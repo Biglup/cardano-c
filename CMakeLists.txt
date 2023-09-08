@@ -21,11 +21,16 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     get_linux_lsb_release_information()
 endif()
 
+# Option that the user can optionally select
+OPTION (TESTING_ENABLED             "Enables unit test build." ON)
+
 # Find external dependencies
 LIST (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Get the target architecture platform.
+INCLUDE (CMakeInstallDirs)
 INCLUDE (TargetArch)
+
 TARGET_ARCHITECTURE (ARCHITECTURE ARCHITECTURE_ALTERNATIVE_NAME)
 
 # Set common variables.
@@ -66,6 +71,8 @@ MESSAGE ( STATUS "CMAKE_BUILD_TYPE     = ${CMAKE_BUILD_TYPE}" )
 MESSAGE ( STATUS "CMAKE_PREFIX_PATH    = ${CMAKE_PREFIX_PATH}" )
 MESSAGE ( STATUS "ARCHITECTURE         = ${ARCHITECTURE}" )
 MESSAGE ( STATUS )
+MESSAGE ( STATUS "TESTING ENABLED      = ${TESTING_ENABLED}")
+MESSAGE ( STATUS )
 MESSAGE ( STATUS "OS DISTRICUTION ID   = ${LSB_RELEASE_ID_SHORT}" )
 MESSAGE ( STATUS "OS RELEASE           = ${LSB_RELEASE_VERSION_SHORT}" )
 MESSAGE ( STATUS "OS CODENAME          = ${LSB_RELEASE_CODENAME_SHORT}" )
@@ -80,6 +87,15 @@ MESSAGE ( STATUS )
 INCLUDE (CMakeInstallDirs)
 INCLUDE (ProcessDebugInformation)
 
+# Enable unit test build
+IF (TESTING_ENABLED)
+    INCLUDE (CTest)
+    ENABLE_TESTING ()
+
+    FIND_PROGRAM (CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
+    SET (MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full")
+ENDIF ()
+
 # Find external dependencies.
 MESSAGE ( STATUS )
 MESSAGE ( STATUS "Configuring basic solution settings:" )
@@ -89,9 +105,7 @@ MESSAGE ( STATUS )
 SET_DIRECTORY_PROPERTIES (PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${PROJECT_BINARY_DIR}/${BUILD_DIR})
 
 # Build libraries.
-INCLUDE_DIRECTORIES (
-  "lib/include"
-)
+INCLUDE_DIRECTORIES(SYSTEM ./lib)
 
 ADD_SUBDIRECTORY (lib ${BUILD_DIR}/lib)
 SET (CARDANO_C_LIBRARY ${PROJECT_BINARY_DIR}/${BUILD_DIR}/cardano-c/libcardano-c.so)

@@ -1,5 +1,5 @@
 /**
- * \file Cardano.c
+ * \file Cardano.h
  *
  * \author angel.castillo
  * \date   Sep 09, 2023
@@ -21,20 +21,13 @@
  * limitations under the License.
  */
 
+#ifndef CARDANO_H
+#define CARDANO_H
+
 /* INCLUDES ******************************************************************/
 
-#ifdef HAVE_CONFIG_H
+#include <cardano/typedefs.h>
+#include <cardano/endian.h>
+#include <cardano/error.h>
 
-#include "./config.h"
-
-#endif
-
-#include <Cardano/Cardano.h>
-
-/* IMPLEMENTATION ************************************************************/
-
-char*
-a()
-{
-  return "Unknown";
-}
+#endif //CARDANO_H

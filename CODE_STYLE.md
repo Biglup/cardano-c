@@ -160,16 +160,6 @@ for (i = 0; i < 10; ++i) ...
 ```
 
 - Except `char`, `float` or `double`, always use types declared in `stdint.h` library, eg. `uint8_t` for `unsigned 8-bit`, etc.
-- Do not use `stdbool.h` library. Use `1` or `0` for `true` or `false` respectively
-```c
-/* OK */
-uint8_t status = 0;
-
-/* Wrong */
-#include <stdbool.h>
-bool status = true;
-```
-
 - Never compare against `true`, eg. `if (check_func() == 1)`, use `if (check_func()) { ... }`
 - Always compare pointers against `NULL` value
 ```c
@@ -938,11 +928,9 @@ Documented code allows doxygen to parse and generate html/pdf/latex output, thus
 
 - Use doxygen-enabled documentation style for `variables`, `functions` and `structures/enumerations`
 - Always use `\` for doxygen, do not use `@`
-- Always use `5x4` spaces (`5` tabs) offset from beginning of line for text
 ```c
 /**
- * \brief       Holds pointer to first entry in linked list
- *          Beginning of this text is 5 tabs (20 spaces) from beginning of line
+ * \brief Holds pointer to first entry in linked list
  */
 static
 type_t* list;
@@ -958,8 +946,8 @@ type_t* list;
 ```c
 /**
  * \brief       Sum `2` numbers
- * \param[in]     a: First number
- * \param[in]     b: Second number
+ * \param[in]   a: First number
+ * \param[in]   b: Second number
  * \return      Sum of input values
  */
 int32_t
@@ -970,10 +958,10 @@ sum(int32_t a, int32_t b)
 
 /**
  * \brief       Sum `2` numbers and write it to pointer
- * \note      This function does not return value, it stores it to pointer instead
- * \param[in]     a: First number
- * \param[in]     b: Second number
- * \param[out]    result: Output variable used to save result
+ * \note        This function does not return value, it stores it to pointer instead
+ * \param[in]   a: First number
+ * \param[in]   b: Second number
+ * \param[out]  result: Output variable used to save result
  */
 void
 void_sum(int32_t a, int32_t b, int32_t* result)
