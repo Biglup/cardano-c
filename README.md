@@ -24,9 +24,12 @@ TBD
 
 TBD
 
-### Documentation
+## Clang format integration
 
-TBD
+Repository comes with always-up-to-date `.clang-format` file, an input configuration
+for `clang-format` tool (version 15.x is a minimum). 
+
+- https://apt.llvm.org/
 
 ### Contributing 
 

@@ -1,0 +1,54 @@
+SET (LIB_OUTPUT_NAME cardano-c)
+
+# Find external packages
+FIND_PACKAGE (Sodium      REQUIRED)
+
+INCLUDE_DIRECTORIES (SYSTEM ${sodium_INCLUDE_DIR})
+
+# Create configuration header
+CONFIGURE_FILE ("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/config.h")
+
+# Source code files
+FILE (GLOB_RECURSE SOURCE_FILES src/*.c include/*.h include/*.inl)
+FILE (GLOB_RECURSE TEST_SRC_FILES tests/*.c tests/*.h tests/*.inl)
+
+# Compiler options
+IF (CMAKE_COMPILER_IS_GNUC)
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H")
+ENDIF ()
+
+# Build library
+ADD_LIBRARY (${LIB_OUTPUT_NAME} SHARED ${SOURCE_FILES})
+
+TARGET_LINK_LIBRARIES (${LIB_OUTPUT_NAME}
+  ${sodium_LIBRARY_RELEASE}
+)
+
+# Pre-compiled header support
+IF (COTIRE_ENABLED)
+  INCLUDE (Cotire)
+  COTIRE (${LIB_OUTPUT_NAME})
+ENDIF ()
+
+INSTALL (
+  TARGETS     ${LIB_OUTPUT_NAME}
+  DESTINATION lib
+  COMPONENT   lib
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ WORLD_WRITE
+)
+
+INSTALL (
+  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano-c
+  DESTINATION include
+  COMPONENT   dev
+  PATTERN     "*.h"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ
+)
+
+INSTALL (
+  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano-c
+  DESTINATION include
+  COMPONENT   dev
+  PATTERN     "*.inl"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ
+)

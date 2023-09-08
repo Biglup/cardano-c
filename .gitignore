@@ -9,3 +9,73 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+
+*~
+build/
+armhf/
+amd64/
+.idea
+
+# CMake files.
+**/CMakeCache.txt
+**/CMakeFiles
+**/cmake_install.cmake
+**/install_manifest.txt
+**/install_manifest_lib.txt
+**/install_manifest_dev.txt
+Makefile
+**/cmake-build-debug/
+
+#CPack files.
+**/_CPack_Packages/
+**/CPackConfig.cmake
+**/CPackSourceConfig.cmake
+**/CTestTestfile.cmake
+**/DartConfiguration.tcl
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# gcc coverage testing tool files
+*.gcno
+*.gcda
+*.gcov
+
+# CDT-specific
+.project
+.cproject
+.settings/
+
+# project-specific
+**/po/
+**/*.pc
+**/config.h
+arch.c
+doc/doxyfile
+*.deb
+
+stdout*
+stderr*
