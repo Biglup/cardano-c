@@ -46,7 +46,7 @@ INSTALL (
 )
 
 INSTALL (
-  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano-c
+  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano
   DESTINATION include
   COMPONENT   dev
   PATTERN     "*.h"
@@ -54,7 +54,7 @@ INSTALL (
 )
 
 INSTALL (
-  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano-c
+  DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/include/cardano
   DESTINATION include
   COMPONENT   dev
   PATTERN     "*.inl"
