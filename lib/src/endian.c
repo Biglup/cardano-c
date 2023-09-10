@@ -27,9 +27,9 @@
 
 /* CONSTANTS *****************************************************************/
 
-const byte_t SIZE_IN_BYTES_16_BITS  = 2;
-const byte_t SIZE_IN_BYTES_32_BITS  = 4;
-const byte_t SIZE_IN_BYTES_64_BITS  = 8;
+const byte_t SIZE_IN_BYTES_16_BITS = 2;
+const byte_t SIZE_IN_BYTES_32_BITS = 4;
+const byte_t SIZE_IN_BYTES_64_BITS = 8;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -63,22 +63,22 @@ reverse_memcpy(byte_t* dest, const byte_t* src, const size_t size)
 static cardano_error_t
 write(
   const byte_t* src,
-  const size_t  srcSize,
+  const size_t  src_size,
   byte_t*       dest,
-  const size_t  destSize,
+  const size_t  dest_size,
   const size_t  offset,
-  const bool    isNativeEndian)
+  const bool    is_native_endian)
 {
-  if (destSize - offset < srcSize)
+  if (dest_size - offset < src_size)
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
 
-  if (isNativeEndian)
+  if (is_native_endian)
   {
-    memcpy((void*)(dest + offset), src, srcSize);
+    memcpy((void*)(dest + offset), src, src_size);
   }
   else
   {
-    reverse_memcpy((byte_t*)(dest + offset), (byte_t*)src, srcSize);
+    reverse_memcpy((byte_t*)(dest + offset), (byte_t*)src, src_size);
   }
 
   return CARDANO_SUCCESS;
@@ -99,22 +99,22 @@ write(
 static cardano_error_t
 read(
   const byte_t* src,
-  const size_t  srcSize,
+  const size_t  src_size,
   byte_t*       dest,
-  const size_t  destSize,
+  const size_t  dest_size,
   const size_t  offset,
-  const bool    isNativeEndian)
+  const bool    is_native_endian)
 {
-  if (srcSize - offset < destSize)
+  if (src_size - offset < dest_size)
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
 
-  if (isNativeEndian)
+  if (is_native_endian)
   {
-    memcpy((void*)(dest), src + offset, srcSize);
+    memcpy((void*)(dest), src + offset, dest_size);
   }
   else
   {
-    reverse_memcpy((byte_t*)dest, (byte_t*)src + offset, srcSize);
+    reverse_memcpy((byte_t*)dest, (byte_t*)src + offset, dest_size);
   }
 
   return CARDANO_SUCCESS;
