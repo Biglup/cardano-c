@@ -24,6 +24,16 @@ TBD
 
 TBD
 
+
+### Set up the Git hooks custom directory
+
+After cloning the repository run the following command in the
+repository root:
+
+```shell
+git config core.hooksPath .githooks
+```
+
 ## Clang format integration
 
 Repository comes with always-up-to-date `.clang-format` file, an input configuration
