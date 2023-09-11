@@ -8,6 +8,10 @@
         {
             "path": "lib/include/**/*.h",
             "recursive": true
+        },
+        {
+            "path": "lib/tests/**/*.cpp",
+            "recursive": true
         }
     ]
 }

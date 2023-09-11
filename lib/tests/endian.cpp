@@ -105,9 +105,7 @@ TEST(cardano_write_uint16_le, serializesToLittleEndian)
 TEST(cardano_write_uint16_le, serializesToLittleEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t buffer[7] = { 0, 0, 0, 0, 0, 0, 0
-
-  };
+  byte_t   buffer[7]   = { 0, 0, 0, 0, 0, 0, 0 };
   byte_t   expected[7] = { 0, 0, 0, 0, 0, 0xEA, 0x04 };
   size_t   size        = sizeof(buffer);
   uint16_t value       = 1258;
