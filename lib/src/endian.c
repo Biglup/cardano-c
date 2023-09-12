@@ -45,7 +45,9 @@ static void
 reverse_memcpy(byte_t* dest, const byte_t* src, const size_t size)
 {
   for (size_t i = 0; i < size; ++i)
-    dest[i] = src[size - 1 - i];
+  {
+    dest[i] = src[size - i - (size_t)1];
+  }
 }
 
 /**
@@ -70,7 +72,9 @@ write(
   const bool    is_native_endian)
 {
   if (dest_size - offset < src_size)
+  {
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+  }
 
   if (is_native_endian)
   {
@@ -106,7 +110,9 @@ read(
   const bool    is_native_endian)
 {
   if (src_size - offset < dest_size)
+  {
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+  }
 
   if (is_native_endian)
   {

@@ -51,6 +51,7 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     default:
       message = "Unknown error code";
+      break;
   }
 
   return message;
