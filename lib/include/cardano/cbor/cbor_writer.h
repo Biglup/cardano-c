@@ -26,8 +26,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#import <cardano/error.h>
-#import <cardano/typedefs.h>
+#include <cardano/cbor/cbor_tag.h>
+#include <cardano/error.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 
