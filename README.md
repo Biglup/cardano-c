@@ -24,12 +24,44 @@ TBD
 
 TBD
 
+
+### Set up the Git hooks custom directory
+
+After cloning the repository run the following command in the
+repository root:
+
+```shell
+git config core.hooksPath .githooks
+```
+
 ## Clang format integration
 
 Repository comes with always-up-to-date `.clang-format` file, an input configuration
 for `clang-format` tool (version 15.x is a minimum). 
 
 - https://apt.llvm.org/
+
+# Unit Tests
+
+This project uses Google test framework for writing unit tests.
+
+Start by installing the gtest development package:
+
+```bash
+sudo apt-get install libgtest-dev
+```
+
+Note that this package only install source files. You have to compile the code yourself to create the necessary
+library files.
+
+These source files should be located at /usr/src/googletest.
+
+```bash
+cd $(mktemp -d)
+cmake /usr/src/googletest
+make
+sudo make install
+```
 
 ### Contributing 
 

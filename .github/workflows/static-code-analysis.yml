@@ -1,0 +1,36 @@
+name: Static Code Analysis
+on: [push]
+jobs:
+  static_code_analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          sudo apt install cppcheck
+          sudo apt install dos2unix
+          sudo apt install python3
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+          sudo apt install clang-format-17
+
+      - name: Style Check
+        run: |
+          chmod +x ./scripts/run-clang-format.sh
+          dos2unix ./scripts/run-clang-format.sh
+          CLANG_FORMAT="/usr/bin/clang-format-17" ./scripts/run-clang-format.sh
+          echo "Style check complete"
+
+      - name: Check General Rules
+        run: cppcheck --enable=all -I "./lib/include"  --error-exitcode=1 --suppress=missingIncludeSystem ./lib
+
+      - name: Check MISRA 2012 Rules
+        run: |
+          cd $GITHUB_WORKSPACE/scripts/misra/
+          mkdir .results
+          chmod +x check_misra.sh
+          dos2unix check_misra.sh
+          ./check_misra.sh -c /usr/bin -o ./.results -q
+          echo "Scan complete"
+          NumViolations=`cat .results/error_count`
+          echo $NumViolations
