@@ -330,7 +330,7 @@ cardano_write_float64_be(const float64_t value, byte_t* buffer, const size_t siz
 }
 
 cardano_error_t
-cardano_read_uint16_le(uint16_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint16_le(uint16_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -342,7 +342,7 @@ cardano_read_uint16_le(uint16_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_uint32_le(uint32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint32_le(uint32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -354,7 +354,7 @@ cardano_read_uint32_le(uint32_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_uint64_le(uint64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint64_le(uint64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -366,7 +366,7 @@ cardano_read_uint64_le(uint64_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_int16_le(int16_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int16_le(int16_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -378,7 +378,7 @@ cardano_read_int16_le(int16_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_int32_le(int32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int32_le(int32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -390,7 +390,7 @@ cardano_read_int32_le(int32_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_int64_le(int64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int64_le(int64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -402,7 +402,7 @@ cardano_read_int64_le(int64_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_float32_le(float32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float32_le(float32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -414,7 +414,7 @@ cardano_read_float32_le(float32_t* value, byte_t* buffer, const size_t size, con
 }
 
 cardano_error_t
-cardano_read_float64_le(float64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float64_le(float64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -426,7 +426,7 @@ cardano_read_float64_le(float64_t* value, byte_t* buffer, const size_t size, con
 }
 
 cardano_error_t
-cardano_read_uint16_be(uint16_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint16_be(uint16_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -438,7 +438,7 @@ cardano_read_uint16_be(uint16_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_uint32_be(uint32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint32_be(uint32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -450,7 +450,7 @@ cardano_read_uint32_be(uint32_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_uint64_be(uint64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_uint64_be(uint64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -462,7 +462,7 @@ cardano_read_uint64_be(uint64_t* value, byte_t* buffer, const size_t size, const
 }
 
 cardano_error_t
-cardano_read_int16_be(int16_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int16_be(int16_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -474,7 +474,7 @@ cardano_read_int16_be(int16_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_int32_be(int32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int32_be(int32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -486,7 +486,7 @@ cardano_read_int32_be(int32_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_int64_be(int64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_int64_be(int64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -498,7 +498,7 @@ cardano_read_int64_be(int64_t* value, byte_t* buffer, const size_t size, const s
 }
 
 cardano_error_t
-cardano_read_float32_be(float32_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float32_be(float32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
@@ -510,7 +510,7 @@ cardano_read_float32_be(float32_t* value, byte_t* buffer, const size_t size, con
 }
 
 cardano_error_t
-cardano_read_float64_be(float64_t* value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float64_be(float64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,

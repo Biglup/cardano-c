@@ -254,7 +254,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint16_le(uint16_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint16_le(uint16_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a uint32_t value as little-endian from the given buffer.
@@ -266,7 +266,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint32_le(uint32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint32_le(uint32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a uint64_t value as little-endian from the given buffer.
@@ -278,7 +278,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint64_le(uint64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint64_le(uint64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int16_t value as little-endian from the given buffer.
@@ -290,7 +290,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int16_le(int16_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int16_le(int16_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int32_t value as little-endian from the given buffer.
@@ -302,7 +302,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int32_le(int32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int32_le(int32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int64_t value as little-endian from the given buffer.
@@ -314,7 +314,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int64_le(int64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int64_le(int64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a float32_t value as little-endian from the given buffer.
@@ -326,7 +326,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_float32_le(float32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_float32_le(float32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a float64_t value as little-endian from the given buffer.
@@ -338,7 +338,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_float64_le(float64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_float64_le(float64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a uint16_t value as big-endian from the given buffer.
@@ -350,7 +350,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint16_be(uint16_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint16_be(uint16_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a uint32_t value as big-endian from the given buffer.
@@ -362,7 +362,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint32_be(uint32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint32_be(uint32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a uint64_t value as big-endian from the given buffer.
@@ -374,7 +374,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_uint64_be(uint64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_uint64_be(uint64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int16_t value as big-endian from the given buffer.
@@ -386,7 +386,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int16_be(int16_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int16_be(int16_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int32_t value as big-endian from the given buffer.
@@ -398,7 +398,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int32_be(int32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int32_be(int32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a int64_t value as big-endian from the given buffer.
@@ -410,7 +410,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_int64_be(int64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_int64_be(int64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a float32_t value as big-endian from the given buffer.
@@ -422,7 +422,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_float32_be(float32_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_float32_be(float32_t* value, const byte_t* buffer, size_t size, size_t offset);
 
   /**
    * \brief Reads a float64_t value as big-endian from the given buffer.
@@ -434,7 +434,7 @@ extern "C"
    *
    * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
    */
-  cardano_error_t cardano_read_float64_be(float64_t* value, byte_t* buffer, size_t size, size_t offset);
+  cardano_error_t cardano_read_float64_be(float64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
 #ifdef __cplusplus
 }
