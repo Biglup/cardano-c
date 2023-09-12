@@ -41,7 +41,7 @@ extern "C" {
  *
  * \return <tt>true</tt> if the system is little endian; otherwise; <tt>false</tt>.
  */
-bool cardano_is_little_endian();
+bool cardano_is_little_endian(void);
 
 /**
  * \brief Gets whether that scalar types are big-endian, that is, the most significant byte is stored
@@ -49,7 +49,7 @@ bool cardano_is_little_endian();
  *
  * \return <tt>true</tt> if the system is big endian; otherwise; <tt>false</tt>.
  */
-bool cardano_is_big_endian();
+bool cardano_is_big_endian(void);
 
 /**
  * \brief Writes an uint16_t value as little-endian into the given buffer.

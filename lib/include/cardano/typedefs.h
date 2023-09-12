@@ -36,10 +36,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
 typedef float         float32_t;
 typedef double        float64_t;
 typedef unsigned char byte_t;

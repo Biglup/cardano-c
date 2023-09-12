@@ -28,9 +28,9 @@
 
 /* CONSTANTS *****************************************************************/
 
-const byte_t SIZE_IN_BYTES_16_BITS = 2;
-const byte_t SIZE_IN_BYTES_32_BITS = 4;
-const byte_t SIZE_IN_BYTES_64_BITS = 8;
+static const byte_t SIZE_IN_BYTES_16_BITS = 2;
+static const byte_t SIZE_IN_BYTES_32_BITS = 4;
+static const byte_t SIZE_IN_BYTES_64_BITS = 8;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -79,11 +79,11 @@ write(
 
   if (is_native_endian)
   {
-    memcpy((void*)(dest + offset), src, src_size);
+    (void)memcpy(&dest[offset], src, src_size);
   }
   else
   {
-    reverse_memcpy((byte_t*)(dest + offset), (byte_t*)src, src_size);
+    reverse_memcpy(&dest[offset], src, src_size);
   }
 
   return CARDANO_SUCCESS;
@@ -117,11 +117,11 @@ read(
 
   if (is_native_endian)
   {
-    memcpy((void*)(dest), src + offset, dest_size);
+    (void)memcpy(dest, &src[offset], dest_size);
   }
   else
   {
-    reverse_memcpy((byte_t*)dest, (byte_t*)src + offset, dest_size);
+    reverse_memcpy(dest, &src[offset], dest_size);
   }
 
   return CARDANO_SUCCESS;
@@ -130,16 +130,16 @@ read(
 /* DEFINITIONS ***************************************************************/
 
 bool
-cardano_is_little_endian()
+cardano_is_little_endian(void)
 {
-  short int number  = 0x1;
-  char*     num_ptr = (char*)&number;
+  int16_t  number  = 0x1;
+  uint8_t* num_ptr = (uint8_t*)&number;
 
-  return num_ptr[0] == 1;
+  return num_ptr[0] == (uint8_t)1;
 }
 
 bool
-cardano_is_big_endian()
+cardano_is_big_endian(void)
 {
   return !cardano_is_little_endian();
 }
@@ -148,7 +148,7 @@ cardano_error_t
 cardano_write_uint16_le(const uint16_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -160,7 +160,7 @@ cardano_error_t
 cardano_write_uint32_le(const uint32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -172,7 +172,7 @@ cardano_error_t
 cardano_write_uint64_le(const uint64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -184,7 +184,7 @@ cardano_error_t
 cardano_write_int16_le(const int16_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -196,7 +196,7 @@ cardano_error_t
 cardano_write_int32_le(const int32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -208,7 +208,7 @@ cardano_error_t
 cardano_write_int64_le(const int64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -220,7 +220,7 @@ cardano_error_t
 cardano_write_float32_le(const float32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -232,7 +232,7 @@ cardano_error_t
 cardano_write_float64_le(const float64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -244,7 +244,7 @@ cardano_error_t
 cardano_write_uint16_be(const uint16_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -256,7 +256,7 @@ cardano_error_t
 cardano_write_uint32_be(const uint32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -268,7 +268,7 @@ cardano_error_t
 cardano_write_uint64_be(const uint64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -280,7 +280,7 @@ cardano_error_t
 cardano_write_int16_be(const int16_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -292,7 +292,7 @@ cardano_error_t
 cardano_write_int32_be(const int32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -304,7 +304,7 @@ cardano_error_t
 cardano_write_int64_be(const int64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -316,7 +316,7 @@ cardano_error_t
 cardano_write_float32_be(const float32_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
@@ -328,7 +328,7 @@ cardano_error_t
 cardano_write_float64_be(const float64_t value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
-    (byte_t*)&value,
+    (const byte_t*)&value,
     sizeof(value),
     buffer,
     size,
