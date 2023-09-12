@@ -1,6 +1,6 @@
 {
   "script": "misra.py",
   "args": [
-    "--rule-texts=./misra/misra2012"
+    "--rule-texts=./misra2012"
   ]
 }
