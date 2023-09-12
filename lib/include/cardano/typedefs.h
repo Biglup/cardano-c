@@ -12,7 +12,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,17 +33,16 @@
 /* DEFINES ******************************************************************/
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
 
-  typedef float         float32_t;
-  typedef double        float64_t;
-  typedef unsigned char byte_t;
+typedef float         float32_t;
+typedef double        float64_t;
+typedef unsigned char byte_t;
 
 #ifdef __cplusplus
 }

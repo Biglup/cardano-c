@@ -12,7 +12,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/cbor/cbor_major_type.h>
+#include <cardano/cbor/cbor_reader_state.h>
+#include <cardano/cbor/cbor_simple_value.h>
+#include <cardano/cbor/cbor_tag.h>
+#include <cardano/cbor/cbor_writer.h>
 #include <cardano/endian.h>
 #include <cardano/error.h>
 #include <cardano/typedefs.h>

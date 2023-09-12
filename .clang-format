@@ -13,7 +13,7 @@ BraceWrapping:
   AfterObjCDeclaration:  true
   AfterStruct:           true
   AfterUnion:            true
-  AfterExternBlock:      true
+  AfterExternBlock:      false
   BeforeCatch:           true
   BeforeElse:            true
   BeforeLambdaBody:      true
