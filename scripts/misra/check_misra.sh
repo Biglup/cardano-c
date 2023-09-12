@@ -37,12 +37,12 @@ let num_cores--
 mkdir -p "$out_folder"
 
 cppcheck_parameters=( --inline-suppr
+                      --quiet
                       --language=c
                       --addon="$script_folder/misra.json"
                       --suppressions-list="$script_folder/suppressions"
                       --cppcheck-build-dir="$out_folder"
-                      --config-exclude="$script_folder/../../lib/tests"
-                      "$source_folder")
+                      "$source_folder/src")
 
 cppcheck_out_file="$out_folder/results"
 if [ $output_xml -eq 1 ]; then
