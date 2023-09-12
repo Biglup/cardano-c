@@ -1,4 +1,5 @@
 # Cardano-C
+[![PostIntegration][img_src_unit-test]][workflow_unit-test]
 
 "cardano-c" is a C library aiming to be a robust, commercial-grade, full-featured Toolkit for building transaction and interacting with the Cardano blockchain. Compliant with MISRA standards, 
 it ensures consistent reliability and safety. With its binding-friendly architecture, "cardano-c" aims for broad compatibility, enabling easy integrations across various programming languages. 
