@@ -34,5 +34,3 @@ jobs:
           echo "Scan complete"
           NumViolations=`cat .results/error_count`
           echo $NumViolations
-          echo "VIOLATIONS=$NumViolations" >> $GITHUB_ENV
-          ls $GITHUB_WORKSPACE/misra/.results/

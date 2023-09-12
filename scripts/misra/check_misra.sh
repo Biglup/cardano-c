@@ -60,4 +60,4 @@ fi
 echo $error_count MISRA violations
 echo $error_count > "$out_folder/error_count"
 
-exit 0
+exit $error_count
