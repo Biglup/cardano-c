@@ -41,6 +41,7 @@ cppcheck_parameters=( --inline-suppr
                       --addon="$script_folder/misra.json"
                       --suppressions-list="$script_folder/suppressions"
                       --cppcheck-build-dir="$out_folder"
+                      --config-exclude="$script_folder/../../lib/tests"
                       "$source_folder")
 
 cppcheck_out_file="$out_folder/results"
@@ -51,8 +52,8 @@ fi
 
 "$cppcheck_bin" ${cppcheck_parameters[@]} 2> $cppcheck_out_file
 
-# Count lines for Mandatory or Required rules
-error_count=`grep -i "Mandatory - \|Required - " < "$cppcheck_out_file" | wc -l`
+# Count lines for broken rules
+error_count=`grep '\[misra-c2012' < "$cppcheck_out_file" | wc -l`
 
 if [ $quiet -eq 0 ]; then
   cat "$cppcheck_out_file"
