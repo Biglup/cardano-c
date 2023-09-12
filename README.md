@@ -17,6 +17,21 @@ A practical toolkit for developers working with Cardano.
 
 TBD
 
+### Memory Management
+
+The Cardano C library uses a simple reference-counting model. The main goal is that the library can be easily integrated
+into applications and languages that uses different memory management models (such as garbage collection).
+
+##### Core Concepts
+
+Every object in our library provides functions to increase and decrease its reference count. For instance, you would use cardano_cbor_writer_ref to increase and cardano_cbor_writer_unref to decrease the reference count for a cardano_cbor_writer_t object. Note that these functions are thread-safe.
+
+Upon creation through constructors like cardano_cbor_writer_new, an object's reference count is initialized to one. This implies that the caller becomes the sole owner of the newly-created reference.
+
+When the reference count drops to zero—typically when the *_unref function is invoked by the last entity holding a reference—the object gets deallocated.
+
+It's crucial to note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke *_unref once they're done using the result.
+
 ### Prerequisites
 
 TBD
