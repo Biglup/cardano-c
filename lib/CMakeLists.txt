@@ -1,6 +1,8 @@
 SET (LIB_OUTPUT_NAME cardano-c)
 
 # Find external packages
+SET (sodium_USE_STATIC_LIBS ON)
+
 FIND_PACKAGE (Sodium REQUIRED)
 
 INCLUDE_DIRECTORIES (SYSTEM ${sodium_INCLUDE_DIR})
@@ -29,7 +31,7 @@ ENDIF ()
 ADD_LIBRARY (${LIB_OUTPUT_NAME} SHARED ${SOURCE_FILES})
 
 TARGET_LINK_LIBRARIES (${LIB_OUTPUT_NAME}
-  ${sodium_LIBRARY_RELEASE}
+  PRIVATE ${sodium_LIBRARY_RELEASE}
 )
 
 # Pre-compiled header support
