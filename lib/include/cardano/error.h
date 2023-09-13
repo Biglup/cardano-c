@@ -12,7 +12,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,50 +27,49 @@
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
+/**
+ * \brief Cardano C library error codes.
+ */
+typedef enum
+{
   /**
-   * \brief Cardano C library error codes.
+   * \brief Successful operation.
    */
-  typedef enum
-  {
-    /**
-     * \brief Successful operation.
-     */
-    CARDANO_SUCCESS = 0,
-
-    /**
-     * \brief Generic error.
-     */
-    CARDANO_ERROR_GENERIC = 1,
-
-    /**
-     * \brief Insufficient buffer size.
-     */
-    CARDANO_INSUFFICIENT_BUFFER_SIZE = 2,
-
-    /**
-     * \brief Operation over a null pointer.
-     */
-    CARDANO_POINTER_IS_NULL = 3,
-
-    /* Serialization errors */
-
-    /**
-     * \brief The serialization or deserialization process resulted in a loss of precision.
-     */
-    CARDANO_ERROR_LOSS_OF_PRECISION = 100
-  } cardano_error_t;
+  CARDANO_SUCCESS = 0,
 
   /**
-   * \brief Converts error codes to their human readable form.
-   *
-   * \param error[in] The error code to get the string representation for.
-   * \return Human readable form of the given error code.
+   * \brief Generic error.
    */
-  const char* cardano_error_to_string(cardano_error_t error);
+  CARDANO_ERROR_GENERIC = 1,
+
+  /**
+   * \brief Insufficient buffer size.
+   */
+  CARDANO_INSUFFICIENT_BUFFER_SIZE = 2,
+
+  /**
+   * \brief Operation over a null pointer.
+   */
+  CARDANO_POINTER_IS_NULL = 3,
+
+  /* Serialization errors */
+
+  /**
+   * \brief The serialization or deserialization process resulted in a loss of precision.
+   */
+  CARDANO_ERROR_LOSS_OF_PRECISION = 100
+} cardano_error_t;
+
+/**
+ * \brief Converts error codes to their human readable form.
+ *
+ * \param error[in] The error code to get the string representation for.
+ * \return Human readable form of the given error code.
+ */
+const char* cardano_error_to_string(cardano_error_t error);
 
 #ifdef __cplusplus
 }

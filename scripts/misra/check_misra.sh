@@ -37,8 +37,8 @@ let num_cores--
 mkdir -p "$out_folder"
 
 cppcheck_parameters=( --inline-suppr
-                      --quiet
                       --language=c
+                      -I "$source_folder/include"
                       --addon="$script_folder/misra.json"
                       --suppressions-list="$script_folder/suppressions"
                       --cppcheck-build-dir="$out_folder"
@@ -54,7 +54,7 @@ fi
 
 # Count lines for broken rules
 error_count=`grep '\[misra-c2012' < "$cppcheck_out_file" | wc -l`
-
+echo `grep '\[misra-c2012' < "$cppcheck_out_file"`
 if [ $quiet -eq 0 ]; then
   cat "$cppcheck_out_file"
 fi
