@@ -124,7 +124,7 @@ cardano_error_t cardano_write_int32_le(int32_t value, byte_t* buffer, size_t siz
 cardano_error_t cardano_write_int64_le(int64_t value, byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Writes an float32_t value as little-endian into the given buffer.
+ * \brief Writes an float value as little-endian into the given buffer.
  *
  * \param value[in] The value to be written into the buffer.
  * \param buffer[out] The buffer where the value will be written to.
@@ -133,10 +133,10 @@ cardano_error_t cardano_write_int64_le(int64_t value, byte_t* buffer, size_t siz
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_write_float32_le(float32_t value, byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_write_float_le(float value, byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Writes an float64_t value as little-endian into the given buffer.
+ * \brief Writes an double value as little-endian into the given buffer.
  *
  * \param value[in] The value to be written into the buffer.
  * \param buffer[out] The buffer where the value will be written to.
@@ -145,7 +145,7 @@ cardano_error_t cardano_write_float32_le(float32_t value, byte_t* buffer, size_t
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_write_float64_le(float64_t value, byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_write_double_le(double value, byte_t* buffer, size_t size, size_t offset);
 
 /**
  * \brief Writes an uint16_t value as big-endian into the given buffer.
@@ -220,7 +220,7 @@ cardano_error_t cardano_write_int32_be(int32_t value, byte_t* buffer, size_t siz
 cardano_error_t cardano_write_int64_be(int64_t value, byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Writes an float32_t value as big-endian into the given buffer.
+ * \brief Writes an float value as big-endian into the given buffer.
  *
  * \param value[in] The value to be written into the buffer.
  * \param buffer[out] The buffer where the value will be written to.
@@ -229,10 +229,10 @@ cardano_error_t cardano_write_int64_be(int64_t value, byte_t* buffer, size_t siz
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_write_float32_be(float32_t value, byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_write_float_be(float value, byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Writes an float64_t value as big-endian into the given buffer.
+ * \brief Writes an double value as big-endian into the given buffer.
  *
  * \param value[in] The value to be written into the buffer.
  * \param buffer[out] The buffer where the value will be written to.
@@ -241,7 +241,7 @@ cardano_error_t cardano_write_float32_be(float32_t value, byte_t* buffer, size_t
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_write_float64_be(float64_t value, byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_write_double_be(double value, byte_t* buffer, size_t size, size_t offset);
 
 /**
  * \brief Reads a uint16_t value as little-endian from the given buffer.
@@ -316,7 +316,7 @@ cardano_error_t cardano_read_int32_le(int32_t* value, const byte_t* buffer, size
 cardano_error_t cardano_read_int64_le(int64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Reads a float32_t value as little-endian from the given buffer.
+ * \brief Reads a float value as little-endian from the given buffer.
  *
  * \param value[out] A pointer to variable where the result will be written.
  * \param buffer[in] The buffer where the value will be written to.
@@ -325,10 +325,10 @@ cardano_error_t cardano_read_int64_le(int64_t* value, const byte_t* buffer, size
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_read_float32_le(float32_t* value, const byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_read_float_le(float* value, const byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Reads a float64_t value as little-endian from the given buffer.
+ * \brief Reads a double value as little-endian from the given buffer.
  *
  * \param value[out] A pointer to variable where the result will be written.
  * \param buffer[in] The buffer where the value will be written to.
@@ -337,7 +337,7 @@ cardano_error_t cardano_read_float32_le(float32_t* value, const byte_t* buffer, 
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_read_float64_le(float64_t* value, const byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_read_double_le(double* value, const byte_t* buffer, size_t size, size_t offset);
 
 /**
  * \brief Reads a uint16_t value as big-endian from the given buffer.
@@ -412,7 +412,7 @@ cardano_error_t cardano_read_int32_be(int32_t* value, const byte_t* buffer, size
 cardano_error_t cardano_read_int64_be(int64_t* value, const byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Reads a float32_t value as big-endian from the given buffer.
+ * \brief Reads a float value as big-endian from the given buffer.
  *
  * \param value[out] A pointer to variable where the result will be written.
  * \param buffer[in] The buffer where the value will be written to.
@@ -421,10 +421,10 @@ cardano_error_t cardano_read_int64_be(int64_t* value, const byte_t* buffer, size
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_read_float32_be(float32_t* value, const byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_read_float_be(float* value, const byte_t* buffer, size_t size, size_t offset);
 
 /**
- * \brief Reads a float64_t value as big-endian from the given buffer.
+ * \brief Reads a double value as big-endian from the given buffer.
  *
  * \param value[out] A pointer to variable where the result will be written.
  * \param buffer[in] The buffer where the value will be written to.
@@ -433,7 +433,7 @@ cardano_error_t cardano_read_float32_be(float32_t* value, const byte_t* buffer, 
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
-cardano_error_t cardano_read_float64_be(float64_t* value, const byte_t* buffer, size_t size, size_t offset);
+cardano_error_t cardano_read_double_be(double* value, const byte_t* buffer, size_t size, size_t offset);
 
 #ifdef __cplusplus
 }

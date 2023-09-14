@@ -217,7 +217,7 @@ cardano_write_int64_le(const int64_t value, byte_t* buffer, const size_t size, c
 }
 
 cardano_error_t
-cardano_write_float32_le(const float32_t value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_write_float_le(const float value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
     (const byte_t*)&value,
@@ -229,7 +229,7 @@ cardano_write_float32_le(const float32_t value, byte_t* buffer, const size_t siz
 }
 
 cardano_error_t
-cardano_write_float64_le(const float64_t value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_write_double_le(const double value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
     (const byte_t*)&value,
@@ -313,7 +313,7 @@ cardano_write_int64_be(const int64_t value, byte_t* buffer, const size_t size, c
 }
 
 cardano_error_t
-cardano_write_float32_be(const float32_t value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_write_float_be(const float value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
     (const byte_t*)&value,
@@ -325,7 +325,7 @@ cardano_write_float32_be(const float32_t value, byte_t* buffer, const size_t siz
 }
 
 cardano_error_t
-cardano_write_float64_be(const float64_t value, byte_t* buffer, const size_t size, const size_t offset)
+cardano_write_double_be(const double value, byte_t* buffer, const size_t size, const size_t offset)
 {
   return write(
     (const byte_t*)&value,
@@ -409,25 +409,25 @@ cardano_read_int64_le(int64_t* value, const byte_t* buffer, const size_t size, c
 }
 
 cardano_error_t
-cardano_read_float32_le(float32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float_le(float* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
     size,
     (byte_t*)value,
-    SIZE_IN_BYTES_32_BITS,
+    sizeof(float),
     offset,
     cardano_is_little_endian());
 }
 
 cardano_error_t
-cardano_read_float64_le(float64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_double_le(double* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
     size,
     (byte_t*)value,
-    SIZE_IN_BYTES_64_BITS,
+    sizeof(double),
     offset,
     cardano_is_little_endian());
 }
@@ -505,25 +505,25 @@ cardano_read_int64_be(int64_t* value, const byte_t* buffer, const size_t size, c
 }
 
 cardano_error_t
-cardano_read_float32_be(float32_t* value, const byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_float_be(float* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
     size,
     (byte_t*)value,
-    SIZE_IN_BYTES_32_BITS,
+    sizeof(float),
     offset,
     cardano_is_big_endian());
 }
 
 cardano_error_t
-cardano_read_float64_be(float64_t* value, const byte_t* buffer, const size_t size, const size_t offset)
+cardano_read_double_be(double* value, const byte_t* buffer, const size_t size, const size_t offset)
 {
   return read(
     buffer,
     size,
     (byte_t*)value,
-    SIZE_IN_BYTES_64_BITS,
+    sizeof(double),
     offset,
     cardano_is_big_endian());
 }

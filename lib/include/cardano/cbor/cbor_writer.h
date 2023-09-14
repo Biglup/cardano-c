@@ -52,13 +52,47 @@ cardano_cbor_writer_t* cardano_cbor_writer_new();
 /**
  * \brief Decreases the reference count of the cardano_cbor_writer_t object. When its reference count drops
  * to 0, the object is finalized (i.e. its memory is freed).
+ *
+ * @param cbor_writer A pointer to the cbor writer object reference.
  */
-void cardano_cbor_writer_unref(cardano_cbor_writer_t*);
+void cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer);
 
 /**
  * \brief Increases the reference count of the cardano_cbor_writer_t object.
+ *
+ * @param cbor_writer the cbor writer object.
  */
-void cardano_cbor_writer_ref(cardano_cbor_writer_t*);
+void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
+
+/**
+ * \brief Get the cbor_writer's reference count
+ *
+ * \rst
+ * .. warning:: This does *not* account for transitive references.
+ * \endrst
+ *
+ * @param cbor_writer the cbor writer object.
+ * @return the reference count
+ */
+size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer)
+
+  /**
+   * \brief Provides CPP-like move construct
+   *
+   * Decreases the reference count by one, but does not deallocate the item even
+   * if its refcount reaches zero. This is useful for passing intermediate values
+   * to functions that increase reference count. Should only be used with
+   * functions that `ref` their arguments.
+   *
+   * \rst
+   * .. warning:: If the object is moved without correctly increasing the reference
+   *  count afterwards, the memory will be leaked.
+   * \endrst
+   *
+   * \param object Reference to an object
+   * \return the object with reference count decreased by one
+   */
+  cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer);
 
 /**
  * \brief Writes the provided value as a tagged bignum encoding, as described in RFC7049 section 2.4.2.

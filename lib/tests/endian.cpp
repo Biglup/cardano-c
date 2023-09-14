@@ -418,92 +418,92 @@ TEST(cardano_write_int64_le, serializesToLittleEndianWithPositiveOffset)
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float32_le, bufferIsInsufficientSize)
+TEST(cardano_write_float_le, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = -26.0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = -26.0;
 
   // Act
-  cardano_error_t result = cardano_write_float32_le(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_float_le(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_write_float32_le, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_write_float_le, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[5] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = -26.0;
+  byte_t buffer[5] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = -26.0;
 
   // Act
-  cardano_error_t result = cardano_write_float32_le(value, buffer, size, 4);
+  cardano_error_t result = cardano_write_float_le(value, buffer, size, 4);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_write_float32_le, serializesToLittleEndian)
+TEST(cardano_write_float_le, serializesToLittleEndian)
 {
   // Arrange
-  byte_t    buffer[4]   = { 0 };
-  byte_t    expected[4] = { 0x47, 0x55, 0x93, 0x3f };
-  size_t    size        = sizeof(buffer);
-  float32_t value       = 1.15104;
+  byte_t buffer[4]   = { 0 };
+  byte_t expected[4] = { 0x47, 0x55, 0x93, 0x3f };
+  size_t size        = sizeof(buffer);
+  float  value       = 1.15104;
 
   // Act
-  cardano_error_t result = cardano_write_float32_le(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_float_le(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float32_le, serializesToLittleEndianWithPositiveOffset)
+TEST(cardano_write_float_le, serializesToLittleEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[7]   = {};
-  byte_t    expected[7] = { 0, 0, 0, 0x47, 0x55, 0x93, 0x3f };
-  size_t    size        = sizeof(buffer);
-  float32_t value       = 1.15104;
+  byte_t buffer[7]   = {};
+  byte_t expected[7] = { 0, 0, 0, 0x47, 0x55, 0x93, 0x3f };
+  size_t size        = sizeof(buffer);
+  float  value       = 1.15104;
 
   // Act
-  cardano_error_t result = cardano_write_float32_le(value, buffer, size, 3);
+  cardano_error_t result = cardano_write_float_le(value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float64_le, serializesToLittleEndian)
+TEST(cardano_write_double_le, serializesToLittleEndian)
 {
   // Arrange
-  byte_t    buffer[8]   = { 0 };
-  byte_t    expected[8] = { 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
-  size_t    size        = sizeof(buffer);
-  float64_t value       = 1.632130073;
+  byte_t buffer[8]   = { 0 };
+  byte_t expected[8] = { 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
+  size_t size        = sizeof(buffer);
+  double value       = 1.632130073;
 
   // Act
-  cardano_error_t result = cardano_write_float64_le(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_double_le(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float64_le, serializesToLittleEndianWithPositiveOffset)
+TEST(cardano_write_double_le, serializesToLittleEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[11]   = { 0 };
-  byte_t    expected[11] = { 0, 0, 0, 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
-  size_t    size         = sizeof(buffer);
-  float64_t value        = 1.632130073;
+  byte_t buffer[11]   = { 0 };
+  byte_t expected[11] = { 0, 0, 0, 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
+  size_t size         = sizeof(buffer);
+  double value        = 1.632130073;
 
   // Act
-  cardano_error_t result = cardano_write_float64_le(value, buffer, size, 3);
+  cardano_error_t result = cardano_write_double_le(value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
@@ -870,92 +870,92 @@ TEST(cardano_write_int64_be, serializesToBigEndianWithPositiveOffset)
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float32_be, bufferIsInsufficientSize)
+TEST(cardano_write_float_be, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = -26.0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = -26.0;
 
   // Act
-  cardano_error_t result = cardano_write_float32_be(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_float_be(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_write_float32_be, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_write_float_be, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[5] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = -26.0;
+  byte_t buffer[5] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = -26.0;
 
   // Act
-  cardano_error_t result = cardano_write_float32_be(value, buffer, size, 4);
+  cardano_error_t result = cardano_write_float_be(value, buffer, size, 4);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_write_float32_be, serializesToBigEndian)
+TEST(cardano_write_float_be, serializesToBigEndian)
 {
   // Arrange
-  byte_t    buffer[4]   = { 0 };
-  byte_t    expected[4] = { 0x3f, 0x93, 0x55, 0x47 };
-  size_t    size        = sizeof(buffer);
-  float32_t value       = 1.15104;
+  byte_t buffer[4]   = { 0 };
+  byte_t expected[4] = { 0x3f, 0x93, 0x55, 0x47 };
+  size_t size        = sizeof(buffer);
+  float  value       = 1.15104;
 
   // Act
-  cardano_error_t result = cardano_write_float32_be(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_float_be(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float32_be, serializesToBigEndianWithPositiveOffset)
+TEST(cardano_write_float_be, serializesToBigEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[7]   = {};
-  byte_t    expected[7] = { 0, 0, 0, 0x3f, 0x93, 0x55, 0x47 };
-  size_t    size        = sizeof(buffer);
-  float32_t value       = 1.15104;
+  byte_t buffer[7]   = {};
+  byte_t expected[7] = { 0, 0, 0, 0x3f, 0x93, 0x55, 0x47 };
+  size_t size        = sizeof(buffer);
+  float  value       = 1.15104;
 
   // Act
-  cardano_error_t result = cardano_write_float32_be(value, buffer, size, 3);
+  cardano_error_t result = cardano_write_float_be(value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float64_be, serializesToBigEndian)
+TEST(cardano_write_double_be, serializesToBigEndian)
 {
   // Arrange
-  byte_t    buffer[8]   = { 0 };
-  byte_t    expected[8] = { 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
-  size_t    size        = sizeof(buffer);
-  float64_t value       = 1.632130073;
+  byte_t buffer[8]   = { 0 };
+  byte_t expected[8] = { 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
+  size_t size        = sizeof(buffer);
+  double value       = 1.632130073;
 
   // Act
-  cardano_error_t result = cardano_write_float64_be(value, buffer, size, 0);
+  cardano_error_t result = cardano_write_double_be(value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_THAT(buffer, testing::ElementsAreArray(expected));
 }
 
-TEST(cardano_write_float64_be, serializesToBigEndianWithPositiveOffset)
+TEST(cardano_write_double_be, serializesToBigEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[11]   = { 0 };
-  byte_t    expected[11] = { 0, 0, 0, 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
-  size_t    size         = sizeof(buffer);
-  float64_t value        = 1.632130073;
+  byte_t buffer[11]   = { 0 };
+  byte_t expected[11] = { 0, 0, 0, 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
+  size_t size         = sizeof(buffer);
+  double value        = 1.632130073;
 
   // Act
-  cardano_error_t result = cardano_write_float64_be(value, buffer, size, 3);
+  cardano_error_t result = cardano_write_double_be(value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
@@ -1310,116 +1310,116 @@ TEST(cardano_read_int64_le, serializesToLittleEndianWithPositiveOffset)
   ASSERT_EQ(value, -5737602015469514410);
 }
 
-TEST(cardano_read_float32_le, bufferIsInsufficientSize)
+TEST(cardano_read_float_le, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_le(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_float_le(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float32_le, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_read_float_le, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[4] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[4] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_le(&value, buffer, size, 3);
+  cardano_error_t result = cardano_read_float_le(&value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float32_le, deserializesFromBigEndian)
+TEST(cardano_read_float_le, deserializesFromBigEndian)
 {
   // Arrange
-  byte_t    buffer[4] = { 0x47, 0x55, 0x93, 0x3f };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[4] = { 0x47, 0x55, 0x93, 0x3f };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_le(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_float_le(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.15104, 0.0000001);
 }
 
-TEST(cardano_read_float32_le, serializesToLittleEndianWithPositiveOffset)
+TEST(cardano_read_float_le, serializesToLittleEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[9] = { 0, 0, 0, 0, 0, 0x47, 0x55, 0x93, 0x3f };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[9] = { 0, 0, 0, 0, 0, 0x47, 0x55, 0x93, 0x3f };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_le(&value, buffer, size, 5);
+  cardano_error_t result = cardano_read_float_le(&value, buffer, size, 5);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.15104, 0.0000001);
 }
 
-TEST(cardano_read_float64_le, bufferIsInsufficientSize)
+TEST(cardano_read_double_le, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_le(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_double_le(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float64_le, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_read_double_le, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[4] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[4] = { 0 };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_le(&value, buffer, size, 3);
+  cardano_error_t result = cardano_read_double_le(&value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float64_le, deserializesFromBigEndian)
+TEST(cardano_read_double_le, deserializesFromBigEndian)
 {
   // Arrange
-  byte_t    buffer[8] = { 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[8] = { 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_le(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_double_le(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.632130073, 0.000000001);
 }
 
-TEST(cardano_read_float64_le, serializesToLittleEndianWithPositiveOffset)
+TEST(cardano_read_double_le, serializesToLittleEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[13] = { 0, 0, 0, 0, 0, 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
-  size_t    size       = sizeof(buffer);
-  float64_t value      = 0;
+  byte_t buffer[13] = { 0, 0, 0, 0, 0, 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
+  size_t size       = sizeof(buffer);
+  double value      = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_le(&value, buffer, size, 5);
+  cardano_error_t result = cardano_read_double_le(&value, buffer, size, 5);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
@@ -1774,116 +1774,116 @@ TEST(cardano_read_int64_be, serializesToLittbeEndianWithPositiveOffset)
   ASSERT_EQ(value, -5737602015469514410);
 }
 
-TEST(cardano_read_float32_be, bufferIsInsufficientSize)
+TEST(cardano_read_float_be, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_be(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_float_be(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float32_be, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_read_float_be, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[4] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[4] = { 0 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_be(&value, buffer, size, 3);
+  cardano_error_t result = cardano_read_float_be(&value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float32_be, deserializesFromBigEndian)
+TEST(cardano_read_float_be, deserializesFromBigEndian)
 {
   // Arrange
-  byte_t    buffer[4] = { 0x3f, 0x93, 0x55, 0x47 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[4] = { 0x3f, 0x93, 0x55, 0x47 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_be(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_float_be(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.15104, 0.0000001);
 }
 
-TEST(cardano_read_float32_be, serializesToLittbeEndianWithPositiveOffset)
+TEST(cardano_read_float_be, serializesToLittbeEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[9] = { 0, 0, 0, 0, 0, 0x3f, 0x93, 0x55, 0x47 };
-  size_t    size      = sizeof(buffer);
-  float32_t value     = 0;
+  byte_t buffer[9] = { 0, 0, 0, 0, 0, 0x3f, 0x93, 0x55, 0x47 };
+  size_t size      = sizeof(buffer);
+  float  value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float32_be(&value, buffer, size, 5);
+  cardano_error_t result = cardano_read_float_be(&value, buffer, size, 5);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.15104, 0.0000001);
 }
 
-TEST(cardano_read_float64_be, bufferIsInsufficientSize)
+TEST(cardano_read_double_be, bufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[1] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[1] = { 0 };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_be(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_double_be(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float64_be, positiveOffsetBufferIsInsufficientSize)
+TEST(cardano_read_double_be, positiveOffsetBufferIsInsufficientSize)
 {
   // Arrange
-  byte_t    buffer[4] = { 0 };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[4] = { 0 };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_be(&value, buffer, size, 3);
+  cardano_error_t result = cardano_read_double_be(&value, buffer, size, 3);
 
   // Assert
   ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_read_float64_be, deserializesFromBigEndian)
+TEST(cardano_read_double_be, deserializesFromBigEndian)
 {
   // Arrange
-  byte_t    buffer[8] = { 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
-  size_t    size      = sizeof(buffer);
-  float64_t value     = 0;
+  byte_t buffer[8] = { 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
+  size_t size      = sizeof(buffer);
+  double value     = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_be(&value, buffer, size, 0);
+  cardano_error_t result = cardano_read_double_be(&value, buffer, size, 0);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NEAR(value, 1.632130073, 0.000000001);
 }
 
-TEST(cardano_read_float64_be, serializesToLittbeEndianWithPositiveOffset)
+TEST(cardano_read_double_be, serializesToLittbeEndianWithPositiveOffset)
 {
   // Arrange
-  byte_t    buffer[13] = { 0, 0, 0, 0, 0, 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
-  size_t    size       = sizeof(buffer);
-  float64_t value      = 0;
+  byte_t buffer[13] = { 0, 0, 0, 0, 0, 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
+  size_t size       = sizeof(buffer);
+  double value      = 0;
 
   // Act
-  cardano_error_t result = cardano_read_float64_be(&value, buffer, size, 5);
+  cardano_error_t result = cardano_read_double_be(&value, buffer, size, 5);
 
   // Assert
   ASSERT_EQ(result, CARDANO_SUCCESS);

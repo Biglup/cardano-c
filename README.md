@@ -24,7 +24,7 @@ into applications and languages that uses different memory management models (su
 
 ##### Core Concepts
 
-Every object in our library provides functions to increase and decrease its reference count. For instance, you would use cardano_cbor_writer_ref to increase and cardano_cbor_writer_unref to decrease the reference count for a cardano_cbor_writer_t object. Note that these functions are thread-safe.
+Every object in our library provides functions to increase and decrease its reference count. For instance, you would use cardano_cbor_writer_ref to increase and cardano_cbor_writer_unref to decrease the reference count for a cardano_cbor_writer_t object.
 
 Upon creation through constructors like cardano_cbor_writer_new, an object's reference count is initialized to one. This implies that the caller becomes the sole owner of the newly-created reference.
 
