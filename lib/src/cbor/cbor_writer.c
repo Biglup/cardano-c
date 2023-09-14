@@ -65,8 +65,6 @@ cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer)
     free(reference);
     *cbor_writer = NULL;
   }
-
-  return;
 }
 
 void

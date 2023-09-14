@@ -55,6 +55,11 @@ typedef enum
    */
   CARDANO_POINTER_IS_NULL = 3,
 
+  /**
+   * \brief Memory could not be allocated.
+   */
+  CARDANO_MEMORY_ALLOCATION_FAILED = 4,
+
   /* Serialization errors */
 
   /**

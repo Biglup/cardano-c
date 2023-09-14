@@ -1,5 +1,5 @@
 /**
- * \file error.cpp
+ * \file cbor_writer.cpp
  *
  * \author angel.castillo
  * \date   Sep 09, 2023
@@ -23,79 +23,103 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/error.h>
+#include <cardano/cbor/cbor_writer.h>
 #include <gmock/gmock.h>
 
 /* UNIT TESTS ****************************************************************/
 
-TEST(cardano_error_to_string_2, canConvertSuccess)
+TEST(cardano_cbor_writer_new, createsANewObjectWithRefCountOne)
 {
   // Arrange
-  cardano_error_t error = CARDANO_SUCCESS;
+  cardano_cbor_writer_t* writer = nullptr;
 
   // Act
-  const char* message = cardano_error_to_string(error);
+  writer = cardano_cbor_writer_new();
 
   // Assert
-  ASSERT_STREQ(message, "Successful operation");
+  EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
+  EXPECT_EQ(cardano_cbor_writer_refcount(writer), 1);
 }
 
-TEST(cardano_error_to_string_2, canConvertGenericError)
+TEST(cardano_cbor_writer_ref, increasesTheReferenceCount)
 {
   // Arrange
-  cardano_error_t error = CARDANO_ERROR_GENERIC;
+  cardano_cbor_writer_t* writer = nullptr;
 
   // Act
-  const char* message = cardano_error_to_string(error);
+  writer = cardano_cbor_writer_new();
+  cardano_cbor_writer_ref(writer);
 
   // Assert
-  ASSERT_STREQ(message, "Generic error");
+  EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
+  EXPECT_EQ(cardano_cbor_writer_refcount(writer), 2);
 }
 
-TEST(cardano_error_to_string_2, canConvertLossOfPrecisionr)
+TEST(cardano_cbor_writer_unref, doesntCrashIfGivenAPtrToANullPtr)
 {
   // Arrange
-  cardano_error_t error = CARDANO_ERROR_LOSS_OF_PRECISION;
+  cardano_cbor_writer_t* writer = nullptr;
 
   // Act
-  const char* message = cardano_error_to_string(error);
-
-  // Assert
-  ASSERT_STREQ(message, "Invalid conversion. Loss of precision");
+  cardano_cbor_writer_unref(&writer);
 }
 
-TEST(cardano_error_to_string_2, canConvertInsufficientBufferSize)
+TEST(cardano_cbor_writer_unref, doesntCrashIfGivenANullPtr)
 {
-  // Arrange
-  cardano_error_t error = CARDANO_INSUFFICIENT_BUFFER_SIZE;
-
   // Act
-  const char* message = cardano_error_to_string(error);
-
-  // Assert
-  ASSERT_STREQ(message, "Invalid operation. Insufficient buffer size");
+  cardano_cbor_writer_unref((cardano_cbor_writer_t**)nullptr);
 }
 
-TEST(cardano_error_to_string_2, canConvertNullPointer)
+TEST(cardano_cbor_writer_unref, decreasesTheReferenceCount)
 {
   // Arrange
-  cardano_error_t error = CARDANO_POINTER_IS_NULL;
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  ;
 
   // Act
-  const char* message = cardano_error_to_string(error);
+  cardano_cbor_writer_ref(writer);
+  size_t ref_count = cardano_cbor_writer_refcount(writer);
+
+  cardano_cbor_writer_unref(&writer);
+  size_t updated_ref_count = cardano_cbor_writer_refcount(writer);
 
   // Assert
-  ASSERT_STREQ(message, "Invalid operation. Argument is a NULL pointer");
+  EXPECT_EQ(ref_count, 2);
+  EXPECT_EQ(updated_ref_count, 1);
 }
 
-TEST(cardano_error_to_string_2, canConvertUnknown)
+TEST(cardano_cbor_writer_unref, freesTheObjectIfReferenceReachesZero)
 {
   // Arrange
-  cardano_error_t error = (cardano_error_t)99999999;
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  ;
 
   // Act
-  const char* message = cardano_error_to_string(error);
+  cardano_cbor_writer_ref(writer);
+  size_t ref_count = cardano_cbor_writer_refcount(writer);
+
+  cardano_cbor_writer_unref(&writer);
+  size_t updated_ref_count = cardano_cbor_writer_refcount(writer);
+
+  cardano_cbor_writer_unref(&writer);
 
   // Assert
-  ASSERT_STREQ(message, "Unknown error code");
+  EXPECT_EQ(ref_count, 2);
+  EXPECT_EQ(updated_ref_count, 1);
+  EXPECT_EQ(writer, (cardano_cbor_writer_t*)nullptr);
+}
+
+TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObject)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  ;
+
+  // Act
+  cardano_cbor_writer_move(writer);
+  size_t ref_count = cardano_cbor_writer_refcount(writer);
+
+  // Assert
+  EXPECT_EQ(ref_count, 0);
+  EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
 }
