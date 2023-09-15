@@ -23,8 +23,11 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/endian.h>
 #include <cardano/error.h>
+
+extern "C" {
+#include "../src/endian.h"
+}
 
 #include <gmock/gmock.h>
 

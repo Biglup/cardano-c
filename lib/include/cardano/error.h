@@ -60,6 +60,16 @@ typedef enum
    */
   CARDANO_MEMORY_ALLOCATION_FAILED = 4,
 
+  /**
+   * \brief Out of bounds memory read.
+   */
+  CARDANO_OUT_OF_BOUNDS_MEMORY_READ = 5,
+
+  /**
+   * \brief Out of bounds memory write.
+   */
+  CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE = 6,
+
   /* Serialization errors */
 
   /**
