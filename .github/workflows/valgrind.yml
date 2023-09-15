@@ -12,6 +12,7 @@ jobs:
           sudo apt install libsodium-dev
           sudo apt install libgtest-dev
           sudo apt install dos2unix
+          sudo apt install valgrind
 
       - name: Setup Gtest
         run: |
