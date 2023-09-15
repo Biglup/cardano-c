@@ -11,6 +11,7 @@ jobs:
           sudo apt install cmake
           sudo apt install libsodium-dev
           sudo apt install libgtest-dev
+          sudo apt install dos2unix
 
       - name: Setup Gtest
         run: |
