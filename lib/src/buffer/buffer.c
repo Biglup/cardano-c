@@ -37,6 +37,7 @@ typedef struct cardano_buffer_t
     size_t  size;
     size_t  head;
     size_t  capacity;
+    size_t  ref_count;
 } cardano_buffer_t;
 
 /* STATIC FUNCTIONS ***********************************************************/
@@ -94,9 +95,10 @@ cardano_buffer_new(const size_t capacity)
     return NULL;
   }
 
-  buffer->size     = 0;
-  buffer->head     = 0;
-  buffer->capacity = capacity;
+  buffer->size      = 0;
+  buffer->head      = 0;
+  buffer->capacity  = capacity;
+  buffer->ref_count = 1;
 
   return buffer;
 }
@@ -132,31 +134,129 @@ cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
   (void)memcpy(buffer->data, lhs->data, lhs->size);
   (void)memcpy(&buffer->data[lhs->size], rhs->data, rhs->size);
 
-  buffer->size     = lhs->size + rhs->size;
-  buffer->head     = 0;
-  buffer->capacity = buffer->size;
+  buffer->size      = lhs->size + rhs->size;
+  buffer->head      = 0;
+  buffer->capacity  = buffer->size;
+  buffer->ref_count = 1;
 
   return buffer;
 }
 
+cardano_buffer_t*
+cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
+{
+  if (start > buffer->size)
+  {
+    return NULL;
+  }
+
+  if (end > buffer->size)
+  {
+    return NULL;
+  }
+
+  if (end < start)
+  {
+    return NULL;
+  }
+
+  size_t slice_size = end - start;
+
+  if (slice_size == 0U)
+  {
+    return NULL;
+  }
+
+  byte_t* slice_data = (byte_t*)malloc(slice_size);
+
+  if (slice_data == NULL)
+  {
+    return NULL;
+  }
+
+  (void)memcpy(slice_data, &buffer->data[start], slice_size);
+
+  cardano_buffer_t* sliced_buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+
+  if (sliced_buffer == NULL)
+  {
+    free(slice_data);
+    return NULL;
+  }
+
+  sliced_buffer->data      = slice_data;
+  sliced_buffer->size      = slice_size;
+  sliced_buffer->head      = 0;
+  sliced_buffer->capacity  = buffer->size;
+  sliced_buffer->ref_count = 1;
+
+  return sliced_buffer;
+}
+
 void
-cardano_buffer_free(cardano_buffer_t** buffer)
+cardano_buffer_unref(cardano_buffer_t** buffer)
 {
   if (buffer == NULL)
   {
     return;
   }
 
-  byte_t* data = (*buffer)->data;
-  free(*buffer);
-  *buffer = NULL;
-
-  if (data == NULL)
+  if (*buffer == NULL)
   {
     return;
   }
 
-  free(data);
+  cardano_buffer_t* reference = *buffer;
+
+  if (reference->ref_count > 0)
+  {
+    reference->ref_count -= 1U;
+  }
+
+  if (reference->ref_count <= 0U)
+  {
+    free(reference->data);
+    free(reference);
+    *buffer = NULL;
+  }
+}
+
+void
+cardano_buffer_ref(cardano_buffer_t* buffer)
+{
+  if (buffer == NULL)
+  {
+    return;
+  }
+
+  buffer->ref_count += 1U;
+}
+
+size_t
+cardano_buffer_refcount(const cardano_buffer_t* buffer)
+{
+  if (buffer == NULL)
+  {
+    return 0;
+  }
+
+  return buffer->ref_count;
+}
+
+cardano_buffer_t*
+cardano_buffer_move(cardano_buffer_t* buffer)
+{
+  if (buffer == NULL)
+  {
+    return NULL;
+  }
+
+  if (buffer->ref_count > 0)
+  {
+    buffer->ref_count -= 1U;
+  }
+
+  return buffer;
 }
 
 byte_t*

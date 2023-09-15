@@ -58,7 +58,10 @@ cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer)
 
   cardano_cbor_writer_t* reference = *cbor_writer;
 
-  reference->ref_count -= 1U;
+  if (reference->ref_count > 0)
+  {
+    reference->ref_count -= 1U;
+  }
 
   if (reference->ref_count <= 0U)
   {

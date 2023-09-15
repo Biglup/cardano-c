@@ -39,6 +39,9 @@ TEST(cardano_cbor_writer_new, createsANewObjectWithRefCountOne)
   // Assert
   EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
   EXPECT_EQ(cardano_cbor_writer_refcount(writer), 1);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_cbor_writer_ref, increasesTheReferenceCount)
@@ -53,6 +56,10 @@ TEST(cardano_cbor_writer_ref, increasesTheReferenceCount)
   // Assert
   EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
   EXPECT_EQ(cardano_cbor_writer_refcount(writer), 2);
+
+  // Cleanup - We need to unref twice since one reference was added.
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_cbor_writer_unref, doesntCrashIfGivenAPtrToANullPtr)
@@ -86,13 +93,15 @@ TEST(cardano_cbor_writer_unref, decreasesTheReferenceCount)
   // Assert
   EXPECT_EQ(ref_count, 2);
   EXPECT_EQ(updated_ref_count, 1);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_cbor_writer_unref, freesTheObjectIfReferenceReachesZero)
 {
   // Arrange
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
-  ;
 
   // Act
   cardano_cbor_writer_ref(writer);
@@ -107,13 +116,15 @@ TEST(cardano_cbor_writer_unref, freesTheObjectIfReferenceReachesZero)
   EXPECT_EQ(ref_count, 2);
   EXPECT_EQ(updated_ref_count, 1);
   EXPECT_EQ(writer, (cardano_cbor_writer_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObject)
 {
   // Arrange
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
-  ;
 
   // Act
   cardano_cbor_writer_move(writer);
@@ -122,4 +133,7 @@ TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObjec
   // Assert
   EXPECT_EQ(ref_count, 0);
   EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
 }

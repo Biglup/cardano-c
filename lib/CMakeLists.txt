@@ -34,6 +34,10 @@ TARGET_LINK_LIBRARIES (${LIB_OUTPUT_NAME}
   PRIVATE ${sodium_LIBRARY_RELEASE}
 )
 
+# VALGRIND
+find_program( MEMORYCHECK_COMMAND valgrind )
+set( MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full" )
+
 # Pre-compiled header support
 IF (COTIRE_ENABLED)
   INCLUDE (Cotire)

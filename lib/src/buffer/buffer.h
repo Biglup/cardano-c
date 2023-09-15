@@ -33,7 +33,7 @@
 /* DECLARATIONS **************************************************************/
 
 /**
- * \brief A dynamic buffer.
+ * \brief A reference counted dynamic buffer.
  *
  * This buffer grows automatically as data is added.
  * Its capacity doubles when the size reaches the current capacity.
@@ -59,33 +59,87 @@ cardano_buffer_t* cardano_buffer_new(size_t capacity);
 cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
 
 /**
- * \brief Frees the memory used by an cardano_buffer_t.
+ * \brief Returns a section of an array.
  *
- * \param buffer The buffer to free.
+ * \param buffer The buffer to get the slice from.
+ * \param start  The beginning of the specified portion of the array.
+ * \param end    The end of the specified portion of the array. This is exclusive of the element at the index 'end'.
+ *
+ * \return A new buffer with the requested slice. This method will return NULL if: buffer is NULL, start or end are of
+ * bounds, end is bigger than start or start and end are equals.
  */
-void cardano_buffer_free(cardano_buffer_t** buffer);
+cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
+
+/**
+ * \brief Decreases the reference count of the cardano_buffer_t object. When its reference count drops
+ * to 0, the object is finalized (i.e. its memory is freed).
+ *
+ * \param buffer A pointer to the cbor writer object reference.
+ */
+void cardano_buffer_unref(cardano_buffer_t** buffer);
+
+/**
+ * \brief Increases the reference count of the cardano_buffer_t object.
+ *
+ * \param buffer the cbor writer object.
+ */
+void cardano_buffer_ref(cardano_buffer_t* buffer);
+
+/**
+ * \brief Get the buffer's reference count
+ *
+ * \rst
+ * .. warning:: This does *not* account for transitive references.
+ * \endrst
+ *
+ * \param buffer the cbor writer object.
+ * \return the reference count
+ */
+size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
+
+/**
+ * \brief Provides CPP-like move construct
+ *
+ * Decreases the reference count by one, but does not deallocate the item even
+ * if its refcount reaches zero. This is useful for passing intermediate values
+ * to functions that increase reference count. Should only be used with
+ * functions that `ref` their arguments.
+ *
+ * \rst
+ * .. warning:: If the object is moved without correctly increasing the reference
+ *  count afterwards, the memory will be leaked.
+ * \endrst
+ *
+ * \param object Reference to an object
+ * \return the object with reference count decreased by one
+ */
+cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
 
 /**
  * \brief Gets a pointer to the buffers data.
  *
- * @param buffer The buffer instance.
- * @return A pointer to the inner byte array. If the given buffer is NULL, this function will return NULL.
+ * \rst
+ * .. warning:: This is a pointer to the inner data of the buffer and not a copy. Do not free this pointer.
+ * \endrst
+ *
+ * \param buffer The buffer instance.
+ * \return A pointer to the inner byte array. If the given buffer is NULL, this function will return NULL.
  */
 byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
 
 /**
  * \brief Gets buffer size.
  *
- * @param buffer The buffer instance.
- * @return The buffer size. If the given buffer is NULL, this function will return 0.
+ * \param buffer The buffer instance.
+ * \return The buffer size. If the given buffer is NULL, this function will return 0.
  */
 size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
 
 /**
  * \brief Gets buffer capacity.
  *
- * @param buffer The buffer instance.
- * @return The buffer capacity. If the given buffer is NULL, this function will return 0.
+ * \param buffer The buffer instance.
+ * \return The buffer capacity. If the given buffer is NULL, this function will return 0.
  */
 size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
 
