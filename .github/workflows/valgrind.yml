@@ -1,7 +1,7 @@
 name: Memory Leak Detection
 on: [push]
 jobs:
-  build_and_unit_tests_little_endian:
+  build_and_run_valgrind:
     runs-on: ubuntu-latest
     steps:
       - name: Install Dependencies
