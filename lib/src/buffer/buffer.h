@@ -33,10 +33,15 @@
 /* DECLARATIONS **************************************************************/
 
 /**
- * \brief A dynamic, reference-counted buffer.
+ * \brief A dynamic, reference-counted buffer with configurable exponential growth.
  *
- * The buffer automatically resizes as more data is added, simplifying the dynamic memory management.
- */
+ * \remarks The buffer employs an exponential growth strategy, increasing its capacity by a factor of 1.5 by default
+ * when the buffer becomes full. This default growth factor is based a
+ * <a href="http://groups.google.com/group/comp.lang.c++.moderated/msg/ba558b4924758e2e">recommendation from Andrew Koenig's</a>
+ * (growth factor should be less than (1+sqrt(5))/2 (~1.6)).
+ *
+ * \note The growth factor of the buffer can be configured at compilation time using the environment variable `BUFFER_GROW_FACTOR`
+ **/
 typedef struct cardano_buffer_t cardano_buffer_t;
 
 /**
