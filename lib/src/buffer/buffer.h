@@ -33,458 +33,460 @@
 /* DECLARATIONS **************************************************************/
 
 /**
- * \brief A reference counted dynamic buffer.
+ * \brief A dynamic, reference-counted buffer.
  *
- * This buffer grows automatically as data is added.
- * Its capacity doubles when the size reaches the current capacity.
+ * The buffer automatically resizes as more data is added, simplifying the dynamic memory management.
  */
 typedef struct cardano_buffer_t cardano_buffer_t;
 
 /**
- * \brief Creates and initializes an cardano_buffer_t. This is not a reference counted object.
+ * \brief Creates a new dynamic buffer with the specified initial capacity.
  *
- * \param capacity The initial capacity of the buffer.
- * \return A pointer to the created buffer, or NULL if memory allocation fails.
+ * \param capacity   Initial capacity of the buffer.
+ *
+ * \return The newly created buffer or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned buffer and must manage its lifecycle,
+ * ensuring it is dereferenced when no longer in use.
  */
 cardano_buffer_t* cardano_buffer_new(size_t capacity);
 
 /**
- * \brief Concatenates two buffers and returns their contents in a newly created buffer.
+ * \brief Concatenates two buffers into a new one.
  *
- * \param lhs The first buffer that will be added to the new array.
- * \param lhs The second buffer that will be added to the new array.
+ * Creates a new buffer containing the combined data of the provided buffers.
  *
- * \return A pointer to the newly created buffer, or NULL if memory allocation fails.
+ * \param lhs   The first buffer.
+ * \param rhs   The second buffer.
+ *
+ * \return A new buffer containing the concatenated data or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned buffer and must manage its lifecycle,
+ * ensuring it is dereferenced when no longer in use.
  */
 cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
 
 /**
- * \brief Returns a section of an array.
+ * \brief Slices a buffer.
  *
- * \param buffer The buffer to get the slice from.
- * \param start  The beginning of the specified portion of the array.
- * \param end    The end of the specified portion of the array. This is exclusive of the element at the index 'end'.
+ * Extracts a portion of the buffer between the given indices.
  *
- * \return A new buffer with the requested slice. This method will return NULL if: buffer is NULL, start or end are of
- * bounds, end is bigger than start or start and end are equals.
+ * \param buffer   Source buffer.
+ * \param start    Start index of the slice (inclusive).
+ * \param end      End index of the slice (exclusive).
+ *
+ * \return A new buffer containing the slice or NULL for invalid input or memory allocation failure.
+ * The caller assumes ownership of the returned buffer and must manage its lifecycle,
+ * ensuring it is dereferenced when no longer in use.
  */
 cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
 
 /**
- * \brief Decreases the reference count of the cardano_buffer_t object. When its reference count drops
- * to 0, the object is finalized (i.e. its memory is freed).
+ * \brief Decrements the buffer's reference count.
  *
- * \param buffer A pointer to the cbor writer object reference.
+ * If the reference count reaches zero, the buffer memory is deallocated.
+ *
+ * \param buffer Pointer to the buffer whose reference count is to be decremented.
  */
 void cardano_buffer_unref(cardano_buffer_t** buffer);
 
 /**
- * \brief Increases the reference count of the cardano_buffer_t object.
+ * \brief Increments the buffer's reference count.
  *
- * \param buffer the cbor writer object.
+ * Ensures that the buffer remains allocated until the last reference is released.
+ *
+ * \param buffer Buffer whose reference count is to be incremented.
  */
 void cardano_buffer_ref(cardano_buffer_t* buffer);
 
 /**
- * \brief Get the buffer's reference count
+ * \brief Retrieves the buffer's current reference count.
  *
- * \rst
- * .. warning:: This does *not* account for transitive references.
- * \endrst
+ * \warning Does not account for transitive references.
  *
- * \param buffer the cbor writer object.
- * \return the reference count
+ * \param buffer Target buffer.
+ * \return Current reference count of the buffer.
  */
 size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
 
 /**
- * \brief Provides CPP-like move construct
+ * \brief Moves a buffer, decrementing its reference count without deallocating.
  *
- * Decreases the reference count by one, but does not deallocate the item even
- * if its refcount reaches zero. This is useful for passing intermediate values
- * to functions that increase reference count. Should only be used with
- * functions that `ref` their arguments.
+ * Useful for transferring buffer ownership to functions that will increase the reference count.
  *
- * \rst
- * .. warning:: If the object is moved without correctly increasing the reference
- *  count afterwards, the memory will be leaked.
- * \endrst
+ * \warning Memory will leak if the reference count isn't properly managed after a move.
  *
- * \param object Reference to an object
- * \return the object with reference count decreased by one
+ * \param buffer Buffer to be moved.
+ * \return The buffer with its reference count decremented.
  */
 cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
 
 /**
- * \brief Gets a pointer to the buffers data.
+ * \brief Fetches a direct pointer to the buffer's data.
  *
- * \rst
- * .. warning:: This is a pointer to the inner data of the buffer and not a copy. Do not free this pointer.
- * \endrst
+ * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
  *
- * \param buffer The buffer instance.
- * \return A pointer to the inner byte array. If the given buffer is NULL, this function will return NULL.
+ * \param buffer Target buffer.
+ * \return Pointer to the buffer's internal data or NULL if the buffer is empty.
  */
 byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
 
 /**
- * \brief Gets buffer size.
+ * \brief Fetches the current size (used space) of the buffer.
  *
- * \param buffer The buffer instance.
- * \return The buffer size. If the given buffer is NULL, this function will return 0.
+ * \param buffer Target buffer.
+ * \return Used space in the buffer. Returns 0 if buffer is NULL.
  */
 size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
 
 /**
- * \brief Gets buffer capacity.
+ * \brief Fetches the buffer's total capacity.
  *
- * \param buffer The buffer instance.
- * \return The buffer capacity. If the given buffer is NULL, this function will return 0.
+ * \param buffer Target buffer.
+ * \return Total capacity of the buffer. Returns 0 if buffer is NULL.
  */
 size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
 
 /**
- * \brief Adds data to the end of the buffer.
+ * \brief Appends data to the buffer.
  *
- * If the buffer's size reaches its capacity, the buffer's capacity is doubled.
+ * If required, the buffer's capacity is automatically expanded (typically doubled).
  *
- * \param buffer The buffer to which the data is added.
- * \param data The data to add to the buffer.
- * \param size The size of the data to be written.
- *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \param buffer Target buffer.
+ * \param data Data to append.
+ * \param size Size of the data.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, size_t size);
 
 /**
- * \brief Reads data from the buffer. If not enough data is present in the buffer. This function will return an error.
+ * \brief Reads data from the buffer into a provided array.
  *
- * \param buffer[in] The buffer to which the data is added.
- * \param data[out] The array where the data will be stored.
- * \param bytes_to_read[in] The size of the data to be written.
+ * If the buffer contains insufficient data, an error is returned.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \param buffer Source buffer.
+ * \param data Output array where data will be copied.
+ * \param bytes_to_read Number of bytes to read.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size_t bytes_to_read);
 
 /**
- * \brief Writes an uint16_t value as little-endian into the given buffer.
+ * \brief Writes a 16-bit unsigned integer value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   16-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, uint16_t value);
 
 /**
- * \brief Writes an uint32_t value as little-endian into the given buffer.
+ * \brief Writes a 32-bit unsigned integer value in little-endian format to the buffer.
  *
- * \param value[in] The value to be written into the buffer.
- * \param buffer[in] The buffer where the value will be written to.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   32-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, uint32_t value);
 
 /**
- * \brief Writes an uint64_t value as little-endian into the given buffer.
+ * \brief Writes a 64-bit unsigned integer value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   64-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, uint64_t value);
 
 /**
- * \brief Writes an int16_t value as little-endian into the given buffer.
+ * \brief Writes a 16-bit integer value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   16-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* buffer, int16_t value);
 
 /**
- * \brief Writes an int32_t value as little-endian into the given buffer.
+ * \brief Writes a 32-bit integer value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   32-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* buffer, int32_t value);
 
 /**
- * \brief Writes an int64_t value as little-endian into the given buffer.
+ * \brief Writes a 64-bit integer value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   64-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* buffer, int64_t value);
 
 /**
- * \brief Writes an float value as little-endian into the given buffer.
+ * \brief Writes a float value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   float to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* buffer, float value);
 
 /**
- * \brief Writes an double value as little-endian into the given buffer.
+ * \brief Writes a double value in little-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   double to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* buffer, double value);
 
 /**
- * \brief Writes an uint16_t value as big-endian into the given buffer.
+ * \brief Writes a 16-bit unsigned integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   16-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, uint16_t value);
 
 /**
- * \brief Writes an uint32_t value as big-endian into the given buffer.
+ * \brief Writes a 32-bit unsigned integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   32-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, uint32_t value);
 
 /**
- * \brief Writes an uint64_t value as big-endian into the given buffer.
+ * \brief Writes a 64-bit unsigned integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   64-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, uint64_t value);
 
 /**
- * \brief Writes an int16_t value as big-endian into the given buffer.
+ * \brief Writes a 16-bit integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   16-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* buffer, int16_t value);
 
 /**
- * \brief Writes an int32_t value as big-endian into the given buffer.
+ * \brief Writes a 32-bit integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   32-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* buffer, int32_t value);
 
 /**
- * \brief Writes an int64_t value as big-endian into the given buffer.
+ * \brief Writes a 64-bit integer value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   64-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* buffer, int64_t value);
 
 /**
- * \brief Writes an float value as big-endian into the given buffer.
+ * \brief Writes a float value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   float integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* buffer, float value);
 
 /**
- * \brief Writes an double value as big-endian into the given buffer.
+ * \brief Writes a double value in big-endian format to the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[in] The value to be written into the buffer.
+ * \param buffer[in]  Target buffer for writing.
+ * \param value[in]   double integer to be written.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* buffer, double value);
 
 /**
- * \brief Reads a uint16_t value as little-endian from the given buffer.
+ * \brief Reads a 16-bit unsigned integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 16-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value);
 
 /**
- * \brief Reads a uint32_t value as little-endian from the given buffer.
+ * \brief Reads a 32-bit unsigned integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 32-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value);
 
 /**
- * \brief Reads a uint64_t value as little-endian from the given buffer.
+ * \brief Reads a 64-bit unsigned integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 64-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value);
 
 /**
- * \brief Reads a int16_t value as little-endian from the given buffer.
+ * \brief Reads a 16-bit integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 16-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value);
 
 /**
- * \brief Reads a int32_t value as little-endian from the given buffer.
+ * \brief Reads a 32-bit integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 32-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value);
 
 /**
- * \brief Reads a int64_t value as little-endian from the given buffer.
+ * \brief Reads a 64-bit integer value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 64-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value);
 
 /**
- * \brief Reads a float value as little-endian from the given buffer.
+ * \brief Reads a float value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a float where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value);
 
 /**
- * \brief Reads a double value as little-endian from the given buffer.
+ * \brief Reads a double value in little-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a double where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value);
 
 /**
- * \brief Reads a uint16_t value as big-endian from the given buffer.
+ * \brief Reads a 16-bit unsigned integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 16-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value);
 
 /**
- * \brief Reads a uint32_t value as big-endian from the given buffer.
+ * \brief Reads a 32-bit unsigned integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 32-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value);
 
 /**
- * \brief Reads a uint64_t value as big-endian from the given buffer.
+ * \brief Reads a 64-bit unsigned integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 64-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value);
 
 /**
- * \brief Reads a int16_t value as big-endian from the given buffer.
+ * \brief Reads a 16-bit integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 16-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value);
 
 /**
- * \brief Reads a int32_t value as big-endian from the given buffer.
+ * \brief Reads a 32-bit integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 32-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value);
 
 /**
- * \brief Reads a int64_t value as big-endian from the given buffer.
+ * \brief Reads a 64-bit integer value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a 64-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value);
 
 /**
- * \brief Reads a float value as big-endian from the given buffer.
+ * \brief Reads a float value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a float where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value);
 
 /**
- * \brief Reads a double value as big-endian from the given buffer.
+ * \brief Reads a double value in big-endian format from the buffer.
  *
- * \param buffer[in] The buffer where the value will be written to.
- * \param value[out] A pointer to variable where the result will be written.
+ * \param buffer[in]   Source buffer for reading.
+ * \param value[out]   Pointer to a double where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);
 
-#endif // CARDANO_buffer_H
+#endif // CARDANO_BUFFER_H

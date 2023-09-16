@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../config.h"
+
 /* STRUCTS *******************************************************************/
 
 typedef struct cardano_buffer_t
@@ -46,7 +48,7 @@ typedef struct cardano_buffer_t
  * \brief Grows the buffer if there is not enough capacity to hold the new data.
  *
  * \param buffer The buffer to grow.
- * \param size The size of the buffer.
+ * \param size_of_new_data The size of new data to be written into the buffer.
  *
  * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
  */
@@ -60,7 +62,7 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
 
   if ((buffer->size + size_of_new_data) >= buffer->capacity)
   {
-    size_t  new_capacity = buffer->capacity * 2U;
+    size_t  new_capacity = buffer->capacity * LIB_CARDANO_C_BUFFER_GROW_FACTOR;
     byte_t* new_data     = (byte_t*)realloc(buffer->data, new_capacity);
 
     if (new_data == NULL)
