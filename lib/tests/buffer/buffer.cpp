@@ -192,6 +192,32 @@ TEST(cardano_buffer_concat, returnsTheConcatenatedBuffer)
   cardano_buffer_unref(&concatenated);
 }
 
-/*
-cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
-*/
+TEST(cardano_buffer_slice, bufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  cardano_buffer_t* new_slice = cardano_buffer_slice(buffer, 0, 10);
+
+  // Assert
+  ASSERT_EQ(new_slice, (cardano_buffer_t*)nullptr);
+}
+
+TEST(cardano_buffer_slice, returnsTheRightSlice)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(4);
+  cardano_buffer_write_int32_le(buffer, 1024);
+  byte_t expected[2] = { 0, 4 };
+
+  // Act
+  cardano_buffer_t* slice = cardano_buffer_slice(buffer, 0, 2);
+
+  // Assert
+  ASSERT_THAT(expected, testing::ElementsAreArray(cardano_buffer_get_data(slice), cardano_buffer_get_size(slice)));
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&slice);
+}

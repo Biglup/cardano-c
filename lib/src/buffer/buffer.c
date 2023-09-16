@@ -147,6 +147,16 @@ cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
 cardano_buffer_t*
 cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
 {
+  if (buffer == NULL)
+  {
+    return NULL;
+  }
+
+  if (buffer->data == NULL)
+  {
+    return NULL;
+  }
+
   if (start > buffer->size)
   {
     return NULL;
