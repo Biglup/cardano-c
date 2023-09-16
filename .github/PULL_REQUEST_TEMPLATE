@@ -1,0 +1,15 @@
+## Description
+
+What changes and why
+
+## Checklist
+
+- [ ] I have read followed [CONTRIBUTING.md](https://github.com/Biglup/cardano-c/blob/master/CONTRIBUTING.md)
+    - [ ] I have added tests
+    - [ ] I have updated the documentation
+    - [ ] I have updated the CHANGELOG
+- [ ] Are there any breaking changes?
+    - [ ] If yes: I have marked them in the CHANGELOG
+- [ ] Does this PR introduce any platform specific code?
+- [ ] Security: Does this PR potentially affect security?
+- [ ] Performance: Does this PR potentially affect performance?
