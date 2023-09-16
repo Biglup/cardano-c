@@ -49,6 +49,15 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_POINTER_IS_NULL:
       message = "Invalid operation. Argument is a NULL pointer";
       break;
+    case CARDANO_MEMORY_ALLOCATION_FAILED:
+      message = "Invalid operation. Requested memory could not be allocated";
+      break;
+    case CARDANO_OUT_OF_BOUNDS_MEMORY_READ:
+      message = "Invalid operation. Out of bounds memory read";
+      break;
+    case CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE:
+      message = "Invalid operation. Out of bounds memory write";
+      break;
     default:
       message = "Unknown error code";
       break;

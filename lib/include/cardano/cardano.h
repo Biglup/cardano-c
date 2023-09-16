@@ -31,7 +31,6 @@
 #include <cardano/cbor/cbor_simple_value.h>
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/cbor/cbor_writer.h>
-#include <cardano/endian.h>
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
 

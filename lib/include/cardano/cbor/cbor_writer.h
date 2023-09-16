@@ -37,7 +37,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * A simple writer for Concise Binary Object Representation (CBOR) encoded data.
+ * \brief A simple writer for Concise Binary Object Representation (CBOR) encoded data.
  */
 typedef struct cardano_cbor_writer_t cardano_cbor_writer_t;
 
@@ -74,25 +74,25 @@ void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
  * @param cbor_writer the cbor writer object.
  * @return the reference count
  */
-size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer)
+size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
 
-  /**
-   * \brief Provides CPP-like move construct
-   *
-   * Decreases the reference count by one, but does not deallocate the item even
-   * if its refcount reaches zero. This is useful for passing intermediate values
-   * to functions that increase reference count. Should only be used with
-   * functions that `ref` their arguments.
-   *
-   * \rst
-   * .. warning:: If the object is moved without correctly increasing the reference
-   *  count afterwards, the memory will be leaked.
-   * \endrst
-   *
-   * \param object Reference to an object
-   * \return the object with reference count decreased by one
-   */
-  cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer);
+/**
+ * \brief Provides CPP-like move construct
+ *
+ * Decreases the reference count by one, but does not deallocate the item even
+ * if its refcount reaches zero. This is useful for passing intermediate values
+ * to functions that increase reference count. Should only be used with
+ * functions that `ref` their arguments.
+ *
+ * \rst
+ * .. warning:: If the object is moved without correctly increasing the reference
+ *  count afterwards, the memory will be leaked.
+ * \endrst
+ *
+ * \param object Reference to an object
+ * \return the object with reference count decreased by one
+ */
+cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer);
 
 /**
  * \brief Writes the provided value as a tagged bignum encoding, as described in RFC7049 section 2.4.2.

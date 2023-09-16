@@ -79,3 +79,5 @@ doc/doxyfile
 
 stdout*
 stderr*
+
+code_coverage.info

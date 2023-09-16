@@ -1,0 +1,39 @@
+name: Memory Leak Detection
+on: [push]
+jobs:
+  build_and_run_valgrind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential
+          sudo apt install cmake
+          sudo apt install libsodium-dev
+          sudo apt install libgtest-dev
+          sudo apt install dos2unix
+          sudo apt install valgrind
+
+      - name: Setup Gtest
+        run: |
+          cd $(mktemp -d)
+          cmake /usr/src/googletest
+          make
+          sudo make install
+          cd -
+
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+        with:
+          submodules: "true"
+
+      - name: Build
+        run: |
+          ./scripts/create-debug-makefiles.sh
+          make
+
+      - name: Run Unit Tests
+        run: |
+          chmod +x ./scripts/run-valgrind.sh
+          dos2unix ./scripts/run-valgrind.sh
+          ./scripts/run-valgrind.sh
