@@ -225,9 +225,11 @@ cardano_buffer_unref(cardano_buffer_t** buffer)
     reference->ref_count -= 1U;
   }
 
-  if (reference->ref_count <= 0U)
+  if (reference->ref_count == 0U)
   {
     free(reference->data);
+    reference->data = NULL;
+
     free(reference);
     *buffer = NULL;
   }
