@@ -17,8 +17,31 @@ A practical toolkit for developers working with Cardano.
 
 ### Getting Started
 
-TBD
+The "cardano-c" library has a single dependency and it links statically with it. The end result
+is a library with no dependencies.
 
+#### Compilation of Sodium on Unix-like systems
+
+Sodium is a shared library with a machine-independent set of headers, so it can easily be used by 3rd party projects.
+
+The library is built using Autotools, making it easy to package.
+
+Installation is trivial, and both compilation and testing can take advantage of multiple CPU cores.
+
+Download a [tarball of libsodium](https://download.libsodium.org/libsodium/releases/), preferably the latest stable
+version, then follow the ritual:
+
+``````
+wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.19.tar.gz -O sodium.tar.gz
+mkdir -p sodium
+tar -xzf sodium.tar.gz -C sodium
+cd ./sodium
+./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --enable-shared --with-pic
+make && make check
+make install
+``````
+
+For instructions on how to build and install Sodium on other platforms see: https://doc.libsodium.org/installation
 ### Memory Management
 
 The Cardano C library uses a simple reference-counting model. The main goal is that the library can be easily integrated

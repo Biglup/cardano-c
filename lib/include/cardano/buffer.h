@@ -32,6 +32,10 @@
 
 /* DECLARATIONS **************************************************************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /**
  * \brief A dynamic, reference-counted buffer with configurable exponential growth.
  *
@@ -47,21 +51,34 @@ typedef struct cardano_buffer_t cardano_buffer_t;
 /**
  * \brief Creates a new dynamic buffer with the specified initial capacity.
  *
- * \param capacity   Initial capacity of the buffer.
+ * \param capacity[in]   Initial capacity of the buffer. The capacity must be greater than 0.
+ * If 0 is provided, this function will return NULL.
  *
  * \return The newly created buffer or NULL on memory allocation failure.
- * The caller assumes ownership of the returned buffer and must manage its lifecycle,
- * ensuring it is dereferenced when no longer in use.
+ * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
+ * It must be dereferenced when no longer in use.
  */
 cardano_buffer_t* cardano_buffer_new(size_t capacity);
+
+/**
+ * \brief Creates a new dynamic buffer with a copy of the given data.
+ *
+ * \param array[in] A pointer to the data to initialize the buffer with.
+ * \param size[in] The size of the data.
+ *
+ * \return The newly created buffer or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
+ * It must be dereferenced when no longer in use.
+ */
+cardano_buffer_t* cardano_buffer_new_from(const byte_t* array, size_t size);
 
 /**
  * \brief Concatenates two buffers into a new one.
  *
  * Creates a new buffer containing the combined data of the provided buffers.
  *
- * \param lhs   The first buffer.
- * \param rhs   The second buffer.
+ * \param lhs[in]   The first buffer.
+ * \param rhs[in]   The second buffer.
  *
  * \return A new buffer containing the concatenated data or NULL on memory allocation failure.
  * The caller assumes ownership of the returned buffer and must manage its lifecycle,
@@ -74,9 +91,9 @@ cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const carda
  *
  * Extracts a portion of the buffer between the given indices.
  *
- * \param buffer   Source buffer.
- * \param start    Start index of the slice (inclusive).
- * \param end      End index of the slice (exclusive).
+ * \param buffer[in]   Source buffer.
+ * \param start[in]    Start index of the slice (inclusive).
+ * \param end[in]      End index of the slice (exclusive).
  *
  * \return A new buffer containing the slice or NULL for invalid input or memory allocation failure.
  * The caller assumes ownership of the returned buffer and must manage its lifecycle,
@@ -85,11 +102,34 @@ cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const carda
 cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
 
 /**
+ * \brief Creates a new buffer from a hex string.
+ *
+ * \param hex_string[in] A pointer to the hex string.
+ * \param size[in] The size of the hex string in bytes.
+ *
+ * \return The newly created buffer or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
+ * It must be dereferenced when no longer in use.
+ */
+cardano_buffer_t* cardano_buffer_from_hex(const char* hex_string, size_t size);
+
+/**
+ * \brief Creates a new hex string from a buffer instance.
+ *
+ * \param buffer[in] Source buffer.
+ *
+ * \return The newly null terminated char string with the hex representation or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned char* string and is responsible for its lifecycle.
+ * It must be freed when no longer in use.
+ */
+char* cardano_buffer_to_hex(const cardano_buffer_t* buffer);
+
+/**
  * \brief Decrements the buffer's reference count.
  *
  * If the reference count reaches zero, the buffer memory is deallocated.
  *
- * \param buffer Pointer to the buffer whose reference count is to be decremented.
+ * \param buffer[in] Pointer to the buffer whose reference count is to be decremented.
  */
 void cardano_buffer_unref(cardano_buffer_t** buffer);
 
@@ -98,7 +138,7 @@ void cardano_buffer_unref(cardano_buffer_t** buffer);
  *
  * Ensures that the buffer remains allocated until the last reference is released.
  *
- * \param buffer Buffer whose reference count is to be incremented.
+ * \param buffer[in] Buffer whose reference count is to be incremented.
  */
 void cardano_buffer_ref(cardano_buffer_t* buffer);
 
@@ -107,7 +147,7 @@ void cardano_buffer_ref(cardano_buffer_t* buffer);
  *
  * \warning Does not account for transitive references.
  *
- * \param buffer Target buffer.
+ * \param buffer[in] Target buffer.
  * \return Current reference count of the buffer.
  */
 size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
@@ -119,7 +159,7 @@ size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
  *
  * \warning Memory will leak if the reference count isn't properly managed after a move.
  *
- * \param buffer Buffer to be moved.
+ * \param buffer[in] Buffer to be moved.
  * \return The buffer with its reference count decremented.
  */
 cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
@@ -129,7 +169,7 @@ cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
  *
- * \param buffer Target buffer.
+ * \param buffer[in] Target buffer.
  * \return Pointer to the buffer's internal data or NULL if the buffer is empty.
  */
 byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
@@ -137,7 +177,7 @@ byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
 /**
  * \brief Fetches the current size (used space) of the buffer.
  *
- * \param buffer Target buffer.
+ * \param buffer[in] Target buffer.
  * \return Used space in the buffer. Returns 0 if buffer is NULL.
  */
 size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
@@ -145,7 +185,7 @@ size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
 /**
  * \brief Fetches the buffer's total capacity.
  *
- * \param buffer Target buffer.
+ * \param buffer[in] Target buffer.
  * \return Total capacity of the buffer. Returns 0 if buffer is NULL.
  */
 size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
@@ -155,9 +195,9 @@ size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
  *
  * If required, the buffer's capacity is automatically expanded (typically doubled).
  *
- * \param buffer Target buffer.
- * \param data Data to append.
- * \param size Size of the data.
+ * \param buffer[in] Target buffer.
+ * \param data[in]   Data to append.
+ * \param size[in]   Size of the data.
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, size_t size);
@@ -167,9 +207,9 @@ cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, siz
  *
  * If the buffer contains insufficient data, an error is returned.
  *
- * \param buffer Source buffer.
- * \param data Output array where data will be copied.
- * \param bytes_to_read Number of bytes to read.
+ * \param buffer[in]        Source buffer.
+ * \param data [out]        Output array where data will be copied.
+ * \param bytes_to_read[in] Number of bytes to read.
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size_t bytes_to_read);
@@ -493,5 +533,9 @@ cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* va
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
 cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif // CARDANO_BUFFER_H

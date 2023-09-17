@@ -23,9 +23,10 @@
 
 /* INCLUDES ******************************************************************/
 
-#include "buffer.h"
 #include "../endian.h"
+#include <cardano/buffer.h>
 
+#include <sodium.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -100,6 +101,39 @@ cardano_buffer_new(const size_t capacity)
   buffer->size      = 0;
   buffer->head      = 0;
   buffer->capacity  = capacity;
+  buffer->ref_count = 1;
+
+  return buffer;
+}
+
+cardano_buffer_t*
+cardano_buffer_new_from(const byte_t* array, const size_t size)
+{
+  if (array == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+
+  if (buffer == NULL)
+  {
+    return NULL;
+  }
+
+  buffer->data = (byte_t*)malloc(size);
+
+  if (buffer->data == NULL)
+  {
+    free(buffer);
+    return NULL;
+  }
+
+  (void)memcpy(buffer->data, array, size);
+
+  buffer->size      = size;
+  buffer->head      = 0;
+  buffer->capacity  = buffer->size;
   buffer->ref_count = 1;
 
   return buffer;
@@ -205,6 +239,89 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
   return sliced_buffer;
 }
 
+cardano_buffer_t*
+cardano_buffer_from_hex(const char* hex_string, const size_t size)
+{
+  if (hex_string == NULL)
+  {
+    return NULL;
+  }
+
+  if ((size % 2U) != 0U)
+  {
+    return NULL;
+  }
+
+  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+
+  if (buffer == NULL)
+  {
+    return NULL;
+  }
+
+  buffer->data      = (byte_t*)malloc(size / 2U);
+  buffer->ref_count = 1;
+  buffer->size      = size / 2U;
+  buffer->head      = 0;
+  buffer->capacity  = buffer->size;
+
+  if (buffer->data == NULL)
+  {
+    free(buffer);
+    return NULL;
+  }
+
+  const char* end = NULL;
+
+  int init_result = sodium_init();
+
+  if (init_result != 0)
+  {
+    cardano_buffer_unref(&buffer);
+    return NULL;
+  }
+
+  int decode_result = sodium_hex2bin(buffer->data, size, hex_string, size, NULL, NULL, &end);
+
+  if (decode_result != 0)
+  {
+    cardano_buffer_unref(&buffer);
+    return NULL;
+  }
+
+  return buffer;
+}
+
+char*
+cardano_buffer_to_hex(const cardano_buffer_t* buffer)
+{
+  if (buffer == NULL)
+  {
+    return NULL;
+  }
+
+  if (buffer->data == NULL)
+  {
+    return NULL;
+  }
+
+  int init_result = sodium_init();
+
+  if (init_result != 0)
+  {
+    return NULL;
+  }
+
+  static const size_t null_termination_size = 1;
+  static const size_t byte_size             = 1;
+  static const size_t byte_size_in_hex      = 2;
+
+  size_t hex_string_size = (buffer->size * byte_size_in_hex) + null_termination_size;
+  char*  hex_string      = (char*)calloc(hex_string_size, byte_size);
+
+  return sodium_bin2hex(hex_string, hex_string_size, buffer->data, buffer->size);
+}
+
 void
 cardano_buffer_unref(cardano_buffer_t** buffer)
 {
@@ -220,7 +337,7 @@ cardano_buffer_unref(cardano_buffer_t** buffer)
 
   cardano_buffer_t* reference = *buffer;
 
-  if (reference->ref_count > 0)
+  if (reference->ref_count > 0U)
   {
     reference->ref_count -= 1U;
   }
@@ -265,7 +382,7 @@ cardano_buffer_move(cardano_buffer_t* buffer)
     return NULL;
   }
 
-  if (buffer->ref_count > 0)
+  if (buffer->ref_count > 0U)
   {
     buffer->ref_count -= 1U;
   }
