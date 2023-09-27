@@ -36,7 +36,7 @@ typedef struct cardano_cbor_writer_t
 } cardano_cbor_writer_t;
 
 cardano_cbor_writer_t*
-cardano_cbor_writer_new()
+cardano_cbor_writer_new(void)
 {
   cardano_cbor_writer_t* obj = (cardano_cbor_writer_t*)malloc(sizeof(cardano_cbor_writer_t));
 
