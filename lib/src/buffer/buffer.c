@@ -275,7 +275,7 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
 
   int init_result = sodium_init();
 
-  if (init_result != 0)
+  if (init_result == -1)
   {
     cardano_buffer_unref(&buffer);
     return NULL;
@@ -307,7 +307,7 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer)
 
   int init_result = sodium_init();
 
-  if (init_result != 0)
+  if (init_result == -1)
   {
     return NULL;
   }
@@ -424,7 +424,7 @@ cardano_buffer_get_capacity(const cardano_buffer_t* buffer)
 }
 
 cardano_error_t
-cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, const size_t size)
+cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, const size_t size)
 {
   if (buffer == NULL)
   {
@@ -519,7 +519,7 @@ cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, const uint32_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_uint32_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_uint32_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -547,7 +547,7 @@ cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, const uint64_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_uint64_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_uint64_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -575,7 +575,7 @@ cardano_buffer_write_int16_le(cardano_buffer_t* buffer, const int16_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int16_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int16_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -603,7 +603,7 @@ cardano_buffer_write_int32_le(cardano_buffer_t* buffer, const int32_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int32_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int32_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -631,7 +631,7 @@ cardano_buffer_write_int64_le(cardano_buffer_t* buffer, const int64_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int64_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int64_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -659,7 +659,7 @@ cardano_buffer_write_float_le(cardano_buffer_t* buffer, const float value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_float_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_float_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -687,7 +687,7 @@ cardano_buffer_write_double_le(cardano_buffer_t* buffer, const double value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_double_le(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_double_le(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -715,7 +715,7 @@ cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, const uint16_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_uint16_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_uint16_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -743,7 +743,7 @@ cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, const uint32_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_uint32_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_uint32_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -771,7 +771,7 @@ cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, const uint64_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_uint64_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_uint64_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -799,7 +799,7 @@ cardano_buffer_write_int16_be(cardano_buffer_t* buffer, const int16_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int16_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int16_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -827,7 +827,7 @@ cardano_buffer_write_int32_be(cardano_buffer_t* buffer, const int32_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int32_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int32_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -855,7 +855,7 @@ cardano_buffer_write_int64_be(cardano_buffer_t* buffer, const int64_t value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_int64_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_int64_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -883,7 +883,7 @@ cardano_buffer_write_float_be(cardano_buffer_t* buffer, const float value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_float_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_float_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {
@@ -911,7 +911,7 @@ cardano_buffer_write_double_be(cardano_buffer_t* buffer, const double value)
     return grow_result;
   }
 
-  const cardano_error_t write_result = cardano_write_double_be(value, buffer->data, sizeof(value), buffer->size);
+  const cardano_error_t write_result = cardano_write_double_be(value, buffer->data, buffer->capacity, buffer->size);
 
   if (write_result != CARDANO_SUCCESS)
   {

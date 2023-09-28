@@ -28,6 +28,7 @@
 
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/error.h>
+#include <cardano/export.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -58,7 +59,8 @@ typedef struct cardano_buffer_t cardano_buffer_t;
  * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
  * It must be dereferenced when no longer in use.
  */
-cardano_buffer_t* cardano_buffer_new(size_t capacity);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_new(size_t capacity);
 
 /**
  * \brief Creates a new dynamic buffer with a copy of the given data.
@@ -70,7 +72,8 @@ cardano_buffer_t* cardano_buffer_new(size_t capacity);
  * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
  * It must be dereferenced when no longer in use.
  */
-cardano_buffer_t* cardano_buffer_new_from(const byte_t* array, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_new_from(const byte_t* array, size_t size);
 
 /**
  * \brief Concatenates two buffers into a new one.
@@ -84,7 +87,8 @@ cardano_buffer_t* cardano_buffer_new_from(const byte_t* array, size_t size);
  * The caller assumes ownership of the returned buffer and must manage its lifecycle,
  * ensuring it is dereferenced when no longer in use.
  */
-cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
 
 /**
  * \brief Slices a buffer.
@@ -99,7 +103,8 @@ cardano_buffer_t* cardano_buffer_concat(const cardano_buffer_t* lhs, const carda
  * The caller assumes ownership of the returned buffer and must manage its lifecycle,
  * ensuring it is dereferenced when no longer in use.
  */
-cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end);
 
 /**
  * \brief Creates a new buffer from a hex string.
@@ -111,7 +116,8 @@ cardano_buffer_t* cardano_buffer_slice(const cardano_buffer_t* buffer, size_t st
  * The caller assumes ownership of the returned buffer and is responsible for its lifecycle.
  * It must be dereferenced when no longer in use.
  */
-cardano_buffer_t* cardano_buffer_from_hex(const char* hex_string, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_from_hex(const char* hex_string, size_t size);
 
 /**
  * \brief Creates a new hex string from a buffer instance.
@@ -122,7 +128,8 @@ cardano_buffer_t* cardano_buffer_from_hex(const char* hex_string, size_t size);
  * The caller assumes ownership of the returned char* string and is responsible for its lifecycle.
  * It must be freed when no longer in use.
  */
-char* cardano_buffer_to_hex(const cardano_buffer_t* buffer);
+CARDANO_NODISCARD
+CARDANO_EXPORT char* cardano_buffer_to_hex(const cardano_buffer_t* buffer);
 
 /**
  * \brief Decrements the buffer's reference count.
@@ -131,7 +138,7 @@ char* cardano_buffer_to_hex(const cardano_buffer_t* buffer);
  *
  * \param buffer[in] Pointer to the buffer whose reference count is to be decremented.
  */
-void cardano_buffer_unref(cardano_buffer_t** buffer);
+CARDANO_EXPORT void cardano_buffer_unref(cardano_buffer_t** buffer);
 
 /**
  * \brief Increments the buffer's reference count.
@@ -140,7 +147,7 @@ void cardano_buffer_unref(cardano_buffer_t** buffer);
  *
  * \param buffer[in] Buffer whose reference count is to be incremented.
  */
-void cardano_buffer_ref(cardano_buffer_t* buffer);
+CARDANO_EXPORT void cardano_buffer_ref(cardano_buffer_t* buffer);
 
 /**
  * \brief Retrieves the buffer's current reference count.
@@ -150,7 +157,7 @@ void cardano_buffer_ref(cardano_buffer_t* buffer);
  * \param buffer[in] Target buffer.
  * \return Current reference count of the buffer.
  */
-size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
+CARDANO_EXPORT size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
 
 /**
  * \brief Moves a buffer, decrementing its reference count without deallocating.
@@ -162,7 +169,8 @@ size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
  * \param buffer[in] Buffer to be moved.
  * \return The buffer with its reference count decremented.
  */
-cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
 
 /**
  * \brief Fetches a direct pointer to the buffer's data.
@@ -172,7 +180,8 @@ cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
  * \param buffer[in] Target buffer.
  * \return Pointer to the buffer's internal data or NULL if the buffer is empty.
  */
-byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
+CARDANO_NODISCARD
+CARDANO_EXPORT byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
 
 /**
  * \brief Fetches the current size (used space) of the buffer.
@@ -180,7 +189,8 @@ byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
  * \param buffer[in] Target buffer.
  * \return Used space in the buffer. Returns 0 if buffer is NULL.
  */
-size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
 
 /**
  * \brief Fetches the buffer's total capacity.
@@ -188,7 +198,8 @@ size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
  * \param buffer[in] Target buffer.
  * \return Total capacity of the buffer. Returns 0 if buffer is NULL.
  */
-size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
 
 /**
  * \brief Appends data to the buffer.
@@ -200,7 +211,8 @@ size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
  * \param size[in]   Size of the data.
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, size_t size);
 
 /**
  * \brief Reads data from the buffer into a provided array.
@@ -212,7 +224,8 @@ cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, byte_t* data, siz
  * \param bytes_to_read[in] Number of bytes to read.
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size_t bytes_to_read);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size_t bytes_to_read);
 
 /**
  * \brief Writes a 16-bit unsigned integer value in little-endian format to the buffer.
@@ -222,7 +235,8 @@ cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, uint16_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, uint16_t value);
 
 /**
  * \brief Writes a 32-bit unsigned integer value in little-endian format to the buffer.
@@ -232,7 +246,8 @@ cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, uint16_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, uint32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, uint32_t value);
 
 /**
  * \brief Writes a 64-bit unsigned integer value in little-endian format to the buffer.
@@ -242,7 +257,8 @@ cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, uint32_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, uint64_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, uint64_t value);
 
 /**
  * \brief Writes a 16-bit integer value in little-endian format to the buffer.
@@ -252,7 +268,8 @@ cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, uint64_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* buffer, int16_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* buffer, int16_t value);
 
 /**
  * \brief Writes a 32-bit integer value in little-endian format to the buffer.
@@ -262,7 +279,8 @@ cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* buffer, int16_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* buffer, int32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* buffer, int32_t value);
 
 /**
  * \brief Writes a 64-bit integer value in little-endian format to the buffer.
@@ -272,7 +290,8 @@ cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* buffer, int32_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* buffer, int64_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* buffer, int64_t value);
 
 /**
  * \brief Writes a float value in little-endian format to the buffer.
@@ -282,7 +301,8 @@ cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* buffer, int64_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* buffer, float value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* buffer, float value);
 
 /**
  * \brief Writes a double value in little-endian format to the buffer.
@@ -292,7 +312,8 @@ cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* buffer, float va
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* buffer, double value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* buffer, double value);
 
 /**
  * \brief Writes a 16-bit unsigned integer value in big-endian format to the buffer.
@@ -302,7 +323,8 @@ cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* buffer, double 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, uint16_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, uint16_t value);
 
 /**
  * \brief Writes a 32-bit unsigned integer value in big-endian format to the buffer.
@@ -312,7 +334,8 @@ cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, uint16_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, uint32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, uint32_t value);
 
 /**
  * \brief Writes a 64-bit unsigned integer value in big-endian format to the buffer.
@@ -322,7 +345,8 @@ cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, uint32_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, uint64_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, uint64_t value);
 
 /**
  * \brief Writes a 16-bit integer value in big-endian format to the buffer.
@@ -332,7 +356,8 @@ cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, uint64_
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* buffer, int16_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* buffer, int16_t value);
 
 /**
  * \brief Writes a 32-bit integer value in big-endian format to the buffer.
@@ -342,7 +367,8 @@ cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* buffer, int16_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* buffer, int32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* buffer, int32_t value);
 
 /**
  * \brief Writes a 64-bit integer value in big-endian format to the buffer.
@@ -352,7 +378,8 @@ cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* buffer, int32_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* buffer, int64_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* buffer, int64_t value);
 
 /**
  * \brief Writes a float value in big-endian format to the buffer.
@@ -362,7 +389,8 @@ cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* buffer, int64_t 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* buffer, float value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* buffer, float value);
 
 /**
  * \brief Writes a double value in big-endian format to the buffer.
@@ -372,7 +400,8 @@ cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* buffer, float va
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* buffer, double value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* buffer, double value);
 
 /**
  * \brief Reads a 16-bit unsigned integer value in little-endian format from the buffer.
@@ -382,7 +411,8 @@ cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* buffer, double 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value);
 
 /**
  * \brief Reads a 32-bit unsigned integer value in little-endian format from the buffer.
@@ -392,7 +422,8 @@ cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value);
 
 /**
  * \brief Reads a 64-bit unsigned integer value in little-endian format from the buffer.
@@ -402,7 +433,8 @@ cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value);
 
 /**
  * \brief Reads a 16-bit integer value in little-endian format from the buffer.
@@ -412,7 +444,8 @@ cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value);
 
 /**
  * \brief Reads a 32-bit integer value in little-endian format from the buffer.
@@ -422,7 +455,8 @@ cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value);
 
 /**
  * \brief Reads a 64-bit integer value in little-endian format from the buffer.
@@ -432,7 +466,8 @@ cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value);
 
 /**
  * \brief Reads a float value in little-endian format from the buffer.
@@ -442,7 +477,8 @@ cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value);
 
 /**
  * \brief Reads a double value in little-endian format from the buffer.
@@ -452,7 +488,8 @@ cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* va
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value);
 
 /**
  * \brief Reads a 16-bit unsigned integer value in big-endian format from the buffer.
@@ -462,7 +499,8 @@ cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value);
 
 /**
  * \brief Reads a 32-bit unsigned integer value in big-endian format from the buffer.
@@ -472,7 +510,8 @@ cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value);
 
 /**
  * \brief Reads a 64-bit unsigned integer value in big-endian format from the buffer.
@@ -482,7 +521,8 @@ cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value);
 
 /**
  * \brief Reads a 16-bit integer value in big-endian format from the buffer.
@@ -492,7 +532,8 @@ cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value);
 
 /**
  * \brief Reads a 32-bit integer value in big-endian format from the buffer.
@@ -502,7 +543,8 @@ cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value);
 
 /**
  * \brief Reads a 64-bit integer value in big-endian format from the buffer.
@@ -512,7 +554,8 @@ cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value);
 
 /**
  * \brief Reads a float value in big-endian format from the buffer.
@@ -522,7 +565,8 @@ cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* 
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value);
 
 /**
  * \brief Reads a double value in big-endian format from the buffer.
@@ -532,7 +576,8 @@ cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* va
  *
  * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
  */
-cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);
 
 #ifdef __cplusplus
 }

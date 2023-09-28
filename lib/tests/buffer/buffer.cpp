@@ -26,7 +26,6 @@
 #include <cardano/buffer.h>
 
 #include <gmock/gmock.h>
-#include <stdio.h>
 
 /* UNIT TESTS ****************************************************************/
 
@@ -180,7 +179,7 @@ TEST(cardano_buffer_move, decreasesTheReferenceCountWithoutDeletingTheObject)
   cardano_buffer_t* buffer = cardano_buffer_new(1);
 
   // Act
-  cardano_buffer_move(buffer);
+  EXPECT_THAT(cardano_buffer_move(buffer), testing::Not((cardano_buffer_t*)nullptr));
   size_t ref_count = cardano_buffer_refcount(buffer);
 
   // Assert
@@ -274,11 +273,12 @@ TEST(cardano_buffer_concat, rhsIsNull)
 TEST(cardano_buffer_concat, returnsTheConcatenatedBuffer)
 {
   // Arrange
-  cardano_buffer_t* lhs = cardano_buffer_new(4);
-  cardano_buffer_t* rhs = cardano_buffer_new(4);
-  cardano_buffer_write_int32_le(lhs, 1);
-  cardano_buffer_write_int32_le(rhs, 2);
-  byte_t expected[8] = { 1, 0, 0, 0, 2, 0, 0, 0 };
+  cardano_buffer_t* lhs         = cardano_buffer_new(4);
+  cardano_buffer_t* rhs         = cardano_buffer_new(4);
+  byte_t            expected[8] = { 1, 0, 0, 0, 2, 0, 0, 0 };
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write_int32_le(lhs, 1));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write_int32_le(rhs, 2));
 
   // Act
   cardano_buffer_t* concatenated = cardano_buffer_concat(lhs, rhs);
@@ -311,7 +311,7 @@ TEST(cardano_buffer_slice, returnNullIfStartOutOfBounds)
   byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
 
   cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
-  cardano_buffer_write(buffer, &actual[0], sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
 
   // Act
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 100, 4);
@@ -329,7 +329,7 @@ TEST(cardano_buffer_slice, returnNullIfEndOutOfBounds)
   byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
 
   cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
-  cardano_buffer_write(buffer, &actual[0], sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
 
   // Act
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 0, 400);
@@ -347,7 +347,7 @@ TEST(cardano_buffer_slice, returnNullIfEndLessThanStart)
   byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
 
   cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
-  cardano_buffer_write(buffer, &actual[0], sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
 
   // Act
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 3, 1);
@@ -366,7 +366,7 @@ TEST(cardano_buffer_slice, returnsTheRightSlice)
   byte_t expected[3] = { 0xBB, 0xCC, 0xDD };
 
   cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
-  cardano_buffer_write(buffer, &actual[0], sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
 
   // Act
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 1, 4);
@@ -395,7 +395,7 @@ TEST(cardano_buffer_to_hex, convertBytesToHex)
   byte_t            expected[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
   cardano_buffer_t* buffer       = cardano_buffer_new(16);
 
-  cardano_buffer_write(buffer, &expected[0], 16);
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], 16));
 
   // Act
   char* encoded_hex = cardano_buffer_to_hex(buffer);
@@ -493,7 +493,7 @@ TEST(cardano_buffer_read, returnsErrorIfGivenNullOutputPointer)
   byte_t            bytes[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
   cardano_buffer_t* buffer    = cardano_buffer_new(16);
 
-  cardano_buffer_write(buffer, &bytes[0], 16);
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
 
   // Act
   cardano_error_t result = cardano_buffer_read(buffer, nullptr, 5);
@@ -512,7 +512,7 @@ TEST(cardano_buffer_read, returnsErrorIfTriesToReadOutOfBounds)
   byte_t            actual[5] = { 0x00 };
   cardano_buffer_t* buffer    = cardano_buffer_new(16);
 
-  cardano_buffer_write(buffer, &bytes[0], 16);
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
 
   // Act
   cardano_error_t result = cardano_buffer_read(buffer, &actual[0], 100);
@@ -532,7 +532,7 @@ TEST(cardano_buffer_read, readBytes)
   byte_t            actual[5]   = { 0x00 };
   cardano_buffer_t* buffer      = cardano_buffer_new(16);
 
-  cardano_buffer_write(buffer, &bytes[0], 16);
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
 
   // Act
   cardano_error_t result = cardano_buffer_read(buffer, &actual[0], 5);
@@ -1008,7 +1008,7 @@ TEST(cardano_buffer_read_uint16_le, canDeserializeValue)
   uint16_t          value       = 0;
   byte_t            expected[2] = { 0xEA, 0x04 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint16_le(buffer, &value);
@@ -1050,7 +1050,7 @@ TEST(cardano_buffer_read_uint32_le, canDeserializeValue)
   uint32_t          value       = 0;
   byte_t            expected[4] = { 0xAA, 0x20, 0xEA, 0x04 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint32_le(buffer, &value);
@@ -1092,7 +1092,7 @@ TEST(cardano_buffer_read_uint64_le, canDeserializeValue)
   uint64_t          value       = 0;
   byte_t            expected[8] = { 0xAA, 0x20, 0xEA, 0x04, 0xAA, 0x20, 0xEA, 0x04 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint64_le(buffer, &value);
@@ -1134,7 +1134,7 @@ TEST(cardano_buffer_read_int16_le, canDeserializeValue)
   int16_t           value       = 0;
   byte_t            expected[2] = { 0x16, 0xFB };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int16_le(buffer, &value);
@@ -1176,7 +1176,7 @@ TEST(cardano_buffer_read_int32_le, canDeserializeValue)
   int32_t           value       = 0;
   byte_t            expected[4] = { 0x56, 0xDF, 0x15, 0xFB };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int32_le(buffer, &value);
@@ -1218,7 +1218,7 @@ TEST(cardano_buffer_read_int64_le, canDeserializeValue)
   int64_t           value       = 0;
   byte_t            expected[8] = { 0x56, 0xD1, 0x5F, 0xB5, 0x5D, 0xF1, 0x5F, 0xB0 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int64_le(buffer, &value);
@@ -1260,7 +1260,7 @@ TEST(cardano_buffer_read_float_le, canDeserializeValue)
   float             value       = 0;
   byte_t            expected[4] = { 0x47, 0x55, 0x93, 0x3f };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_float_le(buffer, &value);
@@ -1302,7 +1302,7 @@ TEST(cardano_buffer_read_double_le, canDeserializeValue)
   double            value       = 0;
   byte_t            expected[8] = { 0x44, 0xa6, 0x65, 0x6c, 0x34, 0x1d, 0xfa, 0x3f };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_double_le(buffer, &value);
@@ -1344,7 +1344,7 @@ TEST(cardano_buffer_read_uint16_be, canDeserializeValue)
   uint16_t          value       = 0;
   byte_t            expected[2] = { 0x04, 0xEA };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint16_be(buffer, &value);
@@ -1386,7 +1386,7 @@ TEST(cardano_buffer_read_uint32_be, canDeserializeValue)
   uint32_t          value       = 0;
   byte_t            expected[4] = { 0x04, 0xEA, 0x20, 0xAA };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint32_be(buffer, &value);
@@ -1428,7 +1428,7 @@ TEST(cardano_buffer_read_uint64_be, canDeserializeValue)
   uint64_t          value       = 0;
   byte_t            expected[8] = { 0x04, 0xEA, 0x20, 0xAA, 0x04, 0xEA, 0x20, 0xAA };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_uint64_be(buffer, &value);
@@ -1470,7 +1470,7 @@ TEST(cardano_buffer_read_int16_be, canDeserializeValue)
   int16_t           value       = 0;
   byte_t            expected[2] = { 0xFB, 0x16 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int16_be(buffer, &value);
@@ -1512,7 +1512,7 @@ TEST(cardano_buffer_read_int32_be, canDeserializeValue)
   int32_t           value       = 0;
   byte_t            expected[4] = { 0xFB, 0x15, 0xDF, 0x56 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int32_be(buffer, &value);
@@ -1554,7 +1554,7 @@ TEST(cardano_buffer_read_int64_be, canDeserializeValue)
   int64_t           value       = 0;
   byte_t            expected[8] = { 0xB0, 0x5F, 0xF1, 0x5D, 0xB5, 0x5F, 0xD1, 0x56 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_int64_be(buffer, &value);
@@ -1596,7 +1596,7 @@ TEST(cardano_buffer_read_float_be, canDeserializeValue)
   float             value       = 0;
   byte_t            expected[4] = { 0x3f, 0x93, 0x55, 0x47 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_float_be(buffer, &value);
@@ -1638,7 +1638,7 @@ TEST(cardano_buffer_read_double_be, canDeserializeValue)
   double            value       = 0;
   byte_t            expected[8] = { 0x3f, 0xfa, 0x1d, 0x34, 0x6c, 0x65, 0xa6, 0x44 };
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
-  cardano_buffer_write(buffer, &expected[0], sizeof(value));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], sizeof(value)));
 
   // Act
   cardano_error_t result = cardano_buffer_read_double_be(buffer, &value);
