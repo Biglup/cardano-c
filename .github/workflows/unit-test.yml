@@ -9,8 +9,18 @@ jobs:
           sudo apt update
           sudo apt install build-essential
           sudo apt install cmake
-          sudo apt install libsodium-dev
           sudo apt install libgtest-dev
+
+      - name: Setup Sodium
+        run: |
+          cd $(mktemp -d)
+          wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.19.tar.gz -O sodium.tar.gz
+          tar -xzf sodium.tar.gz
+          cp -rp ./libsodium-stable/* .
+          ./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --enable-shared --with-pic
+          make && make check
+          sudo make install
+          cd -
 
       - name: Setup Gtest
         run: |
@@ -54,8 +64,18 @@ jobs:
           sudo apt update
           sudo apt install build-essential
           sudo apt install cmake
-          sudo apt install libsodium-dev
           sudo apt install libgtest-dev
+
+      - name: Setup Sodium
+        run: |
+          cd $(mktemp -d)
+          wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.19.tar.gz -O sodium.tar.gz
+          tar -xzf sodium.tar.gz
+          cp -rp ./libsodium-stable/* .
+          ./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --enable-shared --with-pic
+          make && make check
+          sudo make install
+          cd -
 
       - name: Setup Gtest
         run: |

@@ -47,20 +47,20 @@ typedef struct cardano_cbor_writer_t cardano_cbor_writer_t;
  * \return A strong reference to the new cardano_cbor_writer_t object. The caller must call
  * \ref cardano_cbor_writer_unref to dispose of the object.
  */
-cardano_cbor_writer_t* cardano_cbor_writer_new();
+cardano_cbor_writer_t* cardano_cbor_writer_new(void);
 
 /**
  * \brief Decreases the reference count of the cardano_cbor_writer_t object. When its reference count drops
  * to 0, the object is finalized (i.e. its memory is freed).
  *
- * @param cbor_writer A pointer to the cbor writer object reference.
+ * \param cbor_writer A pointer to the cbor writer object reference.
  */
 void cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer);
 
 /**
  * \brief Increases the reference count of the cardano_cbor_writer_t object.
  *
- * @param cbor_writer the cbor writer object.
+ * \param cbor_writer the cbor writer object.
  */
 void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
 
@@ -71,8 +71,8 @@ void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
  * .. warning:: This does *not* account for transitive references.
  * \endrst
  *
- * @param cbor_writer the cbor writer object.
- * @return the reference count
+ * \param cbor_writer the cbor writer object.
+ * \return the reference count
  */
 size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
 

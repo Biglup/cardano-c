@@ -23,6 +23,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/cbor/cbor_writer.h>
+
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -34,7 +36,7 @@ typedef struct cardano_cbor_writer_t
 } cardano_cbor_writer_t;
 
 cardano_cbor_writer_t*
-cardano_cbor_writer_new()
+cardano_cbor_writer_new(void)
 {
   cardano_cbor_writer_t* obj = (cardano_cbor_writer_t*)malloc(sizeof(cardano_cbor_writer_t));
 
@@ -58,12 +60,12 @@ cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer)
 
   cardano_cbor_writer_t* reference = *cbor_writer;
 
-  if (reference->ref_count > 0)
+  if (reference->ref_count > 0U)
   {
     reference->ref_count -= 1U;
   }
 
-  if (reference->ref_count <= 0U)
+  if (reference->ref_count == 0U)
   {
     free(reference);
     *cbor_writer = NULL;

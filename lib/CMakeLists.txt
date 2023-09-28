@@ -22,9 +22,12 @@ FILE (GLOB_RECURSE HEADER_FILES include/*.h include/*.inl)
 FILE (GLOB_RECURSE SOURCE_FILES src/*.c include/*.h include/*.inl)
 FILE (GLOB_RECURSE TEST_SRC_FILES tests/*.cpp tests/*.h tests/*.inl)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 # Compiler options
 IF (CMAKE_COMPILER_IS_GNUC)
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H")
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fPIC -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H")
 ENDIF ()
 
 # Build library
@@ -41,7 +44,7 @@ SET( MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full" )
 # Code Coverage
 SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
 SET(GCC_COVERAGE_LINK_FLAGS "-lgcov")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
