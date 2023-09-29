@@ -28,6 +28,7 @@
 
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/error.h>
+#include <cardano/export.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -47,7 +48,8 @@ typedef struct cardano_cbor_writer_t cardano_cbor_writer_t;
  * \return A strong reference to the new cardano_cbor_writer_t object. The caller must call
  * \ref cardano_cbor_writer_unref to dispose of the object.
  */
-cardano_cbor_writer_t* cardano_cbor_writer_new(void);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_cbor_writer_t* cardano_cbor_writer_new(void);
 
 /**
  * \brief Decreases the reference count of the cardano_cbor_writer_t object. When its reference count drops
@@ -55,14 +57,14 @@ cardano_cbor_writer_t* cardano_cbor_writer_new(void);
  *
  * \param cbor_writer A pointer to the cbor writer object reference.
  */
-void cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer);
+CARDANO_EXPORT void cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer);
 
 /**
  * \brief Increases the reference count of the cardano_cbor_writer_t object.
  *
  * \param cbor_writer the cbor writer object.
  */
-void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
+CARDANO_EXPORT void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
 
 /**
  * \brief Get the cbor_writer's reference count
@@ -74,7 +76,8 @@ void cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer);
  * \param cbor_writer the cbor writer object.
  * \return the reference count
  */
-size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
 
 /**
  * \brief Provides CPP-like move construct
@@ -92,107 +95,137 @@ size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
  * \param object Reference to an object
  * \return the object with reference count decreased by one
  */
-cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer);
 
 /**
  * \brief Writes the provided value as a tagged bignum encoding, as described in RFC7049 section 2.4.2.
  *
- * \param value The value to write.
+ * \param writer[in] The CBOR writer instance.
+ * \param value[in]  The value to write.
  */
-cardano_error_t cardano_cbor_writer_write_big_Integer(cardano_cbor_writer_t* writer, uint64_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, uint64_t value);
 
 /**
  * \brief Writes a boolean value (major type 7).
  *
  * \param value The value to write.
  */
-cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, bool value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, bool value);
 
 /**
  * \brief Writes a buffer as a byte string encoding (major type 2).
  *
  * \param value The value to write.
  */
-cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
 
 /**
  * \brief Writes the next data item as a UTF-8 text string (major type 3).
  *
  * \param value The string.
  */
-cardano_error_t cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, size_t size);
 
 /**
  * \brief Writes a single CBOR data item which has already been encoded.
  *
  * \param value The value to write.
  */
-cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, const char* data, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
 
 /**
  * \brief Writes the start of a definite or indefinite-length array (major type 4).
  *
- * \param length The length of the definite-length array, or undefined for an indefinite-length array.
+ * \param length The length of the definite-length array, or 0 for an indefinite-length array.
  */
-cardano_error_t cardano_cbor_writer_start_array(cardano_cbor_writer_t* writer, int32_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, size_t size);
 
 /**
  * \brief Writes the end of an array (major type 4).
  */
-cardano_error_t cardano_cbor_writer_end_array(cardano_cbor_writer_t* writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_array(cardano_cbor_writer_t* writer);
 
 /**
  * \brief Writes the start of a definite or indefinite-length map (major type 5).
  *
- * \param length The length of the definite-length map, or null for an indefinite-length map.
+ * \param length The length of the definite-length map, or 0 for an indefinite-length map.
  */
-cardano_error_t cardano_cbor_writer_start_map(cardano_cbor_writer_t* writer, int32_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, size_t size);
 
 /**
  * \brief Writes the end of a map (major type 5).
  */
-cardano_error_t cardano_cbor_writer_end_map(cardano_cbor_writer_t* writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_map(cardano_cbor_writer_t* writer);
 
 /**
  * \brief Writes a value as a signed integer encoding (major types 0,1)
  *
  * \param value The value to write.
  */
-cardano_error_t cardano_cbor_writer_int(cardano_cbor_writer_t* writer, uint32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, uint64_t value);
 
 /**
  * \brief Writes a value as a signed integer encoding (major types 0,1)
  *
  * \param value The value to write.
  */
-cardano_error_t cardano_cbor_writer_negative_int(cardano_cbor_writer_t* writer, int32_t value);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_signed_int(cardano_cbor_writer_t* writer, int64_t value);
 
 /**
  * \brief Writes a null value (major type 7).
  */
-cardano_error_t cardano_cbor_writer_null(cardano_cbor_writer_t* writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_null(cardano_cbor_writer_t* writer);
 
 /**
  * \brief Writes an undefined value.
  */
-cardano_error_t cardano_cbor_writer_undefined(cardano_cbor_writer_t* writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_undefined(cardano_cbor_writer_t* writer);
 
 /**
  * \brief Assign a semantic tag (major type 6) to the next data item.
  *
  * \param tag semantic tag.
  */
-cardano_error_t cardano_cbor_writer_tag(cardano_cbor_writer_t* writer, cbor_tag_t tag);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cbor_tag_t tag);
 
 /**
  * \brief Returns a new array containing the encoded value.
  */
-cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size, size_t* written);
+
+/**
+ * \brief Creates a new hex string with the writer encoded data.
+ *
+ * \param writer[in] Source writer.
+ *
+ * \return The newly null terminated char string with the hex representation or NULL on memory allocation failure.
+ * The caller assumes ownership of the returned char* string and is responsible for its lifecycle.
+ * It must be freed when no longer in use.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT char* cardano_cbor_writer_encode_hex(cardano_cbor_writer_t* writer);
 
 /**
  * \brief Resets the writer to have no data.
  */
-cardano_error_t reset(cardano_cbor_writer_t* writer);
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_reset(cardano_cbor_writer_t* writer);
 
 #ifdef __cplusplus
 }

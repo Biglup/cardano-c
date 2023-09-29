@@ -1,8 +1,8 @@
 /**
- * \file cbor_simple_value.h
+ * \file export.h
  *
  * \author angel.castillo
- * \date   Sep 12, 2023
+ * \date   Sep 09, 2023
  *
  * \section LICENSE
  *
@@ -21,8 +21,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_SIMPLE_VALUE_H
-#define CARDANO_CBOR_SIMPLE_VALUE_H
+#ifndef CARDANO_EXPORT_H
+#define CARDANO_EXPORT_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -30,34 +30,27 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/**
- * Represents a CBOR simple value (major type 7).
- */
-typedef enum
-{
-  /**
-   * Represents the value 'false'.
-   */
-  CBOR_SIMPLE_VALUE_FALSE = 20,
+#ifndef CARDANO_EXPORT
+#if defined(_MSC_VER) && defined(CARDANO_C_DLL)
+#define CARDANO_EXPORT __declspec(dllexport)
+#else
+#define CARDANO_EXPORT extern
+#endif
+#endif
 
-  /**
-   * Represents the value 'true'.
-   */
-  CBOR_SIMPLE_VALUE_TRUE = 21,
-
-  /**
-   * Represents the value 'null'.
-   */
-  CBOR_SIMPLE_VALUE_NULL = 22,
-
-  /**
-   * Represents an undefined value, to be used by an encoder as a substitute for a data item with an encoding problem.
-   */
-  CBOR_SIMPLE_VALUE_UNDEFINED = 23
-} cbor_simple_value_t;
+#ifdef __GNUC__
+#define CARDANO_UNUSED(x) __attribute__((__unused__)) (x)
+#define CARDANO_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#define CARDANO_UNUSED(x) __pragma(warning(suppress : 4100 4101))(x)
+#define CARDANO_NODISCARD
+#else
+#define CARDANO_UNUSED(x) (x)
+#define CARDANO_NODISCARD
+#endif
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_SIMPLE_VALUE_H
+#endif /* CARDANO_EXPORT_H */

@@ -24,6 +24,10 @@
 #ifndef CARDANO_ERROR_H
 #define CARDANO_ERROR_H
 
+/* INCLUDES ******************************************************************/
+
+#include <cardano/export.h>
+
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
@@ -70,6 +74,13 @@ typedef enum
    */
   CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE = 6,
 
+  /* Encoding errors */
+
+  /**
+   * \brief Encoding failure.
+   */
+  CARDANO_ERROR_ENCODING = 10,
+
   /* Serialization errors */
 
   /**
@@ -84,7 +95,8 @@ typedef enum
  * \param error[in] The error code to get the string representation for.
  * \return Human readable form of the given error code.
  */
-const char* cardano_error_to_string(cardano_error_t error);
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_error_to_string(cardano_error_t error);
 
 #ifdef __cplusplus
 }
