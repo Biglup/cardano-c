@@ -41,7 +41,7 @@ extern "C" {
  * \brief A dynamic, reference-counted buffer with configurable exponential growth.
  *
  * \remarks The buffer employs an exponential growth strategy, increasing its capacity by a factor of 1.5 by default
- * when the buffer becomes full. This default growth factor is based a
+ * when the buffer becomes full. This default growth factor is based on a
  * <a href="http://groups.google.com/group/comp.lang.c++.moderated/msg/ba558b4924758e2e">recommendation from Andrew Koenig's</a>
  * (growth factor should be less than (1+sqrt(5))/2 (~1.6)).
  *

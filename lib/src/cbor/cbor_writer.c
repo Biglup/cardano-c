@@ -23,6 +23,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "cbor_additional_info.h"
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_writer.h>
@@ -32,8 +33,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../config.h"
+
 /* STRUCTURES ****************************************************************/
 
+/**
+ * Represents a CBOR writer object.
+ */
 typedef struct cardano_cbor_writer_t
 {
     cardano_object_t  base;
@@ -65,7 +71,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 256U)
   {
-    byte_t          header = type | 24U;
+    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_8BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -78,7 +84,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 65536U)
   {
-    byte_t          header = type | 25U;
+    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_16BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -90,7 +96,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 4294967296U)
   {
-    byte_t          header = type | 26U;
+    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_32BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -102,7 +108,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else
   {
-    byte_t          header = type | 27U;
+    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_64BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
