@@ -12,13 +12,13 @@ jobs:
           sudo apt install dos2unix
           sudo apt install python3
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-          sudo apt install clang-format-17
+          sudo apt install clang-format-15
 
       - name: Style Check
         run: |
           chmod +x ./scripts/run-clang-format.sh
           dos2unix ./scripts/run-clang-format.sh
-          CLANG_FORMAT="/usr/bin/clang-format-17" ./scripts/run-clang-format.sh
+          CLANG_FORMAT="/usr/bin/clang-format-15" ./scripts/run-clang-format.sh
           echo "Style check complete"
 
       - name: Check General Rules
