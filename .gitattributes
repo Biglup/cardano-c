@@ -1,1 +1,1 @@
-*.cpp blinguist-language=C
+lib/tests/* linguist-vendored
