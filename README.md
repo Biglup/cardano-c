@@ -1,7 +1,7 @@
 <p align="center">
   <img align="middle" src=
   "assets/cardano-c-logo-small.png"
-  height="150" /></br></br>
+  height="160" /></br></br>
   <sup><sup><sup><sup>The Cardano-C logo is licensed under
   <a href="https://creativecommons.org/licenses/by/3.0/">Creative
   Commons 3.0 Attributions license</a></sup></sup></sup></sup>
