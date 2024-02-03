@@ -1,3 +1,12 @@
+<p align="center">
+  <img align="middle" src=
+  "assets/cardano-c-logo-small.png"
+  height="250" /></br></br>
+  <sup><sup><sup><sup>The Cardano-C logo is licensed under
+  <a href="https://creativecommons.org/licenses/by/3.0/">Creative
+  Commons 3.0 Attributions license</a></sup></sup></sup></sup>
+</p>
+
 # Cardano-C
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/unit-test.yml/badge.svg)
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/static-code-analysis.yml/badge.svg)
