@@ -13,7 +13,7 @@
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/static-code-analysis.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Biglup/cardano-c/graph/badge.svg?token=A5U3U5KGG7)](https://codecov.io/gh/Biglup/cardano-c)
 [![Static Badge](https://img.shields.io/badge/Funded_By-Project_Catalyst-133ff0?logo=cardano&logoColor=ffffff)](https://projectcatalyst.io/)
-[![Static Badge](https://img.shields.io/badge/Made_By-Biglup_Labs-pink?&logoColor=bbbbbb&color=815fe4)](https://github.com/Biglup)
+[![Static Badge](https://img.shields.io/badge/Made_By-Biglup_Labs-pink?&logoColor=bbbbbb&color=815fe4)](https://biglup.io/)
 
 "cardano-c" is a C library aiming to be a robust, commercial-grade, full-featured Toolkit for building transaction and interacting with the Cardano blockchain. Compliant with MISRA standards, 
 it ensures consistent reliability and safety. With its binding-friendly architecture, "cardano-c" aims for broad compatibility, enabling easy integrations across various programming languages. 
