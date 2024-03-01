@@ -25,7 +25,9 @@
 
 #include "../endian.h"
 #include <cardano/buffer.h>
+#include <cardano/object.h>
 
+#include <assert.h>
 #include <sodium.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +38,12 @@
 
 typedef struct cardano_buffer_t
 {
-    byte_t* data;
-    size_t  size;
-    size_t  head;
-    size_t  capacity;
-    size_t  ref_count;
+    cardano_object_t base;
+    byte_t*          data;
+    size_t           size;
+    size_t           head;
+    size_t           capacity;
+    size_t           ref_count;
 } cardano_buffer_t;
 
 /* STATIC FUNCTIONS ***********************************************************/
@@ -56,10 +59,7 @@ typedef struct cardano_buffer_t
 static cardano_error_t
 grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
 {
-  if (buffer == NULL)
-  {
-    return CARDANO_POINTER_IS_NULL;
-  }
+  assert(buffer != NULL);
 
   if ((buffer->size + size_of_new_data) >= buffer->capacity)
   {
@@ -76,6 +76,38 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
   }
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Deallocates a buffer object.
+ *
+ * This function is responsible for properly deallocating a buffer object (`cardano_buffer_t`)
+ * and its associated resources.
+ *
+ * \param object A void pointer to the buffer object to be deallocated. The function casts this
+ *               pointer to the appropriate type (`cardano_buffer_t*`).
+ *
+ * \note It is assumed that this function is called only when the reference count of the buffer
+ *       object reaches zero, as part of the reference counting mechanism implemented for managing the
+ *       lifecycle of these objects.
+ */
+static void
+cardano_buffer_deallocate(void* object)
+{
+  cardano_buffer_t* buffer = (cardano_buffer_t*)object;
+
+  if (buffer == NULL)
+  {
+    return;
+  }
+
+  if (buffer->data != NULL)
+  {
+    free(buffer->data);
+    buffer->data = NULL;
+  }
+
+  free(buffer);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -98,10 +130,12 @@ cardano_buffer_new(const size_t capacity)
     return NULL;
   }
 
-  buffer->size      = 0;
-  buffer->head      = 0;
-  buffer->capacity  = capacity;
-  buffer->ref_count = 1;
+  buffer->size               = 0;
+  buffer->head               = 0;
+  buffer->capacity           = capacity;
+  buffer->base.ref_count     = 1;
+  buffer->base.last_error[0] = '\0';
+  buffer->base.deallocator   = cardano_buffer_deallocate;
 
   return buffer;
 }
@@ -131,10 +165,12 @@ cardano_buffer_new_from(const byte_t* array, const size_t size)
 
   (void)memcpy(buffer->data, array, size);
 
-  buffer->size      = size;
-  buffer->head      = 0;
-  buffer->capacity  = buffer->size;
-  buffer->ref_count = 1;
+  buffer->size               = size;
+  buffer->head               = 0;
+  buffer->capacity           = buffer->size;
+  buffer->base.ref_count     = 1;
+  buffer->base.last_error[0] = '\0';
+  buffer->base.deallocator   = cardano_buffer_deallocate;
 
   return buffer;
 }
@@ -170,10 +206,12 @@ cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
   (void)memcpy(buffer->data, lhs->data, lhs->size);
   (void)memcpy(&buffer->data[lhs->size], rhs->data, rhs->size);
 
-  buffer->size      = lhs->size + rhs->size;
-  buffer->head      = 0;
-  buffer->capacity  = buffer->size;
-  buffer->ref_count = 1;
+  buffer->size               = lhs->size + rhs->size;
+  buffer->head               = 0;
+  buffer->capacity           = buffer->size;
+  buffer->base.ref_count     = 1;
+  buffer->base.last_error[0] = '\0';
+  buffer->base.deallocator   = cardano_buffer_deallocate;
 
   return buffer;
 }
@@ -230,11 +268,13 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
     return NULL;
   }
 
-  sliced_buffer->data      = slice_data;
-  sliced_buffer->size      = slice_size;
-  sliced_buffer->head      = 0;
-  sliced_buffer->capacity  = buffer->size;
-  sliced_buffer->ref_count = 1;
+  sliced_buffer->data               = slice_data;
+  sliced_buffer->size               = slice_size;
+  sliced_buffer->head               = 0;
+  sliced_buffer->capacity           = buffer->size;
+  sliced_buffer->base.ref_count     = 1;
+  sliced_buffer->base.last_error[0] = '\0';
+  sliced_buffer->base.deallocator   = cardano_buffer_deallocate;
 
   return sliced_buffer;
 }
@@ -259,11 +299,14 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
     return NULL;
   }
 
-  buffer->data      = (byte_t*)malloc(size / 2U);
-  buffer->ref_count = 1;
-  buffer->size      = size / 2U;
-  buffer->head      = 0;
-  buffer->capacity  = buffer->size;
+  buffer->data               = (byte_t*)malloc(size / 2U);
+  buffer->ref_count          = 1;
+  buffer->size               = size / 2U;
+  buffer->head               = 0;
+  buffer->capacity           = buffer->size;
+  buffer->base.ref_count     = 1;
+  buffer->base.last_error[0] = '\0';
+  buffer->base.deallocator   = cardano_buffer_deallocate;
 
   if (buffer->data == NULL)
   {
@@ -325,69 +368,25 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer)
 void
 cardano_buffer_unref(cardano_buffer_t** buffer)
 {
-  if (buffer == NULL)
-  {
-    return;
-  }
-
-  if (*buffer == NULL)
-  {
-    return;
-  }
-
-  cardano_buffer_t* reference = *buffer;
-
-  if (reference->ref_count > 0U)
-  {
-    reference->ref_count -= 1U;
-  }
-
-  if (reference->ref_count == 0U)
-  {
-    free(reference->data);
-    reference->data = NULL;
-
-    free(reference);
-    *buffer = NULL;
-  }
+  cardano_object_unref((cardano_object_t**)buffer);
 }
 
 void
 cardano_buffer_ref(cardano_buffer_t* buffer)
 {
-  if (buffer == NULL)
-  {
-    return;
-  }
-
-  buffer->ref_count += 1U;
+  cardano_object_ref((cardano_object_t*)buffer);
 }
 
 size_t
 cardano_buffer_refcount(const cardano_buffer_t* buffer)
 {
-  if (buffer == NULL)
-  {
-    return 0;
-  }
-
-  return buffer->ref_count;
+  return cardano_object_refcount((const cardano_object_t*)buffer);
 }
 
 cardano_buffer_t*
 cardano_buffer_move(cardano_buffer_t* buffer)
 {
-  if (buffer == NULL)
-  {
-    return NULL;
-  }
-
-  if (buffer->ref_count > 0U)
-  {
-    buffer->ref_count -= 1U;
-  }
-
-  return buffer;
+  return (cardano_buffer_t*)cardano_object_move((cardano_object_t*)buffer);
 }
 
 byte_t*
@@ -1353,4 +1352,16 @@ cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value)
   buffer->head += type_size;
 
   return CARDANO_SUCCESS;
+}
+
+void
+cardano_buffer_set_last_error(cardano_buffer_t* buffer, const char* message)
+{
+  cardano_object_set_last_error((cardano_object_t*)buffer, message);
+}
+
+const char*
+cardano_buffer_get_last_error(const cardano_buffer_t* writer)
+{
+  return cardano_object_get_last_error((const cardano_object_t*)writer);
 }

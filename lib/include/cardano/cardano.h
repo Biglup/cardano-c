@@ -33,6 +33,7 @@
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
+#include <cardano/object.h>
 #include <cardano/typedefs.h>
 
 #endif // CARDANO_H

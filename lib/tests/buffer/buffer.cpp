@@ -1648,3 +1648,61 @@ TEST(cardano_buffer_read_double_be, canDeserializeValue)
   ASSERT_NEAR(value, 1.632130073, 0.000000001);
   cardano_buffer_unref(&buffer);
 }
+
+TEST(cardano_buffer_get_last_error, returnsNullTerminatedMessage)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(1);
+  const char*       message = "This is a test message";
+
+  // Act
+  cardano_buffer_set_last_error(buffer, message);
+  const char* last_error = cardano_buffer_get_last_error(buffer);
+
+  // Assert
+  EXPECT_STREQ(last_error, message);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_get_last_error, returnsObjectIsNullWhenCalledForNullObject)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  const char* last_error = cardano_buffer_get_last_error(buffer);
+
+  // Assert
+  EXPECT_STREQ(last_error, "Object is NULL.");
+}
+
+TEST(cardano_buffer_set_last_error, doesNothingWhenObjectIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = nullptr;
+  const char*       message = "This is a test message";
+
+  // Act
+  cardano_buffer_set_last_error(buffer, message);
+
+  // Assert
+  EXPECT_STREQ(cardano_buffer_get_last_error(buffer), "Object is NULL.");
+}
+
+TEST(cardano_buffer_set_last_error, doesNothingWhenWhenMessageIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(1);
+  const char*       message = nullptr;
+
+  // Act
+  cardano_buffer_set_last_error(buffer, message);
+
+  // Assert
+  EXPECT_STREQ(cardano_buffer_get_last_error(buffer), "");
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
