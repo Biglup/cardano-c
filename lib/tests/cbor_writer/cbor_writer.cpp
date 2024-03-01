@@ -905,3 +905,61 @@ TEST(cardano_cbor_writer_encode, returnErrorWhenOutputBufferIsInsufficient)
   // Cleanup
   cardano_cbor_writer_unref(&writer);
 }
+
+TEST(cardano_cbor_writer_get_last_error, returnsNullTerminatedMessage)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer  = cardano_cbor_writer_new();
+  const char*            message = "This is a test message";
+
+  // Act
+  cardano_cbor_writer_set_last_error(writer, message);
+  const char* last_error = cardano_cbor_writer_get_last_error(writer);
+
+  // Assert
+  EXPECT_STREQ(last_error, message);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_get_last_error, returnsObjectIsNullWhenCalledForNullObject)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = nullptr;
+
+  // Act
+  const char* last_error = cardano_cbor_writer_get_last_error(writer);
+
+  // Assert
+  EXPECT_STREQ(last_error, "Object is NULL.");
+}
+
+TEST(cardano_cbor_writer_set_last_error, doesNothingWhenObjectIsNull)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer  = nullptr;
+  const char*            message = "This is a test message";
+
+  // Act
+  cardano_cbor_writer_set_last_error(writer, message);
+
+  // Assert
+  EXPECT_STREQ(cardano_cbor_writer_get_last_error(writer), "Object is NULL.");
+}
+
+TEST(cardano_cbor_writer_set_last_error, doesNothingWhenWhenMessageIsNull)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer  = cardano_cbor_writer_new();
+  const char*            message = nullptr;
+
+  // Act
+  cardano_cbor_writer_set_last_error(writer, message);
+
+  // Assert
+  EXPECT_STREQ(cardano_cbor_writer_get_last_error(writer), "");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
