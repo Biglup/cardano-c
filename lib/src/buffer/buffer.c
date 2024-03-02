@@ -24,6 +24,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "../endian.h"
+
 #include <cardano/buffer.h>
 #include <cardano/object.h>
 
@@ -36,6 +37,9 @@
 
 /* STRUCTS *******************************************************************/
 
+/**
+ * Represents a buffer object.
+ */
 typedef struct cardano_buffer_t
 {
     cardano_object_t base;
