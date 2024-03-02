@@ -579,6 +579,52 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* bu
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);
 
+/**
+ * \brief Sets the last error message for a given object.
+ *
+ * This function records an error message in the object's last_error buffer,
+ * overwriting any previous message. The message is truncated if it exceeds
+ * the buffer size. This function is typically used to store descriptive
+ * error information that can be retrieved later with
+ * cardano_object_get_last_error.
+ *
+ * \param object A pointer to the cardano_buffer_t instance whose last error
+ *               message is to be set. If the object is NULL, the function
+ *               has no effect.
+ * \param message A null-terminated string containing the error message to be
+ *                recorded. If the message is NULL, the object's last_error
+ *                will be set to an empty string, indicating no error.
+ *
+ * \note The error message is limited to 1023 characters due to the fixed size
+ *       of the last_error buffer (1024 characters), including the null
+ *       terminator. Messages longer than this limit will be truncated.
+ */
+CARDANO_EXPORT void cardano_buffer_set_last_error(cardano_buffer_t* buffer, const char* message);
+
+/**
+ * \brief Retrieves the last error message recorded for a specific object.
+ *
+ * This function returns a pointer to the null-terminated string containing
+ * the last error message set by cardano_object_set_last_error for the given
+ * object. If no error message has been set, or if the last_error buffer was
+ * explicitly cleared, an empty string is returned, indicating no error.
+ *
+ * \param object A pointer to the cardano_buffer_t instance whose last error
+ *               message is to be retrieved. If the object is NULL, the function
+ *               returns a generic error message indicating the null object.
+ *
+ * \return A pointer to a null-terminated string containing the last error
+ *         message for the specified object. If the object is NULL, "Object is NULL."
+ *         is returned to indicate the error.
+ *
+ * \note The returned string points to internal storage within the object and
+ *       must not be modified by the caller. The string remains valid until the
+ *       next call to cardano_object_set_last_error for the same object, or until
+ *       the object is deallocated.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_buffer_get_last_error(const cardano_buffer_t* buffer);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

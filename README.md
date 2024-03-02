@@ -3,8 +3,8 @@
   "assets/cardano-c-logo-small.png"
   height="160" /></br></br>
   <sup><sup><sup><sup>The Cardano-C logo is licensed under
-  <a href="https://creativecommons.org/licenses/by/3.0/">Creative
-  Commons 3.0 Attributions license</a></sup></sup></sup></sup>
+  <a href="https://creativecommons.org/licenses/by/4.0/">Creative
+  Commons 4.0 Attributions license</a></sup></sup></sup></sup>
 </p>
 
 # Cardano-C

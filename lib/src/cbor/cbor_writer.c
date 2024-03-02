@@ -26,9 +26,19 @@
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/object.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* STRUCTURES ****************************************************************/
+
+typedef struct cardano_cbor_writer_t
+{
+    cardano_object_t  base;
+    cardano_buffer_t* buffer;
+} cardano_cbor_writer_t;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -106,13 +116,35 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   return CARDANO_SUCCESS;
 }
 
-/* DECLARATIONS **************************************************************/
-
-typedef struct cardano_cbor_writer_t
+/**
+ * \brief Deallocates a CBOR writer object.
+ *
+ * This function is responsible for properly deallocating a CBOR writer object (`cardano_cbor_writer_t`)
+ * and its associated resources.
+ *
+ * \param object A void pointer to the CBOR writer object to be deallocated. The function casts this
+ *               pointer to the appropriate type (`cardano_cbor_writer_t*`).
+ *
+ * \note It is assumed that this function is called only when the reference count of the CBOR writer
+ *       object reaches zero, as part of the reference counting mechanism implemented for managing the
+ *       lifecycle of these objects.
+ */
+static void
+cardano_cbor_writer_deallocate(void* object)
 {
-    size_t            ref_count;
-    cardano_buffer_t* buffer;
-} cardano_cbor_writer_t;
+  assert(object != NULL);
+
+  cardano_cbor_writer_t* cbor_writer = (cardano_cbor_writer_t*)object;
+
+  if (cbor_writer->buffer != NULL)
+  {
+    cardano_buffer_unref(&cbor_writer->buffer);
+  }
+
+  free(cbor_writer);
+}
+
+/* DECLARATIONS **************************************************************/
 
 cardano_cbor_writer_t*
 cardano_cbor_writer_new(void)
@@ -124,8 +156,10 @@ cardano_cbor_writer_new(void)
     return NULL;
   }
 
-  obj->ref_count = 1;
-  obj->buffer    = cardano_buffer_new(128);
+  obj->base.ref_count     = 1;
+  obj->base.deallocator   = cardano_cbor_writer_deallocate;
+  obj->base.last_error[0] = '\0';
+  obj->buffer             = cardano_buffer_new(128);
 
   if (obj->buffer == NULL)
   {
@@ -139,32 +173,18 @@ cardano_cbor_writer_new(void)
 void
 cardano_cbor_writer_unref(cardano_cbor_writer_t** cbor_writer)
 {
-  if (cbor_writer == NULL)
+  if ((cbor_writer == NULL) || (*cbor_writer == NULL))
   {
     return;
   }
 
-  if (*cbor_writer == NULL)
+  cardano_object_t* object = &(*cbor_writer)->base;
+  cardano_object_unref(&object);
+
+  if (object == NULL)
   {
-    return;
-  }
-
-  cardano_cbor_writer_t* reference = *cbor_writer;
-
-  if (reference->ref_count > 0U)
-  {
-    reference->ref_count -= 1U;
-  }
-
-  if (reference->ref_count == 0U)
-  {
-    if (reference->buffer != NULL)
-    {
-      cardano_buffer_unref(&reference->buffer);
-    }
-
-    free(reference);
     *cbor_writer = NULL;
+    return;
   }
 }
 
@@ -176,7 +196,7 @@ cardano_cbor_writer_ref(cardano_cbor_writer_t* cbor_writer)
     return;
   }
 
-  cbor_writer->ref_count += 1U;
+  cardano_object_ref(&cbor_writer->base);
 }
 
 size_t
@@ -187,7 +207,7 @@ cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer)
     return 0;
   }
 
-  return cbor_writer->ref_count;
+  return cardano_object_refcount(&cbor_writer->base);
 }
 
 cardano_cbor_writer_t*
@@ -198,7 +218,8 @@ cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer)
     return NULL;
   }
 
-  cbor_writer->ref_count -= 1U;
+  cardano_object_t* object = cardano_object_move(&cbor_writer->base);
+  (void)object;
 
   return cbor_writer;
 }
@@ -318,7 +339,6 @@ cardano_error_t
 cardano_cbor_writer_write_end_array(cardano_cbor_writer_t* writer)
 {
   static byte_t indefiniteLengthBreakByte = 0xffU;
-  ;
 
   if (writer == NULL)
   {
@@ -461,4 +481,16 @@ cardano_cbor_writer_reset(cardano_cbor_writer_t* writer)
   writer->buffer = cardano_buffer_new(128);
 
   return CARDANO_SUCCESS;
+}
+
+void
+cardano_cbor_writer_set_last_error(cardano_cbor_writer_t* writer, const char* message)
+{
+  cardano_object_set_last_error(&writer->base, message);
+}
+
+const char*
+cardano_cbor_writer_get_last_error(const cardano_cbor_writer_t* writer)
+{
+  return cardano_object_get_last_error(&writer->base);
 }
