@@ -209,7 +209,9 @@ CARDANO_EXPORT size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer
  * \param buffer[in] Target buffer.
  * \param data[in]   Data to append.
  * \param size[in]   Size of the data.
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, size_t size);
@@ -222,7 +224,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, co
  * \param buffer[in]        Source buffer.
  * \param data [out]        Output array where data will be copied.
  * \param bytes_to_read[in] Number of bytes to read.
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, size_t bytes_to_read);
@@ -233,7 +237,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byt
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   16-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, uint16_t value);
@@ -244,7 +250,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   32-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, uint32_t value);
@@ -255,7 +263,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   64-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, uint64_t value);
@@ -266,7 +276,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   16-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* buffer, int16_t value);
@@ -277,7 +289,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   32-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* buffer, int32_t value);
@@ -288,7 +302,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   64-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* buffer, int64_t value);
@@ -299,7 +315,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   float to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* buffer, float value);
@@ -310,7 +328,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   double to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* buffer, double value);
@@ -321,7 +341,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   16-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, uint16_t value);
@@ -332,7 +354,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   32-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, uint32_t value);
@@ -343,7 +367,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   64-bit unsigned integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, uint64_t value);
@@ -354,7 +380,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* 
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   16-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* buffer, int16_t value);
@@ -365,7 +393,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   32-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* buffer, int32_t value);
@@ -376,7 +406,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   64-bit integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* buffer, int64_t value);
@@ -387,7 +419,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   float integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* buffer, float value);
@@ -398,7 +432,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* b
  * \param buffer[in]  Target buffer for writing.
  * \param value[in]   double integer to be written.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* buffer, double value);
@@ -409,7 +445,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* 
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 16-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value);
@@ -420,7 +458,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 32-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value);
@@ -431,7 +471,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 64-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value);
@@ -442,7 +484,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 16-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value);
@@ -453,7 +497,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 32-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value);
@@ -464,7 +510,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 64-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value);
@@ -475,7 +523,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a float where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value);
@@ -486,7 +536,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a double where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value);
@@ -497,7 +549,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 16-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value);
@@ -508,7 +562,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 32-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value);
@@ -519,7 +575,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 64-bit unsigned integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value);
@@ -530,7 +588,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* b
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 16-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value);
@@ -541,7 +601,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 32-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value);
@@ -552,7 +614,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a 64-bit integer where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value);
@@ -563,7 +627,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a float where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value);
@@ -574,7 +640,9 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* bu
  * \param buffer[in]   Source buffer for reading.
  * \param value[out]   Pointer to a double where the result will be stored.
  *
- * \return <tt>cardano_error_t</tt> <tt>CARDANO_SUCCESS</tt> on success; otherwise, an error from <tt>cardano_error_t</tt>.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value);

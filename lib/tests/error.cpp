@@ -99,3 +99,39 @@ TEST(cardano_error_to_string, canConvertUnknown)
   // Assert
   ASSERT_STREQ(message, "Unknown error code");
 }
+
+TEST(cardano_error_to_string, canConvertMemoryAllocationFailed)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_MEMORY_ALLOCATION_FAILED;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Requested memory could not be allocated");
+}
+
+TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryRead)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Out of bounds memory read");
+}
+
+TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryWrite)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Out of bounds memory write");
+}
