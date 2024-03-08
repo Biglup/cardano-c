@@ -8,6 +8,7 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+compile_commands.json
 _deps
 .results
 *~
@@ -79,5 +80,5 @@ doc/doxyfile
 
 stdout*
 stderr*
-
+.cache/
 code_coverage.info

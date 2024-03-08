@@ -29,6 +29,7 @@
 #include <cardano/object.h>
 
 #include <assert.h>
+#include <math.h>
 #include <sodium.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +59,9 @@ typedef struct cardano_buffer_t
  * \param buffer The buffer to grow.
  * \param size_of_new_data The size of new data to be written into the buffer.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
  */
 static cardano_error_t
 grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
@@ -67,7 +70,7 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
 
   if ((buffer->size + size_of_new_data) >= buffer->capacity)
   {
-    size_t  new_capacity = buffer->capacity * LIB_CARDANO_C_BUFFER_GROW_FACTOR;
+    size_t  new_capacity = (size_t)ceil((float)buffer->capacity * (float)LIB_CARDANO_C_COLLECTION_GROW_FACTOR);
     byte_t* new_data     = (byte_t*)realloc(buffer->data, new_capacity);
 
     if (new_data == NULL)
@@ -272,7 +275,7 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
   sliced_buffer->data               = slice_data;
   sliced_buffer->size               = slice_size;
   sliced_buffer->head               = 0;
-  sliced_buffer->capacity           = buffer->size;
+  sliced_buffer->capacity           = sliced_buffer->size;
   sliced_buffer->base.ref_count     = 1;
   sliced_buffer->base.last_error[0] = '\0';
   sliced_buffer->base.deallocator   = cardano_buffer_deallocate;

@@ -26,7 +26,6 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/cbor/cbor_tag.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
@@ -45,7 +44,7 @@ extern "C" {
  * <a href="http://groups.google.com/group/comp.lang.c++.moderated/msg/ba558b4924758e2e">recommendation from Andrew Koenig's</a>
  * (growth factor should be less than (1+sqrt(5))/2 (~1.6)).
  *
- * \note The growth factor of the buffer can be configured at compilation time using the environment variable `BUFFER_GROW_FACTOR`
+ * \note The growth factor of the buffer can be configured at compilation time using the environment variable `COLLECTION_GROW_FACTOR`
  **/
 typedef struct cardano_buffer_t cardano_buffer_t;
 
