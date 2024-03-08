@@ -4,8 +4,6 @@
  * \author angel.castillo
  * \date   Mar 02, 2024
  *
- * \section LICENSE
- *
  * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,16 +42,16 @@ extern "C" {
  * The iterations parameter controls the number of times the pseudorandom function is applied, which increases
  * the computational cost and the time required to compute the derived key, thereby enhancing security.
  *
- * \param password[in] The input password from which the key is derived.
- * \param passwordLength[in] The length of the password.
- * \param salt[in] A cryptographic salt.
- * \param saltLength[in] The length of the salt.
- * \param iterations[in] The number of iterations specifies how many times the pseudorandom function is applied.
- * \param derivedKey[out] The buffer where the derived key will be stored.
- * \param derivedKeyLength[in] The desired length of the derived key.
+ * \param[in] password The input password from which the key is derived.
+ * \param[in] password_length The length of the password.
+ * \param[in] salt A cryptographic salt.
+ * \param[in] salt_length The length of the salt.
+ * \param[in] iterations The number of iterations specifies how many times the pseudorandom function is applied.
+ * \param[out] derived_key The buffer where the derived key will be stored.
+ * \param[in] derived_key_length The desired length of the derived key.
  *
- * \return A \c cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
- *         or an appropriate error code indicating the failure reason. Refer to \c cardano_error_t documentation
+ * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ *         or an appropriate error code indicating the failure reason. Refer to \ref cardano_error_t documentation
  *         for details on possible error codes.
  */
 CARDANO_NODISCARD

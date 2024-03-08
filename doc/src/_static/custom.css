@@ -1,0 +1,25 @@
+html {
+    --pst-header-height: 4rem;
+    --pst-header-article-height: calc(var(--pst-header-height) * 2 / 3);
+    --pst-sidebar-secondary: 25rem;
+}
+
+.bd-page-width {
+    max-width: 80%;
+}
+
+.bd-sidebar-primary {
+    margin-left: 0;
+    max-width: 12rem;
+    overflow-y: hidden;
+}
+
+.bd-article {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    max-width: 90em;
+    overflow-x: auto;
+    padding: 1rem;
+    width: 100%;
+}

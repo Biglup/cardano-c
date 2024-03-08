@@ -1,8 +1,11 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 PROJECT (cardano-c C)
 
+SET(PROJECT_NAME "libcardano-c")
+
 # Option that the user can optionally select
 OPTION (TESTING_ENABLED "Enables unit test build." ON)
+OPTION (DOXYGEN_ENABLED "Build documentation" OFF)
 
 # Find external dependencies
 LIST (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -57,6 +60,7 @@ MESSAGE ( STATUS "CMAKE_BUILD_TYPE     = ${CMAKE_BUILD_TYPE}" )
 MESSAGE ( STATUS "CMAKE_PREFIX_PATH    = ${CMAKE_PREFIX_PATH}" )
 MESSAGE ( STATUS "ARCHITECTURE         = ${ARCHITECTURE}" )
 MESSAGE ( STATUS "TESTING ENABLED      = ${TESTING_ENABLED}")
+MESSAGE ( STATUS "DOXYGEN ENABLED      = ${DOXYGEN_ENABLED}")
 MESSAGE ( STATUS )
 MESSAGE ( STATUS "change a configuration variable with: cmake -D<Variable>=<Value>" )
 MESSAGE ( STATUS "################################################################" )
@@ -84,6 +88,57 @@ MESSAGE ( STATUS )
 
 # Remove build directory on clean target.
 SET_DIRECTORY_PROPERTIES (PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${PROJECT_BINARY_DIR}/${BUILD_DIR})
+SET (CARDANO_C_DATA_DIR "${CMAKE_INSTALL_DATADIR}/cardano-c")
+
+# Build documentation.
+IF (DOXYGEN_ENABLED)
+    IF (COMMAND FIND_HOST_PACKAGE)
+        FIND_HOST_PACKAGE (Doxygen)
+        FIND_HOST_PACKAGE (Sphinx)
+        FIND_HOST_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
+    ELSE ()
+        FIND_PACKAGE (Doxygen)
+        FIND_PACKAGE (Sphinx)
+        FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
+    ENDIF ()
+
+    # Configure tools
+    IF (DOXYGEN_FOUND AND DOXYGEN_ENABLED AND SPHINX_FOUND)
+        SET (DOXYGEN_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc")
+        SET (DOXYGEN_BUILD_DIRECTORY   "${PROJECT_BINARY_DIR}/${BUILD_DIR}/doc")
+        SET (SPHINX_SOURCE "${DOXYGEN_BUILD_DIRECTORY}/")
+        SET (SPHINX_BUILD "./html")
+
+        CONFIGURE_FILE ("${CMAKE_CURRENT_SOURCE_DIR}/doc/doxyfile.in" ${DOXYGEN_BUILD_DIRECTORY}/doxyfile @ONLY)
+        CONFIGURE_FILE ("${CMAKE_CURRENT_SOURCE_DIR}/doc/sphinx/conf.py.in" ${DOXYGEN_BUILD_DIRECTORY}/conf.py @ONLY)
+
+        FILE (COPY doc/src/_static DESTINATION ${DOXYGEN_BUILD_DIRECTORY}/)
+        FILE (COPY doc/src/_templates DESTINATION ${DOXYGEN_BUILD_DIRECTORY}/)
+        FILE (COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/sphinx/Makefile DESTINATION ${DOXYGEN_BUILD_DIRECTORY}/)
+        FILE (COPY ${CMAKE_CURRENT_SOURCE_DIR}/doc/sphinx/make.bat DESTINATION ${DOXYGEN_BUILD_DIRECTORY}/)
+        FILE (COPY doc/src/sections/ DESTINATION ${DOXYGEN_BUILD_DIRECTORY}/)
+
+        # Add custom target for Doxygen
+        ADD_CUSTOM_TARGET(doc_doxygen
+                COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_BUILD_DIRECTORY}/doxyfile
+                WORKING_DIRECTORY ${DOXYGEN_BUILD_DIRECTORY}
+                COMMENT "Generating API documentation with Doxygen"
+        )
+
+        # Add custom target for Sphinx that depends on Doxygen
+        ADD_CUSTOM_TARGET(doc_sphinx
+                COMMAND sphinx-build -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
+                WORKING_DIRECTORY ${DOXYGEN_BUILD_DIRECTORY}
+                COMMENT "Generating documentation with Sphinx"
+                DEPENDS doc_doxygen # Ensure Sphinx runs after Doxygen
+        )
+
+        # Add a custom target that builds both Doxygen and Sphinx documentation
+        ADD_CUSTOM_TARGET(doc
+                DEPENDS doc_doxygen doc_sphinx
+        )
+    ENDIF ()
+ENDIF ()
 
 # Build libraries.
 INCLUDE_DIRECTORIES(SYSTEM ./lib)

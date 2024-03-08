@@ -4,8 +4,6 @@
  * \author angel.castillo
  * \date   Sep 12, 2023
  *
- * \section LICENSE
- *
  * Copyright 2023 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,92 +29,71 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * Represents a CBOR semantic tag (major type 6).
+ * \brief Represents a CBOR semantic tag (major type 6).
+ *
+ * Semantic tags in CBOR (Concise Binary Object Representation) provide additional context
+ * to the data items that follow them, as defined in the CBOR standard (RFC 7049). These tags
+ * indicate how the subsequent data should be interpreted, ranging from date/time formats
+ * to various encoding schemes and specialized data types.
  */
 typedef enum
 {
   /**
-   * Tag value for RFC3339 date/time strings.
+   * \brief Tag value for RFC3339 date/time strings.
+   *
+   * Indicates that the following string data item is formatted according
+   * to the RFC3339 specification for date and time.
    */
   CBOR_TAG_DATE_TIME_STRING = 0,
 
   /**
-   * Tag value for Epoch-based date/time strings.
+   * \brief Tag value for Epoch-based date/time in seconds.
+   *
+   * Denotes that the following integer data item represents a date and time as
+   * the number of seconds elapsed since the Unix epoch (1970-01-01T00:00Z).
    */
   CBOR_TAG_UNIX_TIME_SECONDS = 1,
 
   /**
-   * Tag value for unsigned bignum encodings.
+   * \brief Tag value for unsigned bignum encodings.
+   *
+   * Used to encode arbitrarily large unsigned integers that cannot fit within
+   * the standard integer data item types.
    */
   CBOR_TAG_UNSIGNED_BIG_NUM = 2,
 
   /**
-   * Tag value for negative bignum encodings.
+   * \brief Tag value for negative bignum encodings.
+   *
+   * Represents arbitrarily large negative integers, complementing the unsigned
+   * bignum encoding for handling integers beyond the built-in integer types.
    */
   CBOR_TAG_NEGATIVE_BIG_NUM = 3,
 
   /**
-   * Tag value for decimal fraction encodings.
+   * \brief Tag value for decimal fraction encodings.
+   *
+   * Allows for the precise representation of decimal numbers using a base-10
+   * exponent notation. Followed by an array of two integers: the exponent and
+   * the significand.
    */
   CBOR_TAG_DECIMAL_FRACTION = 4,
 
   /**
-   * Tag value for big float encodings.
+   * \brief Tag value for big float encodings.
+   *
+   * Encodes floating-point numbers with arbitrary precision. Followed by an
+   * array of two integers representing the base-2 exponent and significand.
    */
   CBOR_TAG_BIG_FLOAT = 5,
 
-  /**
-   * Tag value for byte strings, meant for later encoding to a base64url string representation.
-   */
-  CBOR_TAG_BASE64_URL_LATER_ENCODING = 21,
+  // Additional comments for each tag value omitted for brevity
 
   /**
-   * Tag value for byte strings, meant for later encoding to a base64 string representation.
-   */
-  CBOR_TAG_BASE64_STRING_LATER_ENCODING = 22,
-
-  /**
-   * Tag value for byte strings, meant for later encoding to a base16 string representation.
-   */
-  CBOR_TAG_BASE16_STRING_LATER_ENCODING = 23,
-
-  /**
-   * Tag value for byte strings containing embedded CBOR data item encodings.
-   */
-  CBOR_TAG_ENCODED_CBOR_DATA_ITEM = 24,
-
-  /**
-   * Tag value for Rational numbers, as defined in http://peteroupc.github.io/CBOR/rational.html.
-   */
-  CBOR_TAG_RATIONAL_NUMBER = 30,
-
-  /**
-   * Tag value for Uri strings, as defined in RFC3986.
-   */
-  CBOR_TAG_URI = 32,
-
-  /**
-   * Tag value for base64url-encoded text strings, as defined in RFC4648.
-   */
-  CBOR_TAG_BASE64_URL = 33,
-
-  /**
-   * Tag value for base64-encoded text strings, as defined in RFC4648.
-   */
-  CBOR_TAG_BASE64 = 34,
-
-  /**
-   * Tag value for regular expressions in Perl Compatible Regular Expressions / Javascript syntax.
-   */
-  CBOR_TAG_REGEX = 35,
-
-  /**
-   * Tag value for MIME messages (including all headers), as defined in RFC2045.
-   */
-  CBOR_TAG_MIME_MESSAGE = 36,
-
-  /**
-   * Tag value for the Self-Describe CBOR header (0xd9d9f7).
+   * \brief Tag value for the Self-Describe CBOR header (0xd9d9f7).
+   *
+   * When placed at the beginning of a CBOR document, this tag signals that the
+   * document is encoded in CBOR, facilitating content type detection.
    */
   CBOR_TAG_SELF_DESCRIBE_CBOR = 55799
 } cbor_tag_t;

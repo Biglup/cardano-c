@@ -4,8 +4,6 @@
  * \author luisd.bianchi
  * \date   Mar 03, 2024
  *
- * \section LICENSE
- *
  * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +42,7 @@ extern "C" {
  * The function pointed to by this typedef is expected to handle the deallocation of both the object's
  * specific resources (if any) and the object itself.
  *
- * @param data A pointer to the object to be deallocated. While the parameter is of type `void*` to
+ * @param[in] data A pointer to the object to be deallocated. While the parameter is of type `void*` to
  * allow for generic handling of different object types, it is intended that the actual object passed
  * to the deallocator function will be a specific type derived from the base `cardano_object_t` structure.
  * Implementations of the deallocator function should cast `data` to the appropriate specific type
@@ -69,7 +67,7 @@ typedef struct cardano_object_t
  *
  * If the reference count reaches zero, the object memory is deallocated.
  *
- * \param object[in] Pointer to the object whose reference count is to be decremented.
+ * \param[in] object Pointer to the object whose reference count is to be decremented.
  */
 CARDANO_EXPORT void cardano_object_unref(cardano_object_t** object);
 
@@ -78,7 +76,7 @@ CARDANO_EXPORT void cardano_object_unref(cardano_object_t** object);
  *
  * Ensures that the object remains allocated until the last reference is released.
  *
- * \param object[in] object whose reference count is to be incremented.
+ * \param[in] object object whose reference count is to be incremented.
  */
 CARDANO_EXPORT void cardano_object_ref(cardano_object_t* object);
 
@@ -87,7 +85,7 @@ CARDANO_EXPORT void cardano_object_ref(cardano_object_t* object);
  *
  * \warning Does not account for transitive references.
  *
- * \param object[in] Target object.
+ * \param[in] object Target object.
  * \return Current reference count of the object.
  */
 CARDANO_EXPORT size_t cardano_object_refcount(const cardano_object_t* object);
@@ -99,7 +97,7 @@ CARDANO_EXPORT size_t cardano_object_refcount(const cardano_object_t* object);
  *
  * \warning Memory will leak if the reference count isn't properly managed after a move.
  *
- * \param object[in] object to be moved.
+ * \param[in] object object to be moved.
  * \return The object with its reference count decremented.
  */
 CARDANO_NODISCARD
@@ -114,10 +112,10 @@ CARDANO_EXPORT cardano_object_t* cardano_object_move(cardano_object_t* object);
  * error information that can be retrieved later with
  * cardano_object_get_last_error.
  *
- * \param object A pointer to the cardano_object_t instance whose last error
+ * \param[in,out] object A pointer to the cardano_object_t instance whose last error
  *               message is to be set. If the object is NULL, the function
  *               has no effect.
- * \param message A null-terminated string containing the error message to be
+ * \param[in] message A null-terminated string containing the error message to be
  *                recorded. If the message is NULL, the object's last_error
  *                will be set to an empty string, indicating no error.
  *
@@ -131,21 +129,21 @@ CARDANO_EXPORT void cardano_object_set_last_error(cardano_object_t* object, cons
  * \brief Retrieves the last error message recorded for a specific object.
  *
  * This function returns a pointer to the null-terminated string containing
- * the last error message set by cardano_object_set_last_error for the given
+ * the last error message set by \ref cardano_object_set_last_error for the given
  * object. If no error message has been set, or if the last_error buffer was
  * explicitly cleared, an empty string is returned, indicating no error.
  *
- * \param object A pointer to the cardano_object_t instance whose last error
- *               message is to be retrieved. If the object is NULL, the function
+ * \param[in,out] object A pointer to the \ref cardano_object_t instance whose last error
+ *               message is to be retrieved. If the object is \c NULL, the function
  *               returns a generic error message indicating the null object.
  *
  * \return A pointer to a null-terminated string containing the last error
- *         message for the specified object. If the object is NULL, "Object is NULL."
+ *         message for the specified object. If the object is \c NULL, "Object is NULL."
  *         is returned to indicate the error.
  *
  * \note The returned string points to internal storage within the object and
  *       must not be modified by the caller. The string remains valid until the
- *       next call to cardano_object_set_last_error for the same object, or until
+ *       next call to \ref cardano_object_set_last_error for the same object, or until
  *       the object is deallocated.
  */
 CARDANO_NODISCARD

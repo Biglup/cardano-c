@@ -82,3 +82,7 @@ stdout*
 stderr*
 .cache/
 code_coverage.info
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+Doxyfile
+doc_doxygen/

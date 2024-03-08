@@ -4,8 +4,6 @@
  * \author luisd.bianchi
  * \date   Mar 04, 2024
  *
- * \section LICENSE
- *
  * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,21 +51,21 @@ extern "C" {
  * objects producing the same hash value—might occur. The set implementation handles
  * these collisions gracefully.
  *
- * \param object A pointer to the `cardano_object_t` object to be hashed.
+ * \param[in] object A pointer to the `cardano_object_t` object to be hashed.
  *
  * \return A 64-bit unsigned integer representing the hash value of the object.
  *
  * \note The implementer must ensure that the function is deterministic—calling the hash
  *       function with the same object should always return the same hash value.
  */
-typedef uint64_t (*cardano_set_hash_func_t)(const cardano_object_t*);
+typedef uint64_t (*cardano_set_hash_func_t)(const cardano_object_t* object);
 
 /**
  * \brief Function pointer type that compares two objects of the same type and returns a value
  * indicating whether one object is less than, equal to, or greater than the other.
  *
- * \param lhs[in] The left-hand side object to compare.
- * \param rhs[in] The right-hand side object to compare.
+ * \param[in] lhs The left-hand side object to compare.
+ * \param[in] rhs The right-hand side object to compare.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
@@ -75,14 +73,17 @@ typedef uint64_t (*cardano_set_hash_func_t)(const cardano_object_t*);
 typedef int (*cardano_set_compare_item_t)(const cardano_object_t* lhs, const cardano_object_t* rhs);
 
 /**
- * \brief Function pointer that defines a set of criteria and determines whether the specified object
- * meets those criteria.
+ * \brief Defines a function pointer for a predicate to assess if an object in a set meets specific criteria.
  *
- * \param item[in] The object to compare against the criteria defined within the method represented by
- * this function pointer.
+ * This typedef specifies a function pointer type for a predicate function designed to evaluate objects
+ * within a set. The predicate function receives an object and an optional context, assessing whether the
+ * object satisfies a predefined condition.
  *
- * \return \c true if object meets the criteria defined within the method represented by this function
- * pointer; otherwise, \c false.
+ * \param[in] item The object being evaluated against the set criteria.
+ * \param[in] context An optional parameter providing additional data for the predicate's evaluation.
+ *
+ * \return Returns \c true if the `item` conforms to the criteria defined within the predicate function;
+ * \c false otherwise.
  */
 typedef bool (*cardano_set_unary_predicate_t)(const cardano_object_t* item, const void* context);
 
@@ -130,7 +131,7 @@ CARDANO_EXPORT cardano_set_t* cardano_set_from_array(cardano_array_t* array, car
  *
  * If the reference count reaches zero, the set memory is deallocated.
  *
- * \param set[in] Pointer to the set whose reference count is to be decremented.
+ * \param[in] set Pointer to the set whose reference count is to be decremented.
  */
 CARDANO_EXPORT void cardano_set_unref(cardano_set_t** set);
 
@@ -139,7 +140,7 @@ CARDANO_EXPORT void cardano_set_unref(cardano_set_t** set);
  *
  * Ensures that the set remains allocated until the last reference is released.
  *
- * \param set[in] Set whose reference count is to be incremented.
+ * \param[in] set Set whose reference count is to be incremented.
  */
 CARDANO_EXPORT void cardano_set_ref(cardano_set_t* set);
 
@@ -148,7 +149,7 @@ CARDANO_EXPORT void cardano_set_ref(cardano_set_t* set);
  *
  * \warning Does not account for transitive references.
  *
- * \param set[in] Target set.
+ * \param[in] set Target set.
  * \return Current reference count of the set.
  */
 CARDANO_NODISCARD
@@ -161,7 +162,7 @@ CARDANO_EXPORT size_t cardano_set_refcount(const cardano_set_t* set);
  *
  * \warning Memory will leak if the reference count isn't properly managed after a move.
  *
- * \param set[in] Set to be moved.
+ * \param[in] set Set to be moved.
  * \return The set with its reference count decremented.
  */
 CARDANO_NODISCARD
@@ -172,8 +173,8 @@ CARDANO_EXPORT cardano_set_t* cardano_set_move(cardano_set_t* set);
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
  *
- * \param set[in] Target set.
- * \param item[in] Pointer to the data to be added.
+ * \param[in] set Target set.
+ * \param[in] item Pointer to the data to be added.
  *
  * \return The new size of the set.
  */
@@ -187,8 +188,8 @@ CARDANO_EXPORT size_t cardano_set_add(cardano_set_t* set, cardano_object_t* item
  * It uses the set's hash function to compute the item's hash value and then performs an
  * equality check to find an exact match within the set.
  *
- * \param set A pointer to the set in which to search for the item.
- * \param item A pointer to the object being searched for in the set.
+ * \param[in] set A pointer to the set in which to search for the item.
+ * \param[in] item A pointer to the object being searched for in the set.
  * \return Returns `true` if the item is found in the set, otherwise returns `false`.
  */
 CARDANO_NODISCARD
@@ -201,8 +202,8 @@ CARDANO_EXPORT bool cardano_set_has(cardano_set_t* set, cardano_object_t* item);
  * If the item is found, it is removed. The function uses the set's hash function
  * for efficient location of the item.
  *
- * \param set A pointer to the set from which to remove the item.
- * \param item A pointer to the object to be removed from the set.
+ * \param[in] set A pointer to the set from which to remove the item.
+ * \param[in] item A pointer to the object to be removed from the set.
  * \return Returns `true` if the item was successfully removed, otherwise returns `false`
  *         if the item was not found in the set.
  */
@@ -215,7 +216,7 @@ CARDANO_EXPORT bool cardano_set_delete(cardano_set_t* set, cardano_object_t* ite
  * This function creates a new cardano_array_t and populates it with all the objects
  * currently held in the set.
  *
- * \param set A pointer to the set from which to retrieve the entries.
+ * \param[in] set A pointer to the set from which to retrieve the entries.
  * \return A pointer to a `cardano_array_t` containing all set entries or NULL if the operation
  *         fails due to memory allocation errors.
  *
@@ -227,7 +228,7 @@ CARDANO_EXPORT cardano_array_t* cardano_get_entries(cardano_set_t* set);
 /**
  * \brief Fetches the current size (used space) of the set.
  *
- * \param set[in] Target set.
+ * \param[in] set Target set.
  * \return Used space in the set. Returns 0 if set is NULL.
  */
 CARDANO_NODISCARD
@@ -263,44 +264,44 @@ cardano_object_t* cardano_set_find(const cardano_set_t* array, cardano_set_unary
 /**
  * \brief Sets the last error message for a given object.
  *
- * This function records an error message in the object's last_error set,
+ * This function records an error message in the object's last_error buffer,
  * overwriting any previous message. The message is truncated if it exceeds
- * the set size. This function is typically used to store descriptive
+ * the buffer size. This function is typically used to store descriptive
  * error information that can be retrieved later with
- * cardano_object_get_last_error.
+ * cardano_set_get_last_error.
  *
- * \param object A pointer to the cardano_set_t instance whose last error
- *               message is to be set. If the object is NULL, the function
+ * \param[in,out] set A pointer to the \ref cardano_set_t instance whose last error
+ *               message is to be set. If the object is \c NULL, the function
  *               has no effect.
- * \param message A null-terminated string containing the error message to be
- *                recorded. If the message is NULL, the object's last_error
+ * \param[in] message A null-terminated string containing the error message to be
+ *                recorded. If the message is \c NULL, the object's last_error
  *                will be set to an empty string, indicating no error.
  *
  * \note The error message is limited to 1023 characters due to the fixed size
- *       of the last_error set (1024 characters), including the null
+ *       of the last_error buffer (1024 characters), including the null
  *       terminator. Messages longer than this limit will be truncated.
  */
 CARDANO_EXPORT void cardano_set_set_last_error(cardano_set_t* set, const char* message);
 
 /**
- * \brief Retrieves the last error message recorded for a specific set.
+ * \brief Retrieves the last error message recorded for a specific object.
  *
  * This function returns a pointer to the null-terminated string containing
- * the last error message set by cardano_set_set_last_error for the given
- * set. If no error message has been set, or if the last_error was
+ * the last error message set by \ref cardano_set_set_last_error for the given
+ * object. If no error message has been set, or if the last_error buffer was
  * explicitly cleared, an empty string is returned, indicating no error.
  *
- * \param set A pointer to the cardano_set_t instance whose last error
- *              message is to be retrieved. If the object is NULL, the function
- *              returns a generic error message indicating the null object.
+ * \param[in,out] set A pointer to the \ref cardano_set_t instance whose last error
+ *               message is to be retrieved. If the object is \c NULL, the function
+ *               returns a generic error message indicating the null object.
  *
  * \return A pointer to a null-terminated string containing the last error
- *         message for the specified object. If the object is NULL, "Object is NULL."
+ *         message for the specified object. If the object is \c NULL, "Object is NULL."
  *         is returned to indicate the error.
  *
  * \note The returned string points to internal storage within the object and
  *       must not be modified by the caller. The string remains valid until the
- *       next call to cardano_set_set_last_error for the same object, or until
+ *       next call to \ref cardano_set_set_last_error for the same object, or until
  *       the object is deallocated.
  */
 CARDANO_NODISCARD
