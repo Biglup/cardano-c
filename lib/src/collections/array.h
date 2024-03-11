@@ -4,8 +4,6 @@
  * \author luisd.bianchi
  * \date   Mar 04, 2024
  *
- * \section LICENSE
- *
  * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,8 +39,8 @@ extern "C" {
  * \brief Function pointer type that compares two objects of the same type and returns a value
  * indicating whether one object is less than, equal to, or greater than the other.
  *
- * \param lhs[in] The left-hand side object to compare.
- * \param rhs[in] The right-hand side object to compare.
+ * \param[in] lhs The left-hand side object to compare.
+ * \param[in] rhs The right-hand side object to compare.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
@@ -50,14 +48,16 @@ extern "C" {
 typedef int (*cardano_array_compare_item_t)(const cardano_object_t* lhs, const cardano_object_t* rhs);
 
 /**
- * \brief Function pointer that defines a set of criteria and determines whether the specified object
- * meets those criteria.
+ * \brief Defines a function pointer for evaluating whether a specific object meets a defined set of criteria.
  *
- * \param item[in] The object to compare against the criteria defined within the method represented by
- * this function pointer.
+ * This typedef defines a function pointer type that represents a predicate function. A predicate function
+ * takes an object of type `cardano_object_t` and an optional context as parameters and evaluates whether
+ * the object meets a specific set of criteria.
  *
- * \return \c true if object meets the criteria defined within the method represented by this function
- * pointer; otherwise, \c false.
+ * \param[in] item The object to be evaluated against the predicate's criteria.
+ * \param[in] context An optional context providing additional data or parameters for the predicate evaluation.
+ *
+ * \return Returns \c true if the `item` satisfies the predicate's conditions, \c false otherwise.
  */
 typedef bool (*cardano_array_unary_predicate_t)(const cardano_object_t* item, const void* context);
 
@@ -76,7 +76,7 @@ typedef struct cardano_array_t cardano_array_t;
 /**
  * \brief Creates a new dynamic array with the specified initial capacity.
  *
- * \param capacity[in]   Initial capacity of the array. The capacity must be greater than 0.
+ * \param[in] capacity   Initial capacity of the array. The capacity must be greater than 0.
  * If 0 is provided, this function will return NULL.
  *
  * \return The newly created array or NULL on memory allocation failure.
@@ -91,8 +91,8 @@ CARDANO_EXPORT cardano_array_t* cardano_array_new(size_t capacity);
  *
  * Creates a new array containing the combined data of the provided arrays.
  *
- * \param lhs[in]   The first array.
- * \param rhs[in]   The second array.
+ * \param[in] lhs   The first array.
+ * \param[in] rhs  The second array.
  *
  * \return A new array containing the concatenated data or NULL on memory allocation failure.
  * The caller assumes ownership of the returned array and must manage its lifecycle,
@@ -106,9 +106,9 @@ CARDANO_EXPORT cardano_array_t* cardano_array_concat(const cardano_array_t* lhs,
  *
  * Extracts a portion of the array between the given indices.
  *
- * \param array[in]  Source array.
- * \param start[in]  Start index of the slice (inclusive).
- * \param end[in]    End index of the slice (exclusive).
+ * \param[in] array  Source array.
+ * \param[in] start  Start index of the slice (inclusive).
+ * \param[in] end    End index of the slice (exclusive).
  *
  * \return A new array containing the slice or NULL for invalid input or memory allocation failure.
  * The caller assumes ownership of the returned array and must manage its lifecycle,
@@ -122,7 +122,7 @@ CARDANO_EXPORT cardano_array_t* cardano_array_slice(const cardano_array_t* array
  *
  * If the reference count reaches zero, the array memory is deallocated.
  *
- * \param array[in] Pointer to the array whose reference count is to be decremented.
+ * \param[in] array Pointer to the array whose reference count is to be decremented.
  */
 CARDANO_EXPORT void cardano_array_unref(cardano_array_t** array);
 
@@ -131,7 +131,7 @@ CARDANO_EXPORT void cardano_array_unref(cardano_array_t** array);
  *
  * Ensures that the array remains allocated until the last reference is released.
  *
- * \param array[in] Array whose reference count is to be incremented.
+ * \param[in] array Array whose reference count is to be incremented.
  */
 CARDANO_EXPORT void cardano_array_ref(cardano_array_t* array);
 
@@ -140,7 +140,7 @@ CARDANO_EXPORT void cardano_array_ref(cardano_array_t* array);
  *
  * \warning Does not account for transitive references.
  *
- * \param array[in] Target array.
+ * \param[in] array Target array.
  * \return Current reference count of the array.
  */
 CARDANO_NODISCARD
@@ -153,7 +153,7 @@ CARDANO_EXPORT size_t cardano_array_refcount(const cardano_array_t* array);
  *
  * \warning Memory will leak if the reference count isn't properly managed after a move.
  *
- * \param array[in] Array to be moved.
+ * \param[in] array Array to be moved.
  * \return The array with its reference count decremented.
  */
 CARDANO_NODISCARD
@@ -164,8 +164,8 @@ CARDANO_EXPORT cardano_array_t* cardano_array_move(cardano_array_t* array);
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
  *
- * \param array[in] Target array.
- * \param index[in] Index of the data to be fetched.
+ * \param[in] array Target array.
+ * \param[in] index Index of the data to be fetched.
  *
  * \return Pointer to the array's internal data or NULL if the array is empty.
  */
@@ -177,8 +177,8 @@ CARDANO_EXPORT cardano_object_t* cardano_array_get(const cardano_array_t* array,
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
  *
- * \param array[in] Target array.
- * \param item[in] Pointer to the data to be added.
+ * \param[in] array Target array.
+ * \param[in] item Pointer to the data to be added.
  *
  * \return The new size of the array.
  */
@@ -188,7 +188,7 @@ CARDANO_EXPORT size_t cardano_array_add(cardano_array_t* array, cardano_object_t
 /**
  * \brief Fetches the current size (used space) of the array.
  *
- * \param array[in] Target array.
+ * \param[in] array Target array.
  * \return Used space in the array. Returns 0 if array is NULL.
  */
 CARDANO_NODISCARD
@@ -257,7 +257,7 @@ cardano_array_t* cardano_array_filter(const cardano_array_t* array, cardano_arra
 /**
  * \brief Fetches the array's total capacity.
  *
- * \param array[in] Target array.
+ * \param[in] array Target array.
  * \return Total capacity of the array. Returns 0 if array is NULL.
  */
 CARDANO_NODISCARD
@@ -266,44 +266,44 @@ CARDANO_EXPORT size_t cardano_array_get_capacity(const cardano_array_t* array);
 /**
  * \brief Sets the last error message for a given object.
  *
- * This function records an error message in the object's last_error array,
+ * This function records an error message in the object's last_error buffer,
  * overwriting any previous message. The message is truncated if it exceeds
- * the array size. This function is typically used to store descriptive
+ * the buffer size. This function is typically used to store descriptive
  * error information that can be retrieved later with
- * cardano_object_get_last_error.
+ * cardano_array_get_last_error.
  *
- * \param object A pointer to the cardano_array_t instance whose last error
- *               message is to be set. If the object is NULL, the function
+ * \param[in,out] array A pointer to the \ref cardano_array_t instance whose last error
+ *               message is to be set. If the object is \c NULL, the function
  *               has no effect.
- * \param message A null-terminated string containing the error message to be
- *                recorded. If the message is NULL, the object's last_error
+ * \param[in] message A null-terminated string containing the error message to be
+ *                recorded. If the message is \c NULL, the object's last_error
  *                will be set to an empty string, indicating no error.
  *
  * \note The error message is limited to 1023 characters due to the fixed size
- *       of the last_error array (1024 characters), including the null
+ *       of the last_error buffer (1024 characters), including the null
  *       terminator. Messages longer than this limit will be truncated.
  */
 CARDANO_EXPORT void cardano_array_set_last_error(cardano_array_t* array, const char* message);
 
 /**
- * \brief Retrieves the last error message recorded for a specific array.
+ * \brief Retrieves the last error message recorded for a specific object.
  *
  * This function returns a pointer to the null-terminated string containing
- * the last error message set by cardano_array_set_last_error for the given
- * array. If no error message has been set, or if the last_error was
+ * the last error message set by \ref cardano_object_set_last_error for the given
+ * object. If no error message has been set, or if the last_error buffer was
  * explicitly cleared, an empty string is returned, indicating no error.
  *
- * \param array A pointer to the cardano_array_t instance whose last error
- *              message is to be retrieved. If the object is NULL, the function
- *              returns a generic error message indicating the null object.
+ * \param[in,out] array A pointer to the \ref cardano_array_t instance whose last error
+ *               message is to be retrieved. If the object is \c NULL, the function
+ *               returns a generic error message indicating the null object.
  *
  * \return A pointer to a null-terminated string containing the last error
- *         message for the specified object. If the object is NULL, "Object is NULL."
+ *         message for the specified object. If the object is \c NULL, "Object is NULL."
  *         is returned to indicate the error.
  *
  * \note The returned string points to internal storage within the object and
  *       must not be modified by the caller. The string remains valid until the
- *       next call to cardano_array_set_last_error for the same object, or until
+ *       next call to \ref cardano_array_set_last_error for the same object, or until
  *       the object is deallocated.
  */
 CARDANO_NODISCARD

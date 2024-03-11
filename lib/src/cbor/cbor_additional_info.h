@@ -4,8 +4,6 @@
  * \author angel.castillo
  * \date   Sep 29, 2023
  *
- * \section LICENSE
- *
  * Copyright 2023 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,17 +29,53 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * Represents the 5-bit additional information included in a CBOR initial byte.
+ * \brief Represents the 5-bit additional information included in a CBOR initial byte.
+ *
+ * The CBOR encoding format specifies an initial byte for each data item that includes both the major type
+ * and additional information. The additional information field is a 5-bit value that can indicate a variety
+ * of things depending on the context, such as the length of the data, special values like `false`, `true`,
+ * `null`, or the need for more bytes to represent the data length.
  */
 typedef enum
 {
-  CBOR_ADDITIONAL_INFO_FALSE             = 20,
-  CBOR_ADDITIONAL_INFO_TRUE              = 21,
-  CBOR_ADDITIONAL_INFO_NULL              = 22,
-  CBOR_ADDITIONAL_INFO_8BIT_DATA         = 24,
-  CBOR_ADDITIONAL_INFO_16BIT_DATA        = 25,
-  CBOR_ADDITIONAL_INFO_32BIT_DATA        = 26,
-  CBOR_ADDITIONAL_INFO_64BIT_DATA        = 27,
+  /**
+   * \brief Indicates the boolean value `false` (major type 7).
+   */
+  CBOR_ADDITIONAL_INFO_FALSE = 20,
+
+  /**
+   * \brief Indicates the boolean value `true` (major type 7).
+   */
+  CBOR_ADDITIONAL_INFO_TRUE = 21,
+
+  /**
+   * \brief Indicates the value `null` (major type 7).
+   */
+  CBOR_ADDITIONAL_INFO_NULL = 22,
+
+  /**
+   * \brief Indicates that the next byte contains the length of the data (major types 0-2, 4-5).
+   */
+  CBOR_ADDITIONAL_INFO_8BIT_DATA = 24,
+
+  /**
+   * \brief Indicates that the next 2 bytes contain the length of the data (major types 0-2, 4-5).
+   */
+  CBOR_ADDITIONAL_INFO_16BIT_DATA = 25,
+
+  /**
+   * \brief Indicates that the next 4 bytes contain the length of the data (major types 0-2, 4-5).
+   */
+  CBOR_ADDITIONAL_INFO_32BIT_DATA = 26,
+
+  /**
+   * \brief Indicates that the next 8 bytes contain the length of the data (major types 0-2, 4-5).
+   */
+  CBOR_ADDITIONAL_INFO_64BIT_DATA = 27,
+
+  /**
+   * \brief Indicates that the data item is of indefinite length (major types 2, 3, 4, 5).
+   */
   CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH = 31
 } cbor_additional_info_t;
 

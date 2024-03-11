@@ -1,0 +1,4 @@
+Error
+=============================
+
+.. doxygenfile:: error.h

@@ -1,0 +1,113 @@
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = 'Cardano C'
+copyright = '2024, Biglup Labs'
+author = 'Biglup Labs'
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = [
+    'breathe'
+]
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+exclude_patterns += ['page_index.rst']
+
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+extensions.append("sphinx_immaterial")
+html_theme = "sphinx_immaterial"
+
+# material theme options (see theme.conf for more information)
+html_theme_options = {
+    "icon": {
+        "repo": "fontawesome/brands/github",
+        "edit": "material/file-edit-outline",
+    },
+    "font": {
+        "text": "Roboto",  # used for all the pages' text
+        "code": "Roboto Mono"  # used for literal code blocks
+    },
+    "site_url": "https://github.com/Biglup/cardano-c/",
+    "repo_url": "https://github.com/Biglup/cardano-c/",
+    "repo_name": "cardano-c",
+    "edit_uri": "blob/main/doc",
+    "globaltoc_collapse": False,
+    "features": [
+        "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        "navigation.sections",
+        # "navigation.instant",
+        # "header.autohide",
+        "navigation.top",
+        # "navigation.tracking",
+        # "search.highlight",
+        "search.share",
+        "toc.follow",
+        "toc.sticky",
+        "content.tabs.link",
+        "announce.dismiss",
+    ],
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "black",
+            "accent": "pink",
+            "toggle": {
+                "icon": "material/lightbulb-outline",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "black",
+            "accent": "light-blue",
+            "toggle": {
+                "icon": "material/lightbulb",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+    "toc_title_is_page_title": True,
+    # BEGIN: social icons
+    "social": [
+        {
+            "icon": "fontawesome/brands/github",
+            "link": "https://github.com/Biglup/cardano-c",
+            "name": "Source on github.com",
+        }
+    ],
+    # END: social icons
+}
+
+html_static_path = ['_static']
+
+templates_path = ["_templates"]
+
+breathe_projects = { "@PROJECT_NAME@": "@DOXYGEN_BUILD_DIRECTORY@/xml/" }
+breathe_default_project = "@PROJECT_NAME@"
+
+object_description_options = [
+    ("cpp:.*Param", dict(include_in_toc=False)),
+    ("c:.*Param", dict(include_in_toc=False)),
+    ("h:.*Param", dict(include_in_toc=False))
+]
+
+#html_css_files = ["custom.css"]
+
+#def setup(app):
+#    app.add_js_file("custom.js")
+

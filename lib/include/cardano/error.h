@@ -4,8 +4,6 @@
  * \author angel.castillo
  * \date   Sep 09, 2023
  *
- * \section LICENSE
- *
  * Copyright 2023 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -92,7 +90,7 @@ typedef enum
 /**
  * \brief Converts error codes to their human readable form.
  *
- * \param error[in] The error code to get the string representation for.
+ * \param[in] error The error code to get the string representation for.
  * \return Human readable form of the given error code.
  */
 CARDANO_NODISCARD

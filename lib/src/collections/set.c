@@ -4,8 +4,6 @@
  * \author luisd.bianchi
  * \date   Mar 04, 2024
  *
- * \section LICENSE
- *
  * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

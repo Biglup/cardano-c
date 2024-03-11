@@ -115,11 +115,47 @@ make
 sudo make install
 ```
 
-### Contributing
+## Documentation
+
+To generate the documentation for this project, we utilize Doxygen for source code processing, Breathe to integrate Doxygen content with Sphinx, and Sphinx to compile the entire documentation into a web-friendly format.
+
+### Setting Up Your Environment
+
+1. **Install Python 3 and pip**: Required for Sphinx and Breathe. Most Linux distributions include Python 3 by default. For Windows, download from the [Python website](https://www.python.org/downloads/), ensuring you add Python to your PATH.
+
+   Linux example (Ubuntu):
+   ```bash
+   sudo apt install python3 python3-pip
+   ```
+
+2. **Install Sphinx and Breathe**: These Python packages are installed via pip. Breathe bridges Doxygen-generated XML with Sphinx for seamless documentation integration. Additionally, the Sphinx Immaterial theme is installed for a modern web design.
+   ```bash
+   pip install sphinx sphinx-immaterial breathe
+   ```
+
+3. **Install Doxygen**: Necessary for generating XML files from source code. Install via your Linux package manager or download from the [Doxygen website](https://www.doxygen.nl/download.html) for Windows.
+
+   Linux example (Ubuntu):
+   ```bash
+   sudo apt-get install doxygen
+   ```
+
+### Generating Documentation
+
+After setting up your environment, generate the project's documentation by navigating to the repository root and executing:
+
+```bash
+cmake -DDOXYGEN_ENABLED=ON .
+make doc
+```
+
+The generated documentation will be available at `build/release/doc/html/index.html`, providing a comprehensive guide to the project's API and architecture.
+
+## Contributing
 
 We welcome contributions from the community. Please read our CONTRIBUTING.md for guidelines.
 
 
-### License 
+## License 
 
 [APACHE LICENSE, VERSION 2.0](https://apache.org/licenses/LICENSE-2.0)
