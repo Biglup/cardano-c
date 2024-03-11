@@ -23,7 +23,7 @@ A practical toolkit for developers working with Cardano.
 
 Get the latest documentation at [cardano-c.readthedocs.io](https://cardano-c.readthedocs.io/)
 
-> **Note** 
+> \[!IMPORTANT\]
 > This library is at early stages of development.
 > The documentation is a work in progress and may not be complete. We will
 > actively work on improving the documentation as we progress.

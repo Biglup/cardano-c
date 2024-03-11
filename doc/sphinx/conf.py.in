@@ -9,6 +9,7 @@
 project = 'Cardano C'
 copyright = '2024, Biglup Labs'
 author = 'Biglup Labs'
+version = '@CARDANO_C_VERSION@'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -20,7 +21,6 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 exclude_patterns += ['page_index.rst']
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -41,7 +41,7 @@ html_theme_options = {
     "site_url": "https://github.com/Biglup/cardano-c/",
     "repo_url": "https://github.com/Biglup/cardano-c/",
     "repo_name": "cardano-c",
-    "edit_uri": "blob/main/doc",
+    "edit_uri": "tree/main/doc/src/sections",
     "globaltoc_collapse": False,
     "features": [
         "navigation.expand",
