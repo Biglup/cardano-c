@@ -12,6 +12,7 @@
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/unit-test.yml/badge.svg)
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/static-code-analysis.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Biglup/cardano-c/graph/badge.svg?token=A5U3U5KGG7)](https://codecov.io/gh/Biglup/cardano-c)
+[![Documentation Status](https://readthedocs.org/projects/cardano-c/badge/?version=latest)](https://cardano-c.readthedocs.io/en/latest/?badge=latest)
 [![Static Badge](https://img.shields.io/badge/Funded_By-Project_Catalyst-133ff0?logo=cardano&logoColor=ffffff)](https://projectcatalyst.io/)
 [![Static Badge](https://img.shields.io/badge/Made_By-Biglup_Labs-pink?&logoColor=bbbbbb&color=815fe4)](https://biglup.io/)
 
@@ -19,6 +20,13 @@
 it ensures consistent reliability and safety. With its binding-friendly architecture, "cardano-c" aims for broad compatibility, enabling easy integrations across various programming languages. 
 
 A practical toolkit for developers working with Cardano.
+
+Get the latest documentation at [cardano-c.readthedocs.io](https://cardano-c.readthedocs.io/)
+
+> **Note** 
+> This library is at early stages of development.
+> The documentation is a work in progress and may not be complete. We will
+> actively work on improving the documentation as we progress.
 
 ### Features
 
