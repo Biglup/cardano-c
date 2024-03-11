@@ -18,7 +18,7 @@ build:
     post_create_environment:
       - pip install sphinx sphinx-immaterial breathe
     post_install:
-      - cmake -DDOXYGEN_ENABLED=ON .
+      - cmake -DDOXYGEN_ENABLED=ON -DTESTING_ENABLED=OFF .
       - make doc
 
 sphinx:
