@@ -14,7 +14,6 @@ build:
     post_create_environment:
       - pip install sphinx sphinx-immaterial breathe
     post_install:
-      - sudo apt-get install doxygen
       - cmake -DDOXYGEN_ENABLED=ON .
       - make doc
 
