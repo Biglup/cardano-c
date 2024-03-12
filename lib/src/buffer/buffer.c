@@ -364,6 +364,8 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer)
   size_t hex_string_size = (buffer->size * byte_size_in_hex) + null_termination_size;
   char*  hex_string      = (char*)calloc(hex_string_size, byte_size);
 
+  // TODO: Make this function take a pointer to preallocated memory and write to it.
+  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
   return sodium_bin2hex(hex_string, hex_string_size, buffer->data, buffer->size);
 }
 
