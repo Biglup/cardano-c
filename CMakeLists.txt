@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 PROJECT (cardano-c C)
 
-SET(PROJECT_NAME "libcardano-c")
+SET(PROJECT_NAME "cardano-c")
 
 # Option that the user can optionally select
 OPTION (TESTING_ENABLED "Enables unit test build." ON)
