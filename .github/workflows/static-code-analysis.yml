@@ -8,11 +8,18 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          sudo apt update
           sudo apt install cppcheck
           sudo apt install dos2unix
           sudo apt install python3
+          sudo apt install python3-pip
+          sudo apt install build-essential
+          sudo apt install cmake
+          sudo apt install libsodium-dev
+          sudo apt install doxygen
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
           sudo apt install clang-format-15
+          pip install sphinx sphinx-immaterial breathe
 
       - name: Style Check
         run: |
@@ -34,3 +41,10 @@ jobs:
           echo "Scan complete"
           NumViolations=`cat .results/error_count`
           echo $NumViolations
+
+      - name: Check Doxygen Documentation
+        run: |
+          cd $GITHUB_WORKSPACE
+          chmod +x ./scripts/verify-documentation.sh
+          dos2unix ./scripts/verify-documentation.sh
+          ./scripts/verify-documentation.sh

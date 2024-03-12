@@ -51,6 +51,12 @@ ENDIF ()
 
 SET (CARDANO_C_VERSION "${CARDANO_C_VERSION_MAJOR}.${CARDANO_C_VERSION_MINOR}.${CARDANO_C_VERSION_PATCH}")
 
+FIND_PROGRAM (CLANG_TIDY_EXE NAMES "clang-tidy")
+
+if(CLANG_TIDY_EXE)
+    SET (CMAKE_C_CLANG_TIDY "${CLANG_TIDY_EXE}")
+endif()
+
 # Print variables to stdout.
 MESSAGE ( STATUS "################################################################" )
 MESSAGE ( STATUS "Building Cardano C v${CARDANO_C_VERSION}" )
@@ -61,6 +67,7 @@ MESSAGE ( STATUS "CMAKE_PREFIX_PATH    = ${CMAKE_PREFIX_PATH}" )
 MESSAGE ( STATUS "ARCHITECTURE         = ${ARCHITECTURE}" )
 MESSAGE ( STATUS "TESTING ENABLED      = ${TESTING_ENABLED}")
 MESSAGE ( STATUS "DOXYGEN ENABLED      = ${DOXYGEN_ENABLED}")
+MESSAGE ( STATUS "CMAKE_C_CLANG_TIDY   = ${CMAKE_C_CLANG_TIDY}")
 MESSAGE ( STATUS )
 MESSAGE ( STATUS "change a configuration variable with: cmake -D<Variable>=<Value>" )
 MESSAGE ( STATUS "################################################################" )
