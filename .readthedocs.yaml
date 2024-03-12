@@ -19,8 +19,7 @@ build:
       - pip install sphinx sphinx-immaterial breathe
     post_install:
       - pip freeze
-      - ./scripts/create-release-makefiles.sh
-      - make doc
+      - ./scripts/create-docs-makefiles.sh
 
 sphinx:
   configuration: build/release/doc/conf.py
