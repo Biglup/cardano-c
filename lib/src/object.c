@@ -49,6 +49,8 @@ safe_string_copy(char* dest, const char* src, size_t max_dest_size)
   size_t copy_size  = (src_length < (max_dest_size - 1U)) ? src_length : (max_dest_size - 1U);
 
   void* result = memcpy(dest, src, copy_size);
+
+  (void)result;
   assert(result != NULL);
 
   dest[copy_size] = '\0';

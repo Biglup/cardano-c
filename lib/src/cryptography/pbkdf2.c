@@ -66,6 +66,8 @@ cardano_cryptography_pbkdf2_hmac_sha512(
     size_t current_block_length = 0;
 
     cardano_error_t result = cardano_write_uint32_be((uint32_t)(i + 1U), iteration_vector, sizeof(iteration_vector), 0);
+
+    (void)result;
     assert(result == CARDANO_SUCCESS);
 
     void* initial_state_copy_result = memcpy(&loop_hHmac_state, &initial_hmac_state, sizeof(crypto_auth_hmacsha512_state));
