@@ -1,12 +1,10 @@
 /**
- * \file Cardano.h
+ * \file allocators.c
  *
- * \author angel.castillo
- * \date   Sep 09, 2023
+ * \author luisd.bianchi
+ * \date   Mar 11, 2024
  *
- * \section LICENSE
- *
- * Copyright 2023 Biglup Labs
+ * Copyright 2024 Biglup Labs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +19,22 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_H
-#define CARDANO_H
-
 /* INCLUDES ******************************************************************/
 
 #include <cardano/allocators.h>
-#include <cardano/buffer.h>
-#include <cardano/cbor/cbor_major_type.h>
-#include <cardano/cbor/cbor_reader_state.h>
-#include <cardano/cbor/cbor_simple_value.h>
-#include <cardano/cbor/cbor_tag.h>
-#include <cardano/cbor/cbor_writer.h>
-#include <cardano/error.h>
-#include <cardano/object.h>
-#include <cardano/typedefs.h>
 
-#endif // CARDANO_H
+#include <stdlib.h>
+
+/* DEFINITIONS ***************************************************************/
+
+_cardano_malloc_t  _cardano_malloc  = malloc;
+_cardano_realloc_t _cardano_realloc = realloc;
+_cardano_free_t    _cardano_free    = free;
+
+void
+cardano_set_allocators(_cardano_malloc_t custom_malloc, _cardano_realloc_t custom_realloc, _cardano_free_t custom_free)
+{
+  _cardano_malloc  = custom_malloc;
+  _cardano_realloc = custom_realloc;
+  _cardano_free    = custom_free;
+}

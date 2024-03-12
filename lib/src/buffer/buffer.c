@@ -23,6 +23,7 @@
 
 #include "../endian.h"
 
+#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/object.h>
 
@@ -69,7 +70,7 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
   if ((buffer->size + size_of_new_data) >= buffer->capacity)
   {
     size_t  new_capacity = (size_t)ceil((float)buffer->capacity * (float)LIB_CARDANO_C_COLLECTION_GROW_FACTOR);
-    byte_t* new_data     = (byte_t*)realloc(buffer->data, new_capacity);
+    byte_t* new_data     = (byte_t*)_cardano_realloc(buffer->data, new_capacity);
 
     if (new_data == NULL)
     {
@@ -105,11 +106,11 @@ cardano_buffer_deallocate(void* object)
 
   if (buffer->data != NULL)
   {
-    free(buffer->data);
+    _cardano_free(buffer->data);
     buffer->data = NULL;
   }
 
-  free(buffer);
+  _cardano_free(buffer);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -117,18 +118,18 @@ cardano_buffer_deallocate(void* object)
 cardano_buffer_t*
 cardano_buffer_new(const size_t capacity)
 {
-  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+  cardano_buffer_t* buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
   if (buffer == NULL)
   {
     return NULL;
   }
 
-  buffer->data = (byte_t*)malloc(capacity);
+  buffer->data = (byte_t*)_cardano_malloc(capacity);
 
   if (buffer->data == NULL)
   {
-    free(buffer);
+    _cardano_free(buffer);
     return NULL;
   }
 
@@ -150,22 +151,22 @@ cardano_buffer_new_from(const byte_t* array, const size_t size)
     return NULL;
   }
 
-  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+  cardano_buffer_t* buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
   if (buffer == NULL)
   {
     return NULL;
   }
 
-  buffer->data = (byte_t*)malloc(size);
+  buffer->data = (byte_t*)_cardano_malloc(size);
 
   if (buffer->data == NULL)
   {
-    free(buffer);
+    _cardano_free(buffer);
     return NULL;
   }
 
-  (void)memcpy(buffer->data, array, size);
+  CARDANO_UNUSED(memcpy(buffer->data, array, size));
 
   buffer->size               = size;
   buffer->head               = 0;
@@ -190,23 +191,23 @@ cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
     return NULL;
   }
 
-  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+  cardano_buffer_t* buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
   if (buffer == NULL)
   {
     return NULL;
   }
 
-  buffer->data = (byte_t*)malloc(lhs->size + rhs->size);
+  buffer->data = (byte_t*)_cardano_malloc(lhs->size + rhs->size);
 
   if (buffer->data == NULL)
   {
-    free(buffer);
+    _cardano_free(buffer);
     return NULL;
   }
 
-  (void)memcpy(buffer->data, lhs->data, lhs->size);
-  (void)memcpy(&buffer->data[lhs->size], rhs->data, rhs->size);
+  CARDANO_UNUSED(memcpy(buffer->data, lhs->data, lhs->size));
+  CARDANO_UNUSED(memcpy(&buffer->data[lhs->size], rhs->data, rhs->size));
 
   buffer->size               = lhs->size + rhs->size;
   buffer->head               = 0;
@@ -253,20 +254,20 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
     return NULL;
   }
 
-  byte_t* slice_data = (byte_t*)malloc(slice_size);
+  byte_t* slice_data = (byte_t*)_cardano_malloc(slice_size);
 
   if (slice_data == NULL)
   {
     return NULL;
   }
 
-  (void)memcpy(slice_data, &buffer->data[start], slice_size);
+  CARDANO_UNUSED(memcpy(slice_data, &buffer->data[start], slice_size));
 
-  cardano_buffer_t* sliced_buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+  cardano_buffer_t* sliced_buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
   if (sliced_buffer == NULL)
   {
-    free(slice_data);
+    _cardano_free(slice_data);
     return NULL;
   }
 
@@ -294,14 +295,14 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
     return NULL;
   }
 
-  cardano_buffer_t* buffer = (cardano_buffer_t*)malloc(sizeof(cardano_buffer_t));
+  cardano_buffer_t* buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
   if (buffer == NULL)
   {
     return NULL;
   }
 
-  buffer->data               = (byte_t*)malloc(size / 2U);
+  buffer->data               = (byte_t*)_cardano_malloc(size / 2U);
   buffer->ref_count          = 1;
   buffer->size               = size / 2U;
   buffer->head               = 0;
@@ -312,7 +313,7 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
 
   if (buffer->data == NULL)
   {
-    free(buffer);
+    _cardano_free(buffer);
     return NULL;
   }
 
@@ -358,11 +359,10 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer)
   }
 
   static const size_t null_termination_size = 1;
-  static const size_t byte_size             = 1;
   static const size_t byte_size_in_hex      = 2;
 
   size_t hex_string_size = (buffer->size * byte_size_in_hex) + null_termination_size;
-  char*  hex_string      = (char*)calloc(hex_string_size, byte_size);
+  char*  hex_string      = (char*)_cardano_malloc(hex_string_size);
 
   // TODO: Make this function take a pointer to preallocated memory and write to it.
   // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
@@ -418,7 +418,7 @@ cardano_buffer_move(cardano_buffer_t* buffer)
   }
 
   cardano_object_t* object = cardano_object_move(&buffer->base);
-  (void)object;
+  CARDANO_UNUSED(object);
 
   return buffer;
 }
@@ -476,7 +476,7 @@ cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, const size_t 
     return grow_result;
   }
 
-  (void)memcpy(&buffer->data[buffer->size], data, size);
+  CARDANO_UNUSED(memcpy(&buffer->data[buffer->size], data, size));
 
   buffer->size += size;
 
@@ -501,7 +501,7 @@ cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, const size_t bytes_t
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  (void)memcpy(data, &buffer->data[buffer->head], bytes_to_read);
+  CARDANO_UNUSED(memcpy(data, &buffer->data[buffer->head], bytes_to_read));
 
   buffer->head += bytes_to_read;
 

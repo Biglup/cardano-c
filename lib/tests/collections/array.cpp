@@ -25,6 +25,8 @@
 
 #include "../src/collections/array.h"
 
+#include <cardano/allocators.h>
+
 #include <gmock/gmock.h>
 
 /* STRUCTS *******************************************************************/
@@ -56,11 +58,11 @@ cardano_ref_counted_string_deallocate(void* object)
 
   if (ref_str->string != NULL)
   {
-    free(ref_str->string);
+    _cardano_free(ref_str->string);
     ref_str->string = NULL;
   }
 
-  free(ref_str);
+  _cardano_free(ref_str);
 }
 
 /**
@@ -71,12 +73,12 @@ cardano_ref_counted_string_deallocate(void* object)
 static ref_counted_string_t*
 ref_counted_string_new(const char* string)
 {
-  ref_counted_string_t* ref_counted_string = (ref_counted_string_t*)malloc(sizeof(ref_counted_string_t));
+  ref_counted_string_t* ref_counted_string = (ref_counted_string_t*)_cardano_malloc(sizeof(ref_counted_string_t));
 
   ref_counted_string->base.ref_count     = 1;
   ref_counted_string->base.last_error[0] = '\0';
   ref_counted_string->base.deallocator   = cardano_ref_counted_string_deallocate;
-  ref_counted_string->string             = (char*)malloc(strlen(string) + 1);
+  ref_counted_string->string             = (char*)_cardano_malloc(strlen(string) + 1);
 
   strcpy(ref_counted_string->string, string);
 

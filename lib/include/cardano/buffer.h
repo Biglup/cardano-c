@@ -165,7 +165,7 @@ CARDANO_EXPORT cardano_buffer_t* cardano_buffer_from_hex(const char* hex_string,
  * if (hexString != NULL)
  * {
  *     printf("Hex representation: %s\n", hexString);
- *     free(hexString);
+ *     _cardano_free(hexString);
  * }
  *
  * cardano_buffer_unref(&buffer);

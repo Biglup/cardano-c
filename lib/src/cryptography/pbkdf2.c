@@ -23,11 +23,12 @@
 
 #include <cardano/cryptography/pbkdf2.h>
 
+#include <cardano/export.h>
+
 #include <assert.h>
 #include <sodium.h>
 #include <string.h>
 
-#include "../config.h"
 #include "../endian.h"
 
 /* DEFINITIONS ****************************************************************/
@@ -65,21 +66,14 @@ cardano_cryptography_pbkdf2_hmac_sha512(
   {
     size_t current_block_length = 0;
 
-    cardano_error_t result = cardano_write_uint32_be((uint32_t)(i + 1U), iteration_vector, sizeof(iteration_vector), 0);
+    CARDANO_UNUSED(cardano_write_uint32_be((uint32_t)(i + 1U), iteration_vector, sizeof(iteration_vector), 0));
 
-    (void)result;
-    assert(result == CARDANO_SUCCESS);
-
-    void* initial_state_copy_result = memcpy(&loop_hHmac_state, &initial_hmac_state, sizeof(crypto_auth_hmacsha512_state));
-    // Satisfies misra-c2012-17.7. memcpy doesn't return any useful feedback, so it's safe to ignore.
-    (void)initial_state_copy_result;
+    CARDANO_UNUSED(memcpy(&loop_hHmac_state, &initial_hmac_state, sizeof(crypto_auth_hmacsha512_state)));
 
     crypto_auth_hmacsha512_update(&loop_hHmac_state, iteration_vector, sizeof(iteration_vector));
     crypto_auth_hmacsha512_final(&loop_hHmac_state, temp_digest);
 
-    void* tmp_copy_result = memcpy(block_digest, temp_digest, crypto_auth_hmacsha512_BYTES);
-    // Satisfies misra-c2012-17.7. memcpy doesn't return any useful feedback, so it's safe to ignore.
-    (void)tmp_copy_result;
+    CARDANO_UNUSED(memcpy(block_digest, temp_digest, crypto_auth_hmacsha512_BYTES));
 
     for (size_t j = 2; j <= iterations; ++j)
     {
@@ -100,9 +94,7 @@ cardano_cryptography_pbkdf2_hmac_sha512(
       current_block_length = crypto_auth_hmacsha512_BYTES;
     }
 
-    void* block_digest_copy_result = memcpy(&derived_key[i * crypto_auth_hmacsha512_BYTES], block_digest, current_block_length);
-    // Satisfies misra-c2012-17.7. memcpy doesn't return any useful feedback, so it's safe to ignore.
-    (void)block_digest_copy_result;
+    CARDANO_UNUSED(memcpy(&derived_key[i * crypto_auth_hmacsha512_BYTES], block_digest, current_block_length));
   }
 
   sodium_memzero((void*)&initial_hmac_state, sizeof(initial_hmac_state));

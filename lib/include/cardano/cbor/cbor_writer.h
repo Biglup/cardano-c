@@ -785,7 +785,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t*
  * if (hex_string != NULL)
  * {
  *     printf("Encoded CBOR data as hex: %s\n", hex_string);
- *     free(hex_string); // Free the allocated string after use
+ *     _cardano_free(hex_string); // Free the allocated string after use
  * }
  * else
  * {
