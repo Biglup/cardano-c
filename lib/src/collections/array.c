@@ -296,6 +296,7 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
       cardano_object_unref(&slice_items[i]);
     }
 
+    free(slice_items);
     return NULL;
   }
 
