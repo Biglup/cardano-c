@@ -1,8 +1,8 @@
 /**
- * \file Cardano.h
+ * \file allocators.cpp
  *
- * \author angel.castillo
- * \date   Sep 09, 2023
+ * \author luisd.bianchi
+ * \date   Mar 11, 2024
  *
  * \section LICENSE
  *
@@ -21,20 +21,25 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_H
-#define CARDANO_H
-
 /* INCLUDES ******************************************************************/
 
 #include <cardano/allocators.h>
-#include <cardano/buffer.h>
-#include <cardano/cbor/cbor_major_type.h>
-#include <cardano/cbor/cbor_reader_state.h>
-#include <cardano/cbor/cbor_simple_value.h>
-#include <cardano/cbor/cbor_tag.h>
-#include <cardano/cbor/cbor_writer.h>
-#include <cardano/error.h>
-#include <cardano/object.h>
-#include <cardano/typedefs.h>
+#include <gmock/gmock.h>
 
-#endif // CARDANO_H
+/* UNIT TESTS ****************************************************************/
+
+TEST(cardano_set_allocators, cbor_set_allocators)
+{
+  // Arrange
+  _cardano_malloc_t  custom_malloc  = (_cardano_malloc_t)NULL;
+  _cardano_realloc_t custom_realloc = (_cardano_realloc_t)NULL;
+  _cardano_free_t    custom_free    = (_cardano_free_t)NULL;
+
+  // Act
+  cardano_set_allocators(custom_malloc, custom_realloc, custom_free);
+
+  // Assert
+  ASSERT_EQ((ptrdiff_t)_cardano_malloc, (ptrdiff_t)NULL);
+  ASSERT_EQ((ptrdiff_t)_cardano_realloc, (ptrdiff_t)NULL);
+  ASSERT_EQ((ptrdiff_t)_cardano_free, (ptrdiff_t)NULL);
+}

@@ -23,6 +23,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/allocators.h>
 #include <cardano/object.h>
 
 #include <gmock/gmock.h>
@@ -80,7 +81,7 @@ TEST(cardano_object_new, createsANewObjectWithTheAllocator)
   cardano_object_t* object = nullptr;
 
   // Act
-  object = cardano_object_new(free);
+  object = cardano_object_new(_cardano_free);
 
   // Assert
   EXPECT_THAT(object, testing::Not((cardano_object_t*)nullptr));
@@ -108,7 +109,7 @@ TEST(cardano_object_ref, increasesTheReferenceCount)
   cardano_object_t* object = nullptr;
 
   // Act
-  object = cardano_object_new(free);
+  object = cardano_object_new(_cardano_free);
   cardano_object_ref(object);
 
   // Assert
@@ -150,7 +151,7 @@ TEST(cardano_object_unref, doesntCrashIfGivenANullPtr)
 TEST(cardano_object_unref, decreasesTheReferenceCount)
 {
   // Arrange
-  cardano_object_t* object = cardano_object_new(free);
+  cardano_object_t* object = cardano_object_new(_cardano_free);
 
   // Act
   cardano_object_ref(object);
@@ -170,7 +171,7 @@ TEST(cardano_object_unref, decreasesTheReferenceCount)
 TEST(cardano_object_unref, freesTheObjectIfReferenceReachesZero)
 {
   // Arrange
-  cardano_object_t* object = cardano_object_new(free);
+  cardano_object_t* object = cardano_object_new(_cardano_free);
 
   // Act
   cardano_object_ref(object);
@@ -202,7 +203,7 @@ TEST(cardano_object_move, returnsNullIfObjectIsNull)
 TEST(cardano_object_move, decreasesTheReferenceCountWithoutDeletingTheObject)
 {
   // Arrange
-  cardano_object_t* object = cardano_object_new(free);
+  cardano_object_t* object = cardano_object_new(_cardano_free);
 
   // Act
   EXPECT_THAT(cardano_object_move(object), testing::Not((cardano_object_t*)nullptr));
@@ -231,7 +232,7 @@ TEST(cardano_object_refcount, returnsZeroIfObjectIsNull)
 TEST(cardano_object_get_last_error, returnsNullTerminatedMessage)
 {
   // Arrange
-  cardano_object_t* object  = cardano_object_new(free);
+  cardano_object_t* object  = cardano_object_new(_cardano_free);
   const char*       message = "This is a test message";
 
   // Act
@@ -273,7 +274,7 @@ TEST(cardano_object_set_last_error, doesNothingWhenObjectIsNull)
 TEST(cardano_object_set_last_error, doesNothingWhenWhenMessageIsNull)
 {
   // Arrange
-  cardano_object_t* object  = cardano_object_new(free);
+  cardano_object_t* object  = cardano_object_new(_cardano_free);
   const char*       message = nullptr;
 
   // Act

@@ -23,6 +23,8 @@
 
 #include "set.h"
 
+#include <cardano/allocators.h>
+#include <cardano/export.h>
 #include <cardano/object.h>
 
 #include <assert.h>
@@ -81,7 +83,7 @@ cardano_set_deallocate(void* object)
 
       cardano_object_unref(&(entry->object));
 
-      free(entry);
+      _cardano_free(entry);
 
       entry = next;
     }
@@ -89,7 +91,7 @@ cardano_set_deallocate(void* object)
     set->buckets[i] = NULL;
   }
 
-  free(set);
+  _cardano_free(set);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -97,15 +99,14 @@ cardano_set_deallocate(void* object)
 cardano_set_t*
 cardano_set_new(cardano_set_compare_item_t compare, cardano_set_hash_func_t hash)
 {
-  cardano_set_t* set = (cardano_set_t*)malloc(sizeof(cardano_set_t));
+  cardano_set_t* set = (cardano_set_t*)_cardano_malloc(sizeof(cardano_set_t));
 
   if (set == NULL)
   {
     return NULL;
   }
 
-  void* result = memset(set->buckets, 0, sizeof(set->buckets));
-  (void)result;
+  CARDANO_UNUSED(memset(set->buckets, 0, sizeof(set->buckets)));
 
   set->size               = 0;
   set->compare            = compare;
@@ -201,7 +202,8 @@ cardano_set_move(cardano_set_t* set)
   }
 
   cardano_object_t* object = cardano_object_move(&set->base);
-  (void)object;
+
+  CARDANO_UNUSED(object);
 
   return set;
 }
@@ -228,7 +230,7 @@ cardano_set_add(cardano_set_t* set, cardano_object_t* item)
     entry = &((*entry)->next);
   }
 
-  *entry = (cardano_set_entry_t*)malloc(sizeof(cardano_set_entry_t));
+  *entry = (cardano_set_entry_t*)_cardano_malloc(sizeof(cardano_set_entry_t));
 
   if (*entry == NULL)
   {
@@ -284,7 +286,7 @@ cardano_set_delete(cardano_set_t* set, cardano_object_t* item)
       *entry                        = (*entry)->next;
 
       cardano_object_unref(&(toDelete->object));
-      free(toDelete);
+      _cardano_free(toDelete);
 
       --set->size;
 
@@ -354,7 +356,7 @@ cardano_set_clear(cardano_set_t* set)
     {
       cardano_set_entry_t* next = entry->next;
       cardano_object_unref(&entry->object); // Assuming this is the correct function name.
-      free(entry);
+      _cardano_free(entry);
       entry = next;
     }
 

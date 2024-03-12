@@ -22,6 +22,8 @@
 /* INCLUDES ******************************************************************/
 
 #include "cbor_additional_info.h"
+
+#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_writer.h>
@@ -145,7 +147,7 @@ cardano_cbor_writer_deallocate(void* object)
     cardano_buffer_unref(&cbor_writer->buffer);
   }
 
-  free(cbor_writer);
+  _cardano_free(cbor_writer);
 }
 
 /* DECLARATIONS **************************************************************/
@@ -153,7 +155,7 @@ cardano_cbor_writer_deallocate(void* object)
 cardano_cbor_writer_t*
 cardano_cbor_writer_new(void)
 {
-  cardano_cbor_writer_t* obj = (cardano_cbor_writer_t*)malloc(sizeof(cardano_cbor_writer_t));
+  cardano_cbor_writer_t* obj = (cardano_cbor_writer_t*)_cardano_malloc(sizeof(cardano_cbor_writer_t));
 
   if (obj == NULL)
   {
@@ -167,7 +169,7 @@ cardano_cbor_writer_new(void)
 
   if (obj->buffer == NULL)
   {
-    free(obj);
+    _cardano_free(obj);
     return NULL;
   }
 
@@ -223,7 +225,8 @@ cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer)
   }
 
   cardano_object_t* object = cardano_object_move(&cbor_writer->base);
-  (void)object;
+
+  CARDANO_UNUSED(object);
 
   return cbor_writer;
 }
@@ -460,7 +463,7 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t s
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  (void)memcpy(data, cardano_buffer_get_data(writer->buffer), buffer_size);
+  CARDANO_UNUSED(memcpy(data, cardano_buffer_get_data(writer->buffer), buffer_size));
 
   *written = buffer_size;
 

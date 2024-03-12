@@ -21,10 +21,10 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/export.h>
 #include <cardano/object.h>
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "./config.h"
@@ -50,7 +50,8 @@ safe_string_copy(char* dest, const char* src, size_t max_dest_size)
 
   void* result = memcpy(dest, src, copy_size);
 
-  (void)result;
+  CARDANO_UNUSED(result);
+
   assert(result != NULL);
 
   dest[copy_size] = '\0';

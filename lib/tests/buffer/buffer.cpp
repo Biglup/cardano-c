@@ -23,6 +23,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 
 #include <gmock/gmock.h>
@@ -405,7 +406,7 @@ TEST(cardano_buffer_to_hex, convertBytesToHex)
 
   // Cleanup
   cardano_buffer_unref(&buffer);
-  free(encoded_hex);
+  _cardano_free(encoded_hex);
 }
 
 TEST(cardano_buffer_from_hex, whenGivenANullPtrReturnNull)

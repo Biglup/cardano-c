@@ -37,15 +37,14 @@ extern "C" {
 #endif
 
 #ifdef __GNUC__
-#define CARDANO_UNUSED(x) __attribute__((__unused__)) (x)
 #define CARDANO_NODISCARD __attribute__((warn_unused_result))
 #elif defined(_MSC_VER)
-#define CARDANO_UNUSED(x) __pragma(warning(suppress : 4100 4101))(x)
 #define CARDANO_NODISCARD
 #else
-#define CARDANO_UNUSED(x) (x)
 #define CARDANO_NODISCARD
 #endif
+
+#define CARDANO_UNUSED(x) (void)(x)
 
 #ifdef __cplusplus
 }

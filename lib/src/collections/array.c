@@ -23,6 +23,7 @@
 
 #include "array.h"
 
+#include <cardano/allocators.h>
 #include <cardano/object.h>
 
 #include <assert.h>
@@ -66,7 +67,7 @@ grow_array_if_needed(cardano_array_t* array)
   if ((array->size + 1U) >= array->capacity)
   {
     size_t             new_capacity = (size_t)ceil((float)array->capacity * (float)LIB_CARDANO_C_COLLECTION_GROW_FACTOR);
-    cardano_object_t** new_items    = (cardano_object_t**)realloc(array->items, new_capacity * sizeof(cardano_object_t*));
+    cardano_object_t** new_items    = (cardano_object_t**)_cardano_realloc(array->items, new_capacity * sizeof(cardano_object_t*));
 
     if (new_items == NULL)
     {
@@ -107,11 +108,11 @@ cardano_array_deallocate(void* object)
 
   if (array->items != NULL)
   {
-    free(array->items);
+    _cardano_free(array->items);
     array->items = NULL;
   }
 
-  free(array);
+  _cardano_free(array);
 }
 
 /**
@@ -158,18 +159,18 @@ insertion_sort(cardano_object_t** array, const size_t size, const cardano_array_
 cardano_array_t*
 cardano_array_new(const size_t capacity)
 {
-  cardano_array_t* array = (cardano_array_t*)malloc(sizeof(cardano_array_t));
+  cardano_array_t* array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
 
   if (array == NULL)
   {
     return NULL;
   }
 
-  array->items = (cardano_object_t**)malloc(capacity * sizeof(cardano_object_t*));
+  array->items = (cardano_object_t**)_cardano_malloc(capacity * sizeof(cardano_object_t*));
 
   if (array->items == NULL)
   {
-    free(array);
+    _cardano_free(array);
     return NULL;
   }
 
@@ -196,18 +197,18 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
     return NULL;
   }
 
-  cardano_array_t* array = (cardano_array_t*)malloc(sizeof(cardano_array_t));
+  cardano_array_t* array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
 
   if (array == NULL)
   {
     return NULL;
   }
 
-  array->items = (cardano_object_t**)malloc((lhs->size + rhs->size) * sizeof(cardano_object_t*));
+  array->items = (cardano_object_t**)_cardano_malloc((lhs->size + rhs->size) * sizeof(cardano_object_t*));
 
   if (array->items == NULL)
   {
-    free(array);
+    _cardano_free(array);
     return NULL;
   }
 
@@ -273,7 +274,7 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
     return NULL;
   }
 
-  cardano_object_t** slice_items = (cardano_object_t**)malloc(slice_size * sizeof(cardano_object_t*));
+  cardano_object_t** slice_items = (cardano_object_t**)_cardano_malloc(slice_size * sizeof(cardano_object_t*));
 
   if (slice_items == NULL)
   {
@@ -287,7 +288,7 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
     slice_items[i] = item;
   }
 
-  cardano_array_t* sliced_array = (cardano_array_t*)malloc(sizeof(cardano_array_t));
+  cardano_array_t* sliced_array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
 
   if (sliced_array == NULL)
   {
@@ -296,7 +297,7 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
       cardano_object_unref(&slice_items[i]);
     }
 
-    free(slice_items);
+    _cardano_free(slice_items);
     return NULL;
   }
 
@@ -360,7 +361,8 @@ cardano_array_move(cardano_array_t* array)
   }
 
   cardano_object_t* object = cardano_object_move(&array->base);
-  (void)object;
+
+  CARDANO_UNUSED(object);
 
   return array;
 }
@@ -521,7 +523,7 @@ cardano_array_filter(const cardano_array_t* array, cardano_array_unary_predicate
     if (predicate(item, context))
     {
       size_t new_size = cardano_array_add(filtered_array, item);
-      (void)new_size;
+      CARDANO_UNUSED(new_size);
     }
   }
 
