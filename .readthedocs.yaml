@@ -22,8 +22,11 @@ build:
     post_build:
       - pwd
       - ls -R
-      - find ../../../_readthedocs/html -type f -exec sed -i 's/C++/C/g' {} \;
-      - find ../../../_readthedocs/html -type f -exec sed -i 's/CPP/C/g' {} \;
+      - find ./_readthedocs/html -type f -exec sed -i 's/C++/C/g' {} \;
+      - find ./_readthedocs/html -type f -exec sed -i 's/CPP/C/g' {} \;
+      - cd ../../../
+      - pwd
+      - ls -R
 
 sphinx:
   configuration: build/release/doc/conf.py
