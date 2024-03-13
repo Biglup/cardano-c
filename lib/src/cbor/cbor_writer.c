@@ -38,7 +38,7 @@
 /* STRUCTURES ****************************************************************/
 
 /**
- * Represents a CBOR writer object.
+ * \brief A simple writer for Concise Binary Object Representation (CBOR) encoded data.
  */
 typedef struct cardano_cbor_writer_t
 {
@@ -49,10 +49,24 @@ typedef struct cardano_cbor_writer_t
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * Writes a typed value to the buffer.
+ * \brief Writes a value with a specified CBOR major type to a buffer.
  *
- * \param major_type The major type of the value.
- * \param value The value.
+ * This function serializes a given value into a format specified by the CBOR
+ * (Concise Binary Object Representation) encoding standard, targeting the provided
+ * buffer. The major type parameter determines how the value is interpreted and encoded
+ * according to CBOR's major type specification.
+ *
+ * \param buffer A pointer to the \c cardano_buffer_t structure representing the target buffer
+ *               where the encoded data will be written.
+ * \param major_type The CBOR major type of the value to write. This parameter defines the data type
+ *                   and format of the value in the CBOR encoding (e.g., unsigned integer, byte string, etc.).
+ *                   It must be one of the values defined by the \c cbor_major_type_t enumeration.
+ * \param value The value to be encoded and written to the buffer. The function interprets and encodes
+ *              this value according to the specified CBOR major type.
+ *
+ * \return A \c cardano_error_t indicating the result of the operation. Returns \c CARDANO_SUCCESS if
+ *         the value is successfully encoded and written to the buffer. If an error occurs during the
+ *         operation, a corresponding error code is returned, indicating the failure reason.
  */
 static cardano_error_t
 write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, const uint64_t value)

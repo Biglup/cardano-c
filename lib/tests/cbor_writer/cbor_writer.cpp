@@ -26,6 +26,8 @@
 #include <cardano/allocators.h>
 #include <cardano/cbor/cbor_writer.h>
 
+#include "../allocators_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -132,13 +134,46 @@ TEST(cardano_cbor_writer_ref, increasesTheReferenceCount)
   cardano_cbor_writer_unref(&writer);
 }
 
-TEST(cardano_cbor_writer_ref, returnZeroIfGivenANullPtr)
+TEST(cardano_cbor_writer_new, returnsNullIfMemoryAllocationFails)
 {
+  // Arrange
+  cardano_cbor_writer_t* writer = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
   // Act
-  size_t ref_count = cardano_cbor_writer_refcount(nullptr);
+  writer = cardano_cbor_writer_new();
 
   // Assert
-  EXPECT_EQ(ref_count, 0);
+  EXPECT_EQ(writer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_writer_new, returnsNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  writer = cardano_cbor_writer_new();
+
+  // Assert
+  EXPECT_EQ(writer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_writer_ref, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_cbor_writer_ref(nullptr);
 }
 
 TEST(cardano_cbor_writer_unref, doesntCrashIfGivenAPtrToANullPtr)
@@ -215,6 +250,15 @@ TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObjec
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_refcount, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t ref_count = cardano_cbor_writer_refcount(nullptr);
+
+  // Assert
+  EXPECT_EQ(ref_count, 0);
 }
 
 TEST(cardano_cbor_writer_move, returnsNullIfGivenANullPtr)
@@ -778,6 +822,42 @@ TEST(cardano_cbor_writer_write_encoded, writesEncodedValues)
   // Cleanup
   cardano_cbor_writer_unref(&writer);
   free(encoded_hex);
+}
+
+TEST(cardano_cbor_writer_encode_hex, returnsErrorIfGivenANullWriter)
+{
+  // Arrange
+  char buffer[10] = { 0 };
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_hex(nullptr, buffer, sizeof(buffer));
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_writer_encode_hex, returnsErrorIfGivenNullData)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_hex(writer, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_get_hex_size, returnsZeroIfGivenANullWriter)
+{
+  // Act
+  size_t hex_size = cardano_cbor_writer_get_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(hex_size, 0);
 }
 
 TEST(cardano_cbor_writer_write_byte_string, returnsErrorIfGivenANullWriter)

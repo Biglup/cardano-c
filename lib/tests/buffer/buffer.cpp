@@ -26,6 +26,8 @@
 #include <cardano/allocators.h>
 #include <cardano/buffer.h>
 
+#include "../allocators_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* UNIT TESTS ****************************************************************/
@@ -47,10 +49,44 @@ TEST(cardano_buffer_new, createsANewBufferWithTheGivenCapacity)
   cardano_buffer_unref(&buffer);
 }
 
+TEST(cardano_buffer_new, returnNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer = nullptr;
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_new(1000);
+
+  // Assert
+  EXPECT_EQ(buffer, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_new, returnNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer = nullptr;
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_new(1000);
+
+  // Assert
+  EXPECT_EQ(buffer, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_buffer_new_from, returnsNullIfGivenNull)
 {
   // Arrange
   cardano_buffer_t* buffer = nullptr;
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   buffer = cardano_buffer_new_from(nullptr, 8);
@@ -75,6 +111,40 @@ TEST(cardano_buffer_new_from, createsANewBufferWithTheGivenCapacity)
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_new_from, returnNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer  = nullptr;
+  byte_t            data[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_new_from(&data[0], 8);
+
+  // Assert
+  EXPECT_EQ(buffer, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_new_from, returnNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer  = nullptr;
+  byte_t            data[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_new_from(&data[0], 8);
+
+  // Assert
+  EXPECT_EQ(buffer, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_buffer_ref, increasesTheReferenceCount)
@@ -294,6 +364,67 @@ TEST(cardano_buffer_concat, returnsTheConcatenatedBuffer)
   cardano_buffer_unref(&concatenated);
 }
 
+TEST(cardano_buffer_concat, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* lhs = cardano_buffer_new(4);
+  cardano_buffer_t* rhs = cardano_buffer_new(4);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_buffer_t* concatenated = cardano_buffer_concat(lhs, rhs);
+
+  // Assert
+  ASSERT_EQ(concatenated, (cardano_buffer_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&lhs);
+  cardano_buffer_unref(&rhs);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_concat, returnsNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* lhs = cardano_buffer_new(4);
+  cardano_buffer_t* rhs = cardano_buffer_new(4);
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_buffer_t* concatenated = cardano_buffer_concat(lhs, rhs);
+
+  // Assert
+  ASSERT_EQ(concatenated, (cardano_buffer_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&lhs);
+  cardano_buffer_unref(&rhs);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_slice, returnsNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer = cardano_buffer_new(4);
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_buffer_t* slice = cardano_buffer_slice(buffer, 0, 4);
+
+  // Assert
+  ASSERT_EQ(slice, (cardano_buffer_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_buffer_slice, bufferIsNull)
 {
   // Arrange
@@ -358,6 +489,68 @@ TEST(cardano_buffer_slice, returnNullIfEndLessThanStart)
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_slice, returnNullIfStartEqualsEnd)
+{
+  // Arrange
+  byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
+
+  cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
+
+  // Act
+  cardano_buffer_t* slice = cardano_buffer_slice(buffer, 3, 3);
+
+  // Assert
+  ASSERT_EQ(slice, nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_slice, returnNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
+
+  cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_buffer_t* slice = cardano_buffer_slice(buffer, 1, 4);
+
+  // Assert
+  ASSERT_EQ(slice, nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_slice, returnNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
+
+  cardano_buffer_t* buffer = cardano_buffer_new(sizeof(actual));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &actual[0], sizeof(actual)));
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_buffer_t* slice = cardano_buffer_slice(buffer, 1, 4);
+
+  // Assert
+  ASSERT_EQ(slice, nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_buffer_slice, returnsTheRightSlice)
@@ -534,6 +727,44 @@ TEST(cardano_buffer_from_hex, convertHexToBytes)
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_from_hex, returnNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer     = nullptr;
+  const char*       hex_string = "aabbccddeeff00112233445566778899";
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_from_hex(hex_string, 32);
+
+  // Assert
+  ASSERT_EQ(buffer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_from_hex, returnNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_buffer_t* buffer     = nullptr;
+  const char*       hex_string = "aabbccddeeff00112233445566778899";
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  buffer = cardano_buffer_from_hex(hex_string, 32);
+
+  // Assert
+  ASSERT_EQ(buffer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_buffer_write, returnsErrorIfGivenNullBuffer)
@@ -1787,6 +2018,603 @@ TEST(cardano_buffer_set_last_error, doesNothingWhenWhenMessageIsNull)
 
   // Assert
   EXPECT_STREQ(cardano_buffer_get_last_error(buffer), "");
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_write, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+  byte_t            data[] = { 0x01, 0x02, 0x03, 0x04 };
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write(buffer, data, sizeof(data));
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint16_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint16_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint32_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint32_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint64_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint64_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int16_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int16_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int32_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int32_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int64_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int64_le(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_float_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_float_le(buffer, 1.0f);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_double_le, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_double_le(buffer, 1.0);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint16_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint16_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint32_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint32_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_uint64_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_uint64_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int16_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int16_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int32_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int32_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_int64_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_int64_be(buffer, 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_float_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_float_be(buffer, 1.0f);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_write_double_be, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  reset_allocators_run_count();
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_buffer_write_double_be(buffer, 1.0);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_read_uint16_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint16_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint16_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_uint32_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint32_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint32_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_uint64_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint64_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint64_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int16_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int16_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int16_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int32_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int32_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int32_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int64_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int64_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int64_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_float_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  float             value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_float_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_double_le, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  double            value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_double_le(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_uint16_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint16_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint16_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_uint32_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint32_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint32_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_uint64_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  uint64_t          value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_uint64_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int16_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int16_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int16_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int32_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int32_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int32_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_int64_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  int64_t           value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_int64_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_float_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  float             value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_float_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_read_double_be, returnsBufferInsufficientIfTriesToReadMoreThanAvailable)
+{
+  // Arrange
+  double            value  = 0;
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  cardano_error_t result = cardano_buffer_read_double_be(buffer, &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);

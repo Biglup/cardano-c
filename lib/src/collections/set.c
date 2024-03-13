@@ -37,12 +37,24 @@ static const size_t BUCKET_COUNT = 128U;
 
 /* STRUCTS *******************************************************************/
 
+/**
+ * \brief Represents an entry in a Cardano set.
+ *
+ * This structure is a linked list node that contains a pointer to the stored object
+ * and a pointer to the next entry in the bucket.
+ */
 typedef struct cardano_set_entry_t
 {
     cardano_object_t*           object;
     struct cardano_set_entry_t* next;
 } cardano_set_entry_t;
 
+/**
+ * \brief Represents a set data structure in the Cardano C library.
+ *
+ * This structure provides a hash set implementation. It stores unique elements in an array of
+ * linked lists (buckets) to manage collisions.
+ */
 typedef struct cardano_set_t
 {
     cardano_object_t           base;
@@ -137,11 +149,7 @@ cardano_set_from_array(cardano_array_t* array, cardano_set_compare_item_t compar
   {
     cardano_object_t* item = cardano_object_move(cardano_array_get(array, i));
 
-    if (item == NULL)
-    {
-      cardano_set_unref(&set);
-      return NULL;
-    }
+    assert(item != NULL);
 
     if (cardano_set_add(set, item) == 0U)
     {
