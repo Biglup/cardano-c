@@ -20,7 +20,7 @@ The keywords *MUST*, *MUST NOT*, *REQUIRED*, *SHALL*, *SHALL NOT*, *SHOULD*, *SH
 Here are listed most obvious and important general rules. Please check them carefully before you continue with other chapters.
 
 - `clang-format` SHOULD be used with formatting file attached to this repository (version `15.x` is a minimum)
-- Use `C11` standard
+- Use `C99` standard
 - Do not use tabs, use spaces instead
 - Use `4` spaces per indent level
 - Use `1` space between keyword and opening bracket
