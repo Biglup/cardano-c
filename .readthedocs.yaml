@@ -20,8 +20,8 @@ build:
     post_install:
       - ./scripts/create-docs-makefiles.sh
     post_build:
-      - find ../../../_readthedocs/html -type f -exec sed -i 's/C++/C/g' {} \
-      - find ../../../_readthedocs/html -type f -exec sed -i 's/CPP/C/g' {} \
+      - find ../../../_readthedocs/html -type f -exec sed -i 's/C++/C/g' {} \;
+      - find ../../../_readthedocs/html -type f -exec sed -i 's/CPP/C/g' {} \;
 
 sphinx:
   configuration: build/release/doc/conf.py
