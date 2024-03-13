@@ -60,4 +60,9 @@ CMAKE_OPTIONS="${CMAKE_USER_OPTIONS} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_
 
 echo cmake ${CMAKE_OPTIONS} ${VERSION} ${CMAKELISTS_DIR}
 cmake ${CMAKE_OPTIONS} ${VERSION} ${CMAKELISTS_DIR}
+
 make doc
+
+# doxygen flags C docs as CPP, so we need to change it to C
+find ./build/release/doc/html -type f -exec sed -i 's/C++/C/g' {} \;
+find ./build/release/doc/html -type f -exec sed -i 's/CPP/C/g' {} \;
