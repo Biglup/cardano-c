@@ -338,35 +338,58 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
   return buffer;
 }
 
-char*
-cardano_buffer_to_hex(const cardano_buffer_t* buffer)
+size_t
+cardano_buffer_get_hex_size(const cardano_buffer_t* buffer)
+{
+  static const size_t null_termination_size = 1;
+  static const size_t byte_size_in_hex      = 2;
+
+  if (buffer == NULL)
+  {
+    return 0;
+  }
+
+  return (buffer->size * byte_size_in_hex) + null_termination_size;
+}
+
+cardano_error_t
+cardano_buffer_to_hex(const cardano_buffer_t* buffer, char* dest, const size_t dest_size)
 {
   if (buffer == NULL)
   {
-    return NULL;
+    return CARDANO_POINTER_IS_NULL;
   }
 
   if (buffer->data == NULL)
   {
-    return NULL;
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (dest == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  const size_t hex_string_size = cardano_buffer_get_hex_size(buffer);
+
+  if (dest_size < hex_string_size)
+  {
+    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
   int init_result = sodium_init();
 
   if (init_result == -1)
   {
-    return NULL;
+    return CARDANO_ERROR_GENERIC;
   }
 
-  static const size_t null_termination_size = 1;
-  static const size_t byte_size_in_hex      = 2;
+  if (sodium_bin2hex(dest, dest_size, buffer->data, buffer->size) < 0)
+  {
+    return CARDANO_ERROR_GENERIC;
+  }
 
-  size_t hex_string_size = (buffer->size * byte_size_in_hex) + null_termination_size;
-  char*  hex_string      = (char*)_cardano_malloc(hex_string_size);
-
-  // TODO: Make this function take a pointer to preallocated memory and write to it.
-  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-  return sodium_bin2hex(hex_string, hex_string_size, buffer->data, buffer->size);
+  return CARDANO_SUCCESS;
 }
 
 void

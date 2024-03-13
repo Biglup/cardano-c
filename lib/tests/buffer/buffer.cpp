@@ -380,33 +380,117 @@ TEST(cardano_buffer_slice, returnsTheRightSlice)
   cardano_buffer_unref(&slice);
 }
 
-TEST(cardano_buffer_to_hex, whenGivenANullPtrReturnNull)
+TEST(cardano_buffer_to_hex, whenGivenANullPtrReturnError)
 {
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
   // Act
-  char* encoded_hex = cardano_buffer_to_hex(nullptr);
+  const cardano_error_t error = cardano_buffer_to_hex(buffer, nullptr, 0);
 
   // Assert
-  ASSERT_EQ(encoded_hex, nullptr);
+  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_buffer_to_hex, whenGivenADestNullPtrReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_hex(buffer, nullptr, 0);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_to_hex, whenGivenAnEmptyBufferReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(0);
+  char              dest[1] = { 0x00 };
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_hex(buffer, dest, 1);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_STREQ(dest, "");
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_to_hex, whenSizeIsInsuficientReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(1);
+  char              dest[1] = { 0x00 };
+
+  ASSERT_EQ(cardano_buffer_write(buffer, (byte_t*)"A", 1), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_hex(buffer, dest, 1);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
 }
 
 TEST(cardano_buffer_to_hex, convertBytesToHex)
 {
   // Arrange
-  std::string       hex          = "aabbccddeeff00112233445566778899";
-  byte_t            expected[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
-  cardano_buffer_t* buffer       = cardano_buffer_new(16);
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+  byte_t            bytes[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
+  const char*       expected  = "aabbccddeeff00112233445566778899";
 
-  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &expected[0], 16));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
 
   // Act
-  char* encoded_hex = cardano_buffer_to_hex(buffer);
+  char                  dest[33] = { 0x00 };
+  const cardano_error_t error    = cardano_buffer_to_hex(buffer, dest, 33);
 
   // Assert
-  ASSERT_EQ(std::string(hex), std::string(encoded_hex));
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_STREQ(expected, dest);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
-  _cardano_free(encoded_hex);
+}
+
+TEST(cardano_buffer_get_hex_size, whenGivenANullPtrReturnZero)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  const size_t size = cardano_buffer_get_hex_size(buffer);
+
+  // Assert
+  ASSERT_EQ(size, 0);
+}
+
+TEST(cardano_buffer_get_hex_size, returnsTheRightSize)
+{
+  // Arrange
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+  byte_t            bytes[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
+
+  // Act
+  const size_t size = cardano_buffer_get_hex_size(buffer);
+
+  // Assert
+  ASSERT_EQ(size, 33);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
 }
 
 TEST(cardano_buffer_from_hex, whenGivenANullPtrReturnNull)

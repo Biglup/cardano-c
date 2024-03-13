@@ -470,10 +470,31 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t s
   return CARDANO_SUCCESS;
 }
 
-char*
-cardano_cbor_writer_encode_hex(cardano_cbor_writer_t* writer)
+size_t
+cardano_cbor_writer_get_hex_size(const cardano_cbor_writer_t* writer)
 {
-  return cardano_buffer_to_hex(writer->buffer);
+  if (writer == NULL)
+  {
+    return 0U;
+  }
+
+  return cardano_buffer_get_hex_size(writer->buffer);
+}
+
+cardano_error_t
+cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, size_t dest_size)
+{
+  if (writer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (dest == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  return cardano_buffer_to_hex(writer->buffer, dest, dest_size);
 }
 
 cardano_error_t

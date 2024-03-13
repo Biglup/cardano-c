@@ -22,7 +22,7 @@ Here are listed most obvious and important general rules. Please check them care
 - `clang-format` SHOULD be used with formatting file attached to this repository (version `15.x` is a minimum)
 - Use `C99` standard
 - Do not use tabs, use spaces instead
-- Use `4` spaces per indent level
+- Use `2` spaces per indent level
 - Use `1` space between keyword and opening bracket
 ```c
 /* OK */

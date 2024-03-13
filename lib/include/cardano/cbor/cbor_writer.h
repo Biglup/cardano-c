@@ -764,39 +764,88 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size, size_t* written);
 
 /**
- * \brief Creates a new hex string with the encoded data from the writer.
+ * \brief Calculates the required buffer size for the hex string representation of the encoded data.
  *
- * This function encodes the data prepared in the writer's internal context into a hex string. It's useful for debugging,
- * logging, or any scenario where viewing the encoded data as a hex string is beneficial. The function dynamically allocates
- * memory for the hex string, which the caller is responsible for freeing.
+ * This function determines the size of the buffer needed to store the hexadecimal string representation
+ * of the data encoded by the writer. This size includes space for the null terminator. It is intended to
+ * be used before calling `cardano_cbor_writer_encode_hex` to allocate a buffer of appropriate size.
  *
- * \param[in] writer The source writer whose data will be encoded into a hex string.
+ * \param[in] writer The source writer whose encoded data's hex string size is being calculated.
  *
- * \return A pointer to a null-terminated char string containing the hex representation of the encoded data. Returns NULL if
- *         memory allocation fails. The caller assumes ownership of the returned string and must free it when no longer needed.
+ * \return The size of the buffer required to store the hex string representation of the writer's
+ * encoded data, including the null terminator. Returns 0 if the writer is NULL or contains no data.
  *
+ * Example usage:
  * \code{.c}
  * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
  *
  * // Assume writer has been used to encode some CBOR data here
  *
- * char* hex_string = cardano_cbor_writer_encode_hex(writer);
+ * // Calculate the required size for the hex string, including the null terminator
+ * size_t required_size = cardano_cbor_writer_get_hex_size(writer);
+ *
+ * // Now required_size can be used to allocate a buffer of appropriate size
+ * char* hex_string = (char*)malloc(required_size);
  *
  * if (hex_string != NULL)
  * {
+ *   if (cardano_cbor_writer_encode_hex(writer, hex_string, required_size) == CARDANO_SUCCESS)
+ *   {
  *     printf("Encoded CBOR data as hex: %s\n", hex_string);
- *     _cardano_free(hex_string); // Free the allocated string after use
- * }
- * else
- * {
- *     printf("Failed to encode CBOR data as hex.\n");
+ *   }
+ *
+ *   free(hex_string); // Free the allocated string after use
  * }
  *
  * cardano_cbor_writer_unref(&writer); // Properly dispose of the writer after use
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT char* cardano_cbor_writer_encode_hex(cardano_cbor_writer_t* writer);
+CARDANO_EXPORT size_t cardano_cbor_writer_get_hex_size(const cardano_cbor_writer_t* writer);
+
+/**
+ * \brief Writes the encoded data from the writer into a provided buffer as a hex string.
+ *
+ * This function converts the encoded data prepared in the writer's internal context into a
+ * hexadecimal string representation and writes it into the provided buffer. This approach
+ * is useful for debugging, logging, or any scenario where viewing the encoded data as a
+ * hex string is beneficial. The function requires the caller to allocate a buffer of
+ * appropriate size beforehand, based on the size obtained from \ref cardano_cbor_writer_get_hex_size.
+ *
+ * \param[in] writer The source writer whose data will be encoded into a hex string.
+ * \param[out] dest The destination buffer where the hex string will be written.
+ * \param[in] dest_size The size of the destination buffer, including space for the null terminator.
+ * The required size can be obtained using \ref cardano_cbor_writer_get_hex_size.
+ *
+ * \return A `cardano_error_t` indicating the result of the operation: `CARDANO_SUCCESS` on success,
+ * or an appropriate error code indicating the failure reason. Refer to \ref cardano_error_t documentation
+ * for details on possible error codes.
+ *
+ * \code{.c}
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * // Assume writer has been used to encode some CBOR data here
+ *
+ * size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+ * char* hex_string = (char*)malloc(hex_size);
+ * cardano_error_t result = cardano_cbor_writer_encode_hex(writer, hex_string, hex_size);
+ *
+ * if (hex_string != NULL && result == CARDANO_SUCCESS)
+ * {
+ *   printf("Encoded CBOR data as hex: %s\n", hex_string);
+ * }
+ * else
+ * {
+ *   printf("Failed to encode CBOR data as hex or allocate memory.\n");
+ * }
+ *
+ * free(hex_string); // Free the allocated string after use
+ *
+ * cardano_cbor_writer_unref(&writer); // Properly dispose of the writer after use
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, size_t dest_size);
 
 /**
  * \brief Resets the writer, clearing all written data.
