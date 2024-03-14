@@ -78,6 +78,7 @@ arch.c
 doc/doxyfile
 *.deb
 
+scripts/misra/misra2012
 stdout*
 stderr*
 .cache/
