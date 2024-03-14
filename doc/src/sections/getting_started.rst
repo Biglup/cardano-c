@@ -80,7 +80,7 @@ You can verify that everything has been set up properly by creating a file with 
 
     int main(int argc, char * argv[])
     {
-        printf("Hello from libcardano-c %s\n", LIB_CARDANO_C_VERSION);
+        printf("Hello from libcardano-c %s\n", cardano_get_lib_version());
     }
 
 

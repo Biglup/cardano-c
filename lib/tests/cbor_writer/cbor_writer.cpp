@@ -26,6 +26,8 @@
 #include <cardano/allocators.h>
 #include <cardano/cbor/cbor_writer.h>
 
+#include "../allocators_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -41,9 +43,14 @@ static void
 test_unsigned_int(cardano_cbor_writer_t* writer, uint64_t value, const char* hex)
 {
   EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, value), CARDANO_SUCCESS);
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
   ASSERT_EQ(std::string(encoded_hex), hex);
-  _cardano_free(encoded_hex);
+
+  free(encoded_hex);
+
   EXPECT_EQ(cardano_cbor_writer_reset(writer), CARDANO_SUCCESS);
 }
 
@@ -58,9 +65,14 @@ static void
 test_signed_int(cardano_cbor_writer_t* writer, int64_t value, const char* hex)
 {
   EXPECT_EQ(cardano_cbor_writer_write_signed_int(writer, value), CARDANO_SUCCESS);
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
-  EXPECT_EQ(std::string(encoded_hex), hex);
-  _cardano_free(encoded_hex);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
+  ASSERT_EQ(std::string(encoded_hex), hex);
+
+  free(encoded_hex);
+
   EXPECT_EQ(cardano_cbor_writer_reset(writer), CARDANO_SUCCESS);
 }
 
@@ -75,9 +87,14 @@ static void
 test_text_string(cardano_cbor_writer_t* writer, const char* text, const char* hex)
 {
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, text, strlen(text)), CARDANO_SUCCESS);
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
-  EXPECT_EQ(std::string(encoded_hex), hex);
-  _cardano_free(encoded_hex);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
+  ASSERT_EQ(std::string(encoded_hex), hex);
+
+  free(encoded_hex);
+
   EXPECT_EQ(cardano_cbor_writer_reset(writer), CARDANO_SUCCESS);
 }
 
@@ -117,13 +134,46 @@ TEST(cardano_cbor_writer_ref, increasesTheReferenceCount)
   cardano_cbor_writer_unref(&writer);
 }
 
-TEST(cardano_cbor_writer_ref, returnZeroIfGivenANullPtr)
+TEST(cardano_cbor_writer_new, returnsNullIfMemoryAllocationFails)
 {
+  // Arrange
+  cardano_cbor_writer_t* writer = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
   // Act
-  size_t ref_count = cardano_cbor_writer_refcount(nullptr);
+  writer = cardano_cbor_writer_new();
 
   // Assert
-  EXPECT_EQ(ref_count, 0);
+  EXPECT_EQ(writer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_writer_new, returnsNullIfMemoryAllocationEventuallyFails)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  writer = cardano_cbor_writer_new();
+
+  // Assert
+  EXPECT_EQ(writer, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_writer_ref, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_cbor_writer_ref(nullptr);
 }
 
 TEST(cardano_cbor_writer_unref, doesntCrashIfGivenAPtrToANullPtr)
@@ -202,6 +252,15 @@ TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObjec
   cardano_cbor_writer_unref(&writer);
 }
 
+TEST(cardano_cbor_writer_refcount, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t ref_count = cardano_cbor_writer_refcount(nullptr);
+
+  // Assert
+  EXPECT_EQ(ref_count, 0);
+}
+
 TEST(cardano_cbor_writer_move, returnsNullIfGivenANullPtr)
 {
   // Act
@@ -261,14 +320,18 @@ TEST(cardano_cbor_writer_write_tag, writesNestedTaggedValues)
   EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "2013-03-21T20:04:00Z", strlen("2013-03-21T20:04:00Z")), CARDANO_SUCCESS);
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   ASSERT_EQ(std::string(encoded_hex), "c0c0c074323031332d30332d32315432303a30343a30305a");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_tag, writesSingleTaggedUnixTimeSeconds)
@@ -279,7 +342,10 @@ TEST(cardano_cbor_writer_write_tag, writesSingleTaggedUnixTimeSeconds)
   // Act
   cardano_error_t write_result      = cardano_cbor_writer_write_tag(writer, CBOR_TAG_UNIX_TIME_SECONDS);
   cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, 1363896240);
-  char*           encoded_hex       = cardano_cbor_writer_encode_hex(writer);
+  const size_t    hex_string_size   = cardano_cbor_writer_get_hex_size(writer);
+  char*           encoded_hex       = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -399,12 +465,16 @@ TEST(cardano_cbor_writer_write_start_array, writeAnIndefiniteSizeArrayWithSevera
 
   EXPECT_EQ(cardano_cbor_writer_write_end_array(writer), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
+
   ASSERT_EQ(std::string(encoded_hex), "9f0102030405060708090a0b0c0d0e0f101112131415161718181819ff");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, returnsNullIfGivenANullPtr)
@@ -424,7 +494,10 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithOneUnsignedNumber)
   // Act
   cardano_error_t write_result      = cardano_cbor_writer_write_start_array(writer, 1);
   cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, 42);
-  char*           encoded_hex       = cardano_cbor_writer_encode_hex(writer);
+  const size_t    hex_string_size   = cardano_cbor_writer_get_hex_size(writer);
+  char*           encoded_hex       = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -433,7 +506,7 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithOneUnsignedNumber)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, writeArrayWithSeveralUnsignedNumber)
@@ -449,7 +522,10 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithSeveralUnsignedNumber)
     EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, i + 1), CARDANO_SUCCESS);
   }
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -457,7 +533,7 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithSeveralUnsignedNumber)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, writeArrayWithMixedTypes)
@@ -474,7 +550,10 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithMixedTypes)
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "", strlen("")), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_byte_string(writer, array, sizeof(array)), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -482,7 +561,7 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithMixedTypes)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, writeArrayOfStrings)
@@ -497,7 +576,10 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayOfStrings)
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "ipsum", strlen("ipsum")), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "dolor", strlen("dolor")), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -505,7 +587,7 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayOfStrings)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, writeArrayWithSimpleValues)
@@ -521,7 +603,10 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithSimpleValues)
   EXPECT_EQ(cardano_cbor_writer_write_null(writer), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_undefined(writer), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -529,7 +614,7 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithSimpleValues)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_array, writeArrayWithNestedArrays)
@@ -547,14 +632,17 @@ TEST(cardano_cbor_writer_write_start_array, writeArrayWithNestedArrays)
   EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, 4), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, 5), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   ASSERT_EQ(std::string(encoded_hex), "8301820203820405");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_byte_string, writeByteString)
@@ -564,8 +652,11 @@ TEST(cardano_cbor_writer_write_byte_string, writeByteString)
   byte_t                 array[4] = { 0x01, 0x02, 0x03, 0x04 };
 
   // Act
-  cardano_error_t write_result = cardano_cbor_writer_write_byte_string(writer, array, sizeof(array));
-  char*           encoded_hex  = cardano_cbor_writer_encode_hex(writer);
+  cardano_error_t write_result    = cardano_cbor_writer_write_byte_string(writer, array, sizeof(array));
+  const size_t    hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*           encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -573,7 +664,7 @@ TEST(cardano_cbor_writer_write_byte_string, writeByteString)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_unsigned_int, writeUnsignedIntegers)
@@ -665,14 +756,17 @@ TEST(cardano_cbor_writer_write_start_map, carnWriteFixedLengthMapsWithNestedType
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "z", 1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, 0), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   ASSERT_EQ(std::string(encoded_hex), "a26161a102036162a26178206179a1617a00");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_start_map, canWriteUndefiniteLenghtMaps)
@@ -695,14 +789,17 @@ TEST(cardano_cbor_writer_write_start_map, canWriteUndefiniteLenghtMaps)
 
   EXPECT_EQ(cardano_cbor_writer_write_end_map(writer), CARDANO_SUCCESS);
 
-  char* encoded_hex = cardano_cbor_writer_encode_hex(writer);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   ASSERT_EQ(std::string(encoded_hex), "bf6161614161626142616361436164614461656145ff");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
 }
 
 TEST(cardano_cbor_writer_write_encoded, writesEncodedValues)
@@ -712,8 +809,11 @@ TEST(cardano_cbor_writer_write_encoded, writesEncodedValues)
   byte_t                 array[4] = { 0x01, 0x02, 0x03, 0x04 };
 
   // Act
-  cardano_error_t write_result = cardano_cbor_writer_write_encoded(writer, array, sizeof(array));
-  char*           encoded_hex  = cardano_cbor_writer_encode_hex(writer);
+  cardano_error_t write_result    = cardano_cbor_writer_write_encoded(writer, array, sizeof(array));
+  const size_t    hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*           encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -721,7 +821,43 @@ TEST(cardano_cbor_writer_write_encoded, writesEncodedValues)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
-  _cardano_free(encoded_hex);
+  free(encoded_hex);
+}
+
+TEST(cardano_cbor_writer_encode_hex, returnsErrorIfGivenANullWriter)
+{
+  // Arrange
+  char buffer[10] = { 0 };
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_hex(nullptr, buffer, sizeof(buffer));
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_writer_encode_hex, returnsErrorIfGivenNullData)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_hex(writer, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_get_hex_size, returnsZeroIfGivenANullWriter)
+{
+  // Act
+  size_t hex_size = cardano_cbor_writer_get_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(hex_size, 0);
 }
 
 TEST(cardano_cbor_writer_write_byte_string, returnsErrorIfGivenANullWriter)

@@ -38,7 +38,7 @@
 /* STRUCTURES ****************************************************************/
 
 /**
- * Represents a CBOR writer object.
+ * \brief A simple writer for Concise Binary Object Representation (CBOR) encoded data.
  */
 typedef struct cardano_cbor_writer_t
 {
@@ -49,10 +49,24 @@ typedef struct cardano_cbor_writer_t
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * Writes a typed value to the buffer.
+ * \brief Writes a value with a specified CBOR major type to a buffer.
  *
- * \param major_type The major type of the value.
- * \param value The value.
+ * This function serializes a given value into a format specified by the CBOR
+ * (Concise Binary Object Representation) encoding standard, targeting the provided
+ * buffer. The major type parameter determines how the value is interpreted and encoded
+ * according to CBOR's major type specification.
+ *
+ * \param buffer A pointer to the \c cardano_buffer_t structure representing the target buffer
+ *               where the encoded data will be written.
+ * \param major_type The CBOR major type of the value to write. This parameter defines the data type
+ *                   and format of the value in the CBOR encoding (e.g., unsigned integer, byte string, etc.).
+ *                   It must be one of the values defined by the \c cbor_major_type_t enumeration.
+ * \param value The value to be encoded and written to the buffer. The function interprets and encodes
+ *              this value according to the specified CBOR major type.
+ *
+ * \return A \c cardano_error_t indicating the result of the operation. Returns \c CARDANO_SUCCESS if
+ *         the value is successfully encoded and written to the buffer. If an error occurs during the
+ *         operation, a corresponding error code is returned, indicating the failure reason.
  */
 static cardano_error_t
 write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, const uint64_t value)
@@ -470,10 +484,31 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t s
   return CARDANO_SUCCESS;
 }
 
-char*
-cardano_cbor_writer_encode_hex(cardano_cbor_writer_t* writer)
+size_t
+cardano_cbor_writer_get_hex_size(const cardano_cbor_writer_t* writer)
 {
-  return cardano_buffer_to_hex(writer->buffer);
+  if (writer == NULL)
+  {
+    return 0U;
+  }
+
+  return cardano_buffer_get_hex_size(writer->buffer);
+}
+
+cardano_error_t
+cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, size_t dest_size)
+{
+  if (writer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (dest == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  return cardano_buffer_to_hex(writer->buffer, dest, dest_size);
 }
 
 cardano_error_t

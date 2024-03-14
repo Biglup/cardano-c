@@ -24,6 +24,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "../src/collections/set.h"
+#include "../allocators_helpers.h"
 
 #include <cardano/allocators.h>
 
@@ -47,7 +48,7 @@ typedef struct
 /**
  * Reference counted string deallocator.
  *
- * @param object The object to be deallocated.
+ * \param[in] object The object to be deallocated.
  */
 static void
 cardano_ref_counted_string_deallocate(void* object)
@@ -66,9 +67,9 @@ cardano_ref_counted_string_deallocate(void* object)
 }
 
 /**
- * @brief Allocates a new ref-counted string object.
- * @param string The string to be stored in the object.
- * @return A pointer to the newly allocated object.
+ * \brief Allocates a new ref-counted string object.
+ * \param[in] string The string to be stored in the object.
+ * \return A pointer to the newly allocated object.
  */
 static ref_counted_string_t*
 ref_counted_string_new(const char* string)
@@ -87,8 +88,8 @@ ref_counted_string_new(const char* string)
 
 /**
  * \brief Finds a ref-counted string in an set.
- * \param a The object to be compared.
- * \param context The context to be used in the comparison.
+ * \param[in] a The object to be compared.
+ * \param[in] context The context to be used in the comparison.
  *
  * \return True if the object is the one being searched for, false otherwise.
  */
@@ -103,7 +104,7 @@ find_predicate(const cardano_object_t* a, const void* context)
 /**
  * \brief A function pointer type for hashing objects within a set.
  *
- * \param object A pointer to the `cardano_object_t` object to be hashed.
+ * \param[in] object A pointer to the `cardano_object_t` object to be hashed.
  *
  * \return A 64-bit unsigned integer representing the hash value of the object.
  *
@@ -121,8 +122,8 @@ hash(const cardano_object_t* object)
  * \brief Function pointer type that compares two objects of the same type and returns a value
  * indicating whether one object is less than, equal to, or greater than the other.
  *
- * \param lhs[in] The left-hand side object to compare.
- * \param rhs[in] The right-hand side object to compare.
+ * \param[in] lhs The left-hand side object to compare.
+ * \param[in] rhs The right-hand side object to compare.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
@@ -237,6 +238,64 @@ TEST(cardano_set_from_array, doesntAddTheSameElementFromTheArrayTwice)
   cardano_object_unref((cardano_object_t**)&ref_counted_string1);
   cardano_object_unref((cardano_object_t**)&ref_counted_string2);
   cardano_object_unref((cardano_object_t**)&ref_counted_string3);
+}
+
+TEST(cardano_set_from_array, returnsNullIfThereIsMemoryAllocFailure)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_array_t* array = cardano_array_new(128);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_set_t* set = cardano_set_from_array(array, compare, hash);
+
+  // Assert
+  EXPECT_EQ(set, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_array_unref(&array);
+}
+
+TEST(cardano_set_from_array, returnsNullIfThereIsEventualMemoryAllocFailure)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_array_t*      array              = cardano_array_new(128);
+  ref_counted_string_t* ref_counted_string = ref_counted_string_new("Hello, World! - 1");
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  size_t new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string);
+  EXPECT_EQ(new_size, 1);
+
+  // Act
+  cardano_set_t* set = cardano_set_from_array(array, compare, hash);
+
+  // Assert
+  EXPECT_EQ(set, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_counted_string);
+}
+
+TEST(cardano_set_new, returnsNullIfCompareIfThereIsMemoryAllocFailure)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_set_t* set = cardano_set_new(compare, hash);
+
+  // Assert
+  EXPECT_EQ(set, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_set_ref, increasesTheReferenceCount)
@@ -446,6 +505,29 @@ TEST(cardano_set_add, doesntAddTheSameObjectTwice)
   cardano_object_unref(&object);
 }
 
+TEST(cardano_set_add, returnsZeroIfAllocFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_t* set = cardano_set_new(compare, hash);
+
+  ref_counted_string_t* ref_counted_string = ref_counted_string_new("Hello, World!");
+  cardano_object_t*     object             = (cardano_object_t*)ref_counted_string;
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  size_t new_size = cardano_set_add(set, object);
+
+  // Assert
+  EXPECT_EQ(new_size, 0);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_set_unref(&set);
+  cardano_object_unref(&object);
+}
+
 TEST(cardano_set_add, addsMultipleObjectsToTheSet)
 {
   // Arrange
@@ -644,6 +726,33 @@ TEST(cardano_set_delete, removesAnObjectFromTheSet)
   cardano_object_unref(&object);
 }
 
+TEST(cardano_set_delete, removesOnOfManyFromTheSet)
+{
+  // Arrange
+  cardano_set_t*        set                 = cardano_set_new(compare, hash);
+  ref_counted_string_t* ref_counted_string1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_counted_string2 = ref_counted_string_new("Hello, World! - 2");
+  cardano_object_t*     object1             = (cardano_object_t*)ref_counted_string1;
+  cardano_object_t*     object2             = (cardano_object_t*)ref_counted_string2;
+
+  size_t new_size = cardano_set_add(set, object1);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_set_add(set, object2);
+  EXPECT_EQ(new_size, 2);
+
+  // Act
+  bool deleted = cardano_set_delete(set, object2);
+
+  // Assert
+  EXPECT_EQ(deleted, true);
+
+  // Cleanup
+  cardano_set_unref(&set);
+  cardano_object_unref(&object1);
+  cardano_object_unref(&object2);
+}
+
 TEST(cardano_get_entries, returnsNullIfSetIsNull)
 {
   // Arrange
@@ -697,6 +806,58 @@ TEST(cardano_get_entries, returnsAnEmptyArrayIfSetIsEmpty)
   // Cleanup
   cardano_set_unref(&set);
   cardano_array_unref(&array);
+}
+
+TEST(cardano_get_entries, returnsNullIfAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_t* set = cardano_set_new(compare, hash);
+
+  ref_counted_string_t* ref_counted_string = ref_counted_string_new("Hello, World!");
+  cardano_object_t*     object             = (cardano_object_t*)ref_counted_string;
+
+  size_t new_size = cardano_set_add(set, object);
+  EXPECT_EQ(new_size, 1);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* array = cardano_get_entries(set);
+
+  // Assert
+  EXPECT_EQ(array, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_set_unref(&set);
+  cardano_object_unref(&object);
+}
+
+TEST(cardano_get_entries, returnsNullIfReallocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_t* set = cardano_set_new(compare, hash);
+
+  ref_counted_string_t* ref_counted_string = ref_counted_string_new("Hello, World!");
+  cardano_object_t*     object             = (cardano_object_t*)ref_counted_string;
+
+  size_t new_size = cardano_set_add(set, object);
+  EXPECT_EQ(new_size, 1);
+
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_array_t* array = cardano_get_entries(set);
+
+  // Assert
+  EXPECT_EQ(array, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_set_unref(&set);
+  cardano_object_unref(&object);
 }
 
 TEST(cardano_set_clear, doesNothingIfSetIsNull)

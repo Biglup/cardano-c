@@ -27,6 +27,8 @@
 
 #include <cardano/allocators.h>
 
+#include "../allocators_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* STRUCTS *******************************************************************/
@@ -47,7 +49,7 @@ typedef struct
 /**
  * Reference counted string deallocator.
  *
- * @param object The object to be deallocated.
+ * \param object The object to be deallocated.
  */
 static void
 cardano_ref_counted_string_deallocate(void* object)
@@ -66,9 +68,9 @@ cardano_ref_counted_string_deallocate(void* object)
 }
 
 /**
- * @brief Allocates a new ref-counted string object.
- * @param string The string to be stored in the object.
- * @return A pointer to the newly allocated object.
+ * \brief Allocates a new ref-counted string object.
+ * \param string The string to be stored in the object.
+ * \return A pointer to the newly allocated object.
  */
 static ref_counted_string_t*
 ref_counted_string_new(const char* string)
@@ -101,6 +103,34 @@ find_predicate(const cardano_object_t* a, const void* context)
 }
 
 /* UNIT TESTS ****************************************************************/
+
+TEST(cardano_array_new, returnsNullWhenMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* array = cardano_array_new(1);
+
+  // Assert
+  EXPECT_EQ(array, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_array_new, returnsNullIfEventualMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* array = cardano_array_new(1);
+
+  // Assert
+  EXPECT_EQ(array, nullptr);
+  cardano_set_allocators(malloc, realloc, free);
+}
 
 TEST(cardano_array_ref, increasesTheReferenceCount)
 {
@@ -494,6 +524,72 @@ TEST(cardano_array_concat, returnsNullWhenSecondArgumentIsNull)
   cardano_array_unref(&array1);
 }
 
+TEST(cardano_array_concat, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+
+  cardano_array_t*      array1   = cardano_array_new(1);
+  cardano_array_t*      array2   = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+
+  size_t new_size = cardano_array_add(array1, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array2, &ref_str2->base);
+  EXPECT_EQ(new_size, 1);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_concat(array1, array2);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array1);
+  cardano_array_unref(&array2);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_array_concat, returnsNullIfEventualMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+
+  cardano_array_t*      array1   = cardano_array_new(1);
+  cardano_array_t*      array2   = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+
+  size_t new_size = cardano_array_add(array1, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array2, &ref_str2->base);
+  EXPECT_EQ(new_size, 1);
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_concat(array1, array2);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array1);
+  cardano_array_unref(&array2);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_array_concat, canConcatenateTwoArrays)
 {
   // Arrange
@@ -815,6 +911,108 @@ TEST(cardano_array_slice, canSliceAnArrayOfManyItemsFromAnArrayOfManyItems)
   cardano_object_unref((cardano_object_t**)&ref_str4);
   cardano_object_unref((cardano_object_t**)&ref_str5);
   cardano_object_unref((cardano_object_t**)&ref_str6);
+}
+
+TEST(cardano_array_slice, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+  ref_counted_string_t* ref_str4 = ref_counted_string_new("Hello, World! - 4");
+  ref_counted_string_t* ref_str5 = ref_counted_string_new("Hello, World! - 5");
+  ref_counted_string_t* ref_str6 = ref_counted_string_new("Hello, World! - 6");
+
+  size_t new_size = cardano_array_add(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_add(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  new_size = cardano_array_add(array, &ref_str4->base);
+  EXPECT_EQ(new_size, 4);
+
+  new_size = cardano_array_add(array, &ref_str5->base);
+  EXPECT_EQ(new_size, 5);
+
+  new_size = cardano_array_add(array, &ref_str6->base);
+  EXPECT_EQ(new_size, 6);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_slice(array, 2, 5);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+  cardano_object_unref((cardano_object_t**)&ref_str4);
+  cardano_object_unref((cardano_object_t**)&ref_str5);
+  cardano_object_unref((cardano_object_t**)&ref_str6);
+
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_array_slice, returnsNullIfEventualMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+  ref_counted_string_t* ref_str4 = ref_counted_string_new("Hello, World! - 4");
+  ref_counted_string_t* ref_str5 = ref_counted_string_new("Hello, World! - 5");
+  ref_counted_string_t* ref_str6 = ref_counted_string_new("Hello, World! - 6");
+
+  size_t new_size = cardano_array_add(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_add(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  new_size = cardano_array_add(array, &ref_str4->base);
+  EXPECT_EQ(new_size, 4);
+
+  new_size = cardano_array_add(array, &ref_str5->base);
+  EXPECT_EQ(new_size, 5);
+
+  new_size = cardano_array_add(array, &ref_str6->base);
+  EXPECT_EQ(new_size, 6);
+
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_slice(array, 2, 5);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+  cardano_object_unref((cardano_object_t**)&ref_str4);
+  cardano_object_unref((cardano_object_t**)&ref_str5);
+  cardano_object_unref((cardano_object_t**)&ref_str6);
+
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_array_get_last_error, returnsNullTerminatedMessage)
@@ -1187,6 +1385,45 @@ TEST(cardano_array_filter, returnsTheItemsThatMatchPredicate)
   cardano_object_unref((cardano_object_t**)&ref_str1);
   cardano_object_unref((cardano_object_t**)&ref_str2);
   cardano_object_unref((cardano_object_t**)&ref_str3);
+}
+
+TEST(cardano_array_filter, returnsNullWhenMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+
+  size_t new_size = cardano_array_add(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_add(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_filter(
+    array, [](const cardano_object_t* a, const void*) -> bool
+    { return true; },
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_array_set_last_error, doesNothingWhenObjectIsNull)

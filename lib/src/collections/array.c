@@ -36,7 +36,11 @@
 /* STRUCTS *******************************************************************/
 
 /**
- * Represents a array object.
+ * \brief Represents a dynamic array of cardano_object_t pointers.
+ *
+ * This structure models a dynamic array that holds pointers to \ref cardano_object_t instances.
+ * It supports operations such as insertion, deletion, and iteration over the contained objects.
+ * The array automatically resizes to accommodate new elements.
  */
 typedef struct cardano_array_t
 {
@@ -247,11 +251,6 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
     return NULL;
   }
 
-  if (array->items == NULL)
-  {
-    return NULL;
-  }
-
   if (start > array->size)
   {
     return NULL;
@@ -280,6 +279,8 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
   {
     return NULL;
   }
+
+  assert(array->items != NULL);
 
   for (size_t i = 0; i < slice_size; ++i)
   {

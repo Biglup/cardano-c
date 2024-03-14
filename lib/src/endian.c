@@ -55,14 +55,14 @@ reverse_memcpy(byte_t* dest, const byte_t* src, const size_t size)
 /**
  * Writes the source buffer into the destination buffer adjusting for endianess.
  *
- * \param src[in] The source buffer.
- * \param srcSize[in] The size of the source buffer.
- * \param dest[out] The destination buffer.
- * \param destSize[in] The size of the destination buffer.
- * \param offset[in] The number of bytes to skip before starting to write.
- * \param isNativeEndian[in] Whether the current system endianess matches the desired endianess.
+ * \param[in] src The source buffer.
+ * \param[in] src_size The size of the source buffer.
+ * \param[out] dest The destination buffer.
+ * \param[in] dest_size The size of the destination buffer.
+ * \param[in] offset The number of bytes to skip before starting to write.
+ * \param[in] is_native_endian Whether the current system endianess matches the desired endianess.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return \c cardano_error_t Returns \c CARDANO_SUCCESS on success, member of \c cardano_error_t otherwise.
  */
 static cardano_error_t
 write(
@@ -93,14 +93,14 @@ write(
 /**
  * Read the source buffer into the destination buffer adjusting for endianess.
  *
- * \param src[in] The source buffer.
- * \param srcSize[in] The size of the source buffer.
- * \param dest[out] The destination buffer.
- * \param destSize[in] The size of the destination buffer.
- * \param offset[in] The number of bytes to skip before starting to read.
- * \param isNativeEndian[in] Whether the current system endianess matches the desired endianess.
+ * \param[in] src The source buffer.
+ * \param[in] src_size The size of the source buffer.
+ * \param[out] dest The destination buffer.
+ * \param[in] dest_size The size of the destination buffer.
+ * \param[in] offset The number of bytes to skip before starting to read.
+ * \param[in] is_native_endian Whether the current system endianess matches the desired endianess.
  *
- * \return <tt>cardano_error_t</tt> Returns <tt>CARDANO_SUCCESS</tt> on success, member of <tt>cardano_error_t</tt> otherwise.
+ * \return \c cardano_error_t Returns \c CARDANO_SUCCESS on success, member of \c cardano_error_t otherwise.
  */
 static cardano_error_t
 read(
