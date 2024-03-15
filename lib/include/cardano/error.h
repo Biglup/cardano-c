@@ -79,6 +79,11 @@ typedef enum
    */
   CARDANO_ERROR_ENCODING = 10,
 
+  /**
+   * \brief Decoding failure.
+   */
+  CARDANO_ERROR_DECODING = 11,
+
   /* Serialization errors */
 
   /**

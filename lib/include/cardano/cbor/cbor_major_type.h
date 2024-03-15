@@ -88,7 +88,12 @@ typedef enum
   /**
    * \brief Simple values, floating-point numbers, and the "break" stop code.
    */
-  CBOR_MAJOR_TYPE_SIMPLE = 7
+  CBOR_MAJOR_TYPE_SIMPLE = 7,
+
+  /**
+   * \brief Undefined major type.
+   */
+  CBOR_MAJOR_TYPE_UNDEFINED = 0xFFFFFFFF
 } cbor_major_type_t;
 
 #ifdef __cplusplus

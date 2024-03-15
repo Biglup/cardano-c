@@ -416,6 +416,27 @@ cardano_array_add(cardano_array_t* array, cardano_object_t* item)
   return array->size;
 }
 
+cardano_object_t*
+cardano_array_pop(cardano_array_t* array)
+{
+  if (array == NULL)
+  {
+    return NULL;
+  }
+
+  if (array->size == 0U)
+  {
+    return NULL;
+  }
+
+  cardano_object_t* item    = array->items[array->size - 1U];
+  array->items[array->size] = NULL;
+
+  --array->size;
+
+  return item;
+}
+
 size_t
 cardano_array_get_size(const cardano_array_t* array)
 {

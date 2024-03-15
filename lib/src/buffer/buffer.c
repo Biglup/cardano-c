@@ -53,7 +53,6 @@ typedef struct cardano_buffer_t
     size_t           size;
     size_t           head;
     size_t           capacity;
-    size_t           ref_count;
 } cardano_buffer_t;
 
 /* STATIC FUNCTIONS ***********************************************************/
@@ -306,7 +305,6 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
   }
 
   buffer->data               = (byte_t*)_cardano_malloc(size / 2U);
-  buffer->ref_count          = 1;
   buffer->size               = size / 2U;
   buffer->head               = 0;
   buffer->capacity           = buffer->size;
@@ -562,7 +560,7 @@ cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, const size_t bytes_t
     return CARDANO_POINTER_IS_NULL;
   }
 
-  if ((buffer->head + bytes_to_read) >= buffer->size)
+  if ((buffer->head + bytes_to_read) > buffer->size)
   {
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
@@ -1010,7 +1008,7 @@ cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint16_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint16_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1040,7 +1038,7 @@ cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint32_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint32_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1070,7 +1068,7 @@ cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint64_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint64_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1100,7 +1098,7 @@ cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int16_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int16_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1130,7 +1128,7 @@ cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int32_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int32_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1160,7 +1158,7 @@ cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int64_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int64_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1190,7 +1188,7 @@ cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_float_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_float_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1220,7 +1218,7 @@ cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_double_le(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_double_le(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1250,7 +1248,7 @@ cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint16_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint16_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1280,7 +1278,7 @@ cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint32_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint32_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1310,7 +1308,7 @@ cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_uint64_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_uint64_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1340,7 +1338,7 @@ cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int16_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int16_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1370,7 +1368,7 @@ cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int32_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int32_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1400,7 +1398,7 @@ cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_int64_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_int64_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1430,7 +1428,7 @@ cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_float_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_float_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);
@@ -1460,7 +1458,7 @@ cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value)
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  cardano_error_t result = cardano_read_double_be(value, buffer->data, type_size, buffer->head);
+  cardano_error_t result = cardano_read_double_be(value, buffer->data, buffer->size, buffer->head);
 
   CARDANO_UNUSED(result);
   assert(result == CARDANO_SUCCESS);

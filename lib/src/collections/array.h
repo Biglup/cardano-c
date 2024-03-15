@@ -186,6 +186,36 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_array_add(cardano_array_t* array, cardano_object_t* item);
 
 /**
+ * \brief Pops an item from the end of a cardano_array_t.
+ *
+ * This function removes the last item from the array and returns it. If the array is empty,
+ * NULL is returned and no operation is performed.
+ *
+ * \param[in] array A pointer to the cardano_array_t from which the item will be popped.
+ *
+ * \return On success, returns a pointer to the popped cardano_object_t item. The caller
+ *         becomes the owner of this object and is responsible for calling the appropriate
+ *         unref function on it. If the array is empty, returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_array_t* myArray = cardano_array_new();
+ *
+ * // Assume the array has been populated with items
+ * cardano_object_t* item = cardano_array_pop(myArray);
+ *
+ * if (item != NULL)
+ * {
+ *   // Do something with the item
+ *   cardano_object_unref(item); // Assume cardano_object_unref is the correct unref function
+ * }
+ * cardano_array_unref(&myArray);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_object_t* cardano_array_pop(cardano_array_t* array);
+
+/**
  * \brief Fetches the current size (used space) of the array.
  *
  * \param[in] array Target array.
