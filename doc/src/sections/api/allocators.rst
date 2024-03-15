@@ -1,0 +1,4 @@
+Allocators
+=============================
+
+.. doxygenfile:: allocators.h
