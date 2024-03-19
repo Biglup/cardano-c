@@ -392,6 +392,49 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer, char* dest, const size_t d
   return CARDANO_SUCCESS;
 }
 
+size_t
+cardano_buffer_get_str_size(const cardano_buffer_t* buffer)
+{
+  static const size_t null_termination_size = 1;
+
+  if (buffer == NULL)
+  {
+    return 0;
+  }
+
+  return buffer->size + null_termination_size;
+}
+
+cardano_error_t
+cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, const size_t dest_size)
+{
+  if (buffer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (dest == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  const size_t string_size = cardano_buffer_get_str_size(buffer);
+
+  if (dest_size < string_size)
+  {
+    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+  }
+
+  assert(buffer->data != NULL);
+
+  void* result = memcpy(dest, buffer->data, buffer->size);
+  CARDANO_UNUSED(result);
+
+  dest[buffer->size] = '\0';
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_buffer_unref(cardano_buffer_t** buffer)
 {
