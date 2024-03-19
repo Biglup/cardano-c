@@ -491,7 +491,7 @@ TEST(cardano_buffer_slice, returnNullIfEndLessThanStart)
   cardano_buffer_unref(&buffer);
 }
 
-TEST(cardano_buffer_slice, returnNullIfStartEqualsEnd)
+TEST(cardano_buffer_slice, returnEmptyIfStartEqualsEnd)
 {
   // Arrange
   byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
@@ -503,10 +503,11 @@ TEST(cardano_buffer_slice, returnNullIfStartEqualsEnd)
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 3, 3);
 
   // Assert
-  ASSERT_EQ(slice, nullptr);
+  ASSERT_EQ(cardano_buffer_get_size(slice), 0);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&slice);
 }
 
 TEST(cardano_buffer_slice, returnNullIfMemoryAllocationFails)

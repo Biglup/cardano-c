@@ -252,7 +252,7 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
 
   if (slice_size == 0U)
   {
-    return NULL;
+    return cardano_buffer_new(1U);
   }
 
   byte_t* slice_data = (byte_t*)_cardano_malloc(slice_size);
