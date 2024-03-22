@@ -68,18 +68,18 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
   assert(bytes_read != NULL);
 
   byte_t          header = 0;
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_UNDEFINED, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_UNDEFINED, &header);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(header);
+  cardano_cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(header);
 
   switch (major_type)
   {
-    case CBOR_MAJOR_TYPE_UNSIGNED_INTEGER:
+    case CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER:
     {
       uint64_t unsigned_int = 0;
       size_t   read         = 0;
@@ -106,7 +106,7 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
       *bytes_read = read;
       break;
     }
-    case CBOR_MAJOR_TYPE_NEGATIVE_INTEGER:
+    case CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER:
     {
       uint64_t unsigned_int = 0;
       size_t   read         = 0;
@@ -137,7 +137,7 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
     {
       char buffer[64] = { 0 };
 
-      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d or %d but got %d.", CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, major_type);
+      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d or %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, major_type);
 
       if (written < 0)
       {
@@ -188,18 +188,18 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
   assert(bytes_read != NULL);
 
   byte_t          header = 0;
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_UNDEFINED, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_UNDEFINED, &header);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(header);
+  cardano_cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(header);
 
   switch (major_type)
   {
-    case CBOR_MAJOR_TYPE_UNSIGNED_INTEGER:
+    case CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER:
     {
       uint64_t unsigned_int = 0;
       size_t   read         = 0;
@@ -226,7 +226,7 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
       *bytes_read = read;
       return CARDANO_SUCCESS;
     }
-    case CBOR_MAJOR_TYPE_NEGATIVE_INTEGER:
+    case CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER:
     {
       cardano_object_set_last_error(&reader->base, "Integer overflow.");
       return CARDANO_ERROR_DECODING;
@@ -235,7 +235,7 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
     {
       char buffer[64] = { 0 };
 
-      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d but got %d.", CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, major_type);
+      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, major_type);
 
       if (written < 0)
       {
@@ -318,7 +318,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
   assert(unsigned_int != NULL);
   assert(bytes_read != NULL);
 
-  if ((header & additional_information_mask) < (byte_t)CBOR_ADDITIONAL_INFO_8BIT_DATA)
+  if ((header & additional_information_mask) < (byte_t)CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA)
   {
     *bytes_read   = 1;
     *unsigned_int = cardano_cbor_initial_byte_get_additional_info(header);
@@ -327,7 +327,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
 
   switch (cardano_cbor_initial_byte_get_additional_info(header))
   {
-    case CBOR_ADDITIONAL_INFO_8BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 2U)
       {
@@ -345,7 +345,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
 
       break;
     }
-    case CBOR_ADDITIONAL_INFO_16BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_16BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 3U)
       {
@@ -370,7 +370,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
 
       break;
     }
-    case CBOR_ADDITIONAL_INFO_32BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_32BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 5U)
       {
@@ -395,7 +395,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
 
       break;
     }
-    case CBOR_ADDITIONAL_INFO_64BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_64BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 9U)
       {
@@ -441,14 +441,14 @@ _cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
   }
 
   byte_t          header = 0;
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_SIMPLE, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_SIMPLE, &header);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  cbor_additional_info_t additional_info = cardano_cbor_initial_byte_get_additional_info(header);
+  cardano_cbor_additional_info_t additional_info = cardano_cbor_initial_byte_get_additional_info(header);
 
   cardano_buffer_t* buffer                 = NULL;
   cardano_error_t   remainder_bytes_result = cardano_cbor_reader_get_remainder_bytes(reader, &buffer);
@@ -466,7 +466,7 @@ _cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
 
   switch (additional_info)
   {
-    case CBOR_ADDITIONAL_INFO_16BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_16BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 3U)
       {
@@ -492,7 +492,7 @@ _cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
       *value = half_precision;
       break;
     }
-    case CBOR_ADDITIONAL_INFO_32BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_32BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 5U)
       {
@@ -517,7 +517,7 @@ _cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
       *value = single_precision;
       break;
     }
-    case CBOR_ADDITIONAL_INFO_64BIT_DATA:
+    case CARDANO_CBOR_ADDITIONAL_INFO_64BIT_DATA:
     {
       if (cardano_buffer_get_size(buffer) < 9U)
       {

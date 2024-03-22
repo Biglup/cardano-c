@@ -40,12 +40,12 @@
  */
 typedef struct cbor_reader_stack_frame_t
 {
-    cardano_object_t  base;
-    cbor_major_type_t type;
-    uint64_t          frame_offset;
-    int64_t           definite_length;
-    uint64_t          items_read;
-    int64_t           current_key_offset;
+    cardano_object_t          base;
+    cardano_cbor_major_type_t type;
+    uint64_t                  frame_offset;
+    int64_t                   definite_length;
+    uint64_t                  items_read;
+    int64_t                   current_key_offset;
 } cbor_reader_stack_frame_t;
 
 /**
@@ -53,13 +53,13 @@ typedef struct cbor_reader_stack_frame_t
  */
 typedef struct cardano_cbor_reader_t
 {
-    cardano_object_t          base;
-    cardano_buffer_t*         buffer;
-    uint64_t                  offset;
-    cardano_array_t*          nested_items;
-    bool                      is_tag_context;
-    cbor_reader_stack_frame_t current_frame;
-    cbor_reader_state_t       cached_state;
+    cardano_object_t            base;
+    cardano_buffer_t*           buffer;
+    uint64_t                    offset;
+    cardano_array_t*            nested_items;
+    bool                        is_tag_context;
+    cbor_reader_stack_frame_t   current_frame;
+    cardano_cbor_reader_state_t cached_state;
 } cardano_cbor_reader_t;
 
 /* DECLARATIONS **************************************************************/
@@ -82,7 +82,7 @@ typedef struct cardano_cbor_reader_t
  *         encountered during this state update operation.
  */
 cardano_error_t
-_cbor_reader_push_data_item(cardano_cbor_reader_t* reader, cbor_major_type_t type, int64_t definite_length);
+_cbor_reader_push_data_item(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t type, int64_t definite_length);
 
 /**
  * \brief Removes the most recently read data item from the reader's internal stack, verifying it matches
@@ -91,7 +91,7 @@ _cbor_reader_push_data_item(cardano_cbor_reader_t* reader, cbor_major_type_t typ
  * This function is used to ensure the data item just read from the CBOR stream matches an expected major type.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance that is processing the CBOR stream.
- * \param[in] expected_type The \ref cbor_major_type_t that the most recently read data item is expected to be.
+ * \param[in] expected_type The \ref cardano_cbor_major_type_t that the most recently read data item is expected to be.
  *
  * \return A \ref cardano_error_t indicating the outcome of the operation. If the most recently read data
  * item matches the expected major type, \ref CARDANO_SUCCESS is returned, and the item is removed from
@@ -100,7 +100,7 @@ _cbor_reader_push_data_item(cardano_cbor_reader_t* reader, cbor_major_type_t typ
  * such as attempting to pop an item from an empty stack.
  */
 cardano_error_t
-_cbor_reader_pop_data_item(cardano_cbor_reader_t* reader, cbor_major_type_t expected_type);
+_cbor_reader_pop_data_item(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t expected_type);
 
 /**
  * \brief Peeks at the next initial byte in the CBOR stream without advancing the reader.
@@ -119,7 +119,7 @@ _cbor_reader_pop_data_item(cardano_cbor_reader_t* reader, cbor_major_type_t expe
  * type or if another error occurs, an appropriate error code is returned.
  */
 cardano_error_t
-_cbor_reader_peek_initial_byte(cardano_cbor_reader_t* reader, cbor_major_type_t expected_type, byte_t* initial_byte);
+_cbor_reader_peek_initial_byte(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t expected_type, byte_t* initial_byte);
 
 /**
  * \brief Advances the internal buffer of the CBOR reader by a specified length.
@@ -182,7 +182,7 @@ _cbor_reader_skip_next_node(cardano_cbor_reader_t* reader, size_t* depth);
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance whose current state is
  * being queried.
- * \param[out] state A pointer to a \ref cbor_reader_state_t structure where the function will
+ * \param[out] state A pointer to a \ref cardano_cbor_reader_state_t structure where the function will
  * store information about the current state of the reader.
  *
  * \return A \ref cardano_error_t indicating the result of the operation. \ref CARDANO_SUCCESS is
@@ -191,6 +191,6 @@ _cbor_reader_skip_next_node(cardano_cbor_reader_t* reader, size_t* depth);
  * returned indicating the failure reason.
  */
 cardano_error_t
-_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cbor_reader_state_t* state);
+_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cardano_cbor_reader_state_t* state);
 
 #endif // CARDANO_CBOR_READER_INTERNAL_CORE_H

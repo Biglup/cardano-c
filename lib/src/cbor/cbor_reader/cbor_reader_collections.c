@@ -58,7 +58,7 @@ static cardano_error_t
 validate_next_break_byte(cardano_cbor_reader_t* reader)
 {
   byte_t          initial_byte = 0;
-  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_UNDEFINED, &initial_byte);
+  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_UNDEFINED, &initial_byte);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -119,7 +119,7 @@ peek_definite_length(cardano_buffer_t* buffer, const byte_t initial_byte, int64_
 /* DEFINITIONS ***************************************************************/
 
 cardano_error_t
-_cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, const cbor_major_type_t type)
+_cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, const cardano_cbor_major_type_t type)
 {
   if (reader == NULL)
   {
@@ -142,9 +142,9 @@ _cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, 
     return result;
   }
 
-  cbor_additional_info_t info = cardano_cbor_initial_byte_get_additional_info(initial_byte);
+  cardano_cbor_additional_info_t info = cardano_cbor_initial_byte_get_additional_info(initial_byte);
 
-  if (info != CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
+  if (info != CARDANO_CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
   {
     cardano_object_set_last_error(&reader->base, "Not indefinite length string.");
     return CARDANO_ERROR_DECODING;
@@ -166,7 +166,7 @@ _cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, 
 }
 
 cardano_error_t
-_cbor_reader_read_end_indefinite_length_string(cardano_cbor_reader_t* reader, const cbor_major_type_t type)
+_cbor_reader_read_end_indefinite_length_string(cardano_cbor_reader_t* reader, const cardano_cbor_major_type_t type)
 {
   cardano_error_t result = validate_next_break_byte(reader);
 
@@ -270,21 +270,21 @@ _cbor_reader_read_start_array(cardano_cbor_reader_t* reader, int64_t* size)
 {
   byte_t header;
 
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_ARRAY, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, &header);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  if (cardano_cbor_initial_byte_get_additional_info(header) == CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
+  if (cardano_cbor_initial_byte_get_additional_info(header) == CARDANO_CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
   {
     cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, HEADER_BYTE_SIZE);
 
     assert(advance_result == CARDANO_SUCCESS);
     CARDANO_UNUSED(advance_result);
 
-    cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, INDEFINITE_LENGTH);
+    cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, INDEFINITE_LENGTH);
 
     if (push_data_result != CARDANO_SUCCESS)
     {
@@ -321,7 +321,7 @@ _cbor_reader_read_start_array(cardano_cbor_reader_t* reader, int64_t* size)
   assert(advance_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(advance_result);
 
-  cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, length);
+  cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, length);
 
   if (push_data_result != CARDANO_SUCCESS)
   {
@@ -345,7 +345,7 @@ _cbor_reader_read_end_array(cardano_cbor_reader_t* reader)
       return result;
     }
 
-    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_ARRAY);
+    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY);
 
     if (pop_data_result != CARDANO_SUCCESS)
     {
@@ -361,7 +361,7 @@ _cbor_reader_read_end_array(cardano_cbor_reader_t* reader)
   }
   else
   {
-    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_ARRAY);
+    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY);
 
     if (pop_data_result != CARDANO_SUCCESS)
     {
@@ -379,21 +379,21 @@ _cbor_reader_read_start_map(cardano_cbor_reader_t* reader, int64_t* size)
 {
   byte_t header = 0;
 
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_MAP, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_MAP, &header);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  if (cardano_cbor_initial_byte_get_additional_info(header) == CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
+  if (cardano_cbor_initial_byte_get_additional_info(header) == CARDANO_CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
   {
     cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, HEADER_BYTE_SIZE);
 
     assert(advance_result == CARDANO_SUCCESS);
     CARDANO_UNUSED(advance_result);
 
-    cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_MAP, INDEFINITE_LENGTH);
+    cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_MAP, INDEFINITE_LENGTH);
 
     if (push_data_result != CARDANO_SUCCESS)
     {
@@ -439,7 +439,7 @@ _cbor_reader_read_start_map(cardano_cbor_reader_t* reader, int64_t* size)
   assert(advance_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(advance_result);
 
-  cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_MAP, length * ((int64_t)KEY_VALUE_PAIR_SIZE));
+  cardano_error_t push_data_result = _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_MAP, length * ((int64_t)KEY_VALUE_PAIR_SIZE));
 
   if (push_data_result != CARDANO_SUCCESS)
   {
@@ -471,7 +471,7 @@ _cbor_reader_read_end_map(cardano_cbor_reader_t* reader)
       return CARDANO_ERROR_DECODING;
     }
 
-    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_MAP);
+    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_MAP);
 
     if (pop_data_result != CARDANO_SUCCESS)
     {
@@ -486,7 +486,7 @@ _cbor_reader_read_end_map(cardano_cbor_reader_t* reader)
   }
   else
   {
-    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_MAP);
+    cardano_error_t pop_data_result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_MAP);
 
     if (pop_data_result != CARDANO_SUCCESS)
     {
@@ -500,7 +500,7 @@ _cbor_reader_read_end_map(cardano_cbor_reader_t* reader)
 }
 
 cardano_error_t
-_cbor_reader_read_string(cardano_cbor_reader_t* reader, const cbor_major_type_t type, cardano_buffer_t** byte_string)
+_cbor_reader_read_string(cardano_cbor_reader_t* reader, const cardano_cbor_major_type_t type, cardano_buffer_t** byte_string)
 {
   byte_t          header = 0;
   cardano_error_t result = _cbor_reader_peek_initial_byte(reader, type, &header);
@@ -510,7 +510,7 @@ _cbor_reader_read_string(cardano_cbor_reader_t* reader, const cbor_major_type_t 
     return result;
   }
 
-  if (cardano_cbor_initial_byte_get_additional_info(header) == CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
+  if (cardano_cbor_initial_byte_get_additional_info(header) == CARDANO_CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH)
   {
     size_t          encoding_length    = 0;
     cardano_error_t read_concat_result = _cbor_reader_read_indefinite_length_concatenated(reader, byte_string, &encoding_length);

@@ -32,19 +32,19 @@
 /* DEFINITIONS ****************************************************************/
 
 byte_t
-cardano_cbor_initial_byte_pack(const cbor_major_type_t major_type, const cbor_additional_info_t additional_info)
+cardano_cbor_initial_byte_pack(const cardano_cbor_major_type_t major_type, const cardano_cbor_additional_info_t additional_info)
 {
   return (byte_t)(((byte_t)major_type << 5) | (byte_t)additional_info);
 }
 
-cbor_major_type_t
+cardano_cbor_major_type_t
 cardano_cbor_initial_byte_get_major_type(const byte_t initial_byte)
 {
-  return (cbor_major_type_t)(initial_byte >> 5);
+  return (cardano_cbor_major_type_t)(initial_byte >> 5);
 }
 
-cbor_additional_info_t
+cardano_cbor_additional_info_t
 cardano_cbor_initial_byte_get_additional_info(const byte_t initial_byte)
 {
-  return (cbor_additional_info_t)initial_byte & (cbor_additional_info_t)0x1F;
+  return (cardano_cbor_additional_info_t)initial_byte & (cardano_cbor_additional_info_t)0x1F;
 }

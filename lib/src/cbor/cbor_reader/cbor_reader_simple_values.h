@@ -75,12 +75,12 @@ _cbor_reader_read_null(cardano_cbor_reader_t* reader);
  * This function reads the next data item from the CBOR stream associated with the reader
  * and interprets it as a simple value. CBOR simple values are small, non-structured values
  * that include boolean values, null, undefined, and simple error conditions. This function
- * decodes the simple value representation and stores the result in the provided `cbor_simple_value_t`
+ * decodes the simple value representation and stores the result in the provided `cardano_cbor_simple_value_t`
  * variable.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance that represents the CBOR
  *                   stream from which the simple value is to be read.
- * \param[out] value A pointer to a `cbor_simple_value_t` variable where the decoded simple value will be stored.
+ * \param[out] value A pointer to a `cardano_cbor_simple_value_t` variable where the decoded simple value will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the read operation. \ref CARDANO_SUCCESS is
  * returned if a simple value is successfully read from the stream and decoded. If the operation fails
@@ -88,6 +88,6 @@ _cbor_reader_read_null(cardano_cbor_reader_t* reader);
  * stream is not a simple value, an appropriate error code will be returned to indicate the failure reason.
  */
 cardano_error_t
-_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cbor_simple_value_t* value);
+_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cardano_cbor_simple_value_t* value);
 
 #endif // CARDANO_CBOR_READER_INTERNAL_SIMPLE_VALUES_H

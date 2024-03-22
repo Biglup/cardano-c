@@ -219,7 +219,7 @@ CARDANO_EXPORT cardano_cbor_reader_t* cardano_cbor_reader_move(cardano_cbor_read
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the next CBOR token
  * is to be examined.
- * \param[out] state Pointer to a \ref cbor_reader_state_t variable where the current state of the
+ * \param[out] state Pointer to a \ref cardano_cbor_reader_state_t variable where the current state of the
  * CBOR reader will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on successful
@@ -228,7 +228,7 @@ CARDANO_EXPORT cardano_cbor_reader_t* cardano_cbor_reader_move(cardano_cbor_read
  *
  * Usage Example:
  * \code{.c}
- * cbor_reader_state_t state;
+ * cardano_cbor_reader_state_t state;
  * cardano_error_t error = cardano_cbor_reader_peek_state(&state);
  *
  * if (error == CARDANO_SUCCESS)
@@ -242,7 +242,7 @@ CARDANO_EXPORT cardano_cbor_reader_t* cardano_cbor_reader_move(cardano_cbor_read
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cbor_reader_state_t* state);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cardano_cbor_reader_state_t* state);
 
 /**
  * \brief Retrieves the total number of unread bytes remaining in the CBOR reader's buffer.
@@ -560,7 +560,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_double(cardano_cbor_read
  * The decoded simple value is stored in the provided `value` parameter.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the simple value is to be read.
- * \param[out] value Pointer to a `cbor_simple_value_t` variable where the decoded simple value will be stored.
+ * \param[out] value Pointer to a `cardano_cbor_simple_value_t` variable where the decoded simple value will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
@@ -568,7 +568,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_double(cardano_cbor_read
  *
  * Usage Example:
  * \code{.c}
- * cbor_simple_value_t value;
+ * cardano_cbor_simple_value_t value;
  *
  * cardano_error_t error = cardano_cbor_reader_read_simple_value(reader, &value);
  *
@@ -583,7 +583,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_double(cardano_cbor_read
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cbor_simple_value_t* value);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cardano_cbor_simple_value_t* value);
 
 /**
  * \brief Reads the next data item as the start of a map (major type 5).
@@ -812,7 +812,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_textstring(cardano_cbor_
  * \brief Reads the next data item as a semantic tag (major type 6), advancing the reader.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the tag is to be read.
- * \param[out] tag A pointer to a \ref cbor_tag_t variable where the decoded tag value will be stored.
+ * \param[out] tag A pointer to a \ref cardano_cbor_tag_t variable where the decoded tag value will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if the tag is
  * successfully read from the CBOR stream, or an appropriate error code indicating the reason for failure.
@@ -820,7 +820,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_textstring(cardano_cbor_
  *
  * Usage Example:
  * \code{.c}
- * cbor_tag_t tag;
+ * cardano_cbor_tag_t tag;
  *
  * cardano_error_t error = cardano_cbor_reader_read_tag(reader, &tag);
  *
@@ -836,7 +836,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_textstring(cardano_cbor_
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
 /**
  * \brief Peeks at the next semantic tag (major type 6) in the CBOR stream without consuming it.
@@ -847,7 +847,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_
  * value before fully processing the associated data item.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the tag is to be peeked.
- * \param[out] tag A pointer to a \ref cbor_tag_t variable where the tag value will be stored if a tag is present.
+ * \param[out] tag A pointer to a \ref cardano_cbor_tag_t variable where the tag value will be stored if a tag is present.
  *
  * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if a tag is successfully
  * peeked at, or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t
@@ -855,7 +855,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_
  *
  * Usage Example:
  * \code{.c}
- * cbor_tag_t tag;
+ * cardano_cbor_tag_t tag;
  *
  * cardano_error_t error = cardano_cbor_reader_peek_tag(reader, &tag);
  *
@@ -874,7 +874,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_
  * process or skip the tag as needed.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
 /**
  * \brief Sets the last error message for a given CBOR reader object.

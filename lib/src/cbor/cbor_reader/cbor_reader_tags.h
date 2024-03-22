@@ -42,7 +42,7 @@
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance representing the CBOR stream
  *                   from which the tag is to be read. The reader must have been previously initialized
  *                   and positioned correctly within the CBOR data stream.
- * \param[out] tag A pointer to a `cbor_tag_t` variable where the read tag value will be stored. This
+ * \param[out] tag A pointer to a `cardano_cbor_tag_t` variable where the read tag value will be stored. This
  *                 variable is populated with the tag's value if the operation is successful.
  *
  * \return A \ref cardano_error_t indicating the result of the read operation. \ref CARDANO_SUCCESS is
@@ -51,7 +51,7 @@
  * an appropriate error code will be returned to indicate the failure reason.
  */
 cardano_error_t
-_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
+_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
 /**
  * \brief Peeks at the next CBOR tag from the stream without advancing the reader's position.
@@ -61,7 +61,7 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance representing the CBOR
  *                   stream from which the tag is to be peeked.
- * \param[out] tag A pointer to a `cbor_tag_t` variable where the peeked tag value will be stored.
+ * \param[out] tag A pointer to a `cardano_cbor_tag_t` variable where the peeked tag value will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the peek operation. \ref CARDANO_SUCCESS is
  * returned if a tag is successfully peeked from the stream. If the operation fails due to
@@ -70,6 +70,6 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
  * indicate the failure reason.
  */
 cardano_error_t
-_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag);
+_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
 #endif // CARDANO_CBOR_READER_INTERNAL_TAGS_H

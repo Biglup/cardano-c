@@ -41,43 +41,43 @@ typedef enum
   /**
    * \brief Indicates the boolean value `false` (major type 7).
    */
-  CBOR_ADDITIONAL_INFO_FALSE = 20,
+  CARDANO_CBOR_ADDITIONAL_INFO_FALSE = 20,
 
   /**
    * \brief Indicates the boolean value `true` (major type 7).
    */
-  CBOR_ADDITIONAL_INFO_TRUE = 21,
+  CARDANO_CBOR_ADDITIONAL_INFO_TRUE = 21,
 
   /**
    * \brief Indicates the value `null` (major type 7).
    */
-  CBOR_ADDITIONAL_INFO_NULL = 22,
+  CARDANO_CBOR_ADDITIONAL_INFO_NULL = 22,
 
   /**
    * \brief Indicates that the next byte contains the length of the data (major types 0-2, 4-5).
    */
-  CBOR_ADDITIONAL_INFO_8BIT_DATA = 24,
+  CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA = 24,
 
   /**
    * \brief Indicates that the next 2 bytes contain the length of the data (major types 0-2, 4-5).
    */
-  CBOR_ADDITIONAL_INFO_16BIT_DATA = 25,
+  CARDANO_CBOR_ADDITIONAL_INFO_16BIT_DATA = 25,
 
   /**
    * \brief Indicates that the next 4 bytes contain the length of the data (major types 0-2, 4-5).
    */
-  CBOR_ADDITIONAL_INFO_32BIT_DATA = 26,
+  CARDANO_CBOR_ADDITIONAL_INFO_32BIT_DATA = 26,
 
   /**
    * \brief Indicates that the next 8 bytes contain the length of the data (major types 0-2, 4-5).
    */
-  CBOR_ADDITIONAL_INFO_64BIT_DATA = 27,
+  CARDANO_CBOR_ADDITIONAL_INFO_64BIT_DATA = 27,
 
   /**
    * \brief Indicates that the data item is of indefinite length (major types 2, 3, 4, 5).
    */
-  CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH = 31
-} cbor_additional_info_t;
+  CARDANO_CBOR_ADDITIONAL_INFO_INDEFINITE_LENGTH = 31
+} cardano_cbor_additional_info_t;
 
 #ifdef __cplusplus
 }

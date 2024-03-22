@@ -104,8 +104,8 @@ cardano_cbor_reader_new(const byte_t* cbor_data, const size_t size)
   obj->offset                           = 0;
   obj->nested_items                     = cardano_array_new(32);
   obj->is_tag_context                   = false;
-  obj->cached_state                     = CBOR_READER_STATE_UNDEFINED;
-  obj->current_frame.type               = CBOR_MAJOR_TYPE_UNDEFINED;
+  obj->cached_state                     = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  obj->current_frame.type               = CARDANO_CBOR_MAJOR_TYPE_UNDEFINED;
   obj->current_frame.current_key_offset = -1;
   obj->current_frame.frame_offset       = 0;
   obj->current_frame.items_read         = 0;
@@ -151,8 +151,8 @@ cardano_cbor_reader_from_hex(const char* hex_string, const size_t size)
   obj->offset                           = 0;
   obj->nested_items                     = cardano_array_new(32);
   obj->is_tag_context                   = false;
-  obj->cached_state                     = CBOR_READER_STATE_UNDEFINED;
-  obj->current_frame.type               = CBOR_MAJOR_TYPE_UNDEFINED;
+  obj->cached_state                     = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  obj->current_frame.type               = CARDANO_CBOR_MAJOR_TYPE_UNDEFINED;
   obj->current_frame.current_key_offset = -1;
   obj->current_frame.frame_offset       = 0;
   obj->current_frame.items_read         = 0;
@@ -226,7 +226,7 @@ cardano_cbor_reader_move(cardano_cbor_reader_t* cbor_reader)
 }
 
 cardano_error_t
-cardano_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cbor_reader_state_t* state)
+cardano_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cardano_cbor_reader_state_t* state)
 {
   return _cbor_reader_peek_state(reader, state);
 }
@@ -353,7 +353,7 @@ cardano_cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
 }
 
 cardano_error_t
-cardano_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cbor_simple_value_t* value)
+cardano_cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cardano_cbor_simple_value_t* value)
 {
   return _cbor_reader_read_simple_value(reader, value);
 }
@@ -385,23 +385,23 @@ cardano_cbor_reader_read_null(cardano_cbor_reader_t* reader)
 cardano_error_t
 cardano_cbor_reader_read_bytestring(cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string)
 {
-  return _cbor_reader_read_string(reader, CBOR_MAJOR_TYPE_BYTE_STRING, byte_string);
+  return _cbor_reader_read_string(reader, CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING, byte_string);
 }
 
 cardano_error_t
 cardano_cbor_reader_read_textstring(cardano_cbor_reader_t* reader, cardano_buffer_t** text_string)
 {
-  return _cbor_reader_read_string(reader, CBOR_MAJOR_TYPE_UTF8_STRING, text_string);
+  return _cbor_reader_read_string(reader, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING, text_string);
 }
 
 cardano_error_t
-cardano_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag)
+cardano_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
   return _cbor_reader_read_tag(reader, tag);
 }
 
 cardano_error_t
-cardano_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag)
+cardano_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
   return _cbor_reader_peek_tag(reader, tag);
 }

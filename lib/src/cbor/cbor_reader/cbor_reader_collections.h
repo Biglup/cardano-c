@@ -41,15 +41,15 @@
  *
  * \param[in] reader A pointer to an initialized cardano_cbor_reader_t structure that represents the CBOR
  *                   reader context.
- * \param[in] type The major type of the string to read, which should be either \ref CBOR_MAJOR_TYPE_BYTE_STRING
- *                 or \ref CBOR_MAJOR_TYPE_UTF8_STRING, indicating a byte string or a text string, respectively.
+ * \param[in] type The major type of the string to read, which should be either \ref CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING
+ *                 or \ref CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING, indicating a byte string or a text string, respectively.
  *
  * \return A cardano_error_t indicating the success or failure of the operation. \ref CARDANO_SUCCESS is
  * returned if the start of an indefinite-length string of the specified type is successfully detected.
  * If the operation fails, an appropriate error code is returned to indicate the reason for failure.
  */
 cardano_error_t
-_cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, cbor_major_type_t type);
+_cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t type);
 
 /**
  * \brief This function concludes the process of reading a CBOR string (text or byte string) that is encoded with
@@ -60,8 +60,8 @@ _cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, 
  *
  * \param[in] reader A pointer to an initialized cardano_cbor_reader_t structure that represents the
  *                   CBOR reader context.
- * \param[in] type The major type of the string being read, which should be either \ref CBOR_MAJOR_TYPE_BYTE_STRING
- *                 or \ref CBOR_MAJOR_TYPE_UTF8_STRING, indicating a byte string or a text string, respectively.
+ * \param[in] type The major type of the string being read, which should be either \ref CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING
+ *                 or \ref CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING, indicating a byte string or a text string, respectively.
  *
  * \return A cardano_error_t indicating the success or failure of the operation. \ref CARDANO_SUCCESS
  * is returned if the "break" stop code, marking the end of an indefinite-length string of the specified type,
@@ -69,7 +69,7 @@ _cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, 
  * indicate the reason for failure.
  */
 cardano_error_t
-_cbor_reader_read_end_indefinite_length_string(cardano_cbor_reader_t* reader, cbor_major_type_t type);
+_cbor_reader_read_end_indefinite_length_string(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t type);
 
 /**
  * \brief This function is used to read data that is encoded in CBOR format with an indefinite length.
@@ -169,8 +169,8 @@ _cbor_reader_read_end_map(cardano_cbor_reader_t* reader);
  *
  * \param[in] reader A pointer to the cardano_cbor_reader_t structure that represents the CBOR stream
  *                   from which the string is to be read.
- * \param[in] type The major type of the string to be read. This must be either CBOR_MAJOR_TYPE_BYTE_STRING (2)
- *                 for byte strings or CBOR_MAJOR_TYPE_UTF8_STRING (3) for text strings.
+ * \param[in] type The major type of the string to be read. This must be either CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING (2)
+ *                 for byte strings or CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING (3) for text strings.
  * \param[out] byte_string A pointer to a pointer of a cardano_buffer_t structure where the read string will
  *                         be stored. The buffer will contain the string data if the function succeeds.
  *                         The caller is responsible for releasing the buffer using \ref cardano_buffer_unref
@@ -181,6 +181,6 @@ _cbor_reader_read_end_map(cardano_cbor_reader_t* reader);
  * to indicate the reason for failure.
  */
 cardano_error_t
-_cbor_reader_read_string(cardano_cbor_reader_t* reader, cbor_major_type_t type, cardano_buffer_t** byte_string);
+_cbor_reader_read_string(cardano_cbor_reader_t* reader, cardano_cbor_major_type_t type, cardano_buffer_t** byte_string);
 
 #endif // CARDANO_CBOR_READER_INTERNAL_COLLECTIONS_H

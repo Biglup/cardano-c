@@ -51,7 +51,7 @@ extern "C" {
  * \return The packed CBOR initial byte combining both the major type and additional information.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT byte_t cardano_cbor_initial_byte_pack(cbor_major_type_t major_type, cbor_additional_info_t additional_info);
+CARDANO_EXPORT byte_t cardano_cbor_initial_byte_pack(cardano_cbor_major_type_t major_type, cardano_cbor_additional_info_t additional_info);
 
 /**
  * \brief Retrieves the major type from a CBOR initial byte.
@@ -65,7 +65,7 @@ CARDANO_EXPORT byte_t cardano_cbor_initial_byte_pack(cbor_major_type_t major_typ
  * \return The extracted major type of the CBOR data item, as defined by the CBOR encoding specification.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cbor_major_type_t cardano_cbor_initial_byte_get_major_type(byte_t initial_byte);
+CARDANO_EXPORT cardano_cbor_major_type_t cardano_cbor_initial_byte_get_major_type(byte_t initial_byte);
 
 /**
  * \brief Retrieves the additional information from a CBOR initial byte.
@@ -76,11 +76,11 @@ CARDANO_EXPORT cbor_major_type_t cardano_cbor_initial_byte_get_major_type(byte_t
  *
  * \param[in] initial_byte The CBOR initial byte from which to extract the additional information.
  *
- * \return The extracted additional information, as an enum value of type cbor_additional_info_t,
+ * \return The extracted additional information, as an enum value of type cardano_cbor_additional_info_t,
  * indicating specific data characteristics or lengths as defined by the CBOR encoding specification.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cbor_additional_info_t cardano_cbor_initial_byte_get_additional_info(byte_t initial_byte);
+CARDANO_EXPORT cardano_cbor_additional_info_t cardano_cbor_initial_byte_get_additional_info(byte_t initial_byte);
 
 #ifdef __cplusplus
 }

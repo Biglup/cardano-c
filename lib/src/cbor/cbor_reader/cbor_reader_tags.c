@@ -41,7 +41,7 @@
  * position in the data stream.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance representing the CBOR stream to peek into.
- * \param[out] tag A pointer to a `cbor_tag_t` variable where the peeked tag value will be stored.
+ * \param[out] tag A pointer to a `cardano_cbor_tag_t` variable where the peeked tag value will be stored.
  * \param[out] bytes_read A pointer to a `size_t` variable where the number of bytes that the tag occupies in
  * the stream will be stored.
  *
@@ -51,7 +51,7 @@
  * error code will be returned to indicate the failure reason.
  */
 static cardano_error_t
-peek_tag_core(cardano_cbor_reader_t* reader, cbor_tag_t* tag, size_t* bytes_read)
+peek_tag_core(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag, size_t* bytes_read)
 {
   if (reader == NULL)
   {
@@ -62,7 +62,7 @@ peek_tag_core(cardano_cbor_reader_t* reader, cbor_tag_t* tag, size_t* bytes_read
   assert(bytes_read != NULL);
 
   byte_t          header = 0;
-  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_TAG, &header);
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_TAG, &header);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -91,7 +91,7 @@ peek_tag_core(cardano_cbor_reader_t* reader, cbor_tag_t* tag, size_t* bytes_read
     return decode_result;
   }
 
-  *tag        = (cbor_tag_t)unsigned_int;
+  *tag        = (cardano_cbor_tag_t)unsigned_int;
   *bytes_read = read;
 
   return CARDANO_SUCCESS;
@@ -100,10 +100,10 @@ peek_tag_core(cardano_cbor_reader_t* reader, cbor_tag_t* tag, size_t* bytes_read
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
-_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag)
+_cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
-  cbor_tag_t read_tag  = 0;
-  size_t     bytesRead = 0;
+  cardano_cbor_tag_t read_tag  = 0;
+  size_t             bytesRead = 0;
 
   cardano_error_t result = peek_tag_core(reader, &read_tag, &bytesRead);
 
@@ -124,10 +124,10 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag)
 }
 
 cardano_error_t
-_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cbor_tag_t* tag)
+_cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
-  cbor_tag_t read_tag  = 0;
-  size_t     bytesRead = 0;
+  cardano_cbor_tag_t read_tag  = 0;
+  size_t             bytesRead = 0;
 
   cardano_error_t result = peek_tag_core(reader, &read_tag, &bytesRead);
 

@@ -42,12 +42,12 @@ extern "C" {
 /* STATIC FUNCTIONS **********************************************************/
 
 static void
-verify_int(const char* hex, const int64_t expected_int, const cbor_reader_state_t expected_state)
+verify_int(const char* hex, const int64_t expected_int, const cardano_cbor_reader_state_t expected_state)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(hex, strlen(hex));
 
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = cardano_cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(state, expected_state);
@@ -59,18 +59,18 @@ verify_int(const char* hex, const int64_t expected_int, const cbor_reader_state_
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 static void
-verify_float(const char* hex, const double expected_float, const cbor_reader_state_t expected_state)
+verify_float(const char* hex, const double expected_float, const cardano_cbor_reader_state_t expected_state)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(hex, strlen(hex));
 
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = cardano_cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(state, expected_state);
@@ -82,20 +82,20 @@ verify_float(const char* hex, const double expected_float, const cbor_reader_sta
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 static void
-verify_text(const char* hex, const char* expected_text, const cbor_reader_state_t expected_state)
+verify_text(const char* hex, const char* expected_text, const cardano_cbor_reader_state_t expected_state)
 {
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(hex, strlen(hex));
   cardano_buffer_t*      buffer   = nullptr;
   char                   text[30] = { 0 };
 
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = cardano_cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(state, expected_state);
@@ -110,7 +110,7 @@ verify_text(const char* hex, const char* expected_text, const cbor_reader_state_
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -119,14 +119,14 @@ verify_text(const char* hex, const char* expected_text, const cbor_reader_state_
 static std::string
 get_json_val(cardano_cbor_reader_t* reader)
 {
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = cardano_cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   switch (state)
   {
-    case CBOR_READER_STATE_BYTESTRING:
+    case CARDANO_CBOR_READER_STATE_BYTESTRING:
     {
       cardano_buffer_t* buffer = nullptr;
       result                   = cardano_cbor_reader_read_bytestring(reader, &buffer);
@@ -139,7 +139,7 @@ get_json_val(cardano_cbor_reader_t* reader)
       cardano_buffer_unref(&buffer);
       return std::string(text);
     }
-    case CBOR_READER_STATE_TEXT_STRING:
+    case CARDANO_CBOR_READER_STATE_TEXTSTRING:
     {
       cardano_buffer_t* buffer = nullptr;
       result                   = cardano_cbor_reader_read_textstring(reader, &buffer);
@@ -152,8 +152,8 @@ get_json_val(cardano_cbor_reader_t* reader)
       cardano_buffer_unref(&buffer);
       return std::string(text);
     }
-    case CBOR_READER_STATE_UNSIGNED_INTEGER:
-    case CBOR_READER_STATE_NEGATIVE_INTEGER:
+    case CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER:
+    case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
       int64_t value = 0;
       result        = cardano_cbor_reader_read_int(reader, &value);
@@ -161,7 +161,7 @@ get_json_val(cardano_cbor_reader_t* reader)
 
       return std::to_string(value);
     }
-    case CBOR_READER_STATE_START_MAP:
+    case CARDANO_CBOR_READER_STATE_START_MAP:
     {
       int64_t length = 0;
       result         = cardano_cbor_reader_read_start_map(reader, &length);
@@ -184,14 +184,14 @@ get_json_val(cardano_cbor_reader_t* reader)
       }
       else
       {
-        while (state != CBOR_READER_STATE_END_MAP)
+        while (state != CARDANO_CBOR_READER_STATE_END_MAP)
         {
           std::string key = get_json_val(reader);
           std::string val = get_json_val(reader);
           json            += "\"" + key + "\":" + val;
           result          = cardano_cbor_reader_peek_state(reader, &state);
           EXPECT_EQ(result, CARDANO_SUCCESS);
-          if (state != CBOR_READER_STATE_END_MAP)
+          if (state != CARDANO_CBOR_READER_STATE_END_MAP)
           {
             json += ",";
           }
@@ -499,15 +499,15 @@ TEST(cardano_cbor_reader_set_last_error, doesNothingWhenWhenMessageIsNull)
 TEST(cardano_cbor_reader_peek_state, returnsTheStateOfTheReader)
 {
   // Arrange
-  const char*            cbor_hex = "81182a";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "81182a";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
 
   // Assert
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   // Cleanup
@@ -517,15 +517,15 @@ TEST(cardano_cbor_reader_peek_state, returnsTheStateOfTheReader)
 TEST(cardano_cbor_reader_read_start_array, canReadAnEmptyFixedArray)
 {
   // Arrange
-  const char*            cbor_hex = "80";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length   = 0;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "80";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length   = 0;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -533,14 +533,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadAnEmptyFixedArray)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -549,15 +549,15 @@ TEST(cardano_cbor_reader_read_start_array, canReadAnEmptyFixedArray)
 TEST(cardano_cbor_reader_read_start_array, canReadFixedsizeArrayWithAndUnsignedNumber)
 {
   // Arrange
-  const char*            cbor_hex = "81182a";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length   = 0;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "81182a";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length   = 0;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -565,7 +565,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedsizeArrayWithAndUnsignedN
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   uint64_t value = 0;
   result         = cardano_cbor_reader_read_uint(reader, &value);
@@ -574,14 +574,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedsizeArrayWithAndUnsignedN
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -590,15 +590,15 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedsizeArrayWithAndUnsignedN
 TEST(cardano_cbor_reader_read_start_array, canReadAwwayWithSevelraUnsignedNumbers)
 {
   // Arrange
-  const char*            cbor_hex = "98190102030405060708090a0b0c0d0e0f101112131415161718181819";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length   = 0;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "98190102030405060708090a0b0c0d0e0f101112131415161718181819";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length   = 0;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -608,7 +608,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAwwayWithSevelraUnsignedNumber
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
-    EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+    EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
     uint64_t value = 0;
     result         = cardano_cbor_reader_read_uint(reader, &value);
@@ -618,14 +618,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadAwwayWithSevelraUnsignedNumber
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -636,14 +636,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadAFixedSizeArrayWithUnsigned64b
   // Arrange
   const char* cbor_hex = "831BCD2FB6B45D4CF7B01BCD2FB6B45D4CF7B11BCD2FB6B45D4CF7B2";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -653,7 +653,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAFixedSizeArrayWithUnsigned64b
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
-    EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+    EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
     uint64_t value = 0;
     result         = cardano_cbor_reader_read_uint(reader, &value);
@@ -666,7 +666,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAFixedSizeArrayWithUnsigned64b
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -677,14 +677,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayWithMixedTypes)
   // Arrange
   const char* cbor_hex = "8301204107";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -692,7 +692,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayWithMixedTypes)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   uint64_t uint_value = 0;
   result              = cardano_cbor_reader_read_uint(reader, &uint_value);
@@ -701,7 +701,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayWithMixedTypes)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_NEGATIVE_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
 
   int64_t int_value = 0;
   result            = cardano_cbor_reader_read_int(reader, &int_value);
@@ -710,7 +710,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayWithMixedTypes)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BYTESTRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BYTESTRING);
 
   cardano_buffer_t* byte_string = nullptr;
   result                        = cardano_cbor_reader_read_bytestring(reader, &byte_string);
@@ -720,14 +720,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayWithMixedTypes)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -739,14 +739,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
   // Arrange
   const char* cbor_hex = "84f4f6faffc00000fb7ff0000000000000";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -754,7 +754,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BOOLEAN);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool bool_value = true;
   result          = cardano_cbor_reader_read_boolean(reader, &bool_value);
@@ -763,14 +763,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_NULL);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_NULL);
 
   result = cardano_cbor_reader_read_null(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
 
   double single_precition_value = 0.0;
   result                        = cardano_cbor_reader_read_double(reader, &single_precition_value);
@@ -779,7 +779,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
 
   double double_precition_value = 0.0;
   result                        = cardano_cbor_reader_read_double(reader, &double_precition_value);
@@ -788,14 +788,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -806,14 +806,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
   // Arrange
   const char* cbor_hex = "8301820203820405";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -821,7 +821,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   int64_t int_value = 0;
   result            = cardano_cbor_reader_read_int(reader, &int_value);
@@ -830,7 +830,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -838,7 +838,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   int_value = 0;
   result    = cardano_cbor_reader_read_int(reader, &int_value);
@@ -847,7 +847,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   int_value = 0;
   result    = cardano_cbor_reader_read_int(reader, &int_value);
@@ -856,14 +856,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -871,7 +871,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   int_value = 0;
   result    = cardano_cbor_reader_read_int(reader, &int_value);
@@ -880,7 +880,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   int_value = 0;
   result    = cardano_cbor_reader_read_int(reader, &int_value);
@@ -889,21 +889,21 @@ TEST(cardano_cbor_reader_read_start_array, canReadFixedSizeArrayWithNestedValues
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -914,14 +914,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadAnEmptyIndefiniteLengthArray)
   // Arrange
   const char* cbor_hex = "9fff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -929,14 +929,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadAnEmptyIndefiniteLengthArray)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -947,14 +947,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadIndefiniteLengthArrayWithAndUn
   // Arrange
   const char* cbor_hex = "9f182aff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -962,7 +962,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadIndefiniteLengthArrayWithAndUn
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   uint64_t uint_value = 0;
   result              = cardano_cbor_reader_read_uint(reader, &uint_value);
@@ -971,14 +971,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadIndefiniteLengthArrayWithAndUn
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -989,26 +989,26 @@ TEST(cardano_cbor_reader_read_start_array, canReadIndefiniteLengthArrayWithSever
   // Arrange
   const char* cbor_hex = "9f0102030405060708090a0b0c0d0e0f101112131415161718181819ff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                length = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     length = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   result = cardano_cbor_reader_read_start_array(reader, &length);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(length, -1);
 
   int64_t count = 0;
-  while (state != CBOR_READER_STATE_END_ARRAY)
+  while (state != CARDANO_CBOR_READER_STATE_END_ARRAY)
   {
     count++;
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
-    EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+    EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
     uint64_t value = 0;
     result         = cardano_cbor_reader_read_uint(reader, &value);
@@ -1021,14 +1021,14 @@ TEST(cardano_cbor_reader_read_start_array, canReadIndefiniteLengthArrayWithSever
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1039,14 +1039,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadAnEmptyFixedSizeBytestring)
   // Arrange
   const char* cbor_hex = "40";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BYTESTRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1062,14 +1062,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadFixedSizeBytestring)
   // Arrange
   const char* cbor_hex = "4401020304";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BYTESTRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1089,14 +1089,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadFixedSizeBytestringWithAllFF)
   // Arrange
   const char* cbor_hex = "4effffffffffffffffffffffffffff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BYTESTRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1117,14 +1117,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadEmptyNoArrayIndefiniteArray)
   // Arrange
   const char* cbor_hex = "5fff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1140,14 +1140,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadEmptyIndefiniteArray)
   // Arrange
   const char* cbor_hex = "5f40ff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1163,14 +1163,14 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
   // Arrange
   const char* cbor_hex = "5f41ab40ff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1180,7 +1180,7 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1194,7 +1194,7 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
   // Act
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1205,7 +1205,7 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1219,7 +1219,7 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
   // Act
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1237,7 +1237,7 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1246,91 +1246,91 @@ TEST(cardano_cbor_reader_read_bytestring, canReadNonEmptyIndefiniteSizeByteStrin
 
 TEST(cardano_cbor_reader_read_uint, canReadUnsignedIntegers)
 {
-  verify_int("00", 0, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("01", 1, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("0a", 10, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("17", 23, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1818", 24, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1819", 25, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1864", 100, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1903e8", 1000, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1a000f4240", 1000000, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1b000000e8d4a51000", 1000000000000, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("18ff", 255, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("190100", 256, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1affffffff", 4294967295, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1b7fffffffffffffff", 9223372036854775807, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1b0000000100000000", 4294967296, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("19ffff", 65535, CBOR_READER_STATE_UNSIGNED_INTEGER);
-  verify_int("1a00010000", 65536, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("00", 0, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("01", 1, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("0a", 10, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("17", 23, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1818", 24, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1819", 25, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1864", 100, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1903e8", 1000, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1a000f4240", 1000000, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1b000000e8d4a51000", 1000000000000, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("18ff", 255, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("190100", 256, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1affffffff", 4294967295, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1b7fffffffffffffff", 9223372036854775807, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1b0000000100000000", 4294967296, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("19ffff", 65535, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
+  verify_int("1a00010000", 65536, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 }
 
 TEST(cardano_cbor_reader_read_uint, canReadNegativeIntegers)
 {
-  verify_int("20", -1, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("29", -10, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("37", -24, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("3863", -100, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("3903e7", -1000, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("38ff", -256, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("390100", -257, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("39ffff", -65536, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("3a00010000", -65537, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("3affffffff", -4294967296, CBOR_READER_STATE_NEGATIVE_INTEGER);
-  verify_int("3b0000000100000000", -4294967297, CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("20", -1, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("29", -10, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("37", -24, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("3863", -100, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("3903e7", -1000, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("38ff", -256, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("390100", -257, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("39ffff", -65536, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("3a00010000", -65537, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("3affffffff", -4294967296, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+  verify_int("3b0000000100000000", -4294967297, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
 }
 
 TEST(cardano_cbor_reader_read_double, canReadHalfPresitionValues)
 {
-  verify_float("f90000", 0, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f93c00", 1, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f93e00", 1.5, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f98000", -0, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f93c00", 1, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f97bff", 65504, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f90001", 5.960464477539063e-8, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f90400", 0.00006103515625, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f9c400", -4, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f97c00", INFINITY, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
-  verify_float("f9fc00", -INFINITY, CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f90000", 0, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f93c00", 1, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f93e00", 1.5, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f98000", -0, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f93c00", 1, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f97bff", 65504, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f90001", 5.960464477539063e-8, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f90400", 0.00006103515625, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f9c400", -4, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f97c00", INFINITY, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
+  verify_float("f9fc00", -INFINITY, CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT);
 }
 
 TEST(cardano_cbor_reader_read_double, canSinglePresitionValues)
 {
-  verify_float("fa47c35000", 100000, CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
-  verify_float("fa7f7fffff", 3.4028234663852886e+38, CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
-  verify_float("fa7f800000", INFINITY, CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
-  verify_float("faff800000", -INFINITY, CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
+  verify_float("fa47c35000", 100000, CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
+  verify_float("fa7f7fffff", 3.4028234663852886e+38, CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
+  verify_float("fa7f800000", INFINITY, CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
+  verify_float("faff800000", -INFINITY, CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT);
 }
 
 TEST(cardano_cbor_reader_read_double, canDoublePresitionValues)
 {
-  verify_float("fb3ff199999999999a", 1.1, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
-  verify_float("fb7e37e43c8800759c", 1e300, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
-  verify_float("fbc010666666666666", -4.1, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
-  verify_float("fb7ff0000000000000", INFINITY, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
-  verify_float("fbfff0000000000000", -INFINITY, CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  verify_float("fb3ff199999999999a", 1.1, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  verify_float("fb7e37e43c8800759c", 1e300, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  verify_float("fbc010666666666666", -4.1, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  verify_float("fb7ff0000000000000", INFINITY, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
+  verify_float("fbfff0000000000000", -INFINITY, CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT);
 }
 
 TEST(cardano_cbor_reader_read_null, canReadNullValues)
 {
   const char* cbor_hex = "f6";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_NULL);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_NULL);
 
   result = cardano_cbor_reader_read_null(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1339,14 +1339,14 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
 {
   const char* cbor_hex = "f4f5";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BOOLEAN);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool value = false;
   result     = cardano_cbor_reader_read_boolean(reader, &value);
@@ -1355,7 +1355,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BOOLEAN);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   result = cardano_cbor_reader_read_boolean(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1363,7 +1363,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1372,34 +1372,34 @@ TEST(cardano_cbor_reader_read_simple_value, canReadSimpleValues)
 {
   const char* cbor_hex = "e0f4f5f6f7f820f8ff";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_SIMPLE_VALUE);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_SIMPLE_VALUE);
 
-  cbor_simple_value_t value = CBOR_SIMPLE_VALUE_FALSE;
-  result                    = cardano_cbor_reader_read_simple_value(reader, &value);
+  cardano_cbor_simple_value_t value = CARDANO_CBOR_SIMPLE_VALUE_FALSE;
+  result                            = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(value, 0);
 
   result = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(value, CBOR_SIMPLE_VALUE_FALSE);
+  EXPECT_EQ(value, CARDANO_CBOR_SIMPLE_VALUE_FALSE);
 
   result = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(value, CBOR_SIMPLE_VALUE_TRUE);
+  EXPECT_EQ(value, CARDANO_CBOR_SIMPLE_VALUE_TRUE);
 
   result = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(value, CBOR_SIMPLE_VALUE_NULL);
+  EXPECT_EQ(value, CARDANO_CBOR_SIMPLE_VALUE_NULL);
 
   result = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(value, CBOR_SIMPLE_VALUE_UNDEFINED);
+  EXPECT_EQ(value, CARDANO_CBOR_SIMPLE_VALUE_UNDEFINED);
 
   result = cardano_cbor_reader_read_simple_value(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1411,7 +1411,7 @@ TEST(cardano_cbor_reader_read_simple_value, canReadSimpleValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1420,13 +1420,13 @@ TEST(cardano_cbor_reader_skip_value, canSkipAIndefiniteLengthWithoutDecoding)
 {
   const char* cbor_hex = "845f41ab40ff456C6F72656D45697073756D45646F6C6F72";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   int64_t size = 0;
   result       = cardano_cbor_reader_read_start_array(reader, &size);
@@ -1455,14 +1455,14 @@ TEST(cardano_cbor_reader_skip_value, canSkipAIndefiniteLengthWithoutDecoding)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1471,13 +1471,13 @@ TEST(cardano_cbor_reader_skip_value, canSkipAIndefiniteLengthElements)
 {
   const char* cbor_hex = "8a9f182aff5f40ffa201020304bf6161614161626142616361436164614461656145ffc11a514b67b07f62616262626360ff1a00010000f9040038fff4";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   int64_t size = 0;
   result       = cardano_cbor_reader_read_start_array(reader, &size);
@@ -1516,14 +1516,14 @@ TEST(cardano_cbor_reader_skip_value, canSkipAIndefiniteLengthElements)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1532,13 +1532,13 @@ TEST(cardano_cbor_reader_skip_value, canSkipAValueWithoutDecoding)
 {
   const char* cbor_hex = "83656c6f72656d65697073756d65646f6c6f72";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   int64_t size = 0;
   result       = cardano_cbor_reader_read_start_array(reader, &size);
@@ -1570,14 +1570,14 @@ TEST(cardano_cbor_reader_skip_value, canSkipAValueWithoutDecoding)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1586,13 +1586,13 @@ TEST(cardano_cbor_reader_skip_value, canGetAValueWithoutDecoding)
 {
   const char* cbor_hex = "83456C6F72656D45697073756D45646F6C6F72";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer = nullptr;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer = nullptr;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_ARRAY);
 
   int64_t size = 0;
   result       = cardano_cbor_reader_read_start_array(reader, &size);
@@ -1618,14 +1618,14 @@ TEST(cardano_cbor_reader_skip_value, canGetAValueWithoutDecoding)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_ARRAY);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_ARRAY);
 
   result = cardano_cbor_reader_read_end_array(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1634,23 +1634,23 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedValues)
 {
   const char* cbor_hex = "c074323031332d30332d32315432303a30343a30305a";
 
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer   = nullptr;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
-  char                   text[30] = { 0 };
-  cbor_tag_t             tag      = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer   = nullptr;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  char                        text[30] = { 0 };
+  cardano_cbor_tag_t          tag      = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TEXT_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TEXTSTRING);
 
   result = cardano_cbor_reader_read_textstring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1662,7 +1662,7 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -1672,22 +1672,22 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedUnixValues)
 {
   const char* cbor_hex = "c11a514b67b0";
 
-  cardano_cbor_reader_t* reader  = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  uint64_t               seconds = 0;
-  cbor_reader_state_t    state   = CBOR_READER_STATE_UNDEFINED;
-  cbor_tag_t             tag     = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_t*      reader  = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  uint64_t                    seconds = 0;
+  cardano_cbor_reader_state_t state   = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_tag_t          tag     = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_UNIX_TIME_SECONDS);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_UNIX_TIME_SECONDS);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   result = cardano_cbor_reader_read_uint(reader, &seconds);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1696,7 +1696,7 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedUnixValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1705,22 +1705,22 @@ TEST(cardano_cbor_reader_read_tag, canReadUnsignedBignumValues)
 {
   const char* cbor_hex = "c202";
 
-  cardano_cbor_reader_t* reader  = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  uint64_t               seconds = 0;
-  cbor_reader_state_t    state   = CBOR_READER_STATE_UNDEFINED;
-  cbor_tag_t             tag     = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_t*      reader  = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  uint64_t                    seconds = 0;
+  cardano_cbor_reader_state_t state   = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_tag_t          tag     = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_UNSIGNED_BIG_NUM);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_UNSIGNED_INTEGER);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER);
 
   result = cardano_cbor_reader_read_uint(reader, &seconds);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1729,7 +1729,7 @@ TEST(cardano_cbor_reader_read_tag, canReadUnsignedBignumValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1738,15 +1738,15 @@ TEST(cardano_cbor_reader_read_tag, canReadBase16Values)
 {
   const char* cbor_hex = "d74401020304";
 
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer   = nullptr;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
-  char                   text[30] = { 0 };
-  cbor_tag_t             tag      = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer   = nullptr;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  char                        text[30] = { 0 };
+  cardano_cbor_tag_t          tag      = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1754,7 +1754,7 @@ TEST(cardano_cbor_reader_read_tag, canReadBase16Values)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_BYTESTRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BYTESTRING);
 
   result = cardano_cbor_reader_read_bytestring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1766,7 +1766,7 @@ TEST(cardano_cbor_reader_read_tag, canReadBase16Values)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -1776,15 +1776,15 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedUriValue)
 {
   const char* cbor_hex = "d82076687474703a2f2f7777772e6578616d706c652e636f6d";
 
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer   = nullptr;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
-  char                   text[30] = { 0 };
-  cbor_tag_t             tag      = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer   = nullptr;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  char                        text[30] = { 0 };
+  cardano_cbor_tag_t          tag      = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1792,7 +1792,7 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedUriValue)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TEXT_STRING);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TEXTSTRING);
 
   result = cardano_cbor_reader_read_textstring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1804,7 +1804,7 @@ TEST(cardano_cbor_reader_read_tag, canReadSingleTaggedUriValue)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -1909,39 +1909,39 @@ TEST(cardano_cbor_reader_read_tag, canReadNestedTaggedValues)
 {
   const char* cbor_hex = "c0c0c074323031332d30332d32315432303a30343a30305a";
 
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cardano_buffer_t*      buffer   = nullptr;
-  char                   text[30] = { 0 };
-  cbor_tag_t             tag      = CBOR_TAG_SELF_DESCRIBE_CBOR;
-  cbor_reader_state_t    state    = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*           buffer   = nullptr;
+  char                        text[30] = { 0 };
+  cardano_cbor_tag_t          tag      = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_peek_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_TAG);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_TAG);
 
   result = cardano_cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   result = cardano_cbor_reader_read_textstring(reader, &buffer);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1953,7 +1953,7 @@ TEST(cardano_cbor_reader_read_tag, canReadNestedTaggedValues)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -1961,34 +1961,34 @@ TEST(cardano_cbor_reader_read_tag, canReadNestedTaggedValues)
 
 TEST(cardano_cbor_reader_read_textstring, canReadFixedLengthTextStrings)
 {
-  verify_text("60", "", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("6161", "a", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("6449455446", "IETF", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("62225c", "\"\\", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("62c3bc", "\u00FC", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("63e6b0b4", "\u6C34", CBOR_READER_STATE_TEXT_STRING);
-  verify_text("62cebb", "\u03BB", CBOR_READER_STATE_TEXT_STRING);
+  verify_text("60", "", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("6161", "a", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("6449455446", "IETF", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("62225c", "\"\\", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("62c3bc", "\u00FC", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("63e6b0b4", "\u6C34", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("62cebb", "\u03BB", CARDANO_CBOR_READER_STATE_TEXTSTRING);
 }
 
 TEST(cardano_cbor_reader_read_textstring, canReadIndefiniteLengthTextStrings)
 {
-  verify_text("7fff", "", CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXT_STRING);
-  verify_text("7f60ff", "", CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXT_STRING);
-  verify_text("7f62616260ff", "ab", CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXT_STRING);
-  verify_text("7f62616262626360ff", "abbc", CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXT_STRING);
+  verify_text("7fff", "", CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXTSTRING);
+  verify_text("7f60ff", "", CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXTSTRING);
+  verify_text("7f62616260ff", "ab", CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXTSTRING);
+  verify_text("7f62616262626360ff", "abbc", CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXTSTRING);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadEmptyMap)
 {
   const char* cbor_hex = "a0";
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  int64_t                size   = 0;
-  cbor_reader_state_t    state  = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_t*      reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  int64_t                     size   = 0;
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_MAP);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_MAP);
 
   result = cardano_cbor_reader_read_start_map(reader, &size);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1996,7 +1996,7 @@ TEST(cardano_cbor_reader_read_start_map, canReadEmptyMap)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_MAP);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_MAP);
 
   result = cardano_cbor_reader_read_end_map(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -2006,8 +2006,8 @@ TEST(cardano_cbor_reader_read_start_map, canReadEmptyMap)
 
 TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithNumbers)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "a201020304";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "a201020304";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2016,15 +2016,15 @@ TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithNumbers)
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithStrings)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "a56161614161626142616361436164614461656145";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "a56161614161626142616361436164614461656145";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2033,15 +2033,15 @@ TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithStrings)
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithMixedTypes)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "a3616161412002404101";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "a3616161412002404101";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2050,15 +2050,15 @@ TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithMixedTypes)
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithNestedTypes)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "a26161a102036162a26178206179a1617a00";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "a26161a102036162a26178206179a1617a00";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2067,22 +2067,22 @@ TEST(cardano_cbor_reader_read_start_map, canReadFixedLengthMapsWithNestedTypes)
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadEmptyIndefiniteLengthMaps)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "bfff";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "bfff";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   int64_t                size   = 0;
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_START_MAP);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_START_MAP);
 
   result = cardano_cbor_reader_read_start_map(reader, &size);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -2090,7 +2090,7 @@ TEST(cardano_cbor_reader_read_start_map, canReadEmptyIndefiniteLengthMaps)
 
   result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_END_MAP);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_END_MAP);
 
   result = cardano_cbor_reader_read_end_map(reader);
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -2100,8 +2100,8 @@ TEST(cardano_cbor_reader_read_start_map, canReadEmptyIndefiniteLengthMaps)
 
 TEST(cardano_cbor_reader_read_start_map, canReadIndefiniteLengthMapsWithStrings)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "bf6161614161626142616361436164614461656145ff";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "bf6161614161626142616361436164614461656145ff";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2110,15 +2110,15 @@ TEST(cardano_cbor_reader_read_start_map, canReadIndefiniteLengthMapsWithStrings)
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_start_map, canReadIndefiniteLengthMapsWithMixedTypes)
 {
-  cbor_reader_state_t state    = CBOR_READER_STATE_UNDEFINED;
-  const char*         cbor_hex = "bf616161412002404101ff";
+  cardano_cbor_reader_state_t state    = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  const char*                 cbor_hex = "bf616161412002404101ff";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
   std::string            json   = get_json_val(reader);
@@ -2127,7 +2127,7 @@ TEST(cardano_cbor_reader_read_start_map, canReadIndefiniteLengthMapsWithMixedTyp
 
   cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -2139,12 +2139,12 @@ TEST(_cbor_reader_peek_tag, canPeekTag)
   const char* cbor_hex = "c074323031332d30332d32315432303a30343a30305a";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cbor_tag_t             tag    = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_tag_t     tag    = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   // Act
   cardano_error_t result = _cbor_reader_peek_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2152,7 +2152,7 @@ TEST(_cbor_reader_peek_tag, canPeekTag)
 
 TEST(_cbor_reader_peek_tag, returnErrorIfReaderIsNull)
 {
-  cbor_tag_t tag = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   // Act
   cardano_error_t result = _cbor_reader_peek_tag(nullptr, &tag);
@@ -2164,12 +2164,12 @@ TEST(_cbor_reader_read_tag, canReadTag)
   const char* cbor_hex = "c074323031332d30332d32315432303a30343a30305a";
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cbor_tag_t             tag    = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_tag_t     tag    = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   // Act
   cardano_error_t result = _cbor_reader_read_tag(reader, &tag);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(tag, CBOR_TAG_DATE_TIME_STRING);
+  EXPECT_EQ(tag, CARDANO_CBOR_TAG_DATE_TIME_STRING);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2177,7 +2177,7 @@ TEST(_cbor_reader_read_tag, canReadTag)
 
 TEST(_cbor_reader_read_tag, returnErrorIfReaderIsNull)
 {
-  cbor_tag_t tag = CBOR_TAG_SELF_DESCRIBE_CBOR;
+  cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
 
   // Act
   cardano_error_t result = _cbor_reader_read_tag(nullptr, &tag);
@@ -2246,9 +2246,9 @@ TEST(_cbor_reader_read_null, returnErrorSimpleValueButAdditionalInfoIsNotNull)
 
 TEST(_cbor_reader_read_simple_value, returnErrorIfInvalidInitialByte)
 {
-  const char*            cbor_hex = "40";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cbor_simple_value_t    value    = CBOR_SIMPLE_VALUE_FALSE;
+  const char*                 cbor_hex = "40";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_cbor_simple_value_t value    = CARDANO_CBOR_SIMPLE_VALUE_FALSE;
 
   // Act
   cardano_error_t result = _cbor_reader_read_simple_value(reader, &value);
@@ -2260,9 +2260,9 @@ TEST(_cbor_reader_read_simple_value, returnErrorIfInvalidInitialByte)
 
 TEST(_cbor_reader_read_simple_value, returnErrorIfNotAValidSimpleValue)
 {
-  const char*            cbor_hex = "ff";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-  cbor_simple_value_t    value    = CBOR_SIMPLE_VALUE_FALSE;
+  const char*                 cbor_hex = "ff";
+  cardano_cbor_reader_t*      reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_cbor_simple_value_t value    = CARDANO_CBOR_SIMPLE_VALUE_FALSE;
 
   // Act
   cardano_error_t result = _cbor_reader_read_simple_value(reader, &value);
@@ -2507,7 +2507,7 @@ TEST(_cbor_reader_read_uint, returnErrorIfMajorTypeIsSignedInt)
 TEST(_cbor_reader_read_start_indefinite_length_string, returnErrorIfValueIsNull)
 {
   // Act
-  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(nullptr, CBOR_MAJOR_TYPE_UTF8_STRING);
+  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(nullptr, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING);
   EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
 
@@ -2518,7 +2518,7 @@ TEST(_cbor_reader_read_start_indefinite_length_string, returnsErrorIfReaderIsEmp
   reader->offset                  = 1;
 
   // Act
-  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(reader, CBOR_MAJOR_TYPE_UTF8_STRING);
+  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(reader, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2531,7 +2531,7 @@ TEST(_cbor_reader_read_start_indefinite_length_string, returnsErrorIfInvalidInit
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   // Act
-  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(reader, CBOR_MAJOR_TYPE_TAG);
+  cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(reader, CARDANO_CBOR_MAJOR_TYPE_TAG);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2544,7 +2544,7 @@ TEST(_cbor_reader_read_end_indefinite_length_string, returnsErrorIfInvalidInitia
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   // Act
-  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CBOR_MAJOR_TYPE_TAG);
+  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CARDANO_CBOR_MAJOR_TYPE_TAG);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2557,7 +2557,7 @@ TEST(_cbor_reader_read_end_indefinite_length_string, returnsErrorIfInvalidIndefi
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   // Act
-  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CBOR_MAJOR_TYPE_TAG);
+  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CARDANO_CBOR_MAJOR_TYPE_TAG);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2572,7 +2572,7 @@ TEST(_cbor_reader_read_end_indefinite_length_string, returnsErrorIfThereAreNoMor
   reader->current_frame.definite_length = 0;
 
   // Act
-  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CBOR_MAJOR_TYPE_UTF8_STRING);
+  cardano_error_t result = _cbor_reader_read_end_indefinite_length_string(reader, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2784,7 +2784,7 @@ TEST(_cbor_reader_read_string, returnsErrorIfInvalidInitialByte)
 
   // Act
   cardano_buffer_t* buffer = NULL;
-  cardano_error_t   result = _cbor_reader_read_string(reader, CBOR_MAJOR_TYPE_TAG, &buffer);
+  cardano_error_t   result = _cbor_reader_read_string(reader, CARDANO_CBOR_MAJOR_TYPE_TAG, &buffer);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2796,10 +2796,10 @@ TEST(_cbor_reader_pop_data_item, returnsErrorIfCurrentTypeDoesntMatchPopExpected
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, 1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, 1);
 
   // Act
-  cardano_error_t result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_TAG);
+  cardano_error_t result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_TAG);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2811,10 +2811,10 @@ TEST(_cbor_reader_pop_data_item, returnsErrorIfInvalidLenght)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, 1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, 1);
 
   // Act
-  cardano_error_t result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_ARRAY);
+  cardano_error_t result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2826,11 +2826,11 @@ TEST(_cbor_reader_pop_data_item, returnsErrorIfIsTagContext)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
   reader->is_tag_context = true;
 
   // Act
-  cardano_error_t result = _cbor_reader_pop_data_item(reader, CBOR_MAJOR_TYPE_ARRAY);
+  cardano_error_t result = _cbor_reader_pop_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2842,12 +2842,12 @@ TEST(_cbor_reader_peek_initial_byte, returnsErrorIfAlreadyAtEndOfBuffer)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
   reader->offset = 1;
 
   // Act
   uint8_t         initial_byte = 0;
-  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
+  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2859,14 +2859,14 @@ TEST(_cbor_reader_peek_initial_byte, returnsErrorIfAlreadyAtEndOfIndefiniteArray
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
   reader->offset                        = 1;
-  reader->current_frame.type            = CBOR_MAJOR_TYPE_UNDEFINED;
+  reader->current_frame.type            = CARDANO_CBOR_MAJOR_TYPE_UNDEFINED;
   reader->current_frame.definite_length = -1;
 
   // Act
   uint8_t         initial_byte = 0;
-  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
+  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2878,13 +2878,13 @@ TEST(_cbor_reader_peek_initial_byte, returnsErrorIfIndefiniteLengthStringContain
   const char*            cbor_hex = "F9";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type            = CBOR_MAJOR_TYPE_UTF8_STRING;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type            = CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING;
   reader->current_frame.definite_length = -1;
 
   // Act
   uint8_t         initial_byte = 0;
-  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
+  cardano_error_t result       = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, &initial_byte);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2909,8 +2909,8 @@ TEST(_cbor_reader_skip_next_node, returnsErrorIfInvalidState)
   const char*            cbor_hex = "F9";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type            = CBOR_MAJOR_TYPE_BYTE_STRING;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type            = CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING;
   reader->current_frame.definite_length = 1;
 
   // Act
@@ -2924,7 +2924,7 @@ TEST(_cbor_reader_skip_next_node, returnsErrorIfInvalidState)
 
 TEST(_cbor_reader_peek_state, returnErrorIfReaderIsNull)
 {
-  cbor_reader_state_t state = CBOR_READER_STATE_UNDEFINED;
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   // Act
   cardano_error_t result = _cbor_reader_peek_state(nullptr, &state);
@@ -2949,16 +2949,16 @@ TEST(_cbor_reader_peek_state, returnStateFinishesIfNoMoreItems)
   const char*            cbor_hex = "F9";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type            = CBOR_MAJOR_TYPE_UNDEFINED;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type            = CARDANO_CBOR_MAJOR_TYPE_UNDEFINED;
   reader->current_frame.definite_length = 1;
   reader->current_frame.items_read      = 1;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(state, CBOR_READER_STATE_FINISHED);
+  EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_FINISHED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2969,14 +2969,14 @@ TEST(_cbor_reader_peek_state, returnErrorIfInvalidEndMarker)
   const char*            cbor_hex = "F9";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type            = CBOR_MAJOR_TYPE_TAG;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type            = CARDANO_CBOR_MAJOR_TYPE_TAG;
   reader->current_frame.definite_length = 1;
   reader->current_frame.items_read      = 1;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -2988,13 +2988,13 @@ TEST(_cbor_reader_peek_state, returnErrorIfTagNotFollowedByValue)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type = CBOR_MAJOR_TYPE_TAG;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type = CARDANO_CBOR_MAJOR_TYPE_TAG;
   reader->is_tag_context     = true;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3006,12 +3006,12 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedBreakByte)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type = CBOR_MAJOR_TYPE_UNDEFINED;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type = CARDANO_CBOR_MAJOR_TYPE_UNDEFINED;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3023,13 +3023,13 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedMapSize)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type       = CBOR_MAJOR_TYPE_MAP;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type       = CARDANO_CBOR_MAJOR_TYPE_MAP;
   reader->current_frame.items_read = 1;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3041,12 +3041,12 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedEndOfIndefiniteSizeElement)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type = CBOR_MAJOR_TYPE_TAG;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type = CARDANO_CBOR_MAJOR_TYPE_TAG;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3058,12 +3058,12 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedBreakByteInIndefiniteLength
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
   reader->current_frame.definite_length = 1;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3075,13 +3075,13 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedEndOfBufferDueToBufferOverf
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type = CBOR_MAJOR_TYPE_TAG;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type = CARDANO_CBOR_MAJOR_TYPE_TAG;
   reader->offset             = 5;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup
@@ -3093,13 +3093,13 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedEndOfBuffer)
   const char*            cbor_hex = "FF";
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
-  _cbor_reader_push_data_item(reader, CBOR_MAJOR_TYPE_ARRAY, -1);
-  reader->current_frame.type = CBOR_MAJOR_TYPE_TAG;
+  _cbor_reader_push_data_item(reader, CARDANO_CBOR_MAJOR_TYPE_ARRAY, -1);
+  reader->current_frame.type = CARDANO_CBOR_MAJOR_TYPE_TAG;
   reader->offset             = 1;
 
   // Act
-  cbor_reader_state_t state  = CBOR_READER_STATE_UNDEFINED;
-  cardano_error_t     result = _cbor_reader_peek_state(reader, &state);
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = _cbor_reader_peek_state(reader, &state);
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   // Cleanup

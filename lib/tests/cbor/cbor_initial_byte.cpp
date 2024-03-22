@@ -31,7 +31,7 @@
 TEST(cbor_initial_byte, cardano_cbor_initial_byte_pack)
 {
   // Arrange
-  const byte_t initial_byte = cardano_cbor_initial_byte_pack(CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CBOR_ADDITIONAL_INFO_8BIT_DATA);
+  const byte_t initial_byte = cardano_cbor_initial_byte_pack(CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA);
 
   // Assert
   EXPECT_EQ(initial_byte, 0x18);
@@ -40,17 +40,17 @@ TEST(cbor_initial_byte, cardano_cbor_initial_byte_pack)
 TEST(cbor_initial_byte, cardano_cbor_initial_byte_get_major_type)
 {
   // Arrange
-  const cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(0x18);
+  const cardano_cbor_major_type_t major_type = cardano_cbor_initial_byte_get_major_type(0x18);
 
   // Assert
-  EXPECT_EQ(major_type, CBOR_MAJOR_TYPE_UNSIGNED_INTEGER);
+  EXPECT_EQ(major_type, CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER);
 }
 
 TEST(cbor_initial_byte, cardano_cbor_initial_byte_get_additional_info)
 {
   // Arrange
-  const cbor_additional_info_t additional_info = cardano_cbor_initial_byte_get_additional_info(0x18);
+  const cardano_cbor_additional_info_t additional_info = cardano_cbor_initial_byte_get_additional_info(0x18);
 
   // Assert
-  EXPECT_EQ(additional_info, CBOR_ADDITIONAL_INFO_8BIT_DATA);
+  EXPECT_EQ(additional_info, CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA);
 }

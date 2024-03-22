@@ -43,21 +43,21 @@ typedef enum
    *
    * This value is used to represent the boolean false in CBOR-encoded data.
    */
-  CBOR_SIMPLE_VALUE_FALSE = 20,
+  CARDANO_CBOR_SIMPLE_VALUE_FALSE = 20,
 
   /**
    * \brief Represents the value 'true'.
    *
    * This value is used to represent the boolean true in CBOR-encoded data.
    */
-  CBOR_SIMPLE_VALUE_TRUE = 21,
+  CARDANO_CBOR_SIMPLE_VALUE_TRUE = 21,
 
   /**
    * \brief Represents the value 'null'.
    *
    * This value signifies a null reference or the absence of data in CBOR-encoded data.
    */
-  CBOR_SIMPLE_VALUE_NULL = 22,
+  CARDANO_CBOR_SIMPLE_VALUE_NULL = 22,
 
   /**
    * \brief Represents an undefined value.
@@ -65,8 +65,8 @@ typedef enum
    * This value is used by an encoder as a substitute for a data item with an encoding problem,
    * indicating the absence of meaningful or correct data.
    */
-  CBOR_SIMPLE_VALUE_UNDEFINED = 23
-} cbor_simple_value_t;
+  CARDANO_CBOR_SIMPLE_VALUE_UNDEFINED = 23
+} cardano_cbor_simple_value_t;
 
 #ifdef __cplusplus
 }

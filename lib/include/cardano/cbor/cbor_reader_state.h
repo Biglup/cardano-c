@@ -42,102 +42,102 @@ typedef enum
    * This state is used when the CborReader has not yet begun processing
    * or the state is otherwise unknown.
    */
-  CBOR_READER_STATE_UNDEFINED = 0,
+  CARDANO_CBOR_READER_STATE_UNDEFINED = 0,
 
   /**
    * \brief Indicates that the next CBOR data item is an unsigned integer (major type 0).
    */
-  CBOR_READER_STATE_UNSIGNED_INTEGER,
+  CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER,
 
   /**
    * \brief Indicates that the next CBOR data item is a negative integer (major type 1).
    */
-  CBOR_READER_STATE_NEGATIVE_INTEGER,
+  CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER,
 
   /**
    * \brief Indicates that the next CBOR data item is a byte string (major type 2).
    */
-  CBOR_READER_STATE_BYTESTRING,
+  CARDANO_CBOR_READER_STATE_BYTESTRING,
 
   /**
    * \brief Indicates the start of an indefinite-length byte string (major type 2).
    */
-  CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTE_STRING,
+  CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_BYTESTRING,
 
   /**
    * \brief Indicates the end of an indefinite-length byte string (major type 2).
    */
-  CBOR_READER_STATE_END_INDEFINITE_LENGTH_BYTE_STRING,
+  CARDANO_CBOR_READER_STATE_END_INDEFINITE_LENGTH_BYTESTRING,
 
   /**
    * \brief Indicates that the next CBOR data item is a UTF-8 string (major type 3).
    */
-  CBOR_READER_STATE_TEXT_STRING,
+  CARDANO_CBOR_READER_STATE_TEXTSTRING,
 
   /**
    * \brief Indicates the start of an indefinite-length UTF-8 text string (major type 3).
    */
-  CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXT_STRING,
+  CARDANO_CBOR_READER_STATE_START_INDEFINITE_LENGTH_TEXTSTRING,
 
   /**
    * \brief Indicates the end of an indefinite-length UTF-8 text string (major type 3).
    */
-  CBOR_READER_STATE_END_INDEFINITE_LENGTH_TEXT_STRING,
+  CARDANO_CBOR_READER_STATE_END_INDEFINITE_LENGTH_TEXTSTRING,
 
   /**
    * \brief Indicates the start of an array (major type 4).
    */
-  CBOR_READER_STATE_START_ARRAY,
+  CARDANO_CBOR_READER_STATE_START_ARRAY,
 
   /**
    * \brief Indicates the end of an array (major type 4).
    */
-  CBOR_READER_STATE_END_ARRAY,
+  CARDANO_CBOR_READER_STATE_END_ARRAY,
 
   /**
    * \brief Indicates the start of a map (major type 5).
    */
-  CBOR_READER_STATE_START_MAP,
+  CARDANO_CBOR_READER_STATE_START_MAP,
 
   /**
    * \brief Indicates the end of a map (major type 5).
    */
-  CBOR_READER_STATE_END_MAP,
+  CARDANO_CBOR_READER_STATE_END_MAP,
 
   /**
    * \brief Indicates that the next CBOR data item is a semantic tag (major type 6).
    */
-  CBOR_READER_STATE_TAG,
+  CARDANO_CBOR_READER_STATE_TAG,
 
   /**
    * \brief Indicates that the next CBOR data item is a simple value (major type 7).
    */
-  CBOR_READER_STATE_SIMPLE_VALUE,
+  CARDANO_CBOR_READER_STATE_SIMPLE_VALUE,
 
   /**
    * \brief Indicates an IEEE 754 Half-Precision float (major type 7).
    */
-  CBOR_READER_STATE_HALF_PRECISION_FLOAT,
+  CARDANO_CBOR_READER_STATE_HALF_PRECISION_FLOAT,
 
   /**
    * \brief Indicates an IEEE 754 Single-Precision float (major type 7).
    */
-  CBOR_READER_STATE_SINGLE_PRECISION_FLOAT,
+  CARDANO_CBOR_READER_STATE_SINGLE_PRECISION_FLOAT,
 
   /**
    * \brief Indicates an IEEE 754 Double-Precision float (major type 7).
    */
-  CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT,
+  CARDANO_CBOR_READER_STATE_DOUBLE_PRECISION_FLOAT,
 
   /**
    * \brief Indicates a null literal (major type 7).
    */
-  CBOR_READER_STATE_NULL,
+  CARDANO_CBOR_READER_STATE_NULL,
 
   /**
    * \brief Indicates a bool value (major type 7).
    */
-  CBOR_READER_STATE_BOOLEAN,
+  CARDANO_CBOR_READER_STATE_BOOLEAN,
 
   /**
    * \brief Indicates the completion of reading a full CBOR document.
@@ -145,8 +145,8 @@ typedef enum
    * This state is reached when the CborReader has successfully processed
    * an entire CBOR document and there are no more data items to read.
    */
-  CBOR_READER_STATE_FINISHED
-} cbor_reader_state_t;
+  CARDANO_CBOR_READER_STATE_FINISHED
+} cardano_cbor_reader_state_t;
 
 #ifdef __cplusplus
 }
