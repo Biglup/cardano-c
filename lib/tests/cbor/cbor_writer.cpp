@@ -1,5 +1,5 @@
 /**
- * \file cbor_writer.cpp
+ * \file cbor.cpp
  *
  * \author angel.castillo
  * \date   Sep 09, 2023
@@ -273,7 +273,7 @@ TEST(cardano_cbor_writer_move, returnsNullIfGivenANullPtr)
 TEST(cardano_cbor_writer_tag, returnsNullIfGivenANullPtr)
 {
   // Act
-  cardano_error_t write_result = cardano_cbor_writer_write_tag(nullptr, CBOR_TAG_UNIX_TIME_SECONDS);
+  cardano_error_t write_result = cardano_cbor_writer_write_tag(nullptr, CARDANO_CBOR_TAG_UNIX_TIME_SECONDS);
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_POINTER_IS_NULL);
@@ -297,7 +297,7 @@ TEST(cardano_cbor_writer_write_tag, writesATag)
   size_t                 written    = 0;
 
   // Act
-  cardano_error_t write_result  = cardano_cbor_writer_write_tag(writer, CBOR_TAG_UNIX_TIME_SECONDS);
+  cardano_error_t write_result  = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_UNIX_TIME_SECONDS);
   cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written);
 
   // Assert
@@ -316,9 +316,9 @@ TEST(cardano_cbor_writer_write_tag, writesNestedTaggedValues)
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
   // Act
-  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_DATE_TIME_STRING), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "2013-03-21T20:04:00Z", strlen("2013-03-21T20:04:00Z")), CARDANO_SUCCESS);
 
   const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
@@ -340,7 +340,7 @@ TEST(cardano_cbor_writer_write_tag, writesSingleTaggedUnixTimeSeconds)
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
   // Act
-  cardano_error_t write_result      = cardano_cbor_writer_write_tag(writer, CBOR_TAG_UNIX_TIME_SECONDS);
+  cardano_error_t write_result      = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_UNIX_TIME_SECONDS);
   cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, 1363896240);
   const size_t    hex_string_size   = cardano_cbor_writer_get_hex_size(writer);
   char*           encoded_hex       = (char*)malloc(hex_string_size);

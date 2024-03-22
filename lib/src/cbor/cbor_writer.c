@@ -60,7 +60,7 @@ typedef struct cardano_cbor_writer_t
  *               where the encoded data will be written.
  * \param major_type The CBOR major type of the value to write. This parameter defines the data type
  *                   and format of the value in the CBOR encoding (e.g., unsigned integer, byte string, etc.).
- *                   It must be one of the values defined by the \c cbor_major_type_t enumeration.
+ *                   It must be one of the values defined by the \c cardano_cbor_major_type_t enumeration.
  * \param value The value to be encoded and written to the buffer. The function interprets and encodes
  *              this value according to the specified CBOR major type.
  *
@@ -69,7 +69,7 @@ typedef struct cardano_cbor_writer_t
  *         operation, a corresponding error code is returned, indicating the failure reason.
  */
 static cardano_error_t
-write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, const uint64_t value)
+write_type_value(cardano_buffer_t* buffer, const cardano_cbor_major_type_t major_type, const uint64_t value)
 {
   const byte_t type = (byte_t)major_type << 5;
 
@@ -85,7 +85,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 256U)
   {
-    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_8BIT_DATA;
+    byte_t          header = type | (byte_t)CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -98,7 +98,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 65536U)
   {
-    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_16BIT_DATA;
+    byte_t          header = type | (byte_t)CARDANO_CBOR_ADDITIONAL_INFO_16BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -110,7 +110,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else if (value < 4294967296U)
   {
-    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_32BIT_DATA;
+    byte_t          header = type | (byte_t)CARDANO_CBOR_ADDITIONAL_INFO_32BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -122,7 +122,7 @@ write_type_value(cardano_buffer_t* buffer, const cbor_major_type_t major_type, c
   }
   else
   {
-    byte_t          header = type | (byte_t)CBOR_ADDITIONAL_INFO_64BIT_DATA;
+    byte_t          header = type | (byte_t)CARDANO_CBOR_ADDITIONAL_INFO_64BIT_DATA;
     cardano_error_t result = cardano_buffer_write(buffer, &header, sizeof(header));
 
     if (result != CARDANO_SUCCESS)
@@ -253,7 +253,7 @@ cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, uint64_t va
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = cardano_cbor_writer_write_tag(writer, CBOR_TAG_UNSIGNED_BIG_NUM);
+  cardano_error_t result = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -289,7 +289,7 @@ cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* dat
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = write_type_value(writer->buffer, CBOR_MAJOR_TYPE_BYTE_STRING, size);
+  cardano_error_t result = write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING, size);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -312,7 +312,7 @@ cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char*
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = write_type_value(writer->buffer, CBOR_MAJOR_TYPE_UTF8_STRING, size);
+  cardano_error_t result = write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING, size);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -353,7 +353,7 @@ cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, size_t size
     return cardano_buffer_write(writer->buffer, &indefinite_length_array, sizeof(indefinite_length_array));
   }
 
-  return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_ARRAY, size);
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_ARRAY, size);
 }
 
 cardano_error_t
@@ -384,7 +384,7 @@ cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, size_t size)
     return cardano_buffer_write(writer->buffer, &indefinite_length_map, sizeof(indefinite_length_map));
   }
 
-  return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_MAP, size);
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_MAP, size);
 }
 
 cardano_error_t
@@ -401,7 +401,7 @@ cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, uint64_t v
     return CARDANO_POINTER_IS_NULL;
   }
 
-  return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
 }
 
 cardano_error_t
@@ -414,10 +414,10 @@ cardano_cbor_writer_write_signed_int(cardano_cbor_writer_t* writer, int64_t valu
 
   if (value < 0)
   {
-    return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, -1 - value);
+    return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, -1 - value);
   }
 
-  return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
 }
 
 cardano_error_t
@@ -447,14 +447,14 @@ cardano_cbor_writer_write_undefined(cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cbor_tag_t tag)
+cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cardano_cbor_tag_t tag)
 {
   if (writer == NULL)
   {
     return CARDANO_POINTER_IS_NULL;
   }
 
-  return write_type_value(writer->buffer, CBOR_MAJOR_TYPE_TAG, tag);
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_TAG, tag);
 }
 
 cardano_error_t

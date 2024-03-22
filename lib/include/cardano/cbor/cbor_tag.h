@@ -44,7 +44,7 @@ typedef enum
    * Indicates that the following string data item is formatted according
    * to the RFC3339 specification for date and time.
    */
-  CBOR_TAG_DATE_TIME_STRING = 0,
+  CARDANO_CBOR_TAG_DATE_TIME_STRING = 0,
 
   /**
    * \brief Tag value for Epoch-based date/time in seconds.
@@ -52,7 +52,7 @@ typedef enum
    * Denotes that the following integer data item represents a date and time as
    * the number of seconds elapsed since the Unix epoch (1970-01-01T00:00Z).
    */
-  CBOR_TAG_UNIX_TIME_SECONDS = 1,
+  CARDANO_CBOR_TAG_UNIX_TIME_SECONDS = 1,
 
   /**
    * \brief Tag value for unsigned bignum encodings.
@@ -60,7 +60,7 @@ typedef enum
    * Used to encode arbitrarily large unsigned integers that cannot fit within
    * the standard integer data item types.
    */
-  CBOR_TAG_UNSIGNED_BIG_NUM = 2,
+  CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM = 2,
 
   /**
    * \brief Tag value for negative bignum encodings.
@@ -68,7 +68,7 @@ typedef enum
    * Represents arbitrarily large negative integers, complementing the unsigned
    * bignum encoding for handling integers beyond the built-in integer types.
    */
-  CBOR_TAG_NEGATIVE_BIG_NUM = 3,
+  CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM = 3,
 
   /**
    * \brief Tag value for decimal fraction encodings.
@@ -77,7 +77,7 @@ typedef enum
    * exponent notation. Followed by an array of two integers: the exponent and
    * the significand.
    */
-  CBOR_TAG_DECIMAL_FRACTION = 4,
+  CARDANO_CBOR_TAG_DECIMAL_FRACTION = 4,
 
   /**
    * \brief Tag value for big float encodings.
@@ -85,9 +85,7 @@ typedef enum
    * Encodes floating-point numbers with arbitrary precision. Followed by an
    * array of two integers representing the base-2 exponent and significand.
    */
-  CBOR_TAG_BIG_FLOAT = 5,
-
-  // Additional comments for each tag value omitted for brevity
+  CARDANO_CBOR_TAG_BIG_FLOAT = 5,
 
   /**
    * \brief Tag value for the Self-Describe CBOR header (0xd9d9f7).
@@ -95,8 +93,8 @@ typedef enum
    * When placed at the beginning of a CBOR document, this tag signals that the
    * document is encoded in CBOR, facilitating content type detection.
    */
-  CBOR_TAG_SELF_DESCRIBE_CBOR = 55799
-} cbor_tag_t;
+  CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR = 55799
+} cardano_cbor_tag_t;
 
 #ifdef __cplusplus
 }

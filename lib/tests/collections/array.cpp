@@ -1454,3 +1454,63 @@ TEST(cardano_array_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_array_unref(&array);
 }
+
+TEST(cardano_array_pop, returnsNullWhenArrayIsNull)
+{
+  // Arrange
+  cardano_array_t* array = nullptr;
+
+  // Act
+  cardano_object_t* result = cardano_array_pop(array);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST(cardano_array_pop, returnsNullWhenArrayIsEmpty)
+{
+  // Arrange
+  cardano_array_t* array = cardano_array_new(1);
+
+  // Act
+  cardano_object_t* result = cardano_array_pop(array);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+}
+
+TEST(cardano_array_pop, returnsTheLastItem)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+
+  size_t new_size = cardano_array_add(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_add(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_add(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  // Act
+  cardano_object_t* result = cardano_array_pop(array);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 2);
+  EXPECT_EQ(cardano_array_get_capacity(array), 5);
+  EXPECT_STREQ(((ref_counted_string_t*)result)->string, "Hello, World! - 3");
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+}

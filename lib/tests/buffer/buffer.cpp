@@ -491,7 +491,7 @@ TEST(cardano_buffer_slice, returnNullIfEndLessThanStart)
   cardano_buffer_unref(&buffer);
 }
 
-TEST(cardano_buffer_slice, returnNullIfStartEqualsEnd)
+TEST(cardano_buffer_slice, returnEmptyIfStartEqualsEnd)
 {
   // Arrange
   byte_t actual[5] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
@@ -503,10 +503,11 @@ TEST(cardano_buffer_slice, returnNullIfStartEqualsEnd)
   cardano_buffer_t* slice = cardano_buffer_slice(buffer, 3, 3);
 
   // Assert
-  ASSERT_EQ(slice, nullptr);
+  ASSERT_EQ(cardano_buffer_get_size(slice), 0);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&slice);
 }
 
 TEST(cardano_buffer_slice, returnNullIfMemoryAllocationFails)
@@ -686,6 +687,36 @@ TEST(cardano_buffer_get_hex_size, returnsTheRightSize)
   cardano_buffer_unref(&buffer);
 }
 
+TEST(cardano_buffer_get_str_size, whenGivenANullPtrReturnZero)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  const size_t size = cardano_buffer_get_str_size(buffer);
+
+  // Assert
+  ASSERT_EQ(size, 0);
+}
+
+TEST(cardano_buffer_get_str_size, returnsTheRightSize)
+{
+  // Arrange
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+  byte_t            bytes[16] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46 };
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
+
+  // Act
+  const size_t size = cardano_buffer_get_str_size(buffer);
+
+  // Assert
+  ASSERT_EQ(size, 17);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
 TEST(cardano_buffer_from_hex, whenGivenANullPtrReturnNull)
 {
   // Arrange
@@ -765,6 +796,89 @@ TEST(cardano_buffer_from_hex, returnNullIfMemoryAllocationEventuallyFails)
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_buffer_to_str, whenGivenANullPtrReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_str(buffer, nullptr, 0);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_buffer_to_str, whenGivenADestNullPtrReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_str(buffer, nullptr, 0);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_to_str, whenGivenAnEmptyBufferReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(0);
+  char              dest[1] = { 0x00 };
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_str(buffer, dest, 1);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_STREQ(dest, "");
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_to_str, whenSizeIsInsuficientReturnError)
+{
+  // Arrange
+  cardano_buffer_t* buffer  = cardano_buffer_new(1);
+  char              dest[1] = { 0x00 };
+
+  ASSERT_EQ(cardano_buffer_write(buffer, (byte_t*)"A", 1), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t error = cardano_buffer_to_str(buffer, dest, 1);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_to_str, convertBytesToStr)
+{
+  // Arrange
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+  byte_t            bytes[16] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46 };
+  const char*       expected  = "123456789@ABCDEF";
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
+
+  // Act
+  char                  dest[17] = { 0x00 };
+  const cardano_error_t error    = cardano_buffer_to_str(buffer, dest, 17);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_STREQ(expected, dest);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
 }
 
 TEST(cardano_buffer_write, returnsErrorIfGivenNullBuffer)

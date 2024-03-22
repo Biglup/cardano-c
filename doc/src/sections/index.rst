@@ -70,3 +70,4 @@ Join us on this exciting journey to unlock the full potential of the Cardano blo
     api/buffer
     api/error
     api/object
+    api/allocators

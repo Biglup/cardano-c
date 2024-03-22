@@ -215,6 +215,73 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_to_hex(const cardano_buffer_t* buffer, char* dest, size_t dest_size);
 
 /**
+ * \brief Computes the size needed for a null-terminated string representation of the buffer's contents.
+ *
+ * This function calculates the size of the buffer's content when represented as a null-terminated string.
+ * The calculated size includes space for the null terminator. This is useful for allocating an appropriately sized
+ * buffer before converting the buffer's binary data into a string with `cardano_buffer_to_str`.
+ *
+ * \param[in] buffer A pointer to the cardano_buffer_t instance whose string size is being queried.
+ *
+ * \return The size in bytes required to represent the buffer's content as a null-terminated string, including the null terminator.
+ *         Returns 0 if the buffer is NULL or contains no data.
+ *
+ * Example usage:
+ * \code{.c}
+ * cardano_buffer_t* myBuffer = // assume this is initialized and contains data
+ *
+ * size_t strSize = cardano_buffer_get_str_size(myBuffer);
+ *
+ * // strSize now contains the size needed to store the buffer's data as a string
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_buffer_get_str_size(const cardano_buffer_t* buffer);
+
+/**
+ * \brief Converts the content of a buffer to a UTF-8 string.
+ *
+ * This function takes the binary content of the specified buffer and
+ * converts it to a null-terminated string. The caller must ensure
+ * that the destination buffer (\c dest) is large enough to hold the resulting
+ * string, including the null terminator.
+ *
+ * The size required for the destination buffer can be determined using
+ * \ref cardano_buffer_get_str_size.
+ *
+ * \param[in] buffer The source buffer containing the binary data to be converted.
+ * \param[out] dest The destination buffer where the resulting string will be stored.
+ * \param[in] dest_size The size of the destination buffer in bytes.
+ *
+ * \return \c CARDANO_SUCCESS if the conversion was successful and the string was
+ *         copied to \c dest. If the destination buffer is not large enough to hold the string,
+ *         an error code will be returned. Refer to \c cardano_error_t documentation
+ *         for details on possible error codes.
+ *
+ * Example usage:
+ * \code{.c}
+ * size_t needed_size = cardano_buffer_get_str_size(buffer);
+ * char* dest = (char*)malloc(needed_size);
+ *
+ * if (dest != NULL)
+ * {
+ *   if (cardano_buffer_to_str(buffer, dest, needed_size) == CARDANO_SUCCESS)
+ *   {
+ *     printf("Buffer content as string: %s\n", dest);
+ *   }
+ *   else
+ *   {
+ *     printf("Failed to convert buffer to string.\n");
+ *   }
+ *
+ *   free(dest);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, size_t dest_size);
+
+/**
  * \brief Decrements the buffer's reference count.
  *
  * This function is used to decrement the reference count of a `cardano_buffer_t` instance.

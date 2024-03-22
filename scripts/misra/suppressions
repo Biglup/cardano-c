@@ -2,5 +2,8 @@
 misra-c2012-11.5
 misra-c2012-15.5
 
+# Style
+misra-c2012-21.6
+
 # Required
 misra-c2012-21.3

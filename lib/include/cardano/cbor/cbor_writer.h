@@ -719,7 +719,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_undefined(cardano_cbor_
  * See the documentation for \ref cardano_error_t for a list of error codes.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cbor_tag_t tag);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cardano_cbor_tag_t tag);
 
 /**
  * \brief Encodes data from the writer's context into CBOR format and outputs it to a provided buffer.
