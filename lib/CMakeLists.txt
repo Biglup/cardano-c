@@ -31,11 +31,13 @@ endif()
 SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 OPTION(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
-OPTION(BUILD_STATIC_LIBS  "Default to building static libraries" ON)
+OPTION(BUILD_STATIC_LIBS  "Default to building static libraries" OFF)
 
 if (BUILD_SHARED_LIBS)
   ADD_DEFINITIONS(-D CARDANO_C_DLL)
 endif()
+
+ADD_DEFINITIONS(-D SODIUM_STATIC)
 
 # Compiler options
 IF (CMAKE_COMPILER_IS_GNUC)
@@ -51,12 +53,12 @@ TARGET_LINK_LIBRARIES (${LIB_OUTPUT_NAME}
 
 # Allow to build static and shared libraries at the same time
 if (BUILD_STATIC_LIBS AND BUILD_SHARED_LIBS)
-  set(STATIC_LIB ${PROJECT_NAME}-static)
-  add_library(${STATIC_LIB} STATIC ${SOURCE_FILES})
+  SET(STATIC_LIB ${PROJECT_NAME}-static)
+  ADD_LIBRARY(${STATIC_LIB} STATIC ${SOURCE_FILES})
   TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME}-static
-          PUBLIC
-          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+    PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
   )
 
   TARGET_LINK_LIBRARIES(${PROJECT_NAME}-static PRIVATE ${sodium_LIBRARY_RELEASE})
@@ -71,10 +73,27 @@ if (BUILD_STATIC_LIBS AND BUILD_SHARED_LIBS)
 endif ()
 
 # Code Coverage
-SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
-SET(GCC_COVERAGE_LINK_FLAGS "-lgcov")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+  SET(GCC_COVERAGE_LINK_FLAGS "-lgcov")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+ENDIF ()
+
+IF (CMAKE_BUILD_TYPE STREQUAL "Fuzz")
+  # Set compiler to Clang explicitly
+  set(CMAKE_C_COMPILER "clang")
+  set(CMAKE_CXX_COMPILER "clang++")
+
+  # Define additional flags for fuzzing
+  set(CLANG_COMPILE_FLAGS "-g -O1 -fsanitize=fuzzer,address -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage")
+  set(CLANG_LINK_FLAGS "-fsanitize=fuzzer,address -fprofile-instr-generate --coverage")
+
+  # Append the fuzzing flags to the existing flags
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_COMPILE_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_COMPILE_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
+ENDIF ()
 
 # Pre-compiled header support
 IF (COTIRE_ENABLED)
