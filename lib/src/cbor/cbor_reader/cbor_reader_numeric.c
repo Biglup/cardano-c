@@ -219,7 +219,7 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
 
       if (decode_result != CARDANO_SUCCESS)
       {
-        return result;
+        return decode_result;
       }
 
       *signed_int = unsigned_int;

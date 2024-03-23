@@ -3105,3 +3105,52 @@ TEST(_cbor_reader_peek_state, returnErrorIfUnexpectedEndOfBuffer)
   // Cleanup
   cardano_cbor_reader_unref(&reader);
 }
+
+TEST(cardano_cbor_reader_read_bytestring, returnsErrorIfBufferOverflow)
+{
+  // Arrange
+  const char*            cbor_hex   = "4240";
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*      bytestring = NULL;
+
+  // Act
+  cardano_error_t result = cardano_cbor_reader_read_bytestring(reader, &bytestring);
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_read_simple_value, returnsErrorIfBufferOverflow)
+{
+  // Arrange
+  const char*            cbor_hex   = "f8";
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*      bytestring = NULL;
+
+  // Act
+  cardano_cbor_simple_value_t value  = CARDANO_CBOR_SIMPLE_VALUE_FALSE;
+  cardano_error_t             result = cardano_cbor_reader_read_simple_value(reader, &value);
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_skip_value, returnErrorIfInvalidDefiniteLenghtArrayLength)
+{
+  const char* cbor_hex = "68d8618543a10a0fa054541a69735f09305f5f5f5f5f5f5f5f5f5f5f605f5f5f5f5bfffffffffffffff4ff5f5f5fffffffffffffff5bffffffffffffffffffffffff3dffff78610015c0";
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  cardano_error_t result = cardano_cbor_reader_skip_value(reader);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_cbor_reader_skip_value(reader);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_cbor_reader_skip_value(reader);
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+
+  cardano_cbor_reader_unref(&reader);
+}

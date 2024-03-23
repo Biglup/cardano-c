@@ -110,6 +110,11 @@ peek_definite_length(cardano_buffer_t* buffer, const byte_t initial_byte, int64_
     return result;
   }
 
+  if (definite_length > (uint64_t)INT64_MAX)
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
   *length     = (int64_t)definite_length;
   *bytes_read = read;
 
@@ -295,8 +300,8 @@ _cbor_reader_read_start_array(cardano_cbor_reader_t* reader, int64_t* size)
     return CARDANO_SUCCESS;
   }
 
-  int64_t length;
-  size_t  bytes_read;
+  int64_t length     = 0;
+  size_t  bytes_read = 0;
 
   cardano_buffer_t* remaining_bytes  = NULL;
   cardano_error_t   get_bytes_result = cardano_cbor_reader_get_remainder_bytes(reader, &remaining_bytes);
@@ -310,7 +315,9 @@ _cbor_reader_read_start_array(cardano_cbor_reader_t* reader, int64_t* size)
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_cbor_reader_set_last_error(reader, "Failed to read length of definite array");
     cardano_buffer_unref(&remaining_bytes);
+
     return result;
   }
 
@@ -551,8 +558,11 @@ _cbor_reader_read_string(cardano_cbor_reader_t* reader, const cardano_cbor_major
 
   cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, bytes_read + (size_t)length);
 
-  assert(advance_result == CARDANO_SUCCESS);
-  CARDANO_UNUSED(advance_result);
+  if (advance_result != CARDANO_SUCCESS)
+  {
+    cardano_buffer_unref(&buffer);
+    return advance_result;
+  }
 
   _cbor_reader_advance_data_item_counters(reader);
 

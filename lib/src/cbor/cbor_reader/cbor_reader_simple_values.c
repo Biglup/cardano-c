@@ -112,7 +112,10 @@ _cbor_reader_read_simple_value(cardano_cbor_reader_t* reader, cardano_cbor_simpl
 
   if (additional_info == CARDANO_CBOR_ADDITIONAL_INFO_8BIT_DATA)
   {
-    assert(cardano_buffer_get_size(reader->buffer) >= (reader->offset + 1U));
+    if (cardano_buffer_get_size(reader->buffer) <= (reader->offset + 1U))
+    {
+      return CARDANO_ERROR_DECODING;
+    }
 
     byte_t simple_value = cardano_buffer_get_data(reader->buffer)[reader->offset + 1U];
 
