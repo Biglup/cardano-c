@@ -25,7 +25,7 @@
 
 #include <cardano/error.h>
 
-#include <cardano/cryptography/pbkdf2.h>
+#include <cardano/crypto/pbkdf2.h>
 
 #include <gmock/gmock.h>
 
@@ -57,7 +57,7 @@ static const pbkdf2_hmac_sha512_vectors_t pbkdf2_hmac_sha512_test_vectors[] = {
 
 /* UNIT TESTS ****************************************************************/
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVectors)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVectors)
 {
   for (size_t i = 0; i < sizeof(pbkdf2_hmac_sha512_test_vectors) / sizeof(pbkdf2_hmac_sha512_test_vectors[0]); ++i)
   {
@@ -65,7 +65,7 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVect
 
     byte_t derived_key_buffer[vector->dkLen] = { 0 };
 
-    cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+    cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
       vector->password,
       vector->passwordLength,
       vector->salt,
@@ -89,13 +89,13 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVect
   }
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullPassword)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullPassword)
 {
   // Arrange
   byte_t derived_key[64U] = { 0 };
 
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     NULL,
     0U,
     (const byte_t*)"salt",
@@ -108,13 +108,13 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullPassword)
   EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
 {
   // Arrange
   byte_t derived_key[64U] = { 0 };
 
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     (const byte_t*)"password",
     strlen("password"),
     NULL,
@@ -127,10 +127,10 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
   EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
 {
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     (const byte_t*)"password",
     strlen("password"),
     (const byte_t*)"salt",
@@ -143,13 +143,13 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
   EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
 {
   // Arrange
   byte_t derived_key[64U] = { 0 };
 
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     (const byte_t*)"password",
     0U,
     (const byte_t*)"salt",
@@ -162,13 +162,13 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
   EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)
 {
   // Arrange
   byte_t derived_key[64U] = { 0 };
 
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     (const byte_t*)"password",
     strlen("password"),
     (const byte_t*)"salt",
@@ -181,13 +181,13 @@ TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)
   EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
 }
 
-TEST(cardano_cryptography_pbkdf2_hmac_sha512, returnErrorOnZeroDerivedKeyLength)
+TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroDerivedKeyLength)
 {
   // Arrange
   byte_t derived_key[64U] = { 0 };
 
   // Act
-  cardano_error_t result = cardano_cryptography_pbkdf2_hmac_sha512(
+  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
     (const byte_t*)"password",
     strlen("password"),
     (const byte_t*)"salt",
