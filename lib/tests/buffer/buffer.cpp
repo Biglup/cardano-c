@@ -285,6 +285,49 @@ TEST(cardano_buffer_get_size, returnsZeroIfBufferIsNull)
   EXPECT_EQ(size, 0);
 }
 
+TEST(cardano_buffer_set_size, canAdjustSize)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(10);
+
+  // Act
+  cardano_error_t error = cardano_buffer_set_size(buffer, 5);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 5);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_set_size, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_buffer_set_size(buffer, 10);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_buffer_set_size, returnsErrorIfSizeIsGreaterThanCapacity)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(10);
+
+  // Act
+  cardano_error_t error = cardano_buffer_set_size(buffer, 100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
 TEST(cardano_buffer_get_capacity, returnsZeroIfBufferIsNull)
 {
   // Arrange
@@ -876,6 +919,51 @@ TEST(cardano_buffer_to_str, convertBytesToStr)
   // Assert
   ASSERT_EQ(error, CARDANO_SUCCESS);
   ASSERT_STREQ(expected, dest);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_seek, returnsErrorIfGivenNullBuffer)
+{
+  // Act
+  cardano_error_t result = cardano_buffer_seek(nullptr, 0);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_buffer_seek, returnsErrorIfSeekOutOfBounds)
+{
+  // Arrange
+  byte_t            bytes[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
+
+  // Act
+  cardano_error_t result = cardano_buffer_seek(buffer, 100);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_seek, returnsSuccessIfSeekIsWithinBounds)
+{
+  // Arrange
+  cardano_buffer_t* buffer    = cardano_buffer_new(16);
+  byte_t            bytes[16] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99 };
+
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_buffer_write(buffer, &bytes[0], 16));
+
+  // Act
+  cardano_error_t result = cardano_buffer_seek(buffer, 10);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2729,6 +2817,108 @@ TEST(cardano_buffer_read_double_be, returnsBufferInsufficientIfTriesToReadMoreTh
 
   // Assert
   ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsErrorIfBufferLengthIsZero)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, (byte_t*)"data", 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferLengthIsGreaterThanBufferLength)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, (byte_t*)"data", 3);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferLengthIsZero)
+{
+  // Arrange
+  const byte_t      data[]         = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer         = cardano_buffer_new_from(&data[0], 4);
+  byte_t            dest_buffer[4] = { 0 };
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, &dest_buffer[0], 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferIsNull)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_copy_bytes, returnsBufferBytes)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+
+  byte_t dest_buffer[4] = { 0 };
+
+  // Act
+  cardano_error_t error = cardano_buffer_copy_bytes(buffer, dest_buffer, 64);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const byte_t* buffer_data = cardano_buffer_get_data(buffer);
+
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_EQ(dest_buffer[i], buffer_data[i]);
+  }
 
   // Cleanup
   cardano_buffer_unref(&buffer);

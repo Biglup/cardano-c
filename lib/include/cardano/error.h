@@ -72,6 +72,11 @@ typedef enum
    */
   CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE = 6,
 
+  /**
+   * \brief Invalid argument.
+   */
+  CARDANO_ERROR_INVALID_ARGUMENT = 7,
+
   /* Encoding errors */
 
   /**
@@ -89,7 +94,44 @@ typedef enum
   /**
    * \brief The serialization or deserialization process resulted in a loss of precision.
    */
-  CARDANO_ERROR_LOSS_OF_PRECISION = 100
+  CARDANO_ERROR_LOSS_OF_PRECISION = 100,
+
+  /* Crypto errors */
+
+  /**
+   * \brief The hash size is invalid.
+   */
+  CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE = 200,
+
+  /**
+   * \brief The Ed25519 signature size is invalid.
+   */
+  CARDANO_ERROR_INVALID_ED25519_SIGNATURE_SIZE = 201,
+
+  /**
+   * \brief The Ed25519 public key size is invalid.
+   */
+  CARDANO_ERROR_INVALID_ED25519_PUBLIC_KEY_SIZE = 202,
+
+  /**
+   * \brief The Ed25519 private key size is invalid.
+   */
+  CARDANO_ERROR_INVALID_ED25519_PRIVATE_KEY_SIZE = 203,
+
+  /**
+   * \brief The BIP32 public key size is invalid.
+   */
+  CARDANO_ERROR_INVALID_BIP32_PUBLIC_KEY_SIZE = 204,
+
+  /**
+   * \brief The BIP32 private key size is invalid.
+   */
+  CARDANO_ERROR_INVALID_BIP32_PRIVATE_KEY_SIZE = 205,
+
+  /**
+   * \brief The BIP32 derivation index is invalid.
+   */
+  CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX = 206,
 } cardano_error_t;
 
 /**

@@ -1,4 +1,4 @@
 PBKDF2
 ==========================
 
-.. doxygenfile:: pbkdf2.h
+.. doxygenfunction:: cardano_crypto_pbkdf2_hmac_sha512

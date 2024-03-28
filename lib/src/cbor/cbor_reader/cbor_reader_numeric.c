@@ -99,7 +99,7 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
 
       if (decode_result != CARDANO_SUCCESS)
       {
-        return result;
+        return decode_result;
       }
 
       *signed_int = (int64_t)unsigned_int;

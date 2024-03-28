@@ -21,11 +21,10 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/cryptography/pbkdf2.h>
+#include <cardano/crypto/pbkdf2.h>
 
 #include <cardano/export.h>
 
-#include <assert.h>
 #include <sodium.h>
 #include <string.h>
 
@@ -34,7 +33,7 @@
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
-cardano_cryptography_pbkdf2_hmac_sha512(
+cardano_crypto_pbkdf2_hmac_sha512(
   const byte_t*  password,
   const size_t   password_length,
   const byte_t*  salt,

@@ -9,8 +9,6 @@ Cardano C
 
   <p align="center">
     <img src="_static/logo.png"><br><br>
-    <sup>The Cardano-C logo is licensed under
-    <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons 4.0 Attributions license</a>.</sup>
   </p>
 
 .. important::
@@ -19,6 +17,7 @@ Cardano C
 
 Overview
 --------
+
 Cardano C is a library for the Cardano blockchain. Our mission is to provide a solid foundation for building mission-critical blockchain applications, with a steadfast commitment to quality, safety, and cross-platform compatibility.
 
 Main features
@@ -34,7 +33,7 @@ Main features
 - No shared global state - threading friendly
 - Proper handling of UTF-8
 - Extensive documentation and test suite
-- No runtime dependencies, small footprint
+- It has a single dependency (`libsodium`_)
 
 Engineered for Excellence
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,6 +55,13 @@ Start Building Today
 
 Join us on this exciting journey to unlock the full potential of the Cardano blockchain. With comprehensive guides, detailed API documentation, and practical examples, the Cardano C Library equips you with the tools to create secure, efficient, and scalable blockchain solutions. Dive into the world of Cardano development and become a part of a community dedicated to building a decentralized and prosperous future.
 
+License
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The source code of this project is licensed under the Apache License 2.0. The Apache 2.0 License allows for commercial use, modification, distribution, patent use, and private use.
+
+See `APACHE LICENSE, VERSION 2.0`_
+
 .. toctree::
     :hidden:
 
@@ -65,9 +71,12 @@ Join us on this exciting journey to unlock the full potential of the Cardano blo
     :caption: API Reference
     :hidden:
 
-    api/cbor/cbor
     api/cryptography/cryptography
+    api/cbor/cbor
     api/buffer
     api/error
     api/object
     api/allocators
+
+.. _libsodium: https://github.com/jedisct1/libsodium
+.. _APACHE LICENSE, VERSION 2.0: https://apache.org/licenses/LICENSE-2.0

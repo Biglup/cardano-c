@@ -36,7 +36,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \struct cardano_cbor_writer_t
  * \brief A simple writer for Concise Binary Object Representation (CBOR) encoded data.
  *
  * This structure represents a writer that facilitates encoding data into the CBOR format.

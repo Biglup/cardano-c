@@ -1,4 +1,4 @@
 CBOR Reader State
 ==========================
 
-.. doxygenfile:: cbor_reader_state.h
+.. doxygenenum:: cardano_cbor_reader_state_t

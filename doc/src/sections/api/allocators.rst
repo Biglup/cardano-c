@@ -1,4 +1,5 @@
 Allocators
 =============================
 
-.. doxygenfile:: allocators.h
+.. doxygenfunction:: cardano_set_allocators
+
