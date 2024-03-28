@@ -65,8 +65,8 @@ Join us on this exciting journey to unlock the full potential of the Cardano blo
     :caption: API Reference
     :hidden:
 
-    api/cbor/cbor
     api/cryptography/cryptography
+    api/cbor/cbor
     api/buffer
     api/error
     api/object

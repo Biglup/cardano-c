@@ -56,6 +56,30 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE:
       message = "Invalid operation. Out of bounds memory write";
       break;
+    case CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE:
+      message = "Invalid operation. Invalid Blake2b hash size";
+      break;
+    case CARDANO_ERROR_INVALID_ED25519_SIGNATURE_SIZE:
+      message = "Invalid operation. Invalid Ed25519 signature size";
+      break;
+    case CARDANO_ERROR_INVALID_ED25519_PUBLIC_KEY_SIZE:
+      message = "Invalid operation. Invalid Ed25519 public key size";
+      break;
+    case CARDANO_ERROR_INVALID_ED25519_PRIVATE_KEY_SIZE:
+      message = "Invalid operation. Invalid Ed25519 private key size";
+      break;
+    case CARDANO_ERROR_INVALID_BIP32_PUBLIC_KEY_SIZE:
+      message = "Invalid operation. Invalid BIP32 public key size";
+      break;
+    case CARDANO_ERROR_INVALID_BIP32_PRIVATE_KEY_SIZE:
+      message = "Invalid operation. Invalid BIP32 private key size";
+      break;
+    case CARDANO_ERROR_INVALID_ARGUMENT:
+      message = "Invalid operation. Invalid argument";
+      break;
+    case CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX:
+      message = "Invalid operation. Invalid BIP32 derivation index";
+      break;
     default:
       message = "Unknown error code";
       break;

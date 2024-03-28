@@ -385,10 +385,10 @@ CARDANO_EXPORT cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
  * This function provides access to the internal storage of the buffer, allowing for read-only operations on its contents.
  * It is intended for situations where direct access to the data is necessary for performance or interoperability reasons.
  *
- * \warning The returned pointer provides raw, direct access to the buffer's internal data. It must not be used to modify
- * the buffer contents outside the API's control, nor should it be deallocated using free or similar memory management functions.
- * The lifecycle of the data pointed to by the returned pointer is managed by the buffer's reference counting mechanism; therefore,
- * the data remains valid as long as the buffer object exists and has not been deallocated.
+ * \warning The returned pointer provides raw, direct access to the buffer's internal data. It must not be used to
+ * deallocate it using free or similar memory management functions. The lifecycle of the data pointed to by the returned
+ * pointer is managed by the buffer's reference counting mechanism; therefore, the data remains valid as long as the
+ * buffer object exists and has not been deallocated.
  *
  * \param[in] buffer The buffer instance from which to retrieve the internal data pointer. The buffer must have been previously
  * created and not yet deallocated.
@@ -399,6 +399,51 @@ CARDANO_EXPORT cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
+
+/**
+ * \brief Sets the logical size of the buffer to a specified value.
+ *
+ * This function updates the internal marker of the buffer to reflect a new logical size,
+ * indicating how much of the preallocated memory is considered "used" or contains valid data.
+ * It is important to note that this function does not allocate, deallocate, or initialize memory;
+ * it merely updates the buffer's state to reflect that a certain portion of its already allocated
+ * memory is now in use. This is particularly useful when data is written to the buffer in a manner
+ * where the exact amount of data written is known and does not need to be sequentially written or tracked.
+ *
+ * \warning This function should be used with caution as it directly affects how much of the buffer
+ *          is considered valid data.
+ *
+ * \param buffer A pointer to the `cardano_buffer_t` object whose size is to be set. The buffer
+ *               must have been properly initialized and should have enough memory allocated to
+ *               accommodate the new size.
+ * \param size The new logical size of the buffer. This value must not exceed the buffer's current
+ *             allocated memory size.
+ *
+ * \return Returns `CARDANO_SUCCESS` if the buffer's size was successfully updated. If the function
+ *         fails (e.g., due to an invalid buffer pointer, or the specified `size` exceeding the
+ *         buffer's allocated memory), a non-zero error code is returned.
+ *
+ * Example Usage:
+ * \code
+ * cardano_buffer_t* buffer = cardano_buffer_new(1024);
+ *
+ * // Write data to the buffer in a non-standard manner, or track written data externally
+ *
+ * // Artificially set the buffer's size after data has been written or manipulated
+ * size_t data_written = 512; // Assume 512 bytes of data are now considered "used"
+ * cardano_error_t error = cardano_buffer_set_size(&buffer, data_written);
+ *
+ * if (error == CARDANO_SUCCESS)
+ * {
+ *   // The buffer now considers 512 bytes of its allocated memory as "used"
+ * }
+ *
+ * // Clean up
+ * cardano_buffer_free(&buffer);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_set_size(cardano_buffer_t* buffer, size_t size);
 
 /**
  * \brief Retrieves the current size of the buffer, indicating how much data it currently holds.
@@ -419,6 +464,50 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
 
 /**
+ * \brief Copies data from a Cardano buffer to a specified destination array.
+ *
+ * This function safely transfers bytes from a `cardano_buffer_t` object to a provided
+ * destination array.
+ *
+ * \param buffer A pointer to the `cardano_buffer_t` object from which data will be copied.
+ *               The buffer must be initialized and contain the data to be copied.
+ * \param dest A pointer to the destination array where the data will be copied. This array
+ *             must be allocated and have a size large enough to hold the data being copied.
+ * \param dest_size The size of the destination array in bytes. This value determines the
+ *                  maximum amount of data that can be safely copied to `dest`.
+ *
+ * \return cardano_error_t Returns `CARDANO_SUCCESS` if the data was successfully copied to the
+ *         destination array. If the function fails, a non-zero error code is returned,
+ *         indicating issues such as null pointers for `buffer` or `dest`, or an insufficient
+ *         `dest_size` to hold the buffer's data. In cases of failure, the content of `dest`
+ *         may be partially updated or left unchanged.
+ *
+ * Example Usage:
+ * \code
+ * const cardano_buffer_t* source_buffer = ...; // Assume source_buffer is initialized and filled with data
+ * byte_t destination_array[1024];
+ * const size_t destination_size = sizeof(destination_array);
+ *
+ * cardano_error_t error = cardano_buffer_copy_bytes(source_buffer, destination_array, destination_size);
+ *
+ * if (error == CARDANO_SUCCESS)
+ * {
+ *   // Data has been successfully copied to destination_array
+ *   // Proceed with using the data in destination_array as needed
+ * }
+ * else
+ * {
+ *   // Handle the error (e.g., log it, attempt recovery, etc.)
+ * }
+ * \endcode
+ *
+ * \note The caller is responsible for ensuring that the destination array is properly allocated
+ *       and sized to accommodate the data being copied.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_copy_bytes(const cardano_buffer_t* buffer, byte_t* dest, size_t dest_size);
+
+/**
  * \brief Retrieves the total capacity of the buffer.
  *
  * This function returns the total amount of space allocated for the buffer, indicating how much data
@@ -435,6 +524,43 @@ CARDANO_EXPORT size_t cardano_buffer_get_size(const cardano_buffer_t* buffer);
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_buffer_get_capacity(const cardano_buffer_t* buffer);
+
+/**
+ * \brief Repositions the current position within a buffer to a specified offset.
+ *
+ * This function adjusts the current pointer position within the given `cardano_buffer_t`
+ * object to the specified `position`. It is used to set the read/write position within the
+ * buffer, allowing subsequent operations to start from the new location. This can be particularly
+ * useful for parsing structured data or for resetting the position to rewrite or reread portions
+ * of the buffer.
+ *
+ * \param buffer A pointer to the `cardano_buffer_t` object whose position is to be adjusted.
+ * \param position The new position within the buffer where the current pointer should be set.
+ *                 This value must be within the bounds of the buffer's current size.
+ *
+ * \return cardano_error_t Returns `CARDANO_SUCCESS` if the position within the buffer was
+ *         successfully updated. If the function fails, a non-zero error code is returned,
+ *         indicating an invalid `buffer`, an out-of-bounds `position`, or other errors
+ *         related to manipulating the buffer's position.
+ *
+ * Example Usage:
+ * \code
+ * cardano_buffer_t* buffer = ...; // Assume buffer is previously initialized and populated
+ * size_t new_position = 10; // Desired position to seek to within the buffer
+ *
+ * cardano_error_t error = cardano_buffer_seek(buffer, new_position);
+ *
+ * if (error == CARDANO_SUCCESS)
+ * {
+ *   // The buffer's current position is now set to `new_position`
+ *   // Subsequent operations will start from this position
+ * }
+ *
+ * // Continue with further operations on `buffer`
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_buffer_seek(cardano_buffer_t* buffer, size_t position);
 
 /**
  * \brief Appends data to the end of the buffer, expanding its capacity if necessary.

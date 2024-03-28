@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTOGRAPHY_PBKDF2_H
-#define CARDANO_CRYPTOGRAPHY_PBKDF2_H
+#ifndef CARDANO_CRYPTO_PBKDF2_H
+#define CARDANO_CRYPTO_PBKDF2_H
 
 /* INCLUDES ******************************************************************/
 
@@ -55,7 +55,7 @@ extern "C" {
  *         for details on possible error codes.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cryptography_pbkdf2_hmac_sha512(
+CARDANO_EXPORT cardano_error_t cardano_crypto_pbkdf2_hmac_sha512(
   const byte_t* password,
   size_t        password_length,
   const byte_t* salt,
@@ -68,4 +68,4 @@ CARDANO_EXPORT cardano_error_t cardano_cryptography_pbkdf2_hmac_sha512(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTOGRAPHY_PBKDF2_H
+#endif // CARDANO_CRYPTO_PBKDF2_H

@@ -524,7 +524,7 @@ _cbor_reader_read_string(cardano_cbor_reader_t* reader, const cardano_cbor_major
 
     if (read_concat_result != CARDANO_SUCCESS)
     {
-      return result;
+      return read_concat_result;
     }
 
     cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, encoding_length);

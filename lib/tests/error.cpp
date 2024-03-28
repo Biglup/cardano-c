@@ -135,3 +135,99 @@ TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryWrite)
   // Assert
   ASSERT_STREQ(message, "Invalid operation. Out of bounds memory write");
 }
+
+TEST(cardano_error_to_string, canConvertInvalidBlake2bHashSize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Blake2b hash size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidEd25519SignatureSize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_ED25519_SIGNATURE_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Ed25519 signature size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidEd25519PublicKeySize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_ED25519_PUBLIC_KEY_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Ed25519 public key size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidEd25519PrivateKeySize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_ED25519_PRIVATE_KEY_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Ed25519 private key size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidBip32PublicKeySize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_BIP32_PUBLIC_KEY_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 public key size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidArgument)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_ARGUMENT;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid argument");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidBip32PrivateKeySize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_BIP32_PRIVATE_KEY_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 private key size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidBip32DerivationIndex)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 derivation index");
+}
