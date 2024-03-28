@@ -38,7 +38,7 @@ The documentation includes an API reference and usage examples.
 
 A PDF report detailing our adherence to MISRA C coding standards is available at the following link:
 
-- **MISRA Compliance Report**: [MISRA_c_compliance_report_6fd2cd9cbc1a1096ae974afec5941f95db91ea04.pdf](MISRA_c_compliance_report_6fd2cd9cbc1a1096ae974afec5941f95db91ea04.pdf) 
+- **MISRA Compliance Report**: [MISRA_c_compliance_report_6fd2cd9cbc1a1096ae974afec5941f95db91ea04.pdf](MISRA_c_compliance_report_6fd2cd9cbc1a1096ae974afec5941f95db91ea04%E2%80%AC.pdf) 
 
 The specific run of cppcheck and clang-tidy with the MISRA 2012 results can be found in the CI workflow logs for the PR that merged the changes:
 
