@@ -35,7 +35,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \struct cardano_buffer_t
  * \brief A dynamic, reference-counted buffer with configurable exponential growth.
  *
  * This structure represents a dynamically sized buffer that uses reference counting for memory management and

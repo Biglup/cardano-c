@@ -34,8 +34,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \struct cardano_blake2b_hash_t
- * \brief Represents a BLAKE2b hash within the Cardano ecosystem.
+ * \brief Represents a BLAKE2b hash.
  *
  * This structure encapsulates the result of a BLAKE2b hashing operation, abstracting
  * the underlying hash data. It is used throughout the Cardano system in various contexts,
@@ -61,10 +60,6 @@ typedef struct cardano_blake2b_hash_t cardano_blake2b_hash_t;
  * \return \ref cardano_error_t indicating the success or failure of the hash computation.
  * Returns `CARDANO_SUCCESS` on success, or an error code signifying the type of
  * failure encountered during the hash computation.
- *
- * \note It is critical to check the return value for successful execution before
- * using the hash result. On success, `hash` will point to a valid hash object.
- * On failure, `hash` will be `NULL`.
  *
  * Example Usage:
  * \code

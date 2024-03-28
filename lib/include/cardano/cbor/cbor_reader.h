@@ -39,7 +39,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \struct cardano_cbor_reader_t
  * \brief Represents a reader for parsing Concise Binary Object Representation (CBOR) encoded data.
  */
 typedef struct cardano_cbor_reader_t cardano_cbor_reader_t;

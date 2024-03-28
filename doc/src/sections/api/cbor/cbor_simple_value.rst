@@ -1,4 +1,4 @@
 CBOR Simple Value
 ==========================
 
-.. doxygenfile:: cbor_simple_value.h
+.. doxygenenum:: cardano_cbor_simple_value_t

@@ -1,4 +1,4 @@
 CBOR Tag
 ==========================
 
-.. doxygenfile:: cbor_tag.h
+.. doxygenenum:: cardano_cbor_tag_t

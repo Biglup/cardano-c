@@ -34,10 +34,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Represents the types of BLAKE2b hash functions used within the Cardano ecosystem,
- * distinguished by their output bit length. These hash types are utilized in various
- * contexts throughout Cardano, including but not limited to verification keys,
- * multi-signature scripts, and key derivation processes.
+ * \enum cardano_blake2b_hash_size_t
+ * \brief Represents the types of BLAKE2b hash functions distinguished by their output bit length.
+ * These hash types are utilized in various contexts throughout Cardano, including but not limited
+ * to verification keys, multi-signature scripts, and key derivation processes.
  */
 typedef enum
 {

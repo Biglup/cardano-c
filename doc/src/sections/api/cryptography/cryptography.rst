@@ -1,7 +1,10 @@
 Cryptography
 ==========================
+
+This section of the documentation provides detailed information on each cryptographic function offered by this library:
+
 .. toctree::
-    :hidden:
+    :maxdepth: 1
 
     ./bip32_private_key
     ./bip32_public_key

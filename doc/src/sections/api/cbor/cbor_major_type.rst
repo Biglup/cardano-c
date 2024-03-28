@@ -1,4 +1,4 @@
 CBOR Major Type
 ==========================
 
-.. doxygenfile:: cbor_major_type.h
+.. doxygenenum:: cardano_cbor_major_type_t

@@ -34,7 +34,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Represents an Ed25519 signature within the Cardano ecosystem.
+ * \brief Represents an Ed25519 signature.
  */
 typedef struct cardano_ed25519_signature_t cardano_ed25519_signature_t;
 

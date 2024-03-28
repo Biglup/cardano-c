@@ -36,7 +36,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Represents a BIP32 public key within the Cardano ecosystem.
+ * \brief Represents a BIP32 public key.
  *
  * This structure encapsulates a public key according to the BIP32 standard, which
  * is utilized in hierarchical deterministic (HD) wallets.

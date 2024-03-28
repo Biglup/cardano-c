@@ -13,7 +13,7 @@ Building and Installing from Source
 
 Configuration Options:
 
-You can configure the build with several options using CMake. The most notable options for the Cardano C Library include enabling shared libraries, adjusting the installation prefix, and enabling unit tests.
+You can configure the build with several options using CMake. The most notable options for the Cardano C Library include adjusting the installation prefix, and enabling unit tests.
 
 **Configuration options**
 

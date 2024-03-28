@@ -36,7 +36,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \struct cardano_ed25519_public_key_t
  * \brief Represents an Ed25519 public key within the Cardano ecosystem.
  *
  * The structure provides an abstraction over the raw public key data. It is used in
