@@ -45,6 +45,16 @@ jobs:
           NumViolations=`cat .results/error_count`
           echo $NumViolations
 
+      - name: Generate MISRA Compliance Report
+        if: always()
+        id: misra-compliance-report
+        uses: Biglup/misra-compliance-github-action@v0.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          parser: 'Cppcheck'
+          results: './scripts/misra/.results/results'
+          rules: './scripts/misra/misra2012'
+          suppressions: './scripts/misra/suppressions'
       - name: Check Doxygen Documentation
         run: |
           cd $GITHUB_WORKSPACE
