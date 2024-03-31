@@ -1,5 +1,9 @@
 name: Static Code Analysis
-on: [push]
+
+on:
+  pull_request:
+    types: [assigned, opened, reopened, synchronize]
+
 jobs:
   static_code_analysis:
     runs-on: ubuntu-latest
@@ -45,16 +49,26 @@ jobs:
           NumViolations=`cat .results/error_count`
           echo $NumViolations
 
+      - name: Set up Google Cloud credential # We need this to upload the MISRA Compliance Report to Google Cloud Storage
+        if: always()
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" | base64 -di >> "$HOME"/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json" >> $GITHUB_ENV
+
       - name: Generate MISRA Compliance Report
         if: always()
         id: misra-compliance-report
-        uses: Biglup/misra-compliance-github-action@v0.1
+        uses: Biglup/misra-compliance-github-action@v0.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          project: 'libcardano-c'
           parser: 'Cppcheck'
           results: './scripts/misra/.results/results'
           rules: './scripts/misra/misra2012'
           suppressions: './scripts/misra/suppressions'
+          files: './scripts/misra/.results/files.txt'
       - name: Check Doxygen Documentation
         run: |
           cd $GITHUB_WORKSPACE
