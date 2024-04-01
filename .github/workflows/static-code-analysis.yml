@@ -3,7 +3,9 @@ name: Static Code Analysis
 on:
   pull_request:
     types: [assigned, opened, reopened, synchronize]
-
+  push:
+    branches:
+      - main
 jobs:
   static_code_analysis:
     runs-on: ubuntu-latest
