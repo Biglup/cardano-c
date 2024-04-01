@@ -73,6 +73,7 @@ See `APACHE LICENSE, VERSION 2.0`_
 
     api/cryptography/cryptography
     api/cbor/cbor
+    api/encoding/encoding
     api/buffer
     api/error
     api/object

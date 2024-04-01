@@ -34,6 +34,16 @@
 #include <cardano/cbor/cbor_simple_value.h>
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/crypto/bip32_private_key.h>
+#include <cardano/crypto/bip32_public_key.h>
+#include <cardano/crypto/blake2b_hash.h>
+#include <cardano/crypto/blake2b_hash_size.h>
+#include <cardano/crypto/ed25519_private_key.h>
+#include <cardano/crypto/ed25519_public_key.h>
+#include <cardano/crypto/ed25519_signature.h>
+#include <cardano/crypto/pbkdf2.h>
+#include <cardano/encoding/base58.h>
+#include <cardano/encoding/bech32.h>
 #include <cardano/error.h>
 #include <cardano/object.h>
 #include <cardano/typedefs.h>
