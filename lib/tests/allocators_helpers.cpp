@@ -81,6 +81,39 @@ fail_after_three_malloc(const size_t size)
 }
 
 void*
+fail_after_four_malloc(size_t size)
+{
+  if (malloc_run_count < 4)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+  return NULL;
+}
+
+void*
+fail_after_five_malloc(size_t size)
+{
+  if (malloc_run_count < 5)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+  return NULL;
+}
+
+void*
+fail_after_six_malloc(size_t size)
+{
+  if (malloc_run_count < 6)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+  return NULL;
+}
+
+void*
 fail_right_away_realloc(void* const ptr, const size_t size)
 {
   return NULL;
