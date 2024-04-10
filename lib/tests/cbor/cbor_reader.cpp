@@ -23,11 +23,11 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 
 #include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include <gmock/gmock.h>
 #include <math.h>

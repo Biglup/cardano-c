@@ -23,10 +23,11 @@
 
 #include <cardano/crypto/ed25519_public_key.h>
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/export.h>
 #include <cardano/object.h>
+
+#include "../allocators.h"
 
 #include <assert.h>
 #include <sodium.h>

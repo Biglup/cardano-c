@@ -24,6 +24,17 @@ jobs:
           sudo make install
           cd -
 
+      - name: Setup JSON-C
+        run: |
+          cd $(mktemp -d)
+          wget https://github.com/json-c/json-c/archive/refs/tags/json-c-0.17-20230812.tar.gz -O json-c.tar.gz
+          tar -xzf json-c.tar.gz
+          cd ./json-c-json-c-0.17-20230812
+          cmake .
+          make
+          sudo make install
+          cd -
+
       - name: Setup Gtest
         run: |
           cd $(mktemp -d)

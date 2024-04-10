@@ -21,8 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
 #include <cardano/encoding/base58.h>
+
+#include "../allocators.h"
 
 #include <math.h>
 #include <stddef.h>

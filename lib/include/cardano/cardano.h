@@ -26,7 +26,6 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_reader.h>

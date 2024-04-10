@@ -23,12 +23,13 @@
 
 #include <cardano/crypto/bip32_public_key.h>
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/export.h>
 #include <cardano/object.h>
 
+#include "../allocators.h"
 #include "bip32_key_derivation.h"
+
 #include <assert.h>
 #include <string.h>
 

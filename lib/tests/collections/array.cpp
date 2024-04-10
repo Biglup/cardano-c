@@ -25,9 +25,8 @@
 
 #include "../src/collections/array.h"
 
-#include <cardano/allocators.h>
-
 #include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include <gmock/gmock.h>
 

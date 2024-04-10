@@ -33,7 +33,7 @@ Main features
 - No shared global state - threading friendly
 - Proper handling of UTF-8
 - Extensive documentation and test suite
-- It has a single dependency (`libsodium`_)
+- It has no runtime dependencies (The library depends on `libsodium`_ and `_libjsonc` but they are both statically linked)
 
 Engineered for Excellence
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,7 +77,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/buffer
     api/error
     api/object
-    api/allocators
 
 .. _libsodium: https://github.com/jedisct1/libsodium
+.. _libjsonc: https://github.com/json-c/json-c
 .. _APACHE LICENSE, VERSION 2.0: https://apache.org/licenses/LICENSE-2.0

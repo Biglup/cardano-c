@@ -23,15 +23,15 @@
 
 #include "../endian.h"
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/export.h>
 #include <cardano/object.h>
 
+#include "../allocators.h"
+
 #include <assert.h>
 #include <math.h>
 #include <sodium.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../config.h"

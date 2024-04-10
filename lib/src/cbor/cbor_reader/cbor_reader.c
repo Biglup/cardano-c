@@ -21,8 +21,6 @@
 
 /* INCLUDES ******************************************************************/
 
-#include "../../collections/array.h"
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_reader_state.h>
@@ -30,6 +28,8 @@
 #include <cardano/object.h>
 #include <cardano/typedefs.h>
 
+#include "../../allocators.h"
+#include "../../collections/array.h"
 #include "cbor_reader_collections.h"
 #include "cbor_reader_core.h"
 #include "cbor_reader_numeric.h"

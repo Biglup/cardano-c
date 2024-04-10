@@ -23,10 +23,11 @@
 
 #include <cardano/crypto/blake2b_hash.h>
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/export.h>
 #include <cardano/object.h>
+
+#include "../allocators.h"
 
 #include <assert.h>
 #include <sodium.h>

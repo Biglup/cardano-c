@@ -23,7 +23,7 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
+#include "../src/allocators.h"
 #include <cardano/object.h>
 
 #include <gmock/gmock.h>

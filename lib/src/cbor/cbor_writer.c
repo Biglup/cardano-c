@@ -23,14 +23,14 @@
 
 #include "cbor_additional_info.h"
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/object.h>
 
+#include "../allocators.h"
+
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../config.h"
