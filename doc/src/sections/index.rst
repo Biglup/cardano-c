@@ -33,7 +33,7 @@ Main features
 - No shared global state - threading friendly
 - Proper handling of UTF-8
 - Extensive documentation and test suite
-- It has no runtime dependencies (The library depends on `libsodium`_ and `_libjsonc`_ but they are both statically linked)
+- It has no runtime dependencies (The library depends on `libsodium`_ and `libjsonc`_ but they are both statically linked)
 
 Engineered for Excellence
 ~~~~~~~~~~~~~~~~~~~~~~~~~
