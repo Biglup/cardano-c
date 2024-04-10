@@ -21,7 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
+#include "allocators.h"
 
 #include <stdlib.h>
 

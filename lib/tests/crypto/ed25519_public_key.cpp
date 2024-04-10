@@ -23,11 +23,11 @@
 
 #include <cardano/error.h>
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/crypto/ed25519_public_key.h>
 
 #include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include "ed25519_vectors.h"
 

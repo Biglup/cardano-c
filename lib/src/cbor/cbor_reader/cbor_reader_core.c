@@ -21,12 +21,12 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/error.h>
 #include <cardano/object.h>
 
+#include "../../allocators.h"
 #include "../cbor_initial_byte.h"
 #include "cbor_reader_collections.h"
 #include "cbor_reader_core.h"

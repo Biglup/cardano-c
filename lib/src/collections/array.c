@@ -23,8 +23,9 @@
 
 #include "array.h"
 
-#include <cardano/allocators.h>
 #include <cardano/object.h>
+
+#include "../allocators.h"
 
 #include <assert.h>
 #include <math.h>

@@ -23,9 +23,10 @@
 
 #include "set.h"
 
-#include <cardano/allocators.h>
 #include <cardano/export.h>
 #include <cardano/object.h>
+
+#include "../allocators.h"
 
 #include <assert.h>
 #include <stdlib.h>

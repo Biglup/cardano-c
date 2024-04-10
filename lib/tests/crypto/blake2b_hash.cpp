@@ -23,12 +23,12 @@
 
 #include <cardano/error.h>
 
-#include <cardano/allocators.h>
 #include <cardano/buffer.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
 
 #include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include <gmock/gmock.h>
 

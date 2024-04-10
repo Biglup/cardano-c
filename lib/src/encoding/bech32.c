@@ -21,8 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/allocators.h>
 #include <cardano/encoding/bech32.h>
+
+#include "../allocators.h"
 
 #include <assert.h>
 #include <ctype.h>

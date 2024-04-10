@@ -24,9 +24,8 @@
 #include <cardano/encoding/bech32.h>
 #include <gmock/gmock.h>
 
-#include <cardano/allocators.h>
-
 #include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include <vector>
 
