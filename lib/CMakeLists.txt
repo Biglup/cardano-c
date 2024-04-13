@@ -32,6 +32,7 @@ if (NOT DISABLE_STATIC_FPIC)
 endif()
 
 SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 OPTION(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
 OPTION(BUILD_STATIC_LIBS  "Default to building static libraries" OFF)

@@ -812,6 +812,11 @@ cardano_encoding_bech32_get_decoded_length(
 
   *hrp_length = separator_index;
 
+  if (data_length < (*hrp_length + NULL_TERMINATOR_LENGTH + BECH32_CHECKSUM_LENGTH))
+  {
+    return 0;
+  }
+
   size_t data_part_length = data_length - *hrp_length - NULL_TERMINATOR_LENGTH - BECH32_CHECKSUM_LENGTH;
 
   size_t decoded_data_length = convert_5bit_to_8bit_length(data_part_length);

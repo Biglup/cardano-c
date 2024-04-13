@@ -191,7 +191,7 @@ CARDANO_EXPORT cardano_cbor_writer_t* cardano_cbor_writer_move(cardano_cbor_writ
  *                  as an arbitrary precision integer, although it is passed as a \c uint64_t
  *                  for practical purposes.
  *
- * \return Returns \c CARDANO_SUCCESS if the boolean value was successfully encoded and written to the
+ * \return Returns \ref CARDANO_SUCCESS if the boolean value was successfully encoded and written to the
  *         CBOR stream. If the operation encounters an error, such as invalid parameters or issues with
  *         writing to the stream, an appropriate error code is returned indicating the reason for the failure.
  *         Consult the \ref cardano_error_t documentation for details on possible error codes and their meanings.
@@ -228,7 +228,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_big_integer(cardano_cbo
  * \param[in] value The boolean value to write. A value of \c true will be encoded as a CBOR `true` value,
  *                  and \c false as a CBOR `false` value.
  *
- * \return Returns \c CARDANO_SUCCESS if the boolean value was successfully encoded and written to the
+ * \return Returns \ref CARDANO_SUCCESS if the boolean value was successfully encoded and written to the
  *         CBOR stream. If the operation encounters an error, such as invalid parameters or issues with
  *         writing to the stream, an appropriate error code is returned indicating the reason for the failure.
  *         Consult the \ref cardano_error_t documentation for details on possible error codes and their meanings.
@@ -273,7 +273,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_write
  *                 byte string. This value determines the length of the resulting byte string in the
  *                 CBOR stream.
  *
- * \return Returns \c CARDANO_SUCCESS if the byte buffer was successfully serialized and written to the
+ * \return Returns \ref CARDANO_SUCCESS if the byte buffer was successfully serialized and written to the
  *         CBOR stream as a byte string. If the function fails to perform the serialization or write operation,
  *         it returns an error code that specifies the nature of the failure. For detailed information on
  *         error codes and their meanings, refer to the \ref cardano_error_t documentation.
@@ -299,7 +299,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_write
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, const byte_t* data, size_t size);
 
 /**
  * \brief Encodes and writes a UTF-8 encoded text string as a CBOR text string (major type 3).
@@ -316,7 +316,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbo
  *                 This specifies the exact number of bytes to be written from the \c data array to the
  *                 CBOR stream as the text string content.
  *
- * \return Returns \c CARDANO_SUCCESS if the text string was successfully encoded and written to the
+ * \return Returns \ref CARDANO_SUCCESS if the text string was successfully encoded and written to the
  *         CBOR stream. If the function encounters an error, such as an issue with the parameters provided
  *         or a problem with the CBOR stream, an appropriate error code is returned, indicating the reason
  *         for the failure. Refer to the \ref cardano_error_t documentation for an exhaustive list of error
@@ -367,7 +367,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_text_string(cardano_cbo
  *             data item and that the data itself adheres to the correct CBOR encoding standards.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. If the pre-encoded data
- *         item is successfully added to the CBOR stream, the function returns \c CARDANO_SUCCESS. If
+ *         item is successfully added to the CBOR stream, the function returns \ref CARDANO_SUCCESS. If
  *         an error occurs during the operation, the function returns an error code identifying the
  *         specific failure reason. Consult the documentation for \ref cardano_error_t for a detailed
  *         list of potential error codes and their respective meanings.
@@ -391,7 +391,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_text_string(cardano_cbo
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, const byte_t* data, size_t size);
 
 /**
  * \brief Initiates the writing of an array in the CBOR stream, supporting both definite and indefinite lengths.
@@ -406,7 +406,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_wr
  *                   indefinite-length array. In the case of an indefinite-length array, the writing process is open-ended
  *                   until the \ref cardano_cbor_writer_write_end_array function is called to signal the end of the array.
  *
- * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the array
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the array
  *         start marker is successfully written to the stream. If an error occurs (e.g., due to an invalid \c writer pointer,
  *         or if \c writer is not in a ready state), an error code corresponding to the specific failure reason is returned.
  *         Consult the \ref cardano_error_t enumeration for a detailed list of error codes.
@@ -457,7 +457,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_array(cardano_cbo
  *                   with a length of 0.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. On successful addition
- *         of the end-of-array marker, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ *         of the end-of-array marker, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  *         error, an error code specifying the nature of the issue is returned. Refer to the \ref cardano_error_t
  *         enumeration for an exhaustive list of error codes and their corresponding meanings.
  *
@@ -506,7 +506,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_array(cardano_cbor_
  *                   of an indefinite-length map. For indefinite-length maps, the end must be explicitly
  *                   marked using \ref cardano_cbor_writer_write_end_map to complete the map encoding.
  *
- * \return A \ref cardano_error_t indicating the result of the operation. Returns \c CARDANO_SUCCESS if the
+ * \return A \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the
  *         map's initiation is successfully written to the stream. If the operation encounters an error, an
  *         error code is returned specifying the failure reason. Refer to the \ref cardano_error_t enumeration
  *         for details on the possible error codes and their meanings.
@@ -560,7 +560,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_map(cardano_cbor_
  *               where the end-of-map marker will be written. The writer must have been previously
  *               initialized and must be in a valid state for writing.
  *
- * \return A \ref cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS
+ * \return A \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         upon successfully marking the end of the map in the CBOR stream. If the operation fails, an
  *         appropriate error code is returned indicating the reason for failure. Refer to the
  *         \ref cardano_error_t documentation for details on possible error codes.
@@ -582,7 +582,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_map(cardano_cbor_wr
  * \param[in] value The unsigned 64-bit integer value to be encoded and written to the CBOR stream. This
  *                  value is encoded according to the CBOR major type 0 rules.
  *
- * \return Returns \c CARDANO_SUCCESS if the unsigned integer is successfully encoded and written to
+ * \return Returns \ref CARDANO_SUCCESS if the unsigned integer is successfully encoded and written to
  *         the stream. If an error occurs during the process, a specific error code from the \ref cardano_error_t
  *         enumeration is returned to indicate the failure reason.
  *
@@ -618,7 +618,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_unsigned_int(cardano_cb
  *                  positive and negative integers, automatically applying the correct CBOR major type based on
  *                  the value's sign.
  *
- * \return Returns \c CARDANO_SUCCESS upon successful encoding and writing of the signed integer value to the
+ * \return Returns \ref CARDANO_SUCCESS upon successful encoding and writing of the signed integer value to the
  *         CBOR stream. In the event of an error, a specific error code from the \ref cardano_error_t enumeration
  *         is returned to detail the cause of the problem.
  *
@@ -653,7 +653,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_signed_int(cardano_cbor
  * \param[in] writer A pointer to the \ref cardano_cbor_writer_t structure representing the CBOR stream
  *                   where the null value will be written.
  *
- * \return Returns \c CARDANO_SUCCESS if the null value is successfully encoded and written to
+ * \return Returns \ref CARDANO_SUCCESS if the null value is successfully encoded and written to
  *         the stream. If an error occurs, an error code from the \ref cardano_error_t enumeration
  *         is returned, indicating the failure reason.
  *
@@ -693,7 +693,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_null(cardano_cbor_write
  *               properly encoded according to CBOR standards.
  *
  * \return A \ref cardano_error_t indicating the outcome of the operation. If the undefined value is
- *         successfully encoded into the CBOR stream, \c CARDANO_SUCCESS is returned. Should there be
+ *         successfully encoded into the CBOR stream, \ref CARDANO_SUCCESS is returned. Should there be
  *         a failure in writing the value, an appropriate error code is returned, providing insight
  *         into the failure reason. Refer to the \ref cardano_error_t documentation for an exhaustive
  *         list of potential error codes and their meanings.
@@ -713,7 +713,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_undefined(cardano_cbor_
  * \param[in] tag The semantic tag to assign to the next data item. It's an integer that represents the specific meaning
  * or data type according to the predefined set of CBOR tags or potentially application-defined tags.
  *
- * \return A \ref cardano_error_t indicating the result of the operation. Returns \c CARDANO_SUCCESS if the tag is successfully
+ * \return A \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the tag is successfully
  * written to the CBOR stream. If the operation fails, an appropriate error code is returned to indicate the failure reason.
  * See the documentation for \ref cardano_error_t for a list of error codes.
  */

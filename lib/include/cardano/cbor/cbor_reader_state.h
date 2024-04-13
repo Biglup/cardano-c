@@ -22,6 +22,10 @@
 #ifndef CARDANO_CBOR_READER_STATE_H
 #define CARDANO_CBOR_READER_STATE_H
 
+/* INCLUDES ******************************************************************/
+
+#include <cardano/export.h>
+
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
@@ -105,7 +109,7 @@ typedef enum
   CARDANO_CBOR_READER_STATE_END_MAP,
 
   /**
-   * \brief Indicates that the next CBOR data item is a semantic tag (major type 6).
+   * \brief Indicates that the next CBOR data item is a semantic reader_state (major type 6).
    */
   CARDANO_CBOR_READER_STATE_TAG,
 
@@ -147,6 +151,16 @@ typedef enum
    */
   CARDANO_CBOR_READER_STATE_FINISHED
 } cardano_cbor_reader_state_t;
+
+/**
+ * \brief Converts CBOR reader states to their human readable form if possible.
+ *
+ * \param[in] reader_state The reader state to get the string representation for.
+ * \return Human readable form of the given reader state. If the reader state is unknown,
+ * returns "Reader State: Unknown".
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_cbor_reader_state_to_string(cardano_cbor_reader_state_t reader_state);
 
 #ifdef __cplusplus
 }

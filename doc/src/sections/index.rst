@@ -71,9 +71,11 @@ See `APACHE LICENSE, VERSION 2.0`_
     :caption: API Reference
     :hidden:
 
-    api/cryptography/cryptography
-    api/cbor/cbor
-    api/encoding/encoding
+    api/address/index
+    api/common/index
+    api/cryptography/index
+    api/cbor/index
+    api/encoding/index
     api/buffer
     api/error
     api/object

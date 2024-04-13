@@ -1,0 +1,193 @@
+/**
+ * \file cbor_validation.h
+ *
+ * \author angel.castillo
+ * \date   Apr 13, 2024
+ *
+ * Copyright 2024 Biglup Labs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef CARDANO_CBOR_VALIDATION_H
+#define CARDANO_CBOR_VALIDATION_H
+
+/* INCLUDES ******************************************************************/
+
+#include <cardano/cbor/cbor_reader.h>
+#include <cardano/common/credential_type.h>
+#include <cardano/error.h>
+#include <cardano/export.h>
+#include <cardano/typedefs.h>
+
+/* DECLARATIONS **************************************************************/
+
+/**
+ * \brief Validates that the next element in the CBOR stream is an array with exactly \p n elements.
+ *
+ * This function checks whether the next element to be read from the CBOR stream using the provided \p reader
+ * is an array containing exactly \p n elements.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context
+ *                           or field name where this array is expected, which will be included in any
+ *                           error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be
+ *                       advanced if the validation passes.
+ * \param[in] n The expected number of elements in the array. The function checks for this exact count.
+ *
+ * \return \ref CARDANO_SUCCESS if the array contains exactly \p n elements. If the array contains a different
+ *         number of elements, or if the next element is not an array, appropriate error codes are returned,
+ *         such as \ref CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE or \ref CARDANO_ERROR_UNEXPECTED_CBOR_TYPE. If \p reader is NULL,
+ *         \ref CARDANO_POINTER_IS_NULL is returned.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * cardano_error_t result = cardano_cbor_validate_array_of_n_elements("field_name", reader, 2);
+ *
+ * if (result != CARDANO_SUCCESS)
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ *
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cbor_reader_t* reader, uint32_t n);
+
+/**
+ * \brief Validates that the next element in the CBOR stream is an unsigned integer within a specified range.
+ *
+ * This function checks whether the next element to be read from the CBOR stream using the provided \p reader
+ * is an unsigned integer and whether it falls within the inclusive range specified by \p min and \p max.
+ * This check is crucial for ensuring that data conforms to expected value constraints, especially when specific
+ * numerical ranges carry particular meanings or are required by the application logic.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or field
+ *                           name where this integer is expected, which will be included in any error messages generated.
+ * \param[in] type_name A descriptive name for the type being validated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read and interpret
+ *                       the CBOR encoded data stream. The reader's state will be advanced if the validation passes.
+ * \param[out] type Pointer to \ref cardano_credential_type_t where the parsed and validated unsigned integer
+ *                   will be stored if validation succeeds. This parameter is ignored if validation fails.
+ * \param[in] min The minimum acceptable value for the unsigned integer.
+ * \param[in] max The maximum acceptable value for the unsigned integer.
+ *
+ * \return \ref CARDANO_SUCCESS if the next element is an unsigned integer and it falls within the specified range.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * cardano_credential_type_t credential_type;
+ * cardano_error_t result = cardano_cbor_validate_uint_in_range("field_name", "credential_type", reader, &credential_type, 0, 4);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the validated credential type
+ *   printf("Credential type: %u\n", credential_type);
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_uint_in_range(const char* validator_name, const char* type_name, cardano_cbor_reader_t* reader, uint64_t* type, uint64_t min, uint64_t max);
+
+/**
+ * \brief Validates and reads a byte string of a specified size from a CBOR stream.
+ *
+ * This function checks if the next element in the CBOR stream, read using the provided \p reader,
+ * is a byte string of the exact length specified by \p size. If the validation succeeds, the function
+ * reads this byte string and returns it via the \p byte_string parameter.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name where this byte string is expected, which will be included in
+ *                           any error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be advanced
+ *                       if the byte string is successfully read.
+ * \param[out] byte_string A pointer to a pointer of \ref cardano_buffer_t that will be allocated and
+ *                         set to point to the new byte string if validation and reading succeed. The caller
+ *                         is responsible for freeing this memory using \ref cardano_buffer_unref when it
+ *                         is no longer needed.
+ * \param[in] size The exact expected size of the byte string in bytes.
+ *
+ * \return \ref CARDANO_SUCCESS if the next element is a byte string and its size matches the specified \p size.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * cardano_buffer_t* byte_string = NULL;
+ * cardano_error_t result = cardano_cbor_validate_byte_string_of_size("field_name", reader, &byte_string, expected_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the byte string
+ *   // Process or inspect byte_string contents
+ *
+ *   cardano_buffer_unref(&byte_string);
+ * }
+ * else
+ * {
+ *   // Handle error
+ *    fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ *
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string, uint32_t size);
+
+/**
+ * \brief Validates the end of an array in a CBOR stream.
+ *
+ * This function checks if the current position in the CBOR stream, accessed through the provided
+ * \p reader, correctly signifies the end of an array. It is typically used after reading all expected
+ * elements of an array to ensure that there are no additional, unexpected elements in the array.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name associated with the array, which will be included in any
+ *                           error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be checked
+ *                       to ensure it is at the end of an array structure.
+ *
+ * \return \ref CARDANO_SUCCESS if the reader is correctly positioned at the end of an array.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * // Assume we have read some elements from the array
+ * cardano_error_t result = cardano_cbor_validate_end_array("field_name", reader);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Array was properly closed
+ *   printf("Array reading completed successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader);
+
+#endif // CARDANO_CBOR_VALIDATION_H

@@ -38,9 +38,6 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_GENERIC:
       message = "Generic error";
       break;
-    case CARDANO_ERROR_LOSS_OF_PRECISION:
-      message = "Invalid conversion. Loss of precision";
-      break;
     case CARDANO_INSUFFICIENT_BUFFER_SIZE:
       message = "Invalid operation. Insufficient buffer size";
       break;
@@ -79,6 +76,36 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     case CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX:
       message = "Invalid operation. Invalid BIP32 derivation index";
+      break;
+    case CARDANO_ERROR_ENCODING:
+      message = "Invalid operation. Encoding failure";
+      break;
+    case CARDANO_ERROR_DECODING:
+      message = "Invalid operation. Decoding failure";
+      break;
+    case CARDANO_ERROR_CHECKSUM_MISMATCH:
+      message = "Invalid operation. Checksum mismatch";
+      break;
+    case CARDANO_ERROR_LOSS_OF_PRECISION:
+      message = "Invalid operation. Loss of precision";
+      break;
+    case CARDANO_ERROR_UNEXPECTED_CBOR_TYPE:
+      message = "Invalid operation. Unexpected CBOR type";
+      break;
+    case CARDANO_ERROR_INVALID_CBOR_VALUE:
+      message = "Invalid operation. Invalid CBOR value";
+      break;
+    case CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE:
+      message = "Invalid operation. Invalid CBOR array size";
+      break;
+    case CARDANO_ERROR_INVALID_CBOR_MAP_SIZE:
+      message = "Invalid operation. Invalid CBOR map size";
+      break;
+    case CARDANO_INVALID_ADDRESS_TYPE:
+      message = "Invalid operation. Invalid address type";
+      break;
+    case CARDANO_INVALID_ADDRESS_FORMAT:
+      message = "Invalid operation. Invalid address format";
       break;
     default:
       message = "Unknown error code";

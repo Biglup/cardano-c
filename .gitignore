@@ -16,7 +16,8 @@ build/
 armhf/
 amd64/
 .idea
-
+.cmake/
+build.ninja
 # CMake files.
 **/CMakeCache.txt
 **/CMakeFiles

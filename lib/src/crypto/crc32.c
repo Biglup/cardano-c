@@ -39,8 +39,11 @@
 
 /* clang-format off */
 
-CARDANO_32_ALIGN uint32_t
-s_crc32_table[256] =
+// We suppress the MISRA C:2012 rule 8.9 because the table inlining the table inside the function
+// would make the code less readable.
+
+// cppcheck-suppress misra-c2012-8.9
+CARDANO_32_ALIGN static uint32_t s_crc32_table[256] =
 {
     (uint32_t)(0x00000000), (uint32_t)(0x77073096), (uint32_t)(0xee0e612c), (uint32_t)(0x990951ba),
     (uint32_t)(0x076dc419), (uint32_t)(0x706af48f), (uint32_t)(0xe963a535), (uint32_t)(0x9e6495a3),
@@ -115,17 +118,17 @@ s_crc32_table[256] =
 uint32_t
 cardano_checksum_crc32(const byte_t* data, const size_t size)
 {
-  if (data == NULL || size == 0)
+  if ((data == NULL) || (size == 0U))
   {
     return 0;
   }
 
-  uint32_t crc = 0xFFFFFFFF;
+  uint32_t crc = 0xFFFFFFFFU;
 
   for (size_t i = 0; i < size; ++i)
   {
-    byte_t k = ((byte_t*)data)[i];
-    crc      = s_crc32_table[((byte_t)(crc) ^ k) & 0xFF] ^ (crc >> 8);
+    byte_t k = (data)[i];
+    crc      = s_crc32_table[((byte_t)(crc) ^ k) & 0xFFU] ^ (crc >> 8);
   }
   return (crc ^ 0xFFFFFFFF);
 }

@@ -50,7 +50,7 @@ extern "C" {
  * \param[out] derived_key The buffer where the derived key will be stored.
  * \param[in] derived_key_length The desired length of the derived key.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  *         or an appropriate error code indicating the failure reason. Refer to \ref cardano_error_t documentation
  *         for details on possible error codes.
  */

@@ -22,6 +22,10 @@
 #ifndef CARDANO_CBOR_TAG_H
 #define CARDANO_CBOR_TAG_H
 
+/* INCLUDES ******************************************************************/
+
+#include <cardano/export.h>
+
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
@@ -100,6 +104,15 @@ typedef enum
    */
   CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR = 55799
 } cardano_cbor_tag_t;
+
+/**
+ * \brief Converts CBOR tags to their human readable form if possible.
+ *
+ * \param[in] tag The tag to get the string representation for.
+ * \return Human readable form of the given tag. If the tag is unknown, returns "Tag: Custom".
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_cbor_tag_to_string(cardano_cbor_tag_t tag);
 
 #ifdef __cplusplus
 }

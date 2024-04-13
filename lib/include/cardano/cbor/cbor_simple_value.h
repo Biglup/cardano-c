@@ -22,6 +22,10 @@
 #ifndef CARDANO_CBOR_SIMPLE_VALUE_H
 #define CARDANO_CBOR_SIMPLE_VALUE_H
 
+/* INCLUDES ******************************************************************/
+
+#include <cardano/export.h>
+
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
@@ -67,6 +71,16 @@ typedef enum
    */
   CARDANO_CBOR_SIMPLE_VALUE_UNDEFINED = 23
 } cardano_cbor_simple_value_t;
+
+/**
+ * \brief Converts CBOR simple value to their human readable form.
+ *
+ * \param[in] simple_value The simple value to get the string representation for.
+ * \return Human readable form of the given simple value. If the simple value is unknown,
+ * returns "Simple Value: Unknown".
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_cbor_simple_value_to_string(cardano_cbor_simple_value_t simple_value);
 
 #ifdef __cplusplus
 }

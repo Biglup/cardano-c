@@ -81,6 +81,10 @@ CBOR Writer
 
 ------------
 
+.. doxygenfunction:: cardano_cbor_writer_get_encode_size
+
+------------
+
 .. doxygenfunction:: cardano_cbor_writer_encode
 
 ------------

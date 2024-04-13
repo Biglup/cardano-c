@@ -1,5 +1,5 @@
 /**
- * \file cbor_reader_state.h
+ * \file cbor_major_type.h
  *
  * \author angel.castillo
  * \date   Sep 12, 2023
@@ -21,6 +21,10 @@
 
 #ifndef CARDANO_CBOR_MAJOR_TYPE_H
 #define CARDANO_CBOR_MAJOR_TYPE_H
+
+/* INCLUDES ******************************************************************/
+
+#include <cardano/export.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -95,6 +99,16 @@ typedef enum
    */
   CARDANO_CBOR_MAJOR_TYPE_UNDEFINED = 0xFFFFFFFF
 } cardano_cbor_major_type_t;
+
+/**
+ * \brief Converts CBOR major type to their human readable form if possible.
+ *
+ * \param[in] major_type The major type to get the string representation for.
+ * \return Human readable form of the given major type. If the major type is unknown,
+ * returns "Major Type: Unknown".
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_cbor_major_type_to_string(cardano_cbor_major_type_t major_type);
 
 #ifdef __cplusplus
 }

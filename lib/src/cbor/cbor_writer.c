@@ -246,7 +246,7 @@ cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, uint64_t value)
+cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, const uint64_t value)
 {
   if (writer == NULL)
   {
@@ -264,7 +264,7 @@ cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, uint64_t va
 }
 
 cardano_error_t
-cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, bool value)
+cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, const bool value)
 {
   if (writer == NULL)
   {
@@ -277,7 +277,7 @@ cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, bool value)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* data, size_t size)
+cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, const byte_t* data, const size_t size)
 {
   if (writer == NULL)
   {
@@ -300,7 +300,7 @@ cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, byte_t* dat
 }
 
 cardano_error_t
-cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, size_t size)
+cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, const size_t size)
 {
   if (writer == NULL)
   {
@@ -323,7 +323,7 @@ cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char*
 }
 
 cardano_error_t
-cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, byte_t* data, size_t size)
+cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, const byte_t* data, const size_t size)
 {
   if (writer == NULL)
   {
@@ -394,7 +394,7 @@ cardano_cbor_writer_write_end_map(cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, uint64_t value)
+cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, const uint64_t value)
 {
   if (writer == NULL)
   {
@@ -405,7 +405,7 @@ cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, uint64_t v
 }
 
 cardano_error_t
-cardano_cbor_writer_write_signed_int(cardano_cbor_writer_t* writer, int64_t value)
+cardano_cbor_writer_write_signed_int(cardano_cbor_writer_t* writer, const int64_t value)
 {
   if (writer == NULL)
   {
@@ -447,7 +447,7 @@ cardano_cbor_writer_write_undefined(cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cardano_cbor_tag_t tag)
+cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, const cardano_cbor_tag_t tag)
 {
   if (writer == NULL)
   {
@@ -505,7 +505,7 @@ cardano_cbor_writer_get_hex_size(const cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, size_t dest_size)
+cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, const size_t dest_size)
 {
   if (writer == NULL)
   {

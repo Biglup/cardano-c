@@ -26,6 +26,13 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/address/address.h>
+#include <cardano/address/address_type.h>
+#include <cardano/address/base_address.h>
+#include <cardano/address/byron_address.h>
+#include <cardano/address/enterprise_address.h>
+#include <cardano/address/pointer_address.h>
+#include <cardano/address/reward_address.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_reader.h>
@@ -33,6 +40,9 @@
 #include <cardano/cbor/cbor_simple_value.h>
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/credential.h>
+#include <cardano/common/credential_type.h>
+#include <cardano/common/network_id.h>
 #include <cardano/crypto/bip32_private_key.h>
 #include <cardano/crypto/bip32_public_key.h>
 #include <cardano/crypto/blake2b_hash.h>

@@ -1001,7 +1001,7 @@ TEST(cardano_cbor_writer_encode, returnsErrorIfGivenANullWriter)
 TEST(cardano_cbor_writer_encode, returnsErrorIfGivenNullData)
 {
   // Arrange
-  cardano_cbor_writer_t* writer  = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
   // Act
   cardano_error_t encode_result = cardano_cbor_writer_encode(writer, nullptr, 0);
@@ -1030,7 +1030,7 @@ TEST(cardano_cbor_writer_encode, returnErrorWhenOutputBufferIsInsufficient)
   byte_t                 output[1] = { 0x00 };
 
   // Act
-  cardano_error_t write_result  = cardano_cbor_writer_write_encoded(writer, array, sizeof(array));
+  cardano_error_t write_result = cardano_cbor_writer_write_encoded(writer, array, sizeof(array));
 
   cardano_error_t encode_result = cardano_cbor_writer_encode(writer, output, sizeof(output));
 

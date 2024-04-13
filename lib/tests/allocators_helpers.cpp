@@ -114,6 +114,17 @@ fail_after_six_malloc(size_t size)
 }
 
 void*
+fail_after_nine_malloc(size_t size)
+{
+  if (malloc_run_count < 9)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+  return NULL;
+}
+
+void*
 fail_right_away_realloc(void* const ptr, const size_t size)
 {
   return NULL;

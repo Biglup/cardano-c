@@ -221,7 +221,7 @@ CARDANO_EXPORT cardano_cbor_reader_t* cardano_cbor_reader_move(cardano_cbor_read
  * \param[out] state Pointer to a \ref cardano_cbor_reader_state_t variable where the current state of the
  * CBOR reader will be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on successful
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on successful
  * examination of the next CBOR token, or an appropriate error code indicating the reason for failure.
  * Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -251,7 +251,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_peek_state(cardano_cbor_reade
  * remaining in the buffer will be stored. This value represents how much data is available
  * for reading and processing before the end of the buffer is reached.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -284,7 +284,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_get_bytes_remaining(cardano_c
  * \param[out] remainder_bytes A buffer with a copy of the remainder bytes. The caller
  * is responsible for releasing this buffer using \ref cardano_buffer_unref when it is no longer needed.
  *
- * \return \c CARDANO_SUCCESS if the remainder bytes were successfully retrieved and copied into
+ * \return \ref CARDANO_SUCCESS if the remainder bytes were successfully retrieved and copied into
  *         the provided buffer. If the operation fails due to an insufficient buffer size or
  *         other issues, an appropriate error code is returned. Refer to \c cardano_error_t
  *         documentation for details on possible error codes.
@@ -311,7 +311,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_get_remainder_bytes(cardano_c
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the next CBOR data item
  * is to be skipped.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -348,7 +348,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_skip_value(cardano_cbor_reade
  * allocated and populated with the encoded value. The caller is responsible for releasing
  * this buffer using \ref cardano_buffer_unref when it is no longer needed.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -383,7 +383,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_encoded_value(cardano_cb
  * If the array is of definite length, size will be set to the number of elements in the array.
  * If the array is of indefinite length, size will be set to a negative value.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -424,7 +424,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_start_array(cardano_cbor
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the end of the array is to be read.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -460,7 +460,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_array(cardano_cbor_r
  * is to be read.
  * \param[out] value Pointer to an `int64_t` variable where the decoded integer value will be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -494,7 +494,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_int(cardano_cbor_reader_
  * \param[out] value Pointer to a `uint64_t` variable where the decoded unsigned integer value will
  * be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -528,7 +528,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_uint(cardano_cbor_reader
  * floating point number is to be read.
  * \param[out] value Pointer to a `double` variable where the decoded floating point value will be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -561,7 +561,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_double(cardano_cbor_read
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the simple value is to be read.
  * \param[out] value Pointer to a `cardano_cbor_simple_value_t` variable where the decoded simple value will be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -597,7 +597,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_simple_value(cardano_cbo
  * \param[out] size Pointer to an `int64_t` variable where the size of the map (number of key-value pairs)
  *                  will be stored. A value of -1 indicates an indefinite-length map.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on success,
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  * or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t documentation
  * for details on possible error codes.
  *
@@ -634,7 +634,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_start_map(cardano_cbor_r
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the end of the map is to be read.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on successful
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on successful
  * reading of the map's end marker, or an appropriate error code indicating the reason for failure. Refer
  * to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -665,7 +665,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_map(cardano_cbor_rea
  * \param[out] value Pointer to a boolean variable where the decoded value will be stored. The
  * value is set to `true` if the CBOR data item represents true, and `false` if it represents false.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS on successful
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on successful
  * reading and decoding of the boolean value, or an appropriate error code indicating the reason for failure.
  * Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -702,7 +702,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_boolean(cardano_cbor_rea
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the null value is to be read.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if the next
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS if the next
  * data item in the stream is correctly identified as a null value, or an appropriate error code indicating
  * the reason for failure. Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -738,7 +738,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_null(cardano_cbor_reader
  *                         string will be stored. The caller is responsible for freeing this buffer using
  *                         \ref cardano_buffer_unref when it is no longer needed.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if the byte string
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS if the byte string
  * is successfully read from the CBOR stream, or an appropriate error code indicating the reason for failure.
  * Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -780,7 +780,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_bytestring(cardano_cbor_
  *                The caller assumes ownership of this buffer and is responsible for deallocating it using the
  *                appropriate function (e.g., `cardano_buffer_unref`) when it is no longer needed.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if the text string
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS if the text string
  * is successfully read from the CBOR stream, or an appropriate error code indicating the reason for failure.
  * Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -813,7 +813,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_textstring(cardano_cbor_
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the tag is to be read.
  * \param[out] tag A pointer to a \ref cardano_cbor_tag_t variable where the decoded tag value will be stored.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if the tag is
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS if the tag is
  * successfully read from the CBOR stream, or an appropriate error code indicating the reason for failure.
  * Refer to \ref cardano_error_t documentation for details on possible error codes.
  *
@@ -848,7 +848,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the tag is to be peeked.
  * \param[out] tag A pointer to a \ref cardano_cbor_tag_t variable where the tag value will be stored if a tag is present.
  *
- * \return A \ref cardano_error_t indicating the result of the operation: \c CARDANO_SUCCESS if a tag is successfully
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS if a tag is successfully
  * peeked at, or an appropriate error code indicating the reason for failure. Refer to \ref cardano_error_t
  * documentation for details on possible error codes.
  *
