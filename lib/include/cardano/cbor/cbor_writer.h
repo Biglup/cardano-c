@@ -402,7 +402,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_wr
  * is being started by setting the \c size parameter accordingly.
  *
  * \param[in] writer A pointer to the \ref cardano_cbor_writer_t instance that is being used to construct the CBOR stream.
- * \param[in] size   The total number of elements expected in the array for definite-length arrays, or 0 for starting an
+ * \param[in] size   The total number of elements expected in the array for definite-length arrays, or -1 for starting an
  *                   indefinite-length array. In the case of an indefinite-length array, the writing process is open-ended
  *                   until the \ref cardano_cbor_writer_write_end_array function is called to signal the end of the array.
  *
@@ -426,7 +426,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_wr
  *   }
  *
  *   // Alternatively, start an indefinite-length array
- *   result = cardano_cbor_writer_write_start_array(writer, 0);
+ *   result = cardano_cbor_writer_write_start_array(writer, -1);
  *
  *   if (result != CARDANO_SUCCESS)
  *   {
@@ -438,11 +438,11 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_encoded(cardano_cbor_wr
  * }
  * \endcode
  *
- * \note For indefinite-length arrays, it is essential to call \ref cardano_cbor_writer_write_end_array after writing all
+ * \note For indefinite-length arrays, you must call \ref cardano_cbor_writer_write_end_array after writing all
  *       array elements to properly close the array in the CBOR stream.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, int64_t size);
 
 /**
  * \brief Concludes the encoding of an indefinite-length array in the CBOR stream.
@@ -498,11 +498,11 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_array(cardano_cbor_
  * the creation of both definite-length maps, where the number of key-value pairs is known upfront, and
  * indefinite-length maps, where the number of pairs is determined as the map is being written. The
  * definite-length map is initiated by specifying the exact number of pairs, while the indefinite-length
- * map is started by passing 0 as the length parameter.
+ * map is started by passing -1 as the length parameter.
  *
  * \param[in] writer A pointer to the \ref cardano_cbor_writer_t structure that represents the CBOR stream
  *                   where the map will be encoded.
- * \param[in] size   The number of key-value pairs for a definite-length map, or 0 to indicate the start
+ * \param[in] size   The number of key-value pairs for a definite-length map, or -1 to indicate the start
  *                   of an indefinite-length map. For indefinite-length maps, the end must be explicitly
  *                   marked using \ref cardano_cbor_writer_write_end_map to complete the map encoding.
  *
@@ -526,7 +526,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_array(cardano_cbor_
  *   }
  *
  *   // Alternatively, start an indefinite-length map
- *   result = cardano_cbor_writer_write_start_map(writer, 0);
+ *   result = cardano_cbor_writer_write_start_map(writer, -1);
  *   if (result != CARDANO_SUCCESS)
  *   {
  *     // Handle error
@@ -537,11 +537,11 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_array(cardano_cbor_
  * }
  * \endcode
  *
- * \note For indefinite-length maps, it is crucial to call \ref cardano_cbor_writer_write_end_map after adding
+ * \note For indefinite-length maps, you must call \ref cardano_cbor_writer_write_end_map after adding
  *       all key-value pairs to correctly close the map structure in the CBOR stream.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, int64_t size);
 
 /**
  * \brief Concludes the writing of an indefinite-length map (major type 5) in CBOR format.
@@ -721,6 +721,44 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cardano_cbor_tag_t tag);
 
 /**
+ * \brief Calculates the required buffer size for the encoded data.
+ *
+ * This function determines the size of the buffer needed to store the  data encoded by the writer.
+ * It is intended to be used before calling `cardano_cbor_writer_encode` to allocate a buffer of appropriate size.
+ *
+ * \param[in] writer The source writer whose encoded data size is being calculated.
+ *
+ * \return The size of the buffer required to store the writer's encoded data. Returns 0 if the writer is NULL
+ * or contains no data.
+ *
+ * Example usage:
+ * \code{.c}
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * // Assume writer has been used to encode some CBOR data here
+ *
+ * size_t required_size = cardano_cbor_writer_get_encode_size(writer);
+ *
+ * // Now required_size can be used to allocate a buffer of appropriate size
+ * byte_t* data = (byte_t*)malloc(required_size);
+ *
+ * if (byte_t != NULL)
+ * {
+ *   if (cardano_cbor_writer_encode(writer, data, required_size) == CARDANO_SUCCESS)
+ *   {
+ *     // Operate on the encoded data
+ *   }
+ *
+ *   free(data); // Free the allocated string after use
+ * }
+ *
+ * cardano_cbor_writer_unref(&writer); // Properly dispose of the writer after use
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_cbor_writer_get_encode_size(cardano_cbor_writer_t* writer);
+
+/**
  * \brief Encodes data from the writer's context into CBOR format and outputs it to a provided buffer.
  *
  * This function encodes data prepared in the writer's internal context into CBOR format and writes it into an output
@@ -731,8 +769,6 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer
  * \param[in] data A pointer to a byte array where the encoded data will be written. The function will fill this buffer with
  *                 the CBOR-encoded data.
  * \param[in] size The size of the data byte array, indicating how much space is available for writing the encoded data.
- * \param[out] written A pointer to a size_t variable where the function will store the total number of bytes that were
- *                     successfully written into the encoded data buffer.
  *
  * \return A cardano_error_t indicating the outcome of the operation. Returns CARDANO_SUCCESS if the data is successfully
  *         encoded into CBOR format and stored in the provided buffer. If the operation fails, an error code is returned indicating
@@ -743,13 +779,12 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer
  * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
  *
  * byte_t buffer[256]; // Pre-allocated buffer with sufficient space for the encoded data
- * size_t bytes_written;
  *
- * cardano_error_t result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &bytes_written);
+ * cardano_error_t result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer));
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   printf("Encoded CBOR data successfully. Bytes written: %zu\n", bytes_written);
+ *   printf("Encoded CBOR data successfully. Bytes written: %zu\n", sizeof(buffer));
  * }
  * else
  * {
@@ -760,7 +795,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_tag(cardano_cbor_writer
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size, size_t* written);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
 
 /**
  * \brief Calculates the required buffer size for the hex string representation of the encoded data.

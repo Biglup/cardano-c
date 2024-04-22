@@ -339,7 +339,7 @@ cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, byte_t* data, s
 }
 
 cardano_error_t
-cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, size_t size)
+cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, const int64_t size)
 {
   static byte_t indefinite_length_array = 0x9fU;
 
@@ -348,7 +348,7 @@ cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, size_t size
     return CARDANO_POINTER_IS_NULL;
   }
 
-  if (size == 0U)
+  if (size < 0)
   {
     return cardano_buffer_write(writer->buffer, &indefinite_length_array, sizeof(indefinite_length_array));
   }
@@ -370,7 +370,7 @@ cardano_cbor_writer_write_end_array(cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, size_t size)
+cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, const int64_t size)
 {
   static byte_t indefinite_length_map = 0xbfU;
 
@@ -379,7 +379,7 @@ cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, size_t size)
     return CARDANO_POINTER_IS_NULL;
   }
 
-  if (size == 0U)
+  if (size < 0)
   {
     return cardano_buffer_write(writer->buffer, &indefinite_length_map, sizeof(indefinite_length_map));
   }
@@ -457,8 +457,19 @@ cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, cardano_cbor_tag_t 
   return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_TAG, tag);
 }
 
+size_t
+cardano_cbor_writer_get_encode_size(cardano_cbor_writer_t* writer)
+{
+  if (writer == NULL)
+  {
+    return 0U;
+  }
+
+  return cardano_buffer_get_size(writer->buffer);
+}
+
 cardano_error_t
-cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size, size_t* written)
+cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, const size_t size)
 {
   if (writer == NULL)
   {
@@ -478,8 +489,6 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t s
   }
 
   CARDANO_UNUSED(memcpy(data, cardano_buffer_get_data(writer->buffer), buffer_size));
-
-  *written = buffer_size;
 
   return CARDANO_SUCCESS;
 }

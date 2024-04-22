@@ -88,6 +88,11 @@ typedef enum
   CARDANO_CBOR_TAG_BIG_FLOAT = 5,
 
   /**
+   * \brief Tag value for byte strings containing embedded CBOR data item encodings.
+   */
+  CARDANO_ENCODED_CBOR_DATA_ITEM = 24,
+
+  /**
    * \brief Tag value for the Self-Describe CBOR header (0xd9d9f7).
    *
    * When placed at the beginning of a CBOR document, this tag signals that the

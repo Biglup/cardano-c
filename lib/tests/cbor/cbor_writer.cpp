@@ -294,17 +294,17 @@ TEST(cardano_cbor_writer_write_tag, writesATag)
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
   byte_t                 expected[] = { 0xC1 };
   byte_t                 buffer[10] = { 0 };
-  size_t                 written    = 0;
 
   // Act
+
   cardano_error_t write_result  = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_UNIX_TIME_SECONDS);
-  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written);
+  size_t          required_size = cardano_cbor_writer_get_encode_size(writer);
+  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer));
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
   EXPECT_EQ(encode_result, CARDANO_SUCCESS);
-  EXPECT_EQ(written, 1);
-  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, written));
+  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, required_size));
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -363,17 +363,17 @@ TEST(cardano_cbor_writer_write_big_integer, writesTheValueAsATaggedBignumEncodin
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
   byte_t                 expected[] = { 0xC2, 0x02 };
   byte_t                 buffer[10] = { 0 };
-  size_t                 written    = 0;
 
   // Act
   cardano_error_t write_result  = cardano_cbor_writer_write_big_integer(writer, 2);
-  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written);
+  size_t          required_size = cardano_cbor_writer_get_encode_size(writer);
+  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer));
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
   EXPECT_EQ(encode_result, CARDANO_SUCCESS);
-  EXPECT_EQ(written, 2);
-  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, written));
+  EXPECT_EQ(required_size, 2);
+  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, required_size));
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -394,17 +394,17 @@ TEST(cardano_cbor_writer_write_start_array, writesTheStartOfAnArray)
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
   byte_t                 expected[] = { 0x82 };
   byte_t                 buffer[10] = { 0 };
-  size_t                 written    = 0;
 
   // Act
   cardano_error_t write_result  = cardano_cbor_writer_write_start_array(writer, 2);
-  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written);
+  size_t          required_size = cardano_cbor_writer_get_encode_size(writer);
+  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, buffer, sizeof(buffer));
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
   EXPECT_EQ(encode_result, CARDANO_SUCCESS);
-  EXPECT_EQ(written, 1);
-  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, written));
+  EXPECT_EQ(required_size, 1);
+  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, required_size));
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -416,14 +416,14 @@ TEST(cardano_cbor_writer_write_start_array, writeAnIndefiniteSizeArray)
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
   byte_t                 expected[] = { 0x9F, 0xff };
   byte_t                 buffer[10] = { 0 };
-  size_t                 written    = 0;
 
   // Assert
-  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, -1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_end_array(writer), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written), CARDANO_SUCCESS);
-  EXPECT_EQ(written, 2);
-  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, written));
+  size_t required_size = cardano_cbor_writer_get_encode_size(writer);
+  EXPECT_EQ(cardano_cbor_writer_encode(writer, buffer, sizeof(buffer)), CARDANO_SUCCESS);
+  EXPECT_EQ(required_size, 2);
+  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, required_size));
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -435,15 +435,15 @@ TEST(cardano_cbor_writer_write_start_array, writeAnIndefiniteSizeArrayWithAnElem
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
   byte_t                 expected[] = { 0x9F, 0x18, 0x2a, 0xff };
   byte_t                 buffer[10] = { 0 };
-  size_t                 written    = 0;
 
   // Assert
-  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, -1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_signed_int(writer, 42), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_end_array(writer), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_cbor_writer_encode(writer, buffer, sizeof(buffer), &written), CARDANO_SUCCESS);
-  EXPECT_EQ(written, 4);
-  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, written));
+  size_t required_size = cardano_cbor_writer_get_encode_size(writer);
+  EXPECT_EQ(cardano_cbor_writer_encode(writer, buffer, sizeof(buffer)), CARDANO_SUCCESS);
+  EXPECT_EQ(required_size, 4);
+  EXPECT_THAT(expected, testing::ElementsAreArray(buffer, required_size));
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -456,7 +456,7 @@ TEST(cardano_cbor_writer_write_start_array, writeAnIndefiniteSizeArrayWithSevera
 
   // Assert
 
-  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_start_array(writer, -1), CARDANO_SUCCESS);
 
   for (size_t i = 0; i < 25; ++i)
   {
@@ -775,7 +775,7 @@ TEST(cardano_cbor_writer_write_start_map, canWriteUndefiniteLenghtMaps)
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
   // Act
-  EXPECT_EQ(cardano_cbor_writer_write_start_map(writer, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_start_map(writer, -1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "a", 1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "A", 1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_cbor_writer_write_text_string(writer, "b", 1), CARDANO_SUCCESS);
@@ -990,10 +990,9 @@ TEST(cardano_cbor_writer_encode, returnsErrorIfGivenANullWriter)
 {
   // Arrange
   byte_t buffer[10] = { 0 };
-  size_t written    = 0;
 
   // Act
-  cardano_error_t encode_result = cardano_cbor_writer_encode(nullptr, buffer, sizeof(buffer), &written);
+  cardano_error_t encode_result = cardano_cbor_writer_encode(nullptr, buffer, sizeof(buffer));
 
   // Assert
   EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
@@ -1003,10 +1002,9 @@ TEST(cardano_cbor_writer_encode, returnsErrorIfGivenNullData)
 {
   // Arrange
   cardano_cbor_writer_t* writer  = cardano_cbor_writer_new();
-  size_t                 written = 0;
 
   // Act
-  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, nullptr, 0, &written);
+  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, nullptr, 0);
 
   // Assert
   EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
@@ -1030,11 +1028,11 @@ TEST(cardano_cbor_writer_encode, returnErrorWhenOutputBufferIsInsufficient)
   cardano_cbor_writer_t* writer    = cardano_cbor_writer_new();
   byte_t                 array[4]  = { 0x01, 0x02, 0x03, 0x04 };
   byte_t                 output[1] = { 0x00 };
-  size_t                 written   = 0;
 
   // Act
   cardano_error_t write_result  = cardano_cbor_writer_write_encoded(writer, array, sizeof(array));
-  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, output, sizeof(output), &written);
+
+  cardano_error_t encode_result = cardano_cbor_writer_encode(writer, output, sizeof(output));
 
   // Assert
   EXPECT_EQ(write_result, CARDANO_SUCCESS);
@@ -1100,4 +1098,13 @@ TEST(cardano_cbor_writer_set_last_error, doesNothingWhenWhenMessageIsNull)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_get_encode_size, returnsZeroIfGivenaNullPtr)
+{
+  // Act
+  size_t encode_size = cardano_cbor_writer_get_encode_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(encode_size, 0);
 }
