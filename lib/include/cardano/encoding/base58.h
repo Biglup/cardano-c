@@ -76,7 +76,7 @@ CARDANO_EXPORT size_t cardano_encoding_base58_get_encoded_length(const byte_t* d
  * \param[out] output Pointer to the output buffer for the encoded string.
  * \param[in] output_length Length of the output buffer in bytes.
  *
- * \return \c CARDANO_SUCCESS if the encoding was successful, or an appropriate error code otherwise.
+ * \return \ref CARDANO_SUCCESS if the encoding was successful, or an appropriate error code otherwise.
  *
  * \note The output buffer should be large enough to hold the encoded string and the null terminator.
  *       Use \c cardano_encoding_base58_get_encoded_length to calculate the exact buffer size required.
@@ -179,7 +179,7 @@ CARDANO_EXPORT size_t cardano_encoding_base58_get_decoded_length(const char* dat
  * \param[in] data_length The size of the buffer pointed to by `data`, in bytes. This should be computed in advance to be large enough
  *                        to hold the expected decoded binary data.
  *
- * \return \c CARDANO_SUCCESS if the decoding was successful. Otherwise, an appropriate error code is returned indicating the failure reason.
+ * \return \ref CARDANO_SUCCESS if the decoding was successful. Otherwise, an appropriate error code is returned indicating the failure reason.
  *
  * \note The data buffer should be large enough to hold the decoded binary data. The function `cardano_encoding_base58_get_decoded_length`
  *       can be used to calculate the required buffer size based on the length of the Base58-encoded string.

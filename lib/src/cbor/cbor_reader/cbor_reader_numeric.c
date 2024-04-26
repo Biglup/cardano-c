@@ -137,7 +137,7 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
     {
       char buffer[64] = { 0 };
 
-      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d or %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, major_type);
+      int32_t written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d or %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, major_type);
 
       if (written < 0)
       {
@@ -235,7 +235,7 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
     {
       char buffer[64] = { 0 };
 
-      int written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, major_type);
+      int32_t written = snprintf(buffer, sizeof(buffer), "Reader type mismatch, expected %d but got %d.", CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, major_type);
 
       if (written < 0)
       {

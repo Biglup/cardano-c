@@ -128,6 +128,19 @@ void*
 fail_after_six_malloc(size_t size);
 
 /**
+ * \brief A mock version of malloc that allows nine successful allocation before failing.
+ *
+ * This function simulates a scenario where malloc succeeds on the first, second, third, fourth, fifth, sixth, seventh, eighth and ninth call but fails
+ * on subsequent calls.
+ *
+ * \param size The size of the memory allocation request.
+ * \return A pointer to allocated memory on the first call, and NULL on subsequent calls
+ *         to simulate allocation failure.
+ */
+void*
+fail_after_nine_malloc(size_t size);
+
+/**
  * \brief A mock version of realloc that simulates a reallocation failure on the first call.
  *
  * This function is useful for testing how code reacts when realloc fails immediately,

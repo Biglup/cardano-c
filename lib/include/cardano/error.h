@@ -89,6 +89,11 @@ typedef enum
    */
   CARDANO_ERROR_DECODING = 11,
 
+  /**
+   * \brief Invalid checksum.
+   */
+  CARDANO_ERROR_CHECKSUM_MISMATCH = 12,
+
   /* Serialization errors */
 
   /**
@@ -132,6 +137,41 @@ typedef enum
    * \brief The BIP32 derivation index is invalid.
    */
   CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX = 206,
+
+  /* CBOR errors */
+
+  /**
+   * \brief The CBOR type is unexpected.
+   */
+  CARDANO_ERROR_UNEXPECTED_CBOR_TYPE = 300,
+
+  /**
+   * \brief The CBOR value is of the right type, but the value is invalid (I.E out of range).
+   */
+  CARDANO_ERROR_INVALID_CBOR_VALUE = 301,
+
+  /**
+   * \brief The CBOR array size is invalid.
+   */
+  CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE = 302,
+
+  /**
+   * \brief The CBOR map size is invalid.
+   */
+  CARDANO_ERROR_INVALID_CBOR_MAP_SIZE = 303,
+
+  // Address errors
+
+  /**
+   * \brief The address type is invalid.
+   */
+  CARDANO_INVALID_ADDRESS_TYPE = 400,
+
+  /**
+   * \brief The address format is invalid.
+   */
+  CARDANO_INVALID_ADDRESS_FORMAT = 401,
+
 } cardano_error_t;
 
 /**

@@ -252,7 +252,7 @@ CARDANO_EXPORT size_t cardano_buffer_get_str_size(const cardano_buffer_t* buffer
  * \param[out] dest The destination buffer where the resulting string will be stored.
  * \param[in] dest_size The size of the destination buffer in bytes.
  *
- * \return \c CARDANO_SUCCESS if the conversion was successful and the string was
+ * \return \ref CARDANO_SUCCESS if the conversion was successful and the string was
  *         copied to \c dest. If the destination buffer is not large enough to hold the string,
  *         an error code will be returned. Refer to \c cardano_error_t documentation
  *         for details on possible error codes.
@@ -574,7 +574,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_seek(cardano_buffer_t* buffer, siz
  * \param[in] size The size of the data in bytes to be appended. This specifies how much of the data
  * pointed to by `data` should be copied into the buffer.
  *
- * \return Returns \c CARDANO_SUCCESS if the append operation was successful. If the operation encounters an error,
+ * \return Returns \ref CARDANO_SUCCESS if the append operation was successful. If the operation encounters an error,
  *        such as invalid parameters or issues with writing to the buffer, an appropriate error code is returned
  *        indicating the reason for the failure. Consult the \ref cardano_error_t documentation for details on possible
  *        error codes and their meanings.
@@ -596,7 +596,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write(cardano_buffer_t* buffer, co
  * \param[in] bytes_to_read The number of bytes to read from the buffer and copy into the `data` output array.
  * This specifies how much data the function should attempt to transfer from the buffer.
  *
- * \return A \ref cardano_error_t value indicating the outcome of the read operation. \c CARDANO_SUCCESS
+ * \return A \ref cardano_error_t value indicating the outcome of the read operation. \ref CARDANO_SUCCESS
  * is returned if the specified amount of data was successfully read from the buffer and copied into the
  * output array. If the operation fails, for example, because the buffer contains less data than requested,
  * an appropriate error code is returned to indicate the specific reason for failure.
@@ -614,7 +614,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read(cardano_buffer_t* buffer, byt
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -631,7 +631,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_le(cardano_buffer_t* 
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer value is
- * successfully encoded and stored in the buffer, \c CARDANO_SUCCESS is returned. In the event of an error, such
+ * successfully encoded and stored in the buffer, \ref CARDANO_SUCCESS is returned. In the event of an error, such
  * as failure to expand the buffer's capacity, an error code will be returned that details the specific cause of
  * the failure. Clients are encouraged to check this return value to verify that the write operation was successful
  * and to handle any errors that may have occurred.
@@ -649,7 +649,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_le(cardano_buffer_t* 
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer value is
- * successfully encoded and stored in the buffer, \c CARDANO_SUCCESS is returned. In the event of an error, such
+ * successfully encoded and stored in the buffer, \ref CARDANO_SUCCESS is returned. In the event of an error, such
  * as failure to expand the buffer's capacity, an error code will be returned that details the specific cause of
  * the failure. Clients are encouraged to check this return value to verify that the write operation was successful
  * and to handle any errors that may have occurred.
@@ -667,7 +667,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_le(cardano_buffer_t* 
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -684,7 +684,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_le(cardano_buffer_t* b
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -701,7 +701,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_le(cardano_buffer_t* b
  * split the integer into bytes according to little-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -719,7 +719,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_le(cardano_buffer_t* b
  * the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the float is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -737,7 +737,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_le(cardano_buffer_t* b
  * the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the double is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -754,7 +754,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_le(cardano_buffer_t* 
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -771,7 +771,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint16_be(cardano_buffer_t* 
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -788,7 +788,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint32_be(cardano_buffer_t* 
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -805,7 +805,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_uint64_be(cardano_buffer_t* 
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -822,7 +822,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int16_be(cardano_buffer_t* b
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -839,7 +839,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int32_be(cardano_buffer_t* b
  * split the integer into bytes according to big-endian order and then store these bytes sequentially in the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the integer is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -857,7 +857,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_int64_be(cardano_buffer_t* b
  * the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the float is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -875,7 +875,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_float_be(cardano_buffer_t* b
  * the buffer.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the write operation. If the double is
- * successfully written to the buffer, \c CARDANO_SUCCESS is returned. If the operation encounters an
+ * successfully written to the buffer, \ref CARDANO_SUCCESS is returned. If the operation encounters an
  * error, such as an issue with expanding the buffer's capacity, an error code is returned that identifies
  * the failure reason.
  */
@@ -894,7 +894,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_write_double_be(cardano_buffer_t* 
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 16-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -913,7 +913,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_le(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 32-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -932,7 +932,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_le(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 64-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -951,7 +951,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_le(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 16-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -970,7 +970,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_le(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 32-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -989,7 +989,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_le(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 64-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1009,7 +1009,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_le(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the floating-point
- * number is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * number is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1029,7 +1029,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_le(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the double
- * number is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * number is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1048,7 +1048,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_double_le(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 16-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1067,7 +1067,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint16_be(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 32-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1086,7 +1086,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint32_be(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 64-bit unsigned
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1105,7 +1105,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_uint64_be(cardano_buffer_t* b
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 16-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1124,7 +1124,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int16_be(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 32-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1143,7 +1143,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int32_be(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the 64-bit signed
- * integer is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * integer is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1163,7 +1163,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_int64_be(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the floating-point
- * number is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * number is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */
@@ -1183,7 +1183,7 @@ CARDANO_EXPORT cardano_error_t cardano_buffer_read_float_be(cardano_buffer_t* bu
  * before being stored.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the read operation. If the double
- * number is successfully read and decoded from the buffer, \c CARDANO_SUCCESS is returned. If the operation
+ * number is successfully read and decoded from the buffer, \ref CARDANO_SUCCESS is returned. If the operation
  * encounters an error, such as attempting to read beyond the available data in the buffer, an error code
  * is returned that identifies the specific failure reason.
  */

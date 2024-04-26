@@ -40,7 +40,7 @@ TEST(cardano_error_to_string, canConvertSuccess)
   ASSERT_STREQ(message, "Successful operation");
 }
 
-TEST(cardano_error_to_string, canConvertGenericError)
+TEST(cardano_error_to_string, canConvertGeneric)
 {
   // Arrange
   cardano_error_t error = CARDANO_ERROR_GENERIC;
@@ -50,18 +50,6 @@ TEST(cardano_error_to_string, canConvertGenericError)
 
   // Assert
   ASSERT_STREQ(message, "Generic error");
-}
-
-TEST(cardano_error_to_string, canConvertLossOfPrecisionr)
-{
-  // Arrange
-  cardano_error_t error = CARDANO_ERROR_LOSS_OF_PRECISION;
-
-  // Act
-  const char* message = cardano_error_to_string(error);
-
-  // Assert
-  ASSERT_STREQ(message, "Invalid conversion. Loss of precision");
 }
 
 TEST(cardano_error_to_string, canConvertInsufficientBufferSize)
@@ -76,7 +64,7 @@ TEST(cardano_error_to_string, canConvertInsufficientBufferSize)
   ASSERT_STREQ(message, "Invalid operation. Insufficient buffer size");
 }
 
-TEST(cardano_error_to_string, canConvertNullPointer)
+TEST(cardano_error_to_string, canConvertPointerIsNull)
 {
   // Arrange
   cardano_error_t error = CARDANO_POINTER_IS_NULL;
@@ -86,18 +74,6 @@ TEST(cardano_error_to_string, canConvertNullPointer)
 
   // Assert
   ASSERT_STREQ(message, "Invalid operation. Argument is a NULL pointer");
-}
-
-TEST(cardano_error_to_string, canConvertUnknown)
-{
-  // Arrange
-  cardano_error_t error = (cardano_error_t)99999999;
-
-  // Act
-  const char* message = cardano_error_to_string(error);
-
-  // Assert
-  ASSERT_STREQ(message, "Unknown error code");
 }
 
 TEST(cardano_error_to_string, canConvertMemoryAllocationFailed)
@@ -196,18 +172,6 @@ TEST(cardano_error_to_string, canConvertInvalidBip32PublicKeySize)
   ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 public key size");
 }
 
-TEST(cardano_error_to_string, canConvertInvalidArgument)
-{
-  // Arrange
-  cardano_error_t error = CARDANO_ERROR_INVALID_ARGUMENT;
-
-  // Act
-  const char* message = cardano_error_to_string(error);
-
-  // Assert
-  ASSERT_STREQ(message, "Invalid operation. Invalid argument");
-}
-
 TEST(cardano_error_to_string, canConvertInvalidBip32PrivateKeySize)
 {
   // Arrange
@@ -220,6 +184,18 @@ TEST(cardano_error_to_string, canConvertInvalidBip32PrivateKeySize)
   ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 private key size");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidArgument)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_ARGUMENT;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid argument");
+}
+
 TEST(cardano_error_to_string, canConvertInvalidBip32DerivationIndex)
 {
   // Arrange
@@ -230,4 +206,136 @@ TEST(cardano_error_to_string, canConvertInvalidBip32DerivationIndex)
 
   // Assert
   ASSERT_STREQ(message, "Invalid operation. Invalid BIP32 derivation index");
+}
+
+TEST(cardano_error_to_string, canConvertEncoding)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_ENCODING;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Encoding failure");
+}
+
+TEST(cardano_error_to_string, canConvertDecoding)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_DECODING;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Decoding failure");
+}
+
+TEST(cardano_error_to_string, canConvertChecksumMismatch)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_CHECKSUM_MISMATCH;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Checksum mismatch");
+}
+
+TEST(cardano_error_to_string, canConvertLossOfPrecision)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_LOSS_OF_PRECISION;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Loss of precision");
+}
+
+TEST(cardano_error_to_string, canConvertUnexpectedCborType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Unexpected CBOR type");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidCborValue)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_CBOR_VALUE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid CBOR value");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidCborArraySize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid CBOR array size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidCborMapSize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_CBOR_MAP_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid CBOR map size");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidAddressType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_ADDRESS_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid address type");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidAddressFormat)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_ADDRESS_FORMAT;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid address format");
+}
+
+TEST(cardano_error_to_string, canConvertUnknown)
+{
+  // Arrange
+  cardano_error_t error = (cardano_error_t)99999999;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Unknown error code");
 }

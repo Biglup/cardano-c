@@ -58,7 +58,7 @@ typedef struct cardano_bip32_private_key_t cardano_bip32_private_key_t;
  *            The caller is responsible for freeing this object using the appropriate API function to prevent memory leaks.
  *
  * \return A \c cardano_error_t indicating the result of the operation. On success, the function
- *         returns \c CARDANO_SUCCESS, and the `key` parameter is updated to point to the newly created
+ *         returns \ref CARDANO_SUCCESS, and the `key` parameter is updated to point to the newly created
  *         private key object. On failure, a non-zero error code is returned, and the value pointed to by
  *         `key` is set to `NULL`, indicating that the private key object was not successfully created.
  *
@@ -105,7 +105,7 @@ CARDANO_EXPORT cardano_error_t cardano_bip32_private_key_from_bytes(
  *            to manage the lifecycle of this object, including its deallocation, to
  *            prevent memory leaks.
  *
- * \return cardano_error_t Returns \c CARDANO_SUCCESS if the BIP32 private key was successfully
+ * \return cardano_error_t Returns \ref CARDANO_SUCCESS if the BIP32 private key was successfully
  *         created. On failure, a non-zero error code is returned, indicating an issue with
  *         the inputs or an internal error in the key generation process. If the function
  *         fails, the value pointed to by `key` is set to `NULL`.
@@ -152,7 +152,7 @@ CARDANO_EXPORT cardano_error_t cardano_bip32_private_key_from_bip39_entropy(
  *            the appropriate API function to prevent memory leaks.
  *
  * \return A \c cardano_error_t indicating the result of the operation. On success, the function
- *         returns \c CARDANO_SUCCESS, and the `key` parameter is updated to point to the newly created
+ *         returns \ref CARDANO_SUCCESS, and the `key` parameter is updated to point to the newly created
  *         private key object. On failure, a non-zero error code is returned, and the value pointed to by
  *         `key` is set to `NULL`, indicating that the private key object was not successfully created.
  *
@@ -303,7 +303,7 @@ CARDANO_EXPORT cardano_bip32_private_key_t* cardano_bip32_private_key_move(
  *                         for managing the lifecycle of this object, including its deallocation, to
  *                         prevent memory leaks.
  *
- * \return cardano_error_t Returns \c CARDANO_SUCCESS if the child private key was successfully derived.
+ * \return cardano_error_t Returns \ref CARDANO_SUCCESS if the child private key was successfully derived.
  *         On failure, a non-zero error code is returned, indicating an issue with the inputs,
  *         the inability to derive a key at the specified path, or an internal error during the
  *         derivation process. If the function fails, the value pointed to by `derived_private_key` is
@@ -348,7 +348,7 @@ CARDANO_EXPORT cardano_error_t cardano_bip32_private_key_derive(
  *                           this object, including its deallocation, to prevent memory leaks.
  *
  * \return cardano_error_t Returns an error code indicating the outcome of the operation.
- *         On success, the function returns \c CARDANO_SUCCESS, and `ed25519_private_key` is
+ *         On success, the function returns \ref CARDANO_SUCCESS, and `ed25519_private_key` is
  *         updated to point to the new Ed25519 private key object. On failure, a non-zero
  *         error code is returned, and the value pointed to by `ed25519_private_key` is set
  *         to `NULL`, indicating that the conversion was unsuccessful.
@@ -390,7 +390,7 @@ CARDANO_EXPORT cardano_error_t cardano_bip32_private_key_to_ed25519_key(
  *                           the caller's responsibility to manage the lifecycle of this object,
  *                           including its deallocation, to prevent memory leaks.
  *
- * \return cardano_error_t Returns \c CARDANO_SUCCESS if the public key was successfully derived
+ * \return cardano_error_t Returns \ref CARDANO_SUCCESS if the public key was successfully derived
  *         from the private key. On failure, a non-zero error code is returned, indicating
  *         an issue with the input private key or an internal error in the public key derivation
  *         process. If the function fails, the value pointed to by `ed25519_public_key` is set
@@ -480,7 +480,7 @@ CARDANO_EXPORT const byte_t* cardano_bip32_private_key_get_data(const cardano_bi
  *                           the size returned by `cardano_bip32_private_key_get_bytes_size` for
  *                           the given `private_key`.
  *
- * \return cardano_error_t Returns \c CARDANO_SUCCESS if the private key was successfully
+ * \return cardano_error_t Returns \ref CARDANO_SUCCESS if the private key was successfully
  *         serialized into the byte array. If the function fails, it returns a non-zero
  *         error code. Possible failure reasons include invalid input parameters (such as
  *         a NULL `private_key`), a `key` buffer that is too small (`key_length` insufficient),
@@ -564,7 +564,7 @@ CARDANO_EXPORT size_t cardano_bip32_private_key_get_hex_size(const cardano_bip32
  *                   number of characters (bytes) that can be written into the buffer,
  *                   including space for the null terminator.
  *
- * \return cardano_error_t Returns \c CARDANO_SUCCESS if the private key was successfully
+ * \return cardano_error_t Returns \ref CARDANO_SUCCESS if the private key was successfully
  *         serialized into the hexadecimal format and stored in the provided buffer.
  *         If the function fails, it returns a non-zero error code. Failure can occur
  *         for several reasons, including but not limited to an invalid `private_key`,

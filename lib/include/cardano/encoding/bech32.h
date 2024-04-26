@@ -89,7 +89,7 @@ CARDANO_EXPORT size_t cardano_encoding_bech32_get_encoded_length(
  *             large enough to hold the encoded string and the null terminator.
  * \param[in] output_length The size of the output buffer in bytes.
  *
- * \return \c CARDANO_SUCCESS if the encoding was successful, or an appropriate error code otherwise.
+ * \return \ref CARDANO_SUCCESS if the encoding was successful, or an appropriate error code otherwise.
  *
  * \note The function requires that the `output` buffer is pre-allocated and its length (`output_length`) is
  *       sufficient to hold the entire Bech32-encoded string including the null terminator. To determine the
@@ -195,7 +195,7 @@ CARDANO_EXPORT size_t cardano_encoding_bech32_get_decoded_length(
  * \param[in,out] data_length On input, specifies the size of the pre-allocated data buffer. On output, it is updated to reflect the actual length
  *                            of the decoded data.
  *
- * \return \c CARDANO_SUCCESS if the decoding is successful, otherwise an error code indicating the failure reason.
+ * \return \ref CARDANO_SUCCESS if the decoding is successful, otherwise an error code indicating the failure reason.
  *
  * \note The function will modify the `data_length` parameter to indicate the actual length of the decoded data. Ensure that the
  * buffers for `hrp` and `data` are large enough to store the decoded information. Use `cardano_encoding_bech32_get_decoded_length`
