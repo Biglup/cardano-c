@@ -438,7 +438,7 @@ CARDANO_EXPORT byte_t* cardano_buffer_get_data(const cardano_buffer_t* buffer);
  * }
  *
  * // Clean up
- * cardano_buffer_free(&buffer);
+ * cardano_buffer_unref(&buffer);
  * \endcode
  */
 CARDANO_NODISCARD
