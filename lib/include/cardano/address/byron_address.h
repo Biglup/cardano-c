@@ -48,11 +48,6 @@ extern "C" {
 
 /**
  * \brief Represents a Byron-era address in the Cardano blockchain.
- *
- * Byron address attributes (both optional). The network tag is present only on test networks and contains an
- * identifier that is used for network discrimination. The derivation path was used by legacy so-called random
- * wallets in the early days of Cardano and its usage was abandoned with the introduction of Yoroi and Icarus
- * addresses.
  */
 typedef struct cardano_byron_address_t cardano_byron_address_t;
 
