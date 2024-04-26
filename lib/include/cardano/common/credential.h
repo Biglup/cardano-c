@@ -225,7 +225,7 @@ cardano_credential_from_hash_bytes(
  *   printf("Failed to decode credential: %s\n", error);
  * }
  *
- * cardano_cbor_reader_free(reader); // Cleanup the CBOR reader
+ * cardano_cbor_reader_unref(&reader); // Cleanup the CBOR reader
  * \endcode
  */
 CARDANO_NODISCARD
@@ -263,7 +263,7 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
  *     printf("Serialization failed: %s\n", error_message);
  *   }
  *
- *   cardano_cbor_writer_free(writer);
+ *   cardano_cbor_writer_unref(&writer);
  * }
  *
  * cardano_credential_unref(&credential);
