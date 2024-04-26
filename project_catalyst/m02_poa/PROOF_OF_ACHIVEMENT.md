@@ -28,7 +28,7 @@ The source code for the address Encoding/Decoding module is available on GitHub:
 
 - **GitHub Repository**: https://github.com/Biglup/cardano-c/
 
-The relevant code for the cryptography primitives is located at https://github.com/Biglup/cardano-c/tree/main/lib/src/address
+The relevant code for the CIP-019 address primitives is located at https://github.com/Biglup/cardano-c/tree/main/lib/src/address
 
 ### 2. Documentation
 
@@ -62,7 +62,7 @@ https://github.com/Biglup/cardano-c/pull/32#issuecomment-2079082659
 The project as of commit 2b470ded8efa0648b77d0d6863537651664eb618 has a unit test coverage of 99%, as reported by Codecov:
 - **Codecov Report**: https://app.codecov.io/gh/Biglup/cardano-c
 
-The cryptography modules have a 100% coverage: https://app.codecov.io/gh/Biglup/cardano-c/tree/main/lib%2Fsrc%2Fcrypto
+The address modules have a 100% coverage: https://app.codecov.io/gh/Biglup/cardano-c/tree/main/lib/src/address
 
 #### Valgrind Memory Check Results
 
