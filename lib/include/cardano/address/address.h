@@ -34,24 +34,11 @@
 
 /**
  * \brief Defines a pointer to a structure representing a Cardano base address.
- *
- * A base address directly specifies the stake key that should control the stake for that address. The staking rights
- * associated with funds held in this address may be exercised by the owner of the stake key. Base addresses can be
- * used in transactions without registering the stake key in advance.
- *
- * The stake rights can only be exercised by registering the stake key and delegating to a stake pool. Once the stake
- * key is registered, the stake rights can be exercised for base addresses used in transactions before or after the key
- * registration.
  */
 typedef struct cardano_base_address_t cardano_base_address_t;
 
 /**
  * \brief Represents a Byron-era address in the Cardano blockchain.
- *
- * Byron address attributes (both optional). The network tag is present only on test networks and contains an
- * identifier that is used for network discrimination. The derivation path was used by legacy so-called random
- * wallets in the early days of Cardano and its usage was abandoned with the introduction of Yoroi and Icarus
- * addresses.
  */
 typedef struct cardano_byron_address_t cardano_byron_address_t;
 
@@ -77,9 +64,6 @@ typedef struct cardano_pointer_address_t cardano_pointer_address_t;
 
 /**
  * \brief Represents a reward address in the Cardano blockchain ecosystem.
- *
- * A reward address is a cryptographic hash of the public stake key of the address. Reward account addresses are used
- * to distribute rewards for participating in the proof-of-stake protocol (either directly or via delegation).
  */
 typedef struct cardano_reward_address_t cardano_reward_address_t;
 

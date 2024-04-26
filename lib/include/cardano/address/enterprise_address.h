@@ -33,9 +33,13 @@
 /* FORWARD DECLARATIONS *****************************************************/
 
 /**
- * \brief Represents a Cardano address.
+ * \brief Represents an enterprise address in the Cardano blockchain ecosystem.
  *
- * This structure encapsulates all the necessary information for a Cardano address.
+ * Enterprise addresses carry no stake rights, so using these addresses means that you are opting out of participation
+ * in the proof-of-stake protocol.
+ *
+ * Note that using addresses with no stake rights effectively decreases the total amount of stake, which plays
+ * into the hands of a potential adversary.
  */
 typedef struct cardano_address_t cardano_address_t;
 

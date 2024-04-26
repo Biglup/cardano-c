@@ -33,9 +33,7 @@
 /* FORWARD DECLARATIONS *****************************************************/
 
 /**
- * \brief Represents a Cardano address.
- *
- * This structure encapsulates all the necessary information for a Cardano address.
+ * \brief Represents a reward address in the Cardano blockchain ecosystem.
  */
 typedef struct cardano_address_t cardano_address_t;
 

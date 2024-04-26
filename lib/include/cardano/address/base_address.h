@@ -48,14 +48,6 @@ extern "C" {
 
 /**
  * \brief Defines a pointer to a structure representing a Cardano base address.
- *
- * A base address directly specifies the stake key that should control the stake for that address. The staking rights
- * associated with funds held in this address may be exercised by the owner of the stake key. Base addresses can be
- * used in transactions without registering the stake key in advance.
- *
- * The stake rights can only be exercised by registering the stake key and delegating to a stake pool. Once the stake
- * key is registered, the stake rights can be exercised for base addresses used in transactions before or after the key
- * registration.
  */
 typedef struct cardano_base_address_t cardano_base_address_t;
 
