@@ -27,6 +27,7 @@
 #include "base_addr_pack.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -144,8 +145,9 @@ _cardano_unpack_base_address(const byte_t* data, const size_t size, cardano_base
 }
 
 void
-_cardano_pack_base_address(const cardano_address_t* address, byte_t* data)
+_cardano_pack_base_address(const cardano_address_t* address, byte_t* data, const size_t size)
 {
+  assert(size >= (size_t)ADDRESS_HEADER_SIZE + (2U * (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
   assert(address != NULL);
   assert(data != NULL);
 
@@ -156,17 +158,17 @@ _cardano_pack_base_address(const cardano_address_t* address, byte_t* data)
 
   data[0] = ((byte_t)address->type << 4U) | (byte_t)(*address->network_id);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[ADDRESS_HEADER_SIZE],
-      cardano_blake2b_hash_get_data(payment_cred_hash),
-      CARDANO_BLAKE2B_HASH_SIZE_224));
+  cardano_safe_memcpy(
+    &data[ADDRESS_HEADER_SIZE],
+    size - ADDRESS_HEADER_SIZE,
+    cardano_blake2b_hash_get_data(payment_cred_hash),
+    CARDANO_BLAKE2B_HASH_SIZE_224);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[(size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + ADDRESS_HEADER_SIZE],
-      cardano_blake2b_hash_get_data(stake_cred_hash),
-      CARDANO_BLAKE2B_HASH_SIZE_224));
+  cardano_safe_memcpy(
+    &data[(size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + ADDRESS_HEADER_SIZE],
+    size - ((size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + ADDRESS_HEADER_SIZE),
+    cardano_blake2b_hash_get_data(stake_cred_hash),
+    CARDANO_BLAKE2B_HASH_SIZE_224);
 
   cardano_blake2b_hash_unref(&payment_cred_hash);
   cardano_blake2b_hash_unref(&stake_cred_hash);

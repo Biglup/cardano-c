@@ -83,6 +83,7 @@ _cardano_pointer_address_variable_length_decode(const byte_t* array, size_t tota
  *
  * \param[in] address Pointer to the Cardano pointer address structure to be packed.
  * \param[out] data Pointer to the byte array where the packed address will be stored.
+ * \param[in] size Size of the data byte array in bytes.
  *
  * \note This function assumes that the `data` buffer has enough space to hold the packed
  *       address. The caller is responsible for ensuring that there is sufficient space
@@ -92,7 +93,7 @@ _cardano_pointer_address_variable_length_decode(const byte_t* array, size_t tota
  *        the return value will be less than zero.
  */
 int64_t
-_cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data);
+_cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data, size_t size);
 
 /**
  * \brief Unpacks a byte array into a Cardano pointer address structure.

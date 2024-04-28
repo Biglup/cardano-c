@@ -25,6 +25,8 @@
 
 #include <cardano/export.h>
 
+#include "../string_safe.h"
+
 #include <sodium.h>
 #include <string.h>
 
@@ -67,12 +69,12 @@ cardano_crypto_pbkdf2_hmac_sha512(
 
     CARDANO_UNUSED(cardano_write_uint32_be((uint32_t)(i + 1U), iteration_vector, sizeof(iteration_vector), 0));
 
-    CARDANO_UNUSED(memcpy(&loop_hHmac_state, &initial_hmac_state, sizeof(crypto_auth_hmacsha512_state)));
+    cardano_safe_memcpy(&loop_hHmac_state, sizeof(crypto_auth_hmacsha512_state), &initial_hmac_state, sizeof(crypto_auth_hmacsha512_state));
 
     crypto_auth_hmacsha512_update(&loop_hHmac_state, iteration_vector, sizeof(iteration_vector));
     crypto_auth_hmacsha512_final(&loop_hHmac_state, temp_digest);
 
-    CARDANO_UNUSED(memcpy(block_digest, temp_digest, crypto_auth_hmacsha512_BYTES));
+    cardano_safe_memcpy(block_digest, sizeof(block_digest), temp_digest, sizeof(temp_digest));
 
     for (size_t j = 2; j <= iterations; ++j)
     {
@@ -93,7 +95,11 @@ cardano_crypto_pbkdf2_hmac_sha512(
       current_block_length = crypto_auth_hmacsha512_BYTES;
     }
 
-    CARDANO_UNUSED(memcpy(&derived_key[i * crypto_auth_hmacsha512_BYTES], block_digest, current_block_length));
+    cardano_safe_memcpy(
+      &derived_key[i * crypto_auth_hmacsha512_BYTES],
+      derived_key_length - (i * crypto_auth_hmacsha512_BYTES),
+      block_digest,
+      current_block_length);
   }
 
   sodium_memzero((void*)&initial_hmac_state, sizeof(initial_hmac_state));

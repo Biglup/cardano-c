@@ -22,10 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "endian.h"
-
-#include <cardano/export.h>
-
-#include <string.h>
+#include "string_safe.h"
 
 /* CONSTANTS *****************************************************************/
 
@@ -80,7 +77,7 @@ write(
 
   if (is_native_endian)
   {
-    CARDANO_UNUSED(memcpy(&dest[offset], src, src_size));
+    cardano_safe_memcpy(&dest[offset], dest_size - offset, src, src_size);
   }
   else
   {
@@ -118,7 +115,7 @@ read(
 
   if (is_native_endian)
   {
-    CARDANO_UNUSED(memcpy(dest, &src[offset], dest_size));
+    cardano_safe_memcpy(dest, dest_size, &src[offset], dest_size);
   }
   else
   {

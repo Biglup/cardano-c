@@ -38,10 +38,10 @@ extern "C" {
  * \param dest Destination buffer.
  * \param dest_size Size of the destination buffer.
  * \param src Source buffer.
- * \param count Number of bytes to copy.
+ * \param src_size Number of bytes to copy.
  */
 void
-cardano_safe_memcpy(void* dest, size_t dest_size, const void* src, size_t count);
+cardano_safe_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size);
 
 /**
  * \brief Safe version of strlen that limits the maximum number of characters to inspect.

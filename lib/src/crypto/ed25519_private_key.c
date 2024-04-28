@@ -28,6 +28,7 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <sodium.h>
@@ -425,23 +426,23 @@ compute_signature_with_extended_key(
     return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
   }
 
-  size_t  total_length = IV_SIZE + message_length;
-  byte_t* digest_input = (byte_t*)_cardano_malloc(total_length);
+  size_t  digest_input_size = IV_SIZE + message_length;
+  byte_t* digest_input      = (byte_t*)_cardano_malloc(digest_input_size);
 
   if (!digest_input)
   {
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  CARDANO_UNUSED(memcpy(digest_input, &extended_scalar[SCALAR_SIZE], IV_SIZE));
-  CARDANO_UNUSED(memcpy(&digest_input[IV_SIZE], message, message_length));
+  cardano_safe_memcpy(digest_input, digest_input_size, &extended_scalar[SCALAR_SIZE], IV_SIZE);
+  cardano_safe_memcpy(&digest_input[IV_SIZE], digest_input_size - IV_SIZE, message, message_length);
 
-  if (crypto_hash_sha512(hash_output, digest_input, total_length) != 0)
+  if (crypto_hash_sha512(hash_output, digest_input, digest_input_size) != 0)
   {
     return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
   }
 
-  sodium_memzero(digest_input, total_length);
+  sodium_memzero(digest_input, digest_input_size);
   _cardano_free(digest_input);
 
   crypto_core_ed25519_scalar_reduce(nonce, hash_output);
@@ -451,24 +452,28 @@ compute_signature_with_extended_key(
     return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
   }
 
-  total_length       = sizeof(r) + sizeof(public_key) + message_length;
-  byte_t* hram_input = (byte_t*)_cardano_malloc(total_length);
+  digest_input_size  = sizeof(r) + sizeof(public_key) + message_length;
+  byte_t* hram_input = (byte_t*)_cardano_malloc(digest_input_size);
 
   if (!hram_input)
   {
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  CARDANO_UNUSED(memcpy(hram_input, r, sizeof(r)));
-  CARDANO_UNUSED(memcpy(&hram_input[sizeof(r)], public_key, sizeof(public_key)));
-  CARDANO_UNUSED(memcpy(&hram_input[sizeof(r) + sizeof(public_key)], message, message_length));
+  cardano_safe_memcpy(hram_input, digest_input_size, r, sizeof(r));
+  cardano_safe_memcpy(&hram_input[sizeof(r)], digest_input_size - sizeof(r), public_key, sizeof(public_key));
+  cardano_safe_memcpy(
+    &hram_input[sizeof(r) + sizeof(public_key)],
+    digest_input_size - sizeof(r) - sizeof(public_key),
+    message,
+    message_length);
 
-  if (crypto_hash_sha512(hram, hram_input, total_length) != 0)
+  if (crypto_hash_sha512(hram, hram_input, digest_input_size) != 0)
   {
     return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
   }
 
-  sodium_memzero(hram_input, total_length);
+  sodium_memzero(hram_input, digest_input_size);
   _cardano_free(hram_input);
 
   crypto_core_ed25519_scalar_reduce(hram_reduced, hram);
@@ -476,8 +481,8 @@ compute_signature_with_extended_key(
   crypto_core_ed25519_scalar_mul(s, hram_reduced, extended_scalar);
   crypto_core_ed25519_scalar_add(s, s, nonce);
 
-  CARDANO_UNUSED(memcpy(signature_bytes, r, sizeof(r)));
-  CARDANO_UNUSED(memcpy(&signature_bytes[sizeof(r)], s, sizeof(s)));
+  cardano_safe_memcpy(signature_bytes, sizeof(signature_bytes), r, sizeof(r));
+  cardano_safe_memcpy(&signature_bytes[sizeof(r)], sizeof(signature_bytes) - sizeof(r), s, sizeof(s));
 
   return cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), signature);
 }
@@ -529,8 +534,8 @@ compute_signature_with_normal_key(
   byte_t signature_bytes[64U] = { 0 };
   byte_t sk[64U]              = { 0 };
 
-  CARDANO_UNUSED(memcpy(sk, private_key_bytes, 32U));
-  CARDANO_UNUSED(memcpy(&sk[32U], cardano_ed25519_public_key_get_data(public_key), 32U));
+  cardano_safe_memcpy(sk, sizeof(sk), private_key_bytes, 32U);
+  cardano_safe_memcpy(&sk[32U], sizeof(sk) - 32U, cardano_ed25519_public_key_get_data(public_key), 32U);
 
   cardano_ed25519_public_key_unref(&public_key);
 

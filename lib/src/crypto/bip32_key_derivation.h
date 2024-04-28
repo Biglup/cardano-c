@@ -143,6 +143,7 @@ cardano_error_t _cardano_crypto_point_of_trunc28_mul8(const byte_t* sk, byte_t* 
  * \param[in] index The derivation index. If the index is less than 0x80000000, it specifies a soft derivation;
  *                    otherwise, it specifies a hard derivation.
  * \param[out] out A pointer to the output buffer where the derived 32-byte child private key will be stored.
+ * \param[in] out_size The size of the output buffer.
  *
  * \section Security considerations
  * - Hard derivation is secure under the assumption that the parent private key remains confidential. It prevents
@@ -169,7 +170,7 @@ cardano_error_t _cardano_crypto_point_of_trunc28_mul8(const byte_t* sk, byte_t* 
  *
  * \return cardano_error_t Returns an error code indicating the status of the operation.
  */
-cardano_error_t _cardano_crypto_derive_private(const byte_t* key, int32_t index, byte_t* out);
+cardano_error_t _cardano_crypto_derive_private(const byte_t* key, int32_t index, byte_t* out, size_t out_size);
 
 /**
  * Derives a public key from a given private key using a specified derivation index.
@@ -181,9 +182,10 @@ cardano_error_t _cardano_crypto_derive_private(const byte_t* key, int32_t index,
  * \param[in] index The derivation index. Indices in the range [0x80000000, 0xFFFFFFFF] specify a hardened
  *                  derivation, while indices in the range [0, 0x7FFFFFFF] specify a non-hardened (soft) derivation.
  * \param[out] out A pointer to the output buffer where the derived 32-byte key will be stored.
+ * \param[in] out_size The size of the output buffer.
  *
  * \return cardano_error_t Returns an error code indicating the status of the operation.
  */
-cardano_error_t _cardano_crypto_derive_public(const byte_t* key, int32_t index, byte_t* out);
+cardano_error_t _cardano_crypto_derive_public(const byte_t* key, int32_t index, byte_t* out, size_t out_size);
 
 #endif // CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H

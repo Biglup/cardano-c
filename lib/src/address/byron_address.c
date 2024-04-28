@@ -27,6 +27,7 @@
 #include <cardano/error.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 #include "./internals/addr_common.h"
 #include "./internals/byron_addr_pack.h"
 
@@ -79,9 +80,13 @@ cardano_byron_address_from_credentials(
   address->byron_content->attributes = attributes;
   address->byron_content->type       = type;
 
-  CARDANO_UNUSED(memcpy(address->byron_content->root, cardano_blake2b_hash_get_data(root), sizeof(address->byron_content->root)));
+  cardano_safe_memcpy(
+    address->byron_content->root,
+    sizeof(address->byron_content->root),
+    cardano_blake2b_hash_get_data(root),
+    sizeof(address->byron_content->root));
 
-  const cardano_error_t packing_result = _cardano_pack_byron_address(address, address->address_data, &address->address_data_size);
+  const cardano_error_t packing_result = _cardano_pack_byron_address(address, address->address_data, sizeof(address->address_data), &address->address_data_size);
 
   if (packing_result != CARDANO_SUCCESS)
   {
@@ -329,7 +334,7 @@ cardano_byron_address_to_base58(
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memcpy(data, base58, base58_size));
+  cardano_safe_memcpy(data, size, base58, base58_size);
 
   return CARDANO_SUCCESS;
 }

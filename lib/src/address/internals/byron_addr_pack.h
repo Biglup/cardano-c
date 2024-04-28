@@ -322,12 +322,13 @@ _cardano_byron_address_extract_address_components(
  * \param[out] data A pointer to a byte array where the serialized data will be stored.
  * \param[in,out] size A pointer to a size_t that initially contains the size of the array pointed to by data.
  *                     After successful execution, it will contain the actual size of the serialized data.
+ * \param[in] data_size The size of the data array in bytes.
  *
  * \return A cardano_error_t indicating the success or failure of the operation. Returns CARDANO_SUCCESS if the
  *         structure is verified and the data is successfully read.
  */
 cardano_error_t
-_cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, size_t* size);
+_cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, size_t data_size, size_t* size);
 
 /**
  * \brief Deserializes a byte array containing a serialized Byron address into a cardano_byron_address_t structure.

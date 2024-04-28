@@ -291,7 +291,7 @@ cardano_bip32_public_key_derive(
 
     const byte_t*   key_data         = cardano_buffer_get_data(working_key->key_material);
     byte_t          derived_key[64U] = { 0 };
-    cardano_error_t error            = _cardano_crypto_derive_public(key_data, (int32_t)indices[i], &derived_key[0]);
+    cardano_error_t error            = _cardano_crypto_derive_public(key_data, (int32_t)indices[i], &derived_key[0], 64U);
 
     assert(error == CARDANO_SUCCESS);
     CARDANO_UNUSED(error);

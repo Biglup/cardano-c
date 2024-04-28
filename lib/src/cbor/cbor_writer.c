@@ -31,6 +31,7 @@
 #include "../allocators.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 #include "../config.h"
@@ -488,7 +489,7 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, const si
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memcpy(data, cardano_buffer_get_data(writer->buffer), buffer_size));
+  cardano_safe_memcpy(data, size, cardano_buffer_get_data(writer->buffer), buffer_size);
 
   return CARDANO_SUCCESS;
 }

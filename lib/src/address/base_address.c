@@ -97,7 +97,7 @@ cardano_base_address_from_credentials(
   address->stake_pointer      = NULL;
   address->address_data_size  = ADDRESS_HEADER_SIZE + (2U * (size_t)CARDANO_BLAKE2B_HASH_SIZE_224);
 
-  _cardano_pack_base_address(address, address->address_data);
+  _cardano_pack_base_address(address, address->address_data, sizeof(address->address_data));
   _cardano_to_bech32_addr(
     address->address_data,
     address->address_data_size,

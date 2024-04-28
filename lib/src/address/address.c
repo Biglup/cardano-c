@@ -166,7 +166,7 @@ cardano_address_to_bytes(const cardano_address_t* address, byte_t* data, const s
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memcpy(data, address->address_data, address->address_data_size));
+  cardano_safe_memcpy(data, size, address->address_data, address->address_data_size);
 
   return CARDANO_SUCCESS;
 }
@@ -294,14 +294,14 @@ cardano_address_to_string(const cardano_address_t* address, char* data, const si
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  const size_t address_size = cardano_address_get_string_size(address);
+  const size_t src_size = cardano_address_get_string_size(address);
 
   if (size < cardano_address_get_string_size(address))
   {
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memcpy(data, address->address_str, address_size));
+  cardano_safe_memcpy(data, size, address->address_str, src_size);
 
   return CARDANO_SUCCESS;
 }

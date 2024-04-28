@@ -28,6 +28,7 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <math.h>
@@ -171,7 +172,7 @@ cardano_buffer_new_from(const byte_t* array, const size_t size)
     return NULL;
   }
 
-  CARDANO_UNUSED(memcpy(buffer->data, array, size));
+  cardano_safe_memcpy(buffer->data, size, array, size);
 
   buffer->size               = size;
   buffer->head               = 0;
@@ -211,8 +212,8 @@ cardano_buffer_concat(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
     return NULL;
   }
 
-  CARDANO_UNUSED(memcpy(buffer->data, lhs->data, lhs->size));
-  CARDANO_UNUSED(memcpy(&buffer->data[lhs->size], rhs->data, rhs->size));
+  cardano_safe_memcpy(buffer->data, lhs->size + rhs->size, lhs->data, lhs->size);
+  cardano_safe_memcpy(&buffer->data[lhs->size], rhs->size, rhs->data, rhs->size);
 
   buffer->size               = lhs->size + rhs->size;
   buffer->head               = 0;
@@ -263,7 +264,7 @@ cardano_buffer_slice(const cardano_buffer_t* buffer, size_t start, size_t end)
 
   assert(buffer->data != NULL);
 
-  CARDANO_UNUSED(memcpy(slice_data, &buffer->data[start], slice_size));
+  cardano_safe_memcpy(slice_data, slice_size, &buffer->data[start], slice_size);
 
   cardano_buffer_t* sliced_buffer = (cardano_buffer_t*)_cardano_malloc(sizeof(cardano_buffer_t));
 
@@ -425,8 +426,7 @@ cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, const size_t d
 
   assert(buffer->data != NULL);
 
-  void* result = memcpy(dest, buffer->data, buffer->size);
-  CARDANO_UNUSED(result);
+  cardano_safe_memcpy(dest, dest_size, buffer->data, buffer->size);
 
   dest[buffer->size] = '\0';
 
@@ -534,7 +534,7 @@ cardano_buffer_copy_bytes(const cardano_buffer_t* buffer, byte_t* dest, const si
     return CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
   }
 
-  CARDANO_UNUSED(memcpy(dest, cardano_buffer_get_data(buffer), data_length));
+  cardano_safe_memcpy(dest, dest_size, cardano_buffer_get_data(buffer), data_length);
 
   return CARDANO_SUCCESS;
 }
@@ -606,7 +606,7 @@ cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, const size_t 
     return grow_result;
   }
 
-  CARDANO_UNUSED(memcpy(&buffer->data[buffer->size], data, size));
+  cardano_safe_memcpy(&buffer->data[buffer->size], buffer->capacity - buffer->size, data, size);
 
   buffer->size += size;
 
@@ -631,7 +631,7 @@ cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, const size_t bytes_t
     return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
-  CARDANO_UNUSED(memcpy(data, &buffer->data[buffer->head], bytes_to_read));
+  cardano_safe_memcpy(data, bytes_to_read, &buffer->data[buffer->head], bytes_to_read);
 
   buffer->head += bytes_to_read;
 

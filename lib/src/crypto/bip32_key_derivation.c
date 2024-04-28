@@ -23,9 +23,11 @@
 
 #include "bip32_key_derivation.h"
 
+#include <assert.h>
 #include <sodium.h>
 #include <string.h>
 
+#include "../string_safe.h"
 #include "arithmetic.h"
 
 /* DEFINITIONS ****************************************************************/
@@ -47,8 +49,8 @@ _cardano_crypto_derive_hardened(
 {
   byte_t data[1 + 64 + 4] = { 0 };
 
-  CARDANO_UNUSED(memcpy(&data[1], scalar, 32));
-  CARDANO_UNUSED(memcpy(&data[1 + 32], iv, 32));
+  cardano_safe_memcpy(&data[1], sizeof(data) - 1U, scalar, 32);
+  cardano_safe_memcpy(&data[1 + 32], sizeof(data) - (1U + 32U), iv, 32);
 
   data[1 + 64]     = (byte_t)((uint32_t)index & 0xFFu);
   data[1 + 64 + 1] = (byte_t)(((uint32_t)index >> 8) & 0xFFu);
@@ -88,7 +90,7 @@ _cardano_crypto_derive_soft(
     return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
   }
 
-  CARDANO_UNUSED(memcpy(&data[1], vk, 32));
+  cardano_safe_memcpy(&data[1], sizeof(data) - 1U, vk, 32);
 
   data[1 + 32]     = (byte_t)((uint32_t)index & 0xFFu);
   data[1 + 32 + 1] = (byte_t)(((uint32_t)index >> 8) & 0xFFu);
@@ -129,8 +131,10 @@ _cardano_crypto_point_of_trunc28_mul8(const byte_t* sk, byte_t* out)
 }
 
 cardano_error_t
-_cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* out)
+_cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* out, const size_t out_size)
 {
+  assert(out_size >= 96U);
+
   const byte_t* kl = key;
   const byte_t* kr = &key[32];
   const byte_t* cc = &key[64];
@@ -160,8 +164,8 @@ _cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* o
   byte_t zl[32] = { 0 };
   byte_t zr[32] = { 0 };
 
-  CARDANO_UNUSED(memcpy(zl, z_mac, 32));
-  CARDANO_UNUSED(memcpy(zr, &z_mac[32], 32));
+  cardano_safe_memcpy(zl, sizeof(zl), &z_mac, 32);
+  cardano_safe_memcpy(zr, sizeof(zr), &z_mac[32], 32);
 
   byte_t left[32]  = { 0 };
   byte_t right[32] = { 0 };
@@ -169,16 +173,18 @@ _cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* o
   _cardano_crypto_add28_mul8(kl, zl, left);
   _cardano_crypto_add256bits(kr, zr, right);
 
-  CARDANO_UNUSED(memcpy(out, left, 32));
-  CARDANO_UNUSED(memcpy(&out[32], right, 32));
-  CARDANO_UNUSED(memcpy(&out[64], &cc_mac[32], 32));
+  cardano_safe_memcpy(out, out_size, left, 32);
+  cardano_safe_memcpy(&out[32], out_size - 32U, right, 32);
+  cardano_safe_memcpy(&out[64], out_size - 64U, &cc_mac[32], 32);
 
   return CARDANO_SUCCESS;
 }
 
 cardano_error_t
-_cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* out)
+_cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* out, const size_t out_size)
 {
+  assert(out_size >= 64U);
+
   const byte_t* pk = key;
   const byte_t* cc = &key[32];
 
@@ -189,7 +195,8 @@ _cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* ou
   byte_t p[32]            = { 0 };
 
   CARDANO_UNUSED(memset(data, 0, sizeof(data)));
-  CARDANO_UNUSED(memcpy(&data[1], pk, 32));
+
+  cardano_safe_memcpy(&data[1], sizeof(data) - 1U, pk, 32);
 
   data[0] = 0x02;
 
@@ -212,7 +219,7 @@ _cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* ou
 
   byte_t* chain_code = &c[32];
 
-  CARDANO_UNUSED(memcpy(zl, z, 32));
+  cardano_safe_memcpy(zl, sizeof(zl), z, 32);
 
   cardano_error_t error = _cardano_crypto_point_of_trunc28_mul8(zl, p);
 
@@ -226,7 +233,7 @@ _cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* ou
     return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
   }
 
-  CARDANO_UNUSED(memcpy(&out[32], chain_code, 32));
+  cardano_safe_memcpy(&out[32], out_size - 32U, chain_code, 32);
 
   return CARDANO_SUCCESS;
 }

@@ -30,14 +30,14 @@
 /* DEFINITIONS ***************************************************************/
 
 void
-cardano_safe_memcpy(void* dest, const size_t dest_size, const void* src, const size_t count)
+cardano_safe_memcpy(void* dest, const size_t dest_size, const void* src, const size_t src_size)
 {
-  if ((dest == NULL) || (src == NULL) || (dest_size == 0U) || (count == 0U))
+  if ((dest == NULL) || (src == NULL) || (dest_size == 0U) || (src_size == 0U))
   {
     return;
   }
 
-  size_t copy_size = (count < dest_size) ? count : dest_size;
+  size_t copy_size = (src_size < dest_size) ? src_size : dest_size;
 
   CARDANO_UNUSED(memcpy(dest, src, copy_size)); // nosemgrep
 }

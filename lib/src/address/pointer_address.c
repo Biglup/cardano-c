@@ -102,7 +102,7 @@ cardano_pointer_address_from_credentials(
   address->stake_credential   = NULL;
   address->byron_content      = NULL;
   *address->stake_pointer     = pointer;
-  address->address_data_size  = _cardano_pack_pointer_address(address, address->address_data);
+  address->address_data_size  = _cardano_pack_pointer_address(address, address->address_data, sizeof(address->address_data));
 
   _cardano_to_bech32_addr(
     address->address_data,
