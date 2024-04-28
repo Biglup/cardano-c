@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "./config.h"
+#include "./string_safe.h"
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -45,7 +46,7 @@ safe_string_copy(char* dest, const char* src, size_t max_dest_size)
   assert(src != NULL);
   assert(max_dest_size > 0U);
 
-  size_t src_length = strlen(src);
+  size_t src_length = cardano_safe_strlen(src, max_dest_size);
   size_t copy_size  = (src_length < (max_dest_size - 1U)) ? src_length : (max_dest_size - 1U);
 
   void* result = memcpy(dest, src, copy_size);

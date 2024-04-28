@@ -36,22 +36,15 @@ static const char* BECH32_PREFIX_TESTNET       = "addr_test";
 static const char* BECH32_PREFIX_STAKE_MAINNET = "stake";
 static const char* BECH32_PREFIX_STAKE_TESTNET = "stake_test";
 
-// We are suppressing misra-c2012-8.9 because in this case its more readable
-// to have the constants in the same place.
-
-// cppcheck-suppress misra-c2012-8.9
-static const size_t BECH32_PREFIX_LENGTH = 4;
-// cppcheck-suppress misra-c2012-8.9
-static const size_t BECH32_PREFIX_STAKE_LENGTH = 5;
-// cppcheck-suppress misra-c2012-8.9
-static const size_t BECH32_PREFIX_TESTNET_LENGTH = 9;
-// cppcheck-suppress misra-c2012-8.9
+static const size_t BECH32_PREFIX_LENGTH               = 4;
+static const size_t BECH32_PREFIX_STAKE_LENGTH         = 5;
+static const size_t BECH32_PREFIX_TESTNET_LENGTH       = 9;
 static const size_t BECH32_PREFIX_STAKE_TESTNET_LENGTH = 10;
 
 /* IMPLEMENTATION ************************************************************/
 
 const char*
-_cardano_get_bech32_prefix(const cardano_address_type_t type, const cardano_network_id_t network_id)
+_cardano_get_bech32_prefix(const cardano_address_type_t type, const cardano_network_id_t network_id, size_t* size)
 {
   const char* prefix = NULL;
 
@@ -59,7 +52,16 @@ _cardano_get_bech32_prefix(const cardano_address_type_t type, const cardano_netw
   {
     case CARDANO_ADDRESS_TYPE_REWARD_KEY:
     case CARDANO_ADDRESS_TYPE_REWARD_SCRIPT:
-      prefix = (network_id == CARDANO_NETWORK_ID_MAIN_NET) ? BECH32_PREFIX_STAKE_MAINNET : BECH32_PREFIX_STAKE_TESTNET;
+      if (network_id == CARDANO_NETWORK_ID_MAIN_NET)
+      {
+        prefix = BECH32_PREFIX_STAKE_MAINNET;
+        *size  = BECH32_PREFIX_STAKE_LENGTH;
+      }
+      else
+      {
+        prefix = BECH32_PREFIX_STAKE_TESTNET;
+        *size  = BECH32_PREFIX_STAKE_TESTNET_LENGTH;
+      }
       break;
     case CARDANO_ADDRESS_TYPE_POINTER_KEY:
     case CARDANO_ADDRESS_TYPE_POINTER_SCRIPT:
@@ -71,7 +73,16 @@ _cardano_get_bech32_prefix(const cardano_address_type_t type, const cardano_netw
     case CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT:
     case CARDANO_ADDRESS_TYPE_BYRON:
     default:
-      prefix = (network_id == CARDANO_NETWORK_ID_MAIN_NET) ? BECH32_PREFIX_MAINNET : BECH32_PREFIX_TESTNET;
+      if (network_id == CARDANO_NETWORK_ID_MAIN_NET)
+      {
+        prefix = BECH32_PREFIX_MAINNET;
+        *size  = BECH32_PREFIX_LENGTH;
+      }
+      else
+      {
+        prefix = BECH32_PREFIX_TESTNET;
+        *size  = BECH32_PREFIX_TESTNET_LENGTH;
+      }
       break;
   }
 
@@ -346,13 +357,14 @@ _cardano_to_bech32_addr(
   assert(data != NULL);
   assert(address != NULL);
 
-  const char* hrp  = _cardano_get_bech32_prefix(type, network_id);
-  size_t      size = cardano_encoding_bech32_get_encoded_length(hrp, strlen(hrp), data, data_size);
+  size_t      hrp_size = 0U;
+  const char* hrp      = _cardano_get_bech32_prefix(type, network_id, &hrp_size);
+  size_t      size     = cardano_encoding_bech32_get_encoded_length(hrp, hrp_size, data, data_size);
 
   assert(size <= address_size);
   CARDANO_UNUSED(size);
 
-  cardano_error_t result = cardano_encoding_bech32_encode(hrp, strlen(hrp), data, data_size, address, address_size);
+  cardano_error_t result = cardano_encoding_bech32_encode(hrp, hrp_size, data, data_size, address, address_size);
   CARDANO_UNUSED(result);
 
   assert(result == CARDANO_SUCCESS);

@@ -21,9 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/encoding/bech32.h>
-
 #include "../allocators.h"
+#include "../string_safe.h"
+#include <cardano/encoding/bech32.h>
 
 #include <assert.h>
 #include <ctype.h>
@@ -484,7 +484,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
     return CARDANO_ERROR_DECODING;
   }
 
-  if (!verify_checksum(hrp, strlen(hrp), squashed, squashed_length))
+  if (!verify_checksum(hrp, cardano_safe_strlen(hrp, split_loc), squashed, squashed_length))
   {
     _cardano_free(formatted_address);
     _cardano_free(squashed);
@@ -517,11 +517,12 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
  * \param[in] input The squashed byte array to be converted.
  * \param[in] input_length The length of the squashed byte array.
  * \param[out] output Pointer to a char* that will point to the newly created string.
+ * \param[out] output_length Pointer to a size_t that will store the length of the output string.
  *
  * \return 0 on success, non-zero error code on failure.
  */
 static cardano_error_t
-squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** output)
+squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** output, size_t* output_length)
 {
   assert(input != NULL);
   assert(output != NULL);
@@ -544,6 +545,7 @@ squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** 
   }
 
   (*output)[input_length] = '\0';
+  *output_length          = input_length;
 
   return CARDANO_SUCCESS;
 }
@@ -599,8 +601,9 @@ encode_squashed(
   CARDANO_UNUSED(memcpy(combined, data, data_length));
   CARDANO_UNUSED(memcpy(&combined[data_length], checksum, BECH32_CHECKSUM_LENGTH));
 
-  char* encoded = NULL;
-  result        = squashed_bytes_to_string(combined, combined_length, &encoded);
+  char*  encoded        = NULL;
+  size_t encoded_length = 0U;
+  result                = squashed_bytes_to_string(combined, combined_length, &encoded, &encoded_length);
 
   _cardano_free(combined);
   _cardano_free(checksum);
@@ -610,7 +613,7 @@ encode_squashed(
     return result;
   }
 
-  size_t required_output_length = hrp_length + NULL_TERMINATOR_LENGTH + strlen(encoded);
+  size_t required_output_length = hrp_length + NULL_TERMINATOR_LENGTH + cardano_safe_strlen(encoded, encoded_length);
 
   if (output_length < required_output_length)
   {

@@ -35,6 +35,7 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 #include "./internals/addr_common.h"
 
 #include <string.h>
@@ -272,7 +273,7 @@ cardano_address_get_string_size(const cardano_address_t* address)
     return 0U;
   }
 
-  return strlen(address->address_str) + 1U;
+  return cardano_safe_strlen(address->address_str, 1024) + 1U;
 }
 
 cardano_error_t
