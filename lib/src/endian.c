@@ -37,15 +37,18 @@ static const byte_t SIZE_IN_BYTES_64_BITS = 8;
  * Both objects are reinterpreted as arrays of unsigned char.
  *
  * \param dest Pointer to the destination memory.
+ * \param dest_size The max capacity of the destination memory.
  * \param src Pointer to the source memory.
  * \param size The number of bytes to copy.
  */
 static void
-reverse_memcpy(byte_t* dest, const byte_t* src, const size_t size)
+reverse_memcpy(byte_t* dest, const size_t dest_size, const byte_t* src, const size_t size)
 {
-  for (size_t i = 0; i < size; ++i)
+  const size_t max_size = (size > dest_size) ? dest_size : size;
+
+  for (size_t i = 0; i < max_size; ++i)
   {
-    dest[i] = src[size - i - (size_t)1];
+    dest[i] = src[max_size - i - (size_t)1];
   }
 }
 
@@ -81,7 +84,7 @@ write(
   }
   else
   {
-    reverse_memcpy(&dest[offset], src, src_size);
+    reverse_memcpy(&dest[offset], dest_size - offset, src, src_size);
   }
 
   return CARDANO_SUCCESS;
@@ -115,11 +118,11 @@ read(
 
   if (is_native_endian)
   {
-    cardano_safe_memcpy(dest, dest_size, &src[offset], dest_size);
+    cardano_safe_memcpy(dest, dest_size, &src[offset], src_size - offset);
   }
   else
   {
-    reverse_memcpy(dest, &src[offset], dest_size);
+    reverse_memcpy(dest, dest_size, &src[offset], src_size - offset);
   }
 
   return CARDANO_SUCCESS;
