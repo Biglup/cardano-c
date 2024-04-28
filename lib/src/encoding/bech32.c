@@ -217,7 +217,7 @@ check_and_format(char* dest, const char* address, const size_t length)
     return CARDANO_ERROR_DECODING;
   }
 
-  CARDANO_UNUSED(strncpy(dest, low_addr, length));
+  cardano_safe_memcpy(dest, length, low_addr, length);
   dest[length] = '\0';
 
   _cardano_free(low_addr);
