@@ -29,6 +29,7 @@
 #include "pointer_addr_pack.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -189,18 +190,18 @@ _cardano_unpack_pointer_address(const byte_t* data, size_t size, cardano_pointer
 }
 
 int64_t
-_cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data)
+_cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data, const size_t size)
 {
   assert(address != NULL);
   assert(data != NULL);
 
   data[0] = ((byte_t)address->type << 4U) | (byte_t)(*address->network_id);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[ADDRESS_HEADER_SIZE],
-      cardano_credential_get_hash_bytes(address->payment_credential),
-      CARDANO_BLAKE2B_HASH_SIZE_224));
+  cardano_safe_memcpy(
+    &data[ADDRESS_HEADER_SIZE],
+    size - (size_t)ADDRESS_HEADER_SIZE,
+    cardano_credential_get_hash_bytes(address->payment_credential),
+    CARDANO_BLAKE2B_HASH_SIZE_224);
 
   int64_t total_bytes   = (int64_t)(ADDRESS_HEADER_SIZE + (int64_t)CARDANO_BLAKE2B_HASH_SIZE_224);
   size_t  bytes_written = 0;
@@ -208,31 +209,31 @@ _cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data)
 
   bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->slot, buffer, 10);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[total_bytes],
-      buffer,
-      bytes_written));
+  cardano_safe_memcpy(
+    &data[total_bytes],
+    size - (size_t)total_bytes,
+    buffer,
+    bytes_written);
 
   total_bytes += (int64_t)bytes_written;
 
   bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->tx_index, buffer, 10);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[total_bytes],
-      buffer,
-      bytes_written));
+  cardano_safe_memcpy(
+    &data[total_bytes],
+    size - (size_t)total_bytes,
+    buffer,
+    bytes_written);
 
   total_bytes += (int64_t)bytes_written;
 
   bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->cert_index, buffer, 10);
 
-  CARDANO_UNUSED(
-    memcpy(
-      &data[total_bytes],
-      buffer,
-      bytes_written));
+  cardano_safe_memcpy(
+    &data[total_bytes],
+    size - (size_t)total_bytes,
+    buffer,
+    bytes_written);
 
   return (int64_t)total_bytes + (int64_t)bytes_written;
 }

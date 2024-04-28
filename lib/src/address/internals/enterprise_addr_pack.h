@@ -39,13 +39,14 @@
  *
  * \param[in] address Pointer to the Cardano enterprise address structure to be packed.
  * \param[out] data Pointer to the byte array where the packed address will be stored.
+ * \param[in] size Size of the data byte array in bytes.
  *
  * \note This function assumes that the `data` buffer has enough space to hold the packed
  *       address. The caller is responsible for ensuring that there is sufficient space
  *       and for managing the memory of the `data` buffer.
  */
 void
-_cardano_pack_enterprise_address(const cardano_address_t* address, byte_t* data);
+_cardano_pack_enterprise_address(const cardano_address_t* address, byte_t* data, size_t size);
 
 /**
  * \brief Unpacks a byte array into a Cardano enterprise address structure.

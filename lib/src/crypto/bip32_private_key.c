@@ -30,6 +30,7 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 #include "bip32_key_derivation.h"
 
 #include <assert.h>
@@ -375,7 +376,7 @@ cardano_bip32_private_key_derive(
   {
     const byte_t*   key_data         = cardano_buffer_get_data(working_key->key_material);
     byte_t          derived_key[96U] = { 0 };
-    cardano_error_t error            = _cardano_crypto_derive_private(key_data, (int32_t)indices[i], &derived_key[0]);
+    cardano_error_t error            = _cardano_crypto_derive_private(key_data, (int32_t)indices[i], &derived_key[0], sizeof(derived_key));
 
     assert(error == CARDANO_SUCCESS);
     CARDANO_UNUSED(error);
@@ -460,8 +461,8 @@ cardano_bip32_private_key_get_public_key(
 
   byte_t bip32_public_key[64] = { 0 };
 
-  CARDANO_UNUSED(memcpy(&bip32_public_key[0], &public_key[0], 32));
-  CARDANO_UNUSED(memcpy(&bip32_public_key[32], &extended_scalar[chain_code_index], chain_code_size));
+  cardano_safe_memcpy(&bip32_public_key[0], sizeof(bip32_public_key), &public_key[0], 32);
+  cardano_safe_memcpy(&bip32_public_key[32], sizeof(bip32_public_key) - 32U, &extended_scalar[chain_code_index], chain_code_size);
 
   return cardano_bip32_public_key_from_bytes(
     &bip32_public_key[0],

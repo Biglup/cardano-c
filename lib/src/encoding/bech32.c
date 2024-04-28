@@ -21,9 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/encoding/bech32.h>
-
 #include "../allocators.h"
+#include "../string_safe.h"
+#include <cardano/encoding/bech32.h>
 
 #include <assert.h>
 #include <ctype.h>
@@ -217,7 +217,7 @@ check_and_format(char* dest, const char* address, const size_t length)
     return CARDANO_ERROR_DECODING;
   }
 
-  CARDANO_UNUSED(strncpy(dest, low_addr, length));
+  cardano_safe_memcpy(dest, length, low_addr, length);
   dest[length] = '\0';
 
   _cardano_free(low_addr);
@@ -291,7 +291,7 @@ verify_checksum(const char* hrp, const size_t hrp_length, const byte_t* data, co
   }
 
   const size_t values_length = expanded_hrp_length + data_length;
-  byte_t*      values        = (byte_t*)_cardano_malloc(values_length * sizeof(byte_t));
+  byte_t*      values        = (byte_t*)_cardano_malloc(values_length);
 
   if (values == NULL)
   {
@@ -299,8 +299,8 @@ verify_checksum(const char* hrp, const size_t hrp_length, const byte_t* data, co
     return false;
   }
 
-  CARDANO_UNUSED(memcpy(values, expanded_hrp, expanded_hrp_length));
-  CARDANO_UNUSED(memcpy(&values[expanded_hrp_length], data, data_length));
+  cardano_safe_memcpy(values, values_length, expanded_hrp, expanded_hrp_length);
+  cardano_safe_memcpy(&values[expanded_hrp_length], values_length - expanded_hrp_length, data, data_length);
 
   const byte_t checksum = poly_mod(values, values_length);
 
@@ -344,8 +344,9 @@ create_checksum(const char* hrp, size_t hrp_length, const byte_t* data, const si
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  CARDANO_UNUSED(memcpy(values, expanded_hrp, expanded_hrp_length));
-  CARDANO_UNUSED(memcpy(&values[expanded_hrp_length], data, data_length));
+  cardano_safe_memcpy(values, values_length, expanded_hrp, expanded_hrp_length);
+  cardano_safe_memcpy(&values[expanded_hrp_length], values_length - expanded_hrp_length, data, data_length);
+
   CARDANO_UNUSED(memset(&values[expanded_hrp_length + data_length], 0, BECH32_CHECKSUM_LENGTH));
 
   const uint32_t poly_checksum = poly_mod(values, values_length) ^ 1U;
@@ -472,7 +473,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
     return CARDANO_ERROR_DECODING;
   }
 
-  CARDANO_UNUSED(memcpy(hrp, formatted_address, split_loc));
+  cardano_safe_memcpy(hrp, hrp_length, formatted_address, split_loc);
 
   hrp[split_loc]          = '\0';
   byte_t* squashed        = NULL;
@@ -484,7 +485,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
     return CARDANO_ERROR_DECODING;
   }
 
-  if (!verify_checksum(hrp, strlen(hrp), squashed, squashed_length))
+  if (!verify_checksum(hrp, cardano_safe_strlen(hrp, split_loc), squashed, squashed_length))
   {
     _cardano_free(formatted_address);
     _cardano_free(squashed);
@@ -493,7 +494,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
   }
 
   *data_length = squashed_length - BECH32_CHECKSUM_LENGTH;
-  *data        = _cardano_malloc(*data_length * sizeof(byte_t));
+  *data        = _cardano_malloc(*data_length);
 
   if (*data == NULL)
   {
@@ -503,7 +504,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  CARDANO_UNUSED(memcpy(*data, squashed, *data_length));
+  cardano_safe_memcpy(*data, *data_length, squashed, *data_length);
 
   _cardano_free(formatted_address);
   _cardano_free(squashed);
@@ -517,11 +518,12 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
  * \param[in] input The squashed byte array to be converted.
  * \param[in] input_length The length of the squashed byte array.
  * \param[out] output Pointer to a char* that will point to the newly created string.
+ * \param[out] output_length Pointer to a size_t that will store the length of the output string.
  *
  * \return 0 on success, non-zero error code on failure.
  */
 static cardano_error_t
-squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** output)
+squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** output, size_t* output_length)
 {
   assert(input != NULL);
   assert(output != NULL);
@@ -544,6 +546,7 @@ squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** 
   }
 
   (*output)[input_length] = '\0';
+  *output_length          = input_length;
 
   return CARDANO_SUCCESS;
 }
@@ -596,11 +599,12 @@ encode_squashed(
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  CARDANO_UNUSED(memcpy(combined, data, data_length));
-  CARDANO_UNUSED(memcpy(&combined[data_length], checksum, BECH32_CHECKSUM_LENGTH));
+  cardano_safe_memcpy(combined, combined_length, data, data_length);
+  cardano_safe_memcpy(&combined[data_length], combined_length - data_length, checksum, BECH32_CHECKSUM_LENGTH);
 
-  char* encoded = NULL;
-  result        = squashed_bytes_to_string(combined, combined_length, &encoded);
+  char*  encoded        = NULL;
+  size_t encoded_length = 0U;
+  result                = squashed_bytes_to_string(combined, combined_length, &encoded, &encoded_length);
 
   _cardano_free(combined);
   _cardano_free(checksum);
@@ -610,7 +614,7 @@ encode_squashed(
     return result;
   }
 
-  size_t required_output_length = hrp_length + NULL_TERMINATOR_LENGTH + strlen(encoded);
+  size_t required_output_length = hrp_length + NULL_TERMINATOR_LENGTH + cardano_safe_strlen(encoded, encoded_length);
 
   if (output_length < required_output_length)
   {
@@ -878,7 +882,8 @@ cardano_encoding_bech32_decode(
     return CARDANO_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memcpy(data, output_data, output_length));
+  cardano_safe_memcpy(data, data_length, output_data, output_length);
+
   _cardano_free(output_data);
 
   return result;

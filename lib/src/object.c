@@ -21,13 +21,13 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/export.h>
 #include <cardano/object.h>
 
 #include <assert.h>
 #include <string.h>
 
 #include "./config.h"
+#include "./string_safe.h"
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -39,20 +39,16 @@
  * @param maxDestSize Maximum size of the destination buffer.
  */
 static void
-safe_string_copy(char* dest, const char* src, size_t max_dest_size)
+safe_string_copy(char* dest, const char* src, const size_t max_dest_size)
 {
   assert(dest != NULL);
   assert(src != NULL);
   assert(max_dest_size > 0U);
 
-  size_t src_length = strlen(src);
-  size_t copy_size  = (src_length < (max_dest_size - 1U)) ? src_length : (max_dest_size - 1U);
+  const size_t src_length = cardano_safe_strlen(src, max_dest_size);
+  const size_t copy_size  = (src_length < (max_dest_size - 1U)) ? src_length : (max_dest_size - 1U);
 
-  void* result = memcpy(dest, src, copy_size);
-
-  CARDANO_UNUSED(result);
-
-  assert(result != NULL);
+  cardano_safe_memcpy(dest, max_dest_size, src, copy_size);
 
   dest[copy_size] = '\0';
 }

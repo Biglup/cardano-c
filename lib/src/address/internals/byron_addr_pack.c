@@ -28,6 +28,7 @@
 #include "byron_addr_pack.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* IMPLEMENTATION ************************************************************/
@@ -291,7 +292,7 @@ _cardano_byron_address_finalize_encoding(cardano_cbor_writer_t* writer, byte_t**
 }
 
 cardano_error_t
-_cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, size_t* size)
+_cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, const size_t data_size, size_t* size)
 {
   assert(address != NULL);
   assert(data != NULL);
@@ -336,7 +337,8 @@ _cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, size
     // LCOV_EXCL_STOP
   }
 
-  CARDANO_UNUSED(memcpy(data, result_data, *size));
+  cardano_safe_memcpy(data, data_size, result_data, *size);
+
   _cardano_free(result_data);
   cardano_cbor_writer_unref(&writer);
 
@@ -487,7 +489,11 @@ _cardano_byron_address_process_derivation_path(
 
   attributes->derivation_path_size = cardano_buffer_get_size(derivation_path);
 
-  CARDANO_UNUSED(memcpy(attributes->derivation_path, cardano_buffer_get_data(derivation_path), attributes->derivation_path_size));
+  cardano_safe_memcpy(
+    attributes->derivation_path,
+    sizeof(attributes->derivation_path),
+    cardano_buffer_get_data(derivation_path),
+    attributes->derivation_path_size);
 
   cardano_buffer_unref(&derivation_path);
   cardano_buffer_unref(&encoded_derivation_path);

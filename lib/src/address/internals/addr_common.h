@@ -71,12 +71,13 @@ typedef struct cardano_address_t
  *
  * \param[in] type The type of the address for which the Bech32 prefix is required.
  * \param[in] network_id The network ID where the address is being used.
+ * \param[out] size The length of the Bech32 prefix string.
  *
  * \return A constant string representing the Bech32 prefix corresponding to the given address type
  *         and network ID. If the combination of address type and network ID is not recognized,
  *         the function returns NULL.
  */
-const char* _cardano_get_bech32_prefix(cardano_address_type_t type, cardano_network_id_t network_id);
+const char* _cardano_get_bech32_prefix(cardano_address_type_t type, cardano_network_id_t network_id, size_t* size);
 
 /**
  * \brief Checks whether the given string has a valid bech32 prefix.
