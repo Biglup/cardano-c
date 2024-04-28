@@ -9,6 +9,7 @@
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/unit-test.yml/badge.svg)
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/static-code-analysis.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Biglup/cardano-c/graph/badge.svg?token=A5U3U5KGG7)](https://codecov.io/gh/Biglup/cardano-c)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/36ac650a4b694421bf6780a110e2f65a)](https://app.codacy.com/gh/Biglup/cardano-c/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Documentation Status](https://readthedocs.org/projects/cardano-c/badge/?version=latest)](https://cardano-c.readthedocs.io/en/latest/?badge=latest)
 [![Static Badge](https://img.shields.io/badge/Funded_By-Project_Catalyst-133ff0?logo=cardano&logoColor=ffffff)](https://projectcatalyst.io/)
 
