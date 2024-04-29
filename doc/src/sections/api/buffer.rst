@@ -53,10 +53,6 @@ Buffer
 
 ------------
 
-.. doxygenfunction:: cardano_buffer_move
-
-------------
-
 .. doxygenfunction:: cardano_buffer_get_data
 
 ------------

@@ -338,12 +338,6 @@ cardano_pointer_address_refcount(const cardano_pointer_address_t* address)
   return cardano_address_refcount(_cardano_from_pointer_to_address_const(address));
 }
 
-cardano_pointer_address_t*
-cardano_pointer_address_move(cardano_pointer_address_t* address)
-{
-  return _cardano_from_address_to_pointer(cardano_address_move(_cardano_from_pointer_to_address(address)));
-}
-
 void
 cardano_pointer_address_set_last_error(cardano_pointer_address_t* address, const char* message)
 {

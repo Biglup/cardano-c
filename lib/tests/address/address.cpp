@@ -1580,24 +1580,6 @@ TEST(cardano_address_unref, freesTheObjectIfReferenceReachesZero)
   cardano_address_unref(&address);
 }
 
-TEST(cardano_address_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_address_t* address = NULL;
-  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_address_move(address), testing::Not((cardano_address_t*)nullptr));
-  size_t ref_count = cardano_address_refcount(address);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(address, testing::Not((cardano_address_t*)nullptr));
-
-  // Cleanup
-  cardano_address_unref(&address);
-}
-
 TEST(cardano_address_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -1605,15 +1587,6 @@ TEST(cardano_address_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_address_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_address_t* address = cardano_address_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(address, (cardano_address_t*)nullptr);
 }
 
 TEST(cardano_address_get_last_error, returnsNullTerminatedMessage)

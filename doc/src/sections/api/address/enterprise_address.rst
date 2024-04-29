@@ -45,10 +45,6 @@ Enterprise Address
 
 ------------
 
-.. doxygenfunction:: cardano_enterprise_address_move
-
-------------
-
 .. doxygenfunction:: cardano_enterprise_address_ref
 
 ------------

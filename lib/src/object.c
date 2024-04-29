@@ -100,22 +100,6 @@ cardano_object_refcount(const cardano_object_t* object)
   return object->ref_count;
 }
 
-cardano_object_t*
-cardano_object_move(cardano_object_t* object)
-{
-  if (object == NULL)
-  {
-    return NULL;
-  }
-
-  if (object->ref_count > 0U)
-  {
-    object->ref_count -= 1U;
-  }
-
-  return object;
-}
-
 void
 cardano_object_set_last_error(cardano_object_t* object, const char* message)
 {

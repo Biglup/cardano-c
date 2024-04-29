@@ -322,12 +322,6 @@ cardano_reward_address_refcount(const cardano_reward_address_t* address)
   return cardano_address_refcount(_cardano_from_reward_to_address_const(address));
 }
 
-cardano_reward_address_t*
-cardano_reward_address_move(cardano_reward_address_t* address)
-{
-  return _cardano_from_address_to_reward(cardano_address_move(_cardano_from_reward_to_address(address)));
-}
-
 void
 cardano_reward_address_set_last_error(cardano_reward_address_t* address, const char* message)
 {

@@ -361,12 +361,6 @@ cardano_base_address_refcount(const cardano_base_address_t* address)
   return cardano_address_refcount(_cardano_from_base_to_address_const(address));
 }
 
-cardano_base_address_t*
-cardano_base_address_move(cardano_base_address_t* address)
-{
-  return _cardano_from_address_to_base(cardano_address_move(_cardano_from_base_to_address(address)));
-}
-
 void
 cardano_base_address_set_last_error(cardano_base_address_t* address, const char* message)
 {

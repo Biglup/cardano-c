@@ -216,21 +216,6 @@ cardano_ed25519_signature_refcount(const cardano_ed25519_signature_t* ed25519_si
   return cardano_object_refcount(&ed25519_signature->base);
 }
 
-cardano_ed25519_signature_t*
-cardano_ed25519_signature_move(cardano_ed25519_signature_t* ed25519_signature)
-{
-  if (ed25519_signature == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&ed25519_signature->base);
-
-  CARDANO_UNUSED(object);
-
-  return ed25519_signature;
-}
-
 const byte_t*
 cardano_ed25519_signature_get_data(const cardano_ed25519_signature_t* ed25519_signature)
 {

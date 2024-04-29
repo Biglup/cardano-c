@@ -21,10 +21,6 @@ CBOR Writer
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_writer_move
-
-------------
-
 .. doxygenfunction:: cardano_cbor_writer_write_big_integer
 
 ------------

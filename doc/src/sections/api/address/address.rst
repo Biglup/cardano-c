@@ -53,10 +53,6 @@ Address
 
 ------------
 
-.. doxygenfunction:: cardano_address_move
-
-------------
-
 .. doxygenfunction:: cardano_address_ref
 
 ------------

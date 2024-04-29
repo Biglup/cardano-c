@@ -156,19 +156,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_set_refcount(const cardano_set_t* set);
 
 /**
- * \brief Moves a set, decrementing its reference count without deallocating.
- *
- * Useful for transferring set ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] set Set to be moved.
- * \return The set with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_set_t* cardano_set_move(cardano_set_t* set);
-
-/**
  * \brief Fetches a direct pointer to the set's data.
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.

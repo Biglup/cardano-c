@@ -49,10 +49,6 @@ Base Address
 
 ------------
 
-.. doxygenfunction:: cardano_base_address_move
-
-------------
-
 .. doxygenfunction:: cardano_base_address_ref
 
 ------------

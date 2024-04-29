@@ -189,26 +189,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_cbor_reader_refcount(const cardano_cbor_reader_t* cbor_reader);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_cbor_reader_t object.
- *
- * This function decreases the reference count of the specified CBOR reader object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_cbor_reader_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param cbor_reader A pointer to the CBOR reader object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_cbor_reader_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_cbor_reader_t* cardano_cbor_reader_move(cardano_cbor_reader_t* cbor_reader);
-
-/**
  * \brief Reads the next CBOR token from the reader without advancing the reader's internal position.
  *
  * This function examines the next CBOR token in the data stream, allowing the caller to inspect

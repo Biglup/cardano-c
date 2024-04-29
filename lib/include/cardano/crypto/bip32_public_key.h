@@ -207,26 +207,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_bip32_public_key_refcount(const cardano_bip32_public_key_t* public_key);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_bip32_public_key_t object.
- *
- * This function decreases the reference count of the specified BIP32 public key object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_bip32_public_key_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param public_key A pointer to the BIP32 public key object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_bip32_public_key_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_bip32_public_key_t* cardano_bip32_public_key_move(cardano_bip32_public_key_t* public_key);
-
-/**
  * \brief Derives a BIP32 public key based on a sequence of indices.
  *
  * This function takes an existing BIP32 public key and derives a new public key

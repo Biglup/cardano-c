@@ -323,12 +323,6 @@ cardano_enterprise_address_refcount(const cardano_enterprise_address_t* address)
   return cardano_address_refcount(_cardano_from_enterprise_to_address_const(address));
 }
 
-cardano_enterprise_address_t*
-cardano_enterprise_address_move(cardano_enterprise_address_t* address)
-{
-  return _cardano_from_address_to_enterprise(cardano_address_move(_cardano_from_enterprise_to_address(address)));
-}
-
 void
 cardano_enterprise_address_set_last_error(cardano_enterprise_address_t* address, const char* message)
 {

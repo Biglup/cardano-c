@@ -594,19 +594,6 @@ CARDANO_EXPORT void cardano_base_address_ref(cardano_base_address_t* address);
 CARDANO_EXPORT size_t cardano_base_address_refcount(const cardano_base_address_t* address);
 
 /**
- * \brief Moves a base address, decrementing its reference count without deallocating.
- *
- * Useful for transferring base address ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] address base address to be moved.
- * \return The base address with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_base_address_t* cardano_base_address_move(cardano_base_address_t* address);
-
-/**
  * \brief Sets the last error message for a given base address.
  *
  * This function records an error message in the base address's last_error buffer,

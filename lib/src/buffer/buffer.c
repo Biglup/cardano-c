@@ -473,20 +473,6 @@ cardano_buffer_refcount(const cardano_buffer_t* buffer)
   return cardano_object_refcount(&buffer->base);
 }
 
-cardano_buffer_t*
-cardano_buffer_move(cardano_buffer_t* buffer)
-{
-  if (buffer == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&buffer->base);
-  CARDANO_UNUSED(object);
-
-  return buffer;
-}
-
 byte_t*
 cardano_buffer_get_data(const cardano_buffer_t* buffer)
 {

@@ -424,21 +424,6 @@ cardano_credential_refcount(const cardano_credential_t* credential)
   return cardano_object_refcount(&credential->base);
 }
 
-cardano_credential_t*
-cardano_credential_move(cardano_credential_t* credential)
-{
-  if (credential == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&credential->base);
-
-  CARDANO_UNUSED(object);
-
-  return credential;
-}
-
 void
 cardano_credential_set_last_error(cardano_credential_t* credential, const char* message)
 {

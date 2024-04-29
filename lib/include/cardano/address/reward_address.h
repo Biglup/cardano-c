@@ -565,19 +565,6 @@ CARDANO_EXPORT void cardano_reward_address_ref(cardano_reward_address_t* address
 CARDANO_EXPORT size_t cardano_reward_address_refcount(const cardano_reward_address_t* address);
 
 /**
- * \brief Moves a reward address, decrementing its reference count without deallocating.
- *
- * Useful for transferring reward address ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] address reward address to be moved.
- * \return The reward address with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_reward_address_t* cardano_reward_address_move(cardano_reward_address_t* address);
-
-/**
  * \brief Sets the last error message for a given reward address.
  *
  * This function records an error message in the reward address's last_error buffer,

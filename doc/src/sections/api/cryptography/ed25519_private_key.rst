@@ -31,11 +31,6 @@ ED25519 Private Key
 
 .. doxygenfunction:: cardano_ed25519_private_key_refcount
 
-
-------------
-
-.. doxygenfunction:: cardano_ed25519_private_key_move
-
 ------------
 
 .. doxygenfunction:: cardano_ed25519_private_key_sign

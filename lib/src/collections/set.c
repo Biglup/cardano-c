@@ -148,15 +148,18 @@ cardano_set_from_array(cardano_array_t* array, cardano_set_compare_item_t compar
 
   for (size_t i = 0; i < cardano_array_get_size(array); ++i)
   {
-    cardano_object_t* item = cardano_object_move(cardano_array_get(array, i));
+    cardano_object_t* item = cardano_array_get(array, i);
 
     assert(item != NULL);
 
     if (cardano_set_add(set, item) == 0U)
     {
       cardano_set_unref(&set);
+      cardano_object_unref(&item);
       return NULL;
     }
+
+    cardano_object_unref(&item);
   }
 
   return set;
@@ -200,21 +203,6 @@ cardano_set_refcount(const cardano_set_t* set)
   }
 
   return cardano_object_refcount(&set->base);
-}
-
-cardano_set_t*
-cardano_set_move(cardano_set_t* set)
-{
-  if (set == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&set->base);
-
-  CARDANO_UNUSED(object);
-
-  return set;
 }
 
 size_t

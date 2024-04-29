@@ -201,26 +201,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_ed25519_signature_refcount(const cardano_ed25519_signature_t* signature);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_ed25519_signature_t object.
- *
- * This function decreases the reference count of the specified Ed25519 signature object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_ed25519_signature_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param[in,out] signature A pointer to the Ed25519 signature object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_ed25519_signature_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_ed25519_signature_t* cardano_ed25519_signature_move(cardano_ed25519_signature_t* signature);
-
-/**
  * \brief Retrieves a direct pointer to the internal data of a Ed25519 signature object.
  *
  * This function provides access to the internal storage of the Ed25519 signature object, allowing for read-only operations on its contents.

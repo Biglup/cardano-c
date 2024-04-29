@@ -29,10 +29,6 @@ BLAKE2b Hash
 
 ------------
 
-.. doxygenfunction:: cardano_blake2b_hash_move
-
-------------
-
 .. doxygenfunction:: cardano_blake2b_hash_get_data
 
 ------------

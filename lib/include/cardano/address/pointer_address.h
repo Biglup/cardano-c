@@ -630,19 +630,6 @@ CARDANO_EXPORT void cardano_pointer_address_ref(cardano_pointer_address_t* addre
 CARDANO_EXPORT size_t cardano_pointer_address_refcount(const cardano_pointer_address_t* address);
 
 /**
- * \brief Moves a pointer address, decrementing its reference count without deallocating.
- *
- * Useful for transferring pointer address ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] address pointer address to be moved.
- * \return The pointer address with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_pointer_address_t* cardano_pointer_address_move(cardano_pointer_address_t* address);
-
-/**
  * \brief Sets the last error message for a given pointer address.
  *
  * This function records an error message in the pointer address's last_error buffer,

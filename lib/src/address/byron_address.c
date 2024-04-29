@@ -363,12 +363,6 @@ cardano_byron_address_refcount(const cardano_byron_address_t* address)
   return cardano_address_refcount(_cardano_from_byron_to_address_const(address));
 }
 
-cardano_byron_address_t*
-cardano_byron_address_move(cardano_byron_address_t* address)
-{
-  return _cardano_from_address_to_byron(cardano_address_move(_cardano_from_byron_to_address(address)));
-}
-
 void
 cardano_byron_address_set_last_error(cardano_byron_address_t* address, const char* message)
 {

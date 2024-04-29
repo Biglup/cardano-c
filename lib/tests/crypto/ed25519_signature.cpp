@@ -135,25 +135,6 @@ TEST(cardano_ed25519_signature_unref, freesTheObjectIfReferenceReachesZero)
   cardano_ed25519_signature_unref(&signature);
 }
 
-TEST(cardano_ed25519_signature_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_ed25519_signature_t* signature = nullptr;
-  cardano_error_t              error     = cardano_ed25519_signature_from_bytes(SIGNATURE_BYTES, SIGNATURE_SIZE, &signature);
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_ed25519_signature_move(signature), testing::Not((cardano_ed25519_signature_t*)nullptr));
-  size_t ref_count = cardano_ed25519_signature_refcount(signature);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(signature, testing::Not((cardano_ed25519_signature_t*)nullptr));
-
-  // Cleanup
-  cardano_ed25519_signature_unref(&signature);
-}
-
 TEST(cardano_ed25519_signature_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -161,15 +142,6 @@ TEST(cardano_ed25519_signature_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_ed25519_signature_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_ed25519_signature_t* signature = cardano_ed25519_signature_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 }
 
 TEST(cardano_ed25519_signature_from_bytes, returnsNullIfGivenANullPtr)

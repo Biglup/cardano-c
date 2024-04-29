@@ -150,25 +150,6 @@ TEST(cardano_bip32_public_key_unref, freesTheObjectIfReferenceReachesZero)
   cardano_bip32_public_key_unref(&public_key);
 }
 
-TEST(cardano_bip32_public_key_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_bip32_public_key_t* public_key = nullptr;
-  cardano_error_t             error      = cardano_bip32_public_key_from_bytes(BIP32_PUBLIC_KEY, BIP32_PUBLIC_KEY_SIZE, &public_key);
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_bip32_public_key_move(public_key), testing::Not((cardano_bip32_public_key_t*)nullptr));
-  size_t ref_count = cardano_bip32_public_key_refcount(public_key);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(public_key, testing::Not((cardano_bip32_public_key_t*)nullptr));
-
-  // Cleanup
-  cardano_bip32_public_key_unref(&public_key);
-}
-
 TEST(cardano_bip32_public_key_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -176,15 +157,6 @@ TEST(cardano_bip32_public_key_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_bip32_public_key_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_bip32_public_key_t* public_key = cardano_bip32_public_key_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 }
 
 TEST(cardano_bip32_public_key_from_bytes, returnsNullIfGivenANullPtr)

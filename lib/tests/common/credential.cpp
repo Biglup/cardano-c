@@ -821,30 +821,6 @@ TEST(cardano_credential_unref, freesTheObjectIfReferenceReachesZero)
   cardano_credential_unref(&credential);
 }
 
-TEST(cardano_credential_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_credential_t* credential = nullptr;
-  cardano_error_t       error      = cardano_credential_from_hash_hex(
-    KEY_HASH_HEX,
-    strlen(KEY_HASH_HEX),
-    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
-    &credential);
-
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_credential_move(credential), testing::Not((cardano_credential_t*)nullptr));
-  size_t ref_count = cardano_credential_refcount(credential);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(credential, testing::Not((cardano_credential_t*)nullptr));
-
-  // Cleanup
-  cardano_credential_unref(&credential);
-}
-
 TEST(cardano_credential_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -852,15 +828,6 @@ TEST(cardano_credential_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_credential_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_credential_t* credential = cardano_credential_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
 TEST(cardano_credential_set_last_error, doesNothingWhenObjectIsNull)

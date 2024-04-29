@@ -354,21 +354,6 @@ cardano_array_refcount(const cardano_array_t* array)
   return cardano_object_refcount(&array->base);
 }
 
-cardano_array_t*
-cardano_array_move(cardano_array_t* array)
-{
-  if (array == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&array->base);
-
-  CARDANO_UNUSED(object);
-
-  return array;
-}
-
 cardano_object_t*
 cardano_array_get(const cardano_array_t* array, const size_t index)
 {
