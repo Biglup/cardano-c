@@ -217,21 +217,6 @@ cardano_ed25519_public_key_refcount(const cardano_ed25519_public_key_t* ed25519_
   return cardano_object_refcount(&ed25519_public_key->base);
 }
 
-cardano_ed25519_public_key_t*
-cardano_ed25519_public_key_move(cardano_ed25519_public_key_t* ed25519_public_key)
-{
-  if (ed25519_public_key == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&ed25519_public_key->base);
-
-  CARDANO_UNUSED(object);
-
-  return ed25519_public_key;
-}
-
 bool
 cardano_ed25519_public_verify(
   const cardano_ed25519_public_key_t* public_key,

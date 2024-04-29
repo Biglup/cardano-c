@@ -216,35 +216,6 @@ TEST(cardano_array_unref, freesTheObjectIfReferenceReachesZero)
   EXPECT_EQ(array, (cardano_array_t*)nullptr);
 }
 
-TEST(cardano_array_move, returnsNullIfArrayIsNull)
-{
-  // Arrange
-  cardano_array_t* array = nullptr;
-
-  // Act
-  cardano_array_t* moved = cardano_array_move(array);
-
-  // Assert
-  EXPECT_EQ(moved, nullptr);
-}
-
-TEST(cardano_array_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_array_t* array = cardano_array_new(1);
-
-  // Act
-  EXPECT_THAT(cardano_array_move(array), testing::Not((cardano_array_t*)nullptr));
-  size_t ref_count = cardano_array_refcount(array);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(array, testing::Not((cardano_array_t*)nullptr));
-
-  // Cleanup
-  cardano_array_unref(&array);
-}
-
 TEST(cardano_array_get_size, returnsZeroIfArrayIsNull)
 {
   // Arrange

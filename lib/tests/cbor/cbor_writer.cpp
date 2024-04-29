@@ -235,23 +235,6 @@ TEST(cardano_cbor_writer_unref, freesTheObjectIfReferenceReachesZero)
   cardano_cbor_writer_unref(&writer);
 }
 
-TEST(cardano_cbor_writer_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
-
-  // Act
-  EXPECT_THAT(cardano_cbor_writer_move(writer), testing::Not((cardano_cbor_writer_t*)nullptr));
-  size_t ref_count = cardano_cbor_writer_refcount(writer);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(writer, testing::Not((cardano_cbor_writer_t*)nullptr));
-
-  // Cleanup
-  cardano_cbor_writer_unref(&writer);
-}
-
 TEST(cardano_cbor_writer_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -259,15 +242,6 @@ TEST(cardano_cbor_writer_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_cbor_writer_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_cbor_writer_t* writer = cardano_cbor_writer_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(writer, (cardano_cbor_writer_t*)nullptr);
 }
 
 TEST(cardano_cbor_writer_tag, returnsNullIfGivenANullPtr)

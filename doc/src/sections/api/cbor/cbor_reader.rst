@@ -25,10 +25,6 @@ CBOR Reader
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_reader_move
-
-------------
-
 .. doxygenfunction:: cardano_cbor_reader_peek_state
 
 ------------

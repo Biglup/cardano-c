@@ -582,19 +582,6 @@ CARDANO_EXPORT void cardano_enterprise_address_ref(cardano_enterprise_address_t*
 CARDANO_EXPORT size_t cardano_enterprise_address_refcount(const cardano_enterprise_address_t* address);
 
 /**
- * \brief Moves a enterprise address, decrementing its reference count without deallocating.
- *
- * Useful for transferring enterprise address ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] address enterprise address to be moved.
- * \return The enterprise address with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_enterprise_address_t* cardano_enterprise_address_move(cardano_enterprise_address_t* address);
-
-/**
  * \brief Sets the last error message for a given enterprise address.
  *
  * This function records an error message in the enterprise address's last_error buffer,

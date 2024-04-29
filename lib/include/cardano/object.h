@@ -91,19 +91,6 @@ CARDANO_EXPORT void cardano_object_ref(cardano_object_t* object);
 CARDANO_EXPORT size_t cardano_object_refcount(const cardano_object_t* object);
 
 /**
- * \brief Moves a object, decrementing its reference count without deallocating.
- *
- * Useful for transferring object ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] object object to be moved.
- * \return The object with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_object_t* cardano_object_move(cardano_object_t* object);
-
-/**
  * \brief Sets the last error message for a given object.
  *
  * This function records an error message in the object's last_error buffer,

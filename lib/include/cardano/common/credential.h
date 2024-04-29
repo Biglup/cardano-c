@@ -496,26 +496,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_credential_refcount(const cardano_credential_t* credential);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_credential_t object.
- *
- * This function decreases the reference count of the specified credential object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_credential_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param credential A pointer to the credential object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_credential_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_credential_t* cardano_credential_move(cardano_credential_t* credential);
-
-/**
  * \brief Sets the last error message for a given credential object.
  *
  * Records an error message in the credential's last_error buffer, overwriting any existing message.

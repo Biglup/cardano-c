@@ -49,10 +49,6 @@ Pointer Address
 
 ------------
 
-.. doxygenfunction:: cardano_pointer_address_move
-
-------------
-
 .. doxygenfunction:: cardano_pointer_address_ref
 
 ------------

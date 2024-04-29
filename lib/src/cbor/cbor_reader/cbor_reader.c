@@ -210,21 +210,6 @@ cardano_cbor_reader_refcount(const cardano_cbor_reader_t* cbor_reader)
   return cardano_object_refcount(&cbor_reader->base);
 }
 
-cardano_cbor_reader_t*
-cardano_cbor_reader_move(cardano_cbor_reader_t* cbor_reader)
-{
-  if (cbor_reader == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&cbor_reader->base);
-
-  CARDANO_UNUSED(object);
-
-  return cbor_reader;
-}
-
 cardano_error_t
 cardano_cbor_reader_peek_state(cardano_cbor_reader_t* reader, cardano_cbor_reader_state_t* state)
 {

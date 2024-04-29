@@ -358,27 +358,6 @@ CARDANO_EXPORT void cardano_buffer_ref(cardano_buffer_t* buffer);
 CARDANO_EXPORT size_t cardano_buffer_refcount(const cardano_buffer_t* buffer);
 
 /**
- * \brief Moves a buffer, decrementing its reference count without deallocating it.
- *
- * This function is designed for transferring ownership of a buffer to another context where the reference
- * count will be managed (typically increased).
- *
- * \warning Improper management of the reference count after using this function can result in memory leaks. It is
- * critical to ensure that any function or process that takes ownership of the buffer subsequently manages the
- * reference count appropriately (e.g., by incrementing it if the buffer is retained).
- *
- * \param[in] buffer The buffer instance to be moved. The function decreases its reference count by one, but
- * does not deallocate the buffer even if its reference count reaches zero. This behavior supports the transfer
- * of ownership semantics by allowing the new owner to safely increase the reference count.
- *
- * \return Returns the buffer instance with its reference count decremented. The caller becomes the new owner
- * of the buffer and is responsible for its lifecycle management, including properly incrementing the reference
- * count if the buffer is retained and eventually decrementing it to ensure proper deallocation.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_buffer_t* cardano_buffer_move(cardano_buffer_t* buffer);
-
-/**
  * \brief Retrieves a direct pointer to the internal data of a buffer.
  *
  * This function provides access to the internal storage of the buffer, allowing for read-only operations on its contents.

@@ -232,25 +232,6 @@ TEST(cardano_blake2b_hash_unref, freesTheObjectIfReferenceReachesZero)
   cardano_blake2b_hash_unref(&hash);
 }
 
-TEST(cardano_blake2b_hash_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_blake2b_hash_t* hash  = nullptr;
-  cardano_error_t         error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_blake2b_hash_move(hash), testing::Not((cardano_blake2b_hash_t*)nullptr));
-  size_t ref_count = cardano_blake2b_hash_refcount(hash);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(hash, testing::Not((cardano_blake2b_hash_t*)nullptr));
-
-  // Cleanup
-  cardano_blake2b_hash_unref(&hash);
-}
-
 TEST(cardano_blake2b_hash_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -258,15 +239,6 @@ TEST(cardano_blake2b_hash_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_blake2b_hash_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_blake2b_hash_t* hash = cardano_blake2b_hash_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
 TEST(cardano_blake2b_hash_from_bytes, returnsNullIfGivenANullPtr)

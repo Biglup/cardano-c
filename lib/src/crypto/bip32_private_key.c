@@ -311,21 +311,6 @@ cardano_bip32_private_key_refcount(const cardano_bip32_private_key_t* bip32_priv
   return cardano_object_refcount(&bip32_private_key->base);
 }
 
-cardano_bip32_private_key_t*
-cardano_bip32_private_key_move(cardano_bip32_private_key_t* bip32_private_key)
-{
-  if (bip32_private_key == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&bip32_private_key->base);
-
-  CARDANO_UNUSED(object);
-
-  return bip32_private_key;
-}
-
 cardano_error_t
 cardano_bip32_private_key_derive(
   const cardano_bip32_private_key_t* private_key,

@@ -773,24 +773,6 @@ TEST(cardano_pointer_address_unref, freesTheObjectIfReferenceReachesZero)
   cardano_pointer_address_unref(&pointer_address);
 }
 
-TEST(cardano_pointer_address_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_pointer_address_t* pointer_address = NULL;
-  EXPECT_EQ(cardano_pointer_address_from_bech32(Cip19TestVectors::pointerKey.c_str(), Cip19TestVectors::pointerKey.size(), &pointer_address), CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_pointer_address_move(pointer_address), testing::Not((cardano_pointer_address_t*)nullptr));
-  size_t ref_count = cardano_pointer_address_refcount(pointer_address);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(pointer_address, testing::Not((cardano_pointer_address_t*)nullptr));
-
-  // Cleanup
-  cardano_pointer_address_unref(&pointer_address);
-}
-
 TEST(cardano_pointer_address_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -798,15 +780,6 @@ TEST(cardano_pointer_address_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_pointer_address_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_pointer_address_t* pointer_address = cardano_pointer_address_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(pointer_address, (cardano_pointer_address_t*)nullptr);
 }
 
 TEST(cardano_pointer_address_get_last_error, returnsNullTerminatedMessage)

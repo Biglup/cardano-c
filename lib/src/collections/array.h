@@ -147,19 +147,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_array_refcount(const cardano_array_t* array);
 
 /**
- * \brief Moves a array, decrementing its reference count without deallocating.
- *
- * Useful for transferring array ownership to functions that will increase the reference count.
- *
- * \warning Memory will leak if the reference count isn't properly managed after a move.
- *
- * \param[in] array Array to be moved.
- * \return The array with its reference count decremented.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_array_t* cardano_array_move(cardano_array_t* array);
-
-/**
  * \brief Fetches a direct pointer to the array's data.
  *
  * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.

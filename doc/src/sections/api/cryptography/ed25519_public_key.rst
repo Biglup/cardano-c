@@ -25,10 +25,6 @@ ED25519 Public Key
 
 ------------
 
-.. doxygenfunction:: cardano_ed25519_public_key_move
-
-------------
-
 .. doxygenfunction:: cardano_ed25519_public_verify
 
 ------------

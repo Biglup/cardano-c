@@ -430,24 +430,6 @@ TEST(cardano_cbor_reader_unref, freesTheObjectIfReferenceReachesZero)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_cbor_reader_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  const char*            cbor_hex = "81182a";
-  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
-
-  // Act
-  EXPECT_THAT(cardano_cbor_reader_move(reader), testing::Not((cardano_cbor_reader_t*)nullptr));
-  size_t ref_count = cardano_cbor_reader_refcount(reader);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(reader, testing::Not((cardano_cbor_reader_t*)nullptr));
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
 TEST(cardano_cbor_reader_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -455,15 +437,6 @@ TEST(cardano_cbor_reader_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_cbor_reader_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(reader, (cardano_cbor_reader_t*)nullptr);
 }
 
 TEST(cardano_cbor_reader_set_last_error, doesNothingWhenObjectIsNull)

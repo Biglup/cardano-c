@@ -579,21 +579,6 @@ cardano_address_refcount(const cardano_address_t* address)
   return cardano_object_refcount(&address->base);
 }
 
-cardano_address_t*
-cardano_address_move(cardano_address_t* address)
-{
-  if (address == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&address->base);
-
-  CARDANO_UNUSED(object);
-
-  return address;
-}
-
 void
 cardano_address_set_last_error(cardano_address_t* address, const char* message)
 {

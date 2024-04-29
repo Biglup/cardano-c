@@ -25,10 +25,6 @@ ED25519 Signature
 
 ------------
 
-.. doxygenfunction:: cardano_ed25519_signature_move
-
-------------
-
 .. doxygenfunction:: cardano_ed25519_signature_get_data
 
 ------------

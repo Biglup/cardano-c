@@ -262,27 +262,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_bip32_private_key_refcount(const cardano_bip32_private_key_t* private_key);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_bip32_private_key_t object.
- *
- * This function decreases the reference count of the specified BIP32 private key object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_bip32_private_key_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param[in] private_key A pointer to the BIP32 private key object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_bip32_private_key_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_bip32_private_key_t* cardano_bip32_private_key_move(
-  cardano_bip32_private_key_t* private_key);
-
-/**
  * \brief Derives a child BIP32 private key from a parent BIP32 private key using a specified derivation path.
  *
  * This function takes a BIP32 private key and an array of indices representing the derivation path

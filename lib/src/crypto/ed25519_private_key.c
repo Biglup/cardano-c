@@ -678,21 +678,6 @@ cardano_ed25519_private_key_refcount(const cardano_ed25519_private_key_t* ed2551
   return cardano_object_refcount(&ed25519_private_key->base);
 }
 
-cardano_ed25519_private_key_t*
-cardano_ed25519_private_key_move(cardano_ed25519_private_key_t* ed25519_private_key)
-{
-  if (ed25519_private_key == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&ed25519_private_key->base);
-
-  CARDANO_UNUSED(object);
-
-  return ed25519_private_key;
-}
-
 cardano_error_t
 cardano_ed25519_private_key_sign(
   const cardano_ed25519_private_key_t* private_key,

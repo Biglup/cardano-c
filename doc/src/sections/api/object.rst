@@ -17,10 +17,6 @@ Object
 
 ------------
 
-.. doxygenfunction:: cardano_object_move
-
-------------
-
 .. doxygenfunction:: cardano_object_set_last_error
 
 ------------

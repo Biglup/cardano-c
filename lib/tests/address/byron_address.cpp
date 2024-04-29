@@ -694,24 +694,6 @@ TEST(cardano_byron_address_unref, freesTheObjectIfReferenceReachesZero)
   cardano_byron_address_unref(&byron_address);
 }
 
-TEST(cardano_byron_address_move, decreasesTheReferenceCountWithoutDeletingTheObject)
-{
-  // Arrange
-  cardano_byron_address_t* byron_address = NULL;
-  EXPECT_EQ(cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address), CARDANO_SUCCESS);
-
-  // Act
-  EXPECT_THAT(cardano_byron_address_move(byron_address), testing::Not((cardano_byron_address_t*)nullptr));
-  size_t ref_count = cardano_byron_address_refcount(byron_address);
-
-  // Assert
-  EXPECT_EQ(ref_count, 0);
-  EXPECT_THAT(byron_address, testing::Not((cardano_byron_address_t*)nullptr));
-
-  // Cleanup
-  cardano_byron_address_unref(&byron_address);
-}
-
 TEST(cardano_byron_address_refcount, returnsZeroIfGivenANullPtr)
 {
   // Act
@@ -719,15 +701,6 @@ TEST(cardano_byron_address_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
-}
-
-TEST(cardano_byron_address_move, returnsNullIfGivenANullPtr)
-{
-  // Act
-  cardano_byron_address_t* byron_address = cardano_byron_address_move(nullptr);
-
-  // Assert
-  EXPECT_EQ(byron_address, (cardano_byron_address_t*)nullptr);
 }
 
 TEST(cardano_byron_address_get_last_error, returnsNullTerminatedMessage)

@@ -45,10 +45,6 @@ Reward Address
 
 ------------
 
-.. doxygenfunction:: cardano_reward_address_move
-
-------------
-
 .. doxygenfunction:: cardano_reward_address_ref
 
 ------------

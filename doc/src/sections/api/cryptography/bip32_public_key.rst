@@ -25,11 +25,6 @@ BIP32 Public Key
 
 ------------
 
-.. doxygenfunction:: cardano_bip32_public_key_move
-
-
-------------
-
 .. doxygenfunction:: cardano_bip32_public_key_derive
 
 

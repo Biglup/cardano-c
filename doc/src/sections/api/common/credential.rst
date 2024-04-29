@@ -37,10 +37,6 @@ Credential
 
 ------------
 
-.. doxygenfunction:: cardano_credential_move
-
-------------
-
 .. doxygenfunction:: cardano_credential_new
 
 ------------

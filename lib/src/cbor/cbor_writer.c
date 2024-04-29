@@ -231,21 +231,6 @@ cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer)
   return cardano_object_refcount(&cbor_writer->base);
 }
 
-cardano_cbor_writer_t*
-cardano_cbor_writer_move(cardano_cbor_writer_t* cbor_writer)
-{
-  if (cbor_writer == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&cbor_writer->base);
-
-  CARDANO_UNUSED(object);
-
-  return cbor_writer;
-}
-
 cardano_error_t
 cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, const uint64_t value)
 {

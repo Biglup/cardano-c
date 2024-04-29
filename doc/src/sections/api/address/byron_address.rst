@@ -53,10 +53,6 @@ Byron Address
 
 ------------
 
-.. doxygenfunction:: cardano_byron_address_move
-
-------------
-
 .. doxygenfunction:: cardano_byron_address_ref
 
 ------------

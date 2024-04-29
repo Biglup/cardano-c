@@ -309,21 +309,6 @@ cardano_blake2b_hash_refcount(const cardano_blake2b_hash_t* blake2b_hash)
   return cardano_object_refcount(&blake2b_hash->base);
 }
 
-cardano_blake2b_hash_t*
-cardano_blake2b_hash_move(cardano_blake2b_hash_t* blake2b_hash)
-{
-  if (blake2b_hash == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&blake2b_hash->base);
-
-  CARDANO_UNUSED(object);
-
-  return blake2b_hash;
-}
-
 const byte_t*
 cardano_blake2b_hash_get_data(const cardano_blake2b_hash_t* blake2b_hash)
 {

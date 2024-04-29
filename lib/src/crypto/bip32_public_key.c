@@ -218,21 +218,6 @@ cardano_bip32_public_key_refcount(const cardano_bip32_public_key_t* bip32_public
   return cardano_object_refcount(&bip32_public_key->base);
 }
 
-cardano_bip32_public_key_t*
-cardano_bip32_public_key_move(cardano_bip32_public_key_t* bip32_public_key)
-{
-  if (bip32_public_key == NULL)
-  {
-    return NULL;
-  }
-
-  cardano_object_t* object = cardano_object_move(&bip32_public_key->base);
-
-  CARDANO_UNUSED(object);
-
-  return bip32_public_key;
-}
-
 cardano_error_t
 cardano_bip32_public_key_derive(
   const cardano_bip32_public_key_t* bip32_public_key,

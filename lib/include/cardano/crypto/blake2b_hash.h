@@ -252,26 +252,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_blake2b_hash_refcount(const cardano_blake2b_hash_t* hash);
 
 /**
- * \brief Implements a C++-like move construct for the cardano_blake2b_hash_t object.
- *
- * This function decreases the reference count of the specified BLAKE2b hash object by one,
- * but does not deallocate the object, even if its reference count reaches zero. It is designed
- * for transferring ownership of an object to another part of the code, which is expected to
- * subsequently increase the reference count (e.g., by calling \ref cardano_blake2b_hash_ref).
- *
- * \warning Improper use of this function can lead to memory leaks. Ensure that the reference
- *          count is correctly managed after moving the object to avoid leaking resources.
- *
- * \param[in,out] hash A pointer to the BLAKE2b hash object to be moved. The reference count of this
- *                    object is decreased by one.
- * \return The same \ref cardano_blake2b_hash_t object passed as the parameter, with its reference count
- *         decreased by one. If the caller fails to manage the reference count properly after
- *         the move, it may lead to memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_blake2b_hash_t* cardano_blake2b_hash_move(cardano_blake2b_hash_t* hash);
-
-/**
  * \brief Retrieves a direct pointer to the internal data of a blake2b hash object.
  *
  * This function provides access to the internal storage of the blake2b hash object, allowing for read-only operations on its contents.

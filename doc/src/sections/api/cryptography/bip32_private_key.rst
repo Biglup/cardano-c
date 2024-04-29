@@ -29,10 +29,6 @@ BIP32 Private Key
 
 ------------
 
-.. doxygenfunction:: cardano_bip32_private_key_move
-
-------------
-
 .. doxygenfunction:: cardano_bip32_private_key_derive
 
 ------------
