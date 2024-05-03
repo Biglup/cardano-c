@@ -2,7 +2,7 @@
  * \file anchor.h
  *
  * \author angel.castillo
- * \date   Apr 12, 2024
+ * \date   Mar 03, 2024
  *
  * Copyright 2024 Biglup Labs
  *
@@ -26,7 +26,6 @@
 
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
-#include <cardano/common/anchor_type.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
@@ -50,34 +49,37 @@ extern "C" {
 typedef struct cardano_anchor_t cardano_anchor_t;
 
 /**
- * \brief Creates and initializes a new instance of a anchor.
+ * \brief Creates and initializes a new instance of an anchor.
  *
  * This function allocates and initializes a new instance of \ref cardano_anchor_t,
- * using the provided hash and anchor type. It returns an error code to indicate success
- * or failure of the operation.
+ * using the provided URL and associated hash. It returns an error code to indicate the
+ * success or failure of the operation.
  *
+ * \param[in] url A pointer to a character array containing the URL associated with the anchor.
+ * \param[in] url_size The size of the URL character array in bytes.
  * \param[in] hash A pointer to \ref cardano_blake2b_hash_t representing the hash associated
- *             with this anchor. The hash must be properly initialized before being
- *             passed to this function.
- * \param[in] type The type of anchor, as defined in \ref cardano_anchor_type_t,
- *             either a key hash or a script hash.
+ *            with this anchor. The hash must be properly initialized before being
+ *            passed to this function.
  * \param[out] anchor On successful initialization, this will point to a newly created
- *             \ref cardano_anchor_t object. This object represents a "strong reference"
- *             to the anchor, meaning that it is fully initialized and ready for use.
- *             The caller is responsible for managing the lifecycle of this object.
- *             Specifically, once the anchor is no longer needed, the caller must release it
- *             by calling \ref cardano_anchor_unref.
+ *            \ref cardano_anchor_t object. This object represents a "strong reference"
+ *            to the anchor, meaning that it is fully initialized and ready for use.
+ *            The caller is responsible for managing the lifecycle of this object.
+ *            Specifically, once the anchor is no longer needed, the caller must release it
+ *            by calling \ref cardano_anchor_unref.
  *
- * \return \ref CARDANO_SUCCESS if the anchor was successfully created, or an appropriate error code
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the anchor was successfully created, or an appropriate error code
  *         indicating the failure reason.
  *
  * Usage Example:
  * \code{.c}
- * cardano_blake2b_hash_t* hash = { ... };  // Assume hash is initialized here
+ * const char* url = "https://example.com/anchor";
+ * size_t url_size = strlen(url);
+ * cardano_blake2b_hash_t* hash = ...;  // Assume hash is initialized here
  * cardano_anchor_t* anchor = NULL;
  *
  * // Attempt to create a new anchor
- * cardano_error_t result = cardano_anchor_new(hash, CARDANO_anchor_TYPE_KEY_HASH, &anchor);
+ * cardano_error_t result = cardano_anchor_new(url, url_size, hash, &anchor);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -99,37 +101,36 @@ cardano_anchor_new(
   cardano_anchor_t**            anchor);
 
 /**
- * \brief Creates a anchor from a hexadecimal hash string.
+ * \brief Creates an anchor from a hexadecimal hash string.
  *
  * This function constructs a \ref cardano_anchor_t object by interpreting the provided
- * hexadecimal string as a hash value and associating it with a specified anchor type. It
- * returns an error code indicating the success or failure of the operation.
+ * hexadecimal string as a hash value. It returns an error code indicating the success
+ * or failure of the operation.
  *
+ * \param[in] url A pointer to a character array containing the URL associated with the anchor.
+ * \param[in] url_size The size of the URL string in bytes.
  * \param[in] hex A pointer to a character array containing the hexadecimal representation of the hash.
  * \param[in] hex_size The size of the hexadecimal string in bytes.
- * \param[in] type The type of anchor, as defined in \ref cardano_anchor_type_t,
- *                 which determines how the hash is to be treated (e.g., as a key hash or a script hash).
  * \param[out] anchor On successful initialization, this will point to a newly created
- *                 \ref cardano_anchor_t object. This object represents a "strong reference"
- *                 to the anchor, meaning that it is fully initialized and ready for use.
- *                 The caller is responsible for managing the lifecycle of this object,
- *                 specifically, once the anchor is no longer needed, the caller must release it
- *                 by calling \ref cardano_anchor_unref.
+ *             \ref cardano_anchor_t object. This object represents a "strong reference"
+ *             to the anchor, meaning that it is fully initialized and ready for use.
+ *             The caller is responsible for managing the lifecycle of this object,
+ *             specifically, once the anchor is no longer needed, the caller must release it
+ *             by calling \ref cardano_anchor_unref.
  *
  * \return \ref CARDANO_SUCCESS if the anchor was successfully created, or an appropriate error code
  *         indicating the reason for failure.
  *
- * \note The function assumes that the hexadecimal string is valid and correctly formatted.
- *       Malformed input may lead to incorrect or undefined behavior.
- *
  * Usage Example:
  * \code{.c}
- * const char* hash_hex = "abcdef1234567890abcdef1234567890abcdef12....";
+ * const char* url = "https://example.com";
+ * size_t url_size = strlen(url);
+ * const char* hash_hex = "abcdef1234567890abcdef1234567890abcdef12...";
  * size_t hex_size = strlen(hash_hex);
  * cardano_anchor_t* anchor = NULL;
  *
  * // Attempt to create a new anchor from a hexadecimal hash
- * cardano_error_t result = cardano_anchor_from_hash_hex(hash_hex, hex_size, CARDANO_anchor_TYPE_KEY_HASH, &anchor);
+ * cardano_error_t result = cardano_anchor_from_hash_hex(url, url_size, hash_hex, hex_size, &anchor);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -150,34 +151,39 @@ cardano_anchor_from_hash_hex(
   cardano_anchor_t** anchor);
 
 /**
- * \brief Creates a anchor from a byte array representing a hash.
+ * \brief Creates an anchor from a byte array representing a hash.
  *
  * This function constructs a \ref cardano_anchor_t object by using the provided
- * byte array as a hash value and associating it with a specified anchor type. It
- * returns an error code indicating the success or failure of the operation.
+ * byte array as a hash value and associating it with a specified URL. It returns an error
+ * code indicating the success or failure of the operation.
  *
+ * \param[in] url A pointer to the character array containing the URL associated with the anchor.
+ * \param[in] url_size The size of the URL string in bytes.
  * \param[in] data A pointer to the byte array containing the hash data.
  * \param[in] data_size The size of the byte array in bytes.
- * \param[in] type The type of anchor, as defined in \ref cardano_anchor_type_t,
- *                 which determines how the hash is to be treated (e.g., as a key hash or a script hash).
- * \param[out] anchor On successful initialization, this will point to a newly created
- *                 \ref cardano_anchor_t object. This object represents a "strong reference"
- *                 to the anchor, meaning that it is fully initialized and ready for use.
- *                 The caller is responsible for managing the lifecycle of this object,
- *                 specifically, once the anchor is no longer needed, the caller must release it
- *                 by calling \ref cardano_anchor_unref.
+ * \param[out] anchor On successful initialization, this pointer is set to the newly created
+ *                    \ref cardano_anchor_t object. This object represents a "strong reference"
+ *                    to the anchor, meaning that it is fully initialized and ready for use.
+ *                    The caller is responsible for managing the lifecycle of this object,
+ *                    specifically, once the anchor is no longer needed, the caller must release it
+ *                    by calling \ref cardano_anchor_unref.
  *
  * \return \ref CARDANO_SUCCESS if the anchor was successfully created, or an appropriate error code
  *         indicating the reason for failure.
  *
+ * \note This function assumes that the byte array and URL are correctly formatted and valid.
+ *       Malformed or incorrect input may lead to errors or undefined behavior.
+ *
  * Usage Example:
  * \code{.c}
+ * const char* url = "https://example.com";
+ * size_t url_size = strlen(url);
  * const byte_t hash_data[] = { 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef ... };
  * size_t data_size = sizeof(hash_data);
  * cardano_anchor_t* anchor = NULL;
  *
  * // Attempt to create a new anchor from byte array hash
- * cardano_error_t result = cardano_anchor_from_hash_bytes(hash_data, data_size, CARDANO_anchor_TYPE_KEY_HASH, &anchor);
+ * cardano_error_t result = cardano_anchor_from_hash_bytes(url, url_size, hash_data, data_size, &anchor);
  *
  * if (result == CARDANO_SUCCESS && anchor)
  * {
@@ -320,6 +326,37 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_blake2b_hash_t* cardano_anchor_get_hash(const cardano_anchor_t* anchor);
 
 /**
+ * \brief Retrieves the size of the hash bytes stored in the anchor.
+ *
+ * This function computes the size of the hash bytes stored within a \ref cardano_anchor_t object.
+ * It is particularly useful for determining the buffer size needed to store the hash bytes when
+ * retrieving them via \ref cardano_anchor_get_hash_bytes.
+ *
+ * \param[in] anchor A constant pointer to the \ref cardano_anchor_t object from which
+ *                       the size of the hash bytes is to be retrieved.
+ *
+ * \return The size of the hash bytes. If the anchor is NULL the function returns zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = cardano_anchor_new(...);
+ * size_t hash_size = cardano_anchor_get_hash_bytes_size(anchor);
+ *
+ * if (hash_size > 0)
+ * {
+ *   byte_t* hash_bytes = malloc(hash_size);
+ *   if (hash_bytes)
+ *   {
+ *     // Proceed to get the hash bytes
+ *   }
+ * }
+ * cardano_anchor_unref(&anchor);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_anchor_get_hash_bytes_size(const cardano_anchor_t* anchor);
+
+/**
  * \brief Retrieves the byte array representation of the hash from a anchor.
  *
  * This function accesses the byte representation of the hash associated with a given
@@ -351,6 +388,34 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const byte_t* cardano_anchor_get_hash_bytes(const cardano_anchor_t* anchor);
 
 /**
+ * \brief Retrieves the size needed for the hexadecimal string representation of the anchor's hash.
+ *
+ * This function calculates the size required to store the hexadecimal string representation of the hash
+ * associated with a \ref cardano_anchor_t object. This size includes the space needed for the null-terminator.
+ *
+ * \param[in] anchor A constant pointer to the \ref cardano_anchor_t object whose hash size is to be determined.
+ *
+ * \return The size in bytes required to store the hexadecimal representation of the hash, including the null terminator.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = cardano_anchor_new(...);
+ * size_t hex_size = cardano_anchor_get_hash_hex_size(anchor);
+ * char* hex_string = malloc(hex_size);
+ *
+ * if (hex_string)
+ * {
+ *   // Now use hex_string to get the hash or do other operations
+ *   free(hex_string);
+ * }
+ *
+ * cardano_anchor_unref(&anchor);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_anchor_get_hash_hex_size(const cardano_anchor_t* anchor);
+
+/**
  * \brief Retrieves the hexadecimal string representation of the hash from a anchor.
  *
  * This function provides access to the hexadecimal (hex) string representation of the hash
@@ -380,6 +445,142 @@ CARDANO_EXPORT const byte_t* cardano_anchor_get_hash_bytes(const cardano_anchor_
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_anchor_get_hash_hex(const cardano_anchor_t* anchor);
+
+/**
+ * \brief Retrieves the size of the URL string stored in the anchor.
+ *
+ * This function calculates the size of the URL string, including the null terminator,
+ * associated with the provided \ref cardano_anchor_t object. This size is necessary
+ * to allocate a buffer large enough to store the URL string.
+ *
+ * \param[in] anchor A constant pointer to the \ref cardano_anchor_t object from which
+ *                   the URL size is to be retrieved.
+ *
+ * \return The size in bytes of the URL string including the null terminator. If the anchor
+ *         is NULL or if there is no URL assigned, returns 0.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = ...; // Assume this is initialized
+ * size_t url_size = cardano_anchor_get_url_size(anchor);
+ *
+ * if (url_size > 0)
+ * {
+ *   char* url = malloc(url_size); // Allocate space for the URL
+ *   if (url)
+ *   {
+ *     // Further operations such as fetching the URL can be performed here
+ *     free(url);
+ *   }
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t
+cardano_anchor_get_url_size(const cardano_anchor_t* anchor);
+
+/**
+ * \brief Retrieves the URL from an anchor.
+ *
+ * This function returns the URL associated with a \ref cardano_anchor_t object. The URL is returned
+ * as a pointer to a null-terminated string. This pointer points to internal memory managed by the
+ * anchor object, and therefore should not be modified or freed by the caller.
+ *
+ * \param[in] anchor A constant pointer to the \ref cardano_anchor_t object from which
+ *                   the URL is to be retrieved.
+ *
+ * \return A constant pointer to a null-terminated string containing the URL. If the anchor is NULL
+ *         or if the anchor does not have a URL, returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = ...; // Assume this is initialized
+ * const char* url = cardano_anchor_get_url(anchor);
+ *
+ * if (url)
+ * {
+ *   printf("Anchor URL: %s\n", url);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve URL from anchor\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char*
+cardano_anchor_get_url(const cardano_anchor_t* anchor);
+
+/**
+ * \brief Sets the URL for an anchor.
+ *
+ * This function assigns a new URL to an existing \ref cardano_anchor_t object. The URL is specified as a character
+ * array and its size. The function copies the URL into the anchor object.
+ *
+ * \param[in,out] anchor A pointer to the \ref cardano_anchor_t object whose URL is to be set.
+ * \param[in] url A pointer to a character array containing the new URL to be set for the anchor.
+ * \param[in] url_size The size of the URL character array in bytes, excluding any null-terminator.
+ *
+ * \return \ref CARDANO_SUCCESS if the URL was successfully set. Returns \ref CARDANO_POINTER_IS_NULL if any of the
+ *         inputs are NULL, \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the URL size exceeds internal limits, or
+ *         other error codes as appropriate for other failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = ...;
+ * const char* url = "https://example.com/new-anchor-url";
+ * size_t url_size = strlen(url);
+ *
+ * cardano_error_t result = cardano_anchor_set_url(anchor, url, url_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // URL is successfully updated
+ * }
+ *
+ * cardano_anchor_unref(&anchor);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_anchor_set_url(cardano_anchor_t* anchor, const char* url, size_t url_size);
+
+/**
+ * \brief Sets the hash for a anchor.
+ *
+ * This function assigns a new hash to an existing \ref cardano_anchor_t object. The hash
+ * represents the identifying data for the anchor.The function copies the provided hash into
+ * the anchor, so the original hash object may be modified or freed after this operation without
+ * affecting the anchor's hash.
+ *
+ * \param[in,out] anchor A pointer to the \ref cardano_anchor_t object whose hash is to be set.
+ *                           This object must have been previously created and not yet freed.
+ * \param[in] hash A pointer to a \ref cardano_blake2b_hash_t object containing the new hash to be set.
+ *                 This parameter must not be NULL.
+ *
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the hash was successfully set. If the \p anchor or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_anchor_t* anchor = ...;
+ * cardano_blake2b_hash_t* new_hash = cardano_blake2b_compute_hash(...);
+ *
+ * cardano_error_t result = cardano_anchor_set_hash(anchor, new_hash);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // The hash was successfully set
+ * }
+ *
+ * // Clean up
+ * cardano_anchor_unref(&anchor);
+ * cardano_blake2b_hash_unref(&new_hash);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_anchor_set_hash(cardano_anchor_t* anchor, const cardano_blake2b_hash_t* hash);
 
 /**
  * \brief Decrements the reference count of a anchor object.

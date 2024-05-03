@@ -283,6 +283,8 @@ TEST(cardano_credential_new, canCreateKeyHashCredential)
   EXPECT_EQ(memcmp(hash2_bytes, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash)), 0);
   EXPECT_EQ(memcmp(hash3_bytes, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash)), 0);
   EXPECT_STREQ(hex, KEY_HASH_HEX);
+  EXPECT_EQ(cardano_credential_get_hash_bytes_size(credential), cardano_blake2b_hash_get_bytes_size(hash));
+  EXPECT_EQ(cardano_credential_get_hash_hex_size(credential), cardano_blake2b_hash_get_hex_size(hash));
 
   cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
   error                          = cardano_credential_get_type(credential, &type);
@@ -1065,4 +1067,22 @@ TEST(cardano_credential_set_hash, returnErrorIfWorngHashSize)
   // Cleanup
   cardano_credential_unref(&credential);
   cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_credential_get_hash_hex_size, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t size = cardano_credential_get_hash_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_credential_get_hash_bytes_size, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t size = cardano_credential_get_hash_bytes_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
 }

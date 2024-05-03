@@ -328,6 +328,75 @@ cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cb
 }
 
 cardano_error_t
+cardano_cbor_validate_text_string_of_max_size(
+  const char*            validator_name,
+  cardano_cbor_reader_t* reader,
+  char*                  text_string,
+  const uint32_t         size)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_TEXTSTRING)
+  {
+    set_invalid_type_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_TEXTSTRING,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_TEXTSTRING),
+      state,
+      cardano_cbor_reader_state_to_string(state));
+
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  cardano_buffer_t* text_string_buffer      = NULL;
+  cardano_error_t   read_text_string_result = cardano_cbor_reader_read_textstring(reader, &text_string_buffer);
+
+  if (read_text_string_result != CARDANO_SUCCESS)
+  {
+    return read_text_string_result; /* LCOV_EXCL_LINE */
+  }
+
+  const size_t text_string_size = cardano_buffer_get_size(text_string_buffer);
+
+  if (text_string_size > size)
+  {
+    cardano_buffer_unref(&text_string_buffer);
+
+    set_invalid_size_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_TEXTSTRING,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_TEXTSTRING),
+      size,
+      text_string_size);
+
+    return CARDANO_ERROR_INVALID_CBOR_VALUE;
+  }
+
+  cardano_error_t copy_result = cardano_buffer_to_str(text_string_buffer, text_string, size);
+
+  if (copy_result != CARDANO_SUCCESS)
+  {
+    /* LCOV_EXCL_START */
+    cardano_buffer_unref(&text_string_buffer);
+    return copy_result;
+    /* LCOV_EXCL_STOP */
+  }
+
+  cardano_buffer_unref(&text_string_buffer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader)
 {
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;

@@ -311,6 +311,37 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_blake2b_hash_t* cardano_credential_get_hash(const cardano_credential_t* credential);
 
 /**
+ * \brief Retrieves the size of the hash bytes stored in the credential.
+ *
+ * This function computes the size of the hash bytes stored within a \ref cardano_credential_t object.
+ * It is particularly useful for determining the buffer size needed to store the hash bytes when
+ * retrieving them via \ref cardano_credential_get_hash_bytes.
+ *
+ * \param[in] credential A constant pointer to the \ref cardano_credential_t object from which
+ *                       the size of the hash bytes is to be retrieved.
+ *
+ * \return The size of the hash bytes. If the credential is NULL the function returns zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * size_t hash_size = cardano_credential_get_hash_bytes_size(credential);
+ *
+ * if (hash_size > 0)
+ * {
+ *   byte_t* hash_bytes = malloc(hash_size);
+ *   if (hash_bytes)
+ *   {
+ *     // Proceed to get the hash bytes
+ *   }
+ * }
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_credential_get_hash_bytes_size(const cardano_credential_t* credential);
+
+/**
  * \brief Retrieves the byte array representation of the hash from a credential.
  *
  * This function accesses the byte representation of the hash associated with a given
@@ -340,6 +371,34 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_credential_get_hash(const cardano
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT const byte_t* cardano_credential_get_hash_bytes(const cardano_credential_t* credential);
+
+/**
+ * \brief Retrieves the size needed for the hexadecimal string representation of the credential's hash.
+ *
+ * This function calculates the size required to store the hexadecimal string representation of the hash
+ * associated with a \ref cardano_credential_t object. This size includes the space needed for the null-terminator.
+ *
+ * \param[in] credential A constant pointer to the \ref cardano_credential_t object whose hash size is to be determined.
+ *
+ * \return The size in bytes required to store the hexadecimal representation of the hash, including the null terminator.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * size_t hex_size = cardano_credential_get_hash_hex_size(credential);
+ * char* hex_string = malloc(hex_size);
+ *
+ * if (hex_string)
+ * {
+ *   // Now use hex_string to get the hash or do other operations
+ *   free(hex_string);
+ * }
+ *
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_credential_get_hash_hex_size(const cardano_credential_t* credential);
 
 /**
  * \brief Retrieves the hexadecimal string representation of the hash from a credential.

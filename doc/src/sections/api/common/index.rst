@@ -6,6 +6,7 @@ The "Common" section of this documentation explores fundamental domain entities 
 .. toctree::
     :maxdepth: 1
 
+    ./anchor
     ./credential
     ./credential_type
     ./network_id

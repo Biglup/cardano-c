@@ -74,6 +74,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_ARGUMENT:
       message = "Invalid operation. Invalid argument";
       break;
+    case CARDANO_ERROR_INVALID_URL:
+      message = "Invalid argument. Invalid URL";
+      break;
     case CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX:
       message = "Invalid operation. Invalid BIP32 derivation index";
       break;

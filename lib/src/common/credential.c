@@ -27,6 +27,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <string.h>
@@ -44,8 +45,8 @@ typedef struct cardano_credential_t
 {
     cardano_object_t          base;
     cardano_credential_type_t type;
-    byte_t                    bytes[28];
-    char                      hex[57];
+    byte_t                    hash_bytes[28];
+    char                      hash_hex[57];
 } cardano_credential_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -106,12 +107,12 @@ cardano_credential_new(const cardano_blake2b_hash_t* hash, const cardano_credent
     return CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE;
   }
 
-  cardano_error_t copy_hash_result = cardano_blake2b_hash_to_bytes(hash, (*credential)->bytes, sizeof((*credential)->bytes));
+  cardano_error_t copy_hash_result = cardano_blake2b_hash_to_bytes(hash, (*credential)->hash_bytes, sizeof((*credential)->hash_bytes));
 
   assert(copy_hash_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hash_result);
 
-  cardano_error_t copy_hex_result = cardano_blake2b_hash_to_hex(hash, (*credential)->hex, sizeof((*credential)->hex));
+  cardano_error_t copy_hex_result = cardano_blake2b_hash_to_hex(hash, (*credential)->hash_hex, sizeof((*credential)->hash_hex));
 
   assert(copy_hex_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hex_result);
@@ -317,7 +318,7 @@ cardano_credential_to_cbor(
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, credential->bytes, sizeof(credential->bytes));
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, credential->hash_bytes, sizeof(credential->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
@@ -336,12 +337,23 @@ cardano_credential_get_hash(const cardano_credential_t* credential)
   }
 
   cardano_blake2b_hash_t* hash             = NULL;
-  cardano_error_t         read_hash_result = cardano_blake2b_hash_from_bytes(credential->bytes, sizeof(credential->bytes), &hash);
+  cardano_error_t         read_hash_result = cardano_blake2b_hash_from_bytes(credential->hash_bytes, sizeof(credential->hash_bytes), &hash);
 
   assert(read_hash_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(read_hash_result);
 
   return hash;
+}
+
+size_t
+cardano_credential_get_hash_bytes_size(const cardano_credential_t* credential)
+{
+  if (credential == NULL)
+  {
+    return 0U;
+  }
+
+  return sizeof(credential->hash_bytes);
 }
 
 const byte_t*
@@ -352,7 +364,18 @@ cardano_credential_get_hash_bytes(const cardano_credential_t* credential)
     return NULL;
   }
 
-  return credential->bytes;
+  return credential->hash_bytes;
+}
+
+size_t
+cardano_credential_get_hash_hex_size(const cardano_credential_t* credential)
+{
+  if (credential == NULL)
+  {
+    return 0U;
+  }
+
+  return cardano_safe_strlen(credential->hash_hex, sizeof(credential->hash_hex)) + 1U;
 }
 
 const char*
@@ -363,7 +386,7 @@ cardano_credential_get_hash_hex(const cardano_credential_t* credential)
     return NULL;
   }
 
-  return credential->hex;
+  return credential->hash_hex;
 }
 
 cardano_error_t
@@ -422,12 +445,12 @@ cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blak
     return CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE;
   }
 
-  cardano_error_t copy_hash_result = cardano_blake2b_hash_to_bytes(hash, &credential->bytes[0], sizeof(credential->bytes));
+  cardano_error_t copy_hash_result = cardano_blake2b_hash_to_bytes(hash, &credential->hash_bytes[0], sizeof(credential->hash_bytes));
 
   assert(copy_hash_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hash_result);
 
-  cardano_error_t copy_hex_result = cardano_blake2b_hash_to_hex(hash, credential->hex, sizeof(credential->hex));
+  cardano_error_t copy_hex_result = cardano_blake2b_hash_to_hex(hash, credential->hash_hex, sizeof(credential->hash_hex));
 
   assert(copy_hex_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hex_result);

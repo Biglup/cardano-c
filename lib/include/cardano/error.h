@@ -77,6 +77,11 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_ARGUMENT = 7,
 
+  /**
+   * \brief Invalid URL.
+   */
+  CARDANO_ERROR_INVALID_URL = 8,
+
   /* Encoding errors */
 
   /**
