@@ -107,6 +107,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_INVALID_ADDRESS_FORMAT:
       message = "Invalid operation. Invalid address format";
       break;
+    case CARDANO_INVALID_CREDENTIAL_TYPE:
+      message = "Invalid operation. Invalid credential type";
+      break;
     default:
       message = "Unknown error code";
       break;

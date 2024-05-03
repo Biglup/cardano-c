@@ -57,4 +57,12 @@ Credential
 
 ------------
 
+.. doxygenfunction:: cardano_credential_set_type
+
+------------
+
+.. doxygenfunction:: cardano_credential_set_hash
+
+------------
+
 .. doxygenfunction:: cardano_credential_unref

@@ -414,6 +414,73 @@ CARDANO_EXPORT cardano_error_t
 cardano_credential_get_type(const cardano_credential_t* credential, cardano_credential_type_t* type);
 
 /**
+ * \brief Sets the type of the credential.
+ *
+ * This function assigns a new type to an existing \ref cardano_credential_t object. The type is specified
+ * by the \ref cardano_credential_type_t enumeration, which indicates whether the credential is derived from
+ * a public key hash or a script hash.
+ *
+ * \param[in,out] credential A pointer to the \ref cardano_credential_t object whose type is to be set.
+ * \param[in] type The new type of the credential, as defined in the \ref cardano_credential_type_t enumeration.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_POINTER_IS_NULL
+ *         if the \p credential pointer is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * cardano_error_t result = cardano_credential_set_type(credential, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Credential type updated successfully
+ * }
+ *
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_credential_set_type(cardano_credential_t* credential, cardano_credential_type_t type);
+
+/**
+ * \brief Sets the hash for a credential.
+ *
+ * This function assigns a new hash to an existing \ref cardano_credential_t object. The hash
+ * represents the identifying data for the credential.The function copies the provided hash into
+ * the credential, so the original hash object may be modified or freed after this operation without
+ * affecting the credential's hash.
+ *
+ * \param[in,out] credential A pointer to the \ref cardano_credential_t object whose hash is to be set.
+ *                           This object must have been previously created and not yet freed.
+ * \param[in] hash A pointer to a \ref cardano_blake2b_hash_t object containing the new hash to be set.
+ *                 This parameter must not be NULL.
+ *
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the hash was successfully set. If the \p credential or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = ...;
+ * cardano_blake2b_hash_t* new_hash = cardano_blake2b_compute_hash(...);
+ *
+ * cardano_error_t result = cardano_credential_set_hash(credential, new_hash);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // The hash was successfully set
+ * }
+ *
+ * // Clean up
+ * cardano_credential_unref(&credential);
+ * cardano_blake2b_hash_unref(&new_hash);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blake2b_hash_t* hash);
+
+/**
  * \brief Decrements the reference count of a credential object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_credential_t object

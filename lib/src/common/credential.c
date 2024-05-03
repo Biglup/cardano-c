@@ -384,6 +384,57 @@ cardano_credential_get_type(const cardano_credential_t* credential, cardano_cred
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_credential_set_type(cardano_credential_t* credential, cardano_credential_type_t type)
+{
+  if (credential == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if ((type != CARDANO_CREDENTIAL_TYPE_KEY_HASH) && (type != CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH))
+  {
+    return CARDANO_INVALID_CREDENTIAL_TYPE;
+  }
+
+  credential->type = type;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blake2b_hash_t* hash)
+{
+  if (credential == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (hash == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);
+
+  if (hash_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_224)
+  {
+    return CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE;
+  }
+
+  cardano_error_t copy_hash_result = cardano_blake2b_hash_to_bytes(hash, &credential->bytes[0], sizeof(credential->bytes));
+
+  assert(copy_hash_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(copy_hash_result);
+
+  cardano_error_t copy_hex_result = cardano_blake2b_hash_to_hex(hash, credential->hex, sizeof(credential->hex));
+
+  assert(copy_hex_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(copy_hex_result);
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_credential_unref(cardano_credential_t** credential)
 {

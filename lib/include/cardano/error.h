@@ -172,6 +172,13 @@ typedef enum
    */
   CARDANO_INVALID_ADDRESS_FORMAT = 401,
 
+  // Credential errors
+
+  /**
+   * \brief The credential type is invalid.
+   */
+  CARDANO_INVALID_CREDENTIAL_TYPE = 500,
+
 } cardano_error_t;
 
 /**

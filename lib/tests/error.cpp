@@ -328,6 +328,18 @@ TEST(cardano_error_to_string, canConvertInvalidAddressFormat)
   ASSERT_STREQ(message, "Invalid operation. Invalid address format");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidCredentialType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_CREDENTIAL_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid credential type");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange
