@@ -23,7 +23,6 @@
 
 #include <cardano/error.h>
 
-#include <cardano/buffer.h>
 #include <cardano/common/credential.h>
 
 #include "../allocators_helpers.h"

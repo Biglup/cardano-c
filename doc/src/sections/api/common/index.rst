@@ -9,5 +9,6 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./anchor
     ./credential
     ./credential_type
+    ./ex_units
     ./network_id
 
