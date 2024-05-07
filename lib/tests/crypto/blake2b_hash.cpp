@@ -32,6 +32,10 @@
 
 #include <gmock/gmock.h>
 
+/* CONSTANTS *****************************************************************/
+
+static const char* HASH_CBOR = "581c00000000000000000000000000000000000000000000000000000000";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -537,4 +541,124 @@ TEST(cardano_blake2b_hash_to_bytes, returnsHashBytes)
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_blake2b_hash_from_cbor, returnsNullIfGivenANullPtr)
+{
+  // Act
+  cardano_blake2b_hash_t* hash  = nullptr;
+  cardano_error_t         error = cardano_blake2b_hash_from_cbor(nullptr, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+}
+
+TEST(cardano_blake2b_hash_from_cbor, returnsNullIfHashIsNull)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(HASH_CBOR, strlen(HASH_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_from_cbor(reader, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_blake2b_hash_from_cbor, returnErrorIfGivenInvalidCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("00", 2);
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_from_cbor(reader, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_blake2b_hash_from_cbor, canDecodeHashFromValidCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex(HASH_CBOR, strlen(HASH_CBOR));
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_from_cbor(reader, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(hash, testing::Not((cardano_blake2b_hash_t*)nullptr));
+
+  // compare bytes
+  const byte_t* hash_data              = cardano_blake2b_hash_get_data(hash);
+  const byte_t  expected_hash_data[28] = { 0x00 };
+
+  for (size_t i = 0; i < sizeof(expected_hash_data); i++)
+  {
+    EXPECT_EQ(hash_data[i], expected_hash_data[i]);
+  }
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_blake2b_hash_to_cbor, returnsErrorIfHashIsNull)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_to_cbor(nullptr, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_blake2b_hash_to_cbor, returnsErrorIfWriterIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_to_cbor((cardano_blake2b_hash_t*)"", nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_blake2b_hash_to_cbor, canEncodeHashToCbor)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash   = nullptr;
+  cardano_cbor_writer_t*  writer = cardano_cbor_writer_new();
+  cardano_error_t         error  = cardano_blake2b_hash_from_hex("00000000000000000000000000000000000000000000000000000000", 56, &hash);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_blake2b_hash_to_cbor(hash, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t size     = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, cbor_hex, size), CARDANO_SUCCESS);
+  EXPECT_STREQ(cbor_hex, HASH_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_writer_unref(&writer);
+  free(cbor_hex);
 }

@@ -17,6 +17,14 @@ BLAKE2b Hash
 
 ------------
 
+.. doxygenfunction::cardano_blake2b_hash_from_cbor
+
+------------
+
+.. doxygenfunction::cardano_blake2b_hash_to_cbor
+
+------------
+
 .. doxygenfunction:: cardano_blake2b_hash_unref
 
 ------------
