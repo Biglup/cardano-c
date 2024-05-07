@@ -11,4 +11,5 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./credential_type
     ./ex_units
     ./network_id
-
+    ./protocol_version
+    ./unit_interval

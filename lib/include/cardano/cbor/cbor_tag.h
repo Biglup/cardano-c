@@ -97,6 +97,11 @@ typedef enum
   CARDANO_ENCODED_CBOR_DATA_ITEM = 24,
 
   /**
+   * \brief Tag value for Rational numbers, as defined in http://peteroupc.github.io/CBOR/rational.html.
+   */
+  CARDANO_ENCODED_CBOR_RATIONAL_NUMBER = 30,
+
+  /**
    * \brief Tag value for the Self-Describe CBOR header (0xd9d9f7).
    *
    * When placed at the beginning of a CBOR document, this tag signals that the

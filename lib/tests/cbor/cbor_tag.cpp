@@ -118,3 +118,27 @@ TEST(cardano_cbor_tag_to_string, canConvertCustom)
   // Assert
   ASSERT_STREQ(message, "Tag: Custom");
 }
+
+TEST(cardano_cbor_tag_to_string, canConvertEncodedCBORDataItem)
+{
+  // Arrange
+  cardano_cbor_tag_t cbor_tag = CARDANO_ENCODED_CBOR_DATA_ITEM;
+
+  // Act
+  const char* message = cardano_cbor_tag_to_string(cbor_tag);
+
+  // Assert
+  ASSERT_STREQ(message, "Tag: CBOR Data Item");
+}
+
+TEST(cardano_cbor_tag_to_string, canConvertEncodedCBORRationalNumber)
+{
+  // Arrange
+  cardano_cbor_tag_t cbor_tag = CARDANO_ENCODED_CBOR_RATIONAL_NUMBER;
+
+  // Act
+  const char* message = cardano_cbor_tag_to_string(cbor_tag);
+
+  // Assert
+  ASSERT_STREQ(message, "Tag: Rational Number");
+}

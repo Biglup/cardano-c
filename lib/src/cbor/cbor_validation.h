@@ -232,4 +232,44 @@ cardano_cbor_validate_text_string_of_max_size(const char* validator_name, cardan
 cardano_error_t
 cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader);
 
+/**
+ * \brief Validates a CBOR tag in a CBOR stream.
+ *
+ * This function validates the presence of a specific CBOR tag at the current position in the CBOR stream,
+ * accessed through the provided \p reader. It is typically used to ensure that the expected CBOR tag is present
+ * at the specified location in the CBOR data.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name associated with the tag, which will be included in any
+ *                           error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be checked
+ *                       to ensure it contains the specified CBOR tag.
+ * \param[in] tag The CBOR tag to validate at the current position in the CBOR stream.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the validation operation. Returns \ref CARDANO_SUCCESS
+ *         if the specified CBOR tag is found at the current position in the CBOR stream, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * // Assume we have read some data from the CBOR stream
+ * cardano_error_t result = cardano_cbor_validate_tag("tag_validator", reader, MY_CBOR_TAG);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // CBOR tag was found at the current position
+ *   printf("CBOR tag validation successful.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "CBOR tag validation failed for tag_validator: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* reader, cardano_cbor_tag_t tag);
+
 #endif // CARDANO_CBOR_VALIDATION_H
