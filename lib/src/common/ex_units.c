@@ -53,7 +53,7 @@ typedef struct cardano_ex_units_t
 /**
  * \brief Deallocates a ex_units object.
  *
- * This function is responsible for properly deallocating a ex_units object (`cardano_ex_units_t`)
+ * This function is responsible for properly deallocating a execution units object (`cardano_ex_units_t`)
  * and its associated resources.
  *
  * \param object A void pointer to the ex_units object to be deallocated. The function casts this
@@ -121,12 +121,12 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
     return expect_array_result;
   }
 
-  uint64_t              type             = 0U;
+  uint64_t              memory           = 0U;
   const cardano_error_t read_uint_result = cardano_cbor_validate_uint_in_range(
     validator_name,
     "memory",
     reader,
-    &type,
+    &memory,
     0,
     UINT64_MAX);
 
@@ -151,7 +151,7 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
     return read_cpu_result;
   }
 
-  return cardano_ex_units_new(type, cpu_steps, ex_units);
+  return cardano_ex_units_new(memory, cpu_steps, ex_units);
 }
 
 cardano_error_t
