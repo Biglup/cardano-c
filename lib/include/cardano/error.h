@@ -77,6 +77,11 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_ARGUMENT = 7,
 
+  /**
+   * \brief Invalid URL.
+   */
+  CARDANO_ERROR_INVALID_URL = 8,
+
   /* Encoding errors */
 
   /**
@@ -171,6 +176,13 @@ typedef enum
    * \brief The address format is invalid.
    */
   CARDANO_INVALID_ADDRESS_FORMAT = 401,
+
+  // Credential errors
+
+  /**
+   * \brief The credential type is invalid.
+   */
+  CARDANO_INVALID_CREDENTIAL_TYPE = 500,
 
 } cardano_error_t;
 

@@ -23,6 +23,9 @@
 
 #include <cardano/cbor/cbor_reader.h>
 
+#include "../allocators_helpers.h"
+#include "../src/allocators.h"
+
 extern "C" {
 #include "../../src/cbor/cbor_validation.h"
 }
@@ -319,6 +322,135 @@ TEST(cardano_cbor_validate_end_array, returnErrorIfReaderIsNull)
 {
   // Act
   const cardano_error_t result = cardano_cbor_validate_end_array("field_name", NULL);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_validate_text_string_of_max_size, returnValidIfValidTextString)
+{
+  // Arrange
+  const byte_t           cbor_text_string[] = { 0x63, 0x61, 0x62, 0x63 };
+  const uint32_t         max_size           = 3;
+  cardano_cbor_reader_t* reader             = cardano_cbor_reader_new(cbor_text_string, sizeof(cbor_text_string));
+  char                   text_string[100]   = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", reader, text_string, max_size + 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_EQ(strlen(text_string), max_size);
+
+  for (uint32_t i = 0; i < max_size; i++)
+  {
+    ASSERT_EQ(text_string[i], cbor_text_string[i + 1]);
+  }
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_text_string_of_max_size, returnErrorIfNotATextString)
+{
+  // Arrange
+  const byte_t           cbor_text_string[] = { 0x03, 0x61, 0x62, 0x63 };
+  const uint32_t         max_size           = 3;
+  cardano_cbor_reader_t* reader             = cardano_cbor_reader_new(cbor_text_string, sizeof(cbor_text_string));
+  char                   text_string[100]   = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", reader, text_string, max_size + 1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_text_string_of_max_size, returnErrorIfTextStringSizeMismatch)
+{
+  // Arrange
+  const byte_t           cbor_text_string[] = { 0x63, 0x61, 0x62, 0x63 };
+  cardano_cbor_reader_t* reader             = cardano_cbor_reader_new(cbor_text_string, sizeof(cbor_text_string));
+  char                   text_string[100]   = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", reader, text_string, 2);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_text_string_of_max_size, returnErrorIfReaderIsNull)
+{
+  // Arrange
+  char text_string[100] = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", NULL, text_string, 100);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_validate_tag, returnValidIfValidTag)
+{
+  // Arrange
+  const byte_t           cbor_tag[] = { 0xC1, 0x01 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_tag, sizeof(cbor_tag));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_tag("field_name", reader, (cardano_cbor_tag_t)1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_tag, returnErrorIfNotATag)
+{
+  // Arrange
+  const byte_t           cbor_tag[] = { 0x01, 0x02 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_tag, sizeof(cbor_tag));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_tag("field_name", reader, (cardano_cbor_tag_t)1);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_tag, returnErrorIfTagMismatch)
+{
+  // Arrange
+  const byte_t           cbor_tag[] = { 0xC1, 0x01 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_tag, sizeof(cbor_tag));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_tag("field_name", reader, (cardano_cbor_tag_t)2);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  ASSERT_STRCASEEQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the field_name, unexpected tag value, expected Tag: Unsigned Bignum (2), but got Tag: Unix Time Seconds (1).");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_tag, returnErrorIfReaderIsNull)
+{
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_tag("field_name", NULL, (cardano_cbor_tag_t)1);
 
   // Assert
   ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);

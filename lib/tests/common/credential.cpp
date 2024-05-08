@@ -23,7 +23,6 @@
 
 #include <cardano/error.h>
 
-#include <cardano/buffer.h>
 #include <cardano/common/credential.h>
 
 #include "../allocators_helpers.h"
@@ -34,6 +33,7 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* KEY_HASH_HEX             = "00000000000000000000000000000000000000000000000000000000";
+static const char* KEY_HASH_HEX_2           = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 static const char* INVALID_KEY_HASH_HEX     = "000000000000000000000000000000000000000000000000";
 static const char* KEY_HASH_CREDENTIAL_CBOR = "8200581c00000000000000000000000000000000000000000000000000000000";
 
@@ -282,6 +282,8 @@ TEST(cardano_credential_new, canCreateKeyHashCredential)
   EXPECT_EQ(memcmp(hash2_bytes, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash)), 0);
   EXPECT_EQ(memcmp(hash3_bytes, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash)), 0);
   EXPECT_STREQ(hex, KEY_HASH_HEX);
+  EXPECT_EQ(cardano_credential_get_hash_bytes_size(credential), cardano_blake2b_hash_get_bytes_size(hash));
+  EXPECT_EQ(cardano_credential_get_hash_hex_size(credential), cardano_blake2b_hash_get_hex_size(hash));
 
   cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
   error                          = cardano_credential_get_type(credential, &type);
@@ -913,4 +915,173 @@ TEST(cardano_credential_get_type, returnsErrorIfTypeIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_credential_set_type, returnsErrorIfGivenANullPtr)
+{
+  // Act
+  cardano_error_t error = cardano_credential_set_type(nullptr, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_credential_set_type, returnsErrorIfTypeIsInvalid)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+  cardano_error_t       error      = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_credential_set_type(credential, (cardano_credential_type_t)3);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_INVALID_CREDENTIAL_TYPE);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_credential_set_type, canSetType)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+  cardano_error_t       error      = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_credential_set_type(credential, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+  error                          = cardano_credential_get_type(credential, &type);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_credential_set_hash, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_credential_set_hash(nullptr, hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_credential_set_hash, returnsErrorIfHashIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_credential_set_hash((cardano_credential_t*)"", nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_credential_set_hash, canSetHash)
+{
+  // Arrange
+  cardano_credential_t*   credential = nullptr;
+  cardano_blake2b_hash_t* hash       = nullptr;
+
+  cardano_error_t error = cardano_blake2b_hash_from_hex(
+    KEY_HASH_HEX_2,
+    strlen(KEY_HASH_HEX_2),
+    &hash);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_credential_set_hash(credential, hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* hash2 = cardano_credential_get_hash(credential);
+  const char*             hex   = cardano_credential_get_hash_hex(credential);
+
+  EXPECT_EQ(memcmp(cardano_blake2b_hash_get_data(hash2), cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash)), 0);
+  EXPECT_STREQ(hex, KEY_HASH_HEX_2);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_credential_set_hash, returnErrorIfWorngHashSize)
+{
+  // Arrange
+  cardano_credential_t*   credential = nullptr;
+  cardano_blake2b_hash_t* hash       = nullptr;
+
+  cardano_error_t error = cardano_blake2b_hash_from_hex(
+    INVALID_KEY_HASH_HEX,
+    strlen(INVALID_KEY_HASH_HEX),
+    &hash);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_credential_set_hash(credential, hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+  cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_credential_get_hash_hex_size, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t size = cardano_credential_get_hash_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_credential_get_hash_bytes_size, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t size = cardano_credential_get_hash_bytes_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
 }

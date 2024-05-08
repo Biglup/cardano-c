@@ -311,6 +311,37 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_blake2b_hash_t* cardano_credential_get_hash(const cardano_credential_t* credential);
 
 /**
+ * \brief Retrieves the size of the hash bytes stored in the credential.
+ *
+ * This function computes the size of the hash bytes stored within a \ref cardano_credential_t object.
+ * It is particularly useful for determining the buffer size needed to store the hash bytes when
+ * retrieving them via \ref cardano_credential_get_hash_bytes.
+ *
+ * \param[in] credential A constant pointer to the \ref cardano_credential_t object from which
+ *                       the size of the hash bytes is to be retrieved.
+ *
+ * \return The size of the hash bytes. If the credential is NULL the function returns zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * size_t hash_size = cardano_credential_get_hash_bytes_size(credential);
+ *
+ * if (hash_size > 0)
+ * {
+ *   byte_t* hash_bytes = malloc(hash_size);
+ *   if (hash_bytes)
+ *   {
+ *     // Proceed to get the hash bytes
+ *   }
+ * }
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_credential_get_hash_bytes_size(const cardano_credential_t* credential);
+
+/**
  * \brief Retrieves the byte array representation of the hash from a credential.
  *
  * This function accesses the byte representation of the hash associated with a given
@@ -340,6 +371,34 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_credential_get_hash(const cardano
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT const byte_t* cardano_credential_get_hash_bytes(const cardano_credential_t* credential);
+
+/**
+ * \brief Retrieves the size needed for the hexadecimal string representation of the credential's hash.
+ *
+ * This function calculates the size required to store the hexadecimal string representation of the hash
+ * associated with a \ref cardano_credential_t object. This size includes the space needed for the null-terminator.
+ *
+ * \param[in] credential A constant pointer to the \ref cardano_credential_t object whose hash size is to be determined.
+ *
+ * \return The size in bytes required to store the hexadecimal representation of the hash, including the null terminator.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * size_t hex_size = cardano_credential_get_hash_hex_size(credential);
+ * char* hex_string = malloc(hex_size);
+ *
+ * if (hex_string)
+ * {
+ *   // Now use hex_string to get the hash or do other operations
+ *   free(hex_string);
+ * }
+ *
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_credential_get_hash_hex_size(const cardano_credential_t* credential);
 
 /**
  * \brief Retrieves the hexadecimal string representation of the hash from a credential.
@@ -412,6 +471,73 @@ CARDANO_EXPORT const char* cardano_credential_get_hash_hex(const cardano_credent
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_credential_get_type(const cardano_credential_t* credential, cardano_credential_type_t* type);
+
+/**
+ * \brief Sets the type of the credential.
+ *
+ * This function assigns a new type to an existing \ref cardano_credential_t object. The type is specified
+ * by the \ref cardano_credential_type_t enumeration, which indicates whether the credential is derived from
+ * a public key hash or a script hash.
+ *
+ * \param[in,out] credential A pointer to the \ref cardano_credential_t object whose type is to be set.
+ * \param[in] type The new type of the credential, as defined in the \ref cardano_credential_type_t enumeration.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_POINTER_IS_NULL
+ *         if the \p credential pointer is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = cardano_credential_new(...);
+ * cardano_error_t result = cardano_credential_set_type(credential, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Credential type updated successfully
+ * }
+ *
+ * cardano_credential_unref(&credential);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_credential_set_type(cardano_credential_t* credential, cardano_credential_type_t type);
+
+/**
+ * \brief Sets the hash for a credential.
+ *
+ * This function assigns a new hash to an existing \ref cardano_credential_t object. The hash
+ * represents the identifying data for the credential.The function copies the provided hash into
+ * the credential, so the original hash object may be modified or freed after this operation without
+ * affecting the credential's hash.
+ *
+ * \param[in,out] credential A pointer to the \ref cardano_credential_t object whose hash is to be set.
+ *                           This object must have been previously created and not yet freed.
+ * \param[in] hash A pointer to a \ref cardano_blake2b_hash_t object containing the new hash to be set.
+ *                 This parameter must not be NULL.
+ *
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the hash was successfully set. If the \p credential or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = ...;
+ * cardano_blake2b_hash_t* new_hash = cardano_blake2b_compute_hash(...);
+ *
+ * cardano_error_t result = cardano_credential_set_hash(credential, new_hash);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // The hash was successfully set
+ * }
+ *
+ * // Clean up
+ * cardano_credential_unref(&credential);
+ * cardano_blake2b_hash_unref(&new_hash);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blake2b_hash_t* hash);
 
 /**
  * \brief Decrements the reference count of a credential object.

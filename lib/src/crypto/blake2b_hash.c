@@ -28,6 +28,7 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../cbor/cbor_validation.h"
 
 #include <assert.h>
 #include <sodium.h>
@@ -265,6 +266,69 @@ cardano_blake2b_hash_from_hex(
   }
 
   *hash = blake2b_hash;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_hash_t** blake2b_hash)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  const cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_BYTESTRING)
+  {
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  cardano_buffer_t*     byte_string             = NULL;
+  const cardano_error_t read_byte_string_result = cardano_cbor_reader_read_bytestring(reader, &byte_string);
+
+  if (read_byte_string_result != CARDANO_SUCCESS)
+  {
+    return read_byte_string_result; /* LCOV_EXCL_LINE */
+  }
+
+  const cardano_error_t create_hash_result = cardano_blake2b_hash_from_bytes(
+    cardano_buffer_get_data(byte_string),
+    cardano_buffer_get_size(byte_string),
+    blake2b_hash);
+
+  cardano_buffer_unref(&byte_string);
+
+  return create_hash_result;
+}
+
+cardano_error_t
+cardano_blake2b_hash_to_cbor(
+  const cardano_blake2b_hash_t* blake2b_hash,
+  cardano_cbor_writer_t*        writer)
+{
+  if (blake2b_hash == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(
+    writer,
+    cardano_buffer_get_data(blake2b_hash->buffer),
+    cardano_buffer_get_size(blake2b_hash->buffer));
+
+  if (write_bytes_result != CARDANO_SUCCESS)
+  {
+    return write_bytes_result; /* LCOV_EXCL_LINE */
+  }
 
   return CARDANO_SUCCESS;
 }

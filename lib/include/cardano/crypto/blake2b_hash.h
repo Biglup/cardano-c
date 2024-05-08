@@ -24,6 +24,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/cbor/cbor_reader.h>
+#include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
 
@@ -171,6 +173,92 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_from_hex(
   const char*              hex,
   size_t                   hex_length,
   cardano_blake2b_hash_t** hash);
+
+/**
+ * \brief Creates a \ref cardano_blake2b_hash_t from a CBOR reader.
+ *
+ * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_blake2b_hash_t object.
+ * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a blake2b_hash.
+ *
+ * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
+ * \param[out] blake2b_hash A pointer to a pointer of \ref cardano_blake2b_hash_t that will be set to the address
+ *                        of the newly created blake2b_hash object upon successful decoding.
+ *
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the protocol version were successfully created, or an appropriate error code if an error occurred.
+ *
+ * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
+ *       The caller is responsible for freeing the created \ref cardano_blake2b_hash_t object by calling
+ *       \ref cardano_blake2b_hash_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cbor_data, data_size);
+ * cardano_blake2b_hash_t* blake2b_hash = NULL;
+ *
+ * cardano_error_t result = cardano_blake2b_hash_from_cbor(reader, &blake2b_hash);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the blake2b_hash
+ *
+ *   // Once done, ensure to clean up and release the blake2b_hash
+ *   cardano_blake2b_hash_unref(&blake2b_hash);
+ * }
+ * else
+ * {
+ *   const char* error = cardano_cbor_reader_get_last_error(reader);
+ *   printf("Failed to decode blake2b_hash: %s\n", error);
+ * }
+ *
+ * cardano_cbor_reader_unref(&reader); // Cleanup the CBOR reader
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_hash_t** blake2b_hash);
+
+/**
+ * \brief Serializes protocol version into CBOR format using a CBOR writer.
+ *
+ * This function serializes the given \ref cardano_blake2b_hash_t object using a \ref cardano_cbor_writer_t.
+ *
+ * \param[in] blake2b_hash A constant pointer to the \ref cardano_blake2b_hash_t object that is to be serialized.
+ * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
+ *                    The writer must already be initialized and ready to accept the data.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p blake2b_hash or \p writer
+ *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_blake2b_hash_t* blake2b_hash = ...;
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * if (writer)
+ * {
+ *   cardano_error_t result = cardano_blake2b_hash_to_cbor(blake2b_hash, writer);
+ *
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     // Use the writer's buffer containing the serialized data
+ *   }
+ *   else
+ *   {
+ *     const char* error_message = cardano_cbor_writer_get_last_error(writer);
+ *     printf("Serialization failed: %s\n", error_message);
+ *   }
+ *
+ *   cardano_cbor_writer_unref(&writer);
+ * }
+ *
+ * cardano_blake2b_hash_unref(&blake2b_hash);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_cbor(
+  const cardano_blake2b_hash_t* blake2b_hash,
+  cardano_cbor_writer_t*        writer);
 
 /**
  * \brief Decrements the reference count of a BLAKE2b hash object.

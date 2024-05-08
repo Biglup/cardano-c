@@ -175,6 +175,48 @@ set_invalid_range_error_message(
   cardano_cbor_reader_set_last_error(reader, buffer);
 }
 
+/**
+ * \brief Sets an error message for invalid CBOR tag validation failures.
+ *
+ * This function generates and sets a descriptive error message on a CBOR reader object when the
+ * decoded CBOR tag does not match the expected tag, providing details about the expected
+ * and actual tags.
+ *
+ * \param[in,out] reader The CBOR reader object where the error message will be stored.
+ * \param[in] validator_name The name of the validator associated with the tag validation.
+ * \param[in] expected_tag The expected CBOR tag.
+ * \param[in] actual_tag The actual CBOR tag encountered during validation.
+ *
+ * \note This function assumes that all input pointers (reader, validator_name) are valid.
+ */
+static void
+set_invalid_tag_error_message(
+  cardano_cbor_reader_t* reader,
+  const char*            validator_name,
+  const uint64_t         expected_tag,
+  const uint64_t         actual_tag)
+{
+  assert(reader != NULL);
+  assert(validator_name != NULL);
+
+  char buffer[1023] = { 0 };
+
+  const int32_t written = snprintf(
+    buffer,
+    sizeof(buffer),
+    "There was an error decoding the %s, unexpected tag value, expected %s (%lu), but got %s (%lu).",
+    validator_name,
+    cardano_cbor_tag_to_string(expected_tag),
+    expected_tag,
+    cardano_cbor_tag_to_string(actual_tag),
+    actual_tag);
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_cbor_reader_set_last_error(reader, buffer);
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -328,6 +370,75 @@ cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cb
 }
 
 cardano_error_t
+cardano_cbor_validate_text_string_of_max_size(
+  const char*            validator_name,
+  cardano_cbor_reader_t* reader,
+  char*                  text_string,
+  const uint32_t         size)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_TEXTSTRING)
+  {
+    set_invalid_type_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_TEXTSTRING,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_TEXTSTRING),
+      state,
+      cardano_cbor_reader_state_to_string(state));
+
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  cardano_buffer_t* text_string_buffer      = NULL;
+  cardano_error_t   read_text_string_result = cardano_cbor_reader_read_textstring(reader, &text_string_buffer);
+
+  if (read_text_string_result != CARDANO_SUCCESS)
+  {
+    return read_text_string_result; /* LCOV_EXCL_LINE */
+  }
+
+  const size_t text_string_size = cardano_buffer_get_size(text_string_buffer);
+
+  if (text_string_size > size)
+  {
+    cardano_buffer_unref(&text_string_buffer);
+
+    set_invalid_size_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_TEXTSTRING,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_TEXTSTRING),
+      size,
+      text_string_size);
+
+    return CARDANO_ERROR_INVALID_CBOR_VALUE;
+  }
+
+  cardano_error_t copy_result = cardano_buffer_to_str(text_string_buffer, text_string, size);
+
+  if (copy_result != CARDANO_SUCCESS)
+  {
+    /* LCOV_EXCL_START */
+    cardano_buffer_unref(&text_string_buffer);
+    return copy_result;
+    /* LCOV_EXCL_STOP */
+  }
+
+  cardano_buffer_unref(&text_string_buffer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader)
 {
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
@@ -357,6 +468,54 @@ cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_
   if (read_end_array_result != CARDANO_SUCCESS)
   {
     return read_end_array_result; /* LCOV_EXCL_LINE */
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* reader, const cardano_cbor_tag_t tag)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_TAG)
+  {
+    set_invalid_type_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_TAG,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_TAG),
+      state,
+      cardano_cbor_reader_state_to_string(state));
+
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  cardano_cbor_tag_t actual_tag = 0U;
+
+  cardano_error_t read_tag_result = cardano_cbor_reader_read_tag(reader, &actual_tag);
+
+  if (read_tag_result != CARDANO_SUCCESS)
+  {
+    return read_tag_result; /* LCOV_EXCL_LINE */
+  }
+
+  if (actual_tag != tag)
+  {
+    set_invalid_tag_error_message(
+      reader,
+      validator_name,
+      tag,
+      actual_tag);
+
+    return CARDANO_ERROR_INVALID_CBOR_VALUE;
   }
 
   return CARDANO_SUCCESS;

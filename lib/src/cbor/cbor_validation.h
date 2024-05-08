@@ -154,6 +154,48 @@ cardano_error_t
 cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string, uint32_t size);
 
 /**
+ * \brief Validates and reads a text string of a specified maximum size from a CBOR stream.
+ *
+ * This function checks if the next element in the CBOR stream, accessed through the provided \p reader,
+ * is a text string whose length does not exceed the specified \p size. If the validation succeeds, the function
+ * reads this text string and writes it to the \p text_string parameter, ensuring not to exceed the buffer capacity.
+ *
+ * \param[in] validator_name A descriptive name for the validator, indicating the context or
+ *                           the field name where this text string is expected, which will be included in
+ *                           any error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be advanced
+ *                       if the text string is successfully read.
+ * \param[out] text_string A pointer to a character array where the read text string will be stored.
+ *                         The buffer must be large enough to hold the text string plus a terminating null character.
+ * \param[in] size The maximum expected size of the text string in bytes, including the null terminator.
+ *
+ * \return \ref CARDANO_SUCCESS if the next element is a text string and its length is within the specified \p size.
+ *         Returns an appropriate error code if the operation fails, which can be obtained using
+ *         \ref cardano_cbor_reader_get_last_error for more details.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * char text_string[100];  // Define the buffer size based on the expected maximum
+ * cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", reader, text_string, sizeof(text_string));
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the text string
+ *   printf("Read text string: %s\n", text_string);
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_text_string_of_max_size(const char* validator_name, cardano_cbor_reader_t* reader, char* text_string, uint32_t size);
+
+/**
  * \brief Validates the end of an array in a CBOR stream.
  *
  * This function checks if the current position in the CBOR stream, accessed through the provided
@@ -189,5 +231,45 @@ cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cb
  */
 cardano_error_t
 cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader);
+
+/**
+ * \brief Validates a CBOR tag in a CBOR stream.
+ *
+ * This function validates the presence of a specific CBOR tag at the current position in the CBOR stream,
+ * accessed through the provided \p reader. It is typically used to ensure that the expected CBOR tag is present
+ * at the specified location in the CBOR data.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name associated with the tag, which will be included in any
+ *                           error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be checked
+ *                       to ensure it contains the specified CBOR tag.
+ * \param[in] tag The CBOR tag to validate at the current position in the CBOR stream.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the validation operation. Returns \ref CARDANO_SUCCESS
+ *         if the specified CBOR tag is found at the current position in the CBOR stream, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * // Assume we have read some data from the CBOR stream
+ * cardano_error_t result = cardano_cbor_validate_tag("tag_validator", reader, MY_CBOR_TAG);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // CBOR tag was found at the current position
+ *   printf("CBOR tag validation successful.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "CBOR tag validation failed for tag_validator: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* reader, cardano_cbor_tag_t tag);
 
 #endif // CARDANO_CBOR_VALIDATION_H

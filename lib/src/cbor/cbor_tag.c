@@ -50,6 +50,12 @@ cardano_cbor_tag_to_string(const cardano_cbor_tag_t tag)
     case CARDANO_CBOR_TAG_BIG_FLOAT:
       message = "Tag: Big Float";
       break;
+    case CARDANO_ENCODED_CBOR_RATIONAL_NUMBER:
+      message = "Tag: Rational Number";
+      break;
+    case CARDANO_ENCODED_CBOR_DATA_ITEM:
+      message = "Tag: CBOR Data Item";
+      break;
     case CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR:
       message = "Tag: Self Describe CBOR";
       break;
