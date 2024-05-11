@@ -433,6 +433,35 @@ cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, const size_t d
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_buffer_equals(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
+{
+  if (lhs == NULL)
+  {
+    return false;
+  }
+
+  if (rhs == NULL)
+  {
+    return false;
+  }
+
+  if (lhs->size != rhs->size)
+  {
+    return false;
+  }
+
+  if (lhs->size == 0U)
+  {
+    return true;
+  }
+
+  assert(lhs->data != NULL);
+  assert(rhs->data != NULL);
+
+  return (memcmp(lhs->data, rhs->data, lhs->size) == 0);
+}
+
 void
 cardano_buffer_unref(cardano_buffer_t** buffer)
 {

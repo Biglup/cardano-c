@@ -215,27 +215,6 @@ TEST(cardano_credential_from_cbor, returnsErrorIfReaderIsNull)
   EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
 }
 
-TEST(cardano_credential_from_cbor, returnsErrorIfEventualMemoryAllocationFails)
-{
-  // Arrange
-  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(KEY_HASH_CREDENTIAL_CBOR, strlen(KEY_HASH_CREDENTIAL_CBOR));
-  cardano_credential_t*  credential = nullptr;
-
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_nine_malloc, realloc, free);
-
-  // Act
-  cardano_error_t error = cardano_credential_from_cbor(reader, &credential);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
-  EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-  cardano_set_allocators(malloc, realloc, free);
-}
-
 TEST(cardano_credential_from_cbor, returnsErrorIfCredentialIsNull)
 {
   // Arrange

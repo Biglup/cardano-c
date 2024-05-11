@@ -76,6 +76,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/cryptography/index
     api/cbor/index
     api/encoding/index
+    api/plutus_data/index
     api/buffer
     api/error
     api/object

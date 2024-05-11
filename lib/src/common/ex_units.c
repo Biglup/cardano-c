@@ -151,6 +151,17 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
     return read_cpu_result;
   }
 
+  const cardano_error_t expect_end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
+
+  if (expect_end_array_result != CARDANO_SUCCESS)
+  {
+    /* LCOV_EXCL_START */
+    *ex_units = NULL;
+
+    return expect_end_array_result;
+    /* LCOV_EXCL_STOP */
+  }
+
   return cardano_ex_units_new(memory, cpu_steps, ex_units);
 }
 

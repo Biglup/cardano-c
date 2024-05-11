@@ -455,3 +455,66 @@ TEST(cardano_cbor_validate_tag, returnErrorIfReaderIsNull)
   // Assert
   ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
+
+TEST(cardano_cbor_validate_end_map, returnValidIfEndOfMap)
+{
+  // Arrange
+  const byte_t           cbor_map[] = { 0xA0 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_map, sizeof(cbor_map));
+
+  // Act
+  int64_t               n_elements      = 0;
+  const cardano_error_t read_map_result = cardano_cbor_reader_read_start_map(reader, &n_elements);
+
+  // Assert
+  ASSERT_EQ(n_elements, 0); // Ensure the map is empty
+  ASSERT_EQ(read_map_result, CARDANO_SUCCESS);
+
+  const cardano_error_t result = cardano_cbor_validate_end_map("field_name", reader);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_end_map, returnErrorIfNotEndOfMap)
+{
+  // Arrange
+  const byte_t           cbor_map[] = { 0xA2, 0x01, 0x02, 0x03, 0x04 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_map, sizeof(cbor_map));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_end_map("field_name", reader);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_end_map, returnErrorIfNotAMap)
+{
+  // Arrange
+  const byte_t           cbor_map[] = { 0x01, 0x02, 0x03 };
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_new(cbor_map, sizeof(cbor_map));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_end_map("field_name", reader);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_end_map, returnErrorIfReaderIsNull)
+{
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_end_map("field_name", NULL);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+}

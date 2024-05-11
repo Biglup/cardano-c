@@ -30,9 +30,12 @@
 #include <cardano/address/address_type.h>
 #include <cardano/address/base_address.h>
 #include <cardano/address/byron_address.h>
+#include <cardano/address/byron_address_attributes.h>
+#include <cardano/address/byron_address_type.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/address/pointer_address.h>
 #include <cardano/address/reward_address.h>
+#include <cardano/address/stake_pointer.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_reader.h>
@@ -40,13 +43,19 @@
 #include <cardano/cbor/cbor_simple_value.h>
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/anchor.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/credential_type.h>
+#include <cardano/common/ex_units.h>
+#include <cardano/common/governance_action_id.h>
 #include <cardano/common/network_id.h>
+#include <cardano/common/protocol_version.h>
+#include <cardano/common/unit_interval.h>
 #include <cardano/crypto/bip32_private_key.h>
 #include <cardano/crypto/bip32_public_key.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
+#include <cardano/crypto/crc32.h>
 #include <cardano/crypto/ed25519_private_key.h>
 #include <cardano/crypto/ed25519_public_key.h>
 #include <cardano/crypto/ed25519_signature.h>
@@ -55,6 +64,11 @@
 #include <cardano/encoding/bech32.h>
 #include <cardano/error.h>
 #include <cardano/object.h>
+#include <cardano/plutus_data/constr_plutus_data.h>
+#include <cardano/plutus_data/plutus_data.h>
+#include <cardano/plutus_data/plutus_data_kind.h>
+#include <cardano/plutus_data/plutus_list.h>
+#include <cardano/plutus_data/plutus_map.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
