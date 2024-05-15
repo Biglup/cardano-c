@@ -376,6 +376,18 @@ TEST(cardano_error_to_string, canConvertElementNotFound)
   ASSERT_STREQ(message, "Invalid operation. Element not found");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidDatumType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_DATUM_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid datum type");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

@@ -282,8 +282,10 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
 
   if (new_credential_result != CARDANO_SUCCESS)
   {
+    /* LCOV_EXCL_START */
     *credential = NULL;
     return new_credential_result;
+    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
