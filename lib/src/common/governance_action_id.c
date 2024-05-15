@@ -284,8 +284,10 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
 
   if (new_governance_action_id_result != CARDANO_SUCCESS)
   {
+    /* LCOV_EXCL_START */
     *governance_action_id = NULL;
     return new_governance_action_id_result;
+    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;

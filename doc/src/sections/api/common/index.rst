@@ -9,6 +9,8 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./anchor
     ./credential
     ./credential_type
+    ./datum
+    ./datum_type
     ./ex_units
     ./governance_action_id
     ./network_id

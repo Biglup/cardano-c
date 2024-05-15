@@ -195,6 +195,12 @@ typedef enum
    * \brief The Plutus data conversion is invalid.
    */
   CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION = 600,
+
+  /**
+   * \brief The Plutus datum type is invalid.
+   */
+  CARDANO_INVALID_DATUM_TYPE = 601,
+
 } cardano_error_t;
 
 /**

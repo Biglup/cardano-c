@@ -119,6 +119,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION:
       message = "Invalid operation. Invalid Plutus data conversion";
       break;
+    case CARDANO_INVALID_DATUM_TYPE:
+      message = "Invalid operation. Invalid datum type";
+      break;
     default:
       message = "Unknown error code";
       break;
