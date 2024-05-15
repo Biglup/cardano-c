@@ -82,6 +82,11 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_URL = 8,
 
+  /**
+   * \brief Element not found.
+   */
+  CARDANO_ELEMENT_NOT_FOUND = 9,
+
   /* Encoding errors */
 
   /**
@@ -184,6 +189,12 @@ typedef enum
    */
   CARDANO_INVALID_CREDENTIAL_TYPE = 500,
 
+  // Plutus errors
+
+  /**
+   * \brief The Plutus data conversion is invalid.
+   */
+  CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION = 600,
 } cardano_error_t;
 
 /**

@@ -77,6 +77,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_URL:
       message = "Invalid argument. Invalid URL";
       break;
+    case CARDANO_ELEMENT_NOT_FOUND:
+      message = "Invalid operation. Element not found";
+      break;
     case CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX:
       message = "Invalid operation. Invalid BIP32 derivation index";
       break;
@@ -112,6 +115,9 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     case CARDANO_INVALID_CREDENTIAL_TYPE:
       message = "Invalid operation. Invalid credential type";
+      break;
+    case CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION:
+      message = "Invalid operation. Invalid Plutus data conversion";
       break;
     default:
       message = "Unknown error code";

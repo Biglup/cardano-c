@@ -46,6 +46,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
         with:
+          fetch-depth: 0
           submodules: "true"
 
       - name: Build
@@ -55,6 +56,6 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          chmod +x ./scripts/run-valgrind.sh
-          dos2unix ./scripts/run-valgrind.sh
-          ./scripts/run-valgrind.sh
+          chmod +x ./scripts/run-valgrind-on-changes.sh
+          dos2unix ./scripts/run-valgrind-on-changes.sh
+          ./scripts/run-valgrind-on-changes.sh

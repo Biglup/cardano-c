@@ -154,6 +154,17 @@ cardano_protocol_version_from_cbor(cardano_cbor_reader_t* reader, cardano_protoc
     return read_minor_result;
   }
 
+  const cardano_error_t expect_end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
+
+  if (expect_end_array_result != CARDANO_SUCCESS)
+  {
+    /* LCOV_EXCL_START */
+    *protocol_version = NULL;
+
+    return expect_end_array_result;
+    /* LCOV_EXCL_STOP */
+  }
+
   return cardano_protocol_version_new(major, minor, protocol_version);
 }
 

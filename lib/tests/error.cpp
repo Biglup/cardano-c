@@ -352,6 +352,30 @@ TEST(cardano_error_to_string, canConvertInvalidUrl)
   ASSERT_STREQ(message, "Invalid argument. Invalid URL");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidPlutusDataConversion)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Plutus data conversion");
+}
+
+TEST(cardano_error_to_string, canConvertElementNotFound)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ELEMENT_NOT_FOUND;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Element not found");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

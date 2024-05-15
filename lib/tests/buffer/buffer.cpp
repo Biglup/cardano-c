@@ -2894,3 +2894,102 @@ TEST(cardano_buffer_copy_bytes, returnsBufferBytes)
   // Cleanup
   cardano_buffer_unref(&buffer);
 }
+
+TEST(cardano_buffer_equals, returnsFalseIfBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = nullptr;
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, nullptr);
+
+  // Assert
+  EXPECT_FALSE(result);
+}
+
+TEST(cardano_buffer_equals, returnsFalseIfOtherBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, nullptr);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_equals, returnsFalseIfBufferLengthsAreDifferent)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+  cardano_buffer_t* other  = cardano_buffer_new_from(&data[0], 3);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, other);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&other);
+}
+
+TEST(cardano_buffer_equals, returnsTrueIfSizeIsZeroAndBothBuffersAreNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(0);
+  cardano_buffer_t* other  = cardano_buffer_new(0);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, other);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&other);
+}
+
+TEST(cardano_buffer_equals, returnsFalseIfBufferContentsAreDifferent)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+  cardano_buffer_t* other  = cardano_buffer_new_from(&data[0], 4);
+  EXPECT_EQ(cardano_buffer_write(other, (byte_t*)"datb", 4), CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, other);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&other);
+}
+
+TEST(cardano_buffer_equals, returnsTrueIfBufferContentsAreTheSame)
+{
+  // Arrange
+  const byte_t      data[] = { 'd', 'a', 't', 'a' };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(&data[0], 4);
+  cardano_buffer_t* other  = cardano_buffer_new_from(&data[0], 4);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer, other);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_buffer_unref(&other);
+}

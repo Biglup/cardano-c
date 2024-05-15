@@ -233,6 +233,43 @@ cardano_error_t
 cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_t* reader);
 
 /**
+ * \brief Validates the end of an map in a CBOR stream.
+ *
+ * This function checks if the current position in the CBOR stream, accessed through the provided
+ * \p reader, correctly signifies the end of an map. It is typically used after reading all expected
+ * elements of an map to ensure that there are no additional, unexpected elements in the map.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name associated with the map, which will be included in any
+ *                           error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be checked
+ *                       to ensure it is at the end of an map structure.
+ *
+ * \return \ref CARDANO_SUCCESS if the reader is correctly positioned at the end of an map.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * // Assume we have read some elements from the map
+ * cardano_error_t result = cardano_cbor_validate_end_map("field_name", reader);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Array was properly closed
+ *   printf("Array reading completed successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_end_map(const char* validator_name, cardano_cbor_reader_t* reader);
+
+/**
  * \brief Validates a CBOR tag in a CBOR stream.
  *
  * This function validates the presence of a specific CBOR tag at the current position in the CBOR stream,

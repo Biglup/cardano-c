@@ -281,6 +281,20 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, size_t dest_size);
 
 /**
+ * \brief Checks if two cardano_buffer_t objects are equal.
+ *
+ * This function compares the contents of two cardano_buffer_t objects, lhs and rhs, to determine if they are equal.
+ * If the contents of both buffers are identical in size and content, the function returns true. Otherwise, it returns false.
+ *
+ * \param[in] lhs A constant pointer to the first cardano_buffer_t object to be compared.
+ * \param[in] rhs A constant pointer to the second cardano_buffer_t object to be compared.
+ *
+ * \return true if the contents of the buffers are equal, false otherwise.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_buffer_equals(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
+
+/**
  * \brief Decrements the buffer's reference count.
  *
  * This function is used to decrement the reference count of a `cardano_buffer_t` instance.
