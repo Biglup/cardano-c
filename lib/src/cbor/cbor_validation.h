@@ -30,6 +30,10 @@
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
 
+/* TYPES *********************************************************************/
+
+typedef const char* (*enum_to_string_callback_t)(uint64_t value);
+
 /* DECLARATIONS **************************************************************/
 
 /**
@@ -308,5 +312,37 @@ cardano_cbor_validate_end_map(const char* validator_name, cardano_cbor_reader_t*
  */
 cardano_error_t
 cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* reader, cardano_cbor_tag_t tag);
+
+/**
+ * \brief Validates an enum value in a CBOR stream.
+ *
+ * This function validates that the actual enum value read from the CBOR stream matches the expected value.
+ * It provides detailed error messages, including both friendly names and the actual values.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name associated with the value, which will be included in any
+ *                           error messages generated.
+ * \param[in] field_name A descriptive name for the field.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be checked
+ *                       to ensure it contains the expected enum value.
+ * \param[in] expected_value The expected enum value to validate against.
+ * \param[in] enum_to_string_callback A callback function that converts an enum value to a friendly string representation.
+ * \param[out] actual_value Pointer to the unsigned int where the parsed and validated unsigned integer
+ *                  will be stored if validation succeeds. This parameter is ignored if validation fails.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the validation operation. Returns \ref CARDANO_SUCCESS
+ *         if the actual enum value matches the expected value, or an appropriate error code
+ *         indicating the failure reason.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_cbor_validate_enum_value(
+  const char*               validator_name,
+  const char*               field_name,
+  cardano_cbor_reader_t*    reader,
+  uint64_t                  expected_value,
+  enum_to_string_callback_t enum_to_string_callback,
+  uint64_t*                 actual_value);
 
 #endif // CARDANO_CBOR_VALIDATION_H

@@ -28,6 +28,7 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include <cardano/buffer.h>
 #include <gmock/gmock.h>
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -1081,4 +1082,51 @@ TEST(cardano_cbor_writer_get_encode_size, returnsZeroIfGivenaNullPtr)
 
   // Assert
   EXPECT_EQ(encode_size, 0);
+}
+
+TEST(cardano_cbor_writer_encode_in_buffer, returnsErrorIfGivenANullWriter)
+{
+  // Arrange
+  cardano_buffer_t* buffer = NULL;
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_in_buffer(NULL, &buffer);
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_writer_encode_in_buffer, returnsErrorIfGivenANullBuffer)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t encode_result = cardano_cbor_writer_encode_in_buffer(writer, NULL);
+
+  // Assert
+  EXPECT_EQ(encode_result, CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_encode_in_buffer, returnsEncodedDataInBuffer)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = NULL;
+
+  // Act
+  EXPECT_EQ(cardano_cbor_writer_write_unsigned_int(writer, 42), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 2);
+  EXPECT_EQ(cardano_buffer_get_data(buffer)[0], 0x18);
+  EXPECT_EQ(cardano_buffer_get_data(buffer)[1], 0x2a);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
 }

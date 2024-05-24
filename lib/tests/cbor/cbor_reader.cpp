@@ -1840,6 +1840,23 @@ TEST(cardano_cbor_reader_get_remainder_bytes, returnsNullIfReaderIsNull)
   EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
 }
 
+TEST(cardano_cbor_reader_get_remainder_bytes, returnErrorIfMemoryAllocationFails)
+{
+  const char* cbor_hex = "d82076687474703a2f2f7777772e6578616d706c652e636f6d";
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*      buffer = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  cardano_error_t result = cardano_cbor_reader_get_remainder_bytes(reader, &buffer);
+  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  cardano_cbor_reader_unref(&reader);
+  cardano_buffer_unref(&buffer);
+}
+
 TEST(cardano_cbor_reader_read_encoded_value, returnNullIfReaderIsNull)
 {
   cardano_buffer_t* buffer = nullptr;
@@ -3126,4 +3143,152 @@ TEST(cardano_cbor_reader_skip_value, returnErrorIfInvalidDefiniteLenghtArrayLeng
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_clone, canCloneAReader)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_reader_unref(&clone);
+}
+
+TEST(cardano_cbor_reader_clone, canCloneAReaderInTheOfReadingAnStream)
+{
+  const char*            cbor_hex = "8102";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  // Act
+  int64_t size = 0;
+  EXPECT_EQ(cardano_cbor_reader_read_start_array(reader, &size), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_SUCCESS);
+
+  uint64_t val = 0;
+  EXPECT_EQ(cardano_cbor_reader_read_uint(clone, &val), CARDANO_SUCCESS);
+
+  EXPECT_EQ(val, 2);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_reader_unref(&clone);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfReaderIsNull)
+{
+  cardano_cbor_reader_t* reader = nullptr;
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_POINTER_IS_NULL);
+
+  EXPECT_EQ(clone, nullptr);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfCloneIsNull)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  // Act
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, nullptr), CARDANO_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails2)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails3)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_two_malloc, realloc, free);
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails4)
+{
+  const char*            cbor_hex = "f8";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_three_malloc, realloc, free);
+
+  // Act
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails5)
+{
+  const char*            cbor_hex = "8102";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_eight_malloc, realloc, free);
+
+  // Act
+  int64_t size = 0;
+  EXPECT_EQ(cardano_cbor_reader_read_start_array(reader, &size), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* clone = NULL;
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
 }

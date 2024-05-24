@@ -286,6 +286,46 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_reader_get_remainder_bytes(cardano_cbor_reader_t* reader, cardano_buffer_t** remainder_bytes);
 
 /**
+ * \brief Clones a CBOR reader.
+ *
+ * This function creates a duplicate of the given \ref cardano_cbor_reader_t object.
+ * It allocates a new \ref cardano_cbor_reader_t object that is a clone of the provided reader.
+ *
+ * \param[in] reader A pointer to the \ref cardano_cbor_reader_t object to be cloned.
+ * \param[out] clone On successful cloning, this will point to a newly created
+ *                   \ref cardano_cbor_reader_t object. This object represents a "strong reference"
+ *                   to the cloned reader, meaning that it is fully initialized and ready for use.
+ *                   The caller is responsible for managing the lifecycle of this object.
+ *                   Specifically, once the cloned reader is no longer needed, the caller must release it
+ *                   by calling \ref cardano_cbor_reader_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the reader was successfully cloned, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* original_reader = cardano_cbor_reader_new(...); // Assume original_reader is initialized
+ * cardano_cbor_reader_t* cloned_reader = NULL;
+ *
+ * // Attempt to clone the original reader
+ * cardano_error_t result = cardano_cbor_reader_clone(original_reader, &cloned_reader);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the cloned reader
+ *
+ *   // Once done, ensure to clean up and release the cloned reader
+ *   cardano_cbor_reader_unref(&cloned_reader);
+ * }
+ *
+ * // Clean up the original reader object once done
+ * cardano_cbor_reader_unref(&original_reader);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_clone(cardano_cbor_reader_t* reader, cardano_cbor_reader_t** clone);
+
+/**
  * \brief Skips the next CBOR data item and advances the reader.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the next CBOR data item

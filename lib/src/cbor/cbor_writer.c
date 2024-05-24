@@ -479,6 +479,36 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, const si
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_cbor_writer_encode_in_buffer(cardano_cbor_writer_t* writer, cardano_buffer_t** buffer)
+{
+  if (writer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (buffer == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  *buffer = cardano_buffer_new(cardano_buffer_get_size(writer->buffer));
+
+  if (*buffer == NULL)
+  {
+    return CARDANO_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_buffer_write(*buffer, cardano_buffer_get_data(writer->buffer), cardano_buffer_get_size(writer->buffer));
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_buffer_unref(buffer);
+  }
+
+  return result;
+}
+
 size_t
 cardano_cbor_writer_get_hex_size(const cardano_cbor_writer_t* writer)
 {

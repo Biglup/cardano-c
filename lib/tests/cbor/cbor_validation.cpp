@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/cbor/cbor_reader.h>
+#include <cardano/scripts/native_scripts/native_script_type.h>
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -441,7 +442,7 @@ TEST(cardano_cbor_validate_tag, returnErrorIfTagMismatch)
 
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
-  ASSERT_STRCASEEQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the field_name, unexpected tag value, expected Tag: Unsigned Bignum (2), but got Tag: Unix Time Seconds (1).");
+  ASSERT_STRCASEEQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the 'field_name', unexpected tag value, expected 'Tag: Unsigned Bignum' (2), but got 'Tag: Unix Time Seconds' (1).");
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -514,6 +515,98 @@ TEST(cardano_cbor_validate_end_map, returnErrorIfReaderIsNull)
 {
   // Act
   const cardano_error_t result = cardano_cbor_validate_end_map("field_name", NULL);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_validate_enum_value, returnValidIfValidEnumValue)
+{
+  // Arrange
+  const byte_t           cbor_enum[] = { 0x01 };
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_new(cbor_enum, sizeof(cbor_enum));
+
+  // Act
+  uint64_t              value  = 0;
+  const cardano_error_t result = cardano_cbor_validate_enum_value(
+    "field_name",
+    "type",
+    reader,
+    CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF,
+    (enum_to_string_callback_t)((void*)&cardano_native_script_type_to_string),
+    &value);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_EQ(value, 1);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_enum_value, returnErrorIfNotExpectedEnumValue)
+{
+  // Arrange
+  const byte_t           cbor_enum[] = { 0x03 };
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_new(cbor_enum, sizeof(cbor_enum));
+
+  // Act
+  uint64_t              value  = 0;
+  const cardano_error_t result = cardano_cbor_validate_enum_value(
+    "native_script",
+    "type",
+    reader,
+    CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF,
+    (enum_to_string_callback_t)((void*)&cardano_native_script_type_to_string),
+    &value);
+
+  const char* last_error = cardano_cbor_reader_get_last_error(reader);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  ASSERT_STRCASEEQ(last_error, "There was an error decoding 'native_script', expected 'type' was 'Native Script Type: Require All Of' (1), but got 'Native Script Type: Require N Of K' (3).");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_enum_value, returnErrorIfNotCborUint)
+{
+  // Arrange
+  const byte_t           cbor_enum[] = { 0xfe };
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_new(cbor_enum, sizeof(cbor_enum));
+
+  // Act
+  uint64_t              value  = 0;
+  const cardano_error_t result = cardano_cbor_validate_enum_value(
+    "native_script",
+    "type",
+    reader,
+    CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF,
+    (enum_to_string_callback_t)((void*)&cardano_native_script_type_to_string),
+    &value);
+
+  const char* last_error = cardano_cbor_reader_get_last_error(reader);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  ASSERT_STRCASEEQ(last_error, "There was an error decoding 'native_script', expected 'Reader State: Unsigned Integer' (1) but got 'Reader State: Simple Value' (14).");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_validate_enum_value, returnErrorIfReaderIsNull)
+{
+  // Act
+  uint64_t              value  = 0;
+  const cardano_error_t result = cardano_cbor_validate_enum_value(
+    "native_script",
+    "type",
+    NULL,
+    CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF,
+    (enum_to_string_callback_t)((void*)&cardano_native_script_type_to_string),
+    &value);
 
   // Assert
   ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);

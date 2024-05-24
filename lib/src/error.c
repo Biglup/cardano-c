@@ -92,6 +92,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_CHECKSUM_MISMATCH:
       message = "Invalid operation. Checksum mismatch";
       break;
+    case CARDANO_ERROR_INVALID_JSON:
+      message = "Invalid operation. Invalid JSON";
+      break;
     case CARDANO_ERROR_LOSS_OF_PRECISION:
       message = "Invalid operation. Loss of precision";
       break;
@@ -121,6 +124,12 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     case CARDANO_INVALID_DATUM_TYPE:
       message = "Invalid operation. Invalid datum type";
+      break;
+    case CARDANO_INVALID_SCRIPT_LANGUAGE:
+      message = "Invalid operation. Invalid script language";
+      break;
+    case CARDANO_INVALID_NATIVE_SCRIPT_TYPE:
+      message = "Invalid operation. Invalid native script type";
       break;
     default:
       message = "Unknown error code";
