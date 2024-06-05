@@ -12,6 +12,7 @@ jobs:
           sudo apt install libgtest-dev
           sudo apt install dos2unix
           sudo apt install valgrind
+          sudo apt install m4
 
       - name: Setup Sodium
         run: |
@@ -32,6 +33,17 @@ jobs:
           cd ./json-c-json-c-0.17-20230812
           cmake .
           make
+          sudo make install
+          cd -
+
+      - name: Setup GMP
+        run: |
+          cd $(mktemp -d)
+          wget https://storage.googleapis.com/biglup/gmp-6.2.1.tar.xz -O gmp.tar.xz
+          tar Jxf gmp.tar.xz
+          cd ./gmp-6.2.1
+          ./configure CFLAGS="-fPIC" CXXFLAGS="-fPIC" --enable-static=yes --enable-shared=no --with-pic
+          make -j$(nproc)
           sudo make install
           cd -
 

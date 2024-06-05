@@ -95,6 +95,15 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_JSON:
       message = "Invalid operation. Invalid JSON";
       break;
+    case CARDANO_INTEGER_OVERFLOW:
+      message = "Invalid operation. Integer overflow";
+      break;
+    case CARDANO_INTEGER_UNDERFLOW:
+      message = "Invalid operation. Integer underflow";
+      break;
+    case CARDANO_CONVERSION_ERROR:
+      message = "Invalid operation. Conversion error";
+      break;
     case CARDANO_ERROR_LOSS_OF_PRECISION:
       message = "Invalid operation. Loss of precision";
       break;

@@ -1,5 +1,5 @@
 /**
- * \file DATUM_type.h
+ * \file datum_type.h
  *
  * \author luisd.bianchi
  * \date   May 15, 2024

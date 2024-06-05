@@ -15,6 +15,7 @@ build:
     - cmake
     - libsodium-dev
     - libjson-c-dev
+    - libgmp-dev
   jobs:
     post_create_environment:
       - pip install sphinx sphinx-immaterial breathe
