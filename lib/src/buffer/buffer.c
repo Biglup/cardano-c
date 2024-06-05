@@ -75,7 +75,7 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
 
   if ((buffer->size + size_of_new_data) >= buffer->capacity)
   {
-    size_t  new_capacity = (size_t)ceil((float)buffer->capacity * (float)LIB_CARDANO_C_COLLECTION_GROW_FACTOR);
+    size_t  new_capacity = (size_t)ceil((float)((float)buffer->size + (float)size_of_new_data) * (float)LIB_CARDANO_C_COLLECTION_GROW_FACTOR);
     byte_t* new_data     = (byte_t*)_cardano_realloc(buffer->data, new_capacity);
 
     if (new_data == NULL)

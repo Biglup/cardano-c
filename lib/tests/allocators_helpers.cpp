@@ -114,6 +114,17 @@ fail_after_six_malloc(size_t size)
 }
 
 void*
+fail_after_eight_malloc(size_t size)
+{
+  if (malloc_run_count < 8)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+  return NULL;
+}
+
+void*
 fail_after_nine_malloc(size_t size)
 {
   if (malloc_run_count < 9)

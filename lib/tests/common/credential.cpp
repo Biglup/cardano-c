@@ -155,7 +155,7 @@ TEST(cardano_credential_from_cbor, returnErrorIfInvalidArraySize)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
   const char* error_msg = cardano_cbor_reader_get_last_error(reader);
-  EXPECT_STREQ(error_msg, "There was an error decoding the Credential, expected a Major Type: Byte String (2) of 2 element(s) but got a Major Type: Byte String (2) of 1 element(s).");
+  EXPECT_STREQ(error_msg, "There was an error decoding 'Credential', expected a 'Major Type: Byte String' (2) of 2 element(s) but got a 'Major Type: Byte String' (2) of 1 element(s).");
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -177,7 +177,7 @@ TEST(cardano_credential_from_cbor, returnErrorIfInvalidCredentialType)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
   const char* error_msg = cardano_cbor_reader_get_last_error(reader);
-  EXPECT_STREQ(error_msg, "There was an error decoding the Credential, credential_type must have a value between 0 and 1, but got 3.");
+  EXPECT_STREQ(error_msg, "There was an error decoding 'Credential', 'credential_type' must have a value between 0 and 1, but got 3.");
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

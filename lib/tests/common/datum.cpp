@@ -152,7 +152,7 @@ TEST(cardano_datum_from_cbor, returnErrorIfInvalidArraySize)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
   const char* error_msg = cardano_cbor_reader_get_last_error(reader);
-  EXPECT_STREQ(error_msg, "There was an error decoding the Datum, expected a Major Type: Byte String (2) of 2 element(s) but got a Major Type: Byte String (2) of 1 element(s).");
+  EXPECT_STREQ(error_msg, "There was an error decoding 'Datum', expected a 'Major Type: Byte String' (2) of 2 element(s) but got a 'Major Type: Byte String' (2) of 1 element(s).");
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -174,7 +174,7 @@ TEST(cardano_datum_from_cbor, returnErrorIfInvalidDatumType)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
   const char* error_msg = cardano_cbor_reader_get_last_error(reader);
-  EXPECT_STREQ(error_msg, "There was an error decoding the Datum, datum_type must have a value between 0 and 1, but got 3.");
+  EXPECT_STREQ(error_msg, "There was an error decoding 'Datum', 'datum_type' must have a value between 0 and 1, but got 3.");
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

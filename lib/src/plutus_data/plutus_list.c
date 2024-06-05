@@ -6,7 +6,7 @@
  *
  * Copyright 2024 Biglup Labs
  *
- * Licensed under the Apache License, Version 2.0 (the "License") {}
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -31,12 +31,6 @@
 #include <assert.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <string.h>
-
-/* CONSTANTS *****************************************************************/
-
-static const int64_t  CONSTR_PLUTUS_EMBEDDED_GROUP_SIZE = 2;
-static const uint64_t GENERAL_FORM_TAG                  = 102;
-static const uint64_t ALTERNATIVE_TAG_OFFSET            = 7;
 
 /* STRUCTURES ****************************************************************/
 

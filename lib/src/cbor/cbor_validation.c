@@ -66,7 +66,7 @@ set_invalid_type_error_message(
   const int32_t written = snprintf(
     buffer,
     sizeof(buffer),
-    "There was an error decoding the %s, expected %s (%lu) but got %s (%lu).",
+    "There was an error decoding '%s', expected '%s' (%lu) but got '%s' (%lu).",
     validator_name,
     expected_friendly_name,
     expected_value,
@@ -113,7 +113,7 @@ set_invalid_size_error_message(
   const int32_t written = snprintf(
     buffer,
     sizeof(buffer),
-    "There was an error decoding the %s, expected a %s (%ld) of %zu element(s) but got a %s (%ld) of %zu element(s).",
+    "There was an error decoding '%s', expected a '%s' (%ld) of %zu element(s) but got a '%s' (%ld) of %zu element(s).",
     validator_name,
     type_friendly_name,
     type_value,
@@ -162,7 +162,7 @@ set_invalid_range_error_message(
   const int32_t written = snprintf(
     buffer,
     sizeof(buffer),
-    "There was an error decoding the %s, %s must have a value between %lu and %lu, but got %lu.",
+    "There was an error decoding '%s', '%s' must have a value between %lu and %lu, but got %lu.",
     validator_name,
     type_friendly_name,
     expected_min_value,
@@ -204,12 +204,58 @@ set_invalid_tag_error_message(
   const int32_t written = snprintf(
     buffer,
     sizeof(buffer),
-    "There was an error decoding the %s, unexpected tag value, expected %s (%lu), but got %s (%lu).",
+    "There was an error decoding the '%s', unexpected tag value, expected '%s' (%lu), but got '%s' (%lu).",
     validator_name,
     cardano_cbor_tag_to_string(expected_tag),
     expected_tag,
     cardano_cbor_tag_to_string(actual_tag),
     actual_tag);
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_cbor_reader_set_last_error(reader, buffer);
+}
+
+/**
+ * \brief Sets an error message for invalid enum validation failures.
+ *
+ * This function generates and sets a descriptive error message on a CBOR reader object when the
+ * decoded CBOR int does not match the expected enum value, providing details about the expected
+ * and actual enum values.
+ *
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object where the error message will be stored.
+ * \param[in] validator_name The name of the validator associated with the enum validation.
+ * \param[in] type_friendly_name A friendly name for the type being validated, included in the error message.
+ * \param[in] actual_value The actual enum value encountered during validation.
+ * \param[in] expected_value The expected enum value.
+ * \param[in] enum_to_string_callback A callback function that converts an enum value to a friendly string representation.
+ */
+static void
+set_invalid_enum_error_message(
+  cardano_cbor_reader_t*    reader,
+  const char*               validator_name,
+  const char*               field_name,
+  const uint64_t            actual_value,
+  const uint64_t            expected_value,
+  enum_to_string_callback_t enum_to_string_callback)
+{
+  assert(reader != NULL);
+  assert(validator_name != NULL);
+  assert(field_name != NULL);
+
+  char buffer[1023] = { 0 };
+
+  const int32_t written = snprintf(
+    buffer,
+    sizeof(buffer),
+    "There was an error decoding '%s', expected '%s' was '%s' (%lu), but got '%s' (%lu).",
+    validator_name,
+    field_name,
+    enum_to_string_callback(expected_value),
+    expected_value,
+    enum_to_string_callback(actual_value),
+    actual_value);
 
   assert(written > 0);
   CARDANO_UNUSED(written);
@@ -613,6 +659,62 @@ cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* rea
       validator_name,
       tag,
       actual_tag);
+
+    return CARDANO_ERROR_INVALID_CBOR_VALUE;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_cbor_validate_enum_value(
+  const char*               validator_name,
+  const char*               field_name,
+  cardano_cbor_reader_t*    reader,
+  uint64_t                  expected_value,
+  enum_to_string_callback_t enum_to_string_callback,
+  uint64_t*                 actual_value)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER)
+  {
+    set_invalid_type_error_message(
+      reader,
+      validator_name,
+      CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER,
+      cardano_cbor_reader_state_to_string(CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER),
+      state,
+      cardano_cbor_reader_state_to_string(state));
+
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  *actual_value = 0U;
+
+  cardano_error_t read_tag_result = cardano_cbor_reader_read_uint(reader, actual_value);
+
+  if (read_tag_result != CARDANO_SUCCESS)
+  {
+    return read_tag_result; /* LCOV_EXCL_LINE */
+  }
+
+  if (*actual_value != expected_value)
+  {
+    set_invalid_enum_error_message(
+      reader,
+      validator_name,
+      field_name,
+      *actual_value,
+      expected_value,
+      enum_to_string_callback);
 
     return CARDANO_ERROR_INVALID_CBOR_VALUE;
   }

@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
 #include <cardano/cbor/cbor_tag.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
@@ -776,6 +777,46 @@ CARDANO_EXPORT size_t cardano_cbor_writer_get_encode_size(cardano_cbor_writer_t*
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, size_t size);
+
+/**
+ * \brief Encodes data from the writer's context into CBOR format and outputs it into a new buffer.
+ *
+ * This function encodes data prepared in the writer's internal context into CBOR format and writes it into a
+ * buffer. The function will create a new buffer instance to store the encoded data.
+ *
+ * \param[in] writer A pointer to the \ref cardano_cbor_writer_t structure representing the context and state for the CBOR encoding
+ *                   operation.
+ * \param[out] buffer A pointer to a \ref cardano_buffer_t object where the encoded data will be stored. The function will allocate
+ *                    and fill this buffer with the CBOR-encoded data. It is best to initialize this pointer as NULL. The caller is
+ *                    responsible for managing the lifecycle of the buffer, specifically releasing it by calling \ref cardano_buffer_unref
+ *                    when it is no longer needed.
+ *
+ * \return A cardano_error_t indicating the outcome of the operation. Returns CARDANO_SUCCESS if the data is successfully
+ *         encoded into CBOR format and stored in the provided buffer. If the operation fails, an error code is returned indicating
+ *         the specific reason for failure. Detailed information on possible error codes and their meanings can be found in the
+ *         cardano_error_t documentation.
+ *
+ * \code{.c}
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ * cardano_buffer_t* buffer = NULL; // Buffer will be allocated by the function
+ *
+ * cardano_error_t result = cardano_cbor_writer_encode_in_buffer(writer, &buffer);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Encoded CBOR data successfully. Bytes written: %zu\n", cardano_buffer_get_size(buffer));
+ * }
+ * else
+ * {
+ *   printf("Failed to encode CBOR data. Error code: %d\n", result);
+ * }
+ *
+ * cardano_buffer_unref(&buffer); // Properly dispose of the buffer after use
+ * cardano_cbor_writer_unref(&writer); // Properly dispose of the writer after use
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode_in_buffer(cardano_cbor_writer_t* writer, cardano_buffer_t** buffer);
 
 /**
  * \brief Calculates the required buffer size for the hex string representation of the encoded data.

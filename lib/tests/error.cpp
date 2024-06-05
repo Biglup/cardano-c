@@ -388,6 +388,42 @@ TEST(cardano_error_to_string, canConvertInvalidDatumType)
   ASSERT_STREQ(message, "Invalid operation. Invalid datum type");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidScriptLanguage)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_SCRIPT_LANGUAGE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid script language");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidNativeScriptType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid native script type");
+}
+
+TEST(CARDANO_ERROR_INVALID_JSON, canConvertInvalidJson)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_JSON;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid JSON");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

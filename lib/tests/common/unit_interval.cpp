@@ -207,7 +207,7 @@ TEST(cardano_unit_interval_from_cbor, returnErrorIfCborDataIsMissingTheTag)
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, &unit_interval);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the unit_interval, expected Reader State: Tag (13) but got Reader State: Start Array (9).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'unit_interval', expected 'Reader State: Tag' (13) but got 'Reader State: Start Array' (9).");
   EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
 
   // Cleanup
@@ -224,7 +224,7 @@ TEST(cardano_unit_interval_from_cbor, returnErrorIfCborDataStartWithAnInvalidArr
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, &unit_interval);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the unit_interval, expected a Major Type: Byte String (2) of 2 element(s) but got a Major Type: Byte String (2) of 5 element(s).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'unit_interval', expected a 'Major Type: Byte String' (2) of 2 element(s) but got a 'Major Type: Byte String' (2) of 5 element(s).");
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
 
   // Cleanup
@@ -258,7 +258,7 @@ TEST(cardano_unit_interval_from_cbor, returnErrorIfCborDataSecondElementIsNotUin
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, &unit_interval);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the unit_interval, expected Reader State: Unsigned Integer (1) but got Reader State: Simple Value (14).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'unit_interval', expected 'Reader State: Unsigned Integer' (1) but got 'Reader State: Simple Value' (14).");
   EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
 
   // Cleanup

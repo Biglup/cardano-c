@@ -104,6 +104,11 @@ typedef enum
    */
   CARDANO_ERROR_CHECKSUM_MISMATCH = 12,
 
+  /**
+   * \brief Invalid JSON.
+   */
+  CARDANO_ERROR_INVALID_JSON = 13,
+
   /* Serialization errors */
 
   /**
@@ -200,6 +205,18 @@ typedef enum
    * \brief The Plutus datum type is invalid.
    */
   CARDANO_INVALID_DATUM_TYPE = 601,
+
+  // Script errors
+
+  /**
+   * \brief The script language is invalid.
+   */
+  CARDANO_INVALID_SCRIPT_LANGUAGE = 700,
+
+  /**
+   * \brief The native script type is invalid.
+   */
+  CARDANO_INVALID_NATIVE_SCRIPT_TYPE = 701,
 
 } cardano_error_t;
 

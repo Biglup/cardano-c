@@ -562,7 +562,7 @@ TEST(cardano_anchor_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
   cardano_error_t error = cardano_anchor_from_cbor(reader, &anchor);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the anchor, expected a Major Type: Byte String (2) of 2 element(s) but got a Major Type: Byte String (2) of 1 element(s).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'anchor', expected a 'Major Type: Byte String' (2) of 2 element(s) but got a 'Major Type: Byte String' (2) of 1 element(s).");
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
 
   // Cleanup
@@ -579,7 +579,7 @@ TEST(cardano_anchor_from_cbor, returnErrorIfCborDataFirstElementInArrayIsNotText
   cardano_error_t error = cardano_anchor_from_cbor(reader, &anchor);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the anchor, expected Reader State: Text String (6) but got Reader State: Negative Integer (2).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'anchor', expected 'Reader State: Text String' (6) but got 'Reader State: Negative Integer' (2).");
   EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
 
   // Cleanup
@@ -596,7 +596,7 @@ TEST(cardano_anchor_from_cbor, returnErrorIfCborDataSecondElementIsNot32BytesByt
   cardano_error_t error = cardano_anchor_from_cbor(reader, &anchor);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the anchor, expected Reader State: Byte String (3) but got Reader State: Text String (6).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'anchor', expected 'Reader State: Byte String' (3) but got 'Reader State: Text String' (6).");
   EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
 
   // Cleanup

@@ -207,7 +207,7 @@ TEST(cardano_protocol_version_from_cbor, returnErrorIfCborDataStartWithAnInvalid
   cardano_error_t error = cardano_protocol_version_from_cbor(reader, &protocol_version);
 
   // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding the protocol_version, expected a Major Type: Byte String (2) of 2 element(s) but got a Major Type: Byte String (2) of 1 element(s).");
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'protocol_version', expected a 'Major Type: Byte String' (2) of 2 element(s) but got a 'Major Type: Byte String' (2) of 1 element(s).");
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
 
   // Cleanup
