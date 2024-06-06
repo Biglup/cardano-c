@@ -1245,7 +1245,7 @@ TEST(cardano_plutus_data_to_cbor, canDeserializeAndReserializeCbor)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex("820102", strlen("820102"));
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex("9f0102ff", strlen("9f0102ff"));
   cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
@@ -1255,14 +1255,14 @@ TEST(cardano_plutus_data_to_cbor, canDeserializeAndReserializeCbor)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  EXPECT_EQ(hex_size, strlen("820102") + 1);
+  EXPECT_EQ(hex_size, strlen("9f0102ff") + 1);
 
   char* actual_cbor = (char*)malloc(hex_size);
 
   error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(actual_cbor, "820102");
+  EXPECT_STREQ(actual_cbor, "9f0102ff");
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
