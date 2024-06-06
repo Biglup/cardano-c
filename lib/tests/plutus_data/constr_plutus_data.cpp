@@ -123,14 +123,14 @@ TEST(cardano_constr_plutus_data_to_cbor, canSerializeAnEmptyConstrPlutusData)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  EXPECT_EQ(hex_size, 9);
+  EXPECT_EQ(hex_size, 7);
 
   char* actual_cbor = (char*)malloc(hex_size);
 
   error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(actual_cbor, "d8799fff");
+  EXPECT_STREQ(actual_cbor, "d87980");
 
   // Cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);

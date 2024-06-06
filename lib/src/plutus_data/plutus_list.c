@@ -41,7 +41,6 @@ typedef struct cardano_plutus_list_t
 {
     cardano_object_t base;
     cardano_array_t* array;
-    bool             use_indefinite_encoding;
 } cardano_plutus_list_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -95,8 +94,7 @@ cardano_plutus_list_new(cardano_plutus_list_t** plutus_list)
   list->base.last_error[0] = '\0';
   list->base.deallocator   = cardano_plutus_list_deallocate;
 
-  list->array                   = cardano_array_new(128);
-  list->use_indefinite_encoding = true;
+  list->array = cardano_array_new(128);
 
   if (list->array == NULL)
   {
@@ -139,8 +137,6 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
     cardano_plutus_list_unref(&list);
     return result;
   }
-
-  list->use_indefinite_encoding = length < 0;
 
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
@@ -217,7 +213,9 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  if (plutus_list->use_indefinite_encoding)
+  size_t array_size = cardano_array_get_size(plutus_list->array);
+
+  if (array_size > 0U)
   {
     result = cardano_cbor_writer_write_start_array(writer, -1);
 
@@ -228,8 +226,7 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
   }
   else
   {
-    size_t array_size = cardano_array_get_size(plutus_list->array);
-    result            = cardano_cbor_writer_write_start_array(writer, (int64_t)array_size);
+    result = cardano_cbor_writer_write_start_array(writer, (int64_t)array_size);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -259,7 +256,7 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
     }
   }
 
-  if (plutus_list->use_indefinite_encoding)
+  if (array_size > 0U)
   {
     result = cardano_cbor_writer_write_end_array(writer);
   }

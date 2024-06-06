@@ -420,6 +420,8 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
             return result;
           }
 
+          // TODO: Plutus integers are unbounded, but we are using int64_t for now. Implement a proper
+          //       bigint type for plutus integers (cardano_bigint_t?).
           const int64_t integer = buffer_to_le_int(bytes);
 
           cardano_buffer_unref(&bytes);
@@ -495,6 +497,8 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
     {
       int64_t integer = 0;
 
+      // TODO: same here we need to be able to read up to unsigned 64-bit integers. Implement a proper
+      //       bigint type for plutus integers (cardano_bigint_t?).
       result = cardano_cbor_reader_read_int(reader, &integer);
 
       if (result != CARDANO_SUCCESS)
