@@ -23,6 +23,8 @@ jobs:
           sudo apt install cmake
           sudo apt install libsodium-dev
           sudo apt install libjson-c-dev
+          sudo apt install libgmp-dev
+          sudo apt install m4
           sudo apt install doxygen
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
           sudo apt install clang-format-15

@@ -7,6 +7,8 @@ The "Common" section of this documentation explores fundamental domain entities 
     :maxdepth: 1
 
     ./anchor
+    ./bigint
+    ./byte_order
     ./credential
     ./credential_type
     ./datum

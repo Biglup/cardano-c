@@ -87,8 +87,6 @@ typedef enum
    */
   CARDANO_ELEMENT_NOT_FOUND = 9,
 
-  /* Encoding errors */
-
   /**
    * \brief Encoding failure.
    */
@@ -108,6 +106,21 @@ typedef enum
    * \brief Invalid JSON.
    */
   CARDANO_ERROR_INVALID_JSON = 13,
+
+  /**
+   * \brief Size overflow.
+   */
+  CARDANO_INTEGER_OVERFLOW = 14,
+
+  /**
+   * \brief Size underflow.
+   */
+  CARDANO_INTEGER_UNDERFLOW = 15,
+
+  /**
+   * \brief Conversion error.
+   */
+  CARDANO_CONVERSION_ERROR = 16,
 
   /* Serialization errors */
 

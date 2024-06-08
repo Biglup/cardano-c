@@ -424,6 +424,42 @@ TEST(CARDANO_ERROR_INVALID_JSON, canConvertInvalidJson)
   ASSERT_STREQ(message, "Invalid operation. Invalid JSON");
 }
 
+TEST(CARDANO_INTEGER_OVERFLOW, canConvertIntegerOverflow)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INTEGER_OVERFLOW;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Integer overflow");
+}
+
+TEST(CARDANO_INTEGER_UNDERFLOW, canConvertIntegerUnderflow)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INTEGER_UNDERFLOW;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Integer underflow");
+}
+
+TEST(CARDANO_CONVERSION_ERROR, canConvertConversionError)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_CONVERSION_ERROR;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Conversion error");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange
