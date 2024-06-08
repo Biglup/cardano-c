@@ -598,3 +598,62 @@ _cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value)
 
   return CARDANO_SUCCESS;
 }
+
+cardano_error_t
+_cardano_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bigint)
+{
+  if (reader == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (bigint == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM;
+
+  cardano_error_t result = cardano_cbor_reader_read_tag(reader, &tag);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_buffer_t* buffer = NULL;
+  result                   = cardano_cbor_reader_read_bytestring(reader, &buffer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_buffer_unref(&buffer);
+    return result;
+  }
+
+  result = cardano_bigint_from_bytes(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), CARDANO_BYTE_ORDER_BIG_ENDIAN, bigint);
+
+  cardano_buffer_unref(&buffer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_bigint_t* copy = NULL;
+  result                 = cardano_bigint_clone(*bigint, &copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_bigint_unref(bigint);
+    return result;
+  }
+
+  if (tag == CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM)
+  {
+    cardano_bigint_negate(copy, *bigint);
+  }
+
+  cardano_bigint_unref(&copy);
+
+  return CARDANO_SUCCESS;
+}

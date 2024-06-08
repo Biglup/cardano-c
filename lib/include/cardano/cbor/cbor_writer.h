@@ -26,6 +26,7 @@
 
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_tag.h>
+#include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
@@ -159,20 +160,18 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer);
 
 /**
- * \brief Encodes and writes an unsigned integer value as a tagged big number (bignum) in CBOR format.
+ * \brief Encodes and writes a big integer (bignum) in CBOR format.
  *
- * This function writes a provided unsigned integer value as a bignum, following the
+ * This function writes a provided big integer value as a bignum, following the
  * encoding format specified in RFC 7049, section 2.4.2. Bignums are used to represent
  * integers that are too large to be represented directly in the available integer types
  * of CBOR. The function applies the appropriate tag (2 for unsigned bignum) before encoding
  * the integer value, ensuring its correct interpretation as a bignum in the resulting CBOR data.
  *
  * \param[in] writer The \ref cardano_cbor_writer_t instance to which the bignum will be written.
- * \param[in] value The unsigned integer value to be encoded as a bignum. The value is treated
- *                  as an arbitrary precision integer, although it is passed as a \c uint64_t
- *                  for practical purposes.
+ * \param[in] bigint The \ref cardano_bigint_t object representing the big integer value to be encoded as a bignum.
  *
- * \return Returns \ref CARDANO_SUCCESS if the boolean value was successfully encoded and written to the
+ * \return Returns \ref CARDANO_SUCCESS if the bignum value was successfully encoded and written to the
  *         CBOR stream. If the operation encounters an error, such as invalid parameters or issues with
  *         writing to the stream, an appropriate error code is returned indicating the reason for the failure.
  *         Consult the \ref cardano_error_t documentation for details on possible error codes and their meanings.
@@ -180,22 +179,24 @@ CARDANO_EXPORT size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* 
  * Example usage:
  * \code{.c}
  * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
  * if (writer)
  * {
- *   uint64_t bigNumValue = UINT64_MAX; // Example large value to encode as bignum
- *   cardano_error_t result = cardano_cbor_writer_write_big_integer(writer, bigNumValue);
+ *   // Example large value to encode as bignum
+ *   cardano_bigint_t* bigint = NULL;
+ *   cardano_bigint_from_string("123456789123456789123456789", strln("123456789123456789123456789"), 10, &bigint);
  *
- *   if (result == CARDANO_SUCCESS)
- *   {
- *     // Successfully written bigNumValue as a bignum to the writer
- *   }
+ *   cardano_error_t result = cardano_cbor_writer_write_bigint(writer, bigint);
  *
+ *   ...
+ *
+ *   cardano_bigint_unref(&bigint);
  *   cardano_cbor_writer_unref(&writer);
  * }
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, uint64_t value);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bigint_t* bigint);
 
 /**
  * \brief Encodes and writes a boolean value in CBOR format as per RFC 7049, section 2.3.
@@ -265,7 +266,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_write
  * byte_t data[] = {0xde, 0xad, 0xbe, 0xef}; // Example binary data
  * size_t data_size = sizeof(data);
  *
- * cardano_error_t result = cardano_cbor_writer_write_byte_string(writer, data, data_size);
+ * cardano_error_t result = cardano_cbor_writer_write_bytestring(writer, data, data_size);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -280,7 +281,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bool(cardano_cbor_write
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, const byte_t* data, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_bytestring(cardano_cbor_writer_t* writer, const byte_t* data, size_t size);
 
 /**
  * \brief Encodes and writes a UTF-8 encoded text string as a CBOR text string (major type 3).
@@ -311,7 +312,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbo
  * {
  *   const char* text = "Hello, CBOR!";
  *   size_t text_length = strlen(text);
- *   cardano_error_t result = cardano_cbor_writer_write_text_string(writer, text, text_length);
+ *   cardano_error_t result = cardano_cbor_writer_write_textstring(writer, text, text_length);
  *
  *   if (result == CARDANO_SUCCESS)
  *   {
@@ -323,7 +324,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_byte_string(cardano_cbo
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, size_t size);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_textstring(cardano_cbor_writer_t* writer, const char* data, size_t size);
 
 /**
  * \brief Writes a buffer containing a pre-encoded CBOR data item into a CBOR stream.

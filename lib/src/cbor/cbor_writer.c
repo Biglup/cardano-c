@@ -232,21 +232,73 @@ cardano_cbor_writer_refcount(const cardano_cbor_writer_t* cbor_writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_big_integer(cardano_cbor_writer_t* writer, const uint64_t value)
+cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bigint_t* bigint)
 {
   if (writer == NULL)
   {
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
+  if (bigint == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_bigint_t* copy   = NULL;
+  cardano_error_t   result = cardano_bigint_clone(bigint, &copy);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, value);
+  cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM;
+
+  if (cardano_bigint_signum(copy) < 0)
+  {
+    tag = CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM;
+    cardano_bigint_negate(bigint, copy);
+  }
+
+  result = cardano_cbor_writer_write_tag(writer, tag);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    // LCOV_EXCL_START
+    cardano_bigint_unref(&copy);
+
+    return result;
+    // LCOV_EXCL_STOP
+  }
+
+  const size_t size = cardano_bigint_get_bytes_size(copy);
+  byte_t*      data = (byte_t*)_cardano_malloc(size);
+
+  if (data == NULL)
+  {
+    cardano_bigint_unref(&copy);
+
+    return CARDANO_MEMORY_ALLOCATION_FAILED;
+  }
+
+  result = cardano_bigint_to_bytes(copy, CARDANO_BYTE_ORDER_BIG_ENDIAN, data, size);
+
+  cardano_bigint_unref(&copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    // LCOV_EXCL_START
+    _cardano_free(data);
+
+    return result;
+    // LCOV_EXCL_STOP
+  }
+
+  result = cardano_cbor_writer_write_bytestring(writer, data, size);
+
+  _cardano_free(data);
+
+  return result;
 }
 
 cardano_error_t
@@ -263,7 +315,7 @@ cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, const bool value)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, const byte_t* data, const size_t size)
+cardano_cbor_writer_write_bytestring(cardano_cbor_writer_t* writer, const byte_t* data, const size_t size)
 {
   if (writer == NULL)
   {
@@ -286,7 +338,7 @@ cardano_cbor_writer_write_byte_string(cardano_cbor_writer_t* writer, const byte_
 }
 
 cardano_error_t
-cardano_cbor_writer_write_text_string(cardano_cbor_writer_t* writer, const char* data, const size_t size)
+cardano_cbor_writer_write_textstring(cardano_cbor_writer_t* writer, const char* data, const size_t size)
 {
   if (writer == NULL)
   {

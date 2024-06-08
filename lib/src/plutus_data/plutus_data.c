@@ -658,7 +658,7 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
 
       if (size <= max_byte_string_chunk_size)
       {
-        result = cardano_cbor_writer_write_byte_string(writer, cardano_buffer_get_data(plutus_data->bytes), size);
+        result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(plutus_data->bytes), size);
       }
       else
       {
@@ -675,7 +675,7 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
 
         for (size_t i = 0; i < chunks; ++i)
         {
-          result = cardano_cbor_writer_write_byte_string(
+          result = cardano_cbor_writer_write_bytestring(
             writer, &cardano_buffer_get_data(plutus_data->bytes)[i * max_byte_string_chunk_size], max_byte_string_chunk_size);
 
           if (result != CARDANO_SUCCESS)
@@ -686,7 +686,7 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
 
         if (rest > 0U)
         {
-          result = cardano_cbor_writer_write_byte_string(
+          result = cardano_cbor_writer_write_bytestring(
             writer, &cardano_buffer_get_data(plutus_data->bytes)[chunks * max_byte_string_chunk_size], rest);
 
           if (result != CARDANO_SUCCESS)

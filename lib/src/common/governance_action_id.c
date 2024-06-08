@@ -315,7 +315,7 @@ cardano_governance_action_id_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, governance_action_id->hash_bytes, sizeof(governance_action_id->hash_bytes));
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, governance_action_id->hash_bytes, sizeof(governance_action_id->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {

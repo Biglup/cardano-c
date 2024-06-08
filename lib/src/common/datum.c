@@ -394,7 +394,7 @@ cardano_datum_to_cbor(
   {
     case CARDANO_DATUM_TYPE_DATA_HASH:
     {
-      cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, datum->hash_bytes, sizeof(datum->hash_bytes));
+      cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, datum->hash_bytes, sizeof(datum->hash_bytes));
 
       if (write_bytes_result != CARDANO_SUCCESS)
       {

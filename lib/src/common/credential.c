@@ -320,7 +320,7 @@ cardano_credential_to_cbor(
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, credential->hash_bytes, sizeof(credential->hash_bytes));
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, credential->hash_bytes, sizeof(credential->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
