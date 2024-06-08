@@ -244,7 +244,7 @@ cardano_plutus_v1_script_to_cbor(
     return CARDANO_POINTER_IS_NULL;
   }
 
-  return cardano_cbor_writer_write_byte_string(
+  return cardano_cbor_writer_write_bytestring(
     writer,
     cardano_buffer_get_data(plutus_v1_script->compiled_code),
     cardano_buffer_get_size(plutus_v1_script->compiled_code));

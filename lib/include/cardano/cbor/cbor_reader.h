@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_reader_state.h>
 #include <cardano/cbor/cbor_simple_value.h>
 #include <cardano/cbor/cbor_tag.h>
+#include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
@@ -536,6 +537,47 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_int(cardano_cbor_reader_
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value);
+
+/**
+ * \brief Decodes and reads a big integer (bignum) from CBOR format.
+ *
+ * This function reads and decodes a bignum from a provided CBOR reader, following the
+ * encoding format specified in RFC 7049, section 2.4.2. Bignums are used to represent
+ * integers that are too large to be represented directly in the available integer types
+ * of CBOR. The function interprets the appropriate tag (2 for unsigned bignum) and decodes
+ * the integer value, ensuring its correct representation as a bignum in the resulting bigint object.
+ *
+ * \param[in] reader The \ref cardano_cbor_reader_t instance from which the bignum will be read.
+ * \param[out] bigint A pointer to a pointer that will be set to the address of the newly created \ref cardano_bigint_t object
+ *                    representing the decoded big integer value. The caller is responsible for managing the memory of this object.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the bignum value was successfully decoded and read from the
+ *         CBOR stream. If the operation encounters an error, such as invalid parameters or issues with
+ *         reading from the stream, an appropriate error code is returned indicating the reason for the failure.
+ *         Consult the \ref cardano_error_t documentation for details on possible error codes and their meanings.
+ *
+ * Example usage:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cbor_data, cbor_data_size);
+ * if (reader)
+ * {
+ *   cardano_bigint_t* bigint = NULL;
+ *   cardano_error_t result = cardano_cbor_reader_read_bigint(reader, &bigint);
+ *
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     // Successfully read bignum from the reader
+ *     // Use the bigint
+ *   }
+ *
+ *   // Clean up
+ *   cardano_bigint_unref(&bigint);
+ *   cardano_cbor_reader_unref(&reader);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bigint);
 
 /**
  * \brief Reads the next data item as a double-precision floating point number (major type 7).

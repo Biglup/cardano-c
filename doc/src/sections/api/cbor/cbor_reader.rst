@@ -37,6 +37,10 @@ CBOR Reader
 
 ------------
 
+.. doxygenfunction:: cardano_cbor_reader_read_bigint
+
+------------
+
 .. doxygenfunction:: cardano_cbor_reader_read_boolean
 
 ------------

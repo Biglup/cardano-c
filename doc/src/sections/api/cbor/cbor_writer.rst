@@ -53,7 +53,7 @@ CBOR Writer
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_writer_write_big_integer
+.. doxygenfunction:: cardano_cbor_writer_write_bigint
 
 ------------
 
@@ -61,7 +61,7 @@ CBOR Writer
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_writer_write_byte_string
+.. doxygenfunction:: cardano_cbor_writer_write_bytestring
 
 ------------
 
@@ -97,7 +97,7 @@ CBOR Writer
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_writer_write_text_string
+.. doxygenfunction:: cardano_cbor_writer_write_textstring
 
 ------------
 

@@ -64,7 +64,7 @@ _cardano_byron_address_initialize(cardano_cbor_writer_t* writer, const cardano_a
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_byte_string(writer, address->byron_content->root, sizeof(address->byron_content->root));
+  result = cardano_cbor_writer_write_bytestring(writer, address->byron_content->root, sizeof(address->byron_content->root));
 
   if (result != CARDANO_SUCCESS)
   {
@@ -120,7 +120,7 @@ _cardano_byron_address_encode_magic(cardano_cbor_writer_t* writer, const cardano
     result = cardano_cbor_writer_write_unsigned_int(writer, 2);
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_cbor_writer_write_byte_string(writer, magic_data, magic_size);
+      result = cardano_cbor_writer_write_bytestring(writer, magic_data, magic_size);
     }
     _cardano_free(magic_data);
   }
@@ -137,7 +137,7 @@ _cardano_byron_address_encode_derivation_path(cardano_cbor_writer_t* writer, con
   assert(address != NULL);
 
   cardano_cbor_writer_t* attributes_writer = cardano_cbor_writer_new();
-  cardano_error_t        result            = cardano_cbor_writer_write_byte_string(
+  cardano_error_t        result            = cardano_cbor_writer_write_bytestring(
     attributes_writer,
     address->byron_content->attributes.derivation_path,
     address->byron_content->attributes.derivation_path_size);
@@ -161,7 +161,7 @@ _cardano_byron_address_encode_derivation_path(cardano_cbor_writer_t* writer, con
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_cbor_writer_write_byte_string(writer, attributes_data, attributes_size);
+      result = cardano_cbor_writer_write_bytestring(writer, attributes_data, attributes_size);
     }
     _cardano_free(attributes_data);
   }
@@ -241,7 +241,7 @@ _cardano_byron_address_write_final_structure(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_byte_string(writer, encoded_data, encoded_size);
+  result = cardano_cbor_writer_write_bytestring(writer, encoded_data, encoded_size);
 
   if (result != CARDANO_SUCCESS)
   {

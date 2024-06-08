@@ -320,7 +320,7 @@ cardano_blake2b_hash_to_cbor(
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(
     writer,
     cardano_buffer_get_data(blake2b_hash->buffer),
     cardano_buffer_get_size(blake2b_hash->buffer));

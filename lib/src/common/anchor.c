@@ -340,14 +340,14 @@ cardano_anchor_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_url_result = cardano_cbor_writer_write_text_string(writer, anchor->url, cardano_safe_strlen(anchor->url, sizeof(anchor->url)));
+  cardano_error_t write_url_result = cardano_cbor_writer_write_textstring(writer, anchor->url, cardano_safe_strlen(anchor->url, sizeof(anchor->url)));
 
   if (write_url_result != CARDANO_SUCCESS)
   {
     return write_url_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_bytes_result = cardano_cbor_writer_write_byte_string(writer, anchor->hash_bytes, sizeof(anchor->hash_bytes));
+  cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, anchor->hash_bytes, sizeof(anchor->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
