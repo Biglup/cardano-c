@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/buffer.h>
+#include <cardano/common/bigint.h>
 #include <cardano/object.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
@@ -44,7 +45,7 @@ typedef struct cardano_plutus_data_t
     cardano_object_t              base;
     cardano_plutus_map_t*         map;
     cardano_plutus_list_t*        list;
-    int64_t*                      integer;
+    cardano_bigint_t*             integer;
     cardano_buffer_t*             bytes;
     cardano_constr_plutus_data_t* constr;
     cardano_plutus_data_kind_t    kind;
@@ -76,8 +77,7 @@ cardano_plutus_data_deallocate(void* object)
   cardano_plutus_list_unref(&data->list);
   cardano_buffer_unref(&data->bytes);
   cardano_constr_plutus_data_unref(&data->constr);
-
-  _cardano_free(data->integer);
+  cardano_bigint_unref(&data->integer);
 
   data->integer = NULL;
 
@@ -111,28 +111,6 @@ cardano_plutus_data_new(void)
   data->kind    = CARDANO_PLUTUS_DATA_KIND_CONSTR;
 
   return data;
-}
-
-/**
- * \brief Converts an cardano_buffer_t to a int64_t.
- *
- * \param buffer The buffer to be converted to int64_t.
- *
- * \returns The resulting int64_t;
- */
-static int64_t
-buffer_to_le_int(const cardano_buffer_t* buffer)
-{
-  int64_t       ret  = 0;
-  const byte_t* data = cardano_buffer_get_data(buffer);
-
-  for (size_t i = 0; i < cardano_buffer_get_size(buffer); ++i)
-  {
-    const byte_t bi = data[i];
-    ret             = (int64_t)((uint64_t)ret << 8) + (int64_t)bi;
-  }
-
-  return ret;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -235,9 +213,14 @@ cardano_plutus_data_new_list(
 
 cardano_error_t
 cardano_plutus_data_new_integer(
-  const int64_t           integer,
+  const cardano_bigint_t* bigint,
   cardano_plutus_data_t** plutus_data)
 {
+  if (bigint == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
   if (plutus_data == NULL)
   {
     return CARDANO_POINTER_IS_NULL;
@@ -250,22 +233,102 @@ cardano_plutus_data_new_integer(
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
-  int64_t* integer_copy = _cardano_malloc(sizeof(int64_t));
+  cardano_error_t result = cardano_bigint_clone(bigint, &data->integer);
 
-  if (integer_copy == NULL)
+  if (result != CARDANO_SUCCESS)
   {
     cardano_plutus_data_deallocate(data);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return result;
   }
 
-  *integer_copy = integer;
-
-  data->integer = integer_copy;
-  data->kind    = CARDANO_PLUTUS_DATA_KIND_INTEGER;
+  data->kind = CARDANO_PLUTUS_DATA_KIND_INTEGER;
 
   *plutus_data = data;
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_plutus_data_new_integer_from_int(
+  const int64_t           integer,
+  cardano_plutus_data_t** plutus_data)
+{
+  if (plutus_data == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_bigint_t* bigint = NULL;
+  cardano_error_t   result = cardano_bigint_from_int(integer, &bigint);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_plutus_data_new_integer(bigint, plutus_data);
+
+  cardano_bigint_unref(&bigint);
+
+  return result;
+}
+
+cardano_error_t
+cardano_plutus_data_new_integer_from_uint(
+  const uint64_t          integer,
+  cardano_plutus_data_t** plutus_data)
+{
+  if (plutus_data == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_bigint_t* bigint = NULL;
+  cardano_error_t   result = cardano_bigint_from_unsigned_int(integer, &bigint);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_plutus_data_new_integer(bigint, plutus_data);
+
+  cardano_bigint_unref(&bigint);
+
+  return result;
+}
+
+cardano_error_t
+cardano_plutus_data_new_integer_from_string(
+  const char*             string,
+  size_t                  size,
+  int32_t                 base,
+  cardano_plutus_data_t** plutus_data)
+{
+  if (plutus_data == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (string == NULL)
+  {
+    *plutus_data = NULL;
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  cardano_bigint_t* bigint = NULL;
+  cardano_error_t   result = cardano_bigint_from_string(string, size, base, &bigint);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_plutus_data_new_integer(bigint, plutus_data);
+
+  cardano_bigint_unref(&bigint);
+
+  return result;
 }
 
 cardano_error_t
@@ -402,55 +465,9 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
       switch (tag)
       {
         case CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM:
-        {
-          cardano_cbor_tag_t actual_tag = 0;
-          result                        = cardano_cbor_reader_read_tag(reader, &actual_tag);
-
-          assert(result == CARDANO_SUCCESS);
-          assert(actual_tag == CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
-          CARDANO_UNUSED(result);
-
-          cardano_buffer_t* bytes = NULL;
-
-          result = cardano_cbor_reader_read_bytestring(reader, &bytes);
-
-          if (result != CARDANO_SUCCESS)
-          {
-            cardano_plutus_data_deallocate(data);
-            return result;
-          }
-
-          // TODO: Plutus integers are unbounded, but we are using int64_t for now. Implement a proper
-          //       bigint type for plutus integers (cardano_bigint_t?).
-          const int64_t integer = buffer_to_le_int(bytes);
-
-          cardano_buffer_unref(&bytes);
-
-          data->integer = _cardano_malloc(sizeof(int64_t));
-
-          if (data->integer == NULL)
-          {
-            cardano_plutus_data_deallocate(data);
-            return CARDANO_MEMORY_ALLOCATION_FAILED;
-          }
-
-          *data->integer = integer;
-          data->kind     = CARDANO_PLUTUS_DATA_KIND_INTEGER;
-
-          break;
-        }
         case CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM:
         {
-          cardano_cbor_tag_t actual_tag = 0;
-          result                        = cardano_cbor_reader_read_tag(reader, &actual_tag);
-
-          assert(result == CARDANO_SUCCESS);
-          assert(actual_tag == CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM);
-          CARDANO_UNUSED(result);
-
-          cardano_buffer_t* bytes = NULL;
-
-          result = cardano_cbor_reader_read_bytestring(reader, &bytes);
+          result = cardano_cbor_reader_read_bigint(reader, &data->integer);
 
           if (result != CARDANO_SUCCESS)
           {
@@ -458,20 +475,7 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
             return result;
           }
 
-          const int64_t integer = -(buffer_to_le_int(bytes));
-
-          cardano_buffer_unref(&bytes);
-
-          data->integer = _cardano_malloc(sizeof(int64_t));
-
-          if (data->integer == NULL)
-          {
-            cardano_plutus_data_deallocate(data);
-            return CARDANO_MEMORY_ALLOCATION_FAILED;
-          }
-
-          *data->integer = integer;
-          data->kind     = CARDANO_PLUTUS_DATA_KIND_INTEGER;
+          data->kind = CARDANO_PLUTUS_DATA_KIND_INTEGER;
 
           break;
         }
@@ -493,12 +497,33 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
       break;
     }
     case CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER:
+    {
+      uint64_t integer = 0;
+
+      result = cardano_cbor_reader_read_uint(reader, &integer);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_plutus_data_deallocate(data);
+        return result;
+      }
+
+      result = cardano_bigint_from_unsigned_int(integer, &data->integer);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_plutus_data_deallocate(data);
+        return result;
+      }
+
+      data->kind = CARDANO_PLUTUS_DATA_KIND_INTEGER;
+
+      break;
+    }
     case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
       int64_t integer = 0;
 
-      // TODO: same here we need to be able to read up to unsigned 64-bit integers. Implement a proper
-      //       bigint type for plutus integers (cardano_bigint_t?).
       result = cardano_cbor_reader_read_int(reader, &integer);
 
       if (result != CARDANO_SUCCESS)
@@ -507,16 +532,15 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
         return result;
       }
 
-      data->integer = _cardano_malloc(sizeof(int64_t));
+      result = cardano_bigint_from_int(integer, &data->integer);
 
-      if (data->integer == NULL)
+      if (result != CARDANO_SUCCESS)
       {
         cardano_plutus_data_deallocate(data);
-        return CARDANO_MEMORY_ALLOCATION_FAILED;
+        return result;
       }
 
-      *data->integer = integer;
-      data->kind     = CARDANO_PLUTUS_DATA_KIND_INTEGER;
+      data->kind = CARDANO_PLUTUS_DATA_KIND_INTEGER;
 
       break;
     }
@@ -637,7 +661,20 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
     }
     case CARDANO_PLUTUS_DATA_KIND_INTEGER:
     {
-      result = cardano_cbor_writer_write_signed_int(writer, *plutus_data->integer);
+      size_t bit_length = cardano_bigint_bit_length(plutus_data->integer);
+
+      if ((cardano_bigint_signum(plutus_data->integer) < 0) && (bit_length <= 64U))
+      {
+        result = cardano_cbor_writer_write_signed_int(writer, cardano_bigint_to_int(plutus_data->integer));
+      }
+      else if (bit_length <= 64U)
+      {
+        result = cardano_cbor_writer_write_unsigned_int(writer, cardano_bigint_to_unsigned_int(plutus_data->integer));
+      }
+      else
+      {
+        result = cardano_cbor_writer_write_bigint(writer, plutus_data->integer);
+      }
 
       if (result != CARDANO_SUCCESS)
       {
@@ -818,7 +855,7 @@ cardano_plutus_data_to_list(
 cardano_error_t
 cardano_plutus_data_to_integer(
   const cardano_plutus_data_t* plutus_data,
-  int64_t*                     integer)
+  cardano_bigint_t**           integer)
 {
   if (plutus_data == NULL)
   {
@@ -835,9 +872,9 @@ cardano_plutus_data_to_integer(
     return CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION;
   }
 
-  *integer = *plutus_data->integer;
+  cardano_error_t error = cardano_bigint_clone(plutus_data->integer, integer);
 
-  return CARDANO_SUCCESS;
+  return error;
 }
 
 cardano_error_t
@@ -905,7 +942,7 @@ cardano_plutus_data_equals(const cardano_plutus_data_t* lhs, const cardano_plutu
     }
     case CARDANO_PLUTUS_DATA_KIND_INTEGER:
     {
-      return *lhs->integer == *rhs->integer;
+      return cardano_bigint_equals(lhs->integer, rhs->integer);
     }
     case CARDANO_PLUTUS_DATA_KIND_BYTES:
     {

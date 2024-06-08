@@ -146,8 +146,8 @@ TEST(cardano_plutus_map_to_cbor, canSerializeAnSimplePlutusMap)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -219,8 +219,8 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapInteger)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -234,12 +234,13 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapInteger)
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(found, &result), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(result, 2);
+  EXPECT_EQ(cardano_bigint_to_int(result), 2);
+  cardano_bigint_unref(&result);
 
   // Cleanup
   cardano_plutus_map_unref(&plutus_map);
@@ -315,7 +316,7 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapList)
   EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_data_new_list(list, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -330,12 +331,14 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapList)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   // the key is a list, the val is an int
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(found, &result), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(result, 1);
+  EXPECT_EQ(cardano_bigint_to_int(result), 1);
+
+  cardano_bigint_unref(&result);
 
   // Cleanup
   cardano_plutus_map_unref(&plutus_map);
@@ -360,7 +363,7 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapWhenKeyIsAMap)
   EXPECT_EQ(cardano_plutus_map_new(&inner_map), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_data_new_map(inner_map, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -375,12 +378,13 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapWhenKeyIsAMap)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   // the key is a map, the val is an int
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(found, &result), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(result, 1);
+  EXPECT_EQ(cardano_bigint_to_int(result), 1);
+  cardano_bigint_unref(&result);
 
   // Cleanup
   cardano_plutus_map_unref(&plutus_map);
@@ -407,7 +411,7 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapWhenKeyIsAConstr)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_data_new_constr(constr_plutus_data, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -422,12 +426,14 @@ TEST(cardano_plutus_map_to_cbor, canFindElementInMapWhenKeyIsAConstr)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   // the key is a constr, the val is an int
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(found, &result), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(result, 1);
+  EXPECT_EQ(cardano_bigint_to_int(result), 1);
+
+  cardano_bigint_unref(&result);
 
   // Cleanup
   cardano_plutus_map_unref(&plutus_map);
@@ -859,8 +865,8 @@ TEST(cardano_plutus_map_get, returnsErrorIfKeyNotFound)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -871,7 +877,7 @@ TEST(cardano_plutus_map_get, returnsErrorIfKeyNotFound)
 
   // Act
   cardano_plutus_data_t* find = nullptr;
-  EXPECT_EQ(cardano_plutus_data_new_integer(3, &find), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(3, &find), CARDANO_SUCCESS);
 
   error = cardano_plutus_map_get(plutus_map, find, &data);
 
@@ -895,8 +901,8 @@ TEST(cardano_plutus_map_get, returnsErrorIfElementIsNull)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -919,8 +925,8 @@ TEST(cardano_plutus_map_insert, returnsErrorIfPlutusMapIsNull)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   // Act
   cardano_error_t error = cardano_plutus_map_insert(nullptr, key, val);
@@ -943,7 +949,7 @@ TEST(cardano_plutus_map_insert, returnsErrorIfKeyIsNull)
 
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   // Act
   error = cardano_plutus_map_insert(plutus_map, nullptr, val);
@@ -966,7 +972,7 @@ TEST(cardano_plutus_map_insert, returnsErrorIfValueIsNull)
 
   cardano_plutus_data_t* key = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
 
   // Act
   error = cardano_plutus_map_insert(plutus_map, key, nullptr);
@@ -990,8 +996,8 @@ TEST(cardano_plutus_map_insert, returnsErrorIfMemoryAllocationFailes)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
@@ -1101,8 +1107,8 @@ TEST(cardano_plutus_map_get_keys, returnsListOfKeys)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -1117,15 +1123,16 @@ TEST(cardano_plutus_map_get_keys, returnsListOfKeys)
   cardano_plutus_data_t* value = nullptr;
   EXPECT_EQ(cardano_plutus_list_get(keys, 0, &value), CARDANO_SUCCESS);
 
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(value, &result), CARDANO_SUCCESS);
 
   cardano_plutus_data_unref(&value);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(result, 1);
+  EXPECT_EQ(cardano_bigint_to_int(result), 1);
   EXPECT_THAT(keys, testing::Not((cardano_plutus_list_t*)nullptr));
+  cardano_bigint_unref(&result);
 
   size_t length = cardano_plutus_list_get_length(keys);
 
@@ -1228,8 +1235,8 @@ TEST(cardano_plutus_map_get_values, returnsListOfValues)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -1244,15 +1251,17 @@ TEST(cardano_plutus_map_get_values, returnsListOfValues)
   cardano_plutus_data_t* value = nullptr;
   EXPECT_EQ(cardano_plutus_list_get(values, 0, &value), CARDANO_SUCCESS);
 
-  int64_t result = 0;
+  cardano_bigint_t* result = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(value, &result), CARDANO_SUCCESS);
 
   cardano_plutus_data_unref(&value);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(result, 2);
+  EXPECT_EQ(cardano_bigint_to_int(result), 2);
   EXPECT_THAT(values, testing::Not((cardano_plutus_list_t*)nullptr));
+
+  cardano_bigint_unref(&result);
 
   size_t length = cardano_plutus_list_get_length(values);
 
@@ -1312,8 +1321,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapIsEmptyAndOtherIsNotEmpty
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(other, key, val), CARDANO_SUCCESS);
 
@@ -1347,8 +1356,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapIsNotEmptyAndOtherIsEmpty
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -1382,8 +1391,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapHasDifferentKeysThanOther
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -1393,8 +1402,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapHasDifferentKeysThanOther
   key = nullptr;
   val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(3, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(4, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(3, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(4, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(other, key, val), CARDANO_SUCCESS);
 
@@ -1428,8 +1437,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapHasDifferentValuesThanOth
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
 
@@ -1439,8 +1448,8 @@ TEST(cardano_plutus_map_equals, returnsFalseIfPlutusMapHasDifferentValuesThanOth
   key = nullptr;
   val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(3, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(3, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(other, key, val), CARDANO_SUCCESS);
 
@@ -1474,8 +1483,8 @@ TEST(cardano_plutus_map_equals, returnsTrueIfPlutusMapsAreEqual)
   cardano_plutus_data_t* key = nullptr;
   cardano_plutus_data_t* val = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &val), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_insert(plutus_map, key, val), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_map_insert(other, key, val), CARDANO_SUCCESS);

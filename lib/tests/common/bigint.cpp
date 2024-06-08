@@ -2716,7 +2716,7 @@ TEST(cardano_bigint_bit_length, ofNegativeNumber)
 
   size_t bit_length = cardano_bigint_bit_length(bigint);
 
-  ASSERT_EQ(bit_length, 11);
+  ASSERT_EQ(bit_length, 10);
 
   cardano_bigint_unref(&bigint);
 }

@@ -1449,15 +1449,15 @@ CARDANO_EXPORT size_t
 cardano_bigint_bit_count(const cardano_bigint_t* bigint);
 
 /**
- * \brief Returns the number of bits in the minimal two's-complement representation of this BigInteger, excluding the sign bit.
+ * \brief Returns the number of bits required to represent the bigint in a minimal two's-complement form.
  *
- * This function computes the number of bits in the minimal two's-complement representation of the given \ref cardano_bigint_t object, excluding the sign bit.
+ * This function calculates the bit length required to represent the integer stored in a \ref cardano_bigint_t object in its minimal two's-complement form.
+ * This count includes the necessary bits for the absolute value of the number and the sign bit.
  *
  * \param[in] bigint A constant pointer to the bigint object.
  *
- * \return The number of bits in the minimal two's-complement representation, excluding the sign bit.
- *
- * \remark If the \p bigint pointer is NULL, the function returns 0.
+ * \return The number of bits required to represent the bigint in two's-complement form, effectively equal to the actual bit length of the integer as stored.
+ * If the bigint pointer is NULL, the function returns 0.
  *
  * Usage Example:
  * \code{.c}
