@@ -40,7 +40,7 @@ static const char* PLUTUS_DATA_CBOR = "9f01029f0102030405ff9f0102030405ff05ff";
 
 /* UNIT TESTS ****************************************************************/
 
-TEST(cardano_plutus_data_new_integer, returnsErrorWhenMemoryAllocationFailes)
+TEST(cardano_plutus_data_new_integer_from_int, returnsErrorWhenMemoryAllocationFailes)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
@@ -49,7 +49,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorWhenMemoryAllocationFailes)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
@@ -271,13 +271,13 @@ TEST(cardano_plutus_data_new_list, returnErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
-TEST(cardano_plutus_data_new_integer, canCreateAnIntegerPlutusData)
+TEST(cardano_plutus_data_new_integer_from_int, canCreateAnIntegerPlutusData)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
 
   // Act
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -287,16 +287,16 @@ TEST(cardano_plutus_data_new_integer, canCreateAnIntegerPlutusData)
   cardano_plutus_data_unref(&plutus_data);
 }
 
-TEST(cardano_plutus_data_new_integer, returnsErrorIfPlutusDataIsNull)
+TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfPlutusDataIsNull)
 {
   // Act
-  cardano_error_t error = cardano_plutus_data_new_integer(1, nullptr);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, nullptr);
 
   // Assert
   EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
 }
 
-TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
+TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfMemoryAllocationFails)
 {
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
@@ -304,7 +304,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
   cardano_plutus_data_t* plutus_data = nullptr;
 
   // Act
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
@@ -314,7 +314,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
-TEST(cardano_plutus_data_new_integer, returnsErrorIfEventualMemoryAllocationFails)
+TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfEventualMemoryAllocationFails)
 {
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_one_malloc, realloc, free);
@@ -322,7 +322,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfEventualMemoryAllocationFail
   cardano_plutus_data_t* plutus_data = nullptr;
 
   // Act
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
@@ -512,9 +512,10 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAnIntegerPlutusData)
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_THAT(plutus_data, testing::Not((cardano_plutus_data_t*)nullptr));
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 1);
+  EXPECT_EQ(cardano_bigint_to_int(value), 1);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -534,9 +535,10 @@ TEST(cardano_plutus_data_from_cbor, canDecodeNegativeInteger)
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_THAT(plutus_data, testing::Not((cardano_plutus_data_t*)nullptr));
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, -5);
+  EXPECT_EQ(cardano_bigint_to_int(value), -5);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -556,9 +558,10 @@ TEST(cardano_plutus_data_from_cbor, canDecodeBigPositiveInteger)
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_THAT(plutus_data, testing::Not((cardano_plutus_data_t*)nullptr));
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 72057594037927936);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(value), 72057594037927936);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -674,9 +677,10 @@ TEST(cardano_plutus_data_from_cbor, canDecodeBigNegativeInteger)
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_THAT(plutus_data, testing::Not((cardano_plutus_data_t*)nullptr));
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, -72057594037927936);
+  EXPECT_EQ(cardano_bigint_to_int(value), -72057594037927936);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -825,21 +829,26 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAListPlutusData)
   EXPECT_EQ(cardano_plutus_list_get(list, 3, &elem4), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_list_get(list, 4, &elem5), CARDANO_SUCCESS);
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(elem1, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 1);
+  EXPECT_EQ(cardano_bigint_to_int(value), 1);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(elem2, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 2);
+  EXPECT_EQ(cardano_bigint_to_int(value), 2);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(elem3, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 3);
+  EXPECT_EQ(cardano_bigint_to_int(value), 3);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(elem4, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 4);
+  EXPECT_EQ(cardano_bigint_to_int(value), 4);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(elem5, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 5);
+  EXPECT_EQ(cardano_bigint_to_int(value), 5);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_list_unref(&list);
@@ -892,26 +901,32 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAMapPlutusData)
   EXPECT_EQ(cardano_plutus_map_get(map, key2, &value2), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_map_get(map, key3, &value3), CARDANO_SUCCESS);
 
-  int64_t key_value = 0;
-  int64_t value     = 0;
+  cardano_bigint_t* key_value = NULL;
+  cardano_bigint_t* value     = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(key1, &key_value), CARDANO_SUCCESS);
-  EXPECT_EQ(key_value, 1);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(key_value), 1);
+  cardano_bigint_unref(&key_value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(key2, &key_value), CARDANO_SUCCESS);
-  EXPECT_EQ(key_value, 2);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(key_value), 2);
+  cardano_bigint_unref(&key_value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(key3, &key_value), CARDANO_SUCCESS);
-  EXPECT_EQ(key_value, 3);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(key_value), 3);
+  cardano_bigint_unref(&key_value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(value1, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 4);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(value), 4);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(value2, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 5);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(value), 5);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(value3, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 6);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(value), 6);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_map_unref(&map);
@@ -981,12 +996,14 @@ TEST(cardano_plutus_data_from_cbor, canDecodeConstructorPlutusData)
   EXPECT_EQ(cardano_plutus_list_get(list, 0, &elem1), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_list_get(list, 1, &elem2), CARDANO_SUCCESS);
 
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(elem1, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 1);
+  EXPECT_EQ(cardano_bigint_to_int(value), 1);
+  cardano_bigint_unref(&value);
 
   EXPECT_EQ(cardano_plutus_data_to_integer(elem2, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(value, 2);
+  EXPECT_EQ(cardano_bigint_to_int(value), 2);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);
@@ -1025,8 +1042,8 @@ TEST(cardano_plutus_data_to_cbor, canEncodeConstPlutusDataToCbor)
   cardano_plutus_data_t*        elem1              = nullptr;
   cardano_plutus_data_t*        elem2              = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &elem1), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &elem2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &elem1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &elem2), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_list_add(list, elem1), CARDANO_SUCCESS);
@@ -1076,13 +1093,13 @@ TEST(cardano_plutus_data_to_cbor, canEncodeMapToCbor)
   cardano_plutus_data_t* value2      = nullptr;
   cardano_plutus_data_t* value3      = nullptr;
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(1, &key1), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(2, &key2), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(3, &key3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(1, &key1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(2, &key2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(3, &key3), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_plutus_data_new_integer(4, &value1), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(5, &value2), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_plutus_data_new_integer(6, &value3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(4, &value1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(5, &value2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(6, &value3), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
 
@@ -1227,7 +1244,7 @@ TEST(cardano_plutus_data_to_cbor, returnsErrorIfWriterIsNull)
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
 
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1357,7 +1374,7 @@ TEST(cardano_plutus_data_ref, increasesTheReferenceCount)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1398,7 +1415,7 @@ TEST(cardano_plutus_data_unref, decreasesTheReferenceCount)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1421,7 +1438,7 @@ TEST(cardano_plutus_data_unref, freesTheObjectIfReferenceReachesZero)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1469,7 +1486,7 @@ TEST(cardano_plutus_data_set_last_error, doesNothingWhenWhenMessageIsNull)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -1489,7 +1506,7 @@ TEST(cardano_plutus_data_get_kind, returnsTheKindOfPlutusData)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1523,7 +1540,7 @@ TEST(cardano_plutus_data_get_kind, returnsErrorIfKindIsNull)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1540,20 +1557,21 @@ TEST(cardano_plutus_data_to_integer, returnsTheIntegerValue)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(value, 1);
+  EXPECT_EQ(cardano_bigint_to_int(value), 1);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
+  cardano_bigint_unref(&value);
 }
 
 TEST(cardano_plutus_data_to_integer, returnsErrorIfPlutusDataIsNull)
@@ -1562,7 +1580,7 @@ TEST(cardano_plutus_data_to_integer, returnsErrorIfPlutusDataIsNull)
   cardano_plutus_data_t* plutus_data = nullptr;
 
   // Act
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_POINTER_IS_NULL);
 
@@ -1574,7 +1592,7 @@ TEST(cardano_plutus_data_to_integer, returnsErrorIfValueIsNull)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1594,9 +1612,10 @@ TEST(cardano_plutus_data_to_integer, returnsErrorIfPlutusDataIsNotAnInteger)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  int64_t value = 0;
+  cardano_bigint_t* value = NULL;
 
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION);
+  cardano_bigint_unref(&value);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1657,7 +1676,7 @@ TEST(cardano_plutus_data_to_bytes, returnsErrorIfPlutusDataIsNotAByteArray)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1712,7 +1731,7 @@ TEST(cardano_plutus_data_to_constr, returnsErrorIfConstrPlutusDataIsNull)
 {
   // Arrange
   cardano_plutus_data_t* plutus_data = nullptr;
-  cardano_error_t        error       = cardano_plutus_data_new_integer(1, &plutus_data);
+  cardano_error_t        error       = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1901,10 +1920,10 @@ TEST(cardano_plutus_data_equals, returnsTrueIfBothPlutusDataAreEqual)
   cardano_plutus_data_t* plutus_data1 = nullptr;
   cardano_plutus_data_t* plutus_data2 = nullptr;
 
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data1);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  error = cardano_plutus_data_new_integer(1, &plutus_data2);
+  error = cardano_plutus_data_new_integer_from_int(1, &plutus_data2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
@@ -1921,10 +1940,10 @@ TEST(cardano_plutus_data_equals, returnsFalseIfPlutusDataAreDifferent)
   cardano_plutus_data_t* plutus_data1 = nullptr;
   cardano_plutus_data_t* plutus_data2 = nullptr;
 
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data1);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  error = cardano_plutus_data_new_integer(2, &plutus_data2);
+  error = cardano_plutus_data_new_integer_from_int(2, &plutus_data2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
@@ -1941,7 +1960,7 @@ TEST(cardano_plutus_data_equals, returnsFalseIfPlutusDataAreDifferentTypes)
   cardano_plutus_data_t* plutus_data1 = nullptr;
   cardano_plutus_data_t* plutus_data2 = nullptr;
 
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data1);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_plutus_data_new_bytes((const uint8_t*)"test", 4, &plutus_data2);
@@ -1971,7 +1990,7 @@ TEST(cardano_plutus_data_equals, returnsFalseIfOnePlutusDataIsNull)
   cardano_plutus_data_t* plutus_data1 = nullptr;
   cardano_plutus_data_t* plutus_data2 = nullptr;
 
-  cardano_error_t error = cardano_plutus_data_new_integer(1, &plutus_data1);
+  cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
@@ -2100,4 +2119,386 @@ TEST(cardano_plutus_data_equals, returnsTrueIfBothAreBytesAndEqual)
   // Cleanup
   cardano_plutus_data_unref(&plutus_data1);
   cardano_plutus_data_unref(&plutus_data2);
+}
+
+TEST(cardano_plutus_data_new_integer, returnsErrorIfPlutusDataIsNull)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer(nullptr, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_data_new_integer, returnsErrorIfIntegerIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer((const cardano_bigint_t*)"", nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_bigint_t* integer = NULL;
+  EXPECT_EQ(cardano_bigint_from_int(1, &integer), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer(integer, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
+
+  // Cleanup
+  cardano_bigint_unref(&integer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfPlutusDataIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfMemoryAllocationFails2)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_plutus_data_new_integer_from_uint, canReturnUint)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_bigint_t* integer = nullptr;
+  error                     = cardano_plutus_data_to_integer(data, &integer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_unsigned_int(integer), 0);
+
+  // Cleanup
+  cardano_bigint_unref(&integer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfPlutusDataIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_string("0", 1, 10, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfStringIsNull)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_string(nullptr, 0, 10, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfEmptyString)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_string("", 0, 10, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfInvalidString)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_string("a", 1, 10, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_CONVERSION_ERROR);
+
+  // Cleanup
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_new_integer_from_string, returnsPlutusDataWithCorrectNumber)
+{
+  // Arrange
+  cardano_plutus_data_t* data = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_new_integer_from_string("123", 3, 10, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_bigint_t* integer = nullptr;
+  error                     = cardano_plutus_data_to_integer(data, &integer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(integer), 123);
+
+  // Cleanup
+  cardano_bigint_unref(&integer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFailsWhileReadingUint)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("00", strlen("00"));
+
+  // Act
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_from_cbor(reader, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_plutus_data_unref(&data);
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFailsWhileReadingUint2)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("00", strlen("00"));
+
+  // Act
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_three_malloc, realloc, free);
+
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_from_cbor(reader, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_plutus_data_unref(&data);
+  cardano_cbor_reader_unref(&reader);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_plutus_data_to_cbor, canSerializeMaxUint64AsUnsignedInt)
+{
+  // Arrange
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_new_integer_from_uint(UINT64_MAX, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, "1bffffffffffffffff");
+
+  // Cleanup
+  free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, canSerializeSmallUint64AsUnsignedInt)
+{
+  // Arrange
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_new_integer_from_uint(1U, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, "01");
+
+  // Cleanup
+  free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, canSerializeMinInt64AsInt)
+{
+  // Arrange
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_new_integer_from_int(INT64_MIN, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, "3b7fffffffffffffff");
+
+  // Cleanup
+  free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, canSerializeSmallIntAsInt)
+{
+  // Arrange
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_new_integer_from_int(-1, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, "20");
+
+  // Cleanup
+  free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, canSerializeBigInteger)
+{
+  // Arrange
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_error_t        error = cardano_plutus_data_new_integer_from_string("340199290171201906221318119490500689920", strlen("340199290171201906221318119490500689920"), 10, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, "c250fff00000000000000000000000000000");
+
+  // Cleanup
+  free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
 }

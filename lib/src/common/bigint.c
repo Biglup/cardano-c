@@ -660,14 +660,7 @@ cardano_bigint_bit_length(const cardano_bigint_t* bigint)
     return 0;
   }
 
-  size_t bit_length = mpz_sizeinbase(bigint->mpz, 2);
-
-  if (mpz_sgn(bigint->mpz) < 0)
-  {
-    ++bit_length;
-  }
-
-  return bit_length;
+  return mpz_sizeinbase(bigint->mpz, 2);
 }
 
 void

@@ -153,7 +153,7 @@ TEST(cardano_constr_plutus_data_to_cbor, canSerializeAnSimpleConstrPlutusData)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list, data), CARDANO_SUCCESS);
 
     cardano_plutus_data_unref(&data);
@@ -200,7 +200,7 @@ TEST(cardano_constr_plutus_data_to_cbor, canSerializeAnConstrPlutusData)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list, data), CARDANO_SUCCESS);
 
     cardano_plutus_data_unref(&data);
@@ -353,13 +353,14 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusData)
     EXPECT_EQ(cardano_plutus_list_get(list, i, &elem), CARDANO_SUCCESS);
 
     cardano_plutus_data_kind_t kind;
-    int64_t                    value;
+    cardano_bigint_t*          value = NULL;
 
     EXPECT_EQ(cardano_plutus_data_get_kind(elem, &kind), CARDANO_SUCCESS);
     EXPECT_EQ(kind, CARDANO_PLUTUS_DATA_KIND_INTEGER);
 
     EXPECT_EQ(cardano_plutus_data_to_integer(elem, &value), CARDANO_SUCCESS);
-    EXPECT_EQ(value, i + 1);
+    EXPECT_EQ(cardano_bigint_to_int(value), i + 1);
+    cardano_bigint_unref(&value);
 
     cardano_plutus_data_unref(&elem);
   }
@@ -401,13 +402,14 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusDataGeneral
     EXPECT_EQ(cardano_plutus_list_get(list, i, &elem), CARDANO_SUCCESS);
 
     cardano_plutus_data_kind_t kind;
-    int64_t                    value;
+    cardano_bigint_t*          value = NULL;
 
     EXPECT_EQ(cardano_plutus_data_get_kind(elem, &kind), CARDANO_SUCCESS);
     EXPECT_EQ(kind, CARDANO_PLUTUS_DATA_KIND_INTEGER);
 
     EXPECT_EQ(cardano_plutus_data_to_integer(elem, &value), CARDANO_SUCCESS);
-    EXPECT_EQ(value, i + 1);
+    EXPECT_EQ(cardano_bigint_to_int(value), i + 1);
+    cardano_bigint_unref(&value);
 
     cardano_plutus_data_unref(&elem);
   }
@@ -449,13 +451,14 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusDataGeneral
     EXPECT_EQ(cardano_plutus_list_get(list, i, &elem), CARDANO_SUCCESS);
 
     cardano_plutus_data_kind_t kind;
-    int64_t                    value;
+    cardano_bigint_t*          value = NULL;
 
     EXPECT_EQ(cardano_plutus_data_get_kind(elem, &kind), CARDANO_SUCCESS);
     EXPECT_EQ(kind, CARDANO_PLUTUS_DATA_KIND_INTEGER);
 
     EXPECT_EQ(cardano_plutus_data_to_integer(elem, &value), CARDANO_SUCCESS);
-    EXPECT_EQ(value, i + 1);
+    EXPECT_EQ(cardano_bigint_to_int(value), i + 1);
+    cardano_bigint_unref(&value);
 
     cardano_plutus_data_unref(&elem);
   }
@@ -978,7 +981,7 @@ TEST(cardano_constr_plutus_equals, returnsTrueIfConstrPlutusDataAreEqual)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list_1, data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list_2, data), CARDANO_SUCCESS);
 
@@ -1022,7 +1025,7 @@ TEST(cardano_constr_plutus_equals, returnsFalseIfConstrPlutusDataAreNotEqual)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list_1, data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list_2, data), CARDANO_SUCCESS);
 
@@ -1066,7 +1069,7 @@ TEST(cardano_constr_plutus_equals, returnsFalseIfConstrPlutusDataAreDifferentLen
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list_1, data), CARDANO_SUCCESS);
 
     if (i < 4)
@@ -1109,7 +1112,7 @@ TEST(cardano_constr_plutus_equals, returnsTrueIfSamePointer)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list, data), CARDANO_SUCCESS);
 
     cardano_plutus_data_unref(&data);
@@ -1142,7 +1145,7 @@ TEST(cardano_constr_plutus_equals, returnsFalseIfOnePointerIsNull)
   {
     cardano_plutus_data_t* data = nullptr;
 
-    EXPECT_EQ(cardano_plutus_data_new_integer(i + 1, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(i + 1, &data), CARDANO_SUCCESS);
     EXPECT_EQ(cardano_plutus_list_add(list, data), CARDANO_SUCCESS);
 
     cardano_plutus_data_unref(&data);

@@ -27,6 +27,7 @@
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/plutus_data/plutus_data_kind.h>
@@ -200,13 +201,55 @@ cardano_plutus_data_new_list(
   cardano_plutus_data_t** plutus_data);
 
 /**
- * \brief Creates and initializes a new instance of a plutus data from an integer value.
+ * \brief Creates and initializes a new instance of plutus data from a bigint object.
  *
  * This function creates and initializes a new instance of a \ref cardano_plutus_data_t object
- * from a given integer value. It essentially converts an integer into a plutus data.
- * It returns an error code to indicate the success or failure of the operation.
+ * from a given bigint object.
  *
- * \param[in] integer The integer value from which the plutus_data will be created.
+ * \param[in] bigint A constant pointer to the \ref cardano_bigint_t object from which the plutus_data will be created.
+ * \param[out] plutus_data On successful initialization, this will point to a newly created
+ *             \ref cardano_plutus_data_t object. This object represents a "strong reference"
+ *             to the plutus data, meaning that it is fully initialized and ready for use.
+ *             The caller is responsible for managing the lifecycle of this object.
+ *             Specifically, once the plutus data is no longer needed, the caller must release it
+ *             by calling \ref cardano_plutus_data_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the plutus data was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume bigint is already initialized and set to a value
+ * cardano_bigint_t* bigint = ...;
+ * cardano_plutus_data_t* plutus_data = NULL;
+ *
+ * // Attempt to create a new plutus_data from a bigint
+ * cardano_error_t result = cardano_plutus_data_new_integer(bigint, &plutus_data);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the plutus_data
+ *
+ *   // Once done, ensure to clean up and release the plutus_data
+ *   cardano_plutus_data_unref(&plutus_data);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_plutus_data_new_integer(
+  const cardano_bigint_t* bigint,
+  cardano_plutus_data_t** plutus_data);
+
+/**
+ * \brief Creates and initializes a new instance of plutus data from an integer value.
+ *
+ * This function creates and initializes a new instance of a \ref cardano_plutus_data_t object
+ * from a given `int64_t` integer. It converts an integer into a plutus data object, suitable
+ * for transactions and other blockchain-related operations. It returns an error code to indicate
+ * the success or failure of the operation.
+ *
+ * \param[in] integer The `int64_t` integer value from which the plutus_data will be created.
  * \param[out] plutus_data On successful initialization, this will point to a newly created
  *             \ref cardano_plutus_data_t object. This object represents a "strong reference"
  *             to the plutus data, meaning that it is fully initialized and ready for use.
@@ -223,7 +266,7 @@ cardano_plutus_data_new_list(
  * cardano_plutus_data_t* plutus_data = NULL;
  *
  * // Attempt to create a new plutus_data from an integer value
- * cardano_error_t result = cardano_plutus_data_new_integer(integer_value, &plutus_data);
+ * cardano_error_t result = cardano_plutus_data_new_integer_from_int(integer_value, &plutus_data);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -236,8 +279,93 @@ cardano_plutus_data_new_list(
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_plutus_data_new_integer(
+cardano_plutus_data_new_integer_from_int(
   int64_t                 integer,
+  cardano_plutus_data_t** plutus_data);
+
+/**
+ * \brief Creates and initializes a new instance of plutus data from an unsigned integer value.
+ *
+ * This function creates and initializes a new instance of a \ref cardano_plutus_data_t object
+ * from a given `uint64_t` integer.
+ *
+ * \param[in] integer The `uint64_t` integer value from which the plutus_data will be created.
+ * \param[out] plutus_data On successful initialization, this will point to a newly created
+ *             \ref cardano_plutus_data_t object. This object represents a "strong reference"
+ *             to the plutus data, meaning that it is fully initialized and ready for use.
+ *             The caller is responsible for managing the lifecycle of this object.
+ *             Specifically, once the plutus data is no longer needed, the caller must release it
+ *             by calling \ref cardano_plutus_data_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the plutus data was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * uint64_t integer_value = 18446744073709551615u; // Example unsigned integer value
+ * cardano_plutus_data_t* plutus_data = NULL;
+ *
+ * // Attempt to create a new plutus_data from an unsigned integer value
+ * cardano_error_t result = cardano_plutus_data_new_integer_from_uint(integer_value, &plutus_data);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the plutus_data
+ *
+ *   // Once done, ensure to clean up and release the plutus_data
+ *   cardano_plutus_data_unref(&plutus_data);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_plutus_data_new_integer_from_uint(
+  uint64_t                integer,
+  cardano_plutus_data_t** plutus_data);
+
+/**
+ * \brief Creates and initializes a new instance of Plutus data from a string representation of an integer in a specified base.
+ *
+ * This function creates and initializes a new instance of a \ref cardano_plutus_data_t object from a given string
+ * representing an integer, interpreted according to the specified base (e.g., 10 for decimal, 16 for hexadecimal).
+ *
+ * \param[in] string A pointer to the character string containing the numeric representation of the integer.
+ * \param[in] size The number of characters in the string, excluding the null terminator.
+ * \param[in] base The numerical base in which the string representation is expressed. Valid values are between 2 and 36.
+ * \param[out] plutus_data On successful initialization, this will point to a newly created
+ *                         \ref cardano_plutus_data_t object. This object represents a "strong reference"
+ *                         to the plutus data, meaning that it is fully initialized and ready for use.
+ *                         The caller is responsible for managing the lifecycle of this object.
+ *                         Specifically, once the plutus data is no longer needed, the caller must release it
+ *                         by calling \ref cardano_plutus_data_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the plutus data was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const char* integer_str = "12345678901234567890"; // Example large integer value in string form
+ * cardano_plutus_data_t* plutus_data = NULL;
+ * int32_t base = 10; // Decimal base
+ *
+ * // Attempt to create a new plutus_data from a string representation of an integer in decimal
+ * cardano_error_t result = cardano_plutus_data_new_integer_from_string(integer_str, strlen(integer_str), base, &plutus_data);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the plutus_data
+ *
+ *   // Once done, ensure to clean up and release the plutus_data
+ *   cardano_plutus_data_unref(&plutus_data);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_plutus_data_new_integer_from_string(
+  const char*             string,
+  size_t                  size,
+  int32_t                 base,
   cardano_plutus_data_t** plutus_data);
 
 /**
@@ -588,40 +716,45 @@ CARDANO_EXPORT cardano_error_t cardano_plutus_data_to_list(
   cardano_plutus_list_t** list);
 
 /**
- * \brief Converts a plutus data object to an integer value.
+ * \brief Converts a plutus data object to a bigint object.
  *
- * This function converts a \ref cardano_plutus_data_t object to an integer value.
- * It extracts the integer value from the given plutus data, allowing the conversion
- * between different types of plutus data. It returns an error code to indicate the success or failure of
- * the operation.
+ * This function converts a \ref cardano_plutus_data_t object to a \ref cardano_bigint_t object.
  *
  * \param[in] plutus_data A constant pointer to the \ref cardano_plutus_data_t object to be converted.
- * \param[out] integer On successful conversion, this will point to the extracted integer value.
- *                     The caller is responsible for managing the memory allocated for the integer.
+ * \param[out] integer On successful conversion, this will point to a newly created \ref cardano_bigint_t object
+ *                     representing the extracted integer value. The caller is responsible for managing the memory
+ *                     of this object, including releasing it when it is no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the conversion was successful, or an appropriate error code
  *         indicating the failure reason.
  *
  * Usage Example:
  * \code{.c}
- * cardano_plutus_data_t* plutus_data = cardano_plutus_data_new_integer(42);
- * int64_t integer = 0;
- * cardano_error_t result = cardano_plutus_data_to_integer(plutus_data, &integer);
+ * cardano_plutus_data_t* plutus_data = cardano_plutus_data_new_integer_from_string("987456321478523698745");
+ * cardano_bigint_t* bigint = NULL;
+ * cardano_error_t result = cardano_plutus_data_to_integer(plutus_data, &bigint);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the integer value
- *   printf("Extracted integer value: %" PRIu64 "\n", *integer);
+ *   // Use the bigint object
+ *   const size_t size = cardano_bigint_get_string_size(bigint, 10);
+ *   char* buffer = (char*)malloc(size);
+ *
+ *   if (cardano_bigint_to_string(bigint, buffer, size, 10) == CARDANO_SUCCESS)
+ *   {
+ *     printf("Extracted bigint value: %s\n", buffer);
+ *   }
  * }
  *
- * // Clean up the plutus_data object once done
+ * // Clean up
  * cardano_plutus_data_unref(&plutus_data);
+ * cardano_bigint_unref(&bigint);
  * \endcode
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_plutus_data_to_integer(
   const cardano_plutus_data_t* plutus_data,
-  int64_t*                     integer);
+  cardano_bigint_t**           integer);
 
 /**
  * \brief Converts a plutus data object to bounded bytes.
