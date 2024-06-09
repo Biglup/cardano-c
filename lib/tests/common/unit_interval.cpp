@@ -33,11 +33,11 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* PROTOCOL_VERSION_CBOR = "d81e820105";
+static const char* CBOR = "d81e820105";
 
 /* UNIT TESTS ****************************************************************/
 
-TEST(cardano_unit_interval_new, canCreateProtocolVersion)
+TEST(cardano_unit_interval_new, canCreateUnitInterval)
 {
   // Arrange
   cardano_unit_interval_t* unit_interval = nullptr;
@@ -53,7 +53,7 @@ TEST(cardano_unit_interval_new, canCreateProtocolVersion)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_new, returnsErrorIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_new, returnsErrorIfUnitIntervalIsNull)
 {
   // Act
   cardano_error_t error = cardano_unit_interval_new(1, 5, nullptr);
@@ -80,7 +80,7 @@ TEST(cardano_unit_interval_new, returnsErrorIfdenominatorAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
-TEST(cardano_unit_interval_to_cbor, canSerializeProtocolVersion)
+TEST(cardano_unit_interval_to_cbor, canSerializeUnitInterval)
 {
   // Arrange
   cardano_unit_interval_t* unit_interval = nullptr;
@@ -97,14 +97,14 @@ TEST(cardano_unit_interval_to_cbor, canSerializeProtocolVersion)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  EXPECT_EQ(hex_size, strlen(PROTOCOL_VERSION_CBOR) + 1); // +1 for the null terminator
+  EXPECT_EQ(hex_size, strlen(CBOR) + 1); // +1 for the null terminator
 
   char* actual_cbor = (char*)malloc(hex_size);
 
   error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(actual_cbor, PROTOCOL_VERSION_CBOR);
+  EXPECT_STREQ(actual_cbor, CBOR);
 
   // Cleanup
   cardano_unit_interval_unref(&unit_interval);
@@ -146,11 +146,11 @@ TEST(cardano_unit_interval_to_cbor, returnsErrorIfWriterIsNull)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_from_cbor, canDeserializeProtocolVersion)
+TEST(cardano_unit_interval_from_cbor, canDeserializeUnitInterval)
 {
   // Arrange
   cardano_unit_interval_t* unit_interval = nullptr;
-  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(PROTOCOL_VERSION_CBOR, strlen(PROTOCOL_VERSION_CBOR));
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
 
   // Act
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, &unit_interval);
@@ -170,10 +170,10 @@ TEST(cardano_unit_interval_from_cbor, canDeserializeProtocolVersion)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_unit_interval_from_cbor, returnErrorIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_from_cbor, returnErrorIfUnitIntervalIsNull)
 {
   // Arrange
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(PROTOCOL_VERSION_CBOR, strlen(PROTOCOL_VERSION_CBOR));
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
 
   // Act
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, nullptr);
@@ -415,7 +415,7 @@ TEST(cardano_unit_interval_get_denominator, returnsThedenominatorValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_get_denominator, returnZeroIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_get_denominator, returnZeroIfUnitIntervalIsNull)
 {
   // Act
   const uint64_t denominator = cardano_unit_interval_get_denominator(nullptr);
@@ -442,7 +442,7 @@ TEST(cardano_unit_interval_get_numerator, returnsThenumeratorStepsValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_get_numerator, returnZeroIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_get_numerator, returnZeroIfUnitIntervalIsNull)
 {
   // Act
   const uint64_t numerator = cardano_unit_interval_get_numerator(nullptr);
@@ -470,7 +470,7 @@ TEST(cardano_unit_interval_set_denominator, setsTheDenominatorValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_set_denominator, returnErrorIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_set_denominator, returnErrorIfUnitIntervalIsNull)
 {
   // Act
   cardano_error_t error = cardano_unit_interval_set_denominator(nullptr, 123456789);
@@ -498,7 +498,7 @@ TEST(cardano_unit_interval_set_numerator, setsTheNumeratorStepsValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_set_numerator, returnErrorIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_set_numerator, returnErrorIfUnitIntervalIsNull)
 {
   // Act
   cardano_error_t error = cardano_unit_interval_set_numerator(nullptr, 987654321);
@@ -525,7 +525,7 @@ TEST(cardano_unit_interval_to_double, returnsTheDoubleValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
-TEST(cardano_unit_interval_to_double, returnZeroIfProtocolVersionIsNull)
+TEST(cardano_unit_interval_to_double, returnZeroIfUnitIntervalIsNull)
 {
   // Act
   const double value = cardano_unit_interval_to_double(nullptr);

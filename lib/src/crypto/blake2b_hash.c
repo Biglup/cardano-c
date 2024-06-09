@@ -333,6 +333,47 @@ cardano_blake2b_hash_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_blake2b_hash_equals(
+  const cardano_blake2b_hash_t* lhs,
+  const cardano_blake2b_hash_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
+  if ((lhs == NULL) || (rhs == NULL))
+  {
+    return false;
+  }
+
+  return cardano_buffer_equals(lhs->buffer, rhs->buffer);
+}
+
+int32_t
+cardano_blake2b_hash_compare(
+  const cardano_blake2b_hash_t* lhs,
+  const cardano_blake2b_hash_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return 0;
+  }
+
+  if (lhs == NULL)
+  {
+    return -1;
+  }
+
+  if (rhs == NULL)
+  {
+    return 1;
+  }
+
+  return cardano_buffer_compare(lhs->buffer, rhs->buffer);
+}
+
 void
 cardano_blake2b_hash_unref(cardano_blake2b_hash_t** blake2b_hash)
 {

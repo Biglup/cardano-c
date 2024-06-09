@@ -436,6 +436,11 @@ cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, const size_t d
 bool
 cardano_buffer_equals(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
 {
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
   if (lhs == NULL)
   {
     return false;
@@ -460,6 +465,45 @@ cardano_buffer_equals(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
   assert(rhs->data != NULL);
 
   return (memcmp(lhs->data, rhs->data, lhs->size) == 0);
+}
+
+int32_t
+cardano_buffer_compare(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return 0;
+  }
+
+  if (lhs == NULL)
+  {
+    return -1;
+  }
+
+  if (rhs == NULL)
+  {
+    return 1;
+  }
+
+  if (lhs->size < rhs->size)
+  {
+    return -1;
+  }
+
+  if (lhs->size > rhs->size)
+  {
+    return 1;
+  }
+
+  if (lhs->size == 0U)
+  {
+    return 0;
+  }
+
+  assert(lhs->data != NULL);
+  assert(rhs->data != NULL);
+
+  return memcmp(lhs->data, rhs->data, lhs->size);
 }
 
 void

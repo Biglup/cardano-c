@@ -17,6 +17,8 @@ This section of the documentation provides an in-depth look at the various scrip
    script_language
    script_n_of_k
    script_pubkey
+   plutus_language_version
    plutus_v1_script
    plutus_v2_script
    plutus_v3_script
+
