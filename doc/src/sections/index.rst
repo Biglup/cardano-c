@@ -33,7 +33,7 @@ Main features
 - No shared global state - threading friendly
 - Proper handling of UTF-8
 - Extensive documentation and test suite
-- It has no runtime dependencies (The library depends on `libsodium`_ and `libjsonc`_ but they are both statically linked)
+- It has no runtime dependencies (The library depends on `libsodium`_, `libjsonc`_ and `libgmp`_ but they are all statically linked)
 
 Engineered for Excellence
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,6 +77,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/cbor/index
     api/encoding/index
     api/plutus_data/index
+    api/protocol_params/index
     api/scripts/index
     api/buffer
     api/error
@@ -84,4 +85,6 @@ See `APACHE LICENSE, VERSION 2.0`_
 
 .. _libsodium: https://github.com/jedisct1/libsodium
 .. _libjsonc: https://github.com/json-c/json-c
+.. _libgmp: https://gmplib.org/
+
 .. _APACHE LICENSE, VERSION 2.0: https://apache.org/licenses/LICENSE-2.0

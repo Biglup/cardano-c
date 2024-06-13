@@ -261,6 +261,86 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_cbor(
   cardano_cbor_writer_t*        writer);
 
 /**
+ * \brief Compares two Blake2b hash objects for equality.
+ *
+ * This function compares two Blake2b hash objects to determine if they are equal.
+ *
+ * \param[in] lhs Pointer to the first Blake2b hash object.
+ * \param[in] rhs Pointer to the second Blake2b hash object.
+ *
+ * \return \c true if the hash objects are equal, \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_blake2b_hash_t* hash1 = NULL;
+ * cardano_blake2b_hash_t* hash2 = NULL;
+ *
+ * // Assume hash1 and hash2 are initialized properly
+ *
+ * bool are_equal = cardano_blake2b_hash_equals(hash1, hash2);
+ *
+ * if (are_equal)
+ * {
+ *   printf("The hash objects are equal.\n");
+ * }
+ * else
+ * {
+ *   printf("The hash objects are not equal.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_blake2b_hash_unref(&hash1);
+ * cardano_blake2b_hash_unref(&hash2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_blake2b_hash_equals(
+  const cardano_blake2b_hash_t* lhs,
+  const cardano_blake2b_hash_t* rhs);
+
+/**
+ * \brief Compares two Blake2b hash objects.
+ *
+ * This function compares two Blake2b hash objects and returns an integer indicating
+ * their relative order.
+ *
+ * \param[in] lhs Pointer to the first Blake2b hash object.
+ * \param[in] rhs Pointer to the second Blake2b hash object.
+ *
+ * \return A negative value if lhs is less than rhs, zero if they are equal, and a positive value if lhs is greater than rhs.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_blake2b_hash_t* hash1 = NULL;
+ * cardano_blake2b_hash_t* hash2 = NULL;
+ *
+ * // Assume hash1 and hash2 are initialized properly
+ *
+ * int32_t comparison = cardano_blake2b_hash_compare(hash1, hash2);
+ * if (comparison < 0)
+ * {
+ *   printf("hash1 is less than hash2.\n");
+ * }
+ * else if (comparison == 0)
+ * {
+ *   printf("hash1 is equal to hash2.\n");
+ * }
+ * else
+ * {
+ *   printf("hash1 is greater than hash2.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_blake2b_hash_unref(&hash1);
+ * cardano_blake2b_hash_unref(&hash2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT int32_t cardano_blake2b_hash_compare(
+  const cardano_blake2b_hash_t* lhs,
+  const cardano_blake2b_hash_t* rhs);
+
+/**
  * \brief Decrements the reference count of a BLAKE2b hash object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_blake2b_hash_t object

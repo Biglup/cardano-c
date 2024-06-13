@@ -140,6 +140,18 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_INVALID_NATIVE_SCRIPT_TYPE:
       message = "Invalid operation. Invalid native script type";
       break;
+    case CARDANO_INVALID_PLUTUS_COST_MODEL:
+      message = "Invalid operation. Invalid Plutus cost model";
+      break;
+    case CARDANO_INDEX_OUT_OF_BOUNDS:
+      message = "Invalid operation. Index out of bounds";
+      break;
+    case CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY:
+      message = "Invalid operation. Duplicated CBOR map key";
+      break;
+    case CARDANO_ERROR_INVALID_CBOR_MAP_KEY:
+      message = "Invalid operation. Invalid CBOR map key";
+      break;
     default:
       message = "Unknown error code";
       break;

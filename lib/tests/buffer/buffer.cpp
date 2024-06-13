@@ -2895,16 +2895,13 @@ TEST(cardano_buffer_copy_bytes, returnsBufferBytes)
   cardano_buffer_unref(&buffer);
 }
 
-TEST(cardano_buffer_equals, returnsFalseIfBufferIsNull)
+TEST(cardano_buffer_equals, returnsTrueIfBothAreNUll)
 {
-  // Arrange
-  cardano_buffer_t* buffer = nullptr;
-
   // Act
-  bool result = cardano_buffer_equals(buffer, nullptr);
+  bool result = cardano_buffer_equals(nullptr, nullptr);
 
   // Assert
-  EXPECT_FALSE(result);
+  EXPECT_TRUE(result);
 }
 
 TEST(cardano_buffer_equals, returnsFalseIfOtherBufferIsNull)
@@ -2992,4 +2989,161 @@ TEST(cardano_buffer_equals, returnsTrueIfBufferContentsAreTheSame)
   // Cleanup
   cardano_buffer_unref(&buffer);
   cardano_buffer_unref(&other);
+}
+
+TEST(cardano_buffer_equals, returnsTrueIfBuffersAreEqual)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c", 24);
+  cardano_buffer_t* buffer2 = cardano_buffer_from_hex("000102030405060708090a0b0c", 24);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer1, buffer2);
+
+  // Assert
+  EXPECT_EQ(result, true);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
+}
+
+TEST(cardano_buffer_equals, returnsFalseIfBuffersAreDifferent)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c", 26);
+  cardano_buffer_t* buffer2 = cardano_buffer_from_hex("000102030405060708090a0b0d", 26);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer1, buffer2);
+
+  // Assert
+  EXPECT_EQ(result, false);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
+}
+
+TEST(cardano_buffer_equals, returnsFalseIfOneBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c", 24);
+
+  // Act
+  bool result = cardano_buffer_equals(buffer1, nullptr);
+  EXPECT_EQ(result, false);
+
+  result = cardano_buffer_equals(nullptr, buffer1);
+  EXPECT_EQ(result, false);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+}
+
+TEST(cardano_buffer_compare, returnsZeroIfBuffersAreEqual)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c", 26);
+  cardano_buffer_t* buffer2 = cardano_buffer_from_hex("000102030405060708090a0b0c", 26);
+
+  // Act
+  int result = cardano_buffer_compare(buffer1, buffer2);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
+}
+
+TEST(cardano_buffer_compare, returnsNegativeIfFirstBufferIsSmaller)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c", 26);
+  cardano_buffer_t* buffer2 = cardano_buffer_from_hex("000102030405060708090a0b0c0d", 28);
+
+  // Act
+  int result = cardano_buffer_compare(buffer1, buffer2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
+}
+
+TEST(cardano_buffer_compare, returnsPositiveIfFirstBufferIsLarger)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_from_hex("000102030405060708090a0b0c0d", 28);
+  cardano_buffer_t* buffer2 = cardano_buffer_from_hex("000102030405060708090a0b0c", 26);
+
+  // Act
+  int result = cardano_buffer_compare(buffer1, buffer2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
+}
+
+TEST(cardano_buffer_compare, returnZeroIfBothAreNull)
+{
+  // Act
+  int result = cardano_buffer_compare(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+}
+
+TEST(cardano_buffer_compare, returnsNegativeIfFirstBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  int result = cardano_buffer_compare(nullptr, buffer);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_compare, returnsPositiveIfSecondBufferIsNull)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(1);
+
+  // Act
+  int result = cardano_buffer_compare(buffer, nullptr);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_compare, returnsZeroIfBothAreEmpty)
+{
+  // Arrange
+  cardano_buffer_t* buffer1 = cardano_buffer_new(1);
+  cardano_buffer_t* buffer2 = cardano_buffer_new(1);
+
+  // Act
+  int result = cardano_buffer_compare(buffer1, buffer2);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer1);
+  cardano_buffer_unref(&buffer2);
 }

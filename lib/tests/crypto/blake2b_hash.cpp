@@ -662,3 +662,191 @@ TEST(cardano_blake2b_hash_to_cbor, canEncodeHashToCbor)
   cardano_cbor_writer_unref(&writer);
   free(cbor_hex);
 }
+
+TEST(cardano_blake2b_hash_equals, returnsTrueIfBothAreNull)
+{
+  // Act
+  bool result = cardano_blake2b_hash_equals(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, true);
+}
+
+TEST(cardano_blake2b_hash_equals, returnsFalseIfOtherHashIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_blake2b_hash_equals(hash1, nullptr);
+  EXPECT_EQ(result, false);
+
+  result = cardano_blake2b_hash_equals(nullptr, hash1);
+  EXPECT_EQ(result, false);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+}
+
+TEST(cardano_blake2b_hash_equals, returnsFalseIfHashesAreDifferent)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+  cardano_blake2b_hash_t* hash2 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_compute_hash((const byte_t*)"data2", 5, CARDANO_BLAKE2B_HASH_SIZE_512, &hash2);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_blake2b_hash_equals(hash1, hash2);
+
+  // Assert
+  EXPECT_EQ(result, false);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_blake2b_hash_equals, returnsTrueIfHashesAreEqual)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+  cardano_blake2b_hash_t* hash2 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash2);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_blake2b_hash_equals(hash1, hash2);
+
+  // Assert
+  EXPECT_EQ(result, true);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_blake2b_hash_compare, returnsZeroIfHashesAreEqual)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+  cardano_blake2b_hash_t* hash2 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash2);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_blake2b_hash_compare(hash1, hash2);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_blake2b_hash_compare, returnsNegativeIfFirstHashIsSmaller)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+  cardano_blake2b_hash_t* hash2 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data2", 5, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash2);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_blake2b_hash_compare(hash1, hash2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_blake2b_hash_compare, returnsPositiveIfFirstHashIsLarger)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash1 = nullptr;
+  cardano_blake2b_hash_t* hash2 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash1);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_compute_hash((const byte_t*)"data2", 5, CARDANO_BLAKE2B_HASH_SIZE_512, &hash2);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_blake2b_hash_compare(hash1, hash2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_blake2b_hash_compare, returnZeroIfBothAreNull)
+{
+  // Act
+  int result = cardano_blake2b_hash_compare(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+}
+
+TEST(cardano_blake2b_hash_compare, returnNegativeIfLhsIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_blake2b_hash_compare(nullptr, hash);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_blake2b_hash_compare, returnPositiveIfRhsIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_blake2b_hash_compare(hash, nullptr);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+}

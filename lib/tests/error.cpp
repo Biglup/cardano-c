@@ -460,6 +460,54 @@ TEST(CARDANO_CONVERSION_ERROR, canConvertConversionError)
   ASSERT_STREQ(message, "Invalid operation. Conversion error");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidPlutusCostModel)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_PLUTUS_COST_MODEL;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid Plutus cost model");
+}
+
+TEST(cardano_error_to_string, canConvertIndexOutOfBounds)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INDEX_OUT_OF_BOUNDS;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Index out of bounds");
+}
+
+TEST(cardano_error_to_string, canConvertDuplicatedCborMapKey)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Duplicated CBOR map key");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidCborMapKey)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid CBOR map key");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

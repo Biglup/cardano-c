@@ -295,6 +295,48 @@ CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_buffer_equals(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
 
 /**
+ * \brief Compares two buffer objects lexicographically.
+ *
+ * This function compares two buffer objects lexicographically and returns an integer indicating
+ * their relative order. The comparison is performed byte-by-byte.
+ *
+ * \param[in] lhs Pointer to the first buffer object.
+ * \param[in] rhs Pointer to the second buffer object.
+ *
+ * \return A negative value if lhs is less than rhs, zero if they are equal, and a positive value if lhs is greater than rhs.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_buffer_t* buffer1 = NULL;
+ * cardano_buffer_t* buffer2 = NULL;
+ *
+ * // Assume buffer1 and buffer2 are initialized properly
+ *
+ * int32_t comparison = cardano_buffer_compare(buffer1, buffer2);
+ *
+ * if (comparison < 0)
+ * {
+ *   printf("buffer1 is less than buffer2.\n");
+ * }
+ * else if (comparison == 0)
+ * {
+ * {
+ *   printf("buffer1 is equal to buffer2.\n");
+ * }
+ * else
+ * {
+ *   printf("buffer1 is greater than buffer2.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_buffer_unref(&buffer1);
+ * cardano_buffer_unref(&buffer2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT int32_t cardano_buffer_compare(const cardano_buffer_t* lhs, const cardano_buffer_t* rhs);
+
+/**
  * \brief Decrements the buffer's reference count.
  *
  * This function is used to decrement the reference count of a `cardano_buffer_t` instance.

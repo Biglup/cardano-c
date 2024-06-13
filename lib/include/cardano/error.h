@@ -122,6 +122,11 @@ typedef enum
    */
   CARDANO_CONVERSION_ERROR = 16,
 
+  /**
+   * \brief Index out of bounds.
+   */
+  CARDANO_INDEX_OUT_OF_BOUNDS = 17,
+
   /* Serialization errors */
 
   /**
@@ -188,6 +193,16 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_CBOR_MAP_SIZE = 303,
 
+  /**
+   * \brief The CBOR map key is duplicated.
+   */
+  CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY = 304,
+
+  /**
+   * \brief The CBOR map key is invalid.
+   */
+  CARDANO_ERROR_INVALID_CBOR_MAP_KEY = 305,
+
   // Address errors
 
   /**
@@ -230,6 +245,11 @@ typedef enum
    * \brief The native script type is invalid.
    */
   CARDANO_INVALID_NATIVE_SCRIPT_TYPE = 701,
+
+  /**
+   * \brief The Plutus cost model is invalid.
+   */
+  CARDANO_INVALID_PLUTUS_COST_MODEL = 702,
 
 } cardano_error_t;
 
