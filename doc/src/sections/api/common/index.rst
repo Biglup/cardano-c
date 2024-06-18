@@ -13,6 +13,8 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./credential_type
     ./datum
     ./datum_type
+    ./drep
+    ./drep_type
     ./ex_units
     ./governance_action_id
     ./network_id
