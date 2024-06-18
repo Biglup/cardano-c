@@ -167,6 +167,19 @@ fail_after_nine_malloc(size_t size);
 /**
  * \brief A mock version of malloc that allows nine successful allocation before failing.
  *
+ * This function simulates a scenario where malloc succeeds on the first 13 calls but fails
+ * on subsequent calls.
+ *
+ * \param size The size of the memory allocation request.
+ * \return A pointer to allocated memory on the first call, and NULL on subsequent calls
+ *         to simulate allocation failure.
+ */
+void*
+fail_after_thirteen_malloc(size_t size);
+
+/**
+ * \brief A mock version of malloc that allows nine successful allocation before failing.
+ *
  * This function simulates a scenario where malloc succeeds on the first 14 calls but fails
  * on subsequent calls.
  *
