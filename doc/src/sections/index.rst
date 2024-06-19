@@ -72,6 +72,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     :hidden:
 
     api/address/index
+    api/certs/index
     api/common/index
     api/cryptography/index
     api/cbor/index
