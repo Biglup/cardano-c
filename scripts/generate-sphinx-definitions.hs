@@ -15,16 +15,19 @@ if [ ! -f "$HEADER_FILE" ]; then
     exit 1
 fi
 
+# Use an associative array to track seen functions
+declare -A seen
+
 # Extracting function names and generating the Sphinx directives
 # Using sed to remove comments and then grep to find function declarations
 sed '/\/\*/,/\*\//d' "$HEADER_FILE" | \
 grep -oP '\bcardano_[a-zA-Z0-9_]+\s*\(' | \
 sed 's/($//' | \
-sort -u | \
 while read -r line
 do
     func_name=$(echo "$line" | awk '{print $1}')
-    if [[ "$func_name" =~ ^cardano_ ]]; then
+    if [[ "$func_name" =~ ^cardano_ ]] && [ -z "${seen[$func_name]}" ]; then
+        seen[$func_name]=1
         echo ""
         echo "------------"
         echo ""
