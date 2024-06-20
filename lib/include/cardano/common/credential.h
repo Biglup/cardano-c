@@ -540,6 +540,86 @@ CARDANO_EXPORT cardano_error_t
 cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blake2b_hash_t* hash);
 
 /**
+ * \brief Compares two credential objects for equality.
+ *
+ * This function compares two credential objects to determine if they are equal.
+ *
+ * \param[in] lhs Pointer to the first credential object.
+ * \param[in] rhs Pointer to the second credential object.
+ *
+ * \return \c true if the credential objects are equal, \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential1 = NULL;
+ * cardano_credential_t* credential2 = NULL;
+ *
+ * // Assume credential1 and credential2 are initialized properly
+ *
+ * bool are_equal = cardano_credential_equals(credential1, credential2);
+ *
+ * if (are_equal)
+ * {
+ *   printf("The credential objects are equal.\n");
+ * }
+ * else
+ * {
+ *   printf("The credential objects are not equal.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_credential_unref(&credential1);
+ * cardano_credential_unref(&credential2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_credential_equals(
+  const cardano_credential_t* lhs,
+  const cardano_credential_t* rhs);
+
+/**
+ * \brief Compares two credential objects.
+ *
+ * This function compares two credential objects and returns an integer indicating
+ * their relative order.
+ *
+ * \param[in] lhs Pointer to the first credential object.
+ * \param[in] rhs Pointer to the second credential object.
+ *
+ * \return A negative value if lhs is less than rhs, zero if they are equal, and a positive value if lhs is greater than rhs.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential1 = NULL;
+ * cardano_credential_t* credential2 = NULL;
+ *
+ * // Assume credential1 and credential2 are initialized properly
+ *
+ * int32_t comparison = cardano_credential_compare(credential1, credential2);
+ * if (comparison < 0)
+ * {
+ *   printf("credential1 is less than credential2.\n");
+ * }
+ * else if (comparison == 0)
+ * {
+ *   printf("credential1 is equal to credential2.\n");
+ * }
+ * else
+ * {
+ *   printf("credential1 is greater than credential2.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_credential_unref(&credential1);
+ * cardano_credential_unref(&credential2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT int32_t cardano_credential_compare(
+  const cardano_credential_t* lhs,
+  const cardano_credential_t* rhs);
+
+/**
  * \brief Decrements the reference count of a credential object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_credential_t object

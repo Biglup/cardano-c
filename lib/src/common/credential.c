@@ -460,6 +460,42 @@ cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blak
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_credential_equals(
+  const cardano_credential_t* lhs,
+  const cardano_credential_t* rhs)
+{
+  return cardano_credential_compare(lhs, rhs) == 0;
+}
+
+int32_t
+cardano_credential_compare(
+  const cardano_credential_t* lhs,
+  const cardano_credential_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return 0;
+  }
+
+  if (lhs == NULL)
+  {
+    return -1;
+  }
+
+  if (rhs == NULL)
+  {
+    return 1;
+  }
+
+  if (lhs->type != rhs->type)
+  {
+    return (lhs->type < rhs->type) ? -1 : 1;
+  }
+
+  return memcmp(lhs->hash_bytes, rhs->hash_bytes, sizeof(lhs->hash_bytes));
+}
+
 void
 cardano_credential_unref(cardano_credential_t** credential)
 {

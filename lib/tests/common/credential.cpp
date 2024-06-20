@@ -1064,3 +1064,365 @@ TEST(cardano_credential_get_hash_bytes_size, returnsZeroIfGivenANullPtr)
   // Assert
   EXPECT_EQ(size, 0);
 }
+
+TEST(cardano_credential_equals, returnsTrueIfBothAreNullPtr)
+{
+  // Act
+  bool equals = cardano_credential_equals(nullptr, nullptr);
+
+  // Assert
+  EXPECT_TRUE(equals);
+}
+
+TEST(cardano_credential_equals, returnsFalseIfCredentialIsNull)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equals  = cardano_credential_equals(credential, nullptr);
+  bool equals2 = cardano_credential_equals(nullptr, credential);
+
+  // Assert
+  EXPECT_FALSE(equals);
+  EXPECT_FALSE(equals2);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_credential_equals, returnsFalseIfCredentialTypesAreDifferent)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equals = cardano_credential_equals(credential1, credential2);
+
+  // Assert
+  EXPECT_FALSE(equals);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_equals, returnsFalseIfHashesAreDifferent)
+{
+  // Arrange
+  cardano_credential_t*   credential1 = nullptr;
+  cardano_credential_t*   credential2 = nullptr;
+  cardano_blake2b_hash_t* hash        = nullptr;
+
+  cardano_error_t error = cardano_blake2b_hash_from_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    &hash);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX_2,
+    strlen(KEY_HASH_HEX_2),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equals = cardano_credential_equals(credential1, credential2);
+
+  // Assert
+  EXPECT_FALSE(equals);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+  cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_credential_equals, returnsTrueIfCredentialsAreEqual)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equals = cardano_credential_equals(credential1, credential2);
+
+  // Assert
+  EXPECT_TRUE(equals);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_compare, returnsZeroIfBothAreNullPtr)
+{
+  // Act
+  int result = cardano_credential_compare(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+}
+
+TEST(cardano_credential_compare, returnsMinusOneIfFirstCredentialIsNull)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(nullptr, credential);
+
+  // Assert
+  EXPECT_EQ(result, -1);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_credential_compare, returnsOneIfSecondCredentialIsNull)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 1);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_credential_compare, returnsZeroIfCredentialsAreEqual)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential1, credential2);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_compare, returnsNegativeIfFirstCredentialIsLessThanSecond)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX_2,
+    strlen(KEY_HASH_HEX_2),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential1, credential2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_compare, returnsPositiveIfFirstCredentialIsGreaterThanSecond)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX_2,
+    strlen(KEY_HASH_HEX_2),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential1, credential2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_compare, returnsNegativeIfFirstCredentialTypeIsLessThanSecond)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential1, credential2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_compare, returnsPositiveIfFirstCredentialTypeIsGreaterThanSecond)
+{
+  // Arrange
+  cardano_credential_t* credential1 = nullptr;
+  cardano_credential_t* credential2 = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH,
+    &credential1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_credential_compare(credential1, credential2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+}
