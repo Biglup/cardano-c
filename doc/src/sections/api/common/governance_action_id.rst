@@ -5,11 +5,7 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_from_cbor
-
-------------
-
-.. doxygenfunction:: cardano_governance_action_id_from_hash_bytes
+.. doxygenfunction:: cardano_governance_action_id_new
 
 ------------
 
@@ -17,11 +13,19 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_get_hash
+.. doxygenfunction:: cardano_governance_action_id_from_hash_bytes
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_get_hash_bytes
+.. doxygenfunction:: cardano_governance_action_id_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_get_hash
 
 ------------
 
@@ -29,7 +33,7 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_get_hash_hex
+.. doxygenfunction:: cardano_governance_action_id_get_hash_bytes
 
 ------------
 
@@ -37,15 +41,23 @@ Governance Action Id
 
 ------------
 
+.. doxygenfunction:: cardano_governance_action_id_get_hash_hex
+
+------------
+
 .. doxygenfunction:: cardano_governance_action_id_get_index
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_get_last_error
+.. doxygenfunction:: cardano_governance_action_id_set_index
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_new
+.. doxygenfunction:: cardano_governance_action_id_set_hash
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_unref
 
 ------------
 
@@ -57,20 +69,8 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_set_hash
-
-------------
-
-.. doxygenfunction:: cardano_governance_action_id_set_index
-
-------------
-
 .. doxygenfunction:: cardano_governance_action_id_set_last_error
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_governance_action_id_unref
+.. doxygenfunction:: cardano_governance_action_id_get_last_error

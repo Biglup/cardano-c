@@ -27,7 +27,6 @@ BIP32 Public Key
 
 .. doxygenfunction:: cardano_bip32_public_key_derive
 
-
 ------------
 
 .. doxygenfunction:: cardano_bip32_public_key_to_ed25519_key

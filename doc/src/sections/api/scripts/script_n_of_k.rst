@@ -5,7 +5,7 @@ Native Script - Require M Of N
 
 ------------
 
-.. doxygenfunction:: cardano_script_n_of_k_equals
+.. doxygenfunction:: cardano_script_n_of_k_new
 
 ------------
 
@@ -13,11 +13,11 @@ Native Script - Require M Of N
 
 ------------
 
-.. doxygenfunction:: cardano_script_n_of_k_from_json
+.. doxygenfunction:: cardano_script_n_of_k_to_cbor
 
 ------------
 
-.. doxygenfunction:: cardano_script_n_of_k_get_last_error
+.. doxygenfunction:: cardano_script_n_of_k_from_json
 
 ------------
 
@@ -29,11 +29,23 @@ Native Script - Require M Of N
 
 ------------
 
+.. doxygenfunction:: cardano_script_n_of_k_set_required
+
+------------
+
 .. doxygenfunction:: cardano_script_n_of_k_get_scripts
 
 ------------
 
-.. doxygenfunction:: cardano_script_n_of_k_new
+.. doxygenfunction:: cardano_script_n_of_k_set_scripts
+
+------------
+
+.. doxygenfunction:: cardano_script_n_of_k_equals
+
+------------
+
+.. doxygenfunction:: cardano_script_n_of_k_unref
 
 ------------
 
@@ -49,16 +61,4 @@ Native Script - Require M Of N
 
 ------------
 
-.. doxygenfunction:: cardano_script_n_of_k_set_required
-
-------------
-
-.. doxygenfunction:: cardano_script_n_of_k_set_scripts
-
-------------
-
-.. doxygenfunction:: cardano_script_n_of_k_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_script_n_of_k_unref
+.. doxygenfunction:: cardano_script_n_of_k_get_last_error

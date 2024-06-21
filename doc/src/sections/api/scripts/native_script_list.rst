@@ -5,6 +5,30 @@ Native Script List
 
 ------------
 
+.. doxygenfunction:: cardano_native_script_list_new
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_from_json
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_get_length
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_get
+
+------------
+
 .. doxygenfunction:: cardano_native_script_list_add
 
 ------------
@@ -13,27 +37,7 @@ Native Script List
 
 ------------
 
-.. doxygenfunction:: cardano_native_script_list_from_cbor
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_from_json
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_get
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_get_last_error
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_get_length
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_new
+.. doxygenfunction:: cardano_native_script_list_unref
 
 ------------
 
@@ -49,8 +53,4 @@ Native Script List
 
 ------------
 
-.. doxygenfunction:: cardano_native_script_list_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_native_script_list_unref
+.. doxygenfunction:: cardano_native_script_list_get_last_error

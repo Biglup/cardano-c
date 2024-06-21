@@ -5,7 +5,7 @@ Native Script - Require Time After
 
 ------------
 
-.. doxygenfunction:: cardano_script_invalid_before_equals
+.. doxygenfunction:: cardano_script_invalid_before_new
 
 ------------
 
@@ -13,11 +13,11 @@ Native Script - Require Time After
 
 ------------
 
-.. doxygenfunction:: cardano_script_invalid_before_from_json
+.. doxygenfunction:: cardano_script_invalid_before_to_cbor
 
 ------------
 
-.. doxygenfunction:: cardano_script_invalid_before_get_last_error
+.. doxygenfunction:: cardano_script_invalid_before_from_json
 
 ------------
 
@@ -25,7 +25,15 @@ Native Script - Require Time After
 
 ------------
 
-.. doxygenfunction:: cardano_script_invalid_before_new
+.. doxygenfunction:: cardano_script_invalid_before_set_slot
+
+------------
+
+.. doxygenfunction:: cardano_script_invalid_before_equals
+
+------------
+
+.. doxygenfunction:: cardano_script_invalid_before_unref
 
 ------------
 
@@ -41,12 +49,4 @@ Native Script - Require Time After
 
 ------------
 
-.. doxygenfunction:: cardano_script_invalid_before_set_slot
-
-------------
-
-.. doxygenfunction:: cardano_script_invalid_before_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_script_invalid_before_unref
+.. doxygenfunction:: cardano_script_invalid_before_get_last_error

@@ -5,6 +5,26 @@ Plutus List
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_list_new
+
+------------
+
+.. doxygenfunction:: cardano_plutus_list_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_plutus_list_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_plutus_list_get_length
+
+------------
+
+.. doxygenfunction:: cardano_plutus_list_get
+
+------------
+
 .. doxygenfunction:: cardano_plutus_list_add
 
 ------------
@@ -13,23 +33,7 @@ Plutus List
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_list_from_cbor
-
-------------
-
-.. doxygenfunction:: cardano_plutus_list_get
-
-------------
-
-.. doxygenfunction:: cardano_plutus_list_get_last_error
-
-------------
-
-.. doxygenfunction:: cardano_plutus_list_get_length
-
-------------
-
-.. doxygenfunction:: cardano_plutus_list_new
+.. doxygenfunction:: cardano_plutus_list_unref
 
 ------------
 
@@ -45,9 +49,4 @@ Plutus List
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_list_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_plutus_list_unref
-
+.. doxygenfunction:: cardano_plutus_list_get_last_error

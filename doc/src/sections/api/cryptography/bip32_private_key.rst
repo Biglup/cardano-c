@@ -57,4 +57,8 @@ BIP32 Private Key
 
 ------------
 
+.. doxygenfunction:: cardano_bip32_private_key_to_hex
+
+------------
+
 .. doxygenfunction:: cardano_bip32_harden

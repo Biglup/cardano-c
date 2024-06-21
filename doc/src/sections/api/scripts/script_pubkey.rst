@@ -5,11 +5,15 @@ Native Script - Require Signature
 
 ------------
 
-.. doxygenfunction:: cardano_script_pubkey_equals
+.. doxygenfunction:: cardano_script_pubkey_new
 
 ------------
 
 .. doxygenfunction:: cardano_script_pubkey_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_script_pubkey_to_cbor
 
 ------------
 
@@ -21,11 +25,15 @@ Native Script - Require Signature
 
 ------------
 
-.. doxygenfunction:: cardano_script_pubkey_get_last_error
+.. doxygenfunction:: cardano_script_pubkey_set_key_hash
 
 ------------
 
-.. doxygenfunction:: cardano_script_pubkey_new
+.. doxygenfunction:: cardano_script_pubkey_equals
+
+------------
+
+.. doxygenfunction:: cardano_script_pubkey_unref
 
 ------------
 
@@ -37,17 +45,9 @@ Native Script - Require Signature
 
 ------------
 
-.. doxygenfunction:: cardano_script_pubkey_set_key_hash
-
-------------
-
 .. doxygenfunction:: cardano_script_pubkey_set_last_error
 
 ------------
 
-.. doxygenfunction:: cardano_script_pubkey_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_script_pubkey_unref
+.. doxygenfunction:: cardano_script_pubkey_get_last_error
 

@@ -5,7 +5,7 @@ Plutus Map
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_map_equals
+.. doxygenfunction:: cardano_plutus_map_new
 
 ------------
 
@@ -13,15 +13,7 @@ Plutus Map
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_map_get
-
-------------
-
-.. doxygenfunction:: cardano_plutus_map_get_keys
-
-------------
-
-.. doxygenfunction:: cardano_plutus_map_get_last_error
+.. doxygenfunction:: cardano_plutus_map_to_cbor
 
 ------------
 
@@ -29,7 +21,7 @@ Plutus Map
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_map_get_values
+.. doxygenfunction:: cardano_plutus_map_get
 
 ------------
 
@@ -37,7 +29,19 @@ Plutus Map
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_map_new
+.. doxygenfunction:: cardano_plutus_map_get_keys
+
+------------
+
+.. doxygenfunction:: cardano_plutus_map_get_values
+
+------------
+
+.. doxygenfunction:: cardano_plutus_map_equals
+
+------------
+
+.. doxygenfunction:: cardano_plutus_map_unref
 
 ------------
 
@@ -53,9 +57,4 @@ Plutus Map
 
 ------------
 
-.. doxygenfunction:: cardano_plutus_map_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_plutus_map_unref
-
+.. doxygenfunction:: cardano_plutus_map_get_last_error

@@ -5,26 +5,6 @@ Script
 
 ------------
 
-.. doxygenfunction:: cardano_script_equals
-
-------------
-
-.. doxygenfunction:: cardano_script_from_cbor
-
-------------
-
-.. doxygenfunction:: cardano_script_get_hash
-
-------------
-
-.. doxygenfunction:: cardano_script_get_language
-
-------------
-
-.. doxygenfunction:: cardano_script_get_last_error
-
-------------
-
 .. doxygenfunction:: cardano_script_new_native
 
 ------------
@@ -41,19 +21,15 @@ Script
 
 ------------
 
-.. doxygenfunction:: cardano_script_ref
-
-------------
-
-.. doxygenfunction:: cardano_script_refcount
-
-------------
-
-.. doxygenfunction:: cardano_script_set_last_error
+.. doxygenfunction:: cardano_script_from_cbor
 
 ------------
 
 .. doxygenfunction:: cardano_script_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_script_get_language
 
 ------------
 
@@ -73,4 +49,28 @@ Script
 
 ------------
 
+.. doxygenfunction:: cardano_script_get_hash
+
+------------
+
+.. doxygenfunction:: cardano_script_equals
+
+------------
+
 .. doxygenfunction:: cardano_script_unref
+
+------------
+
+.. doxygenfunction:: cardano_script_ref
+
+------------
+
+.. doxygenfunction:: cardano_script_refcount
+
+------------
+
+.. doxygenfunction:: cardano_script_set_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_get_last_error
