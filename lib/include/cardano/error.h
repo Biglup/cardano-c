@@ -127,6 +127,11 @@ typedef enum
    */
   CARDANO_INDEX_OUT_OF_BOUNDS = 17,
 
+  /**
+   * \brief Invalid certificate type.
+   */
+  CARDANO_INVALID_CERTIFICATE_TYPE = 18,
+
   /* Serialization errors */
 
   /**

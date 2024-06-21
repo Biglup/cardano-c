@@ -146,6 +146,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_INDEX_OUT_OF_BOUNDS:
       message = "Invalid operation. Index out of bounds";
       break;
+    case CARDANO_INVALID_CERTIFICATE_TYPE:
+      message = "Invalid operation. Invalid certificate type";
+      break;
     case CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY:
       message = "Invalid operation. Duplicated CBOR map key";
       break;

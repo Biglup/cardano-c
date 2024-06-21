@@ -508,6 +508,18 @@ TEST(cardano_error_to_string, canConvertInvalidCborMapKey)
   ASSERT_STREQ(message, "Invalid operation. Invalid CBOR map key");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidCertificateType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_CERTIFICATE_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid certificate type");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange
