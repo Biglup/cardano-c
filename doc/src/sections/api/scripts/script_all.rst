@@ -5,7 +5,7 @@ Native Script - Require All Of
 
 ------------
 
-.. doxygenfunction:: cardano_script_all_equals
+.. doxygenfunction:: cardano_script_all_new
 
 ------------
 
@@ -13,11 +13,11 @@ Native Script - Require All Of
 
 ------------
 
-.. doxygenfunction:: cardano_script_all_from_json
+.. doxygenfunction:: cardano_script_all_to_cbor
 
 ------------
 
-.. doxygenfunction:: cardano_script_all_get_last_error
+.. doxygenfunction:: cardano_script_all_from_json
 
 ------------
 
@@ -29,7 +29,15 @@ Native Script - Require All Of
 
 ------------
 
-.. doxygenfunction:: cardano_script_all_new
+.. doxygenfunction:: cardano_script_all_set_scripts
+
+------------
+
+.. doxygenfunction:: cardano_script_all_equals
+
+------------
+
+.. doxygenfunction:: cardano_script_all_unref
 
 ------------
 
@@ -45,12 +53,4 @@ Native Script - Require All Of
 
 ------------
 
-.. doxygenfunction:: cardano_script_all_set_scripts
-
-------------
-
-.. doxygenfunction:: cardano_script_all_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_script_all_unref
+.. doxygenfunction:: cardano_script_all_get_last_error

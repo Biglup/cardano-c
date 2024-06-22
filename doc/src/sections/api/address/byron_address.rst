@@ -5,19 +5,15 @@ Byron Address
 
 ------------
 
+.. doxygenfunction:: cardano_byron_address_from_credentials
+
+------------
+
 .. doxygenfunction:: cardano_byron_address_from_address
 
 ------------
 
-.. doxygenfunction:: cardano_byron_address_from_base58
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_from_bytes
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_from_credentials
+.. doxygenfunction:: cardano_byron_address_to_address
 
 ------------
 
@@ -25,19 +21,7 @@ Byron Address
 
 ------------
 
-.. doxygenfunction:: cardano_byron_address_get_base58_size
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_get_bytes
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_get_bytes_size
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_get_last_error
+.. doxygenfunction:: cardano_byron_address_get_type
 
 ------------
 
@@ -45,11 +29,39 @@ Byron Address
 
 ------------
 
+.. doxygenfunction:: cardano_byron_address_from_bytes
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_get_bytes_size
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_get_bytes
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_to_bytes
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_from_base58
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_get_base58_size
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_to_base58
+
+------------
+
 .. doxygenfunction:: cardano_byron_address_get_string
 
 ------------
 
-.. doxygenfunction:: cardano_byron_address_get_type
+.. doxygenfunction:: cardano_byron_address_unref
 
 ------------
 
@@ -65,16 +77,4 @@ Byron Address
 
 ------------
 
-.. doxygenfunction:: cardano_byron_address_to_address
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_to_base58
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_to_bytes
-
-------------
-
-.. doxygenfunction:: cardano_byron_address_unref
+.. doxygenfunction:: cardano_byron_address_get_last_error

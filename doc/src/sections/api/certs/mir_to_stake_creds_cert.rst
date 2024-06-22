@@ -5,19 +5,15 @@ MIR To Stake Credentials
 
 ------------
 
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_new
+
+------------
+
 .. doxygenfunction:: cardano_mir_to_stake_creds_cert_from_cbor
 
 ------------
 
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_key_at
-
-------------
-
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_key_value_at
-
-------------
-
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_last_error
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_to_cbor
 
 ------------
 
@@ -25,11 +21,11 @@ MIR To Stake Credentials
 
 ------------
 
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_size
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_set_pot
 
 ------------
 
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_value_at
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_size
 
 ------------
 
@@ -37,7 +33,19 @@ MIR To Stake Credentials
 
 ------------
 
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_new
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_key_at
+
+------------
+
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_value_at
+
+------------
+
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_key_value_at
+
+------------
+
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_unref
 
 ------------
 
@@ -53,12 +61,4 @@ MIR To Stake Credentials
 
 ------------
 
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_set_pot
-
-------------
-
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_mir_to_stake_creds_cert_unref
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_last_error

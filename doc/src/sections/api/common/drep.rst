@@ -5,7 +5,15 @@ DRep
 
 ------------
 
+.. doxygenfunction:: cardano_drep_new
+
+------------
+
 .. doxygenfunction:: cardano_drep_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_drep_to_cbor
 
 ------------
 
@@ -13,7 +21,7 @@ DRep
 
 ------------
 
-.. doxygenfunction:: cardano_drep_get_last_error
+.. doxygenfunction:: cardano_drep_set_credential
 
 ------------
 
@@ -21,7 +29,11 @@ DRep
 
 ------------
 
-.. doxygenfunction:: cardano_drep_new
+.. doxygenfunction:: cardano_drep_set_type
+
+------------
+
+.. doxygenfunction:: cardano_drep_unref
 
 ------------
 
@@ -33,20 +45,8 @@ DRep
 
 ------------
 
-.. doxygenfunction:: cardano_drep_set_credential
-
-------------
-
 .. doxygenfunction:: cardano_drep_set_last_error
 
 ------------
 
-.. doxygenfunction:: cardano_drep_set_type
-
-------------
-
-.. doxygenfunction:: cardano_drep_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_drep_unref
+.. doxygenfunction:: cardano_drep_get_last_error

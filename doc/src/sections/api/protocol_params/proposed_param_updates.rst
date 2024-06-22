@@ -5,7 +5,23 @@ Proposed Protocol Parameter Updates
 
 ------------
 
+.. doxygenfunction:: cardano_proposed_param_updates_new
+
+------------
+
 .. doxygenfunction:: cardano_proposed_param_updates_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_proposed_param_updates_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_proposed_param_updates_get_size
+
+------------
+
+.. doxygenfunction:: cardano_proposed_param_updates_insert
 
 ------------
 
@@ -17,23 +33,15 @@ Proposed Protocol Parameter Updates
 
 ------------
 
-.. doxygenfunction:: cardano_proposed_param_updates_get_last_error
-
-------------
-
-.. doxygenfunction:: cardano_proposed_param_updates_get_size
-
-------------
-
 .. doxygenfunction:: cardano_proposed_param_updates_get_value_at
 
 ------------
 
-.. doxygenfunction:: cardano_proposed_param_updates_insert
+.. doxygenfunction:: cardano_proposed_param_updates_get_key_value_at
 
 ------------
 
-.. doxygenfunction:: cardano_proposed_param_updates_new
+.. doxygenfunction:: cardano_proposed_param_updates_unref
 
 ------------
 
@@ -49,9 +57,4 @@ Proposed Protocol Parameter Updates
 
 ------------
 
-.. doxygenfunction:: cardano_proposed_param_updates_to_cbor
-
-------------
-
-.. doxygenfunction:: cardano_proposed_param_updates_unref
-
+.. doxygenfunction:: cardano_proposed_param_updates_get_last_error
