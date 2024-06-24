@@ -78,6 +78,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/cbor/index
     api/encoding/index
     api/plutus_data/index
+    api/pool_params/index
     api/protocol_params/index
     api/scripts/index
     api/buffer

@@ -131,6 +131,18 @@ TEST(cardano_cbor_tag_to_string, canConvertEncodedCBORDataItem)
   ASSERT_STREQ(message, "Tag: CBOR Data Item");
 }
 
+TEST(cardano_cbor_tag_to_string, canConvertSet)
+{
+  // Arrange
+  cardano_cbor_tag_t cbor_tag = CARDANO_CBOR_TAG_SET;
+
+  // Act
+  const char* message = cardano_cbor_tag_to_string(cbor_tag);
+
+  // Assert
+  ASSERT_STREQ(message, "Tag: Set");
+}
+
 TEST(cardano_cbor_tag_to_string, canConvertEncodedCBORRationalNumber)
 {
   // Arrange

@@ -102,6 +102,11 @@ typedef enum
   CARDANO_ENCODED_CBOR_RATIONAL_NUMBER = 30,
 
   /**
+   * \brief Tag value for `set<a> = #6.258([* a]) / [* a]`, `nonempty_set<a> = #6.258([+ a]) / [+ a]`, `nonempty_oset<a> = #6.258([+ a]) / [+ a]`
+   */
+  CARDANO_CBOR_TAG_SET = 258,
+
+  /**
    * \brief Tag value for the Self-Describe CBOR header (0xd9d9f7).
    *
    * When placed at the beginning of a CBOR document, this tag signals that the

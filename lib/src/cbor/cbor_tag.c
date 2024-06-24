@@ -56,6 +56,9 @@ cardano_cbor_tag_to_string(const cardano_cbor_tag_t tag)
     case CARDANO_ENCODED_CBOR_DATA_ITEM:
       message = "Tag: CBOR Data Item";
       break;
+    case CARDANO_CBOR_TAG_SET:
+      message = "Tag: Set";
+      break;
     case CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR:
       message = "Tag: Self Describe CBOR";
       break;
