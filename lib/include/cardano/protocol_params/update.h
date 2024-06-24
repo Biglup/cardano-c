@@ -102,7 +102,7 @@ cardano_update_new(
  *                        of the newly created update object upon successful decoding.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the protocol version were successfully created, or an appropriate error code if an error occurred.
+ *         if the object was successfully created, or an appropriate error code if an error occurred.
  *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_update_t object by calling
