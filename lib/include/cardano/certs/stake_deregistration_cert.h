@@ -1,5 +1,5 @@
 /**
- * \file stake_delegation_cert.h
+ * \file stake_deregistration_cert.h
  *
  * \author angel.castillo
  * \date   Jul 23, 2024
@@ -19,14 +19,14 @@
  * limitations under the License.
  */
 
-#ifndef STAKE_DELEGATION_CERT_H
-#define STAKE_DELEGATION_CERT_H
+#ifndef STAKE_DEREGISTRATION_CERT_H
+#define STAKE_DEREGISTRATION_CERT_H
 
 /* INCLUDES ******************************************************************/
 
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
-#include <cardano/certs/mir_cert_pot_type.h>
+#include <cardano/common/credential.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 
@@ -37,46 +37,99 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief This certificate is used when a stakeholder wants to delegate their stake to a
- * specific stake pool. It includes the stake pool id to which the stake is delegated.
+ * \brief This certificate is used when a stakeholder no longer wants to participate in
+ * staking. It revokes the stake registration and the associated stake is no
+ * longer counted when calculating stake pool rewards.
  */
-typedef struct cardano_stake_delegation_cert_t cardano_stake_delegation_cert_t;
+typedef struct cardano_stake_deregistration_cert_t cardano_stake_deregistration_cert_t;
 
 /**
- * \brief Creates a \ref cardano_stake_delegation_cert_t from a CBOR reader.
+ * \brief Certificates are a means to encode various essential operations related to stake
+ * delegation and stake pool management. Certificates are embedded in transactions and
+ * included in blocks. They're a vital aspect of Cardano's proof-of-stake mechanism,
+ * ensuring that stakeholders can participate in the protocol and its governance.
+ */
+typedef struct cardano_certificate_t cardano_certificate_t;
+
+/**
+ * \brief Creates a new stake deregistration certificate.
  *
- * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_stake_delegation_cert_t object.
- * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a auth_committee_hot.
+ * This function allocates and initializes a new \ref cardano_stake_deregistration_cert_t object.
+ * Stake deregistration certificates are used to deregister a staking credential from the Cardano network.
+ *
+ * \param[in] credential A pointer to an initialized \ref cardano_credential_t object that represents
+ *                       the staking credential to be deregistered.
+ * \param[out] stake_deregistration On successful execution, this will point to a newly created
+ *                                  \ref cardano_stake_deregistration_cert_t object. The caller is responsible
+ *                                  for releasing this resource using \ref cardano_stake_deregistration_cert_unref
+ *                                  when it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate
+ *         was successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL
+ *         if any input pointers are NULL).
+ *
+ * \note This function increments the reference count of the credential passed to it.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_credential_t* credential = ...;  // Assume credential is already initialized
+ * cardano_stake_deregistration_cert_t* stake_deregistration = NULL;
+ * cardano_error_t result = cardano_stake_deregistration_cert_new(credential, &stake_deregistration);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The stake deregistration certificate can now be used for deregistering the stake
+ *   // Remember to free the stake_deregistration when done
+ *   cardano_stake_deregistration_cert_unref(&stake_deregistration);
+ * }
+ * else
+ * {
+ *   printf("Failed to create stake deregistration certificate: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_stake_deregistration_cert_new(
+  cardano_credential_t*                 credential,
+  cardano_stake_deregistration_cert_t** stake_deregistration);
+
+/**
+ * \brief Creates a \ref cardano_stake_deregistration_cert_t from a CBOR reader.
+ *
+ * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_stake_deregistration_cert_t object.
+ * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a stake_deregistration.
  *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
- * \param[out] auth_committee_hot A pointer to a pointer of \ref cardano_stake_delegation_cert_t that will be set to the address
- *                        of the newly created auth_committee_hot object upon successful decoding.
+ * \param[out] stake_deregistration A pointer to a pointer of \ref cardano_stake_deregistration_cert_t that will be set to the address
+ *                        of the newly created stake_deregistration object upon successful decoding.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the object was successfully created, or an appropriate error code if an error occurred.
  *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
- *       The caller is responsible for freeing the created \ref cardano_stake_delegation_cert_t object by calling
- *       \ref cardano_auth_committee_hot_unref when it is no longer needed.
+ *       The caller is responsible for freeing the created \ref cardano_stake_deregistration_cert_t object by calling
+ *       \ref cardano_stake_deregistration_cert_unref when it is no longer needed.
  *
  * Usage Example:
  * \code{.c}
  * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cbor_data, data_size);
- * cardano_stake_delegation_cert_t* auth_committee_hot = NULL;
+ * cardano_stake_deregistration_cert_t* stake_deregistration = NULL;
  *
- * cardano_error_t result = cardano_auth_committee_hot_from_cbor(reader, &auth_committee_hot);
+ * cardano_error_t result = cardano_stake_deregistration_cert_from_cbor(reader, &stake_deregistration);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the auth_committee_hot
+ *   // Use the stake_deregistration
  *
- *   // Once done, ensure to clean up and release the auth_committee_hot
- *   cardano_auth_committee_hot_unref(&auth_committee_hot);
+ *   // Once done, ensure to clean up and release the stake_deregistration
+ *   cardano_stake_deregistration_cert_unref(&stake_deregistration);
  * }
  * else
  * {
  *   const char* error = cardano_cbor_reader_get_last_error(reader);
- *   printf("Failed to decode auth_committee_hot: %s\n", error);
+ *   printf("Failed to decode stake_deregistration: %s\n", error);
  * }
  *
  * cardano_cbor_reader_unref(&reader); // Cleanup the CBOR reader
@@ -84,28 +137,28 @@ typedef struct cardano_stake_delegation_cert_t cardano_stake_delegation_cert_t;
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_auth_committee_hot_from_cbor(cardano_cbor_reader_t* reader, cardano_stake_delegation_cert_t** auth_committee_hot);
+cardano_stake_deregistration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_stake_deregistration_cert_t** stake_deregistration);
 
 /**
- * \brief Serializes protocol version into CBOR format using a CBOR writer.
+ * \brief Serializes the certificate into CBOR format using a CBOR writer.
  *
- * This function serializes the given \ref cardano_stake_delegation_cert_t object using a \ref cardano_cbor_writer_t.
+ * This function serializes the given \ref cardano_stake_deregistration_cert_t object using a \ref cardano_cbor_writer_t.
  *
- * \param[in] auth_committee_hot A constant pointer to the \ref cardano_stake_delegation_cert_t object that is to be serialized.
+ * \param[in] stake_deregistration A constant pointer to the \ref cardano_stake_deregistration_cert_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
  *                    The writer must already be initialized and ready to accept the data.
  *
- * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p auth_committee_hot or \p writer
+ * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p stake_deregistration or \p writer
  *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
- * cardano_stake_delegation_cert_t* auth_committee_hot = ...;
+ * cardano_stake_deregistration_cert_t* stake_deregistration = ...;
  * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
  *
  * if (writer)
  * {
- *   cardano_error_t result = cardano_stake_delegation_cert_to_cbor(auth_committee_hot, writer);
+ *   cardano_error_t result = cardano_stake_deregistration_cert_to_cbor(stake_deregistration, writer);
  *
  *   if (result == CARDANO_SUCCESS)
  *   {
@@ -120,142 +173,209 @@ cardano_auth_committee_hot_from_cbor(cardano_cbor_reader_t* reader, cardano_stak
  *   cardano_cbor_writer_unref(&writer);
  * }
  *
- * cardano_auth_committee_hot_unref(&auth_committee_hot);
+ * cardano_stake_deregistration_cert_unref(&stake_deregistration);
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_stake_delegation_cert_to_cbor(
-  const cardano_stake_delegation_cert_t* auth_committee_hot,
-  cardano_cbor_writer_t*                 writer);
+CARDANO_EXPORT cardano_error_t cardano_stake_deregistration_cert_to_cbor(
+  const cardano_stake_deregistration_cert_t* stake_deregistration,
+  cardano_cbor_writer_t*                     writer);
 
 /**
- * \brief Decrements the reference count of a cardano_stake_delegation_cert_t object.
+ * \brief Retrieves the credential associated with a stake deregistration certificate.
  *
- * This function is responsible for managing the lifecycle of a \ref cardano_stake_delegation_cert_t object
- * by decreasing its reference count. When the reference count reaches zero, the auth_committee_hot is
+ * This function extracts the credential from the specified \ref cardano_stake_deregistration_cert_t object.
+ * The credential represents the staking identifier that was intended to be deregistered from the Cardano network.
+ *
+ * \param[in] certificate A constant pointer to an initialized \ref cardano_stake_deregistration_cert_t object.
+ *
+ * \return A pointer to the \ref cardano_credential_t object containing the credential. If the certificate is NULL,
+ *         this function returns NULL. The returned credential object has its reference count increased and it is
+ *         the caller's responsibility to release this reference using \ref cardano_credential_unref when it is
+ *         no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_stake_deregistration_cert_t* certificate = ...; // Assume certificate is already initialized
+ * const cardano_credential_t* credential = cardano_stake_deregistration_cert_get_credential(certificate);
+ *
+ * if (credential != NULL)
+ * {
+ *   // Process the credential
+ *   cardano_credential_unref(&credential);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_credential_t* cardano_stake_deregistration_cert_get_credential(cardano_stake_deregistration_cert_t* certificate);
+
+/**
+ * \brief Sets the credential for a stake deregistration certificate.
+ *
+ * This function assigns a new credential to a given \ref cardano_stake_deregistration_cert_t object. The credential
+ * represents the staking identifier that is intended to be deregistered from the Cardano network.
+ *
+ * \param[in,out] certificate A pointer to an initialized \ref cardano_stake_deregistration_cert_t object to which the credential will be set.
+ * \param[in] credential A pointer to an initialized \ref cardano_credential_t object representing the new credential.
+ *                       This function increments the reference count of the credential, and it will be managed by the
+ *                       certificate object thereafter.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the credential
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         if any of the input pointers are NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_stake_deregistration_cert_t* certificate = ...; // Assume certificate is already initialized
+ * cardano_credential_t* credential = ...; // Assume credential is already initialized
+ *
+ * cardano_error_t result = cardano_stake_deregistration_cert_set_credential(certificate, credential);
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The credential is now set for the stake deregistration certificate
+ * }
+ * else
+ * {
+ *   printf("Failed to set the credential.\n");
+ * }
+ *
+ * // Remember to manage the lifecycle of the objects properly
+ * cardano_credential_unref(&credential);
+ * cardano_stake_deregistration_cert_unref(&certificate);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_stake_deregistration_cert_set_credential(cardano_stake_deregistration_cert_t* certificate, cardano_credential_t* credential);
+
+/**
+ * \brief Decrements the reference count of a cardano_stake_deregistration_cert_t object.
+ *
+ * This function is responsible for managing the lifecycle of a \ref cardano_stake_deregistration_cert_t object
+ * by decreasing its reference count. When the reference count reaches zero, the stake_deregistration is
  * finalized; its associated resources are released, and its memory is deallocated.
  *
- * \param[in,out] auth_committee_hot A pointer to the pointer of the auth_committee_hot object. This double
+ * \param[in,out] stake_deregistration A pointer to the pointer of the stake_deregistration object. This double
  *                            indirection allows the function to set the caller's pointer to
  *                            NULL, avoiding dangling pointer issues after the object has been
  *                            freed.
  *
  * Usage Example:
  * \code{.c}
- * cardano_stake_delegation_cert_t* auth_committee_hot = cardano_auth_committee_hot_new(major, minor);
+ * cardano_stake_deregistration_cert_t* stake_deregistration = cardano_stake_deregistration_cert_new(major, minor);
  *
- * // Perform operations with the auth_committee_hot...
+ * // Perform operations with the stake_deregistration...
  *
- * cardano_auth_committee_hot_unref(&auth_committee_hot);
- * // At this point, auth_committee_hot is NULL and cannot be used.
+ * cardano_stake_deregistration_cert_unref(&stake_deregistration);
+ * // At this point, stake_deregistration is NULL and cannot be used.
  * \endcode
  *
- * \note After calling \ref cardano_auth_committee_hot_unref, the pointer to the \ref cardano_stake_delegation_cert_t object
+ * \note After calling \ref cardano_stake_deregistration_cert_unref, the pointer to the \ref cardano_stake_deregistration_cert_t object
  *       will be set to NULL to prevent its reuse.
  */
-CARDANO_EXPORT void cardano_auth_committee_hot_unref(cardano_stake_delegation_cert_t** auth_committee_hot);
+CARDANO_EXPORT void cardano_stake_deregistration_cert_unref(cardano_stake_deregistration_cert_t** stake_deregistration);
 
 /**
- * \brief Increases the reference count of the cardano_stake_delegation_cert_t object.
+ * \brief Increases the reference count of the cardano_stake_deregistration_cert_t object.
  *
- * This function is used to manually increment the reference count of an cardano_stake_delegation_cert_t
+ * This function is used to manually increment the reference count of an cardano_stake_deregistration_cert_t
  * object, indicating that another part of the code has taken ownership of it. This
  * ensures the object remains allocated and valid until all owners have released their
- * reference by calling \ref cardano_auth_committee_hot_unref.
+ * reference by calling \ref cardano_stake_deregistration_cert_unref.
  *
- * \param auth_committee_hot A pointer to the cardano_stake_delegation_cert_t object whose reference count is to be incremented.
+ * \param stake_deregistration A pointer to the cardano_stake_deregistration_cert_t object whose reference count is to be incremented.
  *
  * Usage Example:
  * \code{.c}
- * // Assuming auth_committee_hot is a previously created auth_committee_hot object
+ * // Assuming stake_deregistration is a previously created stake_deregistration object
  *
- * cardano_auth_committee_hot_ref(auth_committee_hot);
+ * cardano_stake_deregistration_cert_ref(stake_deregistration);
  *
- * // Now auth_committee_hot can be safely used elsewhere without worrying about premature deallocation
+ * // Now stake_deregistration can be safely used elsewhere without worrying about premature deallocation
  * \endcode
  *
- * \note Always ensure that for every call to \ref cardano_auth_committee_hot_ref there is a corresponding
- * call to \ref cardano_auth_committee_hot_unref to prevent memory leaks.
+ * \note Always ensure that for every call to \ref cardano_stake_deregistration_cert_ref there is a corresponding
+ * call to \ref cardano_stake_deregistration_cert_unref to prevent memory leaks.
  */
-CARDANO_EXPORT void cardano_auth_committee_hot_ref(cardano_stake_delegation_cert_t* auth_committee_hot);
+CARDANO_EXPORT void cardano_stake_deregistration_cert_ref(cardano_stake_deregistration_cert_t* stake_deregistration);
 
 /**
- * \brief Retrieves the current reference count of the cardano_stake_delegation_cert_t object.
+ * \brief Retrieves the current reference count of the cardano_stake_deregistration_cert_t object.
  *
- * This function returns the number of active references to an cardano_stake_delegation_cert_t object. It's useful
+ * This function returns the number of active references to an cardano_stake_deregistration_cert_t object. It's useful
  * for debugging purposes or managing the lifecycle of the object in complex scenarios.
  *
  * \warning This function does not account for transitive references. A transitive reference
  * occurs when an object holds a reference to another object, rather than directly to the
- * cardano_stake_delegation_cert_t. As such, the reported count may not fully represent the total number
+ * cardano_stake_deregistration_cert_t. As such, the reported count may not fully represent the total number
  * of conceptual references in cases where such transitive relationships exist.
  *
- * \param auth_committee_hot A pointer to the cardano_stake_delegation_cert_t object whose reference count is queried.
+ * \param stake_deregistration A pointer to the cardano_stake_deregistration_cert_t object whose reference count is queried.
  *                    The object must not be NULL.
  *
- * \return The number of active references to the specified cardano_stake_delegation_cert_t object. If the object
- * is properly managed (i.e., every \ref cardano_auth_committee_hot_ref call is matched with a
- * \ref cardano_auth_committee_hot_unref call), this count should reach zero right before the object
+ * \return The number of active references to the specified cardano_stake_deregistration_cert_t object. If the object
+ * is properly managed (i.e., every \ref cardano_stake_deregistration_cert_ref call is matched with a
+ * \ref cardano_stake_deregistration_cert_unref call), this count should reach zero right before the object
  * is deallocated.
  *
  * Usage Example:
  * \code{.c}
- * // Assuming auth_committee_hot is a previously created auth_committee_hot object
+ * // Assuming stake_deregistration is a previously created stake_deregistration object
  *
- * size_t ref_count = cardano_auth_committee_hot_refcount(auth_committee_hot);
+ * size_t ref_count = cardano_stake_deregistration_cert_refcount(stake_deregistration);
  *
  * printf("Reference count: %zu\n", ref_count);
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT size_t cardano_auth_committee_hot_refcount(const cardano_stake_delegation_cert_t* auth_committee_hot);
+CARDANO_EXPORT size_t cardano_stake_deregistration_cert_refcount(const cardano_stake_deregistration_cert_t* stake_deregistration);
 
 /**
- * \brief Sets the last error message for a given cardano_stake_delegation_cert_t object.
+ * \brief Sets the last error message for a given cardano_stake_deregistration_cert_t object.
  *
- * Records an error message in the auth_committee_hot's last_error buffer, overwriting any existing message.
+ * Records an error message in the stake_deregistration's last_error buffer, overwriting any existing message.
  * This is useful for storing descriptive error information that can be later retrieved. The message
  * is truncated if it exceeds the buffer's capacity.
  *
- * \param[in] auth_committee_hot A pointer to the \ref cardano_stake_delegation_cert_t instance whose last error message is
+ * \param[in] stake_deregistration A pointer to the \ref cardano_stake_deregistration_cert_t instance whose last error message is
  *                       to be set. If \c NULL, the function does nothing.
- * \param[in] message A null-terminated string containing the error message. If \c NULL, the auth_committee_hot's
+ * \param[in] message A null-terminated string containing the error message. If \c NULL, the stake_deregistration's
  *                    last_error is set to an empty string, indicating no error.
  *
  * \note The error message is limited to 1023 characters, including the null terminator, due to the
  * fixed size of the last_error buffer.
  */
-CARDANO_EXPORT void cardano_auth_committee_hot_set_last_error(
-  cardano_stake_delegation_cert_t* auth_committee_hot,
-  const char*                      message);
+CARDANO_EXPORT void cardano_stake_deregistration_cert_set_last_error(
+  cardano_stake_deregistration_cert_t* stake_deregistration,
+  const char*                          message);
 
 /**
- * \brief Retrieves the last error message recorded for a specific auth_committee_hot.
+ * \brief Retrieves the last error message recorded for a specific stake_deregistration.
  *
  * This function returns a pointer to the null-terminated string containing
- * the last error message set by \ref cardano_auth_committee_hot_set_last_error for the given
- * auth_committee_hot. If no error message has been set, or if the last_error buffer was
+ * the last error message set by \ref cardano_stake_deregistration_cert_set_last_error for the given
+ * stake_deregistration. If no error message has been set, or if the last_error buffer was
  * explicitly cleared, an empty string is returned, indicating no error.
  *
- * \param[in] auth_committee_hot A pointer to the \ref cardano_stake_delegation_cert_t instance whose last error
- *                   message is to be retrieved. If the auth_committee_hot is NULL, the function
- *                   returns a generic error message indicating the null auth_committee_hot.
+ * \param[in] stake_deregistration A pointer to the \ref cardano_stake_deregistration_cert_t instance whose last error
+ *                   message is to be retrieved. If the stake_deregistration is NULL, the function
+ *                   returns a generic error message indicating the null stake_deregistration.
  *
  * \return A pointer to a null-terminated string containing the last error
- *         message for the specified auth_committee_hot. If the auth_committee_hot is NULL, "Object is NULL."
+ *         message for the specified stake_deregistration. If the stake_deregistration is NULL, "Object is NULL."
  *         is returned to indicate the error.
  *
  * \note The returned string points to internal storage within the object and
  *       must not be modified by the caller. The string remains valid until the
- *       next call to \ref cardano_auth_committee_hot_set_last_error for the same auth_committee_hot, or until
- *       the auth_committee_hot is deallocated.
+ *       next call to \ref cardano_stake_deregistration_cert_set_last_error for the same stake_deregistration, or until
+ *       the stake_deregistration is deallocated.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT const char* cardano_auth_committee_hot_get_last_error(
-  const cardano_stake_delegation_cert_t* auth_committee_hot);
+CARDANO_EXPORT const char* cardano_stake_deregistration_cert_get_last_error(
+  const cardano_stake_deregistration_cert_t* stake_deregistration);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif // STAKE_DELEGATION_CERT_H
+#endif // STAKE_DEREGISTRATION_CERT_H
