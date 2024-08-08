@@ -198,14 +198,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 
   static const char* validator_name = "pool_params";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, EMBEDDED_GROUP_SIZE);
-
-  if (expect_array_result != CARDANO_SUCCESS)
-  {
-    *pool_params = NULL;
-    return expect_array_result;
-  }
-
   cardano_blake2b_hash_t*   operator_key_hash = NULL;
   cardano_blake2b_hash_t*   vrf_vk_hash       = NULL;
   uint64_t                  pledge            = 0;
@@ -398,15 +390,6 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
   if (writer == NULL)
   {
     return CARDANO_POINTER_IS_NULL;
-  }
-
-  cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
-    writer,
-    EMBEDDED_GROUP_SIZE);
-
-  if (write_start_array_result != CARDANO_SUCCESS)
-  {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
   cardano_error_t write_operator_key_hash_result = cardano_blake2b_hash_to_cbor(pool_params->operator_hash, writer);

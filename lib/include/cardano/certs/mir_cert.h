@@ -60,6 +60,14 @@ typedef struct cardano_mir_to_pot_cert_t cardano_mir_to_pot_cert_t;
 typedef struct cardano_mir_to_stake_creds_cert_t cardano_mir_to_stake_creds_cert_t;
 
 /**
+ * \brief Certificates are a means to encode various essential operations related to stake
+ * delegation and stake pool management. Certificates are embedded in transactions and
+ * included in blocks. They're a vital aspect of Cardano's proof-of-stake mechanism,
+ * ensuring that stakeholders can participate in the protocol and its governance.
+ */
+typedef struct cardano_certificate_t cardano_certificate_t;
+
+/**
  * \brief Creates a Move Instantaneous Rewards (MIR) certificate for transferring funds to another accounting pot.
  *
  * This function initializes a new instance of \ref cardano_mir_cert_t that represents a certificate for moving
@@ -174,7 +182,7 @@ CARDANO_EXPORT cardano_error_t
 cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** mir_cert);
 
 /**
- * \brief Serializes protocol version into CBOR format using a CBOR writer.
+ * \brief Serializes the certificate into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_mir_cert_t object using a \ref cardano_cbor_writer_t.
  *
