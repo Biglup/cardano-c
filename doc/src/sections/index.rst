@@ -81,6 +81,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/pool_params/index
     api/protocol_params/index
     api/scripts/index
+    api/voting_procedures/index
     api/buffer
     api/error
     api/object

@@ -1063,3 +1063,146 @@ TEST(cardano_governance_action_id_get_hash_bytes_size, returnsZeroIfGivenANullPt
   // Assert
   EXPECT_EQ(size, 0);
 }
+
+TEST(cardano_governance_action_id_equals, returnsTrueIfGivenTwoNullPtrs)
+{
+  // Act
+  bool equal = cardano_governance_action_id_equals(nullptr, nullptr);
+
+  // Assert
+  EXPECT_TRUE(equal);
+}
+
+TEST(cardano_governance_action_id_equals, returnsFalseIfOneOfTheObjectsIsNull)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  // Act
+  bool equal = cardano_governance_action_id_equals(governance_action_id, (cardano_governance_action_id_t*)"");
+
+  // Assert
+  EXPECT_FALSE(equal);
+}
+
+TEST(cardano_governance_action_id_equals, returnsFalseIfHashesAreDifferent)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id  = nullptr;
+  cardano_governance_action_id_t* governance_action_id2 = nullptr;
+
+  cardano_error_t error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    3,
+    &governance_action_id);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX_2,
+    strlen(KEY_HASH_HEX_2),
+    3,
+    &governance_action_id2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equal = cardano_governance_action_id_equals(governance_action_id, governance_action_id2);
+
+  // Assert
+  EXPECT_FALSE(equal);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&governance_action_id);
+  cardano_governance_action_id_unref(&governance_action_id2);
+}
+
+TEST(cardano_governance_action_id_equals, returnsFalseIfIndexesAreDifferent)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id  = nullptr;
+  cardano_governance_action_id_t* governance_action_id2 = nullptr;
+
+  cardano_error_t error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    3,
+    &governance_action_id);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    4,
+    &governance_action_id2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equal = cardano_governance_action_id_equals(governance_action_id, governance_action_id2);
+
+  // Assert
+  EXPECT_FALSE(equal);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&governance_action_id);
+  cardano_governance_action_id_unref(&governance_action_id2);
+}
+
+TEST(cardano_governance_action_id_equals, returnsTrueIfObjectsAreTheSame)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  cardano_error_t error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    3,
+    &governance_action_id);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equal = cardano_governance_action_id_equals(governance_action_id, governance_action_id);
+
+  // Assert
+  EXPECT_TRUE(equal);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&governance_action_id);
+}
+
+TEST(cardano_governance_action_id_equals, returnsTrueIfObjectsAreEqual)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id  = nullptr;
+  cardano_governance_action_id_t* governance_action_id2 = nullptr;
+
+  cardano_error_t error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    3,
+    &governance_action_id);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_governance_action_id_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    3,
+    &governance_action_id2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool equal = cardano_governance_action_id_equals(governance_action_id, governance_action_id2);
+
+  // Assert
+  EXPECT_TRUE(equal);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&governance_action_id);
+  cardano_governance_action_id_unref(&governance_action_id2);
+}

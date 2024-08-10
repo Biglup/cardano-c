@@ -461,6 +461,29 @@ cardano_governance_action_id_set_hash(cardano_governance_action_id_t* governance
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_governance_action_id_equals(
+  const cardano_governance_action_id_t* lhs,
+  const cardano_governance_action_id_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
+  if ((lhs == NULL) || (rhs == NULL))
+  {
+    return false;
+  }
+
+  if (lhs->index != rhs->index)
+  {
+    return false;
+  }
+
+  return (memcmp(lhs->hash_bytes, rhs->hash_bytes, sizeof(lhs->hash_bytes)) == 0);
+}
+
 void
 cardano_governance_action_id_unref(cardano_governance_action_id_t** governance_action_id)
 {
