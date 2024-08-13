@@ -527,6 +527,39 @@ CARDANO_EXPORT cardano_error_t
 cardano_governance_action_id_set_hash(cardano_governance_action_id_t* governance_action_id, const cardano_blake2b_hash_t* hash);
 
 /**
+ * \brief Checks if two governance_action_id objects are equal.
+ *
+ * This function compares two \ref cardano_governance_action_id_t objects for equality.
+ * It checks if the contents of the two governance_action_id objects are identical.
+ *
+ * \param[in] lhs A constant pointer to the first \ref cardano_governance_action_id_t object to be compared.
+ * \param[in] rhs A constant pointer to the second \ref cardano_governance_action_id_t object to be compared.
+ *
+ * \return \c true if the two governance_action_id objects are equal (have the same contents), \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_governance_action_id_t* governance_action_id1 = ...;
+ * cardano_governance_action_id_t* governance_action_id2 = ...;
+ *
+ * if (cardano_governance_action_id_equals(governance_action_id1, governance_action_id2))
+ * {
+ *   printf("governance_action_id1 is equal to governance_action_id2\n");
+ * }
+ * else
+ * {
+ *   printf("governance_action_id1 is not equal to governance_action_id2\n");
+ * }
+ *
+ * // Clean up the governance_action_id objects once done
+ * cardano_governance_action_id_unref(&governance_action_id1);
+ * cardano_governance_action_id_unref(&governance_action_id2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_governance_action_id_equals(const cardano_governance_action_id_t* lhs, const cardano_governance_action_id_t* rhs);
+
+/**
  * \brief Decrements the reference count of a governance_action_id object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_governance_action_id_t object

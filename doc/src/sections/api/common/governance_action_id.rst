@@ -53,6 +53,10 @@ Governance Action Id
 
 ------------
 
+.. doxygenfunction:: cardano_governance_action_id_equals
+
+------------
+
 .. doxygenfunction:: cardano_governance_action_id_set_hash
 
 ------------

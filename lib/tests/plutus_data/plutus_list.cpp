@@ -23,7 +23,6 @@
 
 #include <cardano/error.h>
 
-#include <cardano/buffer.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
 
