@@ -19,4 +19,6 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./governance_action_id
     ./network_id
     ./protocol_version
+    ./reward_address_list
     ./unit_interval
+    ./withdrawal_map

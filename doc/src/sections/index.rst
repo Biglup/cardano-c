@@ -79,6 +79,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/encoding/index
     api/plutus_data/index
     api/pool_params/index
+    api/proposal_procedures/index
     api/protocol_params/index
     api/scripts/index
     api/voting_procedures/index
