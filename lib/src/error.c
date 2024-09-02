@@ -155,6 +155,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_CBOR_MAP_KEY:
       message = "Invalid operation. Invalid CBOR map key";
       break;
+    case CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE:
+      message = "Invalid operation. Invalid procedure proposal type";
+      break;
     default:
       message = "Unknown error code";
       break;

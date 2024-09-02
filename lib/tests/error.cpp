@@ -520,6 +520,18 @@ TEST(cardano_error_to_string, canConvertInvalidCertificateType)
   ASSERT_STREQ(message, "Invalid operation. Invalid certificate type");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidProcedureProposalType)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid procedure proposal type");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

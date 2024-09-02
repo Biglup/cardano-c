@@ -256,6 +256,12 @@ typedef enum
    */
   CARDANO_INVALID_PLUTUS_COST_MODEL = 702,
 
+  // Proposal procedure errors
+
+  /**
+   * \brief The governance action type is invalid.
+   */
+  CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE = 800,
 } cardano_error_t;
 
 /**
