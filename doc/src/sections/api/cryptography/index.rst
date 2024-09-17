@@ -12,5 +12,6 @@ This section of the documentation provides detailed information on each cryptogr
     ./ed25519_public_key
     ./ed25519_signature
     ./blake2b_hash
+    ./blake2b_hash_set
     ./blake2b_hash_size
     ./pbkdf2

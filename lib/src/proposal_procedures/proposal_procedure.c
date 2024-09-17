@@ -608,6 +608,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
     // LCOV_EXCL_STOP
   }
 
+  cardano_error_t final_result = CARDANO_SUCCESS;
+
   switch (type)
   {
     case CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE:
@@ -634,7 +636,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_HARD_FORK_INITIATION:
     {
@@ -660,7 +663,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS:
     {
@@ -686,7 +690,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_NO_CONFIDENCE:
     {
@@ -712,7 +717,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_UPDATE_COMMITTEE:
     {
@@ -738,7 +744,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION:
     {
@@ -764,7 +771,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_INFO:
     {
@@ -790,7 +798,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return new_instance_result;
+      final_result = new_instance_result;
+      break;
     }
       // LCOV_EXCL_START
     default:
@@ -804,7 +813,12 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       // LCOV_EXCL_STOP
   }
 
-  return CARDANO_SUCCESS;
+  if (final_result != CARDANO_SUCCESS)
+  {
+    return final_result; // LCOV_EXCL_LINE
+  }
+
+  return cardano_cbor_reader_read_end_array(reader);
 }
 
 cardano_error_t

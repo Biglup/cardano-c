@@ -751,3 +751,54 @@ TEST(cardano_transaction_input_set_add, returnsErrorIfDataIsNull)
   // Cleanup
   cardano_transaction_input_set_unref(&transaction_input_set);
 }
+
+TEST(cardano_transaction_input_set_is_tagged, returnsFalseIfHashSetIsNull)
+{
+  // Act
+  bool is_tagged = cardano_transaction_input_set_is_tagged(nullptr);
+
+  // Assert
+  EXPECT_FALSE(is_tagged);
+}
+
+TEST(cardano_transaction_input_set_is_tagged, returnsTrueIfFromCborReadTaggedSet)
+{
+  // Arrange
+  cardano_transaction_input_set_t* transaction_input_set = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+
+  cardano_error_t error = cardano_transaction_input_set_from_cbor(reader, &transaction_input_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool is_tagged = cardano_transaction_input_set_is_tagged(transaction_input_set);
+
+  // Assert
+  EXPECT_TRUE(is_tagged);
+
+  // Cleanup
+  cardano_transaction_input_set_unref(&transaction_input_set);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_input_set_is_tagged, returnsFalseIfFromCborReadUntaggedSet)
+{
+  // Arrange
+  cardano_transaction_input_set_t* transaction_input_set = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(CBOR_WITHOUT_TAG, strlen(CBOR_WITHOUT_TAG));
+
+  cardano_error_t error = cardano_transaction_input_set_from_cbor(reader, &transaction_input_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool is_tagged = cardano_transaction_input_set_is_tagged(transaction_input_set);
+
+  // Assert
+  EXPECT_FALSE(is_tagged);
+
+  // Cleanup
+  cardano_transaction_input_set_unref(&transaction_input_set);
+  cardano_cbor_reader_unref(&reader);
+}

@@ -40,6 +40,7 @@ typedef struct cardano_transaction_input_set_t
 {
     cardano_object_t base;
     cardano_array_t* array;
+    bool             use_tags;
 } cardano_transaction_input_set_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -117,7 +118,8 @@ cardano_transaction_input_set_new(cardano_transaction_input_set_t** transaction_
   list->base.last_error[0] = '\0';
   list->base.deallocator   = cardano_transaction_input_set_deallocate;
 
-  list->array = cardano_array_new(128);
+  list->array    = cardano_array_new(128);
+  list->use_tags = true;
 
   if (list->array == NULL)
   {
@@ -158,6 +160,8 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
     cardano_transaction_input_set_unref(&list);
     return CARDANO_ERROR_DECODING;
   }
+
+  list->use_tags = state == CARDANO_CBOR_READER_STATE_TAG;
 
   if (state == CARDANO_CBOR_READER_STATE_TAG)
   {
@@ -360,6 +364,17 @@ cardano_transaction_input_set_add(cardano_transaction_input_set_t* transaction_i
   cardano_array_sort(transaction_input_set->array, compare_by_input);
 
   return CARDANO_SUCCESS;
+}
+
+bool
+cardano_transaction_input_set_is_tagged(cardano_transaction_input_set_t* transaction_input_set)
+{
+  if (transaction_input_set == NULL)
+  {
+    return false;
+  }
+
+  return transaction_input_set->use_tags;
 }
 
 void
