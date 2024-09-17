@@ -326,9 +326,40 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
     return CARDANO_SUCCESS;
   }
 
+  cardano_cbor_tag_t tag;
+
+  const cardano_error_t read_tag_result = cardano_cbor_reader_read_tag(reader, &tag);
+
+  if (read_tag_result != CARDANO_SUCCESS)
+  {
+    *datum = NULL;
+    return read_tag_result;
+  }
+
+  if (tag != CARDANO_ENCODED_CBOR_DATA_ITEM)
+  {
+    *datum = NULL;
+    return CARDANO_ERROR_INVALID_CBOR_VALUE;
+  }
+
+  cardano_buffer_t* byte_string = NULL;
+
+  const cardano_error_t read_byte_string_result = cardano_cbor_reader_read_bytestring(reader, &byte_string);
+
+  if (read_byte_string_result != CARDANO_SUCCESS)
+  {
+    *datum = NULL;
+    return read_byte_string_result;
+  }
+
+  cardano_cbor_reader_t* plutus_data_reader = cardano_cbor_reader_new(cardano_buffer_get_data(byte_string), cardano_buffer_get_size(byte_string));
+  cardano_buffer_unref(&byte_string);
+
   cardano_plutus_data_t* inline_data = NULL;
 
-  const cardano_error_t read_inline_data_result = cardano_plutus_data_from_cbor(reader, &inline_data);
+  const cardano_error_t read_inline_data_result = cardano_plutus_data_from_cbor(plutus_data_reader, &inline_data);
+
+  cardano_cbor_reader_unref(&plutus_data_reader);
 
   if (read_inline_data_result != CARDANO_SUCCESS)
   {
@@ -354,8 +385,10 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 
   if (new_datum_result != CARDANO_SUCCESS)
   {
+    // LCOV_EXCL_START
     *datum = NULL;
     return new_datum_result;
+    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -405,11 +438,42 @@ cardano_datum_to_cbor(
     }
     case CARDANO_DATUM_TYPE_INLINE_DATA:
     {
-      cardano_error_t write_plutus_data_result = cardano_plutus_data_to_cbor(datum->inline_data, writer);
+      cardano_error_t write_tag_result = cardano_cbor_writer_write_tag(writer, CARDANO_ENCODED_CBOR_DATA_ITEM);
+
+      if (write_tag_result != CARDANO_SUCCESS)
+      {
+        return write_tag_result; /* LCOV_EXCL_LINE */
+      }
+
+      cardano_cbor_writer_t* plutus_data_writer       = cardano_cbor_writer_new();
+      cardano_error_t        write_plutus_data_result = cardano_plutus_data_to_cbor(datum->inline_data, plutus_data_writer);
 
       if (write_plutus_data_result != CARDANO_SUCCESS)
       {
-        return write_plutus_data_result; /* LCOV_EXCL_LINE */
+        // LCOV_EXCL_START
+        cardano_cbor_writer_unref(&plutus_data_writer);
+        return write_plutus_data_result;
+        // LCOV_EXCL_STOP
+      }
+
+      cardano_buffer_t* byte_string = NULL;
+
+      cardano_error_t encode_result = cardano_cbor_writer_encode_in_buffer(plutus_data_writer, &byte_string);
+
+      cardano_cbor_writer_unref(&plutus_data_writer);
+
+      if (encode_result != CARDANO_SUCCESS)
+      {
+        return encode_result; /* LCOV_EXCL_LINE */
+      }
+
+      cardano_error_t write_byte_string_result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(byte_string), cardano_buffer_get_size(byte_string));
+
+      cardano_buffer_unref(&byte_string);
+
+      if (write_byte_string_result != CARDANO_SUCCESS)
+      {
+        return write_byte_string_result; /* LCOV_EXCL_LINE */
       }
 
       break;

@@ -72,6 +72,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     :hidden:
 
     api/address/index
+    api/assets/index
     api/certs/index
     api/common/index
     api/cryptography/index
@@ -82,6 +83,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/proposal_procedures/index
     api/protocol_params/index
     api/scripts/index
+    api/transaction_body/index
     api/voting_procedures/index
     api/buffer
     api/error

@@ -32,10 +32,11 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* INLINE_DATUM_CBOR       = "8201d8799f0102030405ff";
+static const char* INLINE_DATUM_CBOR       = "8201d81849d8799f0102030405ff";
 static const char* DATUM_HASH_CBOR         = "820058200000000000000000000000000000000000000000000000000000000000000000";
 static const char* INVALID_DATUM_HASH_CBOR = "82005821000000000000000000000000000000000000000000000000000000000000000000";
 static const char* HASH                    = "0000000000000000000000000000000000000000000000000000000000000000";
+static const char* PLUTUS_DATA             = "d8799f0102030405ff";
 
 /* UNIT TESTS ****************************************************************/
 
@@ -200,6 +201,66 @@ TEST(cardano_datum_from_cbor, returnErrorIfInvalidByteStringSize)
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_datum_from_cbor, returnErrorIfInvalidTag)
+{
+  // Arrange
+  const char*            invalid_cbor = "8201ef1849d8799f0102030405ff";
+  cardano_cbor_reader_t* reader       = cardano_cbor_reader_from_hex(
+    invalid_cbor,
+    strlen(invalid_cbor));
+
+  cardano_datum_t* datum = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_datum_from_cbor, returnErrorIfInvalidTag2)
+{
+  // Arrange
+  const char*            invalid_cbor = "8201d81949d8799f0102030405ff";
+  cardano_cbor_reader_t* reader       = cardano_cbor_reader_from_hex(
+    invalid_cbor,
+    strlen(invalid_cbor));
+
+  cardano_datum_t* datum = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_datum_from_cbor, returnErrorIfInvalidByteStream)
+{
+  // Arrange
+  const char*            invalid_cbor = "8201d818efd8799f0102030405ff";
+  cardano_cbor_reader_t* reader       = cardano_cbor_reader_from_hex(
+    invalid_cbor,
+    strlen(invalid_cbor));
+
+  cardano_datum_t* datum = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
 TEST(cardano_datum_from_cbor, returnsErrorIfReaderIsNull)
 {
   // Arrange
@@ -261,7 +322,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -877,8 +938,8 @@ TEST(cardano_datum_get_inline_data, canGetTheInlineData)
   cardano_plutus_data_t* data  = nullptr;
 
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(
-    INLINE_DATUM_CBOR,
-    strlen(INLINE_DATUM_CBOR));
+    PLUTUS_DATA,
+    strlen(PLUTUS_DATA));
 
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &data);
 
@@ -895,6 +956,7 @@ TEST(cardano_datum_get_inline_data, canGetTheInlineData)
 
   // Assert
   EXPECT_THAT(data, testing::Not((cardano_plutus_data_t*)nullptr));
+  EXPECT_EQ(data, data2);
 
   // Cleanup
   cardano_datum_unref(&datum);
