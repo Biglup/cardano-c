@@ -17,6 +17,7 @@ Governance proposal procedure for the Cardano blockchain, it supports various ty
    no_confidence_action
    parameter_change_action
    proposal_procedure
+   proposal_procedure_set
    treasury_withdrawals_action
    update_committee_action
 

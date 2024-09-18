@@ -9,6 +9,7 @@ In Cardano, certificates are tools used to facilitate various network operations
     ./auth_committee_hot_cert
     ./cert_type
     ./certificate
+    ./certificate_set
     ./genesis_key_delegation_cert
     ./mir_cert
     ./mir_cert_pot_type

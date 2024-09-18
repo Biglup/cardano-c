@@ -271,6 +271,39 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_transaction_input_set_add(cardano_transaction_input_set_t* transaction_input_set, cardano_transaction_input_t* element);
 
 /**
+ * \brief Determines if the transaction input set uses tags in its encoding.
+ *
+ * This function checks whether the given \ref cardano_transaction_input_set_t object
+ * uses the new Conway era encoding for sets, which are collections identified by a tag.
+ *
+ * \param[in] transaction_input_set A pointer to an initialized \ref cardano_transaction_input_set_t object.
+ *
+ * \return A boolean value:
+ *         - \c true if the transaction input set uses the Conway era encoding for sets (tagged sets).
+ *         - \c false if the transaction input set uses the older encoding (arrays without tags).
+ *
+ * \note This function helps in determining the serialization format of the transaction input set,
+ *       which may be necessary for compatibility with other transaction encoders/decoders.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_input_set_t* transaction_input_set = ...; // Assume transaction_input_set is already initialized
+ * bool is_tagged_set = cardano_transaction_input_set_is_tagged(transaction_input_set);
+ *
+ * if (is_tagged_set)
+ * {
+ *   printf("The transaction input set uses Conway era tag for sets.\n");
+ * }
+ * else
+ * {
+ *   printf("The transaction input set uses pre-Conway era encoding.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_transaction_input_set_is_tagged(cardano_transaction_input_set_t* transaction_input_set);
+
+/**
  * \brief Decrements the reference count of a transaction_input_set object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_transaction_input_set_t object

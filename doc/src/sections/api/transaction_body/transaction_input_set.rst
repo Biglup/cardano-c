@@ -29,6 +29,10 @@ Transaction Input Set
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_input_set_is_tagged
+
+------------
+
 .. doxygenfunction:: cardano_transaction_input_set_unref
 
 ------------
