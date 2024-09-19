@@ -33,6 +33,7 @@
 #include "../string_safe.h"
 
 #include <assert.h>
+#include <json.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -50,6 +51,18 @@ typedef struct cardano_metadatum_t
     cardano_buffer_t*         text;
     cardano_metadatum_kind_t  kind;
 } cardano_metadatum_t;
+
+/* STATIC FUNCTIONS FORWARD DECLARATIONS *************************************/
+
+/**
+ * \brief Converts a JSON object to a metadatum.
+ *
+ * \param[in] json_obj The JSON object to be converted.
+ * \param[out] metadatum The metadatum object to be created.
+ *
+ * \@return The result of the operation.
+ */
+static cardano_error_t convert_json_to_metadatum(json_object* json_obj, cardano_metadatum_t** metadatum);
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -111,6 +124,381 @@ cardano_metadatum_new(void)
   data->kind    = CARDANO_METADATUM_KIND_MAP;
 
   return data;
+}
+
+/**
+ * \brief Handles the conversion from JSON array to metadatum.
+ *
+ * \param json_obj The JSON array to be converted.
+ * \param metadatum The metadatum object to be created.
+ *
+ * \return The result of the operation.
+ */
+static cardano_error_t
+handle_json_array(json_object* json_obj, cardano_metadatum_t** metadatum)
+{
+  assert(json_obj != NULL);
+  assert(metadatum != NULL);
+
+  cardano_metadatum_list_t* list  = NULL;
+  cardano_error_t           error = cardano_metadatum_list_new(&list);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error; // LCOV_EXCL_LINE
+  }
+
+  const size_t array_len = json_object_array_length(json_obj);
+
+  for (size_t i = 0U; i < array_len; ++i)
+  {
+    json_object* elem = json_object_array_get_idx(json_obj, i);
+
+    cardano_metadatum_t* elem_metadatum = NULL;
+
+    // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+    error = convert_json_to_metadatum(elem, &elem_metadatum);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_metadatum_unref(&elem_metadatum);
+      cardano_metadatum_list_unref(&list);
+
+      return error;
+      // LCOV_EXCL_STOP
+    }
+
+    error = cardano_metadatum_list_add(list, elem_metadatum);
+    cardano_metadatum_unref(&elem_metadatum);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_metadatum_unref(&elem_metadatum);
+      cardano_metadatum_list_unref(&list);
+
+      return error;
+      // LCOV_EXCL_STOP
+    }
+  }
+
+  error = cardano_metadatum_new_list(list, metadatum);
+
+  cardano_metadatum_list_unref(&list);
+
+  return error;
+}
+
+/**
+ * \brief Handles the conversion from JSON object to metadatum.
+ *
+ * \param json_obj The JSON object to be converted.
+ * \param metadatum The metadatum object to be created.
+ *
+ * \return The result of the operation.
+ */
+static cardano_error_t
+handle_json_object(json_object* json_obj, cardano_metadatum_t** metadatum)
+{
+  assert(json_obj != NULL);
+  assert(metadatum != NULL);
+
+  cardano_metadatum_map_t* map   = NULL;
+  cardano_error_t          error = cardano_metadatum_map_new(&map);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error; // LCOV_EXCL_LINE
+  }
+
+  json_object_object_foreach(json_obj, key, val)
+  {
+    cardano_metadatum_t* value = NULL;
+
+    // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+    error = convert_json_to_metadatum(val, &value);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_metadatum_unref(&value);
+      cardano_metadatum_map_unref(&map);
+      return error;
+    }
+
+    cardano_metadatum_t* meta_key = NULL;
+    error                         = cardano_metadatum_new_string(key, cardano_safe_strlen(key, 64), &meta_key);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_metadatum_unref(&value);
+      cardano_metadatum_map_unref(&map);
+      return error;
+      // LCOV_EXCL_STOP
+    }
+
+    error = cardano_metadatum_map_insert(map, meta_key, value);
+
+    cardano_metadatum_unref(&meta_key);
+    cardano_metadatum_unref(&value);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_metadatum_map_unref(&map);
+      return error;
+      // LCOV_EXCL_STOP
+    }
+  }
+
+  error = cardano_metadatum_new_map(map, metadatum);
+  cardano_metadatum_map_unref(&map);
+
+  return error;
+}
+
+/**
+ * \brief Converts a JSON object to a metadatum.
+ *
+ * \param[in] json_obj The JSON object to be converted.
+ * \param[out] metadatum The metadatum object to be created.
+ *
+ * \@return The result of the operation.
+ */
+static cardano_error_t
+convert_json_to_metadatum(json_object* json_obj, cardano_metadatum_t** metadatum)
+{
+  assert(json_obj != NULL);
+  assert(metadatum != NULL);
+
+  if (json_object_is_type(json_obj, json_type_object) != 0)
+  {
+    // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+    return handle_json_object(json_obj, metadatum);
+  }
+  else if (json_object_is_type(json_obj, json_type_array) != 0)
+  {
+    // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+    return handle_json_array(json_obj, metadatum);
+  }
+  else if (json_object_is_type(json_obj, json_type_string) != 0)
+  {
+    const char* str = json_object_get_string(json_obj);
+
+    cardano_error_t error = cardano_metadatum_new_string(str, cardano_safe_strlen(str, 64), metadatum);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error; // LCOV_EXCL_LINE
+    }
+  }
+  else if (json_object_is_type(json_obj, json_type_int) != 0)
+  {
+    int64_t value = json_object_get_int64(json_obj);
+
+    if (value == 0)
+    {
+      uint64_t unsigned_value = json_object_get_uint64(json_obj);
+
+      return cardano_metadatum_new_integer_from_uint(unsigned_value, metadatum);
+    }
+
+    return cardano_metadatum_new_integer_from_int(value, metadatum); // LCOV_EXCL_LINE
+  }
+  else
+  {
+    return CARDANO_ERROR_INVALID_JSON;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Converts a metadatum to a JSON object.
+ *
+ * \param metadatum The metadatum to be converted.
+ * \return The JSON object representing the metadatum.
+ */
+static json_object*
+convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
+{
+  assert(metadatum != NULL);
+
+  switch (metadatum->kind)
+  {
+    case CARDANO_METADATUM_KIND_INTEGER:
+      return json_object_new_int64(cardano_bigint_to_int(metadatum->integer));
+    case CARDANO_METADATUM_KIND_TEXT:
+      return json_object_new_string_len((char*)((void*)cardano_buffer_get_data(metadatum->text)), (int32_t)cardano_buffer_get_size(metadatum->text));
+    case CARDANO_METADATUM_KIND_LIST:
+    {
+      json_object* json_array = json_object_new_array();
+
+      for (size_t i = 0U; i < cardano_metadatum_list_get_length(metadatum->list); i++)
+      {
+        cardano_metadatum_t* meta_elem = NULL;
+
+        cardano_error_t error = cardano_metadatum_list_get(metadatum->list, i, &meta_elem);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          json_object_put(json_array);
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        cardano_metadatum_unref(&meta_elem);
+
+        // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+        json_object* elem = convert_metadatum_to_json_object(meta_elem);
+
+        if (elem == NULL)
+        {
+          // LCOV_EXCL_START
+          json_object_put(json_array);
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        json_object_array_add(json_array, elem);
+      }
+      return json_array;
+    }
+    case CARDANO_METADATUM_KIND_MAP:
+    {
+      json_object*              json_map = json_object_new_object();
+      cardano_metadatum_list_t* keys     = NULL;
+      cardano_metadatum_list_t* values   = NULL;
+
+      cardano_error_t error = cardano_metadatum_map_get_keys(metadatum->map, &keys);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_metadatum_list_unref(&keys);
+        json_object_put(json_map);
+        return NULL;
+        // LCOV_EXCL_STOP
+      }
+
+      error = cardano_metadatum_map_get_values(metadatum->map, &values);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_metadatum_list_unref(&keys);
+        cardano_metadatum_list_unref(&values);
+        json_object_put(json_map);
+
+        return NULL;
+        // LCOV_EXCL_STOP
+      }
+
+      for (size_t i = 0U; i < cardano_metadatum_map_get_length(metadatum->map); i++)
+      {
+        cardano_metadatum_t* key   = NULL;
+        cardano_metadatum_t* value = NULL;
+
+        error = cardano_metadatum_list_get(keys, i, &key);
+        cardano_metadatum_unref(&key);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_metadatum_list_unref(&keys);
+          cardano_metadatum_list_unref(&values);
+          json_object_put(json_map);
+
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        error = cardano_metadatum_list_get(values, i, &value);
+        cardano_metadatum_unref(&value);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_metadatum_list_unref(&keys);
+          cardano_metadatum_list_unref(&values);
+          json_object_put(json_map);
+
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        cardano_metadatum_kind_t key_kind;
+
+        error = cardano_metadatum_get_kind(key, &key_kind);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_metadatum_list_unref(&keys);
+          cardano_metadatum_list_unref(&values);
+          json_object_put(json_map);
+
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        if (key_kind != CARDANO_METADATUM_KIND_TEXT)
+        {
+          cardano_metadatum_set_last_error(metadatum, "JSON map keys must be strings.");
+
+          cardano_metadatum_list_unref(&keys);
+          cardano_metadatum_list_unref(&values);
+          json_object_put(json_map);
+
+          return NULL;
+        }
+
+        const size_t key_size = cardano_buffer_get_size(key->text) + 1U;
+        char*        key_str  = (char*)_cardano_malloc(key_size);
+
+        CARDANO_UNUSED(memset(key_str, 0, key_size));
+
+        cardano_safe_memcpy(key_str, key_size, (void*)cardano_buffer_get_data(key->text), cardano_buffer_get_size(key->text));
+
+        // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
+        json_object* json_value = convert_metadatum_to_json_object(value);
+
+        if (value == NULL)
+        {
+          // LCOV_EXCL_START
+          cardano_metadatum_list_unref(&keys);
+          cardano_metadatum_list_unref(&values);
+          _cardano_free(key_str);
+          json_object_put(json_map);
+
+          return NULL;
+          // LCOV_EXCL_STOP
+        }
+
+        json_object_object_add(json_map, key_str, json_value);
+        _cardano_free(key_str);
+      }
+
+      cardano_metadatum_list_unref(&keys);
+      cardano_metadatum_list_unref(&values);
+
+      return json_map;
+    }
+    case CARDANO_METADATUM_KIND_BYTES:
+    {
+      cardano_metadatum_set_last_error(metadatum, "Metadatum of type 'bytes' cannot be converted to JSON.");
+      return NULL;
+    }
+    // LCOV_EXCL_START
+    default:
+    {
+      cardano_metadatum_set_last_error(metadatum, "Invalid metadatum kind.");
+      return NULL;
+    }
+      // LCOV_EXCL_STOP
+  }
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -628,6 +1016,97 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
 
   *metadatum = data;
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_metadatum_from_json(const char* json, size_t json_size, cardano_metadatum_t** metadatum)
+{
+  if ((json == NULL) || (metadatum == NULL))
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  if (json_size == 0U)
+  {
+    return CARDANO_ERROR_INVALID_JSON;
+  }
+
+  json_object* parsed_json = json_tokener_parse(json);
+
+  if (parsed_json == NULL)
+  {
+    return CARDANO_ERROR_INVALID_JSON;
+  }
+
+  cardano_error_t error = convert_json_to_metadatum(parsed_json, metadatum);
+
+  json_object_put(parsed_json);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    cardano_metadatum_unref(metadatum);
+
+    return error;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_metadatum_to_json(
+  cardano_metadatum_t* metadatum,
+  char*                json,
+  size_t               json_size)
+{
+  if ((metadatum == NULL) || (json == NULL))
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  json_object* json_obj = convert_metadatum_to_json_object(metadatum);
+
+  if (json_obj == NULL)
+  {
+    return CARDANO_ERROR_INVALID_METADATUM_CONVERSION;
+  }
+
+  const char* json_str      = json_object_to_json_string_ext(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE);
+  size_t      required_size = strlen(json_str) + 1U;
+
+  if (json_size < required_size)
+  {
+    json_object_put(json_obj);
+    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+  }
+
+  cardano_safe_memcpy(json, json_size, json_str, required_size);
+
+  json_object_put(json_obj);
+
+  return CARDANO_SUCCESS;
+}
+
+size_t
+cardano_metadatum_get_json_size(cardano_metadatum_t* metadatum)
+{
+  if (metadatum == NULL)
+  {
+    return 0U;
+  }
+
+  json_object* json_obj = convert_metadatum_to_json_object(metadatum);
+
+  if (json_obj == NULL)
+  {
+    return 0U;
+  }
+
+  const char* json_str = json_object_to_json_string_ext(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE);
+  size_t      size     = strlen(json_str) + 1U;
+
+  json_object_put(json_obj);
+
+  return size;
 }
 
 cardano_error_t

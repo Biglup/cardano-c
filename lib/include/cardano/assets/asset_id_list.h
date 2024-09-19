@@ -140,7 +140,7 @@ CARDANO_EXPORT size_t cardano_asset_id_list_get_length(const cardano_asset_id_li
  * {
  *   // Use the retrieved element
  *   // Remember to unreference the element once done if it's no longer needed
- *   cardano_blake2b_hash_unref(&element);
+ *   cardano_asset_id_unref(&element);
  * }
  *
  * // Clean up the asset_id_list object once done

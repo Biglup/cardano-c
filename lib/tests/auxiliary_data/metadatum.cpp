@@ -36,6 +36,43 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* METADATUM_CBOR = "9f01029f0102030405ff9f0102030405ff05ff";
+static const char* JSON_1 =
+  "{\n"
+  "  \"160b85e53e25ef49272c421f04b702bc32184d102865fd1dc8815cde\": {\n"
+  "    \"Horrocube00726x666666ED\": {\n"
+  "      \"cards\": [\n"
+  "        {\n"
+  "          \"name\": \"HERMIT\"\n"
+  "        },\n"
+  "        {\n"
+  "          \"name\": \"TEMPERANCE\"\n"
+  "        },\n"
+  "        {\n"
+  "          \"name\": \"DEVIL\"\n"
+  "        }\n"
+  "      ],\n"
+  "      \"image\": \"ipfs://QmTqFMxoDzQE13oxVatkWsda4uZGJRL5tksJLQv9JRvNrQ\",\n"
+  "      \"name\": \"Horrocube #00726\",\n"
+  "      \"properties\": {\n"
+  "        \"aspect\": \"Anguish\",\n"
+  "        \"background\": \"Green\",\n"
+  "        \"commuter\": \"Oneiric\",\n"
+  "        \"core\": \"Golden Kadathian Steel Fragment\",\n"
+  "        \"mechanism\": \"Gaian Ripper\",\n"
+  "        \"ornament\": \"Molten Voonith Tusks\",\n"
+  "        \"supports\": \"Luciferian Shackle\",\n"
+  "        \"id\": 0\n"
+  "      },\n"
+  "      \"signature\": {\n"
+  "        \"r\": \"AJRpTJaMu7CV7k6IRckO+qFzbQHMyVlQnGhllgqz2uED\",\n"
+  "        \"s\": \"AOtRBblVdO05Owuck9UCU15l6xZO/f/cSkcMRAToVTSs\",\n"
+  "        \"securityAlgorithm\": \"EcdsaSecp256k1Sha256\"\n"
+  "      }\n"
+  "    }\n"
+  "  }\n"
+  "}";
+
+const char* JSON_1_CBOR = "a178383136306238356535336532356566343932373263343231663034623730326263333231383464313032383635666431646338383135636465a177486f72726f637562653030373236783636363636364544a56563617264739fa1646e616d65664845524d4954a1646e616d656a54454d504552414e4345a1646e616d6565444556494cff65696d6167657835697066733a2f2f516d5471464d786f447a514531336f785661746b5773646134755a474a524c35746b734a4c5176394a52764e7251646e616d6570486f72726f63756265202330303732366a70726f70657274696573a86661737065637467416e67756973686a6261636b67726f756e6465477265656e68636f6d6d75746572674f6e656972696364636f7265781f476f6c64656e204b616461746869616e20537465656c20467261676d656e74696d656368616e69736d6c476169616e20526970706572686f726e616d656e74744d6f6c74656e20566f6f6e697468205475736b7368737570706f727473724c75636966657269616e20536861636b6c6562696400697369676e6174757265a36172782c414a5270544a614d75374356376b364952636b4f2b71467a6251484d79566c516e47686c6c67717a327545446173782c414f745242626c56644f30354f7775636b3955435531356c36785a4f2f662f63536b634d5241546f56545373717365637572697479416c676f726974686d744563647361536563703235366b31536861323536";
 
 /* UNIT TESTS ****************************************************************/
 
@@ -2370,4 +2407,168 @@ TEST(cardano_metadatum_new_string, returnsErrorIfMemoryAllocationFails2)
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_metadatum_from_json, canCreateMetadatumFromJson)
+{
+  // Act
+  cardano_metadatum_t*   data   = nullptr;
+  cardano_error_t        error  = cardano_metadatum_from_json(JSON_1, strlen(JSON_1), &data);
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_metadatum_to_cbor(data, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        cbor_hex  = (char*)malloc(cbor_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cbor_hex, JSON_1_CBOR);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+  cardano_cbor_writer_unref(&writer);
+  free(cbor_hex);
+}
+
+TEST(cardano_metadatum_from_json, returnsErrorIfHasInvalidField)
+{
+  // Act
+  cardano_metadatum_t* data = nullptr;
+
+  // Assert
+  EXPECT_EQ(cardano_metadatum_from_json("{ \"key\": true }", strlen("{ \"key\": true }"), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json("{ \"key\": 1.25 }", strlen("{ \"key\": 1.25 }"), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json("{ \"key\": }", strlen("{ \"key\": }"), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json("@", strlen("@"), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json("", strlen("@"), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json("", strlen(""), &data), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_metadatum_from_json(NULL, strlen("2"), &data), CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_metadatum_to_json, canConvertToJson)
+{
+  // Arrange
+  cardano_metadatum_t* data  = nullptr;
+  cardano_error_t      error = cardano_metadatum_from_json(JSON_1, strlen(JSON_1), &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  const size_t json_size = cardano_metadatum_get_json_size(data);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_metadatum_to_json(data, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json, JSON_1);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+  free(json);
+}
+
+TEST(cardano_metadatum_to_json, returnErrorIfNullPointer)
+{
+  // Act
+  char* json = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_to_json(nullptr, json, 0), CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_metadatum_to_json, returnErrorErrorIfBufferToSmall)
+{
+  // Arrange
+  cardano_metadatum_t* data  = nullptr;
+  cardano_error_t      error = cardano_metadatum_from_json(JSON_1, strlen(JSON_1), &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  char json[4];
+  EXPECT_EQ(cardano_metadatum_to_json(data, json, 4), CARDANO_INSUFFICIENT_BUFFER_SIZE);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_to_json, returnErrorIfCantBeEncodedInJson)
+{
+  // Arrange
+  cardano_metadatum_t* data  = nullptr;
+  cardano_error_t      error = cardano_metadatum_new_bytes((const uint8_t*)"test", 4, &data);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  const size_t json_size = cardano_metadatum_get_json_size(data);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_metadatum_to_json(data, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_METADATUM_CONVERSION);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+  free(json);
+}
+
+TEST(cardano_metadatum_to_json, returnErrorIfCantBeEncodedInJson2)
+{
+  //  Arrange
+  cardano_metadatum_t*     data = nullptr;
+  cardano_metadatum_map_t* map  = nullptr;
+
+  cardano_error_t error = cardano_metadatum_map_new(&map);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_metadatum_new_map(map, &data);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_metadatum_t* key = nullptr;
+  error                    = cardano_metadatum_new_integer_from_int(1, &key);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_metadatum_t* value = nullptr;
+  error                      = cardano_metadatum_new_integer_from_int(1, &value);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_metadatum_map_insert(map, key, value);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  const size_t json_size = cardano_metadatum_get_json_size(data);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_metadatum_to_json(data, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_METADATUM_CONVERSION);
+
+  // Cleanup
+  cardano_metadatum_map_unref(&map);
+  cardano_metadatum_unref(&data);
+  cardano_metadatum_unref(&key);
+  cardano_metadatum_unref(&value);
+  free(json);
+}
+
+TEST(cardano_metadatum_get_json_size, returnZeroIfGivenNull)
+{
+  // Act
+  size_t size = cardano_metadatum_get_json_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
 }
