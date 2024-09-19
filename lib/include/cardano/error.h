@@ -262,6 +262,24 @@ typedef enum
    * \brief The governance action type is invalid.
    */
   CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE = 800,
+
+  // Auxiliary data errors
+
+  /**
+   * \brief The metadatum conversion is invalid.
+   */
+  CARDANO_ERROR_INVALID_METADATUM_CONVERSION = 900,
+
+  /**
+   * \brief The metadatum text string size.
+   */
+  CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE = 901,
+
+  /**
+   * \brief The metadatum bounded bytes size.
+   */
+  CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE = 902,
+
 } cardano_error_t;
 
 /**

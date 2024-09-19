@@ -532,6 +532,42 @@ TEST(cardano_error_to_string, canConvertInvalidProcedureProposalType)
   ASSERT_STREQ(message, "Invalid operation. Invalid procedure proposal type");
 }
 
+TEST(cardano_error_to_string, canConvertInvalidMetadatumConversion)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_METADATUM_CONVERSION;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid metadatum conversion");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidMetadatumTextStringSize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid metadatum text string size, must be less than 64 bytes");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidMetadatumBoundedBytesSize)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid operation. Invalid metadatum bounded bytes size, must be less than 64 bytes");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

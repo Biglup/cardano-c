@@ -73,6 +73,7 @@ See `APACHE LICENSE, VERSION 2.0`_
 
     api/address/index
     api/assets/index
+    api/auxiliary_data/index
     api/certs/index
     api/common/index
     api/cryptography/index
