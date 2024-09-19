@@ -46,8 +46,7 @@ typedef struct cardano_withdrawal_map_t cardano_withdrawal_map_t;
  * \brief Creates and initializes a new instance of a withdrawal map.
  *
  * This function allocates and initializes a new instance of \ref cardano_withdrawal_map_t,
- * representing a map structure in the Plutus smart contract language. It returns an error code
- * to indicate the success or failure of the operation.
+ * representing a map structure. It returns an error code to indicate the success or failure of the operation.
  *
  * \param[out] withdrawal_map A pointer to a pointer to a \ref cardano_withdrawal_map_t object. Upon successful
  *                        initialization, this will point to a newly created \ref cardano_withdrawal_map_t

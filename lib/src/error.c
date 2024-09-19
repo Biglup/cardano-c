@@ -158,6 +158,15 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE:
       message = "Invalid operation. Invalid procedure proposal type";
       break;
+    case CARDANO_ERROR_INVALID_METADATUM_CONVERSION:
+      message = "Invalid operation. Invalid metadatum conversion";
+      break;
+    case CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE:
+      message = "Invalid operation. Invalid metadatum text string size, must be less than 64 bytes";
+      break;
+    case CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE:
+      message = "Invalid operation. Invalid metadatum bounded bytes size, must be less than 64 bytes";
+      break;
     default:
       message = "Unknown error code";
       break;
