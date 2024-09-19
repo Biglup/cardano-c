@@ -207,7 +207,7 @@ CARDANO_EXPORT size_t cardano_transaction_output_list_get_length(const cardano_t
  * \param[out] element Pointer to a variable where the retrieved element will be stored.
  *                     This variable will point to the retrieved \ref cardano_transaction_output_t object.
  *                     The caller is responsible for managing the lifecycle of the element by calling
- *                     \ref cardano_blake2b_hash_unref when it is no longer needed.
+ *                     \ref cardano_transaction_output_unref when it is no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the element was successfully retrieved, or an appropriate error code
  *         indicating the failure reason.
