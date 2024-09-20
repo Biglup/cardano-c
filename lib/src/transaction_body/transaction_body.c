@@ -2604,6 +2604,7 @@ cardano_transaction_body_clear_cbor_cache(cardano_transaction_body_t* transactio
   }
 
   cardano_buffer_unref(&transaction_body->cbor_cache);
+  transaction_body->cbor_cache = NULL;
 }
 
 void

@@ -2243,9 +2243,9 @@ TEST(cardano_transaction_body_get_hash, returnsHash)
   EXPECT_THAT(cardano_blake2b_hash_to_hex(hash3, hex3, hex_size3), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_NE(hex1, CBOR_HASH);
-  EXPECT_NE(hex2, CONWAY_CBOR_HASH);
-  EXPECT_NE(hex3, CONWAY_CBOR_WITH_SETS_HASH);
+  EXPECT_STREQ(hex1, CBOR_HASH);
+  EXPECT_STREQ(hex2, CONWAY_CBOR_HASH);
+  EXPECT_STREQ(hex3, CONWAY_CBOR_WITH_SETS_HASH);
 
   // Cleanup
   cardano_transaction_body_unref(&transaction_body1);

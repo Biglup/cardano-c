@@ -494,6 +494,159 @@ CARDANO_EXPORT cardano_error_t
 cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t** metadatum);
 
 /**
+ * \brief Creates a metadatum from a JSON string.
+ *
+ * This function parses JSON data using a provided JSON string and constructs a \ref cardano_metadatum_t object.
+ * It assumes that the JSON data corresponds to the structure expected for a metadatum.
+ *
+ * \param[in] json A pointer to a character array containing the JSON-encoded metadatum data.
+ * \param[in] json_size The size of the JSON data in bytes.
+ * \param[out] metadatum A pointer to a pointer of \ref cardano_metadatum_t that will be set to the address
+ *                           of the newly created metadatum object upon successful decoding.
+ *
+ * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the metadatum was successfully created, or an appropriate error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const char* json_data = "{...}"; // Assume this contains valid JSON-encoded metadatum data
+ * size_t data_size = strlen(json_data);
+ * cardano_metadatum_t* metadatum = NULL;
+ *
+ * cardano_error_t result = cardano_metadatum_from_json(json_data, data_size, &metadatum);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the metadatum
+ *
+ *   // Once done, ensure to clean up and release the metadatum
+ *   cardano_metadatum_unref(&metadatum);
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to decode metadatum: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_metadatum_from_json(const char* json, size_t json_size, cardano_metadatum_t** metadatum);
+
+/**
+ * \brief Computes the size needed for the JSON string representation of a metadatum.
+ *
+ * This function calculates the size in bytes required to represent a \ref cardano_metadatum_t
+ * as a null-terminated JSON string, including the null terminator. This is useful for allocating
+ * an appropriately sized buffer before converting the metadatum to JSON using
+ * \ref cardano_metadatum_to_json.
+ *
+ * \param[in] metadatum A pointer to the \ref cardano_metadatum_t instance whose JSON size is being queried.
+ *                      This parameter must not be NULL.
+ *
+ * \return The size in bytes required to represent the metadatum as a null-terminated JSON string,
+ *         including the null terminator. Returns 0 if \p metadatum is NULL or if an error occurs.
+ *
+ * \note The size returned includes space for the null terminator.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume metadatum is already initialized
+ * cardano_metadatum_t* metadatum = ...;
+ *
+ * size_t json_size = cardano_metadatum_get_json_size(metadatum);
+ *
+ * if (json_size > 0)
+ * {
+ *   // json_size now contains the size needed to store the JSON string, including null terminator
+ *   // You can allocate a buffer of this size for conversion
+ * }
+ * else
+ * {
+ *   printf("Failed to get the JSON size.\n");
+ *   // Handle error
+ * }
+ * \endcode
+ *
+ * \see cardano_metadatum_to_json
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_metadatum_get_json_size(cardano_metadatum_t* metadatum);
+
+/**
+ * \brief Converts a metadatum object to a JSON string.
+ *
+ * This function converts a \ref cardano_metadatum_t object to its JSON representation.
+ * The resulting JSON string is stored in the provided buffer, which must be pre-allocated by the caller.
+ * The buffer must be large enough to hold the entire JSON string, including the null terminator.
+ *
+ * To determine the required buffer size (including the null terminator), use
+ * \ref cardano_metadatum_get_json_size before calling this function.
+ *
+ * \param[in] metadatum A pointer to the \ref cardano_metadatum_t object to be converted.
+ *                      This parameter must not be NULL.
+ * \param[out] json A pointer to a character array where the null-terminated JSON string will be stored.
+ *                  The buffer must be allocated by the caller and have a size of at least \p json_size bytes.
+ *                  This parameter must not be NULL.
+ * \param[in] json_size The size of the \p json buffer in bytes, including space for the null terminator.
+ *
+ * \return \ref CARDANO_SUCCESS if the conversion was successful.
+ *         Returns \ref CARDANO_POINTER_IS_NULL if \p metadatum or \p json is NULL.
+ *         Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if \p json_size is insufficient to hold the JSON string.
+ *
+ * \note The JSON string will be encoded in UTF-8.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume metadatum is already initialized
+ * cardano_metadatum_t* metadatum = ...;
+ *
+ * // Get the size needed for the JSON string (including null terminator)
+ * size_t json_size = cardano_metadatum_get_json_size(metadatum);
+ * if (json_size == 0)
+ * {
+ *   printf("Failed to get the JSON size.\n");
+ *   // Handle error
+ * }
+ * else
+ * {
+ *   // Allocate buffer for the JSON string
+ *   char* json_buffer = (char*)malloc(json_size);
+ *   if (json_buffer == NULL)
+ *   {
+ *     printf("Memory allocation failed.\n");
+ *     // Handle memory allocation failure
+ *   }
+ *   else
+ *   {
+ *     // Convert the metadatum to JSON
+ *     cardano_error_t result = cardano_metadatum_to_json(metadatum, json_buffer, json_size);
+ *     if (result == CARDANO_SUCCESS)
+ *     {
+ *       printf("Metadatum as JSON: %s\n", json_buffer);
+ *     }
+ *     else
+ *     {
+ *       printf("Failed to convert metadatum to JSON: %s\n", cardano_error_to_string(result));
+ *     }
+ *     // Free the buffer when done
+ *     free(json_buffer);
+ *   }
+ * }
+ *
+ * // Clean up the metadatum object once done
+ * cardano_metadatum_unref(&metadatum);
+ * \endcode
+ *
+ * \see cardano_metadatum_get_json_size
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_metadatum_to_json(
+  cardano_metadatum_t* metadatum,
+  char*                json,
+  size_t               json_size);
+
+/**
  * \brief Serializes a metadatum into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_metadatum_t object using a \ref cardano_cbor_writer_t.

@@ -225,7 +225,7 @@ CARDANO_EXPORT size_t cardano_transaction_output_list_get_length(const cardano_t
  * {
  *   // Use the retrieved element
  *   // Remember to unreference the element once done if it's no longer needed
- *   cardano_blake2b_hash_unref(&element);
+ *   cardano_transaction_output_unref(&element);
  * }
  *
  * // Clean up the transaction_output_list object once done

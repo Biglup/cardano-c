@@ -45,6 +45,18 @@ Metadatum
 
 ------------
 
+.. doxygenfunction:: cardano_metadatum_from_json
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_get_json_size
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_to_json
+
+------------
+
 .. doxygenfunction:: cardano_metadatum_to_cbor
 
 ------------
