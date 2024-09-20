@@ -1,0 +1,13 @@
+Witness Set
+============
+
+A witness is a piece of information that allows you to efficiently verify the authenticity of the transaction (also known as proof).
+
+In Cardano, transactions have multiple types of authentication proofs, these can range from signatures for spending UTxOs, to scripts (with its arguments, datums and redeemers) for smart contract execution.
+
+.. toctree::
+   :maxdepth: 1
+
+   redeemer
+   redeemer_list
+   redeemer_tag

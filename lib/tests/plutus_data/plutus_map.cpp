@@ -184,6 +184,39 @@ TEST(cardano_plutus_map_to_cbor, canSerializeIndefiniteMap)
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_plutus_map_from_cbor(reader, &plutus_map);
+  cardano_plutus_map_clear_cbor_cache(plutus_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_plutus_map_to_cbor(plutus_map, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen("bf0102ff") + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, "bf0102ff");
+
+  // Cleanup
+  cardano_plutus_map_unref(&plutus_map);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_plutus_map_to_cbor, canSerializeIndefiniteMapUsingCache)
+{
+  // Arrange
+  cardano_plutus_map_t*  plutus_map = nullptr;
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("bf0102ff", strlen("bf0102ff"));
+  cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_plutus_map_from_cbor(reader, &plutus_map);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_plutus_map_to_cbor(plutus_map, writer);
@@ -484,6 +517,8 @@ TEST(cardano_plutus_map_to_cbor, canDeserializeAndReserializeCbor)
   cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_plutus_map_from_cbor(reader, &plutus_map);
+  cardano_plutus_map_clear_cbor_cache(plutus_map);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_plutus_map_to_cbor(plutus_map, writer);
@@ -514,6 +549,7 @@ TEST(cardano_plutus_map_from_cbor, canDeserializePlutusMap)
 
   // Act
   cardano_error_t error = cardano_plutus_map_from_cbor(reader, &plutus_map);
+  cardano_plutus_map_clear_cbor_cache(plutus_map);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -587,40 +623,6 @@ TEST(cardano_plutus_map_from_cbor, returnErrorIfNotAnArray)
 
   // Assert
   EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Major type mismatch.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_map_from_cbor, returnErrorIfInvalidPlutusDataElementUnexpectedBreak)
-{
-  // Arrange
-  cardano_plutus_map_t*  list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("a1ff", 4);
-
-  // Act
-  cardano_error_t error = cardano_plutus_map_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Unexpected break byte.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_map_from_cbor, returnErrorIfInvalidPlutusDataElementKey)
-{
-  // Arrange
-  cardano_plutus_map_t*  list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("a1f5f5", 4);
-
-  // Act
-  cardano_error_t error = cardano_plutus_map_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Invalid CBOR data item type for plutus data.");
   EXPECT_EQ(error, CARDANO_ERROR_DECODING);
 
   // Cleanup

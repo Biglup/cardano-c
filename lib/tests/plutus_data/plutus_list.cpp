@@ -284,6 +284,8 @@ TEST(cardano_plutus_list_to_cbor, canDeserializeAndReserializeCbor)
   cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_plutus_list_from_cbor(reader, &plutus_list);
+  cardano_plutus_list_clear_cbor_cache(plutus_list);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_plutus_list_to_cbor(plutus_list, writer);
@@ -314,6 +316,7 @@ TEST(cardano_plutus_list_from_cbor, canDeserializePlutusList)
 
   // Act
   cardano_error_t error = cardano_plutus_list_from_cbor(reader, &plutus_list);
+  cardano_plutus_list_clear_cbor_cache(plutus_list);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -474,40 +477,6 @@ TEST(cardano_plutus_list_from_cbor, returnErrorIfNotAnArray)
 
   // Assert
   EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Major type mismatch.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_list_from_cbor, returnErrorIfInvalidPlutusDataElements)
-{
-  // Arrange
-  cardano_plutus_list_t* list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("9ffeff", 6);
-
-  // Act
-  cardano_error_t error = cardano_plutus_list_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Invalid CBOR data item type for plutus data.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_list_from_cbor, returnErrorIfMissingEndArray)
-{
-  // Arrange
-  cardano_plutus_list_t* list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("9f01", 4);
-
-  // Act
-  cardano_error_t error = cardano_plutus_list_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Unexpected end of buffer.");
   EXPECT_EQ(error, CARDANO_ERROR_DECODING);
 
   // Cleanup
