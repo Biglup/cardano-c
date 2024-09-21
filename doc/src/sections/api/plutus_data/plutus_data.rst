@@ -77,6 +77,10 @@ Plutus Data
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_data_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_plutus_data_unref
 
 ------------

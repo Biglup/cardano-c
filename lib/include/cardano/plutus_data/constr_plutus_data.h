@@ -116,6 +116,13 @@ cardano_constr_plutus_data_new(
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the constr_plutus_data was successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
+ *         the resulting encoding could be different. This would change the data and invalidate any existing signatures.
+ *         To prevent this, when a plutus data object is created using \ref cardano_constr_plutus_data_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_constr_plutus_data_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_constr_plutus_data_clear_cbor_cache after the object has been created.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_constr_plutus_data_t object by calling
  *       \ref cardano_constr_plutus_data_unref when it is no longer needed.
@@ -158,6 +165,13 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p constr_plutus_data or \p writer
  *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
+ *         the resulting encoding could be different. This would change the data and invalidate any existing signatures.
+ *         To prevent this, when a plutus data object is created using \ref cardano_constr_plutus_data_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_constr_plutus_data_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_constr_plutus_data_clear_cbor_cache after the object has been created.
  *
  * Usage Example:
  * \code{.c}
@@ -387,6 +401,60 @@ cardano_constr_plutus_data_set_alternative(cardano_constr_plutus_data_t* constr_
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_constr_plutus_equals(const cardano_constr_plutus_data_t* lhs, const cardano_constr_plutus_data_t* rhs);
+
+/**
+ * \brief Clears the cached CBOR representation from a constr plutus data.
+ *
+ * This function removes the internally cached CBOR data from a \ref cardano_constr_plutus_data_t object.
+ * It is useful when you have modified the constr_plutus_data after it was created from CBOR using
+ * \ref cardano_constr_plutus_data_from_cbor and you want to ensure that the next serialization reflects
+ * the current state of the constr_plutus_data, rather than using the original cached CBOR.
+ *
+ * \param[in,out] constr_plutus_data A pointer to an initialized \ref cardano_constr_plutus_data_t object
+ *                         from which the CBOR cache will be cleared.
+ *
+ * \warning Clearing the CBOR cache may change the binary representation of the constr plutus data when
+ *          serialized, which can alter the constr plutus data and invalidate any existing signatures.
+ *          Use this function with caution, especially if the transaction has already been signed or
+ *          if preserving the exact CBOR encoding is important for your application.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume constr_plutus_data was created using cardano_constr_plutus_data_from_cbor
+ * cardano_constr_plutus_data_t* constr_plutus_data = ...;
+ *
+ * // Modify the constr_plutus_data as needed
+ * // For example, change the fee
+
+ * if (result != CARDANO_SUCCESS)
+ * {
+ *   printf("Failed to set new fee: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * // Clear the CBOR cache to ensure serialization uses the updated constr_plutus_data
+ * cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
+ *
+ * // Serialize the constr_plutus_data to CBOR
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * result = cardano_constr_plutus_data_to_cbor(constr_plutus_data, writer);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Process the CBOR data as needed
+ * }
+ * else
+ * {
+ *   const char* error_message = cardano_cbor_writer_get_last_error(writer);
+ *   printf("Serialization failed: %s\n", error_message);
+ * }
+ *
+ * // Clean up resources
+ * cardano_cbor_writer_unref(&writer);
+ * cardano_constr_plutus_data_unref(&constr_plutus_data);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_constr_plutus_data_clear_cbor_cache(cardano_constr_plutus_data_t* constr_plutus_data);
 
 /**
  * \brief Decrements the reference count of a \ref cardano_constr_plutus_data_t object.

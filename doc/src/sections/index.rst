@@ -86,6 +86,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/scripts/index
     api/transaction_body/index
     api/voting_procedures/index
+    api/witness_set/index
     api/buffer
     api/error
     api/object

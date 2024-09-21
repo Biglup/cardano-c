@@ -41,6 +41,10 @@ Plutus Map
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_map_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_plutus_map_unref
 
 ------------

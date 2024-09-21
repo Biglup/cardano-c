@@ -37,6 +37,10 @@ Constr Plutus Data
 
 ------------
 
+.. doxygenfunction:: cardano_constr_plutus_data_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_constr_plutus_data_unref
 
 ------------

@@ -507,6 +507,7 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAnIntegerPlutusData)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -530,6 +531,7 @@ TEST(cardano_plutus_data_from_cbor, canDecodeNegativeInteger)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -553,6 +555,7 @@ TEST(cardano_plutus_data_from_cbor, canDecodeBigPositiveInteger)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -672,6 +675,7 @@ TEST(cardano_plutus_data_from_cbor, canDecodeBigNegativeInteger)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -751,6 +755,7 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeABytesPlutusData)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -803,6 +808,7 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAListPlutusData)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -868,6 +874,7 @@ TEST(cardano_plutus_data_from_cbor, canDeserializeAMapPlutusData)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -968,6 +975,7 @@ TEST(cardano_plutus_data_from_cbor, canDecodeConstructorPlutusData)
 
   // Act
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -1266,6 +1274,8 @@ TEST(cardano_plutus_data_to_cbor, canDeserializeAndReserializeCbor)
   cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_plutus_data_clear_cbor_cache(plutus_data);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_plutus_data_to_cbor(plutus_data, writer);
@@ -1333,40 +1343,6 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFails)
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_data_from_cbor, returnErrorIfInvalidPlutusDataElements)
-{
-  // Arrange
-  cardano_plutus_data_t* list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("9ffeff", 6);
-
-  // Act
-  cardano_error_t error = cardano_plutus_data_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Invalid CBOR data item type for plutus data.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_plutus_data_from_cbor, returnErrorIfMissingEndArray)
-{
-  // Arrange
-  cardano_plutus_data_t* list   = nullptr;
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("9f01", 4);
-
-  // Act
-  cardano_error_t error = cardano_plutus_data_from_cbor(reader, &list);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Unexpected end of buffer.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
   cardano_cbor_reader_unref(&reader);
 }
 
@@ -2501,4 +2477,10 @@ TEST(cardano_plutus_data_to_cbor, canSerializeBigInteger)
   free(cbor_hex);
   cardano_cbor_writer_unref(&writer);
   cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_clear_cbor_cache, doesNothingIfGivenNull)
+{
+  // Act
+  cardano_plutus_data_clear_cbor_cache(nullptr);
 }

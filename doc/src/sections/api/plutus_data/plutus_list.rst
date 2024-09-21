@@ -33,6 +33,10 @@ Plutus List
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_list_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_plutus_list_unref
 
 ------------

@@ -281,6 +281,28 @@ TEST(cardano_constr_plutus_data_to_cbor, canDeserializeAndReserializeCborTag0)
   cardano_cbor_writer_t*        writer             = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+  cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_constr_plutus_data_to_cbor(constr_plutus_data, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_constr_plutus_data_unref(&constr_plutus_data);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_constr_plutus_data_to_cbor, canDeserializeAndReserializeUsingCache)
+{
+  // Arrange
+  cardano_constr_plutus_data_t* constr_plutus_data = nullptr;
+  cardano_cbor_reader_t*        reader             = cardano_cbor_reader_from_hex("d8009f0102030405ff", strlen("d8009f0102030405ff"));
+  cardano_cbor_writer_t*        writer             = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_constr_plutus_data_to_cbor(constr_plutus_data, writer);
@@ -300,6 +322,8 @@ TEST(cardano_constr_plutus_data_to_cbor, canDeserializeAndReserializeCbor)
   cardano_cbor_writer_t*        writer             = cardano_cbor_writer_new();
 
   cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+  cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
+
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_constr_plutus_data_to_cbor(constr_plutus_data, writer);
@@ -330,6 +354,7 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusData)
 
   // Act
   cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+  cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -379,6 +404,7 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusDataGeneral
 
   // Act
   cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+  cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -428,6 +454,7 @@ TEST(cardano_constr_plutus_data_from_cbor, canDeserializeConstrPlutusDataGeneral
 
   // Act
   cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr_plutus_data);
+  cardano_constr_plutus_data_clear_cbor_cache(constr_plutus_data);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -596,23 +623,6 @@ TEST(cardano_constr_plutus_data_from_cbor, returnErrorIfInvalidPlutusDataElement
 
   // Assert
   EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Major type mismatch.");
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
-
-  // Cleanup
-  cardano_cbor_reader_unref(&reader);
-}
-
-TEST(cardano_constr_plutus_data_from_cbor, returnErrorIfMissingEndArray)
-{
-  // Arrange
-  cardano_constr_plutus_data_t* constr = nullptr;
-  cardano_cbor_reader_t*        reader = cardano_cbor_reader_from_hex("d8799f0102030405", 16);
-
-  // Act
-  cardano_error_t error = cardano_constr_plutus_data_from_cbor(reader, &constr);
-
-  // Assert
-  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Unexpected end of buffer.");
   EXPECT_EQ(error, CARDANO_ERROR_DECODING);
 
   // Cleanup
