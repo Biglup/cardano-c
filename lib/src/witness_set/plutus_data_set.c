@@ -40,6 +40,7 @@ typedef struct cardano_plutus_data_set_t
 {
     cardano_object_t  base;
     cardano_array_t*  array;
+    bool              uses_tags;
     cardano_buffer_t* cbor_cache;
 } cardano_plutus_data_set_t;
 
@@ -99,6 +100,7 @@ cardano_plutus_data_set_new(cardano_plutus_data_set_t** plutus_data_set)
   list->base.last_error[0] = '\0';
   list->base.deallocator   = cardano_plutus_data_set_deallocate;
   list->cbor_cache         = NULL;
+  list->uses_tags          = true;
 
   list->array = cardano_array_new(128);
 
@@ -166,6 +168,8 @@ cardano_plutus_data_set_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_
     return CARDANO_ERROR_DECODING;
     // LCOV_EXCL_STOP
   }
+
+  list->uses_tags = (state == CARDANO_CBOR_READER_STATE_TAG);
 
   if (state == CARDANO_CBOR_READER_STATE_TAG)
   {
@@ -271,11 +275,14 @@ cardano_plutus_data_set_to_cbor(const cardano_plutus_data_set_t* plutus_data_set
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  result = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_SET);
-
-  if (result != CARDANO_SUCCESS)
+  if (plutus_data_set->uses_tags)
   {
-    return result; // LCOV_EXCL_LINE
+    result = cardano_cbor_writer_write_tag(writer, CARDANO_CBOR_TAG_SET);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
   }
 
   size_t array_size = cardano_array_get_size(plutus_data_set->array);
@@ -373,6 +380,30 @@ cardano_plutus_data_set_add(cardano_plutus_data_set_t* plutus_data_set, cardano_
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_plutus_data_set_get_use_tag(const cardano_plutus_data_set_t* plutus_data_set)
+{
+  if (plutus_data_set == NULL)
+  {
+    return false;
+  }
+
+  return plutus_data_set->uses_tags;
+}
+
+cardano_error_t
+cardano_plutus_data_set_set_use_tag(cardano_plutus_data_set_t* plutus_data_set, const bool use_tag)
+{
+  if (plutus_data_set == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  plutus_data_set->uses_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_plutus_data_set_clear_cbor_cache(cardano_plutus_data_set_t* plutus_data_set)
 {
@@ -383,6 +414,7 @@ cardano_plutus_data_set_clear_cbor_cache(cardano_plutus_data_set_t* plutus_data_
 
   cardano_buffer_unref(&plutus_data_set->cbor_cache);
   plutus_data_set->cbor_cache = NULL;
+  plutus_data_set->uses_tags  = true;
 }
 
 void

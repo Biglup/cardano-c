@@ -29,6 +29,14 @@ Native Script Set
 
 ------------
 
+.. doxygenfunction:: cardano_native_script_set_get_use_tag
+
+------------
+
+.. doxygenfunction:: cardano_native_script_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_native_script_set_unref
 
 ------------

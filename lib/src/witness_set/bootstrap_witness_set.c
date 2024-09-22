@@ -341,6 +341,30 @@ cardano_bootstrap_witness_set_add(cardano_bootstrap_witness_set_t* bootstrap_wit
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_bootstrap_witness_set_get_use_tag(const cardano_bootstrap_witness_set_t* bootstrap_witness_set)
+{
+  if (bootstrap_witness_set == NULL)
+  {
+    return false;
+  }
+
+  return bootstrap_witness_set->uses_tags;
+}
+
+cardano_error_t
+cardano_bootstrap_witness_set_set_use_tag(cardano_bootstrap_witness_set_t* bootstrap_witness_set, const bool use_tag)
+{
+  if (bootstrap_witness_set == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  bootstrap_witness_set->uses_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_bootstrap_witness_set_unref(cardano_bootstrap_witness_set_t** bootstrap_witness_set)
 {

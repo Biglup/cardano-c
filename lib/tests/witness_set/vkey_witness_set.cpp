@@ -750,3 +750,34 @@ TEST(cardano_vkey_witness_set_add, returnsErrorIfDataIsNull)
   // Cleanup
   cardano_vkey_witness_set_unref(&vkey_witness_set);
 }
+
+TEST(cardano_vkey_witness_set_set_use_tag, canSetUseTag)
+{
+  // Arrange
+  cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
+  cardano_error_t             error            = cardano_vkey_witness_set_new(&vkey_witness_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_vkey_witness_set_set_use_tag(vkey_witness_set, true), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_set_get_use_tag(vkey_witness_set), true);
+
+  EXPECT_EQ(cardano_vkey_witness_set_set_use_tag(vkey_witness_set, false), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_set_get_use_tag(vkey_witness_set), false);
+
+  // Cleanup
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_vkey_witness_set_set_use_tag, returnsErrorIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_vkey_witness_set_set_use_tag(nullptr, true), CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_vkey_witness_get_set_use_tag, returnsFalseIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_vkey_witness_set_get_use_tag(nullptr), false);
+}

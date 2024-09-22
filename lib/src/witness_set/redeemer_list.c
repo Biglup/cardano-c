@@ -614,6 +614,20 @@ cardano_redeemer_list_clear_cbor_cache(cardano_redeemer_list_t* redeemer_list)
 
   cardano_buffer_unref(&redeemer_list->cbor_cache);
   redeemer_list->cbor_cache = NULL;
+
+  for (size_t i = 0U; i < cardano_redeemer_list_get_length(redeemer_list); ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+
+    cardano_error_t result = cardano_redeemer_list_get(redeemer_list, i, &redeemer);
+
+    cardano_redeemer_unref(&redeemer);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_redeemer_clear_cbor_cache(redeemer);
+    }
+  }
 }
 
 void

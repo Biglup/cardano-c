@@ -473,12 +473,6 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_set_ex_units(cardano_redeemer_t*
  * cardano_redeemer_t* redeemer = ...;
  *
  * // Modify the redeemer as needed
- * // For example, change the fee
-
- * if (result != CARDANO_SUCCESS)
- * {
- *   printf("Failed to set new fee: %s\n", cardano_error_to_string(result));
- * }
  *
  * // Clear the CBOR cache to ensure serialization uses the updated redeemer
  * cardano_redeemer_clear_cbor_cache(redeemer);

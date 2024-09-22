@@ -341,6 +341,30 @@ cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, carda
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_vkey_witness_set_get_use_tag(const cardano_vkey_witness_set_t* vkey_witness_set)
+{
+  if (vkey_witness_set == NULL)
+  {
+    return false;
+  }
+
+  return vkey_witness_set->uses_tags;
+}
+
+cardano_error_t
+cardano_vkey_witness_set_set_use_tag(cardano_vkey_witness_set_t* vkey_witness_set, const bool use_tag)
+{
+  if (vkey_witness_set == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  vkey_witness_set->uses_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_vkey_witness_set_unref(cardano_vkey_witness_set_t** vkey_witness_set)
 {
