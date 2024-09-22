@@ -8,6 +8,15 @@ In Cardano, transactions have multiple types of authentication proofs, these can
 .. toctree::
    :maxdepth: 1
 
+   bootstrap_witness
+   bootstrap_witness_set
+   native_script_set
+   plutus_data_set
+   plutus_v1_script_set
+   plutus_v2_script_set
+   plutus_v3_script_set
    redeemer
    redeemer_list
    redeemer_tag
+   vkey_witness
+   vkey_witness_set
