@@ -182,9 +182,11 @@ cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_
 
   if (copy_result != CARDANO_SUCCESS)
   {
+    // LCOV_EXCL_START
     cardano_redeemer_list_unref(&list);
 
-    return copy_result; // LCOV_EXCL_LINE
+    return copy_result;
+    // LCOV_EXCL_STOP
   }
 
   copy_result = cardano_cbor_reader_read_encoded_value(reader_copy, &list->cbor_cache);
