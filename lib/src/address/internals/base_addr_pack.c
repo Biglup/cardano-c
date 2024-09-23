@@ -87,8 +87,11 @@ _cardano_unpack_base_address(const byte_t* data, const size_t size, cardano_base
 {
   assert(data != NULL);
   assert(address != NULL);
-  assert(size >= (size_t)ADDRESS_HEADER_SIZE + (2U * (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
-  CARDANO_UNUSED(size);
+
+  if (size < (size_t)ADDRESS_HEADER_SIZE + (2U * (size_t)CARDANO_BLAKE2B_HASH_SIZE_224))
+  {
+    return CARDANO_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+  }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);
   cardano_network_id_t   network_id = (cardano_network_id_t)(uint8_t)((uint8_t)data[0] & 0x0FU);

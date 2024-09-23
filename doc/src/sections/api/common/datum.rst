@@ -61,6 +61,10 @@ Datum
 
 ------------
 
+.. doxygenfunction:: cardano_datum_equals
+
+------------
+
 .. doxygenfunction:: cardano_datum_unref
 
 ------------

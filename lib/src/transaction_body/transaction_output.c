@@ -755,6 +755,44 @@ cardano_transaction_output_set_script_ref(cardano_transaction_output_t* output, 
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_transaction_output_equals(
+  const cardano_transaction_output_t* lhs,
+  const cardano_transaction_output_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
+  if ((lhs == NULL) || (rhs == NULL))
+  {
+    return false;
+  }
+
+  if (!cardano_address_equals(lhs->address, rhs->address))
+  {
+    return false;
+  }
+
+  if (!cardano_value_equals(lhs->value, rhs->value))
+  {
+    return false;
+  }
+
+  if (!cardano_datum_equals(lhs->datum, rhs->datum))
+  {
+    return false;
+  }
+
+  if (!cardano_script_equals(lhs->script_ref, rhs->script_ref))
+  {
+    return false;
+  }
+
+  return true;
+}
+
 void
 cardano_transaction_output_unref(cardano_transaction_output_t** transaction_output)
 {

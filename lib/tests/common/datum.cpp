@@ -38,6 +38,26 @@ static const char* INVALID_DATUM_HASH_CBOR = "8200582100000000000000000000000000
 static const char* HASH                    = "0000000000000000000000000000000000000000000000000000000000000000";
 static const char* PLUTUS_DATA             = "d8799f0102030405ff";
 
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Creates a new default instance of the datum.
+ * @return A new instance of the datum.
+ */
+static cardano_datum_t*
+new_default_datum(const char* cbor)
+{
+  cardano_datum_t*       datum  = NULL;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_error_t        result = cardano_datum_from_cbor(reader, &datum);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return datum;
+};
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_datum_to_cbor, canSerializeInlineDatum)
@@ -1111,4 +1131,97 @@ TEST(cardano_datum_new_data_hash_hex, returnsErrorIfHexIsTheWrongSize)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
+}
+
+TEST(cardano_datum_equals, returnsTrueIfEqual)
+{
+  // Arrange
+  cardano_datum_t* datum  = new_default_datum(INLINE_DATUM_CBOR);
+  cardano_datum_t* datum2 = new_default_datum(INLINE_DATUM_CBOR);
+
+  // Act
+  bool result = cardano_datum_equals(datum, datum2);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+  cardano_datum_unref(&datum2);
+}
+
+TEST(cardano_datum_equals, returnsTrueIfEqual2)
+{
+  // Arrange
+  cardano_datum_t* datum  = new_default_datum(DATUM_HASH_CBOR);
+  cardano_datum_t* datum2 = new_default_datum(DATUM_HASH_CBOR);
+
+  // Act
+  bool result = cardano_datum_equals(datum, datum2);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+  cardano_datum_unref(&datum2);
+}
+
+TEST(cardano_datum_equals, returnsFalseIfDifferent)
+{
+  // Arrange
+  cardano_datum_t* datum  = new_default_datum(INLINE_DATUM_CBOR);
+  cardano_datum_t* datum2 = new_default_datum(DATUM_HASH_CBOR);
+
+  // Act
+  bool result = cardano_datum_equals(datum, datum2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+  cardano_datum_unref(&datum2);
+}
+
+TEST(cardano_datum_equals, returnsTrueIfBothNull)
+{
+  // Arrange
+  cardano_datum_t* datum = NULL;
+
+  // Act
+  bool result = cardano_datum_equals(datum, datum);
+
+  // Assert
+  EXPECT_TRUE(result);
+}
+
+TEST(cardano_datum_equals, returnsFalseIfOneIsNull)
+{
+  // Arrange
+  cardano_datum_t* datum = new_default_datum(INLINE_DATUM_CBOR);
+
+  // Act
+  bool result = cardano_datum_equals(datum, nullptr);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_datum_equals, returnsFalseIfOneIsNull2)
+{
+  // Arrange
+  cardano_datum_t* datum = new_default_datum(INLINE_DATUM_CBOR);
+
+  // Act
+  bool result = cardano_datum_equals(nullptr, datum);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
 }

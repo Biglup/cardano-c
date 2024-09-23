@@ -570,6 +570,42 @@ CARDANO_EXPORT cardano_error_t
 cardano_datum_set_data_hash(cardano_datum_t* datum, const cardano_blake2b_hash_t* hash);
 
 /**
+ * \brief Compares two datum objects for equality.
+ *
+ * This function compares two datum objects to determine if they are equal.
+ *
+ * \param[in] lhs Pointer to the first datum object.
+ * \param[in] rhs Pointer to the second datum object.
+ *
+ * \return \c true if the datum objects are equal, \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_datum_t* datum1 = NULL;
+ * cardano_datum_t* datum2 = NULL;
+ *
+ * // Assume datum1 and datum2 are initialized properly
+ *
+ * bool are_equal = cardano_datum_equals(datum1, datum2);
+ *
+ * if (are_equal)
+ * {
+ *   printf("The datum objects are equal.\n");
+ * }
+ * else
+ * {
+ *   printf("The datum objects are not equal.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_datum_unref(&datum1);
+ * cardano_datum_unref(&datum2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_datum_equals(const cardano_datum_t* lhs, const cardano_datum_t* rhs);
+
+/**
  * \brief Decrements the reference count of a datum object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_datum_t object

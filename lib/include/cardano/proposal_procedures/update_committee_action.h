@@ -30,8 +30,8 @@
 #include <cardano/common/unit_interval.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/proposal_procedures/committee_members_map.h>
 #include <cardano/proposal_procedures/credential_set.h>
-#include <include/cardano/proposal_procedures/committee_members_map.h>
 
 /* DECLARATIONS **************************************************************/
 

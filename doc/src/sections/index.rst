@@ -84,6 +84,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/proposal_procedures/index
     api/protocol_params/index
     api/scripts/index
+    api/transaction/index
     api/transaction_body/index
     api/voting_procedures/index
     api/witness_set/index

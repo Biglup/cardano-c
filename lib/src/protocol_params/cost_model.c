@@ -32,12 +32,6 @@
 #include <assert.h>
 #include <string.h>
 
-/* CONSTANTS *****************************************************************/
-
-static const size_t PLUTUS_V1_COST_MODEL_OP_COUNT = 166U;
-static const size_t PLUTUS_V2_COST_MODEL_OP_COUNT = 175U;
-static const size_t PLUTUS_V3_COST_MODEL_OP_COUNT = 179U;
-
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -47,7 +41,7 @@ typedef struct cardano_cost_model_t
 {
     cardano_object_t                  base;
     cardano_plutus_language_version_t language_version;
-    int64_t                           costs[179U];
+    int64_t*                          costs;
     size_t                            size;
 } cardano_cost_model_t;
 
@@ -70,6 +64,14 @@ static void
 cardano_cost_model_deallocate(void* object)
 {
   assert(object != NULL);
+
+  cardano_cost_model_t* cost_model = (cardano_cost_model_t*)object;
+
+  if (cost_model->costs != NULL)
+  {
+    _cardano_free(cost_model->costs);
+  }
+
   _cardano_free(object);
 }
 
@@ -87,30 +89,6 @@ cardano_cost_model_new(
     return CARDANO_POINTER_IS_NULL;
   }
 
-  switch (language)
-  {
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V1:
-      if (costs_size != PLUTUS_V1_COST_MODEL_OP_COUNT)
-      {
-        return CARDANO_INVALID_PLUTUS_COST_MODEL;
-      }
-      break;
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V2:
-      if (costs_size != PLUTUS_V2_COST_MODEL_OP_COUNT)
-      {
-        return CARDANO_INVALID_PLUTUS_COST_MODEL;
-      }
-      break;
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V3:
-      if (costs_size != PLUTUS_V3_COST_MODEL_OP_COUNT)
-      {
-        return CARDANO_INVALID_PLUTUS_COST_MODEL;
-      }
-      break;
-    default:
-      return CARDANO_INVALID_PLUTUS_COST_MODEL;
-  }
-
   *cost_model = _cardano_malloc(sizeof(cardano_cost_model_t));
 
   if (*cost_model == NULL)
@@ -118,14 +96,34 @@ cardano_cost_model_new(
     return CARDANO_MEMORY_ALLOCATION_FAILED;
   }
 
+  // Lets add a practical limit here (10 times current cost models size)
+  if (costs_size > 2048U)
+  {
+    // LCOV_EXCL_START
+    _cardano_free(*cost_model);
+    *cost_model = NULL;
+
+    return CARDANO_INVALID_PLUTUS_COST_MODEL;
+    // LCOV_EXCL_STOP
+  }
+
+  (*cost_model)->costs = _cardano_malloc(costs_size * sizeof(int64_t));
+  (*cost_model)->size  = costs_size;
+
+  if ((*cost_model)->costs == NULL)
+  {
+    // LCOV_EXCL_START
+    _cardano_free(*cost_model);
+    *cost_model = NULL;
+
+    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    // LCOV_EXCL_STOP
+  }
+
+  (*cost_model)->language_version   = language;
   (*cost_model)->base.deallocator   = cardano_cost_model_deallocate;
   (*cost_model)->base.ref_count     = 1;
   (*cost_model)->base.last_error[0] = '\0';
-
-  (*cost_model)->language_version = language;
-  (*cost_model)->size             = costs_size;
-
-  assert(costs_size <= 179U);
 
   for (size_t i = 0U; i < costs_size; ++i)
   {
@@ -166,42 +164,33 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     return read_minor_result;
   }
 
-  const cardano_plutus_language_version_t language                 = (cardano_plutus_language_version_t)language_version;
-  size_t                                  expected_cost_model_size = 0U;
-  int64_t                                 costs[179U]              = { 0 };
+  int64_t cost_model_size = 0U;
 
-  switch (language)
-  {
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V1:
-      expected_cost_model_size = PLUTUS_V1_COST_MODEL_OP_COUNT;
-      break;
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V2:
-      expected_cost_model_size = PLUTUS_V2_COST_MODEL_OP_COUNT;
-      break;
-    case CARDANO_PLUTUS_LANGUAGE_VERSION_V3:
-      expected_cost_model_size = PLUTUS_V3_COST_MODEL_OP_COUNT;
-      break;
-    // LCOV_EXCL_START
-    default:
-      *cost_model = NULL;
-      return CARDANO_INVALID_PLUTUS_COST_MODEL;
-      // LCOV_EXCL_STOP
-  }
+  const cardano_error_t read_array_result = cardano_cbor_reader_read_start_array(reader, &cost_model_size);
 
-  const cardano_error_t expect_start_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, expected_cost_model_size);
-
-  if (expect_start_array_result != CARDANO_SUCCESS)
+  if (read_array_result != CARDANO_SUCCESS)
   {
     *cost_model = NULL;
-    return expect_start_array_result;
+    return read_array_result;
   }
 
-  for (size_t i = 0U; i < expected_cost_model_size; ++i)
+  if ((cost_model_size < 0) || (cost_model_size > 2048))
+  {
+    // LCOV_EXCL_START
+    *cost_model = NULL;
+    return CARDANO_INVALID_PLUTUS_COST_MODEL;
+    // LCOV_EXCL_STOP
+  }
+
+  int64_t* costs = _cardano_malloc((size_t)cost_model_size * sizeof(int64_t));
+
+  for (int64_t i = 0; i < cost_model_size; ++i)
   {
     const cardano_error_t read_cost_result = cardano_cbor_reader_read_int(reader, &costs[i]);
 
     if (read_cost_result != CARDANO_SUCCESS)
     {
+      _cardano_free(costs);
       *cost_model = NULL;
       return read_cost_result;
     }
@@ -213,12 +202,16 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
   {
     /* LCOV_EXCL_START */
     *cost_model = NULL;
+    _cardano_free(costs);
 
     return expect_end_array_result;
     /* LCOV_EXCL_STOP */
   }
 
-  return cardano_cost_model_new(language_version, costs, expected_cost_model_size, cost_model);
+  cardano_error_t new_model_result = cardano_cost_model_new(language_version, costs, cost_model_size, cost_model);
+  _cardano_free(costs);
+
+  return new_model_result;
 }
 
 cardano_error_t

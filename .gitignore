@@ -89,3 +89,7 @@ CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
 Doxyfile
 doc_doxygen/
+
+transaction_fuzzer
+cbor_reader_fuzzer
+default.profraw

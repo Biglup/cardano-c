@@ -777,6 +777,42 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_base_address_t* cardano_address_to_base_address(const cardano_address_t* address);
 
 /**
+ * \brief Compares two address objects for equality.
+ *
+ * This function compares two address objects to determine if they are equal.
+ *
+ * \param[in] lhs Pointer to the first address object.
+ * \param[in] rhs Pointer to the second address object.
+ *
+ * \return \c true if the address objects are equal, \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_address_t* address1 = NULL;
+ * cardano_address_t* address2 = NULL;
+ *
+ * // Assume address1 and address2 are initialized properly
+ *
+ * bool are_equal = cardano_address_equals(address1, address2);
+ *
+ * if (are_equal)
+ * {
+ *   printf("The address objects are equal.\n");
+ * }
+ * else
+ * {
+ *   printf("The address objects are not equal.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_address_unref(&address1);
+ * cardano_address_unref(&address2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_address_equals(const cardano_address_t* lhs, const cardano_address_t* rhs);
+
+/**
  * \brief Decrements the address's reference count.
  *
  * If the reference count reaches zero, the address memory is deallocated.

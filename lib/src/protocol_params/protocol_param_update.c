@@ -528,21 +528,34 @@ handle_entropy(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  // entropy is encoded as an array of two elements, where the second elements is the entropy value
-  cardano_error_t read_extra_entropy = cardano_cbor_validate_array_of_n_elements("entropy", reader, 2U);
+  int64_t array_size = 0;
+
+  cardano_error_t read_extra_entropy_array = cardano_cbor_reader_read_start_array(reader, &array_size);
+
+  if (read_extra_entropy_array != CARDANO_SUCCESS)
+  {
+    return read_extra_entropy_array; // LCOV_EXCL_LINE
+  }
+
+  size_t entropy_key = 0U;
+
+  cardano_error_t read_extra_entropy = cardano_cbor_reader_read_uint(reader, &entropy_key);
 
   if (read_extra_entropy != CARDANO_SUCCESS)
   {
     return read_extra_entropy;
   }
 
-  size_t entropy_key = 0U;
-
-  read_extra_entropy = cardano_cbor_reader_read_uint(reader, &entropy_key);
-
-  if (read_extra_entropy != CARDANO_SUCCESS)
+  if (array_size == 1)
   {
-    return read_extra_entropy;
+    (*field) = cardano_buffer_new(1);
+
+    return cardano_cbor_validate_end_array("entropy", reader);
+  }
+
+  if (array_size != 2)
+  {
+    return CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE;
   }
 
   read_extra_entropy = cardano_cbor_reader_read_bytestring(reader, field);
@@ -876,6 +889,25 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
     if (result != CARDANO_SUCCESS)
     {
       return result; // LCOV_EXCL_LINE
+    }
+
+    if (cardano_buffer_get_size(value) == 0U)
+    {
+      result = cardano_cbor_writer_write_start_array(writer, 1U);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result; // LCOV_EXCL_LINE
+      }
+
+      result = cardano_cbor_writer_write_unsigned_int(writer, 0U);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result; // LCOV_EXCL_LINE
+      }
+
+      return CARDANO_SUCCESS;
     }
 
     result = cardano_cbor_writer_write_start_array(writer, 2U);

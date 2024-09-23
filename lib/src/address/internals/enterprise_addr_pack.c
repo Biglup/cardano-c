@@ -41,8 +41,11 @@ _cardano_unpack_enterprise_address(const byte_t* data, size_t size, cardano_ente
 {
   assert(data != NULL);
   assert(address != NULL);
-  assert(size >= (size_t)((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
-  CARDANO_UNUSED(size);
+
+  if (size < (size_t)((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224))
+  {
+    return CARDANO_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+  }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);
   cardano_network_id_t   network_id = (cardano_network_id_t)(uint8_t)((uint8_t)data[0] & 0x0FU);
@@ -82,6 +85,7 @@ _cardano_pack_enterprise_address(const cardano_address_t* address, byte_t* data,
 {
   assert(address != NULL);
   assert(data != NULL);
+  assert(size >= (size_t)((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
 
   CARDANO_UNUSED(memset(data, 0, ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
 

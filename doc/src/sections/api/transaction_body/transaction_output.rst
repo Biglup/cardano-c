@@ -49,6 +49,10 @@ Transaction Output
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_output_equals
+
+------------
+
 .. doxygenfunction:: cardano_transaction_output_unref
 
 ------------

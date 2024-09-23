@@ -1650,3 +1650,85 @@ TEST(cardano_address_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_address_unref(&address);
 }
+
+TEST(cardano_address_equals, returnsTrueIfEqual)
+{
+  // Arrange
+  cardano_address_t* address  = NULL;
+  cardano_address_t* address2 = NULL;
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address2), CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_address_equals(address, address2);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_address_unref(&address);
+  cardano_address_unref(&address2);
+}
+
+TEST(cardano_address_equals, returnsFalseIfDifferent)
+{
+  // Arrange
+  cardano_address_t* address  = NULL;
+  cardano_address_t* address2 = NULL;
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeScript.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address2), CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_address_equals(address, address2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_address_unref(&address);
+  cardano_address_unref(&address2);
+}
+
+TEST(cardano_address_equals, returnsTrueIfBothNull)
+{
+  // Arrange
+  cardano_address_t* address = NULL;
+
+  // Act
+  bool result = cardano_address_equals(address, address);
+
+  // Assert
+  EXPECT_TRUE(result);
+}
+
+TEST(cardano_address_equals, returnsFalseIfOneIsNull)
+{
+  // Arrange
+  cardano_address_t* address = NULL;
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_address_equals(address, nullptr);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_address_equals, returnsFalseIfOneIsNull2)
+{
+  // Arrange
+  cardano_address_t* address = NULL;
+  EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  bool result = cardano_address_equals(nullptr, address);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_address_unref(&address);
+}

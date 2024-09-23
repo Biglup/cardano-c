@@ -77,6 +77,10 @@ Address
 
 ------------
 
+.. doxygenfunction:: cardano_address_equals
+
+------------
+
 .. doxygenfunction:: cardano_address_unref
 
 ------------
