@@ -20,3 +20,4 @@ In Cardano, transactions have multiple types of authentication proofs, these can
    redeemer_tag
    vkey_witness
    vkey_witness_set
+   witness_set

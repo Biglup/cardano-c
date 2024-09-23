@@ -29,6 +29,14 @@ Bootstrap Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_bootstrap_witness_set_get_use_tag
+
+------------
+
+.. doxygenfunction:: cardano_bootstrap_witness_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_bootstrap_witness_set_unref
 
 ------------
@@ -46,3 +54,4 @@ Bootstrap Witness Set
 ------------
 
 .. doxygenfunction:: cardano_bootstrap_witness_set_get_last_error
+

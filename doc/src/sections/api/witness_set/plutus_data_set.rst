@@ -29,6 +29,14 @@ Plutus Data Set
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_data_set_get_use_tag
+
+------------
+
+.. doxygenfunction:: cardano_plutus_data_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_plutus_data_set_clear_cbor_cache
 
 ------------
@@ -50,4 +58,3 @@ Plutus Data Set
 ------------
 
 .. doxygenfunction:: cardano_plutus_data_set_get_last_error
-

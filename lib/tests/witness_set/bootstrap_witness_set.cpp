@@ -750,3 +750,34 @@ TEST(cardano_bootstrap_witness_set_add, returnsErrorIfDataIsNull)
   // Cleanup
   cardano_bootstrap_witness_set_unref(&bootstrap_witness_set);
 }
+
+TEST(cardano_bootstrap_witness_set_set_use_tag, canSetUseTag)
+{
+  // Arrange
+  cardano_bootstrap_witness_set_t* bootstrap_witness_set = nullptr;
+  cardano_error_t                  error                 = cardano_bootstrap_witness_set_new(&bootstrap_witness_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_bootstrap_witness_set_set_use_tag(bootstrap_witness_set, true), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bootstrap_witness_set_get_use_tag(bootstrap_witness_set), true);
+
+  EXPECT_EQ(cardano_bootstrap_witness_set_set_use_tag(bootstrap_witness_set, false), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bootstrap_witness_set_get_use_tag(bootstrap_witness_set), false);
+
+  // Cleanup
+  cardano_bootstrap_witness_set_unref(&bootstrap_witness_set);
+}
+
+TEST(cardano_bootstrap_witness_set_set_use_tag, returnsErrorIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_bootstrap_witness_set_set_use_tag(nullptr, true), CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_bootstrap_witness_get_set_use_tag, returnsFalseIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_bootstrap_witness_set_get_use_tag(nullptr), false);
+}

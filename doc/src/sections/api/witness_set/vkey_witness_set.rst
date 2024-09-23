@@ -29,6 +29,14 @@ VKey Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_vkey_witness_set_get_use_tag
+
+------------
+
+.. doxygenfunction:: cardano_vkey_witness_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_vkey_witness_set_unref
 
 ------------

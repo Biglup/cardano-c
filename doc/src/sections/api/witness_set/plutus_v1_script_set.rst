@@ -29,6 +29,14 @@ Plutus V1 Script set
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_v1_script_set_get_use_tag
+
+------------
+
+.. doxygenfunction:: cardano_plutus_v1_script_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_plutus_v1_script_set_unref
 
 ------------

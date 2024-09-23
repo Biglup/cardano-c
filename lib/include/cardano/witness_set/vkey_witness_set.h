@@ -272,6 +272,66 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, cardano_vkey_witness_t* element);
 
 /**
+ * \brief Checks if the vkey witness set uses tagged encoding (Conway era feature).
+ *
+ * This function determines whether the specified \ref cardano_vkey_witness_set_t object uses tagged encoding for sets,
+ * introduced in the Conway era of the Cardano blockchain. Tagged sets are a new way of encoding sets in CBOR, which
+ * differs from the older array-based representation used in previous eras.
+ *
+ * \param[in] vkey_witness_set A pointer to an initialized \ref cardano_vkey_witness_set_t object.
+ *
+ * \return \c true if the vkey witness set uses tagged encoding for sets; \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t* vkey_witness_set = ...; // Assume vkey_witness_set is already initialized
+ *
+ * bool uses_tag = cardano_vkey_witness_set_get_use_tag(vkey_witness_set);
+ * if (uses_tag)
+ * {
+ *   printf("The vkey witness set uses tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("The vkey witness set uses legacy array encoding.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_vkey_witness_set_get_use_tag(const cardano_vkey_witness_set_t* vkey_witness_set);
+
+/**
+ * \brief Enables or disables tagged encoding (Conway era feature) for the vkey witness set.
+ *
+ * This function sets whether the specified \ref cardano_vkey_witness_set_t object should use tagged encoding
+ * (introduced in the Conway era) when serializing sets in CBOR. If \p use_tag is set to \c true, the vkey witness set will be encoded
+ * using tagged sets. Otherwise, it will use the older array-based encoding method.
+ *
+ * \param[in,out] vkey_witness_set A pointer to an initialized \ref cardano_vkey_witness_set_t object.
+ * \param[in] use_tag A boolean value that determines whether to use tagged encoding (\c true) or legacy array encoding (\c false).
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
+ *         or an appropriate error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t* vkey_witness = ...; // Assume vkey_witness is already initialized
+ * cardano_error_t result = cardano_vkey_witness_set_set_use_tag(vkey_witness, true);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The vkey witness set is now set to use tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set tagged encoding: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_set_use_tag(cardano_vkey_witness_set_t* vkey_witness_set, bool use_tag);
+
+/**
  * \brief Decrements the reference count of a vkey_witness_set object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_vkey_witness_set_t object

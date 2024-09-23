@@ -289,6 +289,66 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_plutus_data_set_add(cardano_plutus_data_set_t* plutus_data_set, cardano_plutus_data_t* element);
 
 /**
+ * \brief Checks if the plutus data set uses tagged encoding (Conway era feature).
+ *
+ * This function determines whether the specified \ref cardano_plutus_data_set_t object uses tagged encoding for sets,
+ * introduced in the Conway era of the Cardano blockchain. Tagged sets are a new way of encoding sets in CBOR, which
+ * differs from the older array-based representation used in previous eras.
+ *
+ * \param[in] plutus_data_set A pointer to an initialized \ref cardano_plutus_data_set_t object.
+ *
+ * \return \c true if the plutus data set uses tagged encoding for sets; \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_plutus_data_set_t* plutus_data_set = ...; // Assume plutus_data_set is already initialized
+ *
+ * bool uses_tag = cardano_plutus_data_set_get_use_tag(plutus_data_set);
+ * if (uses_tag)
+ * {
+ *   printf("The plutus data set uses tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("The plutus data set uses legacy array encoding.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_plutus_data_set_get_use_tag(const cardano_plutus_data_set_t* plutus_data_set);
+
+/**
+ * \brief Enables or disables tagged encoding (Conway era feature) for the plutus data set.
+ *
+ * This function sets whether the specified \ref cardano_plutus_data_set_t object should use tagged encoding
+ * (introduced in the Conway era) when serializing sets in CBOR. If \p use_tag is set to \c true, the set will be encoded
+ * using tagged sets. Otherwise, it will use the older array-based encoding method.
+ *
+ * \param[in,out] plutus_data_set A pointer to an initialized \ref cardano_plutus_data_set_t object.
+ * \param[in] use_tag A boolean value that determines whether to use tagged encoding (\c true) or legacy array encoding (\c false).
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
+ *         or an appropriate error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_plutus_data_set_t* plutus_data_set = ...; // Assume plutus_data_set is already initialized
+ * cardano_error_t result = cardano_plutus_data_set_set_use_tag(plutus_data_set, true);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The plutus data set is now set to use tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set tagged encoding: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_plutus_data_set_set_use_tag(cardano_plutus_data_set_t* plutus_data_set, bool use_tag);
+
+/**
  * \brief Clears the cached CBOR representation from a plutus data set.
  *
  * This function removes the internally cached CBOR data from a \ref cardano_plutus_data_set_t object.

@@ -750,3 +750,34 @@ TEST(cardano_plutus_v1_script_set_add, returnsErrorIfDataIsNull)
   // Cleanup
   cardano_plutus_v1_script_set_unref(&plutus_v1_script_set);
 }
+
+TEST(cardano_plutus_v1_script_set_set_use_tag, canSetUseTag)
+{
+  // Arrange
+  cardano_plutus_v1_script_set_t* plutus_v1_script_set = nullptr;
+  cardano_error_t                 error                = cardano_plutus_v1_script_set_new(&plutus_v1_script_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_plutus_v1_script_set_set_use_tag(plutus_v1_script_set, true), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_v1_script_set_get_use_tag(plutus_v1_script_set), true);
+
+  EXPECT_EQ(cardano_plutus_v1_script_set_set_use_tag(plutus_v1_script_set, false), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_v1_script_set_get_use_tag(plutus_v1_script_set), false);
+
+  // Cleanup
+  cardano_plutus_v1_script_set_unref(&plutus_v1_script_set);
+}
+
+TEST(cardano_plutus_v1_script_set_set_use_tag, returnsErrorIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_plutus_v1_script_set_set_use_tag(nullptr, true), CARDANO_POINTER_IS_NULL);
+}
+
+TEST(cardano_plutus_v1_script_get_set_use_tag, returnsFalseIfGivenNull)
+{
+  // Act
+  EXPECT_EQ(cardano_plutus_v1_script_set_get_use_tag(nullptr), false);
+}

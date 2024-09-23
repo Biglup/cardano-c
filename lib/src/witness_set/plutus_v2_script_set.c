@@ -341,6 +341,30 @@ cardano_plutus_v2_script_set_add(cardano_plutus_v2_script_set_t* plutus_v2_scrip
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_plutus_v2_script_set_get_use_tag(const cardano_plutus_v2_script_set_t* plutus_v2_script_set)
+{
+  if (plutus_v2_script_set == NULL)
+  {
+    return false;
+  }
+
+  return plutus_v2_script_set->uses_tags;
+}
+
+cardano_error_t
+cardano_plutus_v2_script_set_set_use_tag(cardano_plutus_v2_script_set_t* plutus_v2_script_set, const bool use_tag)
+{
+  if (plutus_v2_script_set == NULL)
+  {
+    return CARDANO_POINTER_IS_NULL;
+  }
+
+  plutus_v2_script_set->uses_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_plutus_v2_script_set_unref(cardano_plutus_v2_script_set_t** plutus_v2_script_set)
 {
