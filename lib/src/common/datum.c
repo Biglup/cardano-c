@@ -615,6 +615,37 @@ cardano_datum_set_data_hash(cardano_datum_t* datum, const cardano_blake2b_hash_t
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_datum_equals(const cardano_datum_t* lhs, const cardano_datum_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
+  if (lhs == NULL)
+  {
+    return false;
+  }
+
+  if (rhs == NULL)
+  {
+    return false;
+  }
+
+  if (lhs->type != rhs->type)
+  {
+    return false;
+  }
+
+  if (lhs->type == CARDANO_DATUM_TYPE_DATA_HASH)
+  {
+    return (memcmp(lhs->hash_bytes, rhs->hash_bytes, sizeof(lhs->hash_bytes)) == 0);
+  }
+
+  return cardano_plutus_data_equals(lhs->inline_data, rhs->inline_data);
+}
+
 void
 cardano_datum_unref(cardano_datum_t** datum)
 {

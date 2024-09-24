@@ -102,10 +102,15 @@ _cardano_pointer_address_variable_length_decode(const byte_t* array, size_t tota
 }
 
 cardano_error_t
-_cardano_unpack_pointer_address(const byte_t* data, size_t size, cardano_pointer_address_t** address)
+_cardano_unpack_pointer_address(const byte_t* data, const size_t size, cardano_pointer_address_t** address)
 {
   assert(data != NULL);
   assert(address != NULL);
+
+  if (size < (size_t)(((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + 1U)))
+  {
+    return CARDANO_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+  }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);
   cardano_network_id_t   network_id = (cardano_network_id_t)(uint8_t)((uint8_t)data[0] & 0x0FU);

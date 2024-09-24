@@ -134,16 +134,16 @@ TEST(cardano_cost_model_new, returnErrorIfInvalidCostModel)
   std::vector<int64_t>  costs      = hex_string_to_costs(COST_MODEL_V3_HEX);
 
   // Act
-  cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], costs.size() - 10, &cost_model);
+  cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], 4096, &cost_model);
   EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
 
-  error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V2, &costs[0], costs.size() - 10, &cost_model);
+  error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V2, &costs[0], 4096, &cost_model);
   EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
 
-  error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V3, &costs[0], costs.size() - 10, &cost_model);
+  error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V3, &costs[0], 4096, &cost_model);
   EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
 
-  error = cardano_cost_model_new((cardano_plutus_language_version_t)99, &costs[0], costs.size() - 10, &cost_model);
+  error = cardano_cost_model_new((cardano_plutus_language_version_t)99, &costs[0], 4096, &cost_model);
   EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
 }
 
@@ -320,7 +320,7 @@ TEST(cardano_cost_model_from_cbor, returnsErrorIdInvalidCostsArray)
   cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

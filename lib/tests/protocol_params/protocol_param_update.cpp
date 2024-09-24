@@ -401,7 +401,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfInvalidArrayInEntrop
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
-  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex("a10d810158200000000000000000000000000000000000000000000000000000000000000000", strlen("a10d820158200000000000000000000000000000000000000000000000000000000000000000"));
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex("a10d830158200000000000000000000000000000000000000000000000000000000000000000", strlen("a10d820158200000000000000000000000000000000000000000000000000000000000000000"));
 
   // Act
   cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
@@ -411,6 +411,23 @@ TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfInvalidArrayInEntrop
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_from_cbor, canReadEmptyEntropy)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex("a10d8100", strlen("a10d8100"));
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+  cardano_protocol_param_update_unref(&protocol_param_update);
 }
 
 TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfInvalidUintInEntropy)
@@ -3173,7 +3190,7 @@ TEST(cardano_protocol_param_update_set_d, canUnsetParameterByPassingNull)
   cardano_protocol_param_update_unref(&protocol_param_update);
 }
 
-TEST(cardano_protocol_param_update_set_extra_entropy, setsTheDecentralisationParam)
+TEST(cardano_protocol_param_update_set_extra_entropy, setsTheExtraEntropyParam)
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
@@ -3194,6 +3211,39 @@ TEST(cardano_protocol_param_update_set_extra_entropy, setsTheDecentralisationPar
   cardano_buffer_unref(&extra_entropy);
   cardano_buffer_unref(&extra_entropy_out);
   cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_extra_entropy, setsEmptyExtraEntropyParam)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_buffer_t* extra_entropy = cardano_buffer_new(0);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_extra_entropy(protocol_param_update, extra_entropy), CARDANO_SUCCESS);
+
+  // Assert
+  // serialize to CBOR
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_protocol_param_update_to_cbor(protocol_param_update, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  // Check if the extra_entropy is empty
+  EXPECT_STREQ(hex, "a10d8100");
+
+  // Cleanup
+  cardano_buffer_unref(&extra_entropy);
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
 }
 
 TEST(cardano_protocol_param_update_set_extra_entropy, returnsErrorIfProtocolParamUpdateIsNull)

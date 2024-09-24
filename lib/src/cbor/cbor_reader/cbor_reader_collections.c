@@ -225,8 +225,9 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
     return CARDANO_ERROR_DECODING;
   }
 
-  size_t i            = HEADER_BYTE_SIZE;
-  byte_t initial_byte = cardano_buffer_get_data(data)[i];
+  size_t       i            = HEADER_BYTE_SIZE;
+  byte_t       initial_byte = cardano_buffer_get_data(data)[i];
+  const size_t size         = cardano_buffer_get_size(data);
 
   while (initial_byte != CBOR_INITIAL_BYTE_INDEFINITE_LENGTH_BREAK)
   {
@@ -235,14 +236,29 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
 
     cardano_buffer_t* slice = cardano_buffer_slice(data, i, cardano_buffer_get_size(data));
 
-    assert(slice != NULL);
+    if (slice == NULL)
+    {
+      // LCOV_EXCL_START
+      cardano_buffer_unref(&data);
+      cardano_buffer_unref(&concat);
+
+      return CARDANO_ERROR_DECODING;
+      // LCOV_EXCL_STOP
+    }
 
     cardano_error_t peek_definite_length_result = peek_definite_length(slice, initial_byte, &chunk_length, &bytes_read);
 
     cardano_buffer_unref(&slice);
 
-    assert(peek_definite_length_result == CARDANO_SUCCESS);
-    CARDANO_UNUSED(peek_definite_length_result);
+    if (peek_definite_length_result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_buffer_unref(&data);
+      cardano_buffer_unref(&concat);
+
+      return peek_definite_length_result;
+      // LCOV_EXCL_STOP
+    }
 
     size_t payload_size = bytes_read + (size_t)chunk_length;
 
@@ -258,6 +274,14 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
     }
 
     i += payload_size;
+
+    if (i >= size)
+    {
+      cardano_buffer_unref(&data);
+      cardano_buffer_unref(&concat);
+
+      return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    }
 
     initial_byte = cardano_buffer_get_data(data)[i];
   }

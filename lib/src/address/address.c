@@ -539,6 +539,37 @@ cardano_address_to_base_address(const cardano_address_t* address)
   return base_address;
 }
 
+bool
+cardano_address_equals(const cardano_address_t* lhs, const cardano_address_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return true;
+  }
+
+  if (lhs == NULL)
+  {
+    return false;
+  }
+
+  if (rhs == NULL)
+  {
+    return false;
+  }
+
+  if (lhs->type != rhs->type)
+  {
+    return false;
+  }
+
+  if (lhs->address_data_size != rhs->address_data_size)
+  {
+    return false; // LCOV_EXCL_LINE
+  }
+
+  return memcmp(lhs->address_data, rhs->address_data, lhs->address_data_size) == 0;
+}
+
 void
 cardano_address_unref(cardano_address_t** address)
 {

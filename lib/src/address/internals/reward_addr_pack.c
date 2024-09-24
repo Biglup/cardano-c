@@ -41,8 +41,11 @@ _cardano_unpack_reward_address(const byte_t* data, size_t size, cardano_reward_a
 {
   assert(data != NULL);
   assert(address != NULL);
-  assert(size >= (ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
-  CARDANO_UNUSED(size);
+
+  if (size < (ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224))
+  {
+    return CARDANO_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+  }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);
   cardano_network_id_t   network_id = (cardano_network_id_t)(uint8_t)((uint8_t)data[0] & 0x0FU);

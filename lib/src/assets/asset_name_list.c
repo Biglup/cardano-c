@@ -21,9 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/assets/asset_name.h>
 #include <cardano/assets/asset_name_list.h>
 #include <cardano/object.h>
-#include <include/cardano/assets/asset_name.h>
 
 #include "src/allocators.h"
 #include "src/collections/array.h"

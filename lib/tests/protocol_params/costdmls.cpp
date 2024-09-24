@@ -529,7 +529,7 @@ TEST(cardano_costmdls_from_cbor, returnErrorIfInvalidModel)
   cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
   EXPECT_THAT(costmdls, testing::IsNull());
 
   // Cleanup

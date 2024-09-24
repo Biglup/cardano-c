@@ -424,6 +424,42 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_script_t* cardano_transaction_output_get_script_ref(cardano_transaction_output_t* output);
 
 /**
+ * \brief Compares two transaction output objects for equality.
+ *
+ * This function compares two transaction output objects to determine if they are equal.
+ *
+ * \param[in] lhs Pointer to the first transaction output object.
+ * \param[in] rhs Pointer to the second transaction output object.
+ *
+ * \return \c true if the transaction_output objects are equal, \c false otherwise.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_output_t* transaction_output1 = NULL;
+ * cardano_transaction_output_t* transaction_output2 = NULL;
+ *
+ * // Assume transaction_output1 and transaction_output2 are initialized properly
+ *
+ * bool are_equal = cardano_transaction_output_equals(transaction_output1, transaction_output2);
+ *
+ * if (are_equal)
+ * {
+ *   printf("The transaction_output objects are equal.\n");
+ * }
+ * else
+ * {
+ *   printf("The transaction_output objects are not equal.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_transaction_output_unref(&transaction_output1);
+ * cardano_transaction_output_unref(&transaction_output2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_transaction_output_equals(const cardano_transaction_output_t* lhs, const cardano_transaction_output_t* rhs);
+
+/**
  * \brief Sets the script reference for a transaction output.
  *
  * This function assigns a script reference to a specified \ref cardano_transaction_output_t object.

@@ -35,6 +35,9 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR                                  = "a400583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d01000033222220051200120011";
+static const char* CBOR_DIFFERENT_ADDRESS                = "a400583900537ba48a023f0a3c66e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d01000033222220051200120011";
+static const char* CBOR_DIFFERENT_VALUE                  = "a400583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4340a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d01000033222220051200120011";
+static const char* CBOR_DIFFERENT_SCRIPT                 = "a400583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d01000033222220051200122211";
 static const char* LEGACY_OUTPUT_CBOR                    = "83583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa8821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a58200000000000000000000000000000000000000000000000000000000000000000";
 static const char* LEGACY_OUTPUT_NO_DATUM_CBOR           = "82583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa8821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a";
 static const char* BABBAGE_INLINE_DATUM_CBOR             = "a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff";
@@ -1209,4 +1212,131 @@ TEST(cardano_transaction_output_from_cbor, returnsErrorIfInvalidDatumLegacyOutpu
   // Cleanup
   cardano_transaction_output_unref(&transaction_output);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_output_equals, returnsTrueIfEqual)
+{
+  // Arrange
+  cardano_transaction_output_t* output  = new_default_output(CBOR);
+  cardano_transaction_output_t* output2 = new_default_output(CBOR);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output2);
+
+  // Assert
+  EXPECT_TRUE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_unref(&output2);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfDifferent)
+{
+  // Arrange
+  cardano_transaction_output_t* output  = new_default_output(CBOR);
+  cardano_transaction_output_t* output2 = new_default_output(LEGACY_OUTPUT_NO_DATUM_CBOR);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_unref(&output2);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfDifferent2)
+{
+  // Arrange
+  cardano_transaction_output_t* output  = new_default_output(CBOR);
+  cardano_transaction_output_t* output2 = new_default_output(CBOR_DIFFERENT_ADDRESS);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_unref(&output2);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfDifferent3)
+{
+  // Arrange
+  cardano_transaction_output_t* output  = new_default_output(CBOR);
+  cardano_transaction_output_t* output2 = new_default_output(CBOR_DIFFERENT_VALUE);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_unref(&output2);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfDifferent4)
+{
+  // Arrange
+  cardano_transaction_output_t* output  = new_default_output(CBOR);
+  cardano_transaction_output_t* output2 = new_default_output(CBOR_DIFFERENT_SCRIPT);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output2);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_unref(&output2);
+}
+
+TEST(cardano_transaction_output_equals, returnsTrueIfBothNull)
+{
+  // Arrange
+  cardano_transaction_output_t* output = NULL;
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, output);
+
+  // Assert
+  EXPECT_TRUE(result);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfOneIsNull)
+{
+  // Arrange
+  cardano_transaction_output_t* output = new_default_output(CBOR);
+
+  // Act
+  bool result = cardano_transaction_output_equals(output, nullptr);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
+}
+
+TEST(cardano_transaction_output_equals, returnsFalseIfOneIsNull2)
+{
+  // Arrange
+  cardano_transaction_output_t* output = new_default_output(CBOR);
+
+  // Act
+  bool result = cardano_transaction_output_equals(nullptr, output);
+
+  // Assert
+  EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_transaction_output_unref(&output);
 }
