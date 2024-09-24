@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ARRAY_H
-#define CARDANO_ARRAY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ARRAY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ARRAY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -330,4 +330,4 @@ CARDANO_EXPORT const char* cardano_array_get_last_error(const cardano_array_t* a
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ARRAY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ARRAY_H

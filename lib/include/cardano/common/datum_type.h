@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_DATUM_TYPE_H
-#define CARDANO_DATUM_TYPE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DATUM_TYPE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_DATUM_TYPE_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -54,4 +54,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_DATUM_TYPE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_DATUM_TYPE_H

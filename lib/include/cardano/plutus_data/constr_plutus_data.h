@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CONSTR_PLUTUS_DATA_H
-#define CARDANO_CONSTR_PLUTUS_DATA_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CONSTR_PLUTUS_DATA_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CONSTR_PLUTUS_DATA_H
 
 /* INCLUDES ******************************************************************/
 
@@ -583,4 +583,4 @@ CARDANO_EXPORT const char* cardano_constr_plutus_data_get_last_error(const carda
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CONSTR_PLUTUS_DATA_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CONSTR_PLUTUS_DATA_H

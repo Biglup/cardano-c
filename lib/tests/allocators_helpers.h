@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ALLOCATORS_HELPERS
-#define CARDANO_ALLOCATORS_HELPERS
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_HELPERS
+#define BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_HELPERS
 
 /* INCLUDES ******************************************************************/
 
@@ -242,4 +242,4 @@ fail_after_thirty_seven_malloc(size_t size);
 void*
 fail_right_away_realloc(void* const ptr, size_t size);
 
-#endif // CARDANO_ALLOCATORS_HELPERS
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_HELPERS

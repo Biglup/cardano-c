@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_ARITHMETIC_H
-#define CARDANO_CRYPTO_ARITHMETIC_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ARITHMETIC_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ARITHMETIC_H
 
 /* INCLUDES ******************************************************************/
 
@@ -73,4 +73,4 @@ void _cardano_crypto_add28_mul8(const byte_t* x, const byte_t* y, byte_t* out);
  */
 void _cardano_crypto_add256bits(const byte_t* x, const byte_t* y, byte_t* out);
 
-#endif // CARDANO_CRYPTO_ARITHMETIC_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ARITHMETIC_H

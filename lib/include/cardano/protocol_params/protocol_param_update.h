@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PROTOCOL_PARAM_UPDATE_H
-#define CARDANO_PROTOCOL_PARAM_UPDATE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_PARAM_UPDATE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_PARAM_UPDATE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -3123,4 +3123,4 @@ CARDANO_EXPORT const char* cardano_protocol_param_update_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PROTOCOL_PARAM_UPDATE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_PARAM_UPDATE_H

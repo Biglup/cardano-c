@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_BLAKE2B_HASH_H
-#define CARDANO_CRYPTO_BLAKE2B_HASH_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H
 
 /* INCLUDES ******************************************************************/
 
@@ -575,4 +575,4 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_hex(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_BLAKE2B_HASH_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H

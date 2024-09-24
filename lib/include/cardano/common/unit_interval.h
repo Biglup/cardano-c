@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_UNIT_INTERVAL_H
-#define CARDANO_UNIT_INTERVAL_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_UNIT_INTERVAL_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_UNIT_INTERVAL_H
 
 /* INCLUDES ******************************************************************/
 
@@ -484,4 +484,4 @@ CARDANO_EXPORT const char* cardano_unit_interval_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_UNIT_INTERVAL_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_UNIT_INTERVAL_H

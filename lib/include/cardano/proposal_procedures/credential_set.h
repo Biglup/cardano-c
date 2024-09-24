@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CREDENTIAL_SET_H
-#define CARDANO_CREDENTIAL_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -396,4 +396,4 @@ CARDANO_EXPORT const char* cardano_credential_set_get_last_error(const cardano_c
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CREDENTIAL_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_SET_H

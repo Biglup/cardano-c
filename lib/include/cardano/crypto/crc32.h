@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_CRC32_H
-#define CARDANO_CRYPTO_CRC32_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_CRC32_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_CRC32_H
 
 /* INCLUDES ******************************************************************/
 
@@ -65,4 +65,4 @@ CARDANO_EXPORT uint32_t cardano_checksum_crc32(const byte_t* data, size_t size);
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_CRC32_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_CRC32_H

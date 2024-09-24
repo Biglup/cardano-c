@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ERROR_H
-#define CARDANO_ERROR_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ERROR_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ERROR_H
 
 /* INCLUDES ******************************************************************/
 
@@ -295,4 +295,4 @@ CARDANO_EXPORT const char* cardano_error_to_string(cardano_error_t error);
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ERROR_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ERROR_H

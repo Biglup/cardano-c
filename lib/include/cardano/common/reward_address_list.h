@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_REWARD_ADDRESS_LIST_H
-#define CARDANO_REWARD_ADDRESS_LIST_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_LIST_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_LIST_H
 
 /* INCLUDES ******************************************************************/
 
@@ -312,4 +312,4 @@ CARDANO_EXPORT const char* cardano_reward_address_list_get_last_error(const card
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_REWARD_ADDRESS_LIST_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_LIST_H

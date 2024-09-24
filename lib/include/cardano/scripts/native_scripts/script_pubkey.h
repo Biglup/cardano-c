@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_PUBKEY_H
-#define CARDANO_SCRIPT_PUBKEY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -461,4 +461,4 @@ CARDANO_EXPORT const char* cardano_script_pubkey_get_last_error(const cardano_sc
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_PUBKEY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H

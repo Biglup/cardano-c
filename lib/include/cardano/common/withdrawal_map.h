@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_WITHDRAWAL_MAP_H
-#define CARDANO_WITHDRAWAL_MAP_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_WITHDRAWAL_MAP_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_WITHDRAWAL_MAP_H
 
 /* INCLUDES ******************************************************************/
 
@@ -586,4 +586,4 @@ CARDANO_EXPORT const char* cardano_withdrawal_map_get_last_error(const cardano_w
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_WITHDRAWAL_MAP_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_WITHDRAWAL_MAP_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BLAKE2B_HASH_SET_H
-#define CARDANO_BLAKE2B_HASH_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BLAKE2B_HASH_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BLAKE2B_HASH_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -400,4 +400,4 @@ CARDANO_EXPORT const char* cardano_blake2b_hash_set_get_last_error(const cardano
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BLAKE2B_HASH_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BLAKE2B_HASH_SET_H

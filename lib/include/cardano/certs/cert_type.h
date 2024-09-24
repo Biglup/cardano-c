@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CERT_TYPE_H
-#define CARDANO_CERT_TYPE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CERT_TYPE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CERT_TYPE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -179,4 +179,4 @@ CARDANO_EXPORT const char* cardano_cert_type_to_string(cardano_cert_type_t type)
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CERT_TYPE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CERT_TYPE_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_INVALID_BEFORE_H
-#define CARDANO_SCRIPT_INVALID_BEFORE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_INVALID_BEFORE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_INVALID_BEFORE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -457,4 +457,4 @@ CARDANO_EXPORT const char* cardano_script_invalid_before_get_last_error(const ca
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_INVALID_BEFORE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_INVALID_BEFORE_H

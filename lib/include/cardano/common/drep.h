@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_DREP_H
-#define CARDANO_DREP_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DREP_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_DREP_H
 
 /* INCLUDES ******************************************************************/
 
@@ -456,4 +456,4 @@ CARDANO_EXPORT const char* cardano_drep_get_last_error(const cardano_drep_t* dre
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_DREP_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_DREP_H

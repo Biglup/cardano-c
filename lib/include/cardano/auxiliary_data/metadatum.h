@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_METADATUM_H
-#define CARDANO_METADATUM_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_METADATUM_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_METADATUM_H
 
 /* INCLUDES ******************************************************************/
 
@@ -1177,4 +1177,4 @@ CARDANO_EXPORT const char* cardano_metadatum_get_last_error(const cardano_metada
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_METADATUM_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_METADATUM_H

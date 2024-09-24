@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_TRANSACTION_METADATA_H
-#define CARDANO_TRANSACTION_METADATA_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_METADATA_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_METADATA_H
 
 /* INCLUDES ******************************************************************/
 
@@ -578,4 +578,4 @@ CARDANO_EXPORT const char* cardano_transaction_metadata_get_last_error(const car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_TRANSACTION_METADATA_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_METADATA_H

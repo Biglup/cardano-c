@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CIP19_TEST_VECTORS_H
-#define CARDANO_CIP19_TEST_VECTORS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CIP19_TEST_VECTORS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CIP19_TEST_VECTORS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -180,4 +180,4 @@ static const byte_t pointerScriptBytes[] = {
 
 // clang-format on
 
-#endif // CARDANO_CIP19_TEST_VECTORS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CIP19_TEST_VECTORS_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_EXPORT_H
-#define CARDANO_EXPORT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_EXPORT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_EXPORT_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -50,4 +50,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* CARDANO_EXPORT_H */
+#endif /* BIGLUP_LABS_INCLUDE_CARDANO_EXPORT_H */

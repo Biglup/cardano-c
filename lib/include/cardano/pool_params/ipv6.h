@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_IPV6_H
-#define CARDANO_IPV6_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H
 
 /* INCLUDES ******************************************************************/
 
@@ -465,4 +465,4 @@ CARDANO_EXPORT const char* cardano_ipv6_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_IPV6_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H

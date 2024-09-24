@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_TYPEDEFS_H_
-#define CARDANO_TYPEDEFS_H_
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_TYPEDEFS_H_
+#define BIGLUP_LABS_INCLUDE_CARDANO_TYPEDEFS_H_
 
 /* INCLUDES ******************************************************************/
 

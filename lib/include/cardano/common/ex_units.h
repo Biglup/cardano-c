@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_EX_UNITS_H
-#define CARDANO_EX_UNITS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -417,4 +417,4 @@ CARDANO_EXPORT const char* cardano_ex_units_get_last_error(const cardano_ex_unit
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_EX_UNITS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H

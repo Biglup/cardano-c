@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_VKEY_WITNESS_H
-#define CARDANO_VKEY_WITNESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_VKEY_WITNESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_VKEY_WITNESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -472,4 +472,4 @@ CARDANO_EXPORT const char* cardano_vkey_witness_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_VKEY_WITNESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_VKEY_WITNESS_H

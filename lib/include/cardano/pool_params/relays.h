@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_RELAYS_H
-#define CARDANO_RELAYS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -391,4 +391,4 @@ CARDANO_EXPORT const char* cardano_relays_get_last_error(const cardano_relays_t*
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_RELAYS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H

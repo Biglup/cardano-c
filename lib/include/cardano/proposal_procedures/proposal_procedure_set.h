@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PROPOSAL_PROCEDURE_SET_H
-#define CARDANO_PROPOSAL_PROCEDURE_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -396,4 +396,4 @@ CARDANO_EXPORT const char* cardano_proposal_procedure_set_get_last_error(const c
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PROPOSAL_PROCEDURE_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H

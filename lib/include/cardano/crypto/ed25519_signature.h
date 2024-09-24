@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_ED25519_SIGNATURE_H
-#define CARDANO_CRYPTO_ED25519_SIGNATURE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_SIGNATURE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_SIGNATURE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -356,4 +356,4 @@ CARDANO_EXPORT cardano_error_t cardano_ed25519_signature_to_hex(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_ED25519_SIGNATURE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_SIGNATURE_H

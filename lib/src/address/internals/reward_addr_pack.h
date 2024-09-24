@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_REWARD_ADDRESS_PACK_H
-#define CARDANO_REWARD_ADDRESS_PACK_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_PACK_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_PACK_H
 
 /* INCLUDES ******************************************************************/
 
@@ -67,4 +67,4 @@ _cardano_pack_reward_address(const cardano_address_t* address, byte_t* data, siz
 cardano_error_t
 _cardano_unpack_reward_address(const byte_t* data, size_t size, cardano_reward_address_t** address);
 
-#endif // CARDANO_REWARD_ADDRESS_PACK_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_REWARD_ADDRESS_PACK_H

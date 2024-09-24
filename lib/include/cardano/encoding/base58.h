@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BASE58_H
-#define CARDANO_BASE58_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BASE58_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BASE58_H
 
 /* INCLUDES ******************************************************************/
 
@@ -223,4 +223,4 @@ CARDANO_EXPORT cardano_error_t cardano_encoding_base58_decode(const char* input,
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BASE58_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BASE58_H

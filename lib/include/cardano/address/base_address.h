@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BASE_ADDRESS_H
-#define CARDANO_BASE_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -643,4 +643,4 @@ CARDANO_EXPORT const char* cardano_base_address_get_last_error(const cardano_bas
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BASE_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_H

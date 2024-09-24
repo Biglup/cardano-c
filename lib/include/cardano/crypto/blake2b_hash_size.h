@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H
-#define CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -71,4 +71,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_SIZE_H

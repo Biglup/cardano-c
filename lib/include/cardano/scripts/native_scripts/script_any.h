@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_ANY_H
-#define CARDANO_SCRIPT_ANY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ANY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ANY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -494,4 +494,4 @@ CARDANO_EXPORT const char* cardano_script_any_get_last_error(const cardano_scrip
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_ANY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ANY_H

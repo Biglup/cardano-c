@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H
-#define CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -603,4 +603,4 @@ CARDANO_EXPORT uint32_t cardano_bip32_harden(uint32_t index);
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_PRIVATE_KEY_H

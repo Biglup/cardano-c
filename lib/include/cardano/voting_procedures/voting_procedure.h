@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_VOTING_PROCEDURE_H
-#define CARDANO_VOTING_PROCEDURE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -438,4 +438,4 @@ CARDANO_EXPORT const char* cardano_voting_procedure_get_last_error(const cardano
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_VOTING_PROCEDURE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_REDEEMER_H
-#define CARDANO_REDEEMER_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_H
 
 /* INCLUDES ******************************************************************/
 
@@ -629,4 +629,4 @@ CARDANO_EXPORT const char* cardano_redeemer_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_REDEEMER_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_H

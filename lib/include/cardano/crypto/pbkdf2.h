@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_PBKDF2_H
-#define CARDANO_CRYPTO_PBKDF2_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_PBKDF2_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_PBKDF2_H
 
 /* INCLUDES ******************************************************************/
 
@@ -68,4 +68,4 @@ CARDANO_EXPORT cardano_error_t cardano_crypto_pbkdf2_hmac_sha512(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_PBKDF2_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_PBKDF2_H

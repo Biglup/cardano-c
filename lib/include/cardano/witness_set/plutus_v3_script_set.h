@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PLUTUS_V3_SCRIPT_SET_H
-#define CARDANO_PLUTUS_V3_SCRIPT_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V3_SCRIPT_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V3_SCRIPT_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -467,4 +467,4 @@ CARDANO_EXPORT const char* cardano_plutus_v3_script_set_get_last_error(const car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PLUTUS_V3_SCRIPT_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V3_SCRIPT_SET_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_POOL_PARAMS_H
-#define CARDANO_POOL_PARAMS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_POOL_PARAMS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_POOL_PARAMS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -1025,4 +1025,4 @@ CARDANO_EXPORT const char* cardano_pool_params_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_POOL_PARAMS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_POOL_PARAMS_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_MULTI_ASSET_H
-#define CARDANO_MULTI_ASSET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -790,4 +790,4 @@ CARDANO_EXPORT const char* cardano_multi_asset_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_MULTI_ASSET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H

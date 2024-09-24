@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_UTXO_H
-#define CARDANO_UTXO_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_UTXO_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_UTXO_H
 
 /* INCLUDES ******************************************************************/
 
@@ -516,4 +516,4 @@ CARDANO_EXPORT const char* cardano_utxo_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_UTXO_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_UTXO_H

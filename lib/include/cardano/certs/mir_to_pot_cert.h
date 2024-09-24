@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_MIR_TO_POD_CERT_H
-#define CARDANO_MIR_TO_POD_CERT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_MIR_TO_POD_CERT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_MIR_TO_POD_CERT_H
 
 /* INCLUDES ******************************************************************/
 
@@ -418,4 +418,4 @@ CARDANO_EXPORT const char* cardano_mir_to_pot_cert_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_MIR_TO_POD_CERT_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_MIR_TO_POD_CERT_H

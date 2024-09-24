@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_COST_MODEL_H
-#define CARDANO_COST_MODEL_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_COST_MODEL_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_COST_MODEL_H
 
 /* INCLUDES ******************************************************************/
 
@@ -475,4 +475,4 @@ CARDANO_EXPORT const char* cardano_cost_model_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_COST_MODEL_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_COST_MODEL_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ANCHOR_H
-#define CARDANO_ANCHOR_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ANCHOR_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ANCHOR_H
 
 /* INCLUDES ******************************************************************/
 
@@ -709,4 +709,4 @@ CARDANO_EXPORT const char* cardano_anchor_get_last_error(const cardano_anchor_t*
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ANCHOR_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ANCHOR_H

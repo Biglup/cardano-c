@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ENTERPRISE_ADDRESS_H
-#define CARDANO_ENTERPRISE_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -631,4 +631,4 @@ CARDANO_EXPORT const char* cardano_enterprise_address_get_last_error(const carda
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ENTERPRISE_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H

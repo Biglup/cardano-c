@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_GOVERNANCE_ACTION_ID_H
-#define CARDANO_GOVERNANCE_ACTION_ID_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H
 
 /* INCLUDES ******************************************************************/
 
@@ -686,4 +686,4 @@ CARDANO_EXPORT const char* cardano_governance_action_id_get_last_error(const car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_GOVERNANCE_ACTION_ID_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H

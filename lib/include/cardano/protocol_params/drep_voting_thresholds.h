@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_DREP_VOTING_THRESHOLDS_H
-#define CARDANO_DREP_VOTING_THRESHOLDS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -1149,4 +1149,4 @@ CARDANO_EXPORT const char* cardano_drep_voting_thresholds_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_DREP_VOTING_THRESHOLDS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H

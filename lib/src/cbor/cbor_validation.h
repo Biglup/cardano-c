@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_VALIDATION_H
-#define CARDANO_CBOR_VALIDATION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_VALIDATION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_VALIDATION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -345,4 +345,4 @@ cardano_cbor_validate_enum_value(
   enum_to_string_callback_t enum_to_string_callback,
   uint64_t*                 actual_value);
 
-#endif // CARDANO_CBOR_VALIDATION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_VALIDATION_H

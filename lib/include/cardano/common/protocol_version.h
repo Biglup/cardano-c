@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PROTOCOL_VERSION_H
-#define CARDANO_PROTOCOL_VERSION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -416,4 +416,4 @@ CARDANO_EXPORT const char* cardano_protocol_version_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PROTOCOL_VERSION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H

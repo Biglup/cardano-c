@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_N_OF_K_H
-#define CARDANO_SCRIPT_N_OF_K_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_N_OF_K_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_N_OF_K_H
 
 /* INCLUDES ******************************************************************/
 
@@ -556,4 +556,4 @@ CARDANO_EXPORT const char* cardano_script_n_of_k_get_last_error(const cardano_sc
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_N_OF_K_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_N_OF_K_H

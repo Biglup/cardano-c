@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_COMMITTEE_MEMBERS_MAP_H
-#define CARDANO_COMMITTEE_MEMBERS_MAP_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_COMMITTEE_MEMBERS_MAP_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_COMMITTEE_MEMBERS_MAP_H
 
 /* INCLUDES ******************************************************************/
 
@@ -583,4 +583,4 @@ CARDANO_EXPORT const char* cardano_committee_members_map_get_last_error(const ca
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_COMMITTEE_MEMBERS_MAP_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_COMMITTEE_MEMBERS_MAP_H
