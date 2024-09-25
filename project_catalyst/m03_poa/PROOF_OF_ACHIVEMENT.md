@@ -1,4 +1,4 @@
-# Proof of Achievement Report - [x] CBOR serialization/deserialization for the supported Cardano transaction structures/types up to Conway era
+# Proof of Achievement Report - CBOR serialization/deserialization for types up to Conway era
 
 ## Introduction
 
