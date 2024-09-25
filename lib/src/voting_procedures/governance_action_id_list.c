@@ -157,7 +157,7 @@ cardano_governance_action_id_list_add(cardano_governance_action_id_list_t* gover
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(governance_action_id_list->array);
-  const size_t new_size      = cardano_array_add(governance_action_id_list->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(governance_action_id_list->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 

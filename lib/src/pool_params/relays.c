@@ -168,7 +168,7 @@ cardano_relays_from_cbor(cardano_cbor_reader_t* reader, cardano_relays_t** relay
     }
 
     const size_t old_size = cardano_array_get_size(list->array);
-    const size_t new_size = cardano_array_add(list->array, (cardano_object_t*)((void*)element));
+    const size_t new_size = cardano_array_push(list->array, (cardano_object_t*)((void*)element));
 
     cardano_relay_unref(&element);
 
@@ -298,7 +298,7 @@ cardano_relays_add(cardano_relays_t* relays, cardano_relay_t* element)
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(relays->array);
-  const size_t new_size      = cardano_array_add(relays->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(relays->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 

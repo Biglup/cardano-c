@@ -375,7 +375,7 @@ cardano_array_get(const cardano_array_t* array, const size_t index)
 }
 
 size_t
-cardano_array_add(cardano_array_t* array, cardano_object_t* item)
+cardano_array_push(cardano_array_t* array, cardano_object_t* item)
 {
   if (array == NULL)
   {
@@ -530,7 +530,7 @@ cardano_array_filter(const cardano_array_t* array, cardano_array_unary_predicate
 
     if (predicate(item, context))
     {
-      size_t new_size = cardano_array_add(filtered_array, item);
+      size_t new_size = cardano_array_push(filtered_array, item);
       CARDANO_UNUSED(new_size);
     }
   }

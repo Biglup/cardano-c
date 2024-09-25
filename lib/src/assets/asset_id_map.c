@@ -335,7 +335,7 @@ cardano_asset_id_map_insert(
   cardano_asset_id_ref(key);
 
   const size_t old_size = cardano_array_get_size(asset_id_map->array);
-  const size_t new_size = cardano_array_add(asset_id_map->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(asset_id_map->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

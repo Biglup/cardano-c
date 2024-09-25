@@ -138,7 +138,7 @@ clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
     cardano_object_t* clone_item = (cardano_object_t*)((void*)cloned_frame);
 
     const size_t current_size = cardano_array_get_size(cloned_array);
-    const size_t new_size     = cardano_array_add(cloned_array, clone_item);
+    const size_t new_size     = cardano_array_push(cloned_array, clone_item);
 
     assert(new_size == (current_size + 1U));
 
