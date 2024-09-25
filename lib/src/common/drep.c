@@ -316,15 +316,15 @@ cardano_drep_set_credential(cardano_drep_t* drep, cardano_credential_t* credenti
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if (credential == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   if ((drep->type != CARDANO_DREP_TYPE_KEY_HASH) && (drep->type != CARDANO_DREP_TYPE_SCRIPT_HASH))
   {
     cardano_drep_set_last_error(drep, "DRep: only key hash and script hash DRep types can have a credential");
     return CARDANO_ERROR_INVALID_ARGUMENT;
-  }
-
-  if (credential == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
