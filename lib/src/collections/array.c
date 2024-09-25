@@ -76,7 +76,7 @@ grow_array_if_needed(cardano_array_t* array)
 
     if (new_items == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
 
     array->items    = new_items;
@@ -314,6 +314,75 @@ cardano_array_slice(const cardano_array_t* array, size_t start, size_t end)
   return sliced_array;
 }
 
+cardano_array_t*
+cardano_array_erase(
+  cardano_array_t* array,
+  const int64_t    start,
+  const size_t     delete_count)
+{
+  if (array == NULL)
+  {
+    return NULL;
+  }
+
+  size_t  array_size     = array->size;
+  int64_t adjusted_start = start;
+
+  if (adjusted_start < 0)
+  {
+    adjusted_start += (int64_t)array_size;
+  }
+
+  if ((adjusted_start < 0) || ((size_t)adjusted_start >= array_size))
+  {
+    return NULL;
+  }
+
+  size_t adjusted_start_sz     = (size_t)adjusted_start;
+  size_t adjusted_delete_count = delete_count;
+
+  if ((adjusted_start_sz > (SIZE_MAX - adjusted_delete_count)) || ((adjusted_start_sz + adjusted_delete_count) > array_size))
+  {
+    return NULL;
+  }
+
+  if (adjusted_delete_count == 0U)
+  {
+    return cardano_array_new(1);
+  }
+
+  cardano_array_t* deleted_array = cardano_array_new(adjusted_delete_count);
+
+  if (deleted_array == NULL)
+  {
+    return NULL; // LCOV_EXCL_LINE
+  }
+
+  for (size_t i = 0; i < adjusted_delete_count; ++i)
+  {
+    size_t idx              = adjusted_start_sz + i;
+    deleted_array->items[i] = array->items[idx];
+  }
+
+  deleted_array->size = adjusted_delete_count;
+
+  size_t elements_after_deleted = array_size - (adjusted_start_sz + adjusted_delete_count);
+
+  for (size_t i = 0; i < elements_after_deleted; ++i)
+  {
+    array->items[adjusted_start_sz + i] = array->items[adjusted_start_sz + adjusted_delete_count + i];
+  }
+
+  for (size_t i = array_size - adjusted_delete_count; i < array_size; ++i)
+  {
+    array->items[i] = NULL;
+  }
+
+  array->size -= adjusted_delete_count;
+
+  return deleted_array;
+}
+
 void
 cardano_array_unref(cardano_array_t** array)
 {
@@ -391,8 +460,10 @@ cardano_array_push(cardano_array_t* array, cardano_object_t* item)
 
   if (error != CARDANO_SUCCESS)
   {
+    // LCOV_EXCL_START
     cardano_array_set_last_error(array, cardano_error_to_string(error));
     return array->size;
+    // LCOV_EXCL_STOP
   }
 
   cardano_object_ref(item);

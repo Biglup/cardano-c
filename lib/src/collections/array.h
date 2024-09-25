@@ -118,6 +118,25 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_array_t* cardano_array_slice(const cardano_array_t* array, size_t start, size_t end);
 
 /**
+ * \brief Removes elements from the array starting at a given index.
+ *
+ * This function removes `delete_count` elements from `array` starting at index `start`.
+ *
+ * \param[in,out] array The array to modify.
+ * \param[in] start The index at which to start removing elements. Supports negative indices.
+ * \param[in] delete_count The number of elements to remove from the array starting at `start`.
+ *                         If `delete_count` exceeds the number of elements from `start` to the end,
+ *                         it will be adjusted to remove till the end.
+ *
+ * \return A new array containing the removed elements. Returns `NULL` on error.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_array_t* cardano_array_erase(
+  cardano_array_t* array,
+  int64_t          start,
+  size_t           delete_count);
+
+/**
  * \brief Decrements the array's reference count.
  *
  * If the reference count reaches zero, the array memory is deallocated.
