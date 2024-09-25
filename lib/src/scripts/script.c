@@ -122,19 +122,19 @@ cardano_script_new_native(
 {
   if (native_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_t* data = cardano_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_native_script_ref(native_script);
@@ -154,19 +154,19 @@ cardano_script_new_plutus_v1(
 {
   if (plutus_v1_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_t* data = cardano_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_plutus_v1_script_ref(plutus_v1_script);
@@ -186,19 +186,19 @@ cardano_script_new_plutus_v2(
 {
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_t* data = cardano_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_plutus_v2_script_ref(plutus_v2_script);
@@ -218,19 +218,19 @@ cardano_script_new_plutus_v3(
 {
   if (plutus_v3_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_t* data = cardano_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_plutus_v3_script_ref(plutus_v3_script);
@@ -248,12 +248,12 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "script";
@@ -344,7 +344,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
     }
     // LCOV_EXCL_START
     default:
-      result = CARDANO_INVALID_SCRIPT_LANGUAGE;
+      result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
       break;
       // LCOV_EXCL_STOP
   }
@@ -359,12 +359,12 @@ cardano_script_to_cbor(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -374,7 +374,7 @@ cardano_script_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script->language);
+  result = cardano_cbor_writer_write_uint(writer, script->language);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -397,7 +397,7 @@ cardano_script_to_cbor(
       break;
     // LCOV_EXCL_START
     default:
-      result = CARDANO_INVALID_SCRIPT_LANGUAGE;
+      result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
       break;
       // LCOV_EXCL_STOP
   }
@@ -412,12 +412,12 @@ cardano_script_get_language(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (language == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *language = script->language;
@@ -432,17 +432,17 @@ cardano_script_to_native(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (native_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script->language != CARDANO_SCRIPT_LANGUAGE_NATIVE)
   {
-    return CARDANO_INVALID_SCRIPT_LANGUAGE;
+    return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }
 
   cardano_native_script_ref(script->native_script);
@@ -459,17 +459,17 @@ cardano_script_to_plutus_v1(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_v1 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script->language != CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1)
   {
-    return CARDANO_INVALID_SCRIPT_LANGUAGE;
+    return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }
 
   cardano_plutus_v1_script_ref(script->plutus_v1_script);
@@ -486,17 +486,17 @@ cardano_script_to_plutus_v2(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_v2 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script->language != CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2)
   {
-    return CARDANO_INVALID_SCRIPT_LANGUAGE;
+    return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }
 
   cardano_plutus_v2_script_ref(script->plutus_v2_script);
@@ -513,17 +513,17 @@ cardano_script_to_plutus_v3(
 {
   if (script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_v3 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script->language != CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3)
   {
-    return CARDANO_INVALID_SCRIPT_LANGUAGE;
+    return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }
 
   cardano_plutus_v3_script_ref(script->plutus_v3_script);

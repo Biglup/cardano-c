@@ -85,14 +85,14 @@ cardano_script_invalid_before_new(const uint64_t slot, cardano_script_invalid_be
 {
   if (script_invalid_before == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_invalid_before_t* data = _cardano_malloc(sizeof(cardano_script_invalid_before_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -111,12 +111,12 @@ cardano_script_invalid_before_from_cbor(cardano_cbor_reader_t* reader, cardano_s
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_invalid_before == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "script_invalid_before";
@@ -170,12 +170,12 @@ cardano_script_invalid_before_to_cbor(
 {
   if (script_invalid_before == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 2);
@@ -185,14 +185,14 @@ cardano_script_invalid_before_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_invalid_before->type);
+  result = cardano_cbor_writer_write_uint(writer, script_invalid_before->type);
 
   if (result != CARDANO_SUCCESS)
   {
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_invalid_before->slot);
+  result = cardano_cbor_writer_write_uint(writer, script_invalid_before->slot);
 
   return result;
 }
@@ -202,7 +202,7 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
 {
   if (json == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (json_size == 0U)
@@ -212,7 +212,7 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
 
   if (native_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   struct json_object* json_object = json_tokener_parse(json);
@@ -265,7 +265,7 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
     // LCOV_EXCL_START
     json_object_put(json_object);
 
-    return CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+    return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
     // LCOV_EXCL_STOP
   }
 
@@ -279,12 +279,12 @@ cardano_script_invalid_before_get_slot(const cardano_script_invalid_before_t* sc
 {
   if (script_invalid_before == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (slot == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *slot = script_invalid_before->slot;
@@ -297,7 +297,7 @@ cardano_script_invalid_before_set_slot(cardano_script_invalid_before_t* script_i
 {
   if (script_invalid_before == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   script_invalid_before->slot = slot;

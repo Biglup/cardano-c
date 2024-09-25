@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ENDIAN_H
-#define CARDANO_ENDIAN_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ENDIAN_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ENDIAN_H
 
 /* INCLUDES ******************************************************************/
 
@@ -437,4 +437,4 @@ cardano_error_t cardano_read_double_be(double* value, const byte_t* buffer, size
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ENDIAN_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ENDIAN_H

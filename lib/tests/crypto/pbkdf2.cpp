@@ -105,7 +105,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullPassword)
     sizeof(derived_key));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
@@ -124,7 +124,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
     sizeof(derived_key));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
@@ -140,7 +140,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
     0U);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
@@ -159,7 +159,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
     sizeof(derived_key));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)
@@ -178,7 +178,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)
     sizeof(derived_key));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroDerivedKeyLength)
@@ -197,5 +197,5 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroDerivedKeyLength)
     0U);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }

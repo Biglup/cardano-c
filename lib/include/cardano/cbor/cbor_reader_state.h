@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_READER_STATE_H
-#define CARDANO_CBOR_READER_STATE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_STATE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_STATE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -166,4 +166,4 @@ CARDANO_EXPORT const char* cardano_cbor_reader_state_to_string(cardano_cbor_read
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_READER_STATE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_STATE_H

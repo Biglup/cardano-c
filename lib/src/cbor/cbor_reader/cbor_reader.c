@@ -87,8 +87,8 @@ cardano_cbor_reader_deallocate(void* object)
  *                   containing the cloned items.
  *
  * \return \ref CARDANO_SUCCESS if the items were successfully cloned and stored in the new array.
- *         Returns \ref CARDANO_POINTER_IS_NULL if either \p src or \p clone is NULL.
- *         Returns \ref CARDANO_MEMORY_ALLOCATION_FAILED if there was an error allocating memory for the cloned items.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if either \p src or \p clone is NULL.
+ *         Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if there was an error allocating memory for the cloned items.
  */
 static cardano_error_t
 clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
@@ -103,7 +103,7 @@ clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
 
   if (cloned_array == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   for (size_t i = 0; i < array_size; ++i)
@@ -123,7 +123,7 @@ clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
     {
       cardano_array_unref(&cloned_array);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     cloned_frame->base.ref_count     = 0;
@@ -298,12 +298,12 @@ cardano_cbor_reader_get_bytes_remaining(cardano_cbor_reader_t* reader, size_t* b
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bytes_remaining == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *bytes_remaining = cardano_buffer_get_size(reader->buffer) - reader->offset;
@@ -316,19 +316,19 @@ cardano_cbor_reader_get_remainder_bytes(cardano_cbor_reader_t* reader, cardano_b
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (remainder_bytes == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* slice = cardano_buffer_slice(reader->buffer, reader->offset, cardano_buffer_get_size(reader->buffer));
 
   if (slice == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *remainder_bytes = slice;
@@ -341,19 +341,19 @@ cardano_cbor_reader_clone(cardano_cbor_reader_t* reader, cardano_cbor_reader_t**
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (clone == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* buffer = cardano_buffer_new_from(cardano_buffer_get_data(reader->buffer), cardano_buffer_get_size(reader->buffer));
 
   if (buffer == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_cbor_reader_t* obj = (cardano_cbor_reader_t*)_cardano_malloc(sizeof(cardano_cbor_reader_t));
@@ -361,7 +361,7 @@ cardano_cbor_reader_clone(cardano_cbor_reader_t* reader, cardano_cbor_reader_t**
   if (obj == NULL)
   {
     cardano_buffer_unref(&buffer);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   obj->base.ref_count     = 1;
@@ -373,7 +373,7 @@ cardano_cbor_reader_clone(cardano_cbor_reader_t* reader, cardano_cbor_reader_t**
     cardano_buffer_unref(&buffer);
     _cardano_free(obj);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   obj->buffer                           = buffer;
@@ -414,12 +414,12 @@ cardano_cbor_reader_read_encoded_value(cardano_cbor_reader_t* reader, cardano_bu
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (encoded_value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t initial_offset = reader->offset;
@@ -496,7 +496,7 @@ cardano_cbor_reader_read_end_map(cardano_cbor_reader_t* reader)
 }
 
 cardano_error_t
-cardano_cbor_reader_read_boolean(cardano_cbor_reader_t* reader, bool* value)
+cardano_cbor_reader_read_bool(cardano_cbor_reader_t* reader, bool* value)
 {
   return _cbor_reader_read_boolean(reader, value);
 }

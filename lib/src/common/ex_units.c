@@ -77,14 +77,14 @@ cardano_ex_units_new(const uint64_t memory, const uint64_t cpu_steps, cardano_ex
 {
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *ex_units = _cardano_malloc(sizeof(cardano_ex_units_t));
 
   if (*ex_units == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ex_units)->base.deallocator   = cardano_ex_units_deallocate;
@@ -102,13 +102,13 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
 {
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *ex_units = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "ex_units";
@@ -170,12 +170,12 @@ cardano_ex_units_to_cbor(const cardano_ex_units_t* ex_units, cardano_cbor_writer
 {
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, EX_UNITS_EMBEDDED_GROUP_SIZE);
@@ -185,14 +185,14 @@ cardano_ex_units_to_cbor(const cardano_ex_units_t* ex_units, cardano_cbor_writer
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, ex_units->memory);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, ex_units->memory);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, ex_units->cpu);
+  return cardano_cbor_writer_write_uint(writer, ex_units->cpu);
 }
 
 uint64_t
@@ -211,7 +211,7 @@ cardano_ex_units_set_memory(cardano_ex_units_t* ex_units, const uint64_t memory)
 {
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   ex_units->memory = memory;
@@ -235,7 +235,7 @@ cardano_ex_units_set_cpu_steps(cardano_ex_units_t* ex_units, const uint64_t cpu_
 {
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   ex_units->cpu = cpu_steps;

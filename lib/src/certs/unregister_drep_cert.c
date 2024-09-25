@@ -90,19 +90,19 @@ cardano_unregister_drep_cert_new(
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (unregister_drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unregister_drep_cert_t* data = _cardano_malloc(sizeof(cardano_unregister_drep_cert_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -124,12 +124,12 @@ cardano_unregister_drep_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_un
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (unregister_drep_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "unregister_drep_cert";
@@ -194,12 +194,12 @@ cardano_unregister_drep_cert_to_cbor(
 {
   if (unregister_drep_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -209,7 +209,7 @@ cardano_unregister_drep_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_DREP_UNREGISTRATION);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_DREP_UNREGISTRATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
@@ -223,7 +223,7 @@ cardano_unregister_drep_cert_to_cbor(
     return write_credential_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, unregister_drep_cert->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, unregister_drep_cert->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {
@@ -251,12 +251,12 @@ cardano_unregister_drep_cert_set_credential(cardano_unregister_drep_cert_t* cert
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
@@ -284,7 +284,7 @@ cardano_unregister_drep_cert_set_deposit(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   certificate->deposit = deposit;

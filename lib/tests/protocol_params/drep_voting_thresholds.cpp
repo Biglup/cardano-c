@@ -97,17 +97,17 @@ TEST(cardano_drep_voting_thresholds_new, returnErrorIfFirstParamIsNull)
   cardano_drep_voting_thresholds_t* drep_voting_thresholds = nullptr;
 
   // Assert
-  EXPECT_EQ(cardano_drep_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, &drep_voting_thresholds), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, &drep_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_new, returnsErrorIfMemoryAllocationFails)
@@ -143,7 +143,7 @@ TEST(cardano_drep_voting_thresholds_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_drep_voting_thresholds_new(motion_no_confidence, committee_normal, committee_no_confidence, update_constitution, hard_fork_initiation, pp_network_group, pp_economic_group, pp_technical_group, pp_governance_group, treasury_withdrawal, &drep_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -193,7 +193,7 @@ TEST(cardano_drep_voting_thresholds_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_drep_voting_thresholds_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -208,7 +208,7 @@ TEST(cardano_drep_voting_thresholds_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_drep_voting_thresholds_to_cbor(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -417,7 +417,7 @@ TEST(cardano_drep_voting_thresholds_from_cbor, returnErrorIfGivenNull)
   cardano_error_t error = cardano_drep_voting_thresholds_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -432,7 +432,7 @@ TEST(cardano_drep_voting_thresholds_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_drep_voting_thresholds_from_cbor(nullptr, &drep_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_ref, increasesTheReferenceCount)
@@ -614,7 +614,7 @@ TEST(cardano_drep_voting_thresholds_get_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_get_motion_no_confidence(drep_voting_thresholds, &motion_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_motion_no_confidence, returnsErrorIfGivenANullPtrForTheMotion)
@@ -626,7 +626,7 @@ TEST(cardano_drep_voting_thresholds_get_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_get_motion_no_confidence(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -667,7 +667,7 @@ TEST(cardano_drep_voting_thresholds_get_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_get_committee_normal(drep_voting_thresholds, &committee_normal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_committee_normal, returnsErrorIfGivenANullPtrForTheCommitteeNormal)
@@ -679,7 +679,7 @@ TEST(cardano_drep_voting_thresholds_get_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_get_committee_normal(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -720,7 +720,7 @@ TEST(cardano_drep_voting_thresholds_get_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_drep_voting_thresholds_get_committee_no_confidence(drep_voting_thresholds, &committee_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_committee_no_confidence, returnsErrorIfGivenANullPtrForTheCommitteeNoConfidence)
@@ -732,7 +732,7 @@ TEST(cardano_drep_voting_thresholds_get_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_drep_voting_thresholds_get_committee_no_confidence(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -773,7 +773,7 @@ TEST(cardano_drep_voting_thresholds_get_update_constitution, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_update_constitution(drep_voting_thresholds, &update_constitution);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_update_constitution, returnsErrorIfGivenANullPtrForTheUpdateConstitution)
@@ -785,7 +785,7 @@ TEST(cardano_drep_voting_thresholds_get_update_constitution, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_update_constitution(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -826,7 +826,7 @@ TEST(cardano_drep_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_get_hard_fork_initiation(drep_voting_thresholds, &hard_fork_initiation);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGivenANullPtrForTheHardForkInitiation)
@@ -838,7 +838,7 @@ TEST(cardano_drep_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_get_hard_fork_initiation(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -879,7 +879,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_network_group, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_network_group(drep_voting_thresholds, &pp_network_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_pp_network_group, returnsErrorIfGivenANullPtrForThePpNetworkGroup)
@@ -891,7 +891,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_network_group, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_network_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -932,7 +932,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_economic_group, returnsErrorIfGivenAN
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_economic_group(drep_voting_thresholds, &pp_economic_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_pp_economic_group, returnsErrorIfGivenANullPtrForThePpEconomicGroup)
@@ -944,7 +944,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_economic_group, returnsErrorIfGivenAN
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_economic_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -985,7 +985,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_technical_group, returnsErrorIfGivenA
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_technical_group(drep_voting_thresholds, &pp_technical_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_pp_technical_group, returnsErrorIfGivenANullPtrForThePpTechnicalGroup)
@@ -997,7 +997,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_technical_group, returnsErrorIfGivenA
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_technical_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1038,7 +1038,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_governance_group, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_governance_group(drep_voting_thresholds, &pp_governance_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_pp_governance_group, returnsErrorIfGivenANullPtrForThePpGovernanceGroup)
@@ -1050,7 +1050,7 @@ TEST(cardano_drep_voting_thresholds_get_pp_governance_group, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_pp_governance_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1091,7 +1091,7 @@ TEST(cardano_drep_voting_thresholds_get_treasury_withdrawal, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_treasury_withdrawal(drep_voting_thresholds, &treasury_withdrawal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_get_treasury_withdrawal, returnsErrorIfGivenANullPtrForTheTreasuryWithdrawal)
@@ -1103,7 +1103,7 @@ TEST(cardano_drep_voting_thresholds_get_treasury_withdrawal, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_get_treasury_withdrawal(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1147,7 +1147,7 @@ TEST(cardano_drep_voting_thresholds_set_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_set_motion_no_confidence(drep_voting_thresholds, motion_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_motion_no_confidence, returnsErrorIfGivenANullPtrForTheMotionNoConfidence)
@@ -1159,7 +1159,7 @@ TEST(cardano_drep_voting_thresholds_set_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_set_motion_no_confidence(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1203,7 +1203,7 @@ TEST(cardano_drep_voting_thresholds_set_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_set_committee_normal(drep_voting_thresholds, committee_normal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_committee_normal, returnsErrorIfGivenANullPtrForTheCommitteeNormal)
@@ -1215,7 +1215,7 @@ TEST(cardano_drep_voting_thresholds_set_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_set_committee_normal(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1259,7 +1259,7 @@ TEST(cardano_drep_voting_thresholds_set_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_drep_voting_thresholds_set_committee_no_confidence(drep_voting_thresholds, committee_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_committee_no_confidence, returnsErrorIfGivenANullPtrForTheCommitteeNoConfidence)
@@ -1271,7 +1271,7 @@ TEST(cardano_drep_voting_thresholds_set_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_drep_voting_thresholds_set_committee_no_confidence(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1315,7 +1315,7 @@ TEST(cardano_drep_voting_thresholds_set_update_constitution, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_update_constitution(drep_voting_thresholds, update_constitution);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_update_constitution, returnsErrorIfGivenANullPtrForTheUpdateConstitution)
@@ -1327,7 +1327,7 @@ TEST(cardano_drep_voting_thresholds_set_update_constitution, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_update_constitution(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1371,7 +1371,7 @@ TEST(cardano_drep_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_set_hard_fork_initiation(drep_voting_thresholds, hard_fork_initiation);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGivenANullPtrForTheHardForkInitiation)
@@ -1383,7 +1383,7 @@ TEST(cardano_drep_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_drep_voting_thresholds_set_hard_fork_initiation(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1427,7 +1427,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_network_group, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_network_group(drep_voting_thresholds, pp_network_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_pp_network_group, returnsErrorIfGivenANullPtrForThePpNetworkGroup)
@@ -1439,7 +1439,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_network_group, returnsErrorIfGivenANu
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_network_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1483,7 +1483,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_economic_group, returnsErrorIfGivenAN
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_economic_group(drep_voting_thresholds, pp_economic_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_pp_economic_group, returnsErrorIfGivenANullPtrForThePpEconomicGroup)
@@ -1495,7 +1495,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_economic_group, returnsErrorIfGivenAN
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_economic_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1539,7 +1539,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_technical_group, returnsErrorIfGivenA
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_technical_group(drep_voting_thresholds, pp_technical_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_pp_technical_group, returnsErrorIfGivenANullPtrForThePpTechnicalGroup)
@@ -1551,7 +1551,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_technical_group, returnsErrorIfGivenA
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_technical_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1595,7 +1595,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_governance_group, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_governance_group(drep_voting_thresholds, pp_governance_group);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_pp_governance_group, returnsErrorIfGivenANullPtrForThePpGovernanceGroup)
@@ -1607,7 +1607,7 @@ TEST(cardano_drep_voting_thresholds_set_pp_governance_group, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_pp_governance_group(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -1651,7 +1651,7 @@ TEST(cardano_drep_voting_thresholds_set_treasury_withdrawal, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_treasury_withdrawal(drep_voting_thresholds, treasury_withdrawal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_voting_thresholds_set_treasury_withdrawal, returnsErrorIfGivenANullPtrForTheTreasuryWithdrawal)
@@ -1663,7 +1663,7 @@ TEST(cardano_drep_voting_thresholds_set_treasury_withdrawal, returnsErrorIfGiven
   cardano_error_t error = cardano_drep_voting_thresholds_set_treasury_withdrawal(drep_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);

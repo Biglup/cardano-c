@@ -45,7 +45,7 @@ TEST(cardano_reward_address_from_credentials, returnsErrorWhenPaymentIsNull)
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, NULL, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -58,7 +58,7 @@ TEST(cardano_reward_address_from_credentials, returnsErrorWhenrewardAddressIsNul
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_from_credentials, canCreateARewardAddressFromCredential)
@@ -109,7 +109,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfMemoryAllocationFails
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(reward_address, nullptr);
 
   // Clean up
@@ -139,7 +139,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfEventualMemoryAllocat
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(reward_address, nullptr);
 
   // Clean up
@@ -157,7 +157,7 @@ TEST(cardano_reward_address_from_address, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_reward_address_from_address(NULL, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -171,7 +171,7 @@ TEST(cardano_reward_address_from_address, returnsErrorWhenrewardAddressIsNull)
   cardano_error_t result = cardano_reward_address_from_address(address, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -187,7 +187,7 @@ TEST(cardano_reward_address_from_address, returnsErrorWhenAddressTypeIsInvalid)
   cardano_error_t result = cardano_reward_address_from_address(address, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_TYPE);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_TYPE);
   EXPECT_EQ(reward_address, nullptr);
 
   // Cleanup
@@ -209,7 +209,7 @@ TEST(cardano_reward_address_from_address, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_reward_address_from_address(address, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(reward_address, nullptr);
 
   // Cleanup
@@ -333,7 +333,7 @@ TEST(cardano_reward_address_from_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_reward_address_from_bytes(NULL, 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -346,7 +346,7 @@ TEST(cardano_reward_address_from_bytes, returnsErrorWhenrewardAddressIsNull)
   cardano_error_t result = cardano_reward_address_from_bytes(Cip19TestVectors::rewardKeyBytes, sizeof(Cip19TestVectors::rewardKeyBytes), NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -359,7 +359,7 @@ TEST(cardano_reward_address_from_bytes, returnsErrorWhenInvalidSize)
   cardano_error_t result = cardano_reward_address_from_bytes(Cip19TestVectors::rewardKeyBytes, 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -425,7 +425,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
   cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
 }
@@ -439,7 +439,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfSizeIsZero)
   cardano_error_t result = cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -449,7 +449,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfAddressIsNull)
   cardano_error_t result = cardano_reward_address_from_bech32("a", 1, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_from_bech32, returnErrorIfInvalidPrefix)
@@ -461,7 +461,7 @@ TEST(cardano_reward_address_from_bech32, returnErrorIfInvalidPrefix)
   cardano_error_t result = cardano_reward_address_from_bech32("split1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfjcf7r", strlen("split1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfjcf7r"), &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -532,7 +532,7 @@ TEST(cardano_reward_address_to_bytes, returnsErrorWhenreward_addressIsNull)
   cardano_error_t result = cardano_reward_address_to_bytes(NULL, bytes, sizeof(bytes));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_to_bytes, returnsErrorWhenBufferIsNull)
@@ -545,7 +545,7 @@ TEST(cardano_reward_address_to_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_reward_address_to_bytes(reward_address, NULL, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_reward_address_unref(&reward_address);
@@ -563,7 +563,7 @@ TEST(cardano_reward_address_to_bytes, returnsErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_reward_address_to_bytes(reward_address, bytes, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_reward_address_unref(&reward_address);
@@ -578,7 +578,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorWhenreward_addressIsNull)
   cardano_error_t result = cardano_reward_address_from_bech32(NULL, 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
 }
 
@@ -591,7 +591,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorWhenreward_addressIsInvalid
   cardano_error_t result = cardano_reward_address_from_bech32("invalid_reward_address", 15, &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(reward_address, nullptr);
 }
 

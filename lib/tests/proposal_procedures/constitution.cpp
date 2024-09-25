@@ -231,7 +231,7 @@ TEST(cardano_constitution_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_constitution_from_cbor(nullptr, &constitution);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_constitution_from_cbor, returnsErrorIfCommitteeIsNull)
@@ -243,7 +243,7 @@ TEST(cardano_constitution_from_cbor, returnsErrorIfCommitteeIsNull)
   cardano_error_t result = cardano_constitution_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -284,7 +284,7 @@ TEST(cardano_constitution_to_cbor, returnsErrorIfCommitteeIsNull)
   cardano_error_t result = cardano_constitution_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -296,7 +296,7 @@ TEST(cardano_constitution_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_constitution_to_cbor((cardano_constitution_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Committee specific tests
@@ -328,7 +328,7 @@ TEST(cardano_constitution_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_constitution_new(nullptr, nullptr, &constitution);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_constitution_new, returnsErrorIfCommitteeIsNull)
@@ -339,7 +339,7 @@ TEST(cardano_constitution_new, returnsErrorIfCommitteeIsNull)
   cardano_error_t result = cardano_constitution_new(anchor, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -358,7 +358,7 @@ TEST(cardano_constitution_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_constitution_new(anchor, nullptr, &constitution);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_constitution_unref(&constitution);
@@ -495,7 +495,7 @@ TEST(cardano_constitution_set_anchor, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_constitution_set_anchor(nullptr, anchor);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -510,7 +510,7 @@ TEST(cardano_constitution_set_anchor, returnsErrorIfAnchorIsNull)
   cardano_error_t result = cardano_constitution_set_anchor(constitution, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_constitution_unref(&constitution);
@@ -571,7 +571,7 @@ TEST(cardano_constitution_set_script_hash, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_constitution_set_script_hash(nullptr, script_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&script_hash);

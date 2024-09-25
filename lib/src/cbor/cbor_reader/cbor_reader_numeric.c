@@ -61,7 +61,7 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(signed_int != NULL);
@@ -181,7 +181,7 @@ peek_unsigned_integer(cardano_cbor_reader_t* reader, uint64_t* signed_int, size_
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(signed_int != NULL);
@@ -312,7 +312,7 @@ _cbor_reader_decode_unsigned_integer(cardano_buffer_t* buffer, byte_t header, ui
 
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(unsigned_int != NULL);
@@ -432,12 +432,12 @@ _cbor_reader_read_double(cardano_cbor_reader_t* reader, double* value)
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   byte_t          header = 0;
@@ -604,12 +604,12 @@ _cardano_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bi
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bigint == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM;

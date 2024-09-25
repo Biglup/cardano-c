@@ -191,7 +191,7 @@ TEST(cardano_info_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_info_action_from_cbor(nullptr, &info_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_info_action_from_cbor, returnsErrorIfActionIsNull)
@@ -203,7 +203,7 @@ TEST(cardano_info_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_info_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -244,7 +244,7 @@ TEST(cardano_info_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_info_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -256,7 +256,7 @@ TEST(cardano_info_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_info_action_to_cbor((cardano_info_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -267,7 +267,7 @@ TEST(cardano_info_action_new, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_info_action_new(NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_info_action_new, returnsErrorIfMemoryAllocationFails)
@@ -280,7 +280,7 @@ TEST(cardano_info_action_new, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_info_action_new(&info_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_info_action_unref(&info_action);

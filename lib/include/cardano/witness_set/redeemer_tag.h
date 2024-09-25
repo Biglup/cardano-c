@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_REDEEMER_TAG_H
-#define CARDANO_REDEEMER_TAG_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_TAG_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_TAG_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -79,4 +79,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_REDEEMER_TAG_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_REDEEMER_TAG_H

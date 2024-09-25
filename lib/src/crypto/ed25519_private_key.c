@@ -133,14 +133,14 @@ private_key_from_bytes(
 {
   if (private_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *private_key = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length != (size_t)key_size)
@@ -156,7 +156,7 @@ private_key_from_bytes(
   {
     *private_key = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_private_key->base.ref_count     = 1;
@@ -170,7 +170,7 @@ private_key_from_bytes(
     *private_key = NULL;
     _cardano_free(ed25519_private_key);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *private_key = ed25519_private_key;
@@ -204,14 +204,14 @@ private_key_from_hex(
 {
   if (private_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *private_key = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_length != ((size_t)key_size * 2U))
@@ -227,7 +227,7 @@ private_key_from_hex(
   {
     *private_key = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_private_key->base.ref_count     = 1;
@@ -241,7 +241,7 @@ private_key_from_hex(
     *private_key = NULL;
     _cardano_free(ed25519_private_key);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *private_key = ed25519_private_key;
@@ -431,7 +431,7 @@ compute_signature_with_extended_key(
 
   if (!digest_input)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_safe_memcpy(digest_input, digest_input_size, &extended_scalar[SCALAR_SIZE], IV_SIZE);
@@ -457,7 +457,7 @@ compute_signature_with_extended_key(
 
   if (!hram_input)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_safe_memcpy(hram_input, digest_input_size, r, sizeof(r));
@@ -687,12 +687,12 @@ cardano_ed25519_private_key_sign(
 {
   if (private_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (signature == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (sodium_init() == -1)
@@ -710,12 +710,12 @@ cardano_ed25519_private_key_get_public_key(
 {
   if (private_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (sodium_init() == -1)
@@ -746,7 +746,7 @@ cardano_ed25519_private_key_to_bytes(
 {
   if (private_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_copy_bytes(private_key->key_material, out_key_bytes, out_key_length);

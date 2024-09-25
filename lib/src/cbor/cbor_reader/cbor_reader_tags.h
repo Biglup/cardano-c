@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_READER_INTERNAL_TAGS_H
-#define CARDANO_CBOR_READER_INTERNAL_TAGS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_INTERNAL_TAGS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_INTERNAL_TAGS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -72,4 +72,4 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 cardano_error_t
 _cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
-#endif // CARDANO_CBOR_READER_INTERNAL_TAGS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_INTERNAL_TAGS_H

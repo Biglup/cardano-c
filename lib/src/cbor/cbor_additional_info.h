@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_ADDITIONAL_INFO_H
-#define CARDANO_CBOR_ADDITIONAL_INFO_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_ADDITIONAL_INFO_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_ADDITIONAL_INFO_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -83,4 +83,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_ADDITIONAL_INFO_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_ADDITIONAL_INFO_H

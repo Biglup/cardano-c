@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_POLICY_ID_LIST_H
-#define CARDANO_POLICY_ID_LIST_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_POLICY_ID_LIST_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_POLICY_ID_LIST_H
 
 /* INCLUDES ******************************************************************/
 
@@ -309,4 +309,4 @@ CARDANO_EXPORT const char* cardano_policy_id_list_get_last_error(const cardano_p
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_POLICY_ID_LIST_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_POLICY_ID_LIST_H

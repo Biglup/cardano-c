@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_PUBKEY_H
-#define CARDANO_SCRIPT_PUBKEY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -148,7 +148,7 @@ cardano_script_pubkey_from_cbor(cardano_cbor_reader_t* reader, cardano_script_pu
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p script_pubkey or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -461,4 +461,4 @@ CARDANO_EXPORT const char* cardano_script_pubkey_get_last_error(const cardano_sc
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_PUBKEY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_PUBKEY_H

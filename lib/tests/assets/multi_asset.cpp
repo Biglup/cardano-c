@@ -125,7 +125,7 @@ TEST(cardano_multi_asset_new, returnsErrorIfAssetMultiAssetsIsNull)
   cardano_error_t error = cardano_multi_asset_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_new, returnsErrorIfMemoryAllocationFails)
@@ -139,7 +139,7 @@ TEST(cardano_multi_asset_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_multi_asset_new(&multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(multi_asset, (cardano_multi_asset_t*)nullptr);
 
   // Cleanup
@@ -157,7 +157,7 @@ TEST(cardano_multi_asset_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_multi_asset_new(&multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(multi_asset, (cardano_multi_asset_t*)nullptr);
 
   // Cleanup
@@ -205,7 +205,7 @@ TEST(cardano_multi_asset_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_multi_asset_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -224,7 +224,7 @@ TEST(cardano_multi_asset_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_multi_asset_to_cbor(multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -269,7 +269,7 @@ TEST(cardano_multi_asset_from_cbor, returnErrorIfAssetMultiAssetsIsNull)
   cardano_error_t error = cardano_multi_asset_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -284,7 +284,7 @@ TEST(cardano_multi_asset_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_multi_asset_from_cbor(nullptr, &multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -300,7 +300,7 @@ TEST(cardano_multi_asset_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_multi_asset_from_cbor(reader, &multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(multi_asset, (cardano_multi_asset_t*)nullptr);
 
   // Cleanup
@@ -531,7 +531,7 @@ TEST(cardano_multi_asset_insert_assets, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_multi_asset_insert_assets(nullptr, (cardano_blake2b_hash_t*)"", (cardano_asset_name_map_t*)"");
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_insert_assets, returnsErrorIfAssetNameIsNull)
@@ -546,7 +546,7 @@ TEST(cardano_multi_asset_insert_assets, returnsErrorIfAssetNameIsNull)
   error = cardano_multi_asset_insert_assets(multi_asset, nullptr, (cardano_asset_name_map_t*)"");
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -566,7 +566,7 @@ TEST(cardano_multi_asset_insert_assets, returnsErrorIfAssetNameMapIsNull)
   error = cardano_multi_asset_insert_assets(multi_asset, policy_id, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -591,7 +591,7 @@ TEST(cardano_multi_asset_insert_assets, returnErrorIfMemoryAllocationFails)
   error = cardano_multi_asset_insert_assets(multi_asset, policy_id, asset_name_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -725,7 +725,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_multi_asset_get(nullptr, (cardano_blake2b_hash_t*)"", (cardano_asset_name_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_get, returnsErrorIfElementIsNull)
@@ -740,7 +740,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfElementIsNull)
   error = cardano_multi_asset_get(multi_asset, nullptr, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -760,7 +760,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfAssetNameIsNull)
   error = cardano_multi_asset_get(multi_asset, policy_id, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -783,7 +783,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfElementNotFound)
   error         = cardano_multi_asset_get(multi_asset, policy_id, asset_name, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -878,7 +878,7 @@ TEST(cardano_multi_asset_get_keys, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_multi_asset_get_keys(nullptr, &policies);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_get_keys, returnsErrorIfOutIsNull)
@@ -887,7 +887,7 @@ TEST(cardano_multi_asset_get_keys, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_multi_asset_get_keys((cardano_multi_asset_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_get_keys, returnsTheListOfKeys)
@@ -940,7 +940,7 @@ TEST(cardano_multi_asset_add, returnsErrorIfLhsIsNull)
   cardano_error_t error = cardano_multi_asset_add(lhs_multi_asset, rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_add, returnsErrorIfRhsIsNull)
@@ -953,7 +953,7 @@ TEST(cardano_multi_asset_add, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_multi_asset_add((cardano_multi_asset_t*)"", rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_add, returnsErrorIfOutIsNull)
@@ -966,7 +966,7 @@ TEST(cardano_multi_asset_add, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_multi_asset_add(lhs_multi_asset, rhs_multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_add, returnsErrorIfMemoryAllocationFails)
@@ -989,7 +989,7 @@ TEST(cardano_multi_asset_add, returnsErrorIfMemoryAllocationFails)
   error = cardano_multi_asset_add(lhs_multi_asset, rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_multi_asset_unref(&lhs_multi_asset);
@@ -1249,7 +1249,7 @@ TEST(cardano_multi_asset_add, returnsErrorIfElementIsNull)
   error = cardano_multi_asset_add(lhs_multi_asset, rhs_multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&lhs_multi_asset);
@@ -1267,7 +1267,7 @@ TEST(cardano_multi_asset_subtract, returnsErrorIfLhsIsNull)
   cardano_error_t error = cardano_multi_asset_subtract(lhs_multi_asset, rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_subtract, returnsErrorIfRhsIsNull)
@@ -1280,7 +1280,7 @@ TEST(cardano_multi_asset_subtract, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_multi_asset_subtract((cardano_multi_asset_t*)"", rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_subtract, returnsErrorIfOutIsNull)
@@ -1293,7 +1293,7 @@ TEST(cardano_multi_asset_subtract, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_multi_asset_subtract(lhs_multi_asset, rhs_multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_subtract, returnsErrorIfMemoryAllocationFails)
@@ -1316,7 +1316,7 @@ TEST(cardano_multi_asset_subtract, returnsErrorIfMemoryAllocationFails)
   error = cardano_multi_asset_subtract(lhs_multi_asset, rhs_multi_asset, &result_multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_multi_asset_unref(&lhs_multi_asset);
@@ -1492,7 +1492,7 @@ TEST(cardano_multi_asset_subtract, canSubtractTwoMultiAssetsAndSubtractsPositive
   int64_t value2 = 0;
 
   error = cardano_multi_asset_get(result_multi_asset, policy_id, asset_name1, &value1);
-  ASSERT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  ASSERT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   error = cardano_multi_asset_get(result_multi_asset, policy_id, asset_name2, &value2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
@@ -1578,7 +1578,7 @@ TEST(cardano_multi_asset_subtract, returnsErrorIfElementIsNull)
   error = cardano_multi_asset_subtract(lhs_multi_asset, rhs_multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&lhs_multi_asset);
@@ -1785,7 +1785,7 @@ TEST(cardano_multi_asset_insert_assets, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error = cardano_multi_asset_insert_assets(multi_asset, policy_id, asset_name_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_id);
@@ -1803,7 +1803,7 @@ TEST(cardano_multi_asset_get_assets, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error = cardano_multi_asset_get_assets(multi_asset, policy_id, &asset_name_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_id);
@@ -1824,7 +1824,7 @@ TEST(cardano_multi_asset_get_assets, returnsErrorIfPolicyIdIsNull)
   error                                    = cardano_multi_asset_get_assets(multi_asset, policy_id, &asset_name_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -1849,7 +1849,7 @@ TEST(cardano_multi_asset_get_assets, returnsErrorIfAssetNameMapIsNull)
   error = cardano_multi_asset_get_assets(multi_asset, policy_id, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -1870,7 +1870,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error     = cardano_multi_asset_get(multi_asset, policy_id, asset_name, &value_out);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_id);
@@ -1893,7 +1893,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfPolicyIdIsNull)
   error             = cardano_multi_asset_get(multi_asset, policy_id, asset_name, &value_out);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -1919,7 +1919,7 @@ TEST(cardano_multi_asset_get, returnsErrorIfValueIsNull)
   error = cardano_multi_asset_get(multi_asset, policy_id, asset_name, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -1939,7 +1939,7 @@ TEST(cardano_multi_asset_set, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error = cardano_multi_asset_set(multi_asset, policy_id, asset_name, 1);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_id);
@@ -1961,7 +1961,7 @@ TEST(cardano_multi_asset_set, returnsErrorIfPolicyIdIsNull)
   error = cardano_multi_asset_set(multi_asset, policy_id, asset_name, 1);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -1983,7 +1983,7 @@ TEST(cardano_multi_asset_set, returnsErrorIfAssetNameIsNull)
   error = cardano_multi_asset_set(multi_asset, policy_id, asset_name, 1);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -2036,7 +2036,7 @@ TEST(cardano_multi_asset_get_positive, returnsThePositiveAssets)
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id1, asset_name3, &val3);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val3, 0);
 
   val1 = 0;
@@ -2045,7 +2045,7 @@ TEST(cardano_multi_asset_get_positive, returnsThePositiveAssets)
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id2, asset_name1, &val1);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val1, 0);
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id2, asset_name2, &val2);
@@ -2055,7 +2055,7 @@ TEST(cardano_multi_asset_get_positive, returnsThePositiveAssets)
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id2, asset_name3, &val3);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val3, 0);
 
   // Cleanup
@@ -2106,12 +2106,12 @@ TEST(cardano_multi_asset_get_negative, returnsTheNegativeAssets)
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id1, asset_name1, &val1);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val1, 0);
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id1, asset_name2, &val2);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val2, 0);
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id1, asset_name3, &val3);
@@ -2130,7 +2130,7 @@ TEST(cardano_multi_asset_get_negative, returnsTheNegativeAssets)
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id2, asset_name2, &val2);
 
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(val2, 0);
 
   error = cardano_multi_asset_get(multi_asset_out, policy_id2, asset_name3, &val3);
@@ -2159,7 +2159,7 @@ TEST(cardano_multi_asset_get_positive, returnsErrorIfFirstArgumentIsNull)
   cardano_error_t error = cardano_multi_asset_get_positive(nullptr, &multi_asset_out);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_get_positive, returnsErrorIfSecondArgumentIsNull)
@@ -2175,7 +2175,7 @@ TEST(cardano_multi_asset_get_positive, returnsErrorIfSecondArgumentIsNull)
   error = cardano_multi_asset_get_positive(multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -2190,7 +2190,7 @@ TEST(cardano_multi_asset_get_negative, returnsErrorIfFirstArgumentIsNull)
   cardano_error_t error = cardano_multi_asset_get_negative(nullptr, &multi_asset_out);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_multi_asset_get_negative, returnsErrorIfSecondArgumentIsNull)
@@ -2206,7 +2206,7 @@ TEST(cardano_multi_asset_get_negative, returnsErrorIfSecondArgumentIsNull)
   error = cardano_multi_asset_get_negative(multi_asset, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CREDENTIAL_H
-#define CARDANO_CREDENTIAL_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_H
 
 /* INCLUDES ******************************************************************/
 
@@ -242,7 +242,7 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p credential or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -482,7 +482,7 @@ cardano_credential_get_type(const cardano_credential_t* credential, cardano_cred
  * \param[in,out] credential A pointer to the \ref cardano_credential_t object whose type is to be set.
  * \param[in] type The new type of the credential, as defined in the \ref cardano_credential_type_t enumeration.
  *
- * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_POINTER_IS_NULL
+ * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p credential pointer is NULL.
  *
  * Usage Example:
@@ -516,7 +516,7 @@ cardano_credential_set_type(cardano_credential_t* credential, cardano_credential
  *                 This parameter must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the hash was successfully set. If the \p credential or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         if the hash was successfully set. If the \p credential or \p hash is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -746,4 +746,4 @@ CARDANO_EXPORT const char* cardano_credential_get_last_error(const cardano_crede
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CREDENTIAL_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CREDENTIAL_H

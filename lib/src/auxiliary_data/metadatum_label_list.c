@@ -108,14 +108,14 @@ cardano_metadatum_label_list_new(cardano_metadatum_label_list_t** metadatum_labe
 {
   if (metadatum_label_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_label_list_t* list = _cardano_malloc(sizeof(cardano_metadatum_label_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -127,7 +127,7 @@ cardano_metadatum_label_list_new(cardano_metadatum_label_list_t** metadatum_labe
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *metadatum_label_list = list;
@@ -154,12 +154,12 @@ cardano_metadatum_label_list_get(
 {
   if (metadatum_label_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(metadatum_label_list->array, index);
@@ -167,7 +167,7 @@ cardano_metadatum_label_list_get(
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_metadatum_label_t* elem = (cardano_metadatum_label_t*)((void*)object);
@@ -182,14 +182,14 @@ cardano_metadatum_label_list_add(cardano_metadatum_label_list_t* metadatum_label
 {
   if (metadatum_label_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_label_t* metadatum_label = _cardano_malloc(sizeof(cardano_metadatum_label_t));
 
   if (metadatum_label == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
   }
 
   metadatum_label->base.ref_count     = 0;

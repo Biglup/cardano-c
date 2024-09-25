@@ -191,7 +191,7 @@ TEST(cardano_asset_name_from_bytes, returnsErrorIfDataIsNull)
 
   cardano_error_t result = cardano_asset_name_from_bytes(nullptr, 1, &asset_name);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_name, nullptr);
@@ -226,7 +226,7 @@ TEST(cardano_asset_name_from_bytes, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_asset_name_from_bytes(ASSET_NAME_BYTES, sizeof(ASSET_NAME_BYTES), &asset_name);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_name, nullptr);
 
   // Cleanup
@@ -239,7 +239,7 @@ TEST(cardano_asset_name_from_bytes, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_name_from_bytes(ASSET_NAME_BYTES, sizeof(ASSET_NAME_BYTES), nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_name_from_hex, returnsErrorIfDataIsNull)
@@ -249,7 +249,7 @@ TEST(cardano_asset_name_from_hex, returnsErrorIfDataIsNull)
 
   cardano_error_t result = cardano_asset_name_from_hex(nullptr, 1, &asset_name);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_name, nullptr);
@@ -289,7 +289,7 @@ TEST(cardano_asset_name_from_hex, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_name_from_hex(ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Getters and Setters
@@ -379,7 +379,7 @@ TEST(cardano_asset_name_from_string, returnsErrorIfDataIsNull)
 
   cardano_error_t result = cardano_asset_name_from_string(nullptr, 1, &asset_name);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_name, nullptr);
@@ -421,7 +421,7 @@ TEST(cardano_asset_name_from_string, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_name_from_string(ASSET_NAME, strlen(ASSET_NAME), nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_name_get_string, returnsTheString)
@@ -481,7 +481,7 @@ TEST(cardano_asset_name_to_cbor, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_name_to_cbor(nullptr, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_name_to_cbor, returnsErrorIfWriterIsNull)
@@ -494,7 +494,7 @@ TEST(cardano_asset_name_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_asset_name_to_cbor(asset_name, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_asset_name_unref(&asset_name);
@@ -568,7 +568,7 @@ TEST(cardano_asset_name_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_asset_name_from_cbor(NULL, &asset_name);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(asset_name, nullptr);
 }
 
@@ -582,7 +582,7 @@ TEST(cardano_asset_name_from_cbor, returnsErrorIfAssetNameIsNull)
   cardano_error_t result = cardano_asset_name_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

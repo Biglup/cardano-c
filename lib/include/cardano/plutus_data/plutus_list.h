@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PLUTUS_LIST_H
-#define CARDANO_PLUTUS_LIST_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LIST_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LIST_H
 
 /* INCLUDES ******************************************************************/
 
@@ -144,7 +144,7 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p plutus_list or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -494,4 +494,4 @@ CARDANO_EXPORT const char* cardano_plutus_list_get_last_error(const cardano_plut
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PLUTUS_LIST_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LIST_H

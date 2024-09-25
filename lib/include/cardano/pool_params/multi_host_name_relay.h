@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_MULTI_HOST_NAME_RELAY_H
-#define CARDANO_MULTI_HOST_NAME_RELAY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_MULTI_HOST_NAME_RELAY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_MULTI_HOST_NAME_RELAY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -142,7 +142,7 @@ cardano_multi_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_m
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p multi_host_name_relay or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -407,4 +407,4 @@ CARDANO_EXPORT const char* cardano_multi_host_name_relay_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_MULTI_HOST_NAME_RELAY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_MULTI_HOST_NAME_RELAY_H

@@ -146,29 +146,29 @@ cardano_proposal_procedure_new_parameter_change_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (parameter_change_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -198,29 +198,29 @@ cardano_proposal_procedure_new_hard_fork_initiation_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -250,29 +250,29 @@ cardano_proposal_procedure_new_treasury_withdrawals_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_withdrawals_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -302,29 +302,29 @@ cardano_proposal_procedure_new_no_confidence_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (no_confidence_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -354,29 +354,29 @@ cardano_proposal_procedure_new_update_committee_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -406,29 +406,29 @@ cardano_proposal_procedure_new_constitution_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -458,29 +458,29 @@ cardano_proposal_procedure_new_info_action(
 {
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (info_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_t* data = new_proposal_procedure();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -505,12 +505,12 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "proposal_procedure";
@@ -808,7 +808,7 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       cardano_anchor_unref(&anchor);
       cardano_cbor_reader_unref(&action_reader);
 
-      return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+      return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
     }
       // LCOV_EXCL_STOP
   }
@@ -828,12 +828,12 @@ cardano_proposal_procedure_to_cbor(
 {
   if (proposal_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -843,7 +843,7 @@ cardano_proposal_procedure_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, proposal_procedure->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, proposal_procedure->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {
@@ -939,7 +939,7 @@ cardano_proposal_procedure_to_cbor(
     // LCOV_EXCL_START
     default:
     {
-      return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+      return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
     }
       // LCOV_EXCL_STOP
   }
@@ -961,12 +961,12 @@ cardano_proposal_procedure_get_action_type(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = certificate->action_type;
@@ -981,17 +981,17 @@ cardano_proposal_procedure_to_parameter_change_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (parameter_change_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_parameter_change_action_ref(proposal->parameter_change_action);
@@ -1007,17 +1007,17 @@ cardano_proposal_procedure_to_hard_fork_initiation_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_HARD_FORK_INITIATION)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_hard_fork_initiation_action_ref(proposal->hard_fork_initiation_action);
@@ -1033,17 +1033,17 @@ cardano_proposal_procedure_to_treasury_withdrawals_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_withdrawals_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_treasury_withdrawals_action_ref(proposal->treasury_withdrawals_action);
@@ -1059,17 +1059,17 @@ cardano_proposal_procedure_to_no_confidence_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (no_confidence_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_NO_CONFIDENCE)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_no_confidence_action_ref(proposal->no_confidence_action);
@@ -1085,17 +1085,17 @@ cardano_proposal_procedure_to_update_committee_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_UPDATE_COMMITTEE)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_update_committee_action_ref(proposal->update_committee_action);
@@ -1111,17 +1111,17 @@ cardano_proposal_procedure_to_constitution_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_new_constitution_action_ref(proposal->new_constitution_action);
@@ -1137,17 +1137,17 @@ cardano_proposal_procedure_to_info_action(
 {
   if (proposal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (info_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal->action_type != CARDANO_GOVERNANCE_ACTION_TYPE_INFO)
   {
-    return CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
   }
 
   cardano_info_action_ref(proposal->info_action);
@@ -1161,12 +1161,12 @@ cardano_proposal_procedure_set_anchor(cardano_proposal_procedure_t* proposal_pro
 {
   if (proposal_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_anchor_ref(anchor);
@@ -1193,12 +1193,12 @@ cardano_proposal_procedure_set_reward_address(cardano_proposal_procedure_t* prop
 {
   if (proposal_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reward_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_reward_address_ref(reward_address);
@@ -1236,7 +1236,7 @@ cardano_proposal_procedure_set_deposit(cardano_proposal_procedure_t* certificate
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   certificate->deposit = deposit;

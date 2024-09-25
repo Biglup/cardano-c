@@ -836,7 +836,7 @@ TEST(cardano_native_script_new_all, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_all(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_all, returnsErrorIfNativeScriptIsNull)
@@ -847,7 +847,7 @@ TEST(cardano_native_script_new_all, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_all((cardano_script_all_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_all_unref(&all_script);
@@ -861,7 +861,7 @@ TEST(cardano_native_script_new_all, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_native_script_new_all((cardano_script_all_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -933,7 +933,7 @@ TEST(cardano_native_script_new_any, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_any(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_any, returnsErrorIfNativeScriptIsNull)
@@ -944,7 +944,7 @@ TEST(cardano_native_script_new_any, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_any((cardano_script_any_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_any_unref(&any_script);
@@ -958,7 +958,7 @@ TEST(cardano_native_script_new_any, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_native_script_new_any((cardano_script_any_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1030,7 +1030,7 @@ TEST(cardano_native_script_new_n_of_k, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_n_of_k(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_n_of_k, returnsErrorIfNativeScriptIsNull)
@@ -1041,7 +1041,7 @@ TEST(cardano_native_script_new_n_of_k, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_n_of_k((cardano_script_n_of_k_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_n_of_k_unref(&n_of_k_script);
@@ -1055,7 +1055,7 @@ TEST(cardano_native_script_new_n_of_k, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_native_script_new_n_of_k((cardano_script_n_of_k_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1103,7 +1103,7 @@ TEST(cardano_native_script_new_pubkey, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_pubkey(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_pubkey, returnsErrorIfNativeScriptIsNull)
@@ -1114,7 +1114,7 @@ TEST(cardano_native_script_new_pubkey, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_pubkey((cardano_script_pubkey_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_pubkey_unref(&pubkey_script);
@@ -1128,7 +1128,7 @@ TEST(cardano_native_script_new_pubkey, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_native_script_new_pubkey((cardano_script_pubkey_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1176,7 +1176,7 @@ TEST(cardano_native_script_new_invalid_after, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_after(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_invalid_after, returnsErrorIfNativeScriptIsNull)
@@ -1187,7 +1187,7 @@ TEST(cardano_native_script_new_invalid_after, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_after((cardano_script_invalid_after_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_invalid_after_unref(&invalid_after_script);
@@ -1201,7 +1201,7 @@ TEST(cardano_native_script_new_invalid_after, returnErrorIfMemoryAllocationFails
 
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_after((cardano_script_invalid_after_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1246,7 +1246,7 @@ TEST(cardano_native_script_new_invalid_before, returnsErrorIfScriptsAreNull)
 {
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_before(nullptr, nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_new_invalid_before, returnsErrorIfNativeScriptIsNull)
@@ -1257,7 +1257,7 @@ TEST(cardano_native_script_new_invalid_before, returnsErrorIfNativeScriptIsNull)
 
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_before((cardano_script_invalid_before_t*)"", nullptr);
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_invalid_before_unref(&invalid_before_script);
@@ -1271,7 +1271,7 @@ TEST(cardano_native_script_new_invalid_before, returnErrorIfMemoryAllocationFail
 
   // Act
   cardano_error_t error = cardano_native_script_new_invalid_before((cardano_script_invalid_before_t*)"", (cardano_native_script_t**)"");
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1286,7 +1286,7 @@ TEST(cardano_native_script_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_native_script_from_cbor(nullptr, &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_from_cbor, returnsErrorIfNativeScriptIsNull)
@@ -1298,7 +1298,7 @@ TEST(cardano_native_script_from_cbor, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1317,7 +1317,7 @@ TEST(cardano_native_script_from_cbor, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_native_script_from_cbor(reader, &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1478,7 +1478,7 @@ TEST(cardano_native_script_to_cbor, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -1490,7 +1490,7 @@ TEST(cardano_native_script_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_native_script_to_cbor((cardano_native_script_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_from_json, returnsErrorIfJsonIsNull)
@@ -1502,7 +1502,7 @@ TEST(cardano_native_script_from_json, returnsErrorIfJsonIsNull)
   cardano_error_t result = cardano_native_script_from_json(nullptr, 0, &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_from_json, returnsErrorIfNativeScriptIsNull)
@@ -1511,7 +1511,7 @@ TEST(cardano_native_script_from_json, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_from_json, returnsErrorIfMemoryAllocationFails)
@@ -1525,7 +1525,7 @@ TEST(cardano_native_script_from_json, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_native_script_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -1624,7 +1624,7 @@ TEST(cardano_native_script_from_json, returnsErrorIfUnknownType)
   cardano_error_t result = cardano_native_script_from_json("{\"type\": \"xxxx\"}", strlen("{\"type\": \"xxxx\"}"), &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 }
 
 TEST(cardano_native_script_get_type, returnsTheTypeOfTheScript)
@@ -1656,7 +1656,7 @@ TEST(cardano_native_script_get_type, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_get_type(nullptr, &type);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_get_type, returnsErrorIfTypeIsNull)
@@ -1671,7 +1671,7 @@ TEST(cardano_native_script_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t result = cardano_native_script_get_type(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1686,7 +1686,7 @@ TEST(cardano_native_script_to_all, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_all(nullptr, &all_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_all, returnsErrorIfAllScriptIsNull)
@@ -1701,7 +1701,7 @@ TEST(cardano_native_script_to_all, returnsErrorIfAllScriptIsNull)
   cardano_error_t result = cardano_native_script_to_all(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1720,7 +1720,7 @@ TEST(cardano_native_script_to_all, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_all(after_script, &all_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1751,7 +1751,7 @@ TEST(cardano_native_script_to_any, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_any(nullptr, &any_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_any, returnsErrorIfAnyScriptIsNull)
@@ -1766,7 +1766,7 @@ TEST(cardano_native_script_to_any, returnsErrorIfAnyScriptIsNull)
   cardano_error_t result = cardano_native_script_to_any(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1785,7 +1785,7 @@ TEST(cardano_native_script_to_any, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_any(after_script, &any_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1816,7 +1816,7 @@ TEST(cardano_native_script_to_n_of_k, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_n_of_k(nullptr, &n_of_k_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_n_of_k, returnsErrorIfScriptIsNull)
@@ -1831,7 +1831,7 @@ TEST(cardano_native_script_to_n_of_k, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_native_script_to_n_of_k(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1850,7 +1850,7 @@ TEST(cardano_native_script_to_n_of_k, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_n_of_k(after_script, &n_of_k_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1881,7 +1881,7 @@ TEST(cardano_native_script_to_pubkey, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_pubkey(nullptr, &pubkey_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_pubkey, returnsErrorIfPubkeyScriptIsNull)
@@ -1896,7 +1896,7 @@ TEST(cardano_native_script_to_pubkey, returnsErrorIfPubkeyScriptIsNull)
   cardano_error_t result = cardano_native_script_to_pubkey(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1915,7 +1915,7 @@ TEST(cardano_native_script_to_pubkey, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_pubkey(after_script, &pubkey_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1946,7 +1946,7 @@ TEST(cardano_native_script_to_invalid_after, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_invalid_after(nullptr, &invalid_after_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_invalid_after, returnsErrorIfInvalidAfterScriptIsNull)
@@ -1961,7 +1961,7 @@ TEST(cardano_native_script_to_invalid_after, returnsErrorIfInvalidAfterScriptIsN
   cardano_error_t result = cardano_native_script_to_invalid_after(after_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -1980,7 +1980,7 @@ TEST(cardano_native_script_to_invalid_after, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_invalid_after(after_script, &invalid_after_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&after_script);
@@ -2011,7 +2011,7 @@ TEST(cardano_native_script_to_invalid_before, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_native_script_to_invalid_before(nullptr, &invalid_before_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_native_script_to_invalid_before, returnsErrorIfInvalidBeforeScriptIsNull)
@@ -2026,7 +2026,7 @@ TEST(cardano_native_script_to_invalid_before, returnsErrorIfInvalidBeforeScriptI
   cardano_error_t result = cardano_native_script_to_invalid_before(before_script, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&before_script);
@@ -2045,7 +2045,7 @@ TEST(cardano_native_script_to_invalid_before, returnErrorIfGivenWrongScript)
   cardano_error_t result = cardano_native_script_to_invalid_before(before_script, &invalid_before_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 
   // Cleanup
   cardano_native_script_unref(&before_script);

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ASSET_ID_H
-#define CARDANO_ASSET_ID_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ASSET_ID_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ASSET_ID_H
 
 /* INCLUDES ******************************************************************/
 
@@ -68,8 +68,8 @@ typedef struct cardano_asset_id_t cardano_asset_id_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the asset ID was
  *         successfully created, or an appropriate error code indicating the failure reason, such as:
- *         - \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
- *         - \ref CARDANO_MEMORY_ALLOCATION_FAILED if memory allocation for the asset ID failed.
+ *         - \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         - \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation for the asset ID failed.
  *
  * Usage Example:
  * \code{.c}
@@ -114,7 +114,7 @@ cardano_asset_id_new(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the Lovelace asset ID
  *         was successfully created, or an appropriate error code indicating the failure reason, such as:
- *         - \ref CARDANO_MEMORY_ALLOCATION_FAILED if memory allocation for the asset ID failed.
+ *         - \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation for the asset ID failed.
  *
  * Usage Example:
  * \code{.c}
@@ -161,7 +161,7 @@ cardano_asset_id_new_lovelace(cardano_asset_id_t** asset_id);
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the asset ID was successfully created from the provided bytes, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input data pointer is NULL,
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input data pointer is NULL,
  *         or \ref CARDANO_ERROR_INVALID_ARGUMENT if the size is less than 28 bytes or violates other constraints.
  *
  * Usage Example:
@@ -210,7 +210,7 @@ cardano_asset_id_from_bytes(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the asset ID was successfully created from the provided hexadecimal string, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input string pointer is NULL,
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input string pointer is NULL,
  *         or \ref CARDANO_ERROR_INVALID_ARGUMENT if the string contains invalid characters or does not meet other constraints.
  *
  * Usage Example:
@@ -623,4 +623,4 @@ CARDANO_EXPORT const char* cardano_asset_id_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ASSET_ID_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ASSET_ID_H

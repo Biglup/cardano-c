@@ -130,14 +130,14 @@ cardano_voting_procedures_new(cardano_voting_procedures_t** voting_procedures)
 {
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_voting_procedures_t* map = _cardano_malloc(sizeof(cardano_voting_procedures_t));
 
   if (map == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   map->base.ref_count     = 1;
@@ -149,7 +149,7 @@ cardano_voting_procedures_new(cardano_voting_procedures_t** voting_procedures)
   if (map->array == NULL)
   {
     _cardano_free(map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *voting_procedures = map;
@@ -162,12 +162,12 @@ cardano_voting_procedures_from_cbor(cardano_cbor_reader_t* reader, cardano_votin
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   int64_t         map_size          = 0;
@@ -335,12 +335,12 @@ cardano_voting_procedures_to_cbor(
 {
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t size = cardano_array_get_size(voting_procedures->array);
@@ -358,7 +358,7 @@ cardano_voting_procedures_to_cbor(
 
     if (kvp == NULL)
     {
-      return CARDANO_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
     }
 
     cardano_error_t write_voter_result = cardano_voter_to_cbor(kvp->key, writer);
@@ -477,22 +477,22 @@ cardano_voting_procedures_insert(
 {
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t size = cardano_array_get_size(voting_procedures->array);
@@ -503,7 +503,7 @@ cardano_voting_procedures_insert(
 
     if (kvp == NULL)
     {
-      return CARDANO_ELEMENT_NOT_FOUND;
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
     }
 
     if (cardano_voter_equals(kvp->key, voter))
@@ -551,7 +551,7 @@ cardano_voting_procedures_insert(
   {
     // LCOV_EXCL_START
     cardano_voting_procedure_map_unref(&map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 
@@ -570,7 +570,7 @@ cardano_voting_procedures_insert(
   {
     // LCOV_EXCL_START
     cardano_voting_procedure_kvp_deallocate(kvp);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 
@@ -639,17 +639,17 @@ cardano_voting_procedures_get_governance_ids_by_voter(
 {
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (governance_action_ids == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t size = cardano_array_get_size(voting_procedures->array);
@@ -660,7 +660,7 @@ cardano_voting_procedures_get_governance_ids_by_voter(
 
     if (kvp == NULL)
     {
-      return CARDANO_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
     }
 
     if (cardano_voter_equals(kvp->key, voter))
@@ -687,12 +687,12 @@ cardano_voting_procedures_get_voters(cardano_voting_procedures_t* voting_procedu
 {
   if (voting_procedures == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voters == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_voter_list_t* list = NULL;
@@ -714,7 +714,7 @@ cardano_voting_procedures_get_voters(cardano_voting_procedures_t* voting_procedu
     {
       // LCOV_EXCL_START
       cardano_voter_list_unref(&list);
-      return CARDANO_ELEMENT_NOT_FOUND;
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
       // LCOV_EXCL_STOP
     }
 

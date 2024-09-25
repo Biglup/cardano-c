@@ -87,24 +87,24 @@ cardano_ex_unit_prices_new(
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (memory_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (steps_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *ex_unit_prices = _cardano_malloc(sizeof(cardano_ex_unit_prices_t));
 
   if (*ex_unit_prices == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ex_unit_prices)->base.deallocator   = cardano_ex_unit_prices_deallocate;
@@ -125,13 +125,13 @@ cardano_ex_unit_prices_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_unit_
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *ex_unit_prices = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "ex_unit_prices";
@@ -189,12 +189,12 @@ cardano_ex_unit_prices_to_cbor(const cardano_ex_unit_prices_t* ex_unit_prices, c
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -223,12 +223,12 @@ cardano_ex_unit_prices_get_memory_prices(
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (memory_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(ex_unit_prices->mem_prices);
@@ -244,12 +244,12 @@ cardano_ex_unit_prices_get_steps_prices(
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (steps_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(ex_unit_prices->cpu_prices);
@@ -265,12 +265,12 @@ cardano_ex_unit_prices_set_memory_prices(
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (memory_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&ex_unit_prices->mem_prices);
@@ -287,12 +287,12 @@ cardano_ex_unit_prices_set_steps_prices(
 {
   if (ex_unit_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (steps_prices == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&ex_unit_prices->cpu_prices);

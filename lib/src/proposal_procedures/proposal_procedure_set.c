@@ -80,14 +80,14 @@ cardano_proposal_procedure_set_new(cardano_proposal_procedure_set_t** proposal_p
 {
   if (proposal_procedure_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_set_t* list = _cardano_malloc(sizeof(cardano_proposal_procedure_set_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -99,7 +99,7 @@ cardano_proposal_procedure_set_new(cardano_proposal_procedure_set_t** proposal_p
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *proposal_procedure_set = list;
@@ -112,12 +112,12 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal_procedure_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposal_procedure_set_t* list   = NULL;
@@ -221,12 +221,12 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
 {
   if (proposal_procedure_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(proposal_procedure_set->array != NULL);
@@ -292,19 +292,19 @@ cardano_proposal_procedure_set_get(
 {
   if (proposal_procedure_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(proposal_procedure_set->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_proposal_procedure_t*)((void*)object);
@@ -317,12 +317,12 @@ cardano_proposal_procedure_set_add(cardano_proposal_procedure_set_t* proposal_pr
 {
   if (proposal_procedure_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(proposal_procedure_set->array);
   const size_t new_size      = cardano_array_add(proposal_procedure_set->array, (cardano_object_t*)((void*)element));

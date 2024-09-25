@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PLUTUS_V2_SCRIPT_SET_H
-#define CARDANO_PLUTUS_V2_SCRIPT_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V2_SCRIPT_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V2_SCRIPT_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -148,7 +148,7 @@ cardano_plutus_v2_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p plutus_v2_script or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -467,4 +467,4 @@ CARDANO_EXPORT const char* cardano_plutus_v2_script_set_get_last_error(const car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PLUTUS_V2_SCRIPT_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_V2_SCRIPT_SET_H

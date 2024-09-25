@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BYTE_ORDER_H
-#define CARDANO_BYTE_ORDER_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BYTE_ORDER_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BYTE_ORDER_H
 
 /* DECLARATIONS **************************************************************/
 
@@ -56,4 +56,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BYTE_ORDER_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BYTE_ORDER_H

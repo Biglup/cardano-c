@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_TAG_H
-#define CARDANO_CBOR_TAG_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_TAG_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_TAG_H
 
 /* INCLUDES ******************************************************************/
 
@@ -128,4 +128,4 @@ CARDANO_EXPORT const char* cardano_cbor_tag_to_string(cardano_cbor_tag_t tag);
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_TAG_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_TAG_H

@@ -65,7 +65,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *                                  when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate
- *         was successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL
+ *         was successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any input pointers are NULL).
  *
  * \note This function increments the reference count of the credential passed to it.
@@ -149,7 +149,7 @@ cardano_stake_registration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p stake_registration or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -221,7 +221,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_stake_registration_cert_get_credent
  *                       certificate object thereafter.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the credential
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:

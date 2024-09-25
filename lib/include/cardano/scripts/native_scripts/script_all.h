@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SCRIPT_ALL_H
-#define CARDANO_SCRIPT_ALL_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ALL_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ALL_H
 
 /* INCLUDES ******************************************************************/
 
@@ -151,7 +151,7 @@ cardano_script_all_from_cbor(cardano_cbor_reader_t* reader, cardano_script_all_t
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p script_all or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -495,4 +495,4 @@ CARDANO_EXPORT const char* cardano_script_all_get_last_error(const cardano_scrip
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SCRIPT_ALL_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPT_ALL_H

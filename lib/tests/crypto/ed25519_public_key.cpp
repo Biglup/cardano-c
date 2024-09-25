@@ -153,7 +153,7 @@ TEST(cardano_ed25519_public_key_from_bytes, returnsNullIfGivenANullPtr)
   cardano_error_t               error      = cardano_ed25519_public_key_from_bytes(nullptr, 0, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 }
 
@@ -174,7 +174,7 @@ TEST(cardano_ed25519_public_key_from_bytes, returnsNullIfPublic_keyIsNull)
   cardano_error_t error = cardano_ed25519_public_key_from_bytes(PUBLIC_KEY, PUBLIC_KEY_SIZE, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_public_key_from_bytes, returnsNullIfMemoryAllocationFails)
@@ -189,7 +189,7 @@ TEST(cardano_ed25519_public_key_from_bytes, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_ed25519_public_key_from_bytes(PUBLIC_KEY, PUBLIC_KEY_SIZE, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 
   // Cleanup
@@ -208,7 +208,7 @@ TEST(cardano_ed25519_public_key_from_bytes, returnsNullIfMemoryEventualAllocatio
   cardano_error_t error = cardano_ed25519_public_key_from_bytes(PUBLIC_KEY, PUBLIC_KEY_SIZE, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 
   // Cleanup
@@ -222,7 +222,7 @@ TEST(cardano_ed25519_public_key_from_hex, returnsNullIfGivenANullPtr)
   cardano_error_t               error      = cardano_ed25519_public_key_from_hex(nullptr, 0, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 }
 
@@ -232,7 +232,7 @@ TEST(cardano_ed25519_public_key_from_hex, returnsNullIfpublic_keyIsNull)
   cardano_error_t error = cardano_ed25519_public_key_from_hex(PUBLIC_KEY_HEX, PUBLIC_KEY_SIZE * 2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_public_key_from_hex, returnsNullIfGivenZeroLength)
@@ -258,7 +258,7 @@ TEST(cardano_ed25519_public_key_from_hex, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_ed25519_public_key_from_hex(PUBLIC_KEY_HEX, PUBLIC_KEY_SIZE * 2, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 
   // Cleanup
@@ -277,7 +277,7 @@ TEST(cardano_ed25519_public_key_from_hex, returnsNullIfMemoryEventualAllocationF
   cardano_error_t error = cardano_ed25519_public_key_from_hex(PUBLIC_KEY_HEX, PUBLIC_KEY_SIZE * 2, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_ed25519_public_key_t*)nullptr);
 
   // Cleanup
@@ -330,7 +330,7 @@ TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_ed25519_public_key_to_bytes(public_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfBufferLengthIsZero)
@@ -345,7 +345,7 @@ TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfBufferLengthIsZero)
   error = cardano_ed25519_public_key_to_bytes(public_key, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&public_key);
@@ -362,7 +362,7 @@ TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfPublicKeyLengthIsGreater
   error = cardano_ed25519_public_key_to_bytes(public_key, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&public_key);
@@ -382,7 +382,7 @@ TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfPublicKeyLengthIsZero)
   error = cardano_ed25519_public_key_to_bytes(public_key, buffer, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&public_key);
@@ -400,7 +400,7 @@ TEST(cardano_ed25519_public_key_to_bytes, returnsErrorIfPublicKeyIsNull)
   error = cardano_ed25519_public_key_to_bytes(public_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&public_key);

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PROPOSAL_PROCEDURE_SET_H
-#define CARDANO_PROPOSAL_PROCEDURE_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -137,7 +137,7 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p proposal_procedure or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -396,4 +396,4 @@ CARDANO_EXPORT const char* cardano_proposal_procedure_set_get_last_error(const c
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PROPOSAL_PROCEDURE_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PROPOSAL_PROCEDURE_SET_H

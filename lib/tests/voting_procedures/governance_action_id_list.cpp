@@ -105,7 +105,7 @@ TEST(cardano_governance_action_id_list_new, createsANewInstanceOfGovernanceActio
 
 TEST(cardano_governance_action_id_list_new, returnsErrorIfListIsNull)
 {
-  EXPECT_EQ(cardano_governance_action_id_list_new(nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_list_new(nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_list_new, returnErrorIfMemoryAllocationFails)
@@ -115,7 +115,7 @@ TEST(cardano_governance_action_id_list_new, returnErrorIfMemoryAllocationFails)
 
   cardano_governance_action_id_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_governance_action_id_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_governance_action_id_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -129,7 +129,7 @@ TEST(cardano_governance_action_id_list_new, returnErrorIfMemoryAllocationFails2)
 
   cardano_governance_action_id_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_governance_action_id_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_governance_action_id_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -148,13 +148,13 @@ TEST(cardano_governance_action_id_list_get_length, returnsZeroIfListIsNull)
 TEST(cardano_governance_action_id_list_get, returnsNullIfListIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_governance_action_id_list_get(nullptr, 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_list_get(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_list_get, returnsNullIfElementIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_governance_action_id_list_get((cardano_governance_action_id_list_t*)"", 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_list_get((cardano_governance_action_id_list_t*)"", 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_list_get, returnsErrorIfIndexIsOutOfBounds)
@@ -170,7 +170,7 @@ TEST(cardano_governance_action_id_list_get, returnsErrorIfIndexIsOutOfBounds)
   error                                     = cardano_governance_action_id_list_get(list, 0, &action_id);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_governance_action_id_list_unref(&list);
@@ -327,7 +327,7 @@ TEST(cardano_governance_action_id_list_add, returnsErrorIfListIsNull)
   cardano_error_t result = cardano_governance_action_id_list_add(nullptr, id);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_list_add, returnsErrorIfScriptIsNull)
@@ -336,5 +336,5 @@ TEST(cardano_governance_action_id_list_add, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_governance_action_id_list_add((cardano_governance_action_id_list_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PROTOCOL_VERSION_H
-#define CARDANO_PROTOCOL_VERSION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -143,7 +143,7 @@ cardano_protocol_version_from_cbor(cardano_cbor_reader_t* reader, cardano_protoc
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p protocol_version or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -416,4 +416,4 @@ CARDANO_EXPORT const char* cardano_protocol_version_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PROTOCOL_VERSION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PROTOCOL_VERSION_H

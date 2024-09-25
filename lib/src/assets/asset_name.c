@@ -114,19 +114,19 @@ cardano_asset_name_from_bytes(
 {
   if ((size > 0U) && (data == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_t* new_asset_name = _cardano_malloc(sizeof(cardano_asset_name_t));
 
   if (new_asset_name == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_asset_name->base.deallocator   = cardano_asset_name_deallocate;
@@ -162,12 +162,12 @@ cardano_asset_name_from_hex(
 {
   if ((size > 0U) && (hex == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (((size % 2U) != 0U) || (size > 64U))
@@ -200,12 +200,12 @@ cardano_asset_name_from_string(
 {
   if (string == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_asset_name_from_bytes((const byte_t*)string, size, asset_name);
@@ -216,13 +216,13 @@ cardano_asset_name_from_cbor(cardano_cbor_reader_t* reader, cardano_asset_name_t
 {
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *asset_name = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* buffer          = NULL;
@@ -245,12 +245,12 @@ cardano_asset_name_to_cbor(const cardano_asset_name_t* asset_name, cardano_cbor_
 {
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_result = cardano_cbor_writer_write_bytestring(writer, asset_name->data, asset_name->size);

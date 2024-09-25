@@ -82,14 +82,14 @@ cardano_native_script_list_new(cardano_native_script_list_t** native_script_list
 {
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_native_script_list_t* list = _cardano_malloc(sizeof(cardano_native_script_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -102,7 +102,7 @@ cardano_native_script_list_new(cardano_native_script_list_t** native_script_list
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *native_script_list = list;
@@ -115,12 +115,12 @@ cardano_native_script_list_from_cbor(cardano_cbor_reader_t* reader, cardano_nati
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_native_script_list_t* list   = NULL;
@@ -209,7 +209,7 @@ cardano_native_script_list_from_json(
 {
   if (json == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (json_size == 0U)
@@ -219,7 +219,7 @@ cardano_native_script_list_from_json(
 
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   struct json_object* root = json_tokener_parse(json);
@@ -307,12 +307,12 @@ cardano_native_script_list_to_cbor(const cardano_native_script_list_t* native_sc
 {
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(native_script_list->array != NULL);
@@ -388,19 +388,19 @@ cardano_native_script_list_get(
 {
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(native_script_list->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_native_script_t*)((void*)object);
@@ -413,12 +413,12 @@ cardano_native_script_list_add(cardano_native_script_list_t* native_script_list,
 {
   if (native_script_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(native_script_list->array);
   const size_t new_size      = cardano_array_add(native_script_list->array, (cardano_object_t*)((void*)element));

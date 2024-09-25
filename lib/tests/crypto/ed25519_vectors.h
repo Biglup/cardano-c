@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ED25519_VECTORS_H
-#define CARDANO_ED25519_VECTORS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ED25519_VECTORS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ED25519_VECTORS_H
 
 /* DECLARATIONS **************************************************************/
 

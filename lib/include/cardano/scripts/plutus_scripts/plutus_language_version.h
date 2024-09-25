@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_PLUTUS_LANGUAGE_VERSION_H
-#define CARDANO_PLUTUS_LANGUAGE_VERSION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LANGUAGE_VERSION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LANGUAGE_VERSION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -78,4 +78,4 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_PLUTUS_LANGUAGE_VERSION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_PLUTUS_LANGUAGE_VERSION_H

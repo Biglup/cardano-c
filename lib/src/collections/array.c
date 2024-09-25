@@ -76,7 +76,7 @@ grow_array_if_needed(cardano_array_t* array)
 
     if (new_items == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     array->items    = new_items;

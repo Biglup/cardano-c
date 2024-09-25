@@ -247,7 +247,7 @@ TEST(cardano_asset_id_new, returnsErrorIfPolicyIdIsNull)
 
   cardano_error_t result = cardano_asset_id_new(nullptr, asset_name, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -266,7 +266,7 @@ TEST(cardano_asset_id_new, returnsErrorIfAssetNameIsNull)
 
   cardano_error_t result = cardano_asset_id_new(policy_id, nullptr, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -286,7 +286,7 @@ TEST(cardano_asset_id_new, returnsErrorIfAssetIdIsNull)
 
   cardano_error_t result = cardano_asset_id_new(policy_id, asset_name, nullptr);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -332,7 +332,7 @@ TEST(cardano_asset_id_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_asset_id_new(policy_id, asset_name, &asset_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -367,7 +367,7 @@ TEST(cardano_asset_id_new_lovelace, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_asset_id_new_lovelace(&asset_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id, nullptr);
 
   // Cleanup
@@ -380,7 +380,7 @@ TEST(cardano_asset_id_new_lovelace, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_id_new_lovelace(NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_from_bytes, returnsErrorIfDataIsNull)
@@ -390,7 +390,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfDataIsNull)
 
   cardano_error_t result = cardano_asset_id_from_bytes(nullptr, 1, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -406,7 +406,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfDataSizeIsZero)
 
   cardano_error_t result = cardano_asset_id_from_bytes(data, 0, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -423,7 +423,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_asset_id_from_bytes(POLICY_ID_BYTES, sizeof(POLICY_ID_BYTES), &asset_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id, nullptr);
 
   // Cleanup
@@ -441,7 +441,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfMemoryAllocationFails1)
   cardano_error_t result = cardano_asset_id_from_bytes(POLICY_ID_BYTES, sizeof(POLICY_ID_BYTES), &asset_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id, nullptr);
 
   // Cleanup
@@ -459,7 +459,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t result = cardano_asset_id_from_bytes(POLICY_ID_BYTES, sizeof(POLICY_ID_BYTES), &asset_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id, nullptr);
 
   // Cleanup
@@ -472,7 +472,7 @@ TEST(cardano_asset_id_from_bytes, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_id_from_bytes(POLICY_ID_BYTES, sizeof(POLICY_ID_BYTES), nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_from_hex, returnsErrorIfDataIsNull)
@@ -482,7 +482,7 @@ TEST(cardano_asset_id_from_hex, returnsErrorIfDataIsNull)
 
   cardano_error_t result = cardano_asset_id_from_hex(nullptr, 1, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -495,7 +495,7 @@ TEST(cardano_asset_id_from_hex, returnsErrorIfDataSizeIsZero)
 
   cardano_error_t result = cardano_asset_id_from_hex("", 0, &asset_id);
 
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Assert
   EXPECT_EQ(asset_id, nullptr);
@@ -520,7 +520,7 @@ TEST(cardano_asset_id_from_hex, returnsErrorIfAssetIdIsNull)
   cardano_error_t result = cardano_asset_id_from_hex(ASSET_ID_HEX, strlen(ASSET_ID_HEX), nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Getters and Setters

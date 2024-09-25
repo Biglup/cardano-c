@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BYRON_ADDRESS_PACK_H
-#define CARDANO_BYRON_ADDRESS_PACK_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_PACK_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_PACK_H
 
 /* INCLUDES ******************************************************************/
 
@@ -349,4 +349,4 @@ _cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, size
 cardano_error_t
 _cardano_unpack_byron_address(const byte_t* data, size_t size, cardano_byron_address_t** cardano_byron);
 
-#endif // CARDANO_BYRON_ADDRESS_PACK_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_PACK_H

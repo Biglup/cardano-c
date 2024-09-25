@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BYRON_ADDRESS_H
-#define CARDANO_BYRON_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -111,7 +111,7 @@ CARDANO_EXPORT cardano_error_t cardano_byron_address_from_credentials(
  *                           Byron address object will be stored if the conversion is successful.
  *
  * \return A \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS on successful
- *         conversion, \ref CARDANO_INVALID_ADDRESS_TYPE if the input address is not a valid Byron address, or other
+ *         conversion, \ref CARDANO_ERROR_INVALID_ADDRESS_TYPE if the input address is not a valid Byron address, or other
  *         appropriate error codes for different failures.
  *
  * \note The caller is responsible for managing the lifecycle of the created \ref cardano_byron_address_t object,
@@ -191,7 +191,7 @@ CARDANO_EXPORT cardano_address_t* cardano_byron_address_to_address(
  * \return \ref CARDANO_SUCCESS if the attributes were successfully retrieved, or an appropriate error code if an error occurred.
  *
  * \note The function assumes the \p address pointer and the \p attributes pointer are not NULL. If either is NULL, the function
- *       returns \ref CARDANO_POINTER_IS_NULL.
+ *       returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -227,7 +227,7 @@ CARDANO_EXPORT cardano_error_t cardano_byron_address_get_attributes(
  * \return \ref CARDANO_SUCCESS if the type was successfully retrieved, or an appropriate error code if an error occurred.
  *
  * \note The function assumes the \p address pointer and the \p type pointer are not NULL. If either is NULL, the function
- *       returns \ref CARDANO_POINTER_IS_NULL.
+ *       returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -278,7 +278,7 @@ CARDANO_EXPORT cardano_error_t cardano_byron_address_get_type(
  * \return \ref CARDANO_SUCCESS if the root hash was successfully retrieved, or an appropriate error code if an error occurred.
  *
  * \note The function assumes the \p address pointer is not NULL and that \p root is a valid double pointer. If either is NULL,
- *       the function returns \ref CARDANO_POINTER_IS_NULL.
+ *       the function returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -317,8 +317,8 @@ CARDANO_EXPORT cardano_error_t cardano_byron_address_get_root(
  * \param[out] address A pointer to a pointer of \ref cardano_byron_address_t that will be set to the address of the newly created
  *                     Byron address object upon successful decoding.
  *
- * \return \ref CARDANO_SUCCESS if the Byron address is successfully created from the provided bytes, \ref CARDANO_INVALID_ADDRESS_FORMAT
- *         if the byte array does not represent a valid Byron address, or \ref CARDANO_POINTER_IS_NULL if any pointer parameter is NULL.
+ * \return \ref CARDANO_SUCCESS if the Byron address is successfully created from the provided bytes, \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT
+ *         if the byte array does not represent a valid Byron address, or \ref CARDANO_ERROR_POINTER_IS_NULL if any pointer parameter is NULL.
  *
  * \note The caller is responsible for managing the lifecycle of the created \ref cardano_byron_address_t object. Specifically,
  *       once the address is no longer needed, the caller must release it by calling \ref cardano_address_unref.
@@ -430,7 +430,7 @@ CARDANO_EXPORT const byte_t* cardano_byron_address_get_bytes(const cardano_byron
  *                 returned by \ref cardano_byron_address_get_bytes_size to ensure successful serialization.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the buffer is too small, returns
- *         \ref CARDANO_INSUFFICIENT_BUFFER_SIZE. If the \p address is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE. If the \p address is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -469,8 +469,8 @@ CARDANO_EXPORT cardano_error_t cardano_byron_address_to_bytes(
  * \param[out] address A pointer to a pointer to \ref cardano_byron_address_t that will be set to the address
  *                     of the newly created Byron address object upon successful decoding.
  *
- * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_POINTER_IS_NULL
- *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the Base58 data
+ * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Base58 data
  *         could not be decoded into a valid Byron address.
  *
  * \note The function checks the format and validity of the Base58 string. It is the caller's responsibility to
@@ -553,8 +553,8 @@ CARDANO_EXPORT size_t cardano_byron_address_get_base58_size(const cardano_byron_
  * \param[in] size The size of the provided buffer in bytes. This size should be at least the value returned
  *                 by \ref cardano_byron_address_get_base58_size for this address.
  *
- * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_POINTER_IS_NULL if
- *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the \p size is too
+ * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the \p size is too
  *         small to hold the Base58 representation including the null terminator.
  *
  * Usage Example:
@@ -697,4 +697,4 @@ CARDANO_EXPORT const char* cardano_byron_address_get_last_error(const cardano_by
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BYRON_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_H

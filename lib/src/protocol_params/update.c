@@ -83,14 +83,14 @@ cardano_update_new(uint64_t epoch, cardano_proposed_param_updates_t* updates, ca
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *update = _cardano_malloc(sizeof(cardano_update_t));
 
   if (*update == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*update)->base.deallocator   = cardano_update_deallocate;
@@ -111,13 +111,13 @@ cardano_update_from_cbor(cardano_cbor_reader_t* reader, cardano_update_t** updat
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *update = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "update";
@@ -182,12 +182,12 @@ cardano_update_to_cbor(const cardano_update_t* update, cardano_cbor_writer_t* wr
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t error = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -204,7 +204,7 @@ cardano_update_to_cbor(const cardano_update_t* update, cardano_cbor_writer_t* wr
     return error; // LCOV_EXCL_LINE
   }
 
-  error = cardano_cbor_writer_write_unsigned_int(writer, update->epoch);
+  error = cardano_cbor_writer_write_uint(writer, update->epoch);
 
   return error;
 }
@@ -216,12 +216,12 @@ cardano_update_get_epoch(
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (epoch == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *epoch = update->epoch;
@@ -236,12 +236,12 @@ cardano_update_get_proposed_parameters(
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposed_parameters == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *proposed_parameters = update->proposed_param_updates;
@@ -256,7 +256,7 @@ cardano_update_set_epoch(
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   update->epoch = epoch;
@@ -271,7 +271,7 @@ cardano_update_set_proposed_parameters(
 {
   if (update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposed_param_updates_ref(proposed_parameters);

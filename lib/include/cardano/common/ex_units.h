@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_EX_UNITS_H
-#define CARDANO_EX_UNITS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -147,7 +147,7 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p ex_units or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -264,7 +264,7 @@ CARDANO_EXPORT uint64_t cardano_ex_units_get_cpu_steps(const cardano_ex_units_t*
  *         if the CPU steps were successfully set, or an appropriate error code if an error occurred.
  *
  * \note It is important to ensure that the \p ex_units object has been properly initialized before
- *       calling this function. If \p ex_units is NULL, the function will return \ref CARDANO_POINTER_IS_NULL.
+ *       calling this function. If \p ex_units is NULL, the function will return \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -417,4 +417,4 @@ CARDANO_EXPORT const char* cardano_ex_units_get_last_error(const cardano_ex_unit
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_EX_UNITS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_EX_UNITS_H

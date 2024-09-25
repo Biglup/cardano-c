@@ -124,14 +124,14 @@ cardano_plutus_map_new(cardano_plutus_map_t** plutus_map)
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_map_t* map = _cardano_malloc(sizeof(cardano_plutus_map_t));
 
   if (map == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   map->base.ref_count          = 1;
@@ -145,7 +145,7 @@ cardano_plutus_map_new(cardano_plutus_map_t** plutus_map)
   if (map->array == NULL)
   {
     _cardano_free(map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *plutus_map = map;
@@ -158,12 +158,12 @@ cardano_plutus_map_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_map_t
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t*      cbor_cache  = NULL;
@@ -259,7 +259,7 @@ cardano_plutus_map_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_map_t
       cardano_plutus_data_unref(&value);
       cardano_plutus_map_unref(&map);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       // LCOV_EXCL_STOP
     }
 
@@ -297,12 +297,12 @@ cardano_plutus_map_to_cbor(const cardano_plutus_map_t* plutus_map, cardano_cbor_
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_map->cbor_cache != NULL)
@@ -401,17 +401,17 @@ cardano_plutus_map_get(
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(plutus_map->array); ++i)
@@ -431,7 +431,7 @@ cardano_plutus_map_get(
     cardano_object_unref(&object);
   }
 
-  return CARDANO_ELEMENT_NOT_FOUND;
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
 }
 
 cardano_error_t
@@ -442,24 +442,24 @@ cardano_plutus_map_insert(
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_map_kvp_t* kvp = _cardano_malloc(sizeof(cardano_plutus_map_kvp_t));
 
   if (kvp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   kvp->base.ref_count     = 0;
@@ -489,12 +489,12 @@ cardano_plutus_map_get_keys(
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (keys == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_list_t* list = NULL;
@@ -537,12 +537,12 @@ cardano_plutus_map_get_values(
 {
   if (plutus_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (values == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_list_t* list = NULL;

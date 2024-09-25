@@ -130,14 +130,14 @@ cardano_auxiliary_data_new(cardano_auxiliary_data_t** auxiliary_data)
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_auxiliary_data_t* new_auxiliary_data = (cardano_auxiliary_data_t*)_cardano_malloc(sizeof(cardano_auxiliary_data_t));
 
   if (new_auxiliary_data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_auxiliary_data->base.ref_count     = 1;
@@ -160,13 +160,13 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *auxiliary_data = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "auxiliary_data";
@@ -460,12 +460,12 @@ cardano_auxiliary_data_to_cbor(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (auxiliary_data->cbor_cache != NULL)
@@ -493,7 +493,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->metadata != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 0);
+    result = cardano_cbor_writer_write_uint(writer, 0);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -510,7 +510,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->native_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 1);
+    result = cardano_cbor_writer_write_uint(writer, 1);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -527,7 +527,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v1_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 2);
+    result = cardano_cbor_writer_write_uint(writer, 2);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -544,7 +544,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v2_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 3);
+    result = cardano_cbor_writer_write_uint(writer, 3);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -561,7 +561,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v3_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 4);
+    result = cardano_cbor_writer_write_uint(writer, 4);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -599,7 +599,7 @@ cardano_auxiliary_data_set_transaction_metadata(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadata == NULL)
@@ -638,7 +638,7 @@ cardano_auxiliary_data_set_native_scripts(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (scripts == NULL)
@@ -677,7 +677,7 @@ cardano_auxiliary_data_set_plutus_v1_scripts(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (scripts == NULL)
@@ -716,7 +716,7 @@ cardano_auxiliary_data_set_plutus_v2_scripts(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (scripts == NULL)
@@ -755,7 +755,7 @@ cardano_auxiliary_data_set_plutus_v3_scripts(
 {
   if (auxiliary_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (scripts == NULL)

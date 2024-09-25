@@ -144,12 +144,12 @@ cardano_ipv6_new(const byte_t* data, const size_t size, cardano_ipv6_t** ipv6)
 {
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size != 16U)
@@ -161,7 +161,7 @@ cardano_ipv6_new(const byte_t* data, const size_t size, cardano_ipv6_t** ipv6)
 
   if (*ipv6 == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ipv6)->base.deallocator   = cardano_ipv6_deallocate;
@@ -179,12 +179,12 @@ cardano_ipv6_from_string(const char* string, const size_t size, cardano_ipv6_t**
 {
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (string == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size != 39U)
@@ -196,7 +196,7 @@ cardano_ipv6_from_string(const char* string, const size_t size, cardano_ipv6_t**
 
   if (*ipv6 == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ipv6)->base.deallocator   = cardano_ipv6_deallocate;
@@ -224,13 +224,13 @@ cardano_ipv6_from_cbor(cardano_cbor_reader_t* reader, cardano_ipv6_t** ipv6)
 {
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *ipv6 = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* buffer           = NULL;
@@ -253,12 +253,12 @@ cardano_ipv6_to_cbor(const cardano_ipv6_t* ipv6, cardano_cbor_writer_t* writer)
 {
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_cbor_writer_write_bytestring(writer, ipv6->ip_bytes, sizeof(ipv6->ip_bytes));

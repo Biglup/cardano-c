@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ENTERPRISE_ADDRESS_H
-#define CARDANO_ENTERPRISE_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -73,7 +73,7 @@ typedef struct cardano_enterprise_address_t cardano_enterprise_address_t;
  *                                address creation.
  *
  * \return Returns \ref CARDANO_SUCCESS if the enterprise address was successfully created. Returns
- *         \ref CARDANO_POINTER_IS_NULL if the \p payment or \p enterprise_address pointer is NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if the \p payment or \p enterprise_address pointer is NULL.
  *
  * \note The caller is responsible for managing the lifecycle of the created \ref cardano_enterprise_address_t object.
  *       This involves ensuring that `cardano_enterprise_address_unref` is called to free the address object when it is no longer needed, to avoid memory leaks.
@@ -113,8 +113,8 @@ CARDANO_EXPORT cardano_error_t cardano_enterprise_address_from_credentials(
  *                                to the address of the newly created enterprise address object upon successful
  *                                conversion.
  *
- * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_POINTER_IS_NULL if
- *         the \p address or \p enterprise_address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the
+ * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         the \p address or \p enterprise_address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the
  *         provided address cannot be converted to an enterprise address.
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_enterprise_address_t object,
@@ -233,8 +233,8 @@ CARDANO_EXPORT cardano_credential_t* cardano_enterprise_address_get_payment_cred
  * \param[out] address A pointer to a pointer to \ref cardano_enterprise_address_t that will be set to the address
  *                     of the newly created enterprise address object upon successful decoding.
  *
- * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_POINTER_IS_NULL
- *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the byte array data
+ * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the byte array data
  *         could not be decoded into a valid enterprise address.
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_enterprise_address_t object,
@@ -351,8 +351,8 @@ CARDANO_EXPORT const byte_t* cardano_enterprise_address_get_bytes(const cardano_
  *                 by \ref cardano_enterprise_address_get_bytes_size for this address.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully serialized into the byte array.
- *         Returns \ref CARDANO_POINTER_IS_NULL if the \p address or \p data pointer is NULL. Returns
- *         \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the \p size is too small to hold the serialized data.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the \p address or \p data pointer is NULL. Returns
+ *         \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the \p size is too small to hold the serialized data.
  *
  * Usage Example:
  * \code{.c}
@@ -400,8 +400,8 @@ CARDANO_EXPORT cardano_error_t cardano_enterprise_address_to_bytes(
  * \param[out] address A pointer to a pointer to \ref cardano_enterprise_address_t that will be set to the address
  *                     of the newly created enterprise address object upon successful decoding.
  *
- * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_POINTER_IS_NULL
- *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the Bech32 data
+ * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 data
  *         could not be decoded into a valid enterprise address.
  *
  * Usage Example:
@@ -482,8 +482,8 @@ CARDANO_EXPORT size_t cardano_enterprise_address_get_bech32_size(const cardano_e
  *                 by \ref cardano_enterprise_address_get_bech32_size to ensure it can hold the Bech32 string
  *                 and the null terminator.
  *
- * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_POINTER_IS_NULL if
- *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the \p size is too
+ * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the \p size is too
  *         small to hold the Bech32 representation including the null terminator.
  *
  * \note It is crucial to ensure that the buffer provided in \p data is sufficiently large to accommodate the
@@ -631,4 +631,4 @@ CARDANO_EXPORT const char* cardano_enterprise_address_get_last_error(const carda
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ENTERPRISE_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_H

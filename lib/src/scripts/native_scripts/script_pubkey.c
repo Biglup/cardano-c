@@ -87,19 +87,19 @@ cardano_script_pubkey_new(cardano_blake2b_hash_t* key_hash, cardano_script_pubke
 {
   if (key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_pubkey == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_pubkey_t* data = _cardano_malloc(sizeof(cardano_script_pubkey_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_blake2b_hash_ref(key_hash);
@@ -120,12 +120,12 @@ cardano_script_pubkey_from_cbor(cardano_cbor_reader_t* reader, cardano_script_pu
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_pubkey == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "script_pubkey";
@@ -184,12 +184,12 @@ cardano_script_pubkey_to_cbor(
 {
   if (script_pubkey == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 2);
@@ -199,7 +199,7 @@ cardano_script_pubkey_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_pubkey->type);
+  result = cardano_cbor_writer_write_uint(writer, script_pubkey->type);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -216,7 +216,7 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 {
   if (json == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (json_size == 0U)
@@ -226,7 +226,7 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 
   if (native_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   struct json_object* json_object = json_tokener_parse(json);
@@ -286,7 +286,7 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
     // LCOV_EXCL_START
     json_object_put(json_object);
 
-    return CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+    return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
     // LCOV_EXCL_STOP
   }
 

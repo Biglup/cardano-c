@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_SIMPLE_VALUE_H
-#define CARDANO_CBOR_SIMPLE_VALUE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_SIMPLE_VALUE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_SIMPLE_VALUE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -86,4 +86,4 @@ CARDANO_EXPORT const char* cardano_cbor_simple_value_to_string(cardano_cbor_simp
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_SIMPLE_VALUE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_SIMPLE_VALUE_H

@@ -80,7 +80,7 @@ grow_buffer_if_needed(cardano_buffer_t* buffer, const size_t size_of_new_data)
 
     if (new_data == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     buffer->data     = new_data;
@@ -359,19 +359,19 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer, char* dest, const size_t d
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dest == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t hex_string_size = cardano_buffer_get_hex_size(buffer);
 
   if (dest_size < hex_string_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   int init_result = sodium_init();
@@ -409,19 +409,19 @@ cardano_buffer_to_str(const cardano_buffer_t* buffer, char* dest, const size_t d
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dest == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t string_size = cardano_buffer_get_str_size(buffer);
 
   if (dest_size < string_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   assert(buffer->data != NULL);
@@ -573,24 +573,24 @@ cardano_buffer_copy_bytes(const cardano_buffer_t* buffer, byte_t* dest, const si
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dest == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dest_size == 0U)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE;
   }
 
   size_t data_length = cardano_buffer_get_size(buffer);
 
   if (data_length > dest_size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE;
   }
 
   cardano_safe_memcpy(dest, dest_size, cardano_buffer_get_data(buffer), data_length);
@@ -603,12 +603,12 @@ cardano_buffer_set_size(cardano_buffer_t* buffer, const size_t size)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size > buffer->capacity)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE;
   }
 
   buffer->size = size;
@@ -632,12 +632,12 @@ cardano_buffer_seek(cardano_buffer_t* buffer, size_t position)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (position > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   buffer->head = position;
@@ -650,12 +650,12 @@ cardano_buffer_write(cardano_buffer_t* buffer, const byte_t* data, const size_t 
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const cardano_error_t grow_result = grow_buffer_if_needed(buffer, size);
@@ -677,17 +677,17 @@ cardano_buffer_read(cardano_buffer_t* buffer, byte_t* data, const size_t bytes_t
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((buffer->head + bytes_to_read) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_safe_memcpy(data, bytes_to_read, &buffer->data[buffer->head], bytes_to_read);
@@ -702,7 +702,7 @@ cardano_buffer_write_uint16_le(cardano_buffer_t* buffer, const uint16_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -728,7 +728,7 @@ cardano_buffer_write_uint32_le(cardano_buffer_t* buffer, const uint32_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -754,7 +754,7 @@ cardano_buffer_write_uint64_le(cardano_buffer_t* buffer, const uint64_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -780,7 +780,7 @@ cardano_buffer_write_int16_le(cardano_buffer_t* buffer, const int16_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -806,7 +806,7 @@ cardano_buffer_write_int32_le(cardano_buffer_t* buffer, const int32_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -832,7 +832,7 @@ cardano_buffer_write_int64_le(cardano_buffer_t* buffer, const int64_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -858,7 +858,7 @@ cardano_buffer_write_float_le(cardano_buffer_t* buffer, const float value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -884,7 +884,7 @@ cardano_buffer_write_double_le(cardano_buffer_t* buffer, const double value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -910,7 +910,7 @@ cardano_buffer_write_uint16_be(cardano_buffer_t* buffer, const uint16_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -936,7 +936,7 @@ cardano_buffer_write_uint32_be(cardano_buffer_t* buffer, const uint32_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -962,7 +962,7 @@ cardano_buffer_write_uint64_be(cardano_buffer_t* buffer, const uint64_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -988,7 +988,7 @@ cardano_buffer_write_int16_be(cardano_buffer_t* buffer, const int16_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -1014,7 +1014,7 @@ cardano_buffer_write_int32_be(cardano_buffer_t* buffer, const int32_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -1040,7 +1040,7 @@ cardano_buffer_write_int64_be(cardano_buffer_t* buffer, const int64_t value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -1066,7 +1066,7 @@ cardano_buffer_write_float_be(cardano_buffer_t* buffer, const float value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -1092,7 +1092,7 @@ cardano_buffer_write_double_be(cardano_buffer_t* buffer, const double value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t          type_size   = sizeof(value);
@@ -1118,19 +1118,19 @@ cardano_buffer_read_uint16_le(cardano_buffer_t* buffer, uint16_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint16_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint16_le(value, buffer->data, buffer->size, buffer->head);
@@ -1148,19 +1148,19 @@ cardano_buffer_read_uint32_le(cardano_buffer_t* buffer, uint32_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint32_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint32_le(value, buffer->data, buffer->size, buffer->head);
@@ -1178,19 +1178,19 @@ cardano_buffer_read_uint64_le(cardano_buffer_t* buffer, uint64_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint64_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint64_le(value, buffer->data, buffer->size, buffer->head);
@@ -1208,19 +1208,19 @@ cardano_buffer_read_int16_le(cardano_buffer_t* buffer, int16_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int16_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int16_le(value, buffer->data, buffer->size, buffer->head);
@@ -1238,19 +1238,19 @@ cardano_buffer_read_int32_le(cardano_buffer_t* buffer, int32_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int32_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int32_le(value, buffer->data, buffer->size, buffer->head);
@@ -1268,19 +1268,19 @@ cardano_buffer_read_int64_le(cardano_buffer_t* buffer, int64_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int64_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int64_le(value, buffer->data, buffer->size, buffer->head);
@@ -1298,19 +1298,19 @@ cardano_buffer_read_float_le(cardano_buffer_t* buffer, float* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(float);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_float_le(value, buffer->data, buffer->size, buffer->head);
@@ -1328,19 +1328,19 @@ cardano_buffer_read_double_le(cardano_buffer_t* buffer, double* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(double);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_double_le(value, buffer->data, buffer->size, buffer->head);
@@ -1358,19 +1358,19 @@ cardano_buffer_read_uint16_be(cardano_buffer_t* buffer, uint16_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint16_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint16_be(value, buffer->data, buffer->size, buffer->head);
@@ -1388,19 +1388,19 @@ cardano_buffer_read_uint32_be(cardano_buffer_t* buffer, uint32_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint32_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint32_be(value, buffer->data, buffer->size, buffer->head);
@@ -1418,19 +1418,19 @@ cardano_buffer_read_uint64_be(cardano_buffer_t* buffer, uint64_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(uint64_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_uint64_be(value, buffer->data, buffer->size, buffer->head);
@@ -1448,19 +1448,19 @@ cardano_buffer_read_int16_be(cardano_buffer_t* buffer, int16_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int16_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int16_be(value, buffer->data, buffer->size, buffer->head);
@@ -1478,19 +1478,19 @@ cardano_buffer_read_int32_be(cardano_buffer_t* buffer, int32_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int32_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int32_be(value, buffer->data, buffer->size, buffer->head);
@@ -1508,19 +1508,19 @@ cardano_buffer_read_int64_be(cardano_buffer_t* buffer, int64_t* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(int64_t);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_int64_be(value, buffer->data, buffer->size, buffer->head);
@@ -1538,19 +1538,19 @@ cardano_buffer_read_float_be(cardano_buffer_t* buffer, float* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(float);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_float_be(value, buffer->data, buffer->size, buffer->head);
@@ -1568,19 +1568,19 @@ cardano_buffer_read_double_be(cardano_buffer_t* buffer, double* value)
 {
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t type_size = sizeof(double);
 
   if ((buffer->head + type_size) > buffer->size)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_error_t result = cardano_read_double_be(value, buffer->data, buffer->size, buffer->head);

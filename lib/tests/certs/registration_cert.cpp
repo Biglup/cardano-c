@@ -212,7 +212,7 @@ TEST(cardano_registration_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_registration_cert_from_cbor(nullptr, &registration_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_registration_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -224,7 +224,7 @@ TEST(cardano_registration_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_registration_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -265,7 +265,7 @@ TEST(cardano_registration_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_registration_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -277,7 +277,7 @@ TEST(cardano_registration_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_registration_cert_to_cbor((cardano_registration_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -309,7 +309,7 @@ TEST(cardano_registration_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_registration_cert_new(nullptr, 0, &registration_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_registration_cert_new, returnsErrorIfCertIsNull)
@@ -319,7 +319,7 @@ TEST(cardano_registration_cert_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_registration_cert_new((cardano_credential_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -338,7 +338,7 @@ TEST(cardano_registration_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_registration_cert_new(cred, 0, &registration_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -439,7 +439,7 @@ TEST(cardano_registration_cert_set_stake_credential, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_registration_cert_set_stake_credential(nullptr, cred);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -454,7 +454,7 @@ TEST(cardano_registration_cert_set_stake_credential, returnsErrorIfCredentialIsN
   cardano_error_t result = cardano_registration_cert_set_stake_credential(registration_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_registration_cert_unref(&registration_cert);
@@ -536,5 +536,5 @@ TEST(cardano_registration_cert_set_deposit, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_registration_cert_set_deposit(nullptr, 100);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

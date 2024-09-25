@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_POINTER_ADDRESS_H
-#define CARDANO_POINTER_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_POINTER_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_POINTER_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -73,7 +73,7 @@ typedef struct cardano_pointer_address_t cardano_pointer_address_t;
  *                              address creation.
  *
  * \return Returns \ref CARDANO_SUCCESS if the pointer address was successfully created. Returns
- *         \ref CARDANO_POINTER_IS_NULL if any of the pointers (\p payment or \p pointer_address) are NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if any of the pointers (\p payment or \p pointer_address) are NULL.
  *
  * \note The caller is responsible for managing the lifecycle of the created \ref cardano_pointer_address_t
  *       object, including ensuring that `cardano_pointer_address_unref` is called to free the address object
@@ -120,8 +120,8 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_from_credentials(
  *                              to the address of the newly created pointer address object upon successful
  *                              conversion.
  *
- * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_POINTER_IS_NULL if
- *         the \p address or \p pointer_address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the
+ * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         the \p address or \p pointer_address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the
  *         provided address cannot be converted to a pointer address.
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_pointer_address_t object,
@@ -242,7 +242,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_pointer_address_get_payment_credent
  *                     stake pointer information if the retrieval is successful.
  *
  * \return Returns \ref CARDANO_SUCCESS if the stake pointer was successfully retrieved. Returns
- *         \ref CARDANO_POINTER_IS_NULL if the \p address or \p pointer argument is NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if the \p address or \p pointer argument is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -278,8 +278,8 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_get_stake_pointer(
  * \param[out] address A pointer to a pointer to \ref cardano_pointer_address_t that will be set to the address
  *                     of the newly created pointer address object upon successful decoding.
  *
- * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_POINTER_IS_NULL
- *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the byte array data
+ * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the byte array data
  *         could not be decoded into a valid pointer address.
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_pointer_address_t object,
@@ -396,8 +396,8 @@ CARDANO_EXPORT const byte_t* cardano_pointer_address_get_bytes(const cardano_poi
  *                 by \ref cardano_pointer_address_get_bytes_size to ensure it can hold the serialized data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully serialized into the byte array.
- *         Returns \ref CARDANO_POINTER_IS_NULL if the \p address or \p data pointer is NULL. Returns
- *         \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the \p size is too small to hold the serialized data.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the \p address or \p data pointer is NULL. Returns
+ *         \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the \p size is too small to hold the serialized data.
  *
  * \note The buffer provided in \p data must be sufficiently large to accommodate
  *       the serialized data to prevent buffer overflow errors.
@@ -448,8 +448,8 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bytes(
  * \param[out] address A pointer to a pointer to \ref cardano_pointer_address_t that will be set to the address
  *                     of the newly created enterprise address object upon successful decoding.
  *
- * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_POINTER_IS_NULL
- *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the Bech32 data
+ * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 data
  *         could not be decoded into a valid enterprise address.
  *
  * Usage Example:
@@ -530,8 +530,8 @@ CARDANO_EXPORT size_t cardano_pointer_address_get_bech32_size(const cardano_poin
  *                 by \ref cardano_pointer_address_get_bech32_size to ensure it can hold the Bech32 string
  *                 and the null terminator.
  *
- * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_POINTER_IS_NULL if
- *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the \p size is too
+ * \return Returns \ref CARDANO_SUCCESS if the conversion was successful. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         the \p address or \p data pointer is NULL. Returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the \p size is too
  *         small to hold the Bech32 representation including the null terminator.
  *
  * \note It is crucial to ensure that the buffer provided in \p data is sufficiently large to accommodate the
@@ -679,4 +679,4 @@ CARDANO_EXPORT const char* cardano_pointer_address_get_last_error(const cardano_
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_POINTER_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_POINTER_ADDRESS_H

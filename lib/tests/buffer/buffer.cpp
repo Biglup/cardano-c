@@ -281,7 +281,7 @@ TEST(cardano_buffer_set_size, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_buffer_set_size(buffer, 10);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_set_size, returnsErrorIfSizeIsGreaterThanCapacity)
@@ -293,7 +293,7 @@ TEST(cardano_buffer_set_size, returnsErrorIfSizeIsGreaterThanCapacity)
   cardano_error_t error = cardano_buffer_set_size(buffer, 100);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -597,7 +597,7 @@ TEST(cardano_buffer_to_hex, whenGivenANullPtrReturnError)
   const cardano_error_t error = cardano_buffer_to_hex(buffer, nullptr, 0);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_to_hex, whenGivenADestNullPtrReturnError)
@@ -609,7 +609,7 @@ TEST(cardano_buffer_to_hex, whenGivenADestNullPtrReturnError)
   const cardano_error_t error = cardano_buffer_to_hex(buffer, nullptr, 0);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -644,7 +644,7 @@ TEST(cardano_buffer_to_hex, whenSizeIsInsuficientReturnError)
   const cardano_error_t error = cardano_buffer_to_hex(buffer, dest, 1);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -821,7 +821,7 @@ TEST(cardano_buffer_to_str, whenGivenANullPtrReturnError)
   const cardano_error_t error = cardano_buffer_to_str(buffer, nullptr, 0);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_to_str, whenGivenADestNullPtrReturnError)
@@ -833,7 +833,7 @@ TEST(cardano_buffer_to_str, whenGivenADestNullPtrReturnError)
   const cardano_error_t error = cardano_buffer_to_str(buffer, nullptr, 0);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -868,7 +868,7 @@ TEST(cardano_buffer_to_str, whenSizeIsInsuficientReturnError)
   const cardano_error_t error = cardano_buffer_to_str(buffer, dest, 1);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -901,7 +901,7 @@ TEST(cardano_buffer_seek, returnsErrorIfGivenNullBuffer)
   cardano_error_t result = cardano_buffer_seek(nullptr, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_seek, returnsErrorIfSeekOutOfBounds)
@@ -916,7 +916,7 @@ TEST(cardano_buffer_seek, returnsErrorIfSeekOutOfBounds)
   cardano_error_t result = cardano_buffer_seek(buffer, 100);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -949,7 +949,7 @@ TEST(cardano_buffer_write, returnsErrorIfGivenNullBuffer)
   cardano_error_t result = cardano_buffer_write(nullptr, &actual[0], 5);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write, returnsErrorIfGivenNullInputPtr)
@@ -961,7 +961,7 @@ TEST(cardano_buffer_write, returnsErrorIfGivenNullInputPtr)
   cardano_error_t result = cardano_buffer_write(buffer, nullptr, 5);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -973,7 +973,7 @@ TEST(cardano_buffer_read, returnsErrorIfGivenNullBuffer)
   cardano_error_t result = cardano_buffer_read(nullptr, nullptr, 5);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read, returnsErrorIfGivenNullOutputPointer)
@@ -988,7 +988,7 @@ TEST(cardano_buffer_read, returnsErrorIfGivenNullOutputPointer)
   cardano_error_t result = cardano_buffer_read(buffer, nullptr, 5);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -1007,7 +1007,7 @@ TEST(cardano_buffer_read, returnsErrorIfTriesToReadOutOfBounds)
   cardano_error_t result = cardano_buffer_read(buffer, &actual[0], 100);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -1040,7 +1040,7 @@ TEST(cardano_buffer_write_uint16_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint16_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint16_le, serializesToLittleEndian)
@@ -1067,7 +1067,7 @@ TEST(cardano_buffer_write_uint32_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint32_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint32_le, serializesToLittleEndian)
@@ -1094,7 +1094,7 @@ TEST(cardano_buffer_write_uint64_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint64_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint64_le, serializesToLittleEndian)
@@ -1121,7 +1121,7 @@ TEST(cardano_buffer_write_int16_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int16_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int16_le, serializesToLittleEndian)
@@ -1148,7 +1148,7 @@ TEST(cardano_buffer_write_int32_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int32_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int32_le, serializesToLittleEndian)
@@ -1175,7 +1175,7 @@ TEST(cardano_buffer_write_int64_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int64_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int64_le, serializesToLittleEndian)
@@ -1202,7 +1202,7 @@ TEST(cardano_buffer_write_float_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_float_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_float_le, serializesToLittleEndian)
@@ -1229,7 +1229,7 @@ TEST(cardano_buffer_write_double_le, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_double_le(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_double_le, serializesToLittleEndian)
@@ -1256,7 +1256,7 @@ TEST(cardano_buffer_write_uint16_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint16_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint16_be, serializesToLittleEndian)
@@ -1283,7 +1283,7 @@ TEST(cardano_buffer_write_uint32_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint32_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint32_be, serializesToLittleEndian)
@@ -1310,7 +1310,7 @@ TEST(cardano_buffer_write_uint64_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_uint64_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_uint64_be, serializesToLittleEndian)
@@ -1337,7 +1337,7 @@ TEST(cardano_buffer_write_int16_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int16_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int16_be, serializesToLittleEndian)
@@ -1364,7 +1364,7 @@ TEST(cardano_buffer_write_int32_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int32_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int32_be, serializesToLittleEndian)
@@ -1391,7 +1391,7 @@ TEST(cardano_buffer_write_int64_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_int64_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_int64_be, serializesToLittleEndian)
@@ -1418,7 +1418,7 @@ TEST(cardano_buffer_write_float_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_float_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_float_be, serializesToLittleEndian)
@@ -1445,7 +1445,7 @@ TEST(cardano_buffer_write_double_be, bufferIsNullResultsInError)
   cardano_error_t result = cardano_buffer_write_double_be(nullptr, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_write_double_be, serializesToLittleEndian)
@@ -1475,7 +1475,7 @@ TEST(cardano_buffer_read_uint16_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint16_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint16_le, valueIsNull)
@@ -1487,7 +1487,7 @@ TEST(cardano_buffer_read_uint16_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint16_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1517,7 +1517,7 @@ TEST(cardano_buffer_read_uint32_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint32_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint32_le, valueIsNull)
@@ -1529,7 +1529,7 @@ TEST(cardano_buffer_read_uint32_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint32_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1559,7 +1559,7 @@ TEST(cardano_buffer_read_uint64_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint64_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint64_le, valueIsNull)
@@ -1571,7 +1571,7 @@ TEST(cardano_buffer_read_uint64_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint64_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1601,7 +1601,7 @@ TEST(cardano_buffer_read_int16_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int16_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int16_le, valueIsNull)
@@ -1613,7 +1613,7 @@ TEST(cardano_buffer_read_int16_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int16_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1643,7 +1643,7 @@ TEST(cardano_buffer_read_int32_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int32_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int32_le, valueIsNull)
@@ -1655,7 +1655,7 @@ TEST(cardano_buffer_read_int32_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int32_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1685,7 +1685,7 @@ TEST(cardano_buffer_read_int64_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int64_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int64_le, valueIsNull)
@@ -1697,7 +1697,7 @@ TEST(cardano_buffer_read_int64_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int64_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1727,7 +1727,7 @@ TEST(cardano_buffer_read_float_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_float_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_float_le, valueIsNull)
@@ -1739,7 +1739,7 @@ TEST(cardano_buffer_read_float_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_float_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1769,7 +1769,7 @@ TEST(cardano_buffer_read_double_le, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_double_le(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_double_le, valueIsNull)
@@ -1781,7 +1781,7 @@ TEST(cardano_buffer_read_double_le, valueIsNull)
   cardano_error_t result = cardano_buffer_read_double_le(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1811,7 +1811,7 @@ TEST(cardano_buffer_read_uint16_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint16_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint16_be, valueIsNull)
@@ -1823,7 +1823,7 @@ TEST(cardano_buffer_read_uint16_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint16_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1853,7 +1853,7 @@ TEST(cardano_buffer_read_uint32_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint32_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint32_be, valueIsNull)
@@ -1865,7 +1865,7 @@ TEST(cardano_buffer_read_uint32_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint32_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1895,7 +1895,7 @@ TEST(cardano_buffer_read_uint64_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_uint64_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_uint64_be, valueIsNull)
@@ -1907,7 +1907,7 @@ TEST(cardano_buffer_read_uint64_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_uint64_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1937,7 +1937,7 @@ TEST(cardano_buffer_read_int16_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int16_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int16_be, valueIsNull)
@@ -1949,7 +1949,7 @@ TEST(cardano_buffer_read_int16_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int16_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -1979,7 +1979,7 @@ TEST(cardano_buffer_read_int32_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int32_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int32_be, valueIsNull)
@@ -1991,7 +1991,7 @@ TEST(cardano_buffer_read_int32_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int32_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -2021,7 +2021,7 @@ TEST(cardano_buffer_read_int64_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_int64_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_int64_be, valueIsNull)
@@ -2033,7 +2033,7 @@ TEST(cardano_buffer_read_int64_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_int64_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -2063,7 +2063,7 @@ TEST(cardano_buffer_read_float_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_float_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_float_be, valueIsNull)
@@ -2075,7 +2075,7 @@ TEST(cardano_buffer_read_float_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_float_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -2105,7 +2105,7 @@ TEST(cardano_buffer_read_double_be, bufferIsNull)
   cardano_error_t result = cardano_buffer_read_double_be(nullptr, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_read_double_be, valueIsNull)
@@ -2117,7 +2117,7 @@ TEST(cardano_buffer_read_double_be, valueIsNull)
   cardano_error_t result = cardano_buffer_read_double_be(buffer, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_buffer_unref(&buffer);
 }
 
@@ -2210,7 +2210,7 @@ TEST(cardano_buffer_write, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write(buffer, data, sizeof(data));
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2230,7 +2230,7 @@ TEST(cardano_buffer_write_uint16_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint16_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2250,7 +2250,7 @@ TEST(cardano_buffer_write_uint32_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint32_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2270,7 +2270,7 @@ TEST(cardano_buffer_write_uint64_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint64_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2290,7 +2290,7 @@ TEST(cardano_buffer_write_int16_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int16_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2310,7 +2310,7 @@ TEST(cardano_buffer_write_int32_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int32_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2330,7 +2330,7 @@ TEST(cardano_buffer_write_int64_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int64_le(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2350,7 +2350,7 @@ TEST(cardano_buffer_write_float_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_float_le(buffer, 1.0f);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2370,7 +2370,7 @@ TEST(cardano_buffer_write_double_le, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_double_le(buffer, 1.0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2390,7 +2390,7 @@ TEST(cardano_buffer_write_uint16_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint16_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2410,7 +2410,7 @@ TEST(cardano_buffer_write_uint32_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint32_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2430,7 +2430,7 @@ TEST(cardano_buffer_write_uint64_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_uint64_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2450,7 +2450,7 @@ TEST(cardano_buffer_write_int16_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int16_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2470,7 +2470,7 @@ TEST(cardano_buffer_write_int32_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int32_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2490,7 +2490,7 @@ TEST(cardano_buffer_write_int64_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_int64_be(buffer, 1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2510,7 +2510,7 @@ TEST(cardano_buffer_write_float_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_float_be(buffer, 1.0f);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2530,7 +2530,7 @@ TEST(cardano_buffer_write_double_be, returnsNullIfMemoryAllocationFails)
   cardano_error_t result = cardano_buffer_write_double_be(buffer, 1.0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2547,7 +2547,7 @@ TEST(cardano_buffer_read_uint16_le, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint16_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2563,7 +2563,7 @@ TEST(cardano_buffer_read_uint32_le, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint32_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2579,7 +2579,7 @@ TEST(cardano_buffer_read_uint64_le, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint64_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2595,7 +2595,7 @@ TEST(cardano_buffer_read_int16_le, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int16_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2611,7 +2611,7 @@ TEST(cardano_buffer_read_int32_le, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int32_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2627,7 +2627,7 @@ TEST(cardano_buffer_read_int64_le, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int64_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2643,7 +2643,7 @@ TEST(cardano_buffer_read_float_le, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_float_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2659,7 +2659,7 @@ TEST(cardano_buffer_read_double_le, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_double_le(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2675,7 +2675,7 @@ TEST(cardano_buffer_read_uint16_be, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint16_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2691,7 +2691,7 @@ TEST(cardano_buffer_read_uint32_be, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint32_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2707,7 +2707,7 @@ TEST(cardano_buffer_read_uint64_be, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_uint64_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2723,7 +2723,7 @@ TEST(cardano_buffer_read_int16_be, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int16_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2739,7 +2739,7 @@ TEST(cardano_buffer_read_int32_be, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int32_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2755,7 +2755,7 @@ TEST(cardano_buffer_read_int64_be, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_int64_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2771,7 +2771,7 @@ TEST(cardano_buffer_read_float_be, returnsBufferInsufficientIfTriesToReadMoreTha
   cardano_error_t result = cardano_buffer_read_float_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2787,7 +2787,7 @@ TEST(cardano_buffer_read_double_be, returnsBufferInsufficientIfTriesToReadMoreTh
   cardano_error_t result = cardano_buffer_read_double_be(buffer, &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(result, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2802,7 +2802,7 @@ TEST(cardano_buffer_copy_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_buffer_copy_bytes(buffer, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_buffer_copy_bytes, returnsErrorIfBufferLengthIsZero)
@@ -2815,7 +2815,7 @@ TEST(cardano_buffer_copy_bytes, returnsErrorIfBufferLengthIsZero)
   cardano_error_t error = cardano_buffer_copy_bytes(buffer, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2831,7 +2831,7 @@ TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferLengthIsGreaterThanBufferLen
   cardano_error_t error = cardano_buffer_copy_bytes(buffer, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2848,7 +2848,7 @@ TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferLengthIsZero)
   cardano_error_t error = cardano_buffer_copy_bytes(buffer, &dest_buffer[0], 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_buffer_unref(&buffer);
@@ -2864,7 +2864,7 @@ TEST(cardano_buffer_copy_bytes, returnsErrorIfbufferIsNull)
   cardano_error_t error = cardano_buffer_copy_bytes(buffer, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&buffer);

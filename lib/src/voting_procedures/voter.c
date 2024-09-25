@@ -81,20 +81,20 @@ cardano_voter_new(const cardano_voter_type_t type, cardano_credential_t* credent
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
     *voter = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *voter = _cardano_malloc(sizeof(cardano_voter_t));
 
   if (*voter == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*voter)->base.deallocator   = cardano_voter_deallocate;
@@ -113,13 +113,13 @@ cardano_voter_from_cbor(cardano_cbor_reader_t* reader, cardano_voter_t** voter)
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *voter = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "Voter";
@@ -235,12 +235,12 @@ cardano_voter_to_cbor(
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, VOTER_ARRAY_SIZE);
@@ -250,7 +250,7 @@ cardano_voter_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, voter->type);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voter->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -290,12 +290,12 @@ cardano_voter_set_credential(cardano_voter_t* voter, cardano_credential_t* crede
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
@@ -310,12 +310,12 @@ cardano_voter_get_type(const cardano_voter_t* voter, cardano_voter_type_t* type)
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = voter->type;
@@ -328,7 +328,7 @@ cardano_voter_set_type(cardano_voter_t* voter, const cardano_voter_type_t type)
 {
   if (voter == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   voter->type = type;

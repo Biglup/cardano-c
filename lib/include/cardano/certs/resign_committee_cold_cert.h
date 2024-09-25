@@ -62,7 +62,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *                                        when it is no longer needed using the appropriate unref function.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if any input pointers are NULL).
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -145,7 +145,7 @@ cardano_resign_committee_cold_cert_from_cbor(cardano_cbor_reader_t* reader, card
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p resign_committee_cold or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -219,7 +219,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_resign_committee_cold_cert_get_cred
  * \param[in] credential A pointer to an initialized \ref cardano_credential_t object representing the committee's cold credential.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the committee cold credential was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
  *         input pointers are NULL.
  *
  * Usage Example:
@@ -284,7 +284,7 @@ CARDANO_EXPORT cardano_anchor_t* cardano_resign_committee_cold_cert_get_anchor(c
  *                    to the anchor.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the anchor
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:

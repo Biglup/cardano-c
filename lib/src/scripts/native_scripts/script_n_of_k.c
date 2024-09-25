@@ -84,19 +84,19 @@ cardano_script_n_of_k_new(cardano_native_script_list_t* native_scripts, const si
 {
   if (native_scripts == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_script_n_of_k_t* data = _cardano_malloc(sizeof(cardano_script_n_of_k_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_native_script_list_ref(native_scripts);
@@ -118,12 +118,12 @@ cardano_script_n_of_k_from_cbor(cardano_cbor_reader_t* reader, cardano_script_n_
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "script_n_of_k";
@@ -190,12 +190,12 @@ cardano_script_n_of_k_to_cbor(
 {
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 3);
@@ -205,14 +205,14 @@ cardano_script_n_of_k_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_n_of_k->type);
+  result = cardano_cbor_writer_write_uint(writer, script_n_of_k->type);
 
   if (result != CARDANO_SUCCESS)
   {
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_n_of_k->required);
+  result = cardano_cbor_writer_write_uint(writer, script_n_of_k->required);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -229,12 +229,12 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
 {
   if (json == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (native_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   struct json_object* json_object = json_tokener_parse(json);
@@ -302,7 +302,7 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
     // LCOV_EXCL_START
     json_object_put(json_object);
 
-    return CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+    return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
     // LCOV_EXCL_STOP
   }
 
@@ -330,7 +330,7 @@ cardano_script_n_of_k_set_required(cardano_script_n_of_k_t* script_n_of_k, size_
 {
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   script_n_of_k->required = required;
@@ -356,12 +356,12 @@ cardano_script_n_of_k_get_scripts(
 {
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_native_script_list_ref(script_n_of_k->scripts);
@@ -378,12 +378,12 @@ cardano_script_n_of_k_set_scripts(
 {
   if (script_n_of_k == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_native_script_list_ref(list);

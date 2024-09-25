@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ALLOCATORS_H
-#define CARDANO_ALLOCATORS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -113,4 +113,4 @@ CARDANO_EXPORT void cardano_set_allocators(_cardano_malloc_t custom_malloc, _car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ALLOCATORS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_H

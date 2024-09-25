@@ -81,12 +81,12 @@ TEST(cardano_pool_voting_thresholds_new, returnErrorIfFirstParamIsNull)
   cardano_pool_voting_thresholds_t* pool_voting_thresholds = nullptr;
 
   // Assert
-  EXPECT_EQ(cardano_pool_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_pool_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, &pool_voting_thresholds), CARDANO_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, &pool_voting_thresholds), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new(nullptr, nullptr, nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, nullptr, &pool_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr, &pool_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_voting_thresholds_new((cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", (cardano_unit_interval_t*)"", nullptr, &pool_voting_thresholds), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_new, returnsErrorIfMemoryAllocationFails)
@@ -112,7 +112,7 @@ TEST(cardano_pool_voting_thresholds_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_pool_voting_thresholds_new(motion_no_confidence, committee_normal, committee_no_confidence, hard_fork_initiation, security_relevant_param, &pool_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -157,7 +157,7 @@ TEST(cardano_pool_voting_thresholds_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_voting_thresholds_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -172,7 +172,7 @@ TEST(cardano_pool_voting_thresholds_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_pool_voting_thresholds_to_cbor(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -301,7 +301,7 @@ TEST(cardano_pool_voting_thresholds_from_cbor, returnErrorIfGivenNull)
   cardano_error_t error = cardano_pool_voting_thresholds_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -316,7 +316,7 @@ TEST(cardano_pool_voting_thresholds_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_pool_voting_thresholds_from_cbor(nullptr, &pool_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_ref, increasesTheReferenceCount)
@@ -498,7 +498,7 @@ TEST(cardano_pool_voting_thresholds_get_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_get_motion_no_confidence(pool_voting_thresholds, &motion_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_get_motion_no_confidence, returnsErrorIfGivenANullPtrForTheMotion)
@@ -510,7 +510,7 @@ TEST(cardano_pool_voting_thresholds_get_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_get_motion_no_confidence(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -551,7 +551,7 @@ TEST(cardano_pool_voting_thresholds_get_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_pool_voting_thresholds_get_committee_normal(pool_voting_thresholds, &committee_normal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_get_committee_normal, returnsErrorIfGivenANullPtrForTheCommitteeNormal)
@@ -563,7 +563,7 @@ TEST(cardano_pool_voting_thresholds_get_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_pool_voting_thresholds_get_committee_normal(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -604,7 +604,7 @@ TEST(cardano_pool_voting_thresholds_get_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_get_committee_no_confidence(pool_voting_thresholds, &committee_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_get_committee_no_confidence, returnsErrorIfGivenANullPtrForTheCommitteeNoConfidence)
@@ -616,7 +616,7 @@ TEST(cardano_pool_voting_thresholds_get_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_get_committee_no_confidence(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -657,7 +657,7 @@ TEST(cardano_pool_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_get_hard_fork_initiation(pool_voting_thresholds, &hard_fork_initiation);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGivenANullPtrForTheHardForkInitiation)
@@ -669,7 +669,7 @@ TEST(cardano_pool_voting_thresholds_get_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_get_hard_fork_initiation(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -710,7 +710,7 @@ TEST(cardano_pool_voting_thresholds_get_security_relevant_param, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_get_security_relevant_param(pool_voting_thresholds, &security_relevant_param);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_get_security_relevant_param, returnsErrorIfGivenANullPtrForThePpNetworkGroup)
@@ -722,7 +722,7 @@ TEST(cardano_pool_voting_thresholds_get_security_relevant_param, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_get_security_relevant_param(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -766,7 +766,7 @@ TEST(cardano_pool_voting_thresholds_set_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_set_motion_no_confidence(pool_voting_thresholds, motion_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_set_motion_no_confidence, returnsErrorIfGivenANullPtrForTheMotionNoConfidence)
@@ -778,7 +778,7 @@ TEST(cardano_pool_voting_thresholds_set_motion_no_confidence, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_set_motion_no_confidence(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -822,7 +822,7 @@ TEST(cardano_pool_voting_thresholds_set_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_pool_voting_thresholds_set_committee_normal(pool_voting_thresholds, committee_normal);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_set_committee_normal, returnsErrorIfGivenANullPtrForTheCommitteeNormal)
@@ -834,7 +834,7 @@ TEST(cardano_pool_voting_thresholds_set_committee_normal, returnsErrorIfGivenANu
   cardano_error_t error = cardano_pool_voting_thresholds_set_committee_normal(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -878,7 +878,7 @@ TEST(cardano_pool_voting_thresholds_set_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_set_committee_no_confidence(pool_voting_thresholds, committee_no_confidence);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_set_committee_no_confidence, returnsErrorIfGivenANullPtrForTheCommitteeNoConfidence)
@@ -890,7 +890,7 @@ TEST(cardano_pool_voting_thresholds_set_committee_no_confidence, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_set_committee_no_confidence(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -934,7 +934,7 @@ TEST(cardano_pool_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_set_hard_fork_initiation(pool_voting_thresholds, hard_fork_initiation);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGivenANullPtrForTheHardForkInitiation)
@@ -946,7 +946,7 @@ TEST(cardano_pool_voting_thresholds_set_hard_fork_initiation, returnsErrorIfGive
   cardano_error_t error = cardano_pool_voting_thresholds_set_hard_fork_initiation(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -990,7 +990,7 @@ TEST(cardano_pool_voting_thresholds_set_security_relevant_param, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_set_security_relevant_param(pool_voting_thresholds, security_relevant_param);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_voting_thresholds_set_security_relevant_param, returnsErrorIfGivenANullPtrForThePpNetworkGroup)
@@ -1002,7 +1002,7 @@ TEST(cardano_pool_voting_thresholds_set_security_relevant_param, returnsErrorIfG
   cardano_error_t error = cardano_pool_voting_thresholds_set_security_relevant_param(pool_voting_thresholds, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_GOVERNANCE_ACTION_ID_H
-#define CARDANO_GOVERNANCE_ACTION_ID_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H
 
 /* INCLUDES ******************************************************************/
 
@@ -239,7 +239,7 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p governance_action_id or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -470,7 +470,7 @@ cardano_governance_action_id_get_index(const cardano_governance_action_id_t* gov
  * \param[in,out] governance_action_id A pointer to the \ref cardano_governance_action_id_t object whose index is to be set.
  * \param[in] index The new index of the governance action id.
  *
- * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_POINTER_IS_NULL
+ * \return Returns \ref CARDANO_SUCCESS if the type was successfully set. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p governance_action_id pointer is NULL.
  *
  * Usage Example:
@@ -503,7 +503,7 @@ cardano_governance_action_id_set_index(cardano_governance_action_id_t* governanc
  *                 This parameter must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the hash was successfully set. If the \p governance_action_id or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         if the hash was successfully set. If the \p governance_action_id or \p hash is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -686,4 +686,4 @@ CARDANO_EXPORT const char* cardano_governance_action_id_get_last_error(const car
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_GOVERNANCE_ACTION_ID_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_GOVERNANCE_ACTION_ID_H

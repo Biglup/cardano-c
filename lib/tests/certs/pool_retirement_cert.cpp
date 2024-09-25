@@ -193,7 +193,7 @@ TEST(cardano_pool_retirement_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_from_cbor(nullptr, &pool_retirement_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_retirement_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -205,7 +205,7 @@ TEST(cardano_pool_retirement_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -246,7 +246,7 @@ TEST(cardano_pool_retirement_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -258,7 +258,7 @@ TEST(cardano_pool_retirement_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_to_cbor((cardano_pool_retirement_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -294,7 +294,7 @@ TEST(cardano_pool_retirement_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_new(nullptr, 0, &pool_retirement_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_retirement_cert_new, returnsErrorIfSecondArgIsNull)
@@ -311,7 +311,7 @@ TEST(cardano_pool_retirement_cert_new, returnsErrorIfSecondArgIsNull)
   result = cardano_pool_retirement_cert_new(hash, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -334,7 +334,7 @@ TEST(cardano_pool_retirement_cert_new, returnsErrorIfMemoryAllocationFails)
   result = cardano_pool_retirement_cert_new(hash, 0, &pool_retirement_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -448,7 +448,7 @@ TEST(cardano_pool_retirement_cert_set_pool_key_hash, returnsErrorIfCertIsNull)
   result = cardano_pool_retirement_cert_set_pool_key_hash(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -464,7 +464,7 @@ TEST(cardano_pool_retirement_cert_set_pool_key_hash, returnsErrorIfHashIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_set_pool_key_hash(cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_retirement_cert_unref(&cert);
@@ -524,7 +524,7 @@ TEST(cardano_pool_retirement_cert_set_epoch, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_retirement_cert_set_epoch(nullptr, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_retirement_cert_set_epoch, setsTheEpoch)

@@ -62,7 +62,7 @@ TEST(cardano_ipv6_new, returnsErrorIfIpBytesAreNull)
   cardano_error_t error = cardano_ipv6_new(nullptr, sizeof(IP_BYTES), &ipv6);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(ipv6, (cardano_ipv6_t*)nullptr);
 }
 
@@ -85,7 +85,7 @@ TEST(cardano_ipv6_new, returnsErrorIfIpIsNull)
   cardano_error_t error = cardano_ipv6_new(IP_BYTES, sizeof(IP_BYTES), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ipv6_new, returnsErrorIfmajorAllocationFails)
@@ -99,7 +99,7 @@ TEST(cardano_ipv6_new, returnsErrorIfmajorAllocationFails)
   cardano_error_t error = cardano_ipv6_new(IP_BYTES, sizeof(IP_BYTES), &ipv6);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(ipv6, (cardano_ipv6_t*)nullptr);
 
   // Cleanup
@@ -133,7 +133,7 @@ TEST(cardano_ipv6_from_string, returnsErrorIfIpIsNull)
   cardano_error_t error = cardano_ipv6_from_string(nullptr, 0, &ipv6);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(ipv6, (cardano_ipv6_t*)nullptr);
 }
 
@@ -168,7 +168,7 @@ TEST(cardano_ipv6_from_string, returnsErrorIfIpIsInvalid2)
   cardano_error_t error = cardano_ipv6_from_string("10.3.2", strlen("10.3.2"), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ipv6_from_string, returnsErrorIfMemoryAllocationFails)
@@ -182,7 +182,7 @@ TEST(cardano_ipv6_from_string, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_ipv6_from_string("0102:0304:0102:0304:0102:0304:0102:0304", strlen("0102:0304:0102:0304:0102:0304:0102:0304"), &ipv6);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(ipv6, (cardano_ipv6_t*)nullptr);
 
   // Cleanup
@@ -256,7 +256,7 @@ TEST(cardano_ipv6_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_ipv6_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -275,7 +275,7 @@ TEST(cardano_ipv6_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_ipv6_to_cbor(ipv6, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ipv6_unref(&ipv6);
@@ -310,7 +310,7 @@ TEST(cardano_ipv6_from_cbor, returnErrorIfIpIsNull)
   cardano_error_t error = cardano_ipv6_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -325,7 +325,7 @@ TEST(cardano_ipv6_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_ipv6_from_cbor(nullptr, &ipv6);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ipv6_from_cbor, returnErrorIfCborDataInvalidByteString)

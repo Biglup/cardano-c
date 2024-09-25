@@ -135,7 +135,7 @@ TEST(cardano_datum_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_datum_to_cbor(datum, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_datum_unref(&datum);
@@ -151,7 +151,7 @@ TEST(cardano_datum_to_cbor, returnsErrorIfDatumIsNull)
   cardano_error_t error = cardano_datum_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -290,7 +290,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t error = cardano_datum_from_cbor(nullptr, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_from_cbor, returnsErrorIfDatumIsNull)
@@ -302,7 +302,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfDatumIsNull)
   cardano_error_t error = cardano_datum_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -321,7 +321,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -342,7 +342,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -363,7 +363,7 @@ TEST(cardano_datum_from_cbor, returnsErrorIfMemoryAllocationFails3)
   cardano_error_t error = cardano_datum_from_cbor(reader, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -403,7 +403,7 @@ TEST(cardano_datum_new, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_datum_new_data_hash(nullptr, &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 }
 
@@ -425,7 +425,7 @@ TEST(cardano_datum_new, returnsErrorIfDatumIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -498,7 +498,7 @@ TEST(cardano_datum_new_data_hash_bytes, returnsErrorIfMemoryAllocationFails)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -529,7 +529,7 @@ TEST(cardano_datum_new_data_hash_bytes, returnsErrorIfEventualMemoryAllocationFa
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -549,7 +549,7 @@ TEST(cardano_datum_new_data_hash_bytes, returnsErrorIfHashIsNull)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 }
 
@@ -572,7 +572,7 @@ TEST(cardano_datum_new_data_hash_bytes, returnsErrorIfDatumIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -590,7 +590,7 @@ TEST(cardano_datum_new_data_hash_bytes, returnsErrorIfHashIsInvalid)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 }
 
@@ -774,7 +774,7 @@ TEST(cardano_datum_get_type, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_datum_get_type(nullptr, &type);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_get_type, returnsErrorIfTypeIsNull)
@@ -783,7 +783,7 @@ TEST(cardano_datum_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t error = cardano_datum_get_type((cardano_datum_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_set_hash, returnsErrorIfGivenANullPtr)
@@ -795,7 +795,7 @@ TEST(cardano_datum_set_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_datum_set_data_hash(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_set_hash, returnsErrorIfHashIsNull)
@@ -804,7 +804,7 @@ TEST(cardano_datum_set_hash, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_datum_set_data_hash((cardano_datum_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_get_hash_hex_size, returnsZeroIfGivenANullPtr)
@@ -834,7 +834,7 @@ TEST(cardano_datum_new_data_hash_hex, returnsErrorIfDatumIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_new_data_hash_hex, returnsErrorIfHashIsNull)
@@ -849,7 +849,7 @@ TEST(cardano_datum_new_data_hash_hex, returnsErrorIfHashIsNull)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_new_data_hash_hex, returnsErrorIfMemoryAllocationFails)
@@ -867,7 +867,7 @@ TEST(cardano_datum_new_data_hash_hex, returnsErrorIfMemoryAllocationFails)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -889,7 +889,7 @@ TEST(cardano_datum_new_data_hash_hex, returnsErrorIfEventualMemoryAllocationFail
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup
@@ -904,7 +904,7 @@ TEST(cardano_datum_new_inline_data, returnsErrorIfDatumIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_new_inline_data, returnsErrorIfDataIsNull)
@@ -918,7 +918,7 @@ TEST(cardano_datum_new_inline_data, returnsErrorIfDataIsNull)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_datum_new_inline_data, returnsErrorIfMemoryAllocationFails)
@@ -935,7 +935,7 @@ TEST(cardano_datum_new_inline_data, returnsErrorIfMemoryAllocationFails)
     &datum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(datum, (cardano_datum_t*)nullptr);
 
   // Cleanup

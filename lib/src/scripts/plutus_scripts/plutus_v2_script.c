@@ -109,24 +109,24 @@ cardano_plutus_v2_script_new_bytes(
 {
   if (bytes == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size == 0U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_v2_script_t* data = cardano_plutus_v2_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   const cardano_error_t error = cardano_buffer_write(data->compiled_code, bytes, size);
@@ -152,24 +152,24 @@ cardano_plutus_v2_script_new_bytes_from_hex(
 {
   if (hex == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size == 0U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_v2_script_t* data = cardano_plutus_v2_script_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_buffer_t* buffer = cardano_buffer_from_hex(hex, size);
@@ -177,7 +177,7 @@ cardano_plutus_v2_script_new_bytes_from_hex(
   if (buffer == NULL)
   {
     cardano_plutus_v2_script_unref(&data);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t error = cardano_buffer_write(data->compiled_code, cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
@@ -202,12 +202,12 @@ cardano_plutus_v2_script_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* compiled_code = NULL;
@@ -236,12 +236,12 @@ cardano_plutus_v2_script_to_cbor(
 {
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_cbor_writer_write_bytestring(
@@ -257,12 +257,12 @@ cardano_plutus_v2_script_to_raw_bytes(
 {
   if (plutus_v2_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (compiled_script == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_ref(plutus_v2_script->compiled_code);

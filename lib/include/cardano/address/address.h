@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ADDRESS_H
-#define CARDANO_ADDRESS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -179,8 +179,8 @@ CARDANO_EXPORT size_t cardano_address_get_bytes_size(
  *                  as the value returned by \ref cardano_address_get_bytes_size for successful serialization.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the buffer \p data
- *         is too small, returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE. If \p address or \p data is NULL,
- *         returns \ref CARDANO_POINTER_IS_NULL.
+ *         is too small, returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE. If \p address or \p data is NULL,
+ *         returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -256,8 +256,8 @@ CARDANO_EXPORT const byte_t* cardano_address_get_bytes(
  *                     when it is no longer needed using \ref cardano_address_unref.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address is successfully created from the string. Returns
- *         \ref CARDANO_INVALID_ADDRESS_FORMAT if the string is not a valid address format. If the \p data is
- *         NULL or \p address is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the string is not a valid address format. If the \p data is
+ *         NULL or \p address is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -338,7 +338,7 @@ CARDANO_EXPORT size_t cardano_address_get_string_size(const cardano_address_t* a
  *                 returned by \ref cardano_address_get_string_size to ensure successful serialization.
  *
  * \return Returns \ref CARDANO_SUCCESS if the conversion is successful. If the buffer is too small, returns
- *         \ref CARDANO_INSUFFICIENT_BUFFER_SIZE. If the \p address or \p data is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE. If the \p address or \p data is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -508,7 +508,7 @@ CARDANO_EXPORT bool cardano_address_is_valid(const char* data, size_t size);
  *                  determination. This parameter cannot be NULL.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address type was successfully determined.
- *         Returns \ref CARDANO_POINTER_IS_NULL if the input address or type pointer is NULL.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the input address or type pointer is NULL.
  *         Returns other error codes as defined in \ref cardano_error_t if the address type cannot be determined
  *         due to the address not conforming to any known Cardano address format.
  *
@@ -556,7 +556,7 @@ CARDANO_EXPORT cardano_error_t cardano_address_get_type(
  *                        extraction. This parameter cannot be NULL.
  *
  * \return Returns \ref CARDANO_SUCCESS if the network ID was successfully retrieved.
- *         Returns \ref CARDANO_POINTER_IS_NULL if the input address or network_id pointer is NULL.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the input address or network_id pointer is NULL.
  *         Returns other error codes as defined in \ref cardano_error_t if the network ID cannot be retrieved due to
  *         malformed or unrecognized address formats.
  *
@@ -890,4 +890,4 @@ CARDANO_EXPORT const char* cardano_address_get_last_error(const cardano_address_
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ADDRESS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_H

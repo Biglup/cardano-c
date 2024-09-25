@@ -730,7 +730,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool bool_value = true;
-  result          = cardano_cbor_reader_read_boolean(reader, &bool_value);
+  result          = cardano_cbor_reader_read_bool(reader, &bool_value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(bool_value, false);
 
@@ -1308,7 +1308,7 @@ TEST(cardano_cbor_reader_read_null, canReadNullValues)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
+TEST(cardano_cbor_reader_read_bool, canReadBooleanValues)
 {
   const char* cbor_hex = "f4f5";
 
@@ -1322,7 +1322,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool value = false;
-  result     = cardano_cbor_reader_read_boolean(reader, &value);
+  result     = cardano_cbor_reader_read_bool(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(value, false);
 
@@ -1330,7 +1330,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
-  result = cardano_cbor_reader_read_boolean(reader, &value);
+  result = cardano_cbor_reader_read_bool(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(value, true);
 
@@ -1802,7 +1802,7 @@ TEST(cardano_cbor_reader_get_bytes_remaining, returnsNullIfReaderIsNull)
   size_t size = 0;
 
   cardano_error_t result = cardano_cbor_reader_get_bytes_remaining(nullptr, &size);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_reader_get_bytes_remaining, returnsNullIfSizeIsNull)
@@ -1812,7 +1812,7 @@ TEST(cardano_cbor_reader_get_bytes_remaining, returnsNullIfSizeIsNull)
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   cardano_error_t result = cardano_cbor_reader_get_bytes_remaining(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1837,7 +1837,7 @@ TEST(cardano_cbor_reader_get_remainder_bytes, returnsNullIfReaderIsNull)
   cardano_buffer_t* buffer = nullptr;
 
   cardano_error_t result = cardano_cbor_reader_get_remainder_bytes(nullptr, &buffer);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_reader_get_remainder_bytes, returnErrorIfMemoryAllocationFails)
@@ -1851,7 +1851,7 @@ TEST(cardano_cbor_reader_get_remainder_bytes, returnErrorIfMemoryAllocationFails
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   cardano_error_t result = cardano_cbor_reader_get_remainder_bytes(reader, &buffer);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_cbor_reader_unref(&reader);
   cardano_buffer_unref(&buffer);
@@ -1862,7 +1862,7 @@ TEST(cardano_cbor_reader_read_encoded_value, returnNullIfReaderIsNull)
   cardano_buffer_t* buffer = nullptr;
 
   cardano_error_t result = cardano_cbor_reader_read_encoded_value(nullptr, &buffer);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_reader_read_encoded_value, returnNullIfBufferIsNull)
@@ -1872,7 +1872,7 @@ TEST(cardano_cbor_reader_read_encoded_value, returnNullIfBufferIsNull)
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   cardano_error_t result = cardano_cbor_reader_read_encoded_value(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -1880,7 +1880,7 @@ TEST(cardano_cbor_reader_read_encoded_value, returnNullIfBufferIsNull)
 TEST(cardano_cbor_reader_skip_value, returnsNullIfReaderIsNull)
 {
   cardano_error_t result = cardano_cbor_reader_skip_value(nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_reader_get_remainder_bytes, returnsNullIfBufferIsNull)
@@ -1890,7 +1890,7 @@ TEST(cardano_cbor_reader_get_remainder_bytes, returnsNullIfBufferIsNull)
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   cardano_error_t result = cardano_cbor_reader_get_remainder_bytes(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -2146,7 +2146,7 @@ TEST(_cbor_reader_peek_tag, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_peek_tag(nullptr, &tag);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_tag, canReadTag)
@@ -2171,7 +2171,7 @@ TEST(_cbor_reader_read_tag, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_read_tag(nullptr, &tag);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_boolean, returnErrorIfInvalidInitialByte)
@@ -2272,7 +2272,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfBufferIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0, &value, &bytes_read);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIs8BitsAndBufferTooSmall)
@@ -2357,7 +2357,7 @@ TEST(_cbor_reader_read_double, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_read_double(reader, &value);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_double, returnErrorIfValueIsNull)
@@ -2367,7 +2367,7 @@ TEST(_cbor_reader_read_double, returnErrorIfValueIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_read_double(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2436,7 +2436,7 @@ TEST(_cbor_reader_read_int, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_read_int(reader, &value);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_int, returnErrorIfMajorTypeIsNotAnInt)
@@ -2461,7 +2461,7 @@ TEST(_cbor_reader_read_uint, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_read_uint(reader, &value);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_uint, returnErrorIfMajorTypeIsNotAnInt)
@@ -2498,7 +2498,7 @@ TEST(_cbor_reader_read_start_indefinite_length_string, returnErrorIfValueIsNull)
 {
   // Act
   cardano_error_t result = _cbor_reader_read_start_indefinite_length_string(nullptr, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_read_start_indefinite_length_string, returnsErrorIfReaderIsEmpty)
@@ -2581,7 +2581,7 @@ TEST(_cbor_reader_read_indefinite_length_concatenated, returnsErrorIfEventualMem
 
   // Act
   cardano_error_t result = _cbor_reader_read_indefinite_length_concatenated(reader, &buffer, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2632,7 +2632,7 @@ TEST(_cbor_reader_read_start_array, returnsErrorIfMemoryAllocationFails)
   // Act
   int64_t         size   = 0;
   cardano_error_t result = _cbor_reader_read_start_array(reader, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2650,7 +2650,7 @@ TEST(_cbor_reader_read_start_array, returnsErrorIfEventualMemoryAllocationFails)
   // Act
   int64_t         size   = 0;
   cardano_error_t result = _cbor_reader_read_start_array(reader, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2668,7 +2668,7 @@ TEST(_cbor_reader_read_start_array, returnsErrorIfMemoryAllocationFailsReadingIn
   // Act
   int64_t         size   = 0;
   cardano_error_t result = _cbor_reader_read_start_array(reader, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2713,7 +2713,7 @@ TEST(_cbor_reader_read_start_map, returnsErrorIfMemoryAllocationFails)
   // Act
   int64_t         size   = 0;
   cardano_error_t result = _cbor_reader_read_start_map(reader, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2747,7 +2747,7 @@ TEST(_cbor_reader_read_start_map, returnsErrorIfEventualMemoryAllocationFails)
   // Act
   int64_t         size   = 0;
   cardano_error_t result = _cbor_reader_read_start_map(reader, &size);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -2918,7 +2918,7 @@ TEST(_cbor_reader_peek_state, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_peek_state(nullptr, &state);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(_cbor_reader_peek_state, returnErrorIfStateIsNull)
@@ -2928,7 +2928,7 @@ TEST(_cbor_reader_peek_state, returnErrorIfStateIsNull)
 
   // Act
   cardano_error_t result = _cbor_reader_peek_state(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3188,7 +3188,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfReaderIsNull)
   // Act
   cardano_cbor_reader_t* clone = NULL;
 
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_POINTER_IS_NULL);
 
   EXPECT_EQ(clone, nullptr);
 }
@@ -3199,7 +3199,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfCloneIsNull)
   cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
 
   // Act
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3215,7 +3215,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_cbor_reader_t* clone = NULL;
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3232,7 +3232,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails2)
 
   // Act
   cardano_cbor_reader_t* clone = NULL;
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3249,7 +3249,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails3)
 
   // Act
   cardano_cbor_reader_t* clone = NULL;
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3266,7 +3266,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails4)
 
   // Act
   cardano_cbor_reader_t* clone = NULL;
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3286,7 +3286,7 @@ TEST(cardano_cbor_reader_clone, returnErrorIfMemoryAllocationFails5)
   EXPECT_EQ(cardano_cbor_reader_read_start_array(reader, &size), CARDANO_SUCCESS);
 
   cardano_cbor_reader_t* clone = NULL;
-  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_reader_clone(reader, &clone), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3300,7 +3300,7 @@ TEST(cardano_cbor_reader_read_bigint, returnErrorIfReaderIsNull)
 
   // Act
   cardano_error_t result = cardano_cbor_reader_read_bigint(reader, &bigint);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_reader_read_bigint, returnErrorIfBufferIsNull)
@@ -3310,7 +3310,7 @@ TEST(cardano_cbor_reader_read_bigint, returnErrorIfBufferIsNull)
 
   // Act
   cardano_error_t result = cardano_cbor_reader_read_bigint(reader, nullptr);
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3406,7 +3406,7 @@ TEST(cardano_cbor_reader_read_bigint, returnErrorWhenMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_cbor_reader_read_bigint(reader, &bigint);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -3426,7 +3426,7 @@ TEST(cardano_cbor_reader_read_bigint, returnErrorWhenMemoryAllocationFails2)
 
   // Act
   cardano_error_t result = cardano_cbor_reader_read_bigint(reader, &bigint);
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

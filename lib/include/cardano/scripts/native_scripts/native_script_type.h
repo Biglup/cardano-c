@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_NATIVE_SCRIPT_TYPE_H
-#define CARDANO_NATIVE_SCRIPT_TYPE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_TYPE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_TYPE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -84,4 +84,4 @@ CARDANO_EXPORT const char* cardano_native_script_type_to_string(cardano_native_s
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_NATIVE_SCRIPT_TYPE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_TYPE_H

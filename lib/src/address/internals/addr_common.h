@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ADDRESS_INTERNALS_COMMON_H
-#define CARDANO_ADDRESS_INTERNALS_COMMON_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_INTERNALS_COMMON_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_INTERNALS_COMMON_H
 
 /* INCLUDES ******************************************************************/
 
@@ -409,4 +409,4 @@ void _cardano_to_bech32_addr(
  */
 void _cardano_address_deallocate(void* object);
 
-#endif // CARDANO_ADDRESS_INTERNALS_COMMON_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_INTERNALS_COMMON_H

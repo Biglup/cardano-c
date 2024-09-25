@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BECH32_H
-#define CARDANO_BECH32_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BECH32_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BECH32_H
 
 /* INCLUDES ******************************************************************/
 
@@ -236,4 +236,4 @@ CARDANO_EXPORT cardano_error_t cardano_encoding_bech32_decode(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_BECH32_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BECH32_H

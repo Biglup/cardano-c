@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_STRING_SAFE_H
-#define CARDANO_STRING_SAFE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_STRING_SAFE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_STRING_SAFE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -58,4 +58,4 @@ cardano_safe_strlen(const char* str, size_t max_length);
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_STRING_SAFE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_STRING_SAFE_H

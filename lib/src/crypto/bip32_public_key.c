@@ -92,13 +92,13 @@ cardano_bip32_public_key_from_bytes(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *public_key = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length != BIP32_ED25519_PUBLIC_KEY_LENGTH)
@@ -112,7 +112,7 @@ cardano_bip32_public_key_from_bytes(
   if (bip32_public_key == NULL)
   {
     *public_key = NULL;
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   bip32_public_key->base.ref_count     = 1;
@@ -123,7 +123,7 @@ cardano_bip32_public_key_from_bytes(
   if (bip32_public_key->key_material == NULL)
   {
     _cardano_free(bip32_public_key);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *public_key = bip32_public_key;
@@ -139,13 +139,13 @@ cardano_bip32_public_key_from_hex(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *public_key = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_length != (BIP32_ED25519_PUBLIC_KEY_LENGTH * 2U))
@@ -159,7 +159,7 @@ cardano_bip32_public_key_from_hex(
   if (bip32_public_key == NULL)
   {
     *public_key = NULL;
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   bip32_public_key->base.ref_count     = 1;
@@ -170,7 +170,7 @@ cardano_bip32_public_key_from_hex(
   if (bip32_public_key->key_material == NULL)
   {
     _cardano_free(bip32_public_key);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *public_key = bip32_public_key;
@@ -227,21 +227,21 @@ cardano_bip32_public_key_derive(
 {
   if (derived_bip32_public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bip32_public_key == NULL)
   {
     *derived_bip32_public_key = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (indices == NULL)
   {
     *derived_bip32_public_key = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (indices_count == 0U)
@@ -311,13 +311,13 @@ cardano_bip32_public_key_to_ed25519_key(
 
   if (ed25519_public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (public_key == NULL)
   {
     *ed25519_public_key = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const byte_t* data = cardano_buffer_get_data(public_key->key_material);
@@ -345,7 +345,7 @@ cardano_bip32_public_key_to_bytes(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_copy_bytes(public_key->key_material, out_key_bytes, out_key_length);

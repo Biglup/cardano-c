@@ -93,14 +93,14 @@ cardano_single_host_addr_relay_new(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *single_host_addr_relay = _cardano_malloc(sizeof(cardano_single_host_addr_relay_t));
 
   if (*single_host_addr_relay == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*single_host_addr_relay)->base.deallocator   = cardano_single_host_addr_relay_deallocate;
@@ -117,7 +117,7 @@ cardano_single_host_addr_relay_new(
     if ((*single_host_addr_relay)->port == NULL)
     {
       cardano_single_host_addr_relay_unref(single_host_addr_relay);
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     *(*single_host_addr_relay)->port = *port;
@@ -143,13 +143,13 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *single_host_addr_relay = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "single_host_addr_relay";
@@ -304,12 +304,12 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -321,7 +321,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -339,7 +339,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
   }
   else
   {
-    cardano_error_t write_port_result = cardano_cbor_writer_write_unsigned_int(writer, *single_host_addr_relay->port);
+    cardano_error_t write_port_result = cardano_cbor_writer_write_uint(writer, *single_host_addr_relay->port);
 
     if (write_port_result != CARDANO_SUCCESS)
     {
@@ -407,7 +407,7 @@ cardano_single_host_addr_relay_set_port(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (port == NULL)
@@ -427,7 +427,7 @@ cardano_single_host_addr_relay_set_port(
 
     if (relay->port == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -443,12 +443,12 @@ cardano_single_host_addr_relay_get_ipv4(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_ipv4_ref(single_host_addr_relay->ipv4);
@@ -464,12 +464,12 @@ cardano_single_host_addr_relay_set_ipv4(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_ipv4_ref(ipv4);
@@ -486,12 +486,12 @@ cardano_single_host_addr_relay_get_ipv6(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_ipv6_ref(single_host_addr_relay->ipv6);
@@ -507,12 +507,12 @@ cardano_single_host_addr_relay_set_ipv6(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ipv6 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_ipv6_ref(ipv6);

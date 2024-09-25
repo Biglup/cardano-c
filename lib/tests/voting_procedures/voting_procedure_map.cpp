@@ -104,7 +104,7 @@ TEST(cardano_voting_procedure_map_new, returnsErrorIfVotingProcedureMapIsNull)
   cardano_error_t error = cardano_voting_procedure_map_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_map_new, returnsErrorIfMemoryAllocationFails)
@@ -118,7 +118,7 @@ TEST(cardano_voting_procedure_map_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_voting_procedure_map_new(&voting_procedure_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(voting_procedure_map, (cardano_voting_procedure_map_t*)nullptr);
 
   // Cleanup
@@ -136,7 +136,7 @@ TEST(cardano_voting_procedure_map_new, returnsErrorIfEventualMemoryAllocationFai
   cardano_error_t error = cardano_voting_procedure_map_new(&voting_procedure_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(voting_procedure_map, (cardano_voting_procedure_map_t*)nullptr);
 
   // Cleanup
@@ -311,7 +311,7 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfVotingProcedureMapIsNull)
   cardano_error_t error = cardano_voting_procedure_map_get(nullptr, (cardano_governance_action_id_t*)"", &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_map_get, returnsErrorIfDataIsNull)
@@ -326,7 +326,7 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfDataIsNull)
   error = cardano_voting_procedure_map_get(voting_procedure_map, (cardano_governance_action_id_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -344,7 +344,7 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfKeyIsNull)
   error = cardano_voting_procedure_map_get(voting_procedure_map, nullptr, (cardano_voting_procedure_t**)"");
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -376,7 +376,7 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfKeyNotFound)
   cardano_governance_action_id_unref(&find);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -439,7 +439,7 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfElementIsNull)
   error = cardano_voting_procedure_map_get(voting_procedure_map, key, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -455,7 +455,7 @@ TEST(cardano_voting_procedure_map_insert, returnsErrorIfVotingProcedureMapIsNull
   cardano_error_t error = cardano_voting_procedure_map_insert(nullptr, key, val);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&key);
@@ -476,7 +476,7 @@ TEST(cardano_voting_procedure_map_insert, returnsErrorIfKeyIsNull)
   error = cardano_voting_procedure_map_insert(voting_procedure_map, nullptr, val);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_unref(&val);
@@ -497,7 +497,7 @@ TEST(cardano_voting_procedure_map_insert, returnsErrorIfValueIsNull)
   error = cardano_voting_procedure_map_insert(voting_procedure_map, key, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&key);
@@ -522,7 +522,7 @@ TEST(cardano_voting_procedure_map_insert, returnsErrorIfMemoryAllocationFailes)
   error = cardano_voting_procedure_map_insert(voting_procedure_map, key, val);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -540,7 +540,7 @@ TEST(cardano_voting_procedure_map_get_keys, returnsErrorIfVotingProcedureMapIsNu
   cardano_error_t error = cardano_voting_procedure_map_get_keys(nullptr, &keys);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_map_get_keys, returnsErrorIfKeysIsNull)
@@ -555,7 +555,7 @@ TEST(cardano_voting_procedure_map_get_keys, returnsErrorIfKeysIsNull)
   error = cardano_voting_procedure_map_get_keys(voting_procedure_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -578,7 +578,7 @@ TEST(cardano_voting_procedure_map_get_keys, returnsErrorIfMemoryAllocationFails)
   error = cardano_voting_procedure_map_get_keys(voting_procedure_map, &keys);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(keys, (cardano_governance_action_id_list_t*)nullptr);
 
   // Cleanup
@@ -664,7 +664,7 @@ TEST(cardano_voting_procedure_map_get_values, returnsErrorIfVotingProcedureMapIs
   cardano_error_t error = cardano_voting_procedure_map_get_values(nullptr, &values);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_map_get_values, returnsErrorIfValuesIsNull)
@@ -679,7 +679,7 @@ TEST(cardano_voting_procedure_map_get_values, returnsErrorIfValuesIsNull)
   error = cardano_voting_procedure_map_get_values(voting_procedure_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_map_unref(&voting_procedure_map);
@@ -702,7 +702,7 @@ TEST(cardano_voting_procedure_map_get_values, returnsErrorIfMemoryAllocationFail
   error = cardano_voting_procedure_map_get_values(voting_procedure_map, &values);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(values, (cardano_voting_procedure_list_t*)nullptr);
 
   // Cleanup

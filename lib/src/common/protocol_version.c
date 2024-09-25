@@ -80,14 +80,14 @@ cardano_protocol_version_new(
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *protocol_version = _cardano_malloc(sizeof(cardano_protocol_version_t));
 
   if (*protocol_version == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*protocol_version)->base.deallocator   = cardano_protocol_version_deallocate;
@@ -105,13 +105,13 @@ cardano_protocol_version_from_cbor(cardano_cbor_reader_t* reader, cardano_protoc
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *protocol_version = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "protocol_version";
@@ -173,12 +173,12 @@ cardano_protocol_version_to_cbor(const cardano_protocol_version_t* protocol_vers
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -190,14 +190,14 @@ cardano_protocol_version_to_cbor(const cardano_protocol_version_t* protocol_vers
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, protocol_version->major);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, protocol_version->major);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, protocol_version->minor);
+  return cardano_cbor_writer_write_uint(writer, protocol_version->minor);
 }
 
 uint64_t
@@ -216,7 +216,7 @@ cardano_protocol_version_set_major(cardano_protocol_version_t* protocol_version,
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   protocol_version->major = major;
@@ -240,7 +240,7 @@ cardano_protocol_version_set_minor(cardano_protocol_version_t* protocol_version,
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   protocol_version->minor = minor;

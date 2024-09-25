@@ -103,14 +103,14 @@ cardano_pool_owners_new(cardano_pool_owners_t** pool_owners)
 {
   if (pool_owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_pool_owners_t* list = _cardano_malloc(sizeof(cardano_pool_owners_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -122,7 +122,7 @@ cardano_pool_owners_new(cardano_pool_owners_t** pool_owners)
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *pool_owners = list;
@@ -135,12 +135,12 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pool_owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_pool_owners_t* list   = NULL;
@@ -246,12 +246,12 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
 {
   if (pool_owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(pool_owners->array != NULL);
@@ -317,19 +317,19 @@ cardano_pool_owners_get(
 {
   if (pool_owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(pool_owners->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_blake2b_hash_t*)((void*)object);
@@ -342,12 +342,12 @@ cardano_pool_owners_add(cardano_pool_owners_t* pool_owners, cardano_blake2b_hash
 {
   if (pool_owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(pool_owners->array);
   const size_t new_size      = cardano_array_add(pool_owners->array, (cardano_object_t*)((void*)element));

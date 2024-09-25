@@ -228,7 +228,7 @@ TEST(cardano_vkey_witness_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_vkey_witness_from_cbor(nullptr, &vkey_witness);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vkey_witness_from_cbor, returnsErrorIfCertIsNull)
@@ -240,7 +240,7 @@ TEST(cardano_vkey_witness_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_vkey_witness_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -281,7 +281,7 @@ TEST(cardano_vkey_witness_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_vkey_witness_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -293,7 +293,7 @@ TEST(cardano_vkey_witness_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_vkey_witness_to_cbor((cardano_vkey_witness_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -327,7 +327,7 @@ TEST(cardano_vkey_witness_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_vkey_witness_new(nullptr, nullptr, &vkey_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vkey_witness_new, returnsErrorIfSecondArgIsNull)
@@ -338,7 +338,7 @@ TEST(cardano_vkey_witness_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_vkey_witness_new((cardano_ed25519_public_key_t*)"", nullptr, &vkey_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vkey_witness_new, returnsErrorIfWitnessArgIsNull)
@@ -348,7 +348,7 @@ TEST(cardano_vkey_witness_new, returnsErrorIfWitnessArgIsNull)
   cardano_error_t result = cardano_vkey_witness_new((cardano_ed25519_public_key_t*)"", (cardano_ed25519_signature_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -368,7 +368,7 @@ TEST(cardano_vkey_witness_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_vkey_witness_new(vk, sig, &vkey_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&vk);
@@ -486,7 +486,7 @@ TEST(cardano_vkey_witness_set_vkey, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_vkey_witness_set_vkey(nullptr, vkey);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&vkey);
@@ -501,7 +501,7 @@ TEST(cardano_vkey_witness_set_vkey, returnsErrorIfVkeyIsNull)
   cardano_error_t result = cardano_vkey_witness_set_vkey(vkey_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vkey_witness_unref(&vkey_witness);
@@ -560,7 +560,7 @@ TEST(cardano_vkey_witness_set_signature, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_vkey_witness_set_signature(nullptr, sig);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_signature_unref(&sig);
@@ -575,7 +575,7 @@ TEST(cardano_vkey_witness_set_signature, returnsErrorIfSignatureIsNull)
   cardano_error_t result = cardano_vkey_witness_set_signature(vkey_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vkey_witness_unref(&vkey_witness);

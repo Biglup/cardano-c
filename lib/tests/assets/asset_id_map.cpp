@@ -78,7 +78,7 @@ TEST(cardano_asset_id_map_new, returnsErrorIfAssetMapsIsNull)
   cardano_error_t error = cardano_asset_id_map_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_new, returnsErrorIfMemoryAllocationFails)
@@ -92,7 +92,7 @@ TEST(cardano_asset_id_map_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_asset_id_map_new(&asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id_map, (cardano_asset_id_map_t*)nullptr);
 
   // Cleanup
@@ -110,7 +110,7 @@ TEST(cardano_asset_id_map_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_asset_id_map_new(&asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(asset_id_map, (cardano_asset_id_map_t*)nullptr);
 
   // Cleanup
@@ -289,7 +289,7 @@ TEST(cardano_asset_id_map_insert, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_insert(nullptr, (cardano_asset_id_t*)"", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_insert, returnsErrorIfAssetNameIsNull)
@@ -304,7 +304,7 @@ TEST(cardano_asset_id_map_insert, returnsErrorIfAssetNameIsNull)
   error = cardano_asset_id_map_insert(asset_id_map, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -327,7 +327,7 @@ TEST(cardano_asset_id_map_insert, returnErrorIfMemoryAllocationFails)
   error = cardano_asset_id_map_insert(asset_id_map, asset_id, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -436,7 +436,7 @@ TEST(cardano_asset_id_map_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_get(nullptr, asset_id, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get, returnsErrorIfElementIsNull)
@@ -445,7 +445,7 @@ TEST(cardano_asset_id_map_get, returnsErrorIfElementIsNull)
   cardano_error_t error = cardano_asset_id_map_get((cardano_asset_id_map_t*)"", (cardano_asset_id_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get, returnsErrorIfAssetNameIsNull)
@@ -462,7 +462,7 @@ TEST(cardano_asset_id_map_get, returnsErrorIfAssetNameIsNull)
   error = cardano_asset_id_map_get(asset_id_map, nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -483,7 +483,7 @@ TEST(cardano_asset_id_map_get, returnsErrorIfElementNotFound)
   error = cardano_asset_id_map_get(asset_id_map, asset_id, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -574,7 +574,7 @@ TEST(cardano_asset_id_map_get_key_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_get_key_at(nullptr, 0, &asset_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_key_at, returnsErrorIfOutIsNull)
@@ -583,7 +583,7 @@ TEST(cardano_asset_id_map_get_key_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_asset_id_map_get_key_at((cardano_asset_id_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
@@ -600,7 +600,7 @@ TEST(cardano_asset_id_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_asset_id_map_get_key_at(asset_id_map, 0, &asset_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -615,7 +615,7 @@ TEST(cardano_asset_id_map_get_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_get_value_at(nullptr, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_value_at, returnsErrorIfOutIsNull)
@@ -624,7 +624,7 @@ TEST(cardano_asset_id_map_get_value_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_asset_id_map_get_value_at((cardano_asset_id_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -641,7 +641,7 @@ TEST(cardano_asset_id_map_get_value_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_asset_id_map_get_value_at(asset_id_map, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -688,7 +688,7 @@ TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_get_key_value_at(nullptr, 0, &asset_id, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfAssetNameIsNull)
@@ -700,7 +700,7 @@ TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfAssetNameIsNull)
   cardano_error_t error = cardano_asset_id_map_get_key_value_at((cardano_asset_id_map_t*)"", 0, nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfValueIsNull)
@@ -712,7 +712,7 @@ TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_asset_id_map_get_key_value_at((cardano_asset_id_map_t*)"", 0, &asset_id, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -730,7 +730,7 @@ TEST(cardano_asset_id_map_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_asset_id_map_get_key_value_at(asset_id_map, 0, &asset_id, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_asset_id_map_unref(&asset_id_map);
@@ -779,7 +779,7 @@ TEST(cardano_asset_id_map_get_keys, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_asset_id_map_get_keys(nullptr, &asset_ids);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_keys, returnsErrorIfOutIsNull)
@@ -788,7 +788,7 @@ TEST(cardano_asset_id_map_get_keys, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_asset_id_map_get_keys((cardano_asset_id_map_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_get_keys, returnsTheListOfKeys)
@@ -850,7 +850,7 @@ TEST(cardano_asset_id_map_add, returnsErrorIfLhsIsNull)
   cardano_error_t error = cardano_asset_id_map_add(lhs_asset_id_map, rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_add, returnsErrorIfRhsIsNull)
@@ -863,7 +863,7 @@ TEST(cardano_asset_id_map_add, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_asset_id_map_add((cardano_asset_id_map_t*)"", rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_add, returnsErrorIfOutIsNull)
@@ -876,7 +876,7 @@ TEST(cardano_asset_id_map_add, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_asset_id_map_add(lhs_asset_id_map, rhs_asset_id_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_add, returnsErrorIfMemoryAllocationFails)
@@ -899,7 +899,7 @@ TEST(cardano_asset_id_map_add, returnsErrorIfMemoryAllocationFails)
   error = cardano_asset_id_map_add(lhs_asset_id_map, rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_asset_id_map_unref(&lhs_asset_id_map);
@@ -1103,7 +1103,7 @@ TEST(cardano_asset_id_map_add, returnsErrorIfElementIsNull)
   error = cardano_asset_id_map_add(lhs_asset_id_map, rhs_asset_id_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_asset_id_map_unref(&lhs_asset_id_map);
@@ -1121,7 +1121,7 @@ TEST(cardano_asset_id_map_subtract, returnsErrorIfLhsIsNull)
   cardano_error_t error = cardano_asset_id_map_subtract(lhs_asset_id_map, rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_subtract, returnsErrorIfRhsIsNull)
@@ -1134,7 +1134,7 @@ TEST(cardano_asset_id_map_subtract, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_asset_id_map_subtract((cardano_asset_id_map_t*)"", rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_subtract, returnsErrorIfOutIsNull)
@@ -1147,7 +1147,7 @@ TEST(cardano_asset_id_map_subtract, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_asset_id_map_subtract(lhs_asset_id_map, rhs_asset_id_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_asset_id_map_subtract, returnsErrorIfMemoryAllocationFails)
@@ -1170,7 +1170,7 @@ TEST(cardano_asset_id_map_subtract, returnsErrorIfMemoryAllocationFails)
   error = cardano_asset_id_map_subtract(lhs_asset_id_map, rhs_asset_id_map, &result_asset_id_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_asset_id_map_unref(&lhs_asset_id_map);
@@ -1290,7 +1290,7 @@ TEST(cardano_asset_id_map_subtract, canSubtractTwoMapsAndSubtractsPositiveValues
   int64_t value2 = 0;
 
   error = cardano_asset_id_map_get(result_asset_id_map, asset_id1, &value1);
-  ASSERT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  ASSERT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   error = cardano_asset_id_map_get(result_asset_id_map, asset_id2, &value2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
@@ -1373,7 +1373,7 @@ TEST(cardano_asset_id_map_subtract, returnsErrorIfElementIsNull)
   error = cardano_asset_id_map_subtract(lhs_asset_id_map, rhs_asset_id_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_asset_id_map_unref(&lhs_asset_id_map);

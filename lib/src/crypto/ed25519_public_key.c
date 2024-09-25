@@ -87,13 +87,13 @@ cardano_ed25519_public_key_from_bytes(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *public_key = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length != crypto_sign_PUBLICKEYBYTES)
@@ -107,7 +107,7 @@ cardano_ed25519_public_key_from_bytes(
   if (ed25519_public_key == NULL)
   {
     *public_key = NULL;
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_public_key->base.ref_count     = 1;
@@ -120,7 +120,7 @@ cardano_ed25519_public_key_from_bytes(
     *public_key = NULL;
     _cardano_free(ed25519_public_key);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *public_key = ed25519_public_key;
@@ -136,13 +136,13 @@ cardano_ed25519_public_key_from_hex(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *public_key = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_length != (crypto_sign_PUBLICKEYBYTES * 2))
@@ -156,7 +156,7 @@ cardano_ed25519_public_key_from_hex(
   if (ed25519_public_key == NULL)
   {
     *public_key = NULL;
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_public_key->base.ref_count     = 1;
@@ -169,7 +169,7 @@ cardano_ed25519_public_key_from_hex(
     *public_key = NULL;
     _cardano_free(ed25519_public_key);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *public_key = ed25519_public_key;
@@ -265,7 +265,7 @@ cardano_ed25519_public_key_to_bytes(
 {
   if (public_key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_copy_bytes(public_key->key_material, out_key_bytes, out_key_length);

@@ -191,7 +191,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfGivenANullPtr)
   cardano_error_t              error       = cardano_bip32_private_key_from_bytes(nullptr, 0, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 
@@ -212,7 +212,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfprivate_keyIsNull)
   cardano_error_t error = cardano_bip32_private_key_from_bytes(BIP32_PRIVATE_KEY, BIP32_PRIVATE_KEY_SIZE, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_from_bytes, returnsNullIfMemoryAllocationFails)
@@ -227,7 +227,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_bip32_private_key_from_bytes(BIP32_PRIVATE_KEY, BIP32_PRIVATE_KEY_SIZE, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 
   // Cleanup
@@ -246,7 +246,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfMemoryEventualAllocation
   cardano_error_t error = cardano_bip32_private_key_from_bytes(BIP32_PRIVATE_KEY, BIP32_PRIVATE_KEY_SIZE, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 
   // Cleanup
@@ -260,7 +260,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfGivenANullPtr)
   cardano_error_t              error       = cardano_bip32_private_key_from_hex(nullptr, 0, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 
@@ -270,7 +270,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfprivate_keyIsNull)
   cardano_error_t error = cardano_bip32_private_key_from_hex(BIP32_PRIVATE_KEY_HEX, BIP32_PRIVATE_KEY_SIZE * 2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_from_hex, returnsNullIfGivenZeroLength)
@@ -296,7 +296,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_bip32_private_key_from_hex(BIP32_PRIVATE_KEY_HEX, BIP32_PRIVATE_KEY_SIZE * 2, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 
   // Cleanup
@@ -315,7 +315,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfMemoryEventualAllocationFa
   cardano_error_t error = cardano_bip32_private_key_from_hex(BIP32_PRIVATE_KEY_HEX, BIP32_PRIVATE_KEY_SIZE * 2, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 
   // Cleanup
@@ -368,7 +368,7 @@ TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_bip32_private_key_to_bytes(private_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfBufferLengthIsZero)
@@ -383,7 +383,7 @@ TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfBufferLengthIsZero)
   error = cardano_bip32_private_key_to_bytes(private_key, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_bip32_private_key_unref(&private_key);
@@ -400,7 +400,7 @@ TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfprivateKeyLengthIsGreater
   error = cardano_bip32_private_key_to_bytes(private_key, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_bip32_private_key_unref(&private_key);
@@ -420,7 +420,7 @@ TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfprivateKeyLengthIsZero)
   error = cardano_bip32_private_key_to_bytes(private_key, buffer, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_private_key_unref(&private_key);
@@ -438,7 +438,7 @@ TEST(cardano_bip32_private_key_to_bytes, returnsErrorIfprivateKeyIsNull)
   error = cardano_bip32_private_key_to_bytes(private_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_private_key_unref(&private_key);
@@ -502,7 +502,7 @@ TEST(cardano_bip32_private_key_to_ed25519_key, returnsErrorIfprivateKeyIsNull)
   cardano_error_t error = cardano_bip32_private_key_to_ed25519_key(private_key, &ed25519_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_to_ed25519_key, returnsErrorIfprivateKeyIsInvalid)
@@ -516,7 +516,7 @@ TEST(cardano_bip32_private_key_to_ed25519_key, returnsErrorIfprivateKeyIsInvalid
   cardano_error_t ed25519_key = cardano_bip32_private_key_to_ed25519_key(private_key, nullptr);
 
   // Assert
-  EXPECT_EQ(ed25519_key, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(ed25519_key, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_private_key_unref(&private_key);
@@ -558,7 +558,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfPrivateKeyIsNull)
   cardano_error_t error = cardano_bip32_private_key_derive(private_key, indices, 3, &derived_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_derive, returnsErrorIfIndicesIsNull)
@@ -571,7 +571,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfIndicesIsNull)
   cardano_error_t error = cardano_bip32_private_key_derive(private_key, nullptr, 3, &derived_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_derive, returnsErrorIfIndicesLengthIsZero)
@@ -599,7 +599,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfDerivedKeyIsNull)
   cardano_error_t error = cardano_bip32_private_key_derive(private_key, indices, 3, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_derive, deriveCorrectHardenedKey)
@@ -687,7 +687,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_private_key_derive(private_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_private_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -695,7 +695,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_private_key_derive(private_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_private_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -703,7 +703,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_private_key_derive(private_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_private_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -711,7 +711,7 @@ TEST(cardano_bip32_private_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_private_key_derive(private_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_private_key_t*)nullptr);
 
   // Cleanup
@@ -729,7 +729,7 @@ TEST(cardano_bip32_private_key_get_public_key, returnsErrorIfPrivateKeyIsNull)
   cardano_error_t error = cardano_bip32_private_key_get_public_key(private_key, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_get_public_key, returnsErrorIfPublicKeyIsNull)
@@ -741,7 +741,7 @@ TEST(cardano_bip32_private_key_get_public_key, returnsErrorIfPublicKeyIsNull)
   cardano_error_t error = cardano_bip32_private_key_get_public_key(private_key, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_get_public_key, canComputeTheCorrectPublicKey)
@@ -785,7 +785,7 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPasswordIsNull)
   cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(nullptr, 0, nullptr, 0, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 
@@ -796,7 +796,7 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPasswordLengthIs
   cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, 0, BIP39_ENTROPY, BIP39_ENTROPY_SIZE, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 
@@ -806,7 +806,7 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPrivateKeyIsNull
   cardano_error_t error = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, BIP39_PASSWORD_SIZE, BIP39_ENTROPY, BIP39_ENTROPY_SIZE, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfEntropyIfNull)
@@ -816,7 +816,7 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfEntropyIfNull)
   cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, BIP39_PASSWORD_SIZE, nullptr, 0, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 
@@ -827,7 +827,7 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfEntropyLengthIsZ
   cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, BIP39_PASSWORD_SIZE, BIP39_ENTROPY, 0, &private_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
   EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
 }
 

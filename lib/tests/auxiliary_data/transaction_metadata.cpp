@@ -81,7 +81,7 @@ TEST(cardano_transaction_metadata_new, returnsErrorIfProposedParamUpdatesIsNull)
   cardano_error_t error = cardano_transaction_metadata_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_new, returnsErrorIfMemoryAllocationFails)
@@ -95,7 +95,7 @@ TEST(cardano_transaction_metadata_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_transaction_metadata_new(&transaction_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(transaction_metadata, (cardano_transaction_metadata_t*)nullptr);
 
   // Cleanup
@@ -113,7 +113,7 @@ TEST(cardano_transaction_metadata_new, returnsErrorIfEventualMemoryAllocationFai
   cardano_error_t error = cardano_transaction_metadata_new(&transaction_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(transaction_metadata, (cardano_transaction_metadata_t*)nullptr);
 
   // Cleanup
@@ -161,7 +161,7 @@ TEST(cardano_transaction_metadata_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_transaction_metadata_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -180,7 +180,7 @@ TEST(cardano_transaction_metadata_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_transaction_metadata_to_cbor(transaction_metadata, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -225,7 +225,7 @@ TEST(cardano_transaction_metadata_from_cbor, returnErrorIfProposedParamUpdatesIs
   cardano_error_t error = cardano_transaction_metadata_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -240,7 +240,7 @@ TEST(cardano_transaction_metadata_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_transaction_metadata_from_cbor(nullptr, &transaction_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -256,7 +256,7 @@ TEST(cardano_transaction_metadata_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_transaction_metadata_from_cbor(reader, &transaction_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(transaction_metadata, (cardano_transaction_metadata_t*)nullptr);
 
   // Cleanup
@@ -504,7 +504,7 @@ TEST(cardano_transaction_metadata_insert, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_transaction_metadata_insert(nullptr, 5, metadatum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_insert, returnsErrorIfMetadatumIsNull)
@@ -519,7 +519,7 @@ TEST(cardano_transaction_metadata_insert, returnsErrorIfMetadatumIsNull)
   error = cardano_transaction_metadata_insert(transaction_metadata, 5, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -542,7 +542,7 @@ TEST(cardano_transaction_metadata_insert, returnErrorIfMemoryAllocationFails)
   error = cardano_transaction_metadata_insert(transaction_metadata, 5, metadatum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -603,7 +603,7 @@ TEST(cardano_transaction_metadata_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_transaction_metadata_get(nullptr, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get, returnsErrorIfMetadatumIsNull)
@@ -618,7 +618,7 @@ TEST(cardano_transaction_metadata_get, returnsErrorIfMetadatumIsNull)
   error = cardano_transaction_metadata_get(transaction_metadata, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -638,7 +638,7 @@ TEST(cardano_transaction_metadata_get, returnsErrorIfElementNotFound)
   error = cardano_transaction_metadata_get(transaction_metadata, 0, &metadatum);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -744,7 +744,7 @@ TEST(cardano_transaction_metadata_get, returnsTheRightElementIfMoreThanOne2)
 TEST(cardano_transaction_metadata_get_keys, returnsNullIfObjectIsNull)
 {
   // Assert
-  EXPECT_EQ(cardano_transaction_metadata_get_keys(nullptr, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_metadata_get_keys(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_keys, returnsNullIfKeysIsNull)
@@ -756,7 +756,7 @@ TEST(cardano_transaction_metadata_get_keys, returnsNullIfKeysIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(cardano_transaction_metadata_get_keys(transaction_metadata, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_metadata_get_keys(transaction_metadata, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -838,7 +838,7 @@ TEST(cardano_transaction_metadata_get_key_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_key_at(nullptr, 0, &label);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_key_at, returnsErrorIfOutIsNull)
@@ -847,7 +847,7 @@ TEST(cardano_transaction_metadata_get_key_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_key_at((cardano_transaction_metadata_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_key_at, returnsErrorIfIndexIsOutOfBounds)
@@ -864,7 +864,7 @@ TEST(cardano_transaction_metadata_get_key_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_transaction_metadata_get_key_at(transaction_metadata, 0, &label);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -912,7 +912,7 @@ TEST(cardano_transaction_metadata_get_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_value_at(nullptr, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_value_at, returnsErrorIfOutIsNull)
@@ -921,7 +921,7 @@ TEST(cardano_transaction_metadata_get_value_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_value_at((cardano_transaction_metadata_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -938,7 +938,7 @@ TEST(cardano_transaction_metadata_get_value_at, returnsErrorIfIndexIsOutOfBounds
   error = cardano_transaction_metadata_get_value_at(transaction_metadata, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);
@@ -984,7 +984,7 @@ TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_key_value_at(nullptr, 0, &key, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfMEtadatumIsNull)
@@ -996,7 +996,7 @@ TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfMEtadatumIsNul
   cardano_error_t error = cardano_transaction_metadata_get_key_value_at((cardano_transaction_metadata_t*)"", 0, nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfUpdateIsNull)
@@ -1008,7 +1008,7 @@ TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfUpdateIsNull)
   cardano_error_t error = cardano_transaction_metadata_get_key_value_at((cardano_transaction_metadata_t*)"", 0, &val, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -1026,7 +1026,7 @@ TEST(cardano_transaction_metadata_get_key_value_at, returnsErrorIfIndexIsOutOfBo
   error = cardano_transaction_metadata_get_key_value_at(transaction_metadata, 0, &key, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_transaction_metadata_unref(&transaction_metadata);

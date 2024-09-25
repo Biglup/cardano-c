@@ -105,14 +105,14 @@ cardano_bigint_clone(const cardano_bigint_t* bigint, cardano_bigint_t** clone)
 {
   if ((bigint == NULL) || (clone == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *clone = cardano_bigint_new();
 
   if (*clone == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   mpz_init_set((*clone)->mpz, bigint->mpz);
@@ -125,7 +125,7 @@ cardano_bigint_from_string(const char* string, const size_t size, const int32_t 
 {
   if ((string == NULL) || (bigint == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((size == 0U) || (*string == '\0'))
@@ -137,7 +137,7 @@ cardano_bigint_from_string(const char* string, const size_t size, const int32_t 
 
   if (*bigint == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   int ret = mpz_init_set_str((*bigint)->mpz, string, base);
@@ -146,7 +146,7 @@ cardano_bigint_from_string(const char* string, const size_t size, const int32_t 
   {
     cardano_bigint_unref(bigint);
 
-    return CARDANO_CONVERSION_ERROR;
+    return CARDANO_ERROR_CONVERSION_FAILED;
   }
 
   return CARDANO_SUCCESS;
@@ -182,14 +182,14 @@ cardano_bigint_from_int(int64_t value, cardano_bigint_t** bigint)
 {
   if (bigint == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *bigint = cardano_bigint_new();
 
   if (*bigint == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   mpz_init_set_si((*bigint)->mpz, value);
@@ -202,14 +202,14 @@ cardano_bigint_from_unsigned_int(uint64_t value, cardano_bigint_t** bigint)
 {
   if (bigint == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *bigint = cardano_bigint_new();
 
   if (*bigint == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   mpz_set_ui((*bigint)->mpz, value);
@@ -226,14 +226,14 @@ cardano_bigint_from_bytes(
 {
   if ((data == NULL) || (bigint == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *bigint = cardano_bigint_new();
 
   if (*bigint == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   int32_t       order         = 1;
@@ -259,14 +259,14 @@ cardano_bigint_to_string(
 {
   if ((bigint == NULL) || (string == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   char* temp = mpz_get_str(NULL, base, bigint->mpz);
 
   if (temp == NULL)
   {
-    return CARDANO_CONVERSION_ERROR; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_CONVERSION_FAILED; // LCOV_EXCL_LINE
   }
 
   size_t temp_len = cardano_safe_strlen(temp, size);
@@ -275,7 +275,7 @@ cardano_bigint_to_string(
   {
     _cardano_free(temp);
 
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(string, size, temp, temp_len);
@@ -323,14 +323,14 @@ cardano_bigint_to_bytes(
 {
   if ((bigint == NULL) || (data == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t required_size = cardano_bigint_get_bytes_size(bigint);
 
   if (required_size != size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   size_t        count;
@@ -342,7 +342,7 @@ cardano_bigint_to_bytes(
 
   if (count != size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE; // LCOV_EXCL_LINE
   }
 
   return CARDANO_SUCCESS;

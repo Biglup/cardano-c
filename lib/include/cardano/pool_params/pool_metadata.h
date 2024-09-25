@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_POOL_METADATA_H
-#define CARDANO_POOL_METADATA_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_POOL_METADATA_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_POOL_METADATA_H
 
 /* INCLUDES ******************************************************************/
 
@@ -208,7 +208,7 @@ cardano_pool_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_meta
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p pool_metadata or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -542,4 +542,4 @@ CARDANO_EXPORT const char* cardano_pool_metadata_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_POOL_METADATA_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_POOL_METADATA_H

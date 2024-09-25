@@ -143,14 +143,14 @@ cardano_unit_interval_new(
 {
   if (unit_interval == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *unit_interval = _cardano_malloc(sizeof(cardano_unit_interval_t));
 
   if (*unit_interval == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*unit_interval)->base.deallocator   = cardano_unit_interval_deallocate;
@@ -184,13 +184,13 @@ cardano_unit_interval_from_cbor(cardano_cbor_reader_t* reader, cardano_unit_inte
 {
   if (unit_interval == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *unit_interval = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "unit_interval";
@@ -260,12 +260,12 @@ cardano_unit_interval_to_cbor(const cardano_unit_interval_t* unit_interval, card
 {
   if (unit_interval == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_tag_result = cardano_cbor_writer_write_tag(writer, CARDANO_ENCODED_CBOR_RATIONAL_NUMBER);
@@ -284,14 +284,14 @@ cardano_unit_interval_to_cbor(const cardano_unit_interval_t* unit_interval, card
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, unit_interval->numerator);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, unit_interval->numerator);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, unit_interval->denominator);
+  return cardano_cbor_writer_write_uint(writer, unit_interval->denominator);
 }
 
 uint64_t
@@ -310,7 +310,7 @@ cardano_unit_interval_set_numerator(cardano_unit_interval_t* unit_interval, cons
 {
   if (unit_interval == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   unit_interval->numerator = numerator;
@@ -334,7 +334,7 @@ cardano_unit_interval_set_denominator(cardano_unit_interval_t* unit_interval, co
 {
   if (unit_interval == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   unit_interval->denominator = denominator;

@@ -175,7 +175,7 @@ typedef struct cardano_vote_registration_delegation_cert_t cardano_vote_registra
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -217,7 +217,7 @@ cardano_certificate_new_auth_committee_hot(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -258,7 +258,7 @@ cardano_certificate_new_genesis_key_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -301,7 +301,7 @@ cardano_certificate_new_mir(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -344,7 +344,7 @@ cardano_certificate_new_pool_registration(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -387,7 +387,7 @@ cardano_certificate_new_pool_retirement(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -429,7 +429,7 @@ cardano_certificate_new_register_drep(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -471,7 +471,7 @@ cardano_certificate_new_registration(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -513,7 +513,7 @@ cardano_certificate_new_resign_committee_cold(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -555,7 +555,7 @@ cardano_certificate_new_stake_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -597,7 +597,7 @@ cardano_certificate_new_stake_deregistration(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -639,7 +639,7 @@ cardano_certificate_new_stake_registration(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -681,7 +681,7 @@ cardano_certificate_new_stake_registration_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -724,7 +724,7 @@ cardano_certificate_new_stake_vote_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -766,7 +766,7 @@ cardano_certificate_new_stake_vote_registration_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -808,7 +808,7 @@ cardano_certificate_new_unregister_drep(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -850,7 +850,7 @@ cardano_certificate_new_unregistration(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -892,7 +892,7 @@ cardano_certificate_new_update_drep(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -934,7 +934,7 @@ cardano_certificate_new_vote_delegation(
  *                         is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was
- *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_POINTER_IS_NULL if
+ *         successfully created, or an error code indicating the reason for failure (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any input pointers are NULL).
  *
  * Usage Example:
@@ -1017,7 +1017,7 @@ cardano_certificate_from_cbor(cardano_cbor_reader_t* reader, cardano_certificate
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p auth_committee_hot or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -1059,7 +1059,7 @@ CARDANO_EXPORT cardano_error_t cardano_certificate_to_cbor(
  * \param[out] type A pointer to a \ref cardano_cert_type_t variable where the type of the certificate will be stored upon successful execution.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the type was successfully retrieved,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if either input pointer is NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if either input pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -1092,7 +1092,7 @@ cardano_cert_get_type(const cardano_certificate_t* certificate, cardano_cert_typ
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1129,7 +1129,7 @@ cardano_certificate_to_auth_committee_hot(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1166,7 +1166,7 @@ cardano_certificate_to_genesis_key_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1203,7 +1203,7 @@ cardano_certificate_to_mir(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1240,7 +1240,7 @@ cardano_certificate_to_pool_registration(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1277,7 +1277,7 @@ cardano_certificate_to_pool_retirement(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1314,7 +1314,7 @@ cardano_certificate_to_register_drep(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1351,7 +1351,7 @@ cardano_certificate_to_registration(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1388,7 +1388,7 @@ cardano_certificate_to_resign_committee_cold(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1425,7 +1425,7 @@ cardano_certificate_to_stake_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1462,7 +1462,7 @@ cardano_certificate_to_stake_deregistration(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1499,7 +1499,7 @@ cardano_certificate_to_stake_registration(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1536,7 +1536,7 @@ cardano_certificate_to_stake_registration_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1573,7 +1573,7 @@ cardano_certificate_to_stake_vote_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1610,7 +1610,7 @@ cardano_certificate_to_stake_vote_registration_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1647,7 +1647,7 @@ cardano_certificate_to_unregister_drep(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1684,7 +1684,7 @@ cardano_certificate_to_unregistration(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1721,7 +1721,7 @@ cardano_certificate_to_update_drep(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}
@@ -1758,7 +1758,7 @@ cardano_certificate_to_vote_delegation(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the conversion was successful,
  *         or an appropriate error code indicating the failure reason. If the certificate type does not match, the function will return
- *         \ref CARDANO_INVALID_CERTIFICATE_TYPE.
+ *         \ref CARDANO_ERROR_INVALID_CERTIFICATE_TYPE.
  *
  * Usage Example:
  * \code{.c}

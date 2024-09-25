@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_AUXILIARY_DATA_H
-#define CARDANO_AUXILIARY_DATA_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_AUXILIARY_DATA_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_AUXILIARY_DATA_H
 
 /* INCLUDES ******************************************************************/
 
@@ -61,8 +61,8 @@ typedef struct cardano_auxiliary_data_t cardano_auxiliary_data_t;
  *                            will point to the newly created auxiliary data object.
  *
  * \return \ref CARDANO_SUCCESS if the auxiliary data object was successfully created, or an appropriate
- *         error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
- *         \p auxiliary_data pointer is NULL, or \ref CARDANO_MEMORY_ALLOCATION_FAILED if memory allocation failed.
+ *         error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
+ *         \p auxiliary_data pointer is NULL, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation failed.
  *
  * \note The caller is responsible for managing the lifecycle of the created auxiliary data object.
  *       When the auxiliary data object is no longer needed, the caller must release it by calling
@@ -151,7 +151,7 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p auxiliary_data or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark If the auxiliary data object was created by \ref cardano_auxiliary_data_from_cbor, the original CBOR encoding
  *         will be cached and reused by this function to prevent round-trip encoding issues that can change the auxiliary data hash
@@ -237,7 +237,7 @@ CARDANO_EXPORT cardano_transaction_metadata_t* cardano_auxiliary_data_get_transa
  *                     to be associated with the auxiliary data, or `NULL` to unset the metadata.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the metadata
- *         was successfully set or unset, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set or unset, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p auxiliary_data pointer is `NULL`.
  *
  * \note If \p metadata is not `NULL`, this function increases the reference count of the \p metadata object, meaning that the caller retains
@@ -330,7 +330,7 @@ CARDANO_EXPORT cardano_native_script_list_t* cardano_auxiliary_data_get_native_s
  *                    This parameter can be `NULL` to unset the native scripts in the auxiliary data.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the native scripts were
- *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if any
+ *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any
  *         required pointers are `NULL`.
  *
  * \note If the `scripts` parameter is `NULL`, any existing native scripts in the auxiliary data will be removed.
@@ -411,7 +411,7 @@ CARDANO_EXPORT cardano_plutus_v1_script_list_t* cardano_auxiliary_data_get_plutu
  *                    This parameter can be `NULL` to unset the plutus v1 scripts in the auxiliary data.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the plutus v1 scripts were
- *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if any
+ *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any
  *         required pointers are `NULL`.
  *
  * \note If the `scripts` parameter is `NULL`, any existing plutus v1 scripts in the auxiliary data will be removed.
@@ -492,7 +492,7 @@ CARDANO_EXPORT cardano_plutus_v2_script_list_t* cardano_auxiliary_data_get_plutu
  *                    This parameter can be `NULL` to unset the plutus v2 scripts in the auxiliary data.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the plutus v2 scripts were
- *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if any
+ *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any
  *         required pointers are `NULL`.
  *
  * \note If the `scripts` parameter is `NULL`, any existing plutus v2 scripts in the auxiliary data will be removed.
@@ -573,7 +573,7 @@ CARDANO_EXPORT cardano_plutus_v3_script_list_t* cardano_auxiliary_data_get_plutu
  *                    This parameter can be `NULL` to unset the plutus v3 scripts in the auxiliary data.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the plutus v3 scripts were
- *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if any
+ *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any
  *         required pointers are `NULL`.
  *
  * \note If the `scripts` parameter is `NULL`, any existing plutus v3 scripts in the auxiliary data will be removed.
@@ -814,4 +814,4 @@ CARDANO_EXPORT const char* cardano_auxiliary_data_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_AUXILIARY_DATA_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_AUXILIARY_DATA_H

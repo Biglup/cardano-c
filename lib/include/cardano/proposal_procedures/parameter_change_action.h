@@ -160,7 +160,7 @@ cardano_parameter_change_action_from_cbor(cardano_cbor_reader_t* reader, cardano
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p parameter_change_action or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -202,7 +202,7 @@ CARDANO_EXPORT cardano_error_t cardano_parameter_change_action_to_cbor(
  * \param[in] protocol_param_update A pointer to an initialized \ref cardano_protocol_param_update_t object representing the new protocol parameter updates.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the protocol parameter update was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         parameter_change_action pointer is NULL.
  *
  * Usage Example:
@@ -270,7 +270,7 @@ cardano_parameter_change_action_get_protocol_param_update(cardano_parameter_chan
  * \param[in] policy_hash A pointer to an initialized \ref cardano_blake2b_hash_t object representing the new policy hash. This parameter can be NULL if the policy hash is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the policy hash was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
  *         input pointers are NULL.
  *
  * Usage Example:
@@ -347,7 +347,7 @@ cardano_parameter_change_action_get_policy_hash(cardano_parameter_change_action_
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         parameter_change_action pointer is NULL.
  *
  * Usage Example:

@@ -87,14 +87,14 @@ cardano_voting_procedure_new(
 {
   if (voting_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_voting_procedure_t* data = _cardano_malloc(sizeof(cardano_voting_procedure_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -119,12 +119,12 @@ cardano_voting_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_voting
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voting_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "voting_procedure";
@@ -197,12 +197,12 @@ cardano_voting_procedure_to_cbor(
 {
   if (voting_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -212,7 +212,7 @@ cardano_voting_procedure_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, voting_procedure->vote);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voting_procedure->vote);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -259,7 +259,7 @@ cardano_voting_procedure_set_vote(
 {
   if (voting_procedure == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   voting_procedure->vote = vote;
@@ -287,12 +287,12 @@ cardano_voting_procedure_set_anchor(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_anchor_ref(anchor);

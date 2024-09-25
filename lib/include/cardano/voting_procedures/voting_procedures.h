@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_VOTING_PROCEDURES_H
-#define CARDANO_VOTING_PROCEDURES_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURES_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURES_H
 
 /* INCLUDES ******************************************************************/
 
@@ -59,7 +59,7 @@ typedef struct cardano_voting_procedures_t cardano_voting_procedures_t;
  *             by calling \ref cardano_voting_procedures_unref.
  *
  * \return \ref CARDANO_SUCCESS if the map of voting procedures was successfully created, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the output pointer is NULL.
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the output pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -139,7 +139,7 @@ cardano_voting_procedures_from_cbor(cardano_cbor_reader_t* reader, cardano_votin
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p voting_procedures or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -186,7 +186,7 @@ CARDANO_EXPORT cardano_error_t cardano_voting_procedures_to_cbor(
  * \param[in] value A pointer to an initialized \ref cardano_voting_procedure_t object representing the voting procedure.
  *
  * \return \ref CARDANO_SUCCESS if the entry was successfully inserted, or an appropriate error code indicating the failure
- *         reason, such as \ref CARDANO_POINTER_IS_NULL if any input pointers are NULL.
+ *         reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -495,4 +495,4 @@ CARDANO_EXPORT const char* cardano_voting_procedures_get_last_error(const cardan
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_VOTING_PROCEDURES_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURES_H

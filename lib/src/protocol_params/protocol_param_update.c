@@ -463,7 +463,7 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return cardano_cbor_reader_read_uint(reader, *field);
@@ -800,14 +800,14 @@ write_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const u
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, *value);
+    result = cardano_cbor_writer_write_uint(writer, *value);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -842,7 +842,7 @@ write_unit_interval_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -884,7 +884,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -900,7 +900,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
         return result; // LCOV_EXCL_LINE
       }
 
-      result = cardano_cbor_writer_write_unsigned_int(writer, 0U);
+      result = cardano_cbor_writer_write_uint(writer, 0U);
 
       if (result != CARDANO_SUCCESS)
       {
@@ -917,7 +917,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, 1U);
+    result = cardano_cbor_writer_write_uint(writer, 1U);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -959,7 +959,7 @@ write_protocol_version_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1001,7 +1001,7 @@ write_cost_models_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1043,7 +1043,7 @@ write_ex_unit_prices_if_present(cardano_cbor_writer_t* writer, const uint64_t ke
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1085,7 +1085,7 @@ write_ex_units_if_present(cardano_cbor_writer_t* writer, const uint64_t key, con
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1127,7 +1127,7 @@ write_pool_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1169,7 +1169,7 @@ write_drep_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1234,14 +1234,14 @@ cardano_protocol_param_update_new(cardano_protocol_param_update_t** protocol_par
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *protocol_param_update = _cardano_malloc(sizeof(cardano_protocol_param_update_t));
 
   if (*protocol_param_update == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*protocol_param_update)->base.deallocator   = cardano_protocol_param_update_deallocate;
@@ -1290,7 +1290,7 @@ cardano_protocol_param_update_from_cbor(cardano_cbor_reader_t* reader, cardano_p
 {
   if (!reader || !protocol_param_update)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *protocol_param_update                  = NULL;
@@ -1362,12 +1362,12 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t map_size = get_map_size(protocol_param_update);
@@ -1620,12 +1620,12 @@ cardano_protocol_param_update_get_min_fee_a(
 {
   if ((protocol_param_update == NULL) || (min_fee_a == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_fee_a == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *min_fee_a = *protocol_param_update->min_fee_a;
@@ -1640,12 +1640,12 @@ cardano_protocol_param_update_get_min_fee_b(
 {
   if ((protocol_param_update == NULL) || (min_fee_b == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_fee_b == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *min_fee_b = *protocol_param_update->min_fee_b;
@@ -1660,12 +1660,12 @@ cardano_protocol_param_update_get_max_block_body_size(
 {
   if ((protocol_param_update == NULL) || (max_block_body_size == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_body_size == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_block_body_size = *protocol_param_update->max_block_body_size;
@@ -1680,12 +1680,12 @@ cardano_protocol_param_update_get_max_tx_size(
 {
   if ((protocol_param_update == NULL) || (max_tx_size == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_tx_size == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_tx_size = *protocol_param_update->max_tx_size;
@@ -1700,12 +1700,12 @@ cardano_protocol_param_update_get_max_block_header_size(
 {
   if ((protocol_param_update == NULL) || (max_block_header_size == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_header_size == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_block_header_size = *protocol_param_update->max_block_header_size;
@@ -1720,12 +1720,12 @@ cardano_protocol_param_update_get_key_deposit(
 {
   if ((protocol_param_update == NULL) || (key_deposit == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->key_deposit == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *key_deposit = *protocol_param_update->key_deposit;
@@ -1740,12 +1740,12 @@ cardano_protocol_param_update_get_pool_deposit(
 {
   if ((protocol_param_update == NULL) || (pool_deposit == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_deposit == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *pool_deposit = *protocol_param_update->pool_deposit;
@@ -1760,12 +1760,12 @@ cardano_protocol_param_update_get_max_epoch(
 {
   if ((protocol_param_update == NULL) || (max_epoch == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_epoch == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_epoch = *protocol_param_update->max_epoch;
@@ -1780,12 +1780,12 @@ cardano_protocol_param_update_get_n_opt(
 {
   if ((protocol_param_update == NULL) || (n_opt == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->n_opt == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *n_opt = *protocol_param_update->n_opt;
@@ -1800,12 +1800,12 @@ cardano_protocol_param_update_get_pool_pledge_influence(
 {
   if ((protocol_param_update == NULL) || (pool_pledge_influence == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_pledge_influence == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_unit_interval_ref(protocol_param_update->pool_pledge_influence);
@@ -1821,12 +1821,12 @@ cardano_protocol_param_update_get_expansion_rate(
 {
   if ((protocol_param_update == NULL) || (expansion_rate == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->expansion_rate == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_unit_interval_ref(protocol_param_update->expansion_rate);
@@ -1842,12 +1842,12 @@ cardano_protocol_param_update_get_treasury_growth_rate(
 {
   if ((protocol_param_update == NULL) || (treasury_growth_rate == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->treasury_growth_rate == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_unit_interval_ref(protocol_param_update->treasury_growth_rate);
@@ -1863,12 +1863,12 @@ cardano_protocol_param_update_get_d(
 {
   if ((protocol_param_update == NULL) || (d == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->d == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_unit_interval_ref(protocol_param_update->d);
@@ -1884,12 +1884,12 @@ cardano_protocol_param_update_get_extra_entropy(
 {
   if ((protocol_param_update == NULL) || (extra_entropy == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->extra_entropy == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_buffer_ref(protocol_param_update->extra_entropy);
@@ -1905,12 +1905,12 @@ cardano_protocol_param_update_get_protocol_version(
 {
   if ((protocol_param_update == NULL) || (protocol_version == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->protocol_version == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_protocol_version_ref(protocol_param_update->protocol_version);
@@ -1926,12 +1926,12 @@ cardano_protocol_param_update_get_min_pool_cost(
 {
   if ((protocol_param_update == NULL) || (min_pool_cost == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_pool_cost == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *min_pool_cost = *protocol_param_update->min_pool_cost;
@@ -1946,12 +1946,12 @@ cardano_protocol_param_update_get_ada_per_utxo_byte(
 {
   if ((protocol_param_update == NULL) || (ada_per_utxo_byte == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->ada_per_utxo_byte == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *ada_per_utxo_byte = *protocol_param_update->ada_per_utxo_byte;
@@ -1966,12 +1966,12 @@ cardano_protocol_param_update_get_cost_models(
 {
   if ((protocol_param_update == NULL) || (cost_models == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->cost_models == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_costmdls_ref(protocol_param_update->cost_models);
@@ -1987,12 +1987,12 @@ cardano_protocol_param_update_get_execution_costs(
 {
   if ((protocol_param_update == NULL) || (execution_costs == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->execution_costs == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_ex_unit_prices_ref(protocol_param_update->execution_costs);
@@ -2008,12 +2008,12 @@ cardano_protocol_param_update_get_max_tx_ex_units(
 {
   if ((protocol_param_update == NULL) || (max_tx_ex_units == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_tx_ex_units == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_ex_units_ref(protocol_param_update->max_tx_ex_units);
@@ -2029,12 +2029,12 @@ cardano_protocol_param_update_get_max_block_ex_units(
 {
   if ((protocol_param_update == NULL) || (max_block_ex_units == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_ex_units == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_ex_units_ref(protocol_param_update->max_block_ex_units);
@@ -2050,12 +2050,12 @@ cardano_protocol_param_update_get_max_value_size(
 {
   if ((protocol_param_update == NULL) || (max_value_size == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_value_size == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_value_size = *protocol_param_update->max_value_size;
@@ -2070,12 +2070,12 @@ cardano_protocol_param_update_get_collateral_percentage(
 {
   if ((protocol_param_update == NULL) || (collateral_percentage == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->collateral_percentage == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *collateral_percentage = *protocol_param_update->collateral_percentage;
@@ -2090,12 +2090,12 @@ cardano_protocol_param_update_get_max_collateral_inputs(
 {
   if ((protocol_param_update == NULL) || (max_collateral_inputs == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_collateral_inputs == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *max_collateral_inputs = *protocol_param_update->max_collateral_inputs;
@@ -2110,12 +2110,12 @@ cardano_protocol_param_update_get_pool_voting_thresholds(
 {
   if ((protocol_param_update == NULL) || (pool_voting_thresholds == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_voting_thresholds == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_pool_voting_thresholds_ref(protocol_param_update->pool_voting_thresholds);
@@ -2131,12 +2131,12 @@ cardano_protocol_param_update_get_drep_voting_thresholds(
 {
   if ((protocol_param_update == NULL) || (drep_voting_thresholds == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_voting_thresholds == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_drep_voting_thresholds_ref(protocol_param_update->drep_voting_thresholds);
@@ -2152,12 +2152,12 @@ cardano_protocol_param_update_get_min_committee_size(
 {
   if ((protocol_param_update == NULL) || (min_committee_size == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_committee_size == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *min_committee_size = *protocol_param_update->min_committee_size;
@@ -2172,12 +2172,12 @@ cardano_protocol_param_update_get_committee_term_limit(
 {
   if ((protocol_param_update == NULL) || (committee_term_limit == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->committee_term_limit == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *committee_term_limit = *protocol_param_update->committee_term_limit;
@@ -2192,12 +2192,12 @@ cardano_protocol_param_update_get_governance_action_validity_period(
 {
   if ((protocol_param_update == NULL) || (governance_action_validity_period == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->governance_action_validity_period == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *governance_action_validity_period = *protocol_param_update->governance_action_validity_period;
@@ -2212,12 +2212,12 @@ cardano_protocol_param_update_get_governance_action_deposit(
 {
   if ((protocol_param_update == NULL) || (governance_action_deposit == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->governance_action_deposit == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *governance_action_deposit = *protocol_param_update->governance_action_deposit;
@@ -2232,12 +2232,12 @@ cardano_protocol_param_update_get_drep_deposit(
 {
   if ((protocol_param_update == NULL) || (drep_deposit == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_deposit == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *drep_deposit = *protocol_param_update->drep_deposit;
@@ -2252,12 +2252,12 @@ cardano_protocol_param_update_get_drep_inactivity_period(
 {
   if ((protocol_param_update == NULL) || (drep_inactivity_period == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_inactivity_period == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   *drep_inactivity_period = *protocol_param_update->drep_inactivity_period;
@@ -2272,12 +2272,12 @@ cardano_protocol_param_update_get_ref_script_cost_per_byte(
 {
   if ((protocol_param_update == NULL) || (ref_script_cost_per_byte == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->ref_script_cost_per_byte == NULL)
   {
-    return CARDANO_ELEMENT_NOT_FOUND;
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   cardano_unit_interval_ref(protocol_param_update->ref_script_cost_per_byte);
@@ -2293,7 +2293,7 @@ cardano_protocol_param_update_set_min_fee_a(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_fee_a != NULL)
@@ -2312,7 +2312,7 @@ cardano_protocol_param_update_set_min_fee_a(
 
   if (protocol_param_update->min_fee_a == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->min_fee_a = *min_fee_a;
@@ -2327,7 +2327,7 @@ cardano_protocol_param_update_set_min_fee_b(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_fee_b != NULL)
@@ -2346,7 +2346,7 @@ cardano_protocol_param_update_set_min_fee_b(
 
   if (protocol_param_update->min_fee_b == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->min_fee_b = *min_fee_b;
@@ -2361,7 +2361,7 @@ cardano_protocol_param_update_set_max_block_body_size(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_body_size != NULL)
@@ -2380,7 +2380,7 @@ cardano_protocol_param_update_set_max_block_body_size(
 
   if (protocol_param_update->max_block_body_size == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_block_body_size = *max_block_body_size;
@@ -2395,7 +2395,7 @@ cardano_protocol_param_update_set_max_tx_size(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_tx_size != NULL)
@@ -2414,7 +2414,7 @@ cardano_protocol_param_update_set_max_tx_size(
 
   if (protocol_param_update->max_tx_size == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_tx_size = *max_tx_size;
@@ -2429,7 +2429,7 @@ cardano_protocol_param_update_set_max_block_header_size(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_header_size != NULL)
@@ -2448,7 +2448,7 @@ cardano_protocol_param_update_set_max_block_header_size(
 
   if (protocol_param_update->max_block_header_size == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_block_header_size = *max_block_header_size;
@@ -2463,7 +2463,7 @@ cardano_protocol_param_update_set_key_deposit(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->key_deposit != NULL)
@@ -2482,7 +2482,7 @@ cardano_protocol_param_update_set_key_deposit(
 
   if (protocol_param_update->key_deposit == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->key_deposit = *key_deposit;
@@ -2497,7 +2497,7 @@ cardano_protocol_param_update_set_pool_deposit(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_deposit != NULL)
@@ -2516,7 +2516,7 @@ cardano_protocol_param_update_set_pool_deposit(
 
   if (protocol_param_update->pool_deposit == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->pool_deposit = *pool_deposit;
@@ -2531,7 +2531,7 @@ cardano_protocol_param_update_set_max_epoch(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_epoch != NULL)
@@ -2550,7 +2550,7 @@ cardano_protocol_param_update_set_max_epoch(
 
   if (protocol_param_update->max_epoch == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_epoch = *max_epoch;
@@ -2565,7 +2565,7 @@ cardano_protocol_param_update_set_n_opt(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->n_opt != NULL)
@@ -2584,7 +2584,7 @@ cardano_protocol_param_update_set_n_opt(
 
   if (protocol_param_update->n_opt == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->n_opt = *n_opt;
@@ -2599,7 +2599,7 @@ cardano_protocol_param_update_set_pool_pledge_influence(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_pledge_influence != NULL)
@@ -2627,7 +2627,7 @@ cardano_protocol_param_update_set_expansion_rate(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->expansion_rate != NULL)
@@ -2655,7 +2655,7 @@ cardano_protocol_param_update_set_treasury_growth_rate(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->treasury_growth_rate != NULL)
@@ -2683,7 +2683,7 @@ cardano_protocol_param_update_set_d(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->d != NULL)
@@ -2711,7 +2711,7 @@ cardano_protocol_param_update_set_extra_entropy(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->extra_entropy != NULL)
@@ -2739,7 +2739,7 @@ cardano_protocol_param_update_set_protocol_version(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->protocol_version != NULL)
@@ -2767,7 +2767,7 @@ cardano_protocol_param_update_set_min_pool_cost(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_pool_cost != NULL)
@@ -2786,7 +2786,7 @@ cardano_protocol_param_update_set_min_pool_cost(
 
   if (protocol_param_update->min_pool_cost == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->min_pool_cost = *min_pool_cost;
@@ -2801,7 +2801,7 @@ cardano_protocol_param_update_set_ada_per_utxo_byte(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->ada_per_utxo_byte != NULL)
@@ -2820,7 +2820,7 @@ cardano_protocol_param_update_set_ada_per_utxo_byte(
 
   if (protocol_param_update->ada_per_utxo_byte == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->ada_per_utxo_byte = *ada_per_utxo_byte;
@@ -2835,7 +2835,7 @@ cardano_protocol_param_update_set_cost_models(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->cost_models != NULL)
@@ -2863,7 +2863,7 @@ cardano_protocol_param_update_set_execution_costs(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->execution_costs != NULL)
@@ -2891,7 +2891,7 @@ cardano_protocol_param_update_set_max_tx_ex_units(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_tx_ex_units != NULL)
@@ -2919,7 +2919,7 @@ cardano_protocol_param_update_set_max_block_ex_units(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_block_ex_units != NULL)
@@ -2947,7 +2947,7 @@ cardano_protocol_param_update_set_max_value_size(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_value_size != NULL)
@@ -2966,7 +2966,7 @@ cardano_protocol_param_update_set_max_value_size(
 
   if (protocol_param_update->max_value_size == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_value_size = *max_value_size;
@@ -2981,7 +2981,7 @@ cardano_protocol_param_update_set_collateral_percentage(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->collateral_percentage != NULL)
@@ -3000,7 +3000,7 @@ cardano_protocol_param_update_set_collateral_percentage(
 
   if (protocol_param_update->collateral_percentage == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->collateral_percentage = *collateral_percentage;
@@ -3015,7 +3015,7 @@ cardano_protocol_param_update_set_max_collateral_inputs(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->max_collateral_inputs != NULL)
@@ -3034,7 +3034,7 @@ cardano_protocol_param_update_set_max_collateral_inputs(
 
   if (protocol_param_update->max_collateral_inputs == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->max_collateral_inputs = *max_collateral_inputs;
@@ -3049,7 +3049,7 @@ cardano_protocol_param_update_set_pool_voting_thresholds(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->pool_voting_thresholds != NULL)
@@ -3077,7 +3077,7 @@ cardano_protocol_param_update_set_drep_voting_thresholds(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_voting_thresholds != NULL)
@@ -3105,7 +3105,7 @@ cardano_protocol_param_update_set_min_committee_size(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->min_committee_size != NULL)
@@ -3124,7 +3124,7 @@ cardano_protocol_param_update_set_min_committee_size(
 
   if (protocol_param_update->min_committee_size == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->min_committee_size = *min_committee_size;
@@ -3139,7 +3139,7 @@ cardano_protocol_param_update_set_committee_term_limit(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->committee_term_limit != NULL)
@@ -3158,7 +3158,7 @@ cardano_protocol_param_update_set_committee_term_limit(
 
   if (protocol_param_update->committee_term_limit == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->committee_term_limit = *committee_term_limit;
@@ -3173,7 +3173,7 @@ cardano_protocol_param_update_set_governance_action_validity_period(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->governance_action_validity_period != NULL)
@@ -3192,7 +3192,7 @@ cardano_protocol_param_update_set_governance_action_validity_period(
 
   if (protocol_param_update->governance_action_validity_period == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->governance_action_validity_period = *governance_action_validity_period;
@@ -3207,7 +3207,7 @@ cardano_protocol_param_update_set_governance_action_deposit(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->governance_action_deposit != NULL)
@@ -3226,7 +3226,7 @@ cardano_protocol_param_update_set_governance_action_deposit(
 
   if (protocol_param_update->governance_action_deposit == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->governance_action_deposit = *governance_action_deposit;
@@ -3241,7 +3241,7 @@ cardano_protocol_param_update_set_drep_deposit(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_deposit != NULL)
@@ -3260,7 +3260,7 @@ cardano_protocol_param_update_set_drep_deposit(
 
   if (protocol_param_update->drep_deposit == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->drep_deposit = *drep_deposit;
@@ -3275,7 +3275,7 @@ cardano_protocol_param_update_set_drep_inactivity_period(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->drep_inactivity_period != NULL)
@@ -3294,7 +3294,7 @@ cardano_protocol_param_update_set_drep_inactivity_period(
 
   if (protocol_param_update->drep_inactivity_period == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *protocol_param_update->drep_inactivity_period = *drep_inactivity_period;
@@ -3309,7 +3309,7 @@ cardano_protocol_param_update_set_ref_script_cost_per_byte(
 {
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update->ref_script_cost_per_byte != NULL)

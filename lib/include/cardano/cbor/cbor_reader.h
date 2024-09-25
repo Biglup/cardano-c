@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_READER_H
-#define CARDANO_CBOR_READER_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_H
 
 /* INCLUDES ******************************************************************/
 
@@ -734,7 +734,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_map(cardano_cbor_rea
  * Usage Example:
  * \code{.c}
  * bool value;
- * cardano_error_t error = cardano_cbor_reader_read_boolean(reader, &value);
+ * cardano_error_t error = cardano_cbor_reader_read_bool(reader, &value);
  *
  * if (error == CARDANO_SUCCESS)
  * {
@@ -755,7 +755,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_map(cardano_cbor_rea
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_boolean(cardano_cbor_reader_t* reader, bool* value);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_bool(cardano_cbor_reader_t* reader, bool* value);
 
 /**
  * \brief Reads the next data item as a null value (major type 7).
@@ -982,4 +982,4 @@ CARDANO_EXPORT const char* cardano_cbor_reader_get_last_error(const cardano_cbor
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_READER_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_H

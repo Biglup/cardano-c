@@ -183,7 +183,7 @@ TEST(cardano_value_new, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_new(0, NULL, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_new, returnsErrorIfMemoryAllocationFails)
@@ -197,7 +197,7 @@ TEST(cardano_value_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_value_new(0, NULL, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(value, (cardano_value_t*)nullptr);
 
   // Cleanup
@@ -215,7 +215,7 @@ TEST(cardano_value_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_value_new(0, NULL, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(value, (cardano_value_t*)nullptr);
 
   // Cleanup
@@ -263,7 +263,7 @@ TEST(cardano_value_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_value_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -282,7 +282,7 @@ TEST(cardano_value_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_value_to_cbor(value, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value);
@@ -327,7 +327,7 @@ TEST(cardano_value_from_cbor, returnErrorIfValueIsNull)
   cardano_error_t error = cardano_value_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -342,7 +342,7 @@ TEST(cardano_value_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_value_from_cbor(nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -358,7 +358,7 @@ TEST(cardano_value_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_value_from_cbor(reader, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(value, (cardano_value_t*)nullptr);
 
   // Cleanup
@@ -677,7 +677,7 @@ TEST(cardano_value_set_multi_asset, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_set_multi_asset(nullptr, multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -729,7 +729,7 @@ TEST(cardano_value_set_coin, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_set_coin(nullptr, 2000000);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_add_coin, canAddCoin)
@@ -754,7 +754,7 @@ TEST(cardano_value_add_coin, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_add_coin(nullptr, 2000000);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_subtract_coin, canSubtractCoin)
@@ -782,7 +782,7 @@ TEST(cardano_value_subtract_coin, returnsUnderflowIfTooBigValue)
   cardano_error_t error = cardano_value_subtract_coin(value, 2000000);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INTEGER_UNDERFLOW);
+  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
   EXPECT_EQ(cardano_value_get_coin(value), 1000000);
 
   // Cleanup
@@ -795,7 +795,7 @@ TEST(cardano_value_subtract_coin, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_subtract_coin(nullptr, 2000000);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_add_multi_asset, canAddMultiAsset)
@@ -846,7 +846,7 @@ TEST(cardano_value_add_multi_asset, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_add_multi_asset(nullptr, multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -897,7 +897,7 @@ TEST(cardano_value_add_multi_asset, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error = cardano_value_add_multi_asset((cardano_value_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_subtract_multi_asset, returnsErrorIfMultiAssetIsNull)
@@ -906,7 +906,7 @@ TEST(cardano_value_subtract_multi_asset, returnsErrorIfMultiAssetIsNull)
   cardano_error_t error = cardano_value_subtract_multi_asset((cardano_value_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_value_subtract_multi_asset, returnsErrorIfValueIsNull)
@@ -918,7 +918,7 @@ TEST(cardano_value_subtract_multi_asset, returnsErrorIfValueIsNull)
   cardano_error_t error = cardano_value_subtract_multi_asset(nullptr, multi_asset);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
@@ -976,7 +976,7 @@ TEST(cardano_value_add, returnsErrorIfValue1IsNull)
   cardano_error_t error = cardano_value_add(nullptr, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value2);
@@ -992,7 +992,7 @@ TEST(cardano_value_add, returnsErrorIfValue2IsNull)
   cardano_error_t error = cardano_value_add(value1, nullptr, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1008,7 +1008,7 @@ TEST(cardano_value_add, returnsErrorIfResultIsNull)
   cardano_error_t error = cardano_value_add(value1, value2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1190,7 +1190,7 @@ TEST(cardano_value_subtract, returnsErrorIfValue1IsNull)
   cardano_error_t error = cardano_value_subtract(nullptr, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value2);
@@ -1206,7 +1206,7 @@ TEST(cardano_value_subtract, returnsErrorIfValue2IsNull)
   cardano_error_t error = cardano_value_subtract(value1, nullptr, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1222,7 +1222,7 @@ TEST(cardano_value_subtract, returnsErrorIfResultIsNull)
   cardano_error_t error = cardano_value_subtract(value1, value2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1363,7 +1363,7 @@ TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinNoAsse
   cardano_error_t error = cardano_value_subtract(value1, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INTEGER_UNDERFLOW);
+  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
   EXPECT_EQ(cardano_value_get_coin(result), 0);
 
   // Cleanup
@@ -1383,7 +1383,7 @@ TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinLhsHas
   cardano_error_t error = cardano_value_subtract(value1, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INTEGER_UNDERFLOW);
+  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
   EXPECT_EQ(cardano_value_get_coin(result), 0);
 
   // Cleanup
@@ -1403,7 +1403,7 @@ TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinRhsHas
   cardano_error_t error = cardano_value_subtract(value1, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INTEGER_UNDERFLOW);
+  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
   EXPECT_EQ(cardano_value_get_coin(result), 0);
 
   // Cleanup
@@ -1425,7 +1425,7 @@ TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinBothHa
   cardano_error_t error = cardano_value_subtract(value1, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INTEGER_UNDERFLOW);
+  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
   EXPECT_EQ(cardano_value_get_coin(result), 0);
 
   // Cleanup
@@ -1669,7 +1669,7 @@ TEST(cardano_value_get_intersection, returnsErrorIfLhsIsNull)
   cardano_error_t error = cardano_value_get_intersection(nullptr, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value2);
@@ -1685,7 +1685,7 @@ TEST(cardano_value_get_intersection, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_value_get_intersection(value1, nullptr, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1761,7 +1761,7 @@ TEST(cardano_value_get_intersection_count, returnsErrorIfLshIsNull)
   cardano_error_t error = cardano_value_get_intersection_count(nullptr, value2, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value2);
@@ -1777,7 +1777,7 @@ TEST(cardano_value_get_intersection_count, returnsErrorIfRhsIsNull)
   cardano_error_t error = cardano_value_get_intersection_count(value1, nullptr, &result);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);
@@ -1793,7 +1793,7 @@ TEST(cardano_value_get_intersection_count, returnsErrorIfResultIsNull)
   cardano_error_t error = cardano_value_get_intersection_count(value1, value2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_value_unref(&value1);

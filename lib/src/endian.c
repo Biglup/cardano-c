@@ -75,7 +75,7 @@ write_bytes(
 {
   if ((dest_size - offset) < src_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (is_native_endian)
@@ -113,7 +113,7 @@ read_bytes(
 {
   if ((src_size - offset) < dest_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (is_native_endian)

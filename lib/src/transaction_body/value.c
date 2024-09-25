@@ -94,14 +94,14 @@ cardano_value_new(
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_value_t* new_value = (cardano_value_t*)_cardano_malloc(sizeof(cardano_value_t));
 
   if (new_value == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_value->base.ref_count     = 1;
@@ -136,13 +136,13 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *value = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_multi_asset_t*      multi_asset = NULL;
@@ -227,17 +227,17 @@ cardano_value_to_cbor(
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((value->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U))
   {
-    return cardano_cbor_writer_write_unsigned_int(writer, value->coin);
+    return cardano_cbor_writer_write_uint(writer, value->coin);
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, VALUE_ARRAY_REQUIRED_SIZE);
@@ -247,7 +247,7 @@ cardano_value_to_cbor(
     return write_start_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_coin_result = cardano_cbor_writer_write_unsigned_int(writer, value->coin);
+  cardano_error_t write_coin_result = cardano_cbor_writer_write_uint(writer, value->coin);
 
   if (write_coin_result != CARDANO_SUCCESS)
   {
@@ -275,7 +275,7 @@ cardano_value_set_multi_asset(cardano_value_t* value, cardano_multi_asset_t* ass
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_multi_asset_ref(assets);
@@ -301,7 +301,7 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin)
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   value->coin = coin;
@@ -314,7 +314,7 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin)
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   value->coin += coin;
@@ -327,12 +327,12 @@ cardano_value_subtract_coin(cardano_value_t* value, uint64_t coin)
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value->coin < coin)
   {
-    return CARDANO_INTEGER_UNDERFLOW;
+    return CARDANO_ERROR_INTEGER_UNDERFLOW;
   }
 
   value->coin -= coin;
@@ -345,12 +345,12 @@ cardano_value_add_multi_asset(cardano_value_t* value, cardano_multi_asset_t* mul
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (multi_asset == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_multi_asset_t* add_result = NULL;
@@ -372,12 +372,12 @@ cardano_value_subtract_multi_asset(cardano_value_t* value, cardano_multi_asset_t
 {
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (multi_asset == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_multi_asset_t* subtraction_result = NULL;
@@ -399,17 +399,17 @@ cardano_value_add(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value_t** 
 {
   if (lhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (rhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (result == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((lhs->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(lhs->multi_asset) == 0U))
@@ -443,24 +443,24 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 {
   if (lhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (rhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (result == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((lhs->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(lhs->multi_asset) == 0U))
   {
     if (lhs->coin < rhs->coin)
     {
-      return CARDANO_INTEGER_UNDERFLOW;
+      return CARDANO_ERROR_INTEGER_UNDERFLOW;
     }
 
     cardano_error_t new_val_result = cardano_value_new(lhs->coin - rhs->coin, NULL, result);
@@ -480,7 +480,7 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
   {
     if (lhs->coin < rhs->coin)
     {
-      return CARDANO_INTEGER_UNDERFLOW;
+      return CARDANO_ERROR_INTEGER_UNDERFLOW;
     }
 
     return cardano_value_new(lhs->coin - rhs->coin, lhs->multi_asset, result);
@@ -488,7 +488,7 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 
   if (lhs->coin < rhs->coin)
   {
-    return CARDANO_INTEGER_UNDERFLOW;
+    return CARDANO_ERROR_INTEGER_UNDERFLOW;
   }
 
   uint64_t               coin        = lhs->coin - rhs->coin;
@@ -512,7 +512,7 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 {
   if ((lhs == NULL) || (rhs == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_id_list_t* intersection = NULL;
@@ -714,12 +714,12 @@ cardano_value_get_intersection_count(cardano_value_t* lhs, cardano_value_t* rhs,
 {
   if ((lhs == NULL) || (rhs == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (result == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_id_list_t* intersection = NULL;

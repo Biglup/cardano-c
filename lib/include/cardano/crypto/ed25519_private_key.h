@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H
-#define CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -569,4 +569,4 @@ CARDANO_EXPORT cardano_error_t cardano_ed25519_private_key_to_hex(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_ED25519_PRIVATE_KEY_H

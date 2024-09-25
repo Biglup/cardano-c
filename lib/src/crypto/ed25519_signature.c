@@ -87,13 +87,13 @@ cardano_ed25519_signature_from_bytes(
 {
   if (signature == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *signature = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length != crypto_sign_BYTES)
@@ -106,7 +106,7 @@ cardano_ed25519_signature_from_bytes(
 
   if (ed25519_signature == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_signature->base.ref_count     = 1;
@@ -117,7 +117,7 @@ cardano_ed25519_signature_from_bytes(
   if (ed25519_signature->buffer == NULL)
   {
     _cardano_free(ed25519_signature);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *signature = ed25519_signature;
@@ -133,13 +133,13 @@ cardano_ed25519_signature_from_hex(
 {
   if (signature == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *signature = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_length != (crypto_sign_BYTES * 2))
@@ -155,7 +155,7 @@ cardano_ed25519_signature_from_hex(
   {
     *signature = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   ed25519_signature->base.ref_count     = 1;
@@ -168,7 +168,7 @@ cardano_ed25519_signature_from_hex(
     *signature = NULL;
     _cardano_free(ed25519_signature);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *signature = ed25519_signature;
@@ -236,7 +236,7 @@ cardano_ed25519_signature_to_bytes(
 {
   if (ed25519_signature == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_copy_bytes(ed25519_signature->buffer, signature, signature_length);

@@ -157,7 +157,7 @@ cardano_stake_vote_delegation_cert_from_cbor(cardano_cbor_reader_t* reader, card
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p stake_registration or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -235,7 +235,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_stake_vote_delegation_cert_get_cred
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the credential was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -309,7 +309,7 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_stake_vote_delegation_cert_get_po
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the pool key hash was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -374,7 +374,7 @@ CARDANO_EXPORT cardano_drep_t* cardano_stake_vote_delegation_cert_get_drep(carda
  * \param[in] drep A pointer to an initialized \ref cardano_drep_t object to be assigned to the certificate.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the DREP was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function increments the reference count of the \p drep object, so it remains managed by both the caller and the certificate.
  *       It is the caller's responsibility to unreference their own copy of \p drep when it is no longer needed.

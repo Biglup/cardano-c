@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_MAJOR_TYPE_H
-#define CARDANO_CBOR_MAJOR_TYPE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_MAJOR_TYPE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_MAJOR_TYPE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -114,4 +114,4 @@ CARDANO_EXPORT const char* cardano_cbor_major_type_to_string(cardano_cbor_major_
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_MAJOR_TYPE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_MAJOR_TYPE_H

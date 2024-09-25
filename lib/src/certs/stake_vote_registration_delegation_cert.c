@@ -96,29 +96,29 @@ cardano_stake_vote_registration_delegation_cert_new(
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pool_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vote_registration_delegation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_stake_vote_registration_delegation_cert_t* data = _cardano_malloc(sizeof(cardano_stake_vote_registration_delegation_cert_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -146,12 +146,12 @@ cardano_stake_vote_registration_delegation_cert_from_cbor(cardano_cbor_reader_t*
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (stake_vote_registration_delegation_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "stake_vote_registration_delegation_cert";
@@ -243,12 +243,12 @@ cardano_stake_vote_registration_delegation_cert_to_cbor(
 {
   if (stake_vote_registration_delegation_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -258,7 +258,7 @@ cardano_stake_vote_registration_delegation_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_STAKE_VOTE_REGISTRATION_DELEGATION);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_STAKE_VOTE_REGISTRATION_DELEGATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
@@ -286,7 +286,7 @@ cardano_stake_vote_registration_delegation_cert_to_cbor(
     return write_drep_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, stake_vote_registration_delegation_cert->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, stake_vote_registration_delegation_cert->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {
@@ -314,12 +314,12 @@ cardano_stake_vote_registration_delegation_cert_set_credential(cardano_stake_vot
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
@@ -347,12 +347,12 @@ cardano_stake_vote_registration_delegation_cert_set_pool_key_hash(cardano_stake_
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_ref(hash);
@@ -382,12 +382,12 @@ cardano_stake_vote_registration_delegation_cert_set_drep(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_drep_ref(drep);
@@ -415,7 +415,7 @@ cardano_stake_vote_registration_delegation_cert_set_deposit(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   certificate->deposit = deposit;

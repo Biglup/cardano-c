@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_IPV6_H
-#define CARDANO_IPV6_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H
 
 /* INCLUDES ******************************************************************/
 
@@ -186,7 +186,7 @@ cardano_ipv6_from_cbor(cardano_cbor_reader_t* reader, cardano_ipv6_t** ipv6);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p ipv6 or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -465,4 +465,4 @@ CARDANO_EXPORT const char* cardano_ipv6_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_IPV6_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_IPV6_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_DREP_H
-#define CARDANO_DREP_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DREP_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_DREP_H
 
 /* INCLUDES ******************************************************************/
 
@@ -155,7 +155,7 @@ cardano_drep_from_cbor(cardano_cbor_reader_t* reader, cardano_drep_t** drep);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p drep or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -456,4 +456,4 @@ CARDANO_EXPORT const char* cardano_drep_get_last_error(const cardano_drep_t* dre
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_DREP_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_DREP_H

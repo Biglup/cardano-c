@@ -503,7 +503,7 @@ write_vkey_witness_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -545,7 +545,7 @@ write_native_script_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -587,7 +587,7 @@ write_bootstrap_witness_set_if_present(cardano_cbor_writer_t* writer, const uint
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -629,7 +629,7 @@ write_plutus_v1_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -671,7 +671,7 @@ write_plutus_data_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -713,7 +713,7 @@ write_redeemer_list_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -755,7 +755,7 @@ write_plutus_v2_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -797,7 +797,7 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -867,14 +867,14 @@ cardano_witness_set_new(cardano_witness_set_t** witness_set)
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *witness_set = create_witness_set_new();
 
   if (*witness_set == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return CARDANO_SUCCESS;
@@ -885,7 +885,7 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
 {
   if (!reader || !witness_set)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *witness_set                   = NULL;
@@ -893,7 +893,7 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
 
   if (witness == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   int64_t         map_size = 0;
@@ -958,12 +958,12 @@ cardano_witness_set_to_cbor(const cardano_witness_set_t* witness_set, cardano_cb
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t map_size = get_map_size(witness_set);
@@ -1054,7 +1054,7 @@ cardano_witness_set_set_vkeys(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vkeys == NULL)
@@ -1092,7 +1092,7 @@ cardano_witness_set_set_bootstrap(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bootstraps == NULL)
@@ -1130,7 +1130,7 @@ cardano_witness_set_set_native_scripts(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (native_scripts == NULL)
@@ -1168,7 +1168,7 @@ cardano_witness_set_set_plutus_v1_scripts(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_scripts == NULL)
@@ -1206,7 +1206,7 @@ cardano_witness_set_set_plutus_v2_scripts(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_scripts == NULL)
@@ -1244,7 +1244,7 @@ cardano_witness_set_set_plutus_v3_scripts(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_scripts == NULL)
@@ -1282,7 +1282,7 @@ cardano_witness_set_set_plutus_data(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_data == NULL)
@@ -1320,7 +1320,7 @@ cardano_witness_set_set_redeemers(
 {
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (redeemers == NULL)

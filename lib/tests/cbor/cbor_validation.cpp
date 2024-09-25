@@ -95,7 +95,7 @@ TEST(cardano_cbor_validate_array_of_n_elements, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_array_of_n_elements("field_name", NULL, n_elements);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_uint_in_range, returnValidIfValidUintInRange)
@@ -167,7 +167,7 @@ TEST(cardano_cbor_validate_uint_in_range, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_uint_in_range("field_name", "type_name", NULL, &type, min, max);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_byte_string_of_size, returnValidIfValidByteString)
@@ -262,7 +262,7 @@ TEST(cardano_cbor_validate_byte_string_of_size, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_byte_string_of_size("field_name", NULL, &byte_string, size);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_end_array, returnValidIfEndOfArray)
@@ -325,7 +325,7 @@ TEST(cardano_cbor_validate_end_array, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_end_array("field_name", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_text_string_of_max_size, returnValidIfValidTextString)
@@ -396,7 +396,7 @@ TEST(cardano_cbor_validate_text_string_of_max_size, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_text_string_of_max_size("field_name", NULL, text_string, 100);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_tag, returnValidIfValidTag)
@@ -454,7 +454,7 @@ TEST(cardano_cbor_validate_tag, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_tag("field_name", NULL, (cardano_cbor_tag_t)1);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_end_map, returnValidIfEndOfMap)
@@ -517,7 +517,7 @@ TEST(cardano_cbor_validate_end_map, returnErrorIfReaderIsNull)
   const cardano_error_t result = cardano_cbor_validate_end_map("field_name", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_validate_enum_value, returnValidIfValidEnumValue)
@@ -609,5 +609,5 @@ TEST(cardano_cbor_validate_enum_value, returnErrorIfReaderIsNull)
     &value);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

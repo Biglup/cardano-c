@@ -78,14 +78,14 @@ cardano_policy_id_list_new(cardano_policy_id_list_t** policy_id)
 {
   if (policy_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_policy_id_list_t* list = _cardano_malloc(sizeof(cardano_policy_id_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -97,7 +97,7 @@ cardano_policy_id_list_new(cardano_policy_id_list_t** policy_id)
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *policy_id = list;
@@ -124,19 +124,19 @@ cardano_policy_id_list_get(
 {
   if (policy_id_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(policy_id_list->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_blake2b_hash_t*)((void*)object);
@@ -149,12 +149,12 @@ cardano_policy_id_list_add(cardano_policy_id_list_t* policy_id_list, cardano_bla
 {
   if (policy_id_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(policy_id_list->array);
   const size_t new_size      = cardano_array_add(policy_id_list->array, (cardano_object_t*)((void*)element));

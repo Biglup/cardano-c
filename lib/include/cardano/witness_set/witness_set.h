@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_WITNESS_SET_H
-#define CARDANO_WITNESS_SET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_WITNESS_SET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_WITNESS_SET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -152,7 +152,7 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p witness_set or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -238,7 +238,7 @@ CARDANO_EXPORT cardano_vkey_witness_set_t* cardano_witness_set_get_vkeys(
  *                  or NULL to remove the vkey witnesses from the witness set.
  *
  * \return A \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the vkey witnesses
- *         were successfully set or removed, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         were successfully set or removed, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the witness_set pointer is NULL.
  *
  * \note This function increases the reference count of the `vkeys` object if it is not NULL. The caller retains ownership of their references,
@@ -312,7 +312,7 @@ CARDANO_EXPORT cardano_bootstrap_witness_set_t* cardano_witness_set_get_bootstra
  *                       This parameter can be \c NULL to remove the bootstrap witnesses from the witness set.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the bootstrap witnesses
- *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the witness_set pointer is \c NULL.
  *
  * \note The function does not take ownership of the \p bootstraps object. The caller must ensure the lifecycle of the \p bootstraps object is properly managed.
@@ -385,7 +385,7 @@ CARDANO_EXPORT cardano_native_script_set_t* cardano_witness_set_get_native_scrip
  *                           This can be \c NULL to remove any existing native scripts from the witness set.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the native scripts were
- *         successfully set, or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if the witness_set is \c NULL.
+ *         successfully set, or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if the witness_set is \c NULL.
  *
  * \note If \p native_scripts is \c NULL, any existing native scripts in the \p witness_set will be removed.
  *
@@ -690,7 +690,7 @@ CARDANO_EXPORT cardano_plutus_data_set_t* cardano_witness_set_get_plutus_data(
  *                        This parameter can be \c NULL to remove the Plutus data from the witness set.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the Plutus data
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p witness_set is NULL.
  *
  * Usage Example:
@@ -764,7 +764,7 @@ CARDANO_EXPORT cardano_redeemer_list_t* cardano_witness_set_get_redeemers(
  *                      This can be set to \c NULL to remove the redeemers from the witness set.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the redeemers
- *         were successfully set, or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if any required pointer is NULL.
+ *         were successfully set, or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if any required pointer is NULL.
  *
  * \note The caller retains ownership of the \p redeemers object. The function increases the reference count
  *       for the provided redeemers. If \p redeemers is \c NULL, the redeemers field in the witness set will be cleared.
@@ -971,4 +971,4 @@ CARDANO_EXPORT const char* cardano_witness_set_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_WITNESS_SET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_WITNESS_SET_H

@@ -388,7 +388,7 @@ TEST(cardano_proposal_procedure_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_proposal_procedure_from_cbor(nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_from_cbor, returnsErrorIfActionIsNull)
@@ -400,7 +400,7 @@ TEST(cardano_proposal_procedure_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_proposal_procedure_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -575,7 +575,7 @@ TEST(cardano_proposal_procedure_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_proposal_procedure_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -587,7 +587,7 @@ TEST(cardano_proposal_procedure_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_proposal_procedure_to_cbor((cardano_proposal_procedure_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Proposals specific tests
@@ -644,7 +644,7 @@ TEST(cardano_proposal_procedure_new_parameter_change_action, returnsErrorIfActio
   cardano_error_t result = cardano_proposal_procedure_new_parameter_change_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -663,7 +663,7 @@ TEST(cardano_proposal_procedure_new_parameter_change_action, returnsErrorIfRewar
   cardano_error_t result = cardano_proposal_procedure_new_parameter_change_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_parameter_change_action_unref(&action);
@@ -682,7 +682,7 @@ TEST(cardano_proposal_procedure_new_parameter_change_action, returnsErrorIfAncho
   cardano_error_t result = cardano_proposal_procedure_new_parameter_change_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_parameter_change_action_unref(&action);
@@ -700,7 +700,7 @@ TEST(cardano_proposal_procedure_new_parameter_change_action, returnsErrorIfPropo
   cardano_error_t result = cardano_proposal_procedure_new_parameter_change_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_parameter_change_action_unref(&action);
@@ -722,7 +722,7 @@ TEST(cardano_proposal_procedure_new_parameter_change_action, returnsErrorIfMemor
 
   cardano_error_t result = cardano_proposal_procedure_new_parameter_change_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_parameter_change_action_unref(&action);
@@ -746,7 +746,7 @@ TEST(cardano_proposal_procedure_new_hard_fork_initiation_action, returnsErrorIfM
 
   cardano_error_t result = cardano_proposal_procedure_new_hard_fork_initiation_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&action);
@@ -770,7 +770,7 @@ TEST(cardano_proposal_procedure_new_treasury_withdrawals_action, returnsErrorIfM
 
   cardano_error_t result = cardano_proposal_procedure_new_treasury_withdrawals_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&action);
@@ -794,7 +794,7 @@ TEST(cardano_proposal_procedure_new_no_confidence_action, returnsErrorIfMemoryAl
 
   cardano_error_t result = cardano_proposal_procedure_new_no_confidence_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_no_confidence_action_unref(&action);
@@ -818,7 +818,7 @@ TEST(cardano_proposal_procedure_new_update_committee_action, returnsErrorIfMemor
 
   cardano_error_t result = cardano_proposal_procedure_new_update_committee_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_update_committee_action_unref(&action);
@@ -842,7 +842,7 @@ TEST(cardano_proposal_procedure_new_constitution_action, returnsErrorIfMemoryAll
 
   cardano_error_t result = cardano_proposal_procedure_new_constitution_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_new_constitution_action_unref(&action);
@@ -866,7 +866,7 @@ TEST(cardano_proposal_procedure_new_info_action, returnsErrorIfMemoryAllocationF
 
   cardano_error_t result = cardano_proposal_procedure_new_info_action(DEPOSIT, reward_address, anchor, action, &proposal_procedure);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_info_action_unref(&action);
@@ -903,7 +903,7 @@ TEST(cardano_proposal_procedure_to_parameter_change_action, returnsErrorIfPropos
   cardano_error_t result = cardano_proposal_procedure_to_parameter_change_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_parameter_change_action, returnsErrorIfActionIsNull)
@@ -916,7 +916,7 @@ TEST(cardano_proposal_procedure_to_parameter_change_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_parameter_change_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -934,7 +934,7 @@ TEST(cardano_proposal_procedure_to_parameter_change_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_parameter_change_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_parameter_change_action_unref(&action);
@@ -968,7 +968,7 @@ TEST(cardano_proposal_procedure_to_hard_fork_initiation_action, returnsErrorIfPr
   cardano_error_t result = cardano_proposal_procedure_to_hard_fork_initiation_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_hard_fork_initiation_action, returnsErrorIfActionIsNull)
@@ -981,7 +981,7 @@ TEST(cardano_proposal_procedure_to_hard_fork_initiation_action, returnsErrorIfAc
   cardano_error_t result = cardano_proposal_procedure_to_hard_fork_initiation_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -999,7 +999,7 @@ TEST(cardano_proposal_procedure_to_hard_fork_initiation_action, returnsErrorIfAc
   cardano_error_t result = cardano_proposal_procedure_to_hard_fork_initiation_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&action);
@@ -1033,7 +1033,7 @@ TEST(cardano_proposal_procedure_to_treasury_withdrawals_action, returnsErrorIfPr
   cardano_error_t result = cardano_proposal_procedure_to_treasury_withdrawals_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_treasury_withdrawals_action, returnsErrorIfActionIsNull)
@@ -1046,7 +1046,7 @@ TEST(cardano_proposal_procedure_to_treasury_withdrawals_action, returnsErrorIfAc
   cardano_error_t result = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -1064,7 +1064,7 @@ TEST(cardano_proposal_procedure_to_treasury_withdrawals_action, returnsErrorIfAc
   cardano_error_t result = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&action);
@@ -1098,7 +1098,7 @@ TEST(cardano_proposal_procedure_to_no_confidence_action, returnsErrorIfProposalP
   cardano_error_t result = cardano_proposal_procedure_to_no_confidence_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_no_confidence_action, returnsErrorIfActionIsNull)
@@ -1111,7 +1111,7 @@ TEST(cardano_proposal_procedure_to_no_confidence_action, returnsErrorIfActionIsN
   cardano_error_t result = cardano_proposal_procedure_to_no_confidence_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -1129,7 +1129,7 @@ TEST(cardano_proposal_procedure_to_no_confidence_action, returnsErrorIfActionIsN
   cardano_error_t result = cardano_proposal_procedure_to_no_confidence_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_no_confidence_action_unref(&action);
@@ -1163,7 +1163,7 @@ TEST(cardano_proposal_procedure_to_update_committee_action, returnsErrorIfPropos
   cardano_error_t result = cardano_proposal_procedure_to_update_committee_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_update_committee_action, returnsErrorIfActionIsNull)
@@ -1176,7 +1176,7 @@ TEST(cardano_proposal_procedure_to_update_committee_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_update_committee_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -1194,7 +1194,7 @@ TEST(cardano_proposal_procedure_to_update_committee_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_update_committee_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_update_committee_action_unref(&action);
@@ -1228,7 +1228,7 @@ TEST(cardano_proposal_procedure_to_new_constitution_action, returnsErrorIfPropos
   cardano_error_t result = cardano_proposal_procedure_to_constitution_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_new_constitution_action, returnsErrorIfActionIsNull)
@@ -1241,7 +1241,7 @@ TEST(cardano_proposal_procedure_to_new_constitution_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_constitution_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -1259,7 +1259,7 @@ TEST(cardano_proposal_procedure_to_new_constitution_action, returnsErrorIfAction
   cardano_error_t result = cardano_proposal_procedure_to_constitution_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_new_constitution_action_unref(&action);
@@ -1293,7 +1293,7 @@ TEST(cardano_proposal_procedure_to_info_action, returnsErrorIfProposalProcedureI
   cardano_error_t result = cardano_proposal_procedure_to_info_action(nullptr, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_to_info_action, returnsErrorIfActionIsNull)
@@ -1306,7 +1306,7 @@ TEST(cardano_proposal_procedure_to_info_action, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_proposal_procedure_to_info_action(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -1324,7 +1324,7 @@ TEST(cardano_proposal_procedure_to_info_action, returnsErrorIfActionIsNotAnInfoA
   cardano_error_t result = cardano_proposal_procedure_to_info_action(proposal_procedure, &action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE);
 
   // Cleanup
   cardano_info_action_unref(&action);
@@ -1385,7 +1385,7 @@ TEST(cardano_proposal_procedure_new_hard_fork_initiation_action, returnsErrorIfA
   cardano_error_t result = cardano_proposal_procedure_new_hard_fork_initiation_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1404,7 +1404,7 @@ TEST(cardano_proposal_procedure_new_hard_fork_initiation_action, returnsErrorIfR
   cardano_error_t result = cardano_proposal_procedure_new_hard_fork_initiation_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&action);
@@ -1423,7 +1423,7 @@ TEST(cardano_proposal_procedure_new_hard_fork_initiation_action, returnsErrorIfA
   cardano_error_t result = cardano_proposal_procedure_new_hard_fork_initiation_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&action);
@@ -1441,7 +1441,7 @@ TEST(cardano_proposal_procedure_new_hard_fork_initiation_action, returnsErrorIfP
   cardano_error_t result = cardano_proposal_procedure_new_hard_fork_initiation_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&action);
@@ -1503,7 +1503,7 @@ TEST(cardano_proposal_procedure_new_treasury_withdrawals_action, returnsErrorIfA
   cardano_error_t result = cardano_proposal_procedure_new_treasury_withdrawals_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1522,7 +1522,7 @@ TEST(cardano_proposal_procedure_new_treasury_withdrawals_action, returnsErrorIfR
   cardano_error_t result = cardano_proposal_procedure_new_treasury_withdrawals_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&action);
@@ -1541,7 +1541,7 @@ TEST(cardano_proposal_procedure_new_treasury_withdrawals_action, returnsErrorIfA
   cardano_error_t result = cardano_proposal_procedure_new_treasury_withdrawals_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&action);
@@ -1559,7 +1559,7 @@ TEST(cardano_proposal_procedure_new_treasury_withdrawals_action, returnsErrorIfP
   cardano_error_t result = cardano_proposal_procedure_new_treasury_withdrawals_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&action);
@@ -1621,7 +1621,7 @@ TEST(cardano_proposal_procedure_new_no_confidence_action, returnsErrorIfActionIs
   cardano_error_t result = cardano_proposal_procedure_new_no_confidence_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1640,7 +1640,7 @@ TEST(cardano_proposal_procedure_new_no_confidence_action, returnsErrorIfRewardAd
   cardano_error_t result = cardano_proposal_procedure_new_no_confidence_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_no_confidence_action_unref(&action);
@@ -1659,7 +1659,7 @@ TEST(cardano_proposal_procedure_new_no_confidence_action, returnsErrorIfAnchorIs
   cardano_error_t result = cardano_proposal_procedure_new_no_confidence_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_no_confidence_action_unref(&action);
@@ -1677,7 +1677,7 @@ TEST(cardano_proposal_procedure_new_no_confidence_action, returnsErrorIfProposal
   cardano_error_t result = cardano_proposal_procedure_new_no_confidence_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_no_confidence_action_unref(&action);
@@ -1739,7 +1739,7 @@ TEST(cardano_proposal_procedure_new_update_committee_action, returnsErrorIfActio
   cardano_error_t result = cardano_proposal_procedure_new_update_committee_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1758,7 +1758,7 @@ TEST(cardano_proposal_procedure_new_update_committee_action, returnsErrorIfRewar
   cardano_error_t result = cardano_proposal_procedure_new_update_committee_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&action);
@@ -1777,7 +1777,7 @@ TEST(cardano_proposal_procedure_new_update_committee_action, returnsErrorIfAncho
   cardano_error_t result = cardano_proposal_procedure_new_update_committee_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&action);
@@ -1795,7 +1795,7 @@ TEST(cardano_proposal_procedure_new_update_committee_action, returnsErrorIfPropo
   cardano_error_t result = cardano_proposal_procedure_new_update_committee_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&action);
@@ -1857,7 +1857,7 @@ TEST(cardano_proposal_procedure_new_constitution_action, returnsErrorIfActionIsN
   cardano_error_t result = cardano_proposal_procedure_new_constitution_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1876,7 +1876,7 @@ TEST(cardano_proposal_procedure_new_constitution_action, returnsErrorIfRewardAdd
   cardano_error_t result = cardano_proposal_procedure_new_constitution_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_new_constitution_action_unref(&action);
@@ -1895,7 +1895,7 @@ TEST(cardano_proposal_procedure_new_constitution_action, returnsErrorIfAnchorIsN
   cardano_error_t result = cardano_proposal_procedure_new_constitution_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_new_constitution_action_unref(&action);
@@ -1913,7 +1913,7 @@ TEST(cardano_proposal_procedure_new_constitution_action, returnsErrorIfProposalP
   cardano_error_t result = cardano_proposal_procedure_new_constitution_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_new_constitution_action_unref(&action);
@@ -1975,7 +1975,7 @@ TEST(cardano_proposal_procedure_new_info_action, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_proposal_procedure_new_info_action(DEPOSIT, reward_address, anchor, nullptr, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -1994,7 +1994,7 @@ TEST(cardano_proposal_procedure_new_info_action, returnsErrorIfRewardAddressIsNu
   cardano_error_t result = cardano_proposal_procedure_new_info_action(DEPOSIT, nullptr, anchor, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_info_action_unref(&action);
@@ -2013,7 +2013,7 @@ TEST(cardano_proposal_procedure_new_info_action, returnsErrorIfAnchorIsNull)
   cardano_error_t result = cardano_proposal_procedure_new_info_action(DEPOSIT, reward_address, nullptr, action, &proposal_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_info_action_unref(&action);
@@ -2031,7 +2031,7 @@ TEST(cardano_proposal_procedure_new_info_action, returnsErrorIfProposalProcedure
   cardano_error_t result = cardano_proposal_procedure_new_info_action(DEPOSIT, reward_address, anchor, action, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_info_action_unref(&action);
@@ -2065,7 +2065,7 @@ TEST(cardano_proposal_procedure_get_action_type, returnsErrorIfProposalProcedure
   cardano_error_t result = cardano_proposal_procedure_get_action_type(nullptr, &action_type);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_get_action_type, returnsErrorIfActionTypeIsNull)
@@ -2078,7 +2078,7 @@ TEST(cardano_proposal_procedure_get_action_type, returnsErrorIfActionTypeIsNull)
   cardano_error_t result = cardano_proposal_procedure_get_action_type(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -2116,7 +2116,7 @@ TEST(cardano_proposal_procedure_set_anchor, returnsErrorIfProposalProcedureIsNul
   cardano_error_t result = cardano_proposal_procedure_set_anchor(nullptr, anchor);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -2132,7 +2132,7 @@ TEST(cardano_proposal_procedure_set_anchor, returnsErrorIfAnchorIsNull)
   cardano_error_t result = cardano_proposal_procedure_set_anchor(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -2202,7 +2202,7 @@ TEST(cardano_proposal_procedure_set_reward_address, returnsErrorIfProposalProced
   cardano_error_t result = cardano_proposal_procedure_set_reward_address(nullptr, reward_address);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
@@ -2218,7 +2218,7 @@ TEST(cardano_proposal_procedure_set_reward_address, returnsErrorIfRewardAddressI
   cardano_error_t result = cardano_proposal_procedure_set_reward_address(proposal_procedure, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_unref(&proposal_procedure);
@@ -2279,7 +2279,7 @@ TEST(cardano_proposal_procedure_set_deposit, returnsErrorIfProposalProcedureIsNu
   cardano_error_t result = cardano_proposal_procedure_set_deposit(nullptr, DEPOSIT);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_get_deposit, canGetDeposit)

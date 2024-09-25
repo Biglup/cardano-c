@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_RELAY_TYPE_H
-#define CARDANO_RELAY_TYPE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_RELAY_TYPE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_RELAY_TYPE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -72,4 +72,4 @@ CARDANO_EXPORT const char* cardano_relay_type_to_string(cardano_relay_type_t typ
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_RELAY_TYPE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_RELAY_TYPE_H

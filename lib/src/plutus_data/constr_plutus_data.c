@@ -137,19 +137,19 @@ cardano_constr_plutus_data_new(
 {
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *constr_plutus_data = _cardano_malloc(sizeof(cardano_constr_plutus_data_t));
 
   if (*constr_plutus_data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*constr_plutus_data)->base.deallocator   = cardano_constr_plutus_data_deallocate;
@@ -171,13 +171,13 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *constr_plutus_data = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t*      cbor_cache  = NULL;
@@ -314,12 +314,12 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (constr_plutus_data->cbor_cache != NULL)
@@ -348,7 +348,7 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  const cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, constr_plutus_data->alternative);
+  const cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, constr_plutus_data->alternative);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -365,12 +365,12 @@ cardano_constr_plutus_data_get_data(
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_list_ref(constr_plutus_data->data);
@@ -386,12 +386,12 @@ cardano_constr_plutus_data_set_data(
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_list_ref(data);
@@ -410,12 +410,12 @@ cardano_constr_plutus_data_get_alternative(
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (alternative == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *alternative = constr_plutus_data->alternative;
@@ -430,7 +430,7 @@ cardano_constr_plutus_data_set_alternative(
 {
   if (constr_plutus_data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   constr_plutus_data->alternative = alternative;

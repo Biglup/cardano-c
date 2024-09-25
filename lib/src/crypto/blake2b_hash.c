@@ -86,21 +86,21 @@ cardano_blake2b_compute_hash(
 {
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *hash = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length == 0U)
   {
     *hash = NULL;
 
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   if (hash_length == 0U)
@@ -116,7 +116,7 @@ cardano_blake2b_compute_hash(
   {
     *hash = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   obj->base.ref_count     = 1;
@@ -129,7 +129,7 @@ cardano_blake2b_compute_hash(
     _cardano_free(obj);
     *hash = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   int init_result = sodium_init();
@@ -180,21 +180,21 @@ cardano_blake2b_hash_from_bytes(
 {
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *hash = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length == 0U)
   {
     *hash = NULL;
 
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_blake2b_hash_t* blake2b_hash = (cardano_blake2b_hash_t*)_cardano_malloc(sizeof(cardano_blake2b_hash_t));
@@ -203,7 +203,7 @@ cardano_blake2b_hash_from_bytes(
   {
     *hash = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   blake2b_hash->base.ref_count     = 1;
@@ -216,7 +216,7 @@ cardano_blake2b_hash_from_bytes(
     *hash = NULL;
     _cardano_free(blake2b_hash);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *hash = blake2b_hash;
@@ -233,25 +233,25 @@ cardano_blake2b_hash_from_hex(
   if (hex == NULL)
   {
     *hash = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_length == 0U)
   {
     *hash = NULL;
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   cardano_blake2b_hash_t* blake2b_hash = (cardano_blake2b_hash_t*)_cardano_malloc(sizeof(cardano_blake2b_hash_t));
 
   if (blake2b_hash == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   blake2b_hash->base.ref_count     = 1;
@@ -262,7 +262,7 @@ cardano_blake2b_hash_from_hex(
   if (blake2b_hash->buffer == NULL)
   {
     _cardano_free(blake2b_hash);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *hash = blake2b_hash;
@@ -312,12 +312,12 @@ cardano_blake2b_hash_to_cbor(
 {
   if (blake2b_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(
@@ -434,7 +434,7 @@ cardano_blake2b_hash_to_bytes(
 {
   if (blake2b_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_copy_bytes(blake2b_hash->buffer, hash, hash_length);

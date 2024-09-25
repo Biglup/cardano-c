@@ -80,14 +80,14 @@ cardano_vkey_witness_set_new(cardano_vkey_witness_set_t** vkey_witness_set)
 {
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_vkey_witness_set_t* list = _cardano_malloc(sizeof(cardano_vkey_witness_set_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -100,7 +100,7 @@ cardano_vkey_witness_set_new(cardano_vkey_witness_set_t** vkey_witness_set)
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *vkey_witness_set = list;
@@ -113,12 +113,12 @@ cardano_vkey_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_w
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_vkey_witness_set_t* list   = NULL;
@@ -224,12 +224,12 @@ cardano_vkey_witness_set_to_cbor(const cardano_vkey_witness_set_t* vkey_witness_
 {
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(vkey_witness_set->array != NULL);
@@ -298,19 +298,19 @@ cardano_vkey_witness_set_get(
 {
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(vkey_witness_set->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_vkey_witness_t*)((void*)object);
@@ -323,12 +323,12 @@ cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, carda
 {
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(vkey_witness_set->array);
   const size_t new_size      = cardano_array_add(vkey_witness_set->array, (cardano_object_t*)((void*)element));
@@ -357,7 +357,7 @@ cardano_vkey_witness_set_set_use_tag(cardano_vkey_witness_set_t* vkey_witness_se
 {
   if (vkey_witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   vkey_witness_set->uses_tags = use_tag;

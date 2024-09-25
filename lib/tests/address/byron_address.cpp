@@ -45,7 +45,7 @@ TEST(cardano_byron_address_from_credentials, returnsErrorWhenRootHashIsNull)
   cardano_error_t result = cardano_byron_address_from_credentials(NULL, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -58,7 +58,7 @@ TEST(cardano_byron_address_from_credentials, returnsErrorWhenbyronAddressIsNull)
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_from_credentials, canCreateAByronAddressFromCredential)
@@ -107,7 +107,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 
   // Clean up
@@ -135,7 +135,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 
   // Clean up
@@ -163,7 +163,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 
   // Clean up
@@ -180,7 +180,7 @@ TEST(cardano_byron_address_from_address, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_byron_address_from_address(NULL, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -194,7 +194,7 @@ TEST(cardano_byron_address_from_address, returnsErrorWhenbyronAddressIsNull)
   cardano_error_t result = cardano_byron_address_from_address(address, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -210,7 +210,7 @@ TEST(cardano_byron_address_from_address, returnsErrorWhenAddressTypeIsInvalid)
   cardano_error_t result = cardano_byron_address_from_address(address, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_TYPE);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_TYPE);
   EXPECT_EQ(byron_address, nullptr);
 
   // Cleanup
@@ -232,7 +232,7 @@ TEST(cardano_byron_address_from_address, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_byron_address_from_address(address, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 
   // Cleanup
@@ -296,7 +296,7 @@ TEST(cardano_byron_address_from_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_byron_address_from_bytes(NULL, 0, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -309,7 +309,7 @@ TEST(cardano_byron_address_from_bytes, returnsErrorWhenbyronAddressIsNull)
   cardano_error_t result = cardano_byron_address_from_bytes(Cip19TestVectors::byronMainnetYoroiBytes, sizeof(Cip19TestVectors::byronMainnetYoroiBytes), NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -322,7 +322,7 @@ TEST(cardano_byron_address_from_bytes, returnsErrorWhenInvalidSize)
   cardano_error_t result = cardano_byron_address_from_bytes(Cip19TestVectors::byronMainnetYoroiBytes, 0, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -388,7 +388,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -401,7 +401,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfSizeIsZero)
   cardano_error_t result = cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), 0, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -411,7 +411,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfAddressIsNull)
   cardano_error_t result = cardano_byron_address_from_base58("a", 1, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_from_base58, returnErrorIfInvalidPrefix)
@@ -494,7 +494,7 @@ TEST(cardano_byron_address_to_bytes, returnsErrorWhenbyron_addressIsNull)
   cardano_error_t result = cardano_byron_address_to_bytes(NULL, bytes, sizeof(bytes));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_to_bytes, returnsErrorWhenBufferIsNull)
@@ -507,7 +507,7 @@ TEST(cardano_byron_address_to_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_byron_address_to_bytes(byron_address, NULL, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_byron_address_unref(&byron_address);
@@ -525,7 +525,7 @@ TEST(cardano_byron_address_to_bytes, returnsErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_byron_address_to_bytes(byron_address, bytes, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_byron_address_unref(&byron_address);
@@ -540,7 +540,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorWhenbyron_addressIsNull)
   cardano_error_t result = cardano_byron_address_from_base58(NULL, 0, &byron_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(byron_address, nullptr);
 }
 
@@ -604,7 +604,7 @@ TEST(cardano_byron_address_to_base58, returnsErrorIfBufferTooSmall)
   cardano_error_t result = cardano_byron_address_to_base58(byron_address, buffer, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_byron_address_unref(&byron_address);
@@ -795,7 +795,7 @@ TEST(cardano_byron_address_get_attributes, returnsNullIfGivenANullPtr)
   cardano_error_t result = cardano_byron_address_get_attributes(byron_address, &attributes);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_get_attributes, canGetTheAttributes)
@@ -828,7 +828,7 @@ TEST(cardano_byron_address_get_type, returnsNullIfGivenANullPtr)
   cardano_error_t result = cardano_byron_address_get_type(byron_address, &type);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_get_type, canGetTheType)
@@ -860,7 +860,7 @@ TEST(cardano_byron_address_get_root, returnsNullIfGivenANullPtr)
   cardano_error_t result = cardano_byron_address_get_root(byron_address, &root);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_byron_address_get_root, canGetTheRoot)
@@ -898,7 +898,7 @@ TEST(cardano_byron_address_get_root, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_byron_address_get_root(byron_address, &root);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(root, nullptr);
 
   // Cleanup

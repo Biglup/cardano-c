@@ -79,14 +79,14 @@ cardano_certificate_set_new(cardano_certificate_set_t** certificate_set)
 {
   if (certificate_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_certificate_set_t* list = _cardano_malloc(sizeof(cardano_certificate_set_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -98,7 +98,7 @@ cardano_certificate_set_new(cardano_certificate_set_t** certificate_set)
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *certificate_set = list;
@@ -111,12 +111,12 @@ cardano_certificate_set_from_cbor(cardano_cbor_reader_t* reader, cardano_certifi
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (certificate_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_certificate_set_t* list   = NULL;
@@ -220,12 +220,12 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
 {
   if (certificate_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(certificate_set->array != NULL);
@@ -291,19 +291,19 @@ cardano_certificate_set_get(
 {
   if (certificate_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(certificate_set->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_certificate_t*)((void*)object);
@@ -316,12 +316,12 @@ cardano_certificate_set_add(cardano_certificate_set_t* certificate_set, cardano_
 {
   if (certificate_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(certificate_set->array);
   const size_t new_size      = cardano_array_add(certificate_set->array, (cardano_object_t*)((void*)element));

@@ -68,7 +68,7 @@ TEST(cardano_metadatum_label_list_new, createsANewInstanceOfRewardAddressList)
 
 TEST(cardano_metadatum_label_list_new, returnsErrorIfListIsNull)
 {
-  EXPECT_EQ(cardano_metadatum_label_list_new(nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_label_list_new(nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_metadatum_label_list_new, returnErrorIfMemoryAllocationFails)
@@ -78,7 +78,7 @@ TEST(cardano_metadatum_label_list_new, returnErrorIfMemoryAllocationFails)
 
   cardano_metadatum_label_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_metadatum_label_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_metadatum_label_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -92,7 +92,7 @@ TEST(cardano_metadatum_label_list_new, returnErrorIfMemoryAllocationFails2)
 
   cardano_metadatum_label_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_metadatum_label_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_metadatum_label_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -111,13 +111,13 @@ TEST(cardano_metadatum_label_list_get_length, returnsZeroIfListIsNull)
 TEST(cardano_metadatum_label_list_get, returnsNullIfListIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_metadatum_label_list_get(nullptr, 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_label_list_get(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_metadatum_label_list_get, returnsNullIfElementIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_metadatum_label_list_get((cardano_metadatum_label_list_t*)"", 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_label_list_get((cardano_metadatum_label_list_t*)"", 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_metadatum_label_list_get, returnsErrorIfIndexIsOutOfBounds)
@@ -133,7 +133,7 @@ TEST(cardano_metadatum_label_list_get, returnsErrorIfIndexIsOutOfBounds)
   error                    = cardano_metadatum_label_list_get(list, 0, &metadatum_label);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_metadatum_label_list_unref(&list);
@@ -283,5 +283,5 @@ TEST(cardano_metadatum_label_list_add, returnsErrorIfListIsNull)
   cardano_error_t result = cardano_metadatum_label_list_add(nullptr, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

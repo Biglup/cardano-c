@@ -71,7 +71,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
  *         unregistration certificate was successfully created, or an appropriate error code indicating
- *         the failure reason (e.g., \ref CARDANO_POINTER_IS_NULL if any input pointers are NULL).
+ *         the failure reason (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -154,7 +154,7 @@ cardano_unregister_drep_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_un
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p unregister_drep_cert or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -227,7 +227,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_unregister_drep_cert_get_credential
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
  *         credential was successfully set, or an appropriate error code indicating the failure reason, such as
- *         \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -286,7 +286,7 @@ CARDANO_EXPORT uint64_t cardano_unregister_drep_cert_get_deposit(const cardano_u
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the deposit was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the certificate pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the certificate pointer is NULL.
  *
  * Usage Example:
  * \code{.c}

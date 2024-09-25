@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_SINGLE_HOST_ADDR_RELAY_H
-#define CARDANO_SINGLE_HOST_ADDR_RELAY_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_SINGLE_HOST_ADDR_RELAY_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_SINGLE_HOST_ADDR_RELAY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -65,7 +65,7 @@ typedef struct cardano_single_host_addr_relay_t cardano_single_host_addr_relay_t
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the single host address relay was successfully created, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the single_host_addr_relay pointer
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the single_host_addr_relay pointer
  *         is NULL or other input validation errors.
  *
  * Usage Example:
@@ -151,7 +151,7 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p single_host_addr_relay or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -229,7 +229,7 @@ CARDANO_EXPORT const uint16_t* cardano_single_host_addr_relay_get_port(
  *                 the port number is unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the port number was successfully set or unset. Returns an error code such as \ref CARDANO_POINTER_IS_NULL
+ *         if the port number was successfully set or unset. Returns an error code such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the single_host_addr_relay pointer is NULL.
  *
  * Usage Example:
@@ -275,7 +275,7 @@ CARDANO_EXPORT cardano_error_t cardano_single_host_addr_relay_set_port(
  *                  by calling \ref cardano_ipv4_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the IPv4 address was successfully retrieved, or an error code such as \ref CARDANO_POINTER_IS_NULL
+ *         if the IPv4 address was successfully retrieved, or an error code such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any input pointers are NULL.
  *
  * Usage Example:
@@ -316,7 +316,7 @@ CARDANO_EXPORT cardano_error_t cardano_single_host_addr_relay_get_ipv4(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the IPv4 address was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input pointer to the relay or IPv4 address is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pointer to the relay or IPv4 address is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -358,7 +358,7 @@ CARDANO_EXPORT cardano_error_t cardano_single_host_addr_relay_set_ipv4(
  *                  by calling \ref cardano_ipv6_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the IPv6 address was successfully retrieved, or an error code such as \ref CARDANO_POINTER_IS_NULL
+ *         if the IPv6 address was successfully retrieved, or an error code such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any input pointers are NULL.
  *
  * Usage Example:
@@ -399,7 +399,7 @@ CARDANO_EXPORT cardano_error_t cardano_single_host_addr_relay_get_ipv6(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the IPv6 address was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input pointer to the relay or IPv6 address is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pointer to the relay or IPv6 address is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -558,4 +558,4 @@ CARDANO_EXPORT const char* cardano_single_host_addr_relay_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_SINGLE_HOST_ADDR_RELAY_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_SINGLE_HOST_ADDR_RELAY_H

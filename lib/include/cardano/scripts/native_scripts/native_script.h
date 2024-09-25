@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_NATIVE_SCRIPT_H
-#define CARDANO_NATIVE_SCRIPT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_H
 
 /* INCLUDES ******************************************************************/
 
@@ -417,7 +417,7 @@ cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_sc
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p native_script or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -982,4 +982,4 @@ CARDANO_EXPORT const char* cardano_native_script_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_NATIVE_SCRIPT_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_NATIVE_SCRIPT_H

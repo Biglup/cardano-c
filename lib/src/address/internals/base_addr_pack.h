@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BASE_ADDRESS_PACK_H
-#define CARDANO_BASE_ADDRESS_PACK_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_PACK_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_PACK_H
 
 /* INCLUDES ******************************************************************/
 
@@ -86,4 +86,4 @@ _cardano_get_base_address_type(
   const cardano_credential_t* stake_credential,
   cardano_address_type_t*     type);
 
-#endif // CARDANO_BASE_ADDRESS_PACK_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BASE_ADDRESS_PACK_H

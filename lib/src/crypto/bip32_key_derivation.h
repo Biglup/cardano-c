@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H
-#define CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -188,4 +188,4 @@ cardano_error_t _cardano_crypto_derive_private(const byte_t* key, int32_t index,
  */
 cardano_error_t _cardano_crypto_derive_public(const byte_t* key, int32_t index, byte_t* out, size_t out_size);
 
-#endif // CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BIP32_KEY_DERIVATION_H

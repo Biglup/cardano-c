@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_DREP_VOTING_THRESHOLDS_H
-#define CARDANO_DREP_VOTING_THRESHOLDS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -198,7 +198,7 @@ cardano_drep_voting_thresholds_from_cbor(cardano_cbor_reader_t* reader, cardano_
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p drep_voting_thresholds or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -1149,4 +1149,4 @@ CARDANO_EXPORT const char* cardano_drep_voting_thresholds_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_DREP_VOTING_THRESHOLDS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_DREP_VOTING_THRESHOLDS_H

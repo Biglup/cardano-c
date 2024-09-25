@@ -81,7 +81,7 @@ TEST(cardano_drep_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_drep_to_cbor(drep, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_unref(&drep);
@@ -96,7 +96,7 @@ TEST(cardano_drep_to_cbor, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_drep_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -161,7 +161,7 @@ TEST(cardano_drep_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 
   // Cleanup
@@ -363,7 +363,7 @@ TEST(cardano_drep_new, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_KEY_HASH, NULL, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 }
 
@@ -423,7 +423,7 @@ TEST(cardano_drep_get_credential, returnsErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_get_credential(nullptr, &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
@@ -433,7 +433,7 @@ TEST(cardano_drep_get_credential, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_drep_get_credential((cardano_drep_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_set_credential, canSetCredential)
@@ -480,7 +480,7 @@ TEST(cardano_drep_set_credential, returnsErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_set_credential(nullptr, credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_set_credential, returnsErrorIfCredentialIsNull)
@@ -489,7 +489,7 @@ TEST(cardano_drep_set_credential, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_drep_set_credential((cardano_drep_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_get_type, canGetType)
@@ -522,7 +522,7 @@ TEST(cardano_drep_get_type, returnsErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_get_type(nullptr, &type);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_get_type, returnsErrorIfTypeIsNull)
@@ -534,7 +534,7 @@ TEST(cardano_drep_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t error = cardano_drep_get_type(drep, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_new, returnErrorIfDrepIsNull)
@@ -543,7 +543,7 @@ TEST(cardano_drep_new, returnErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_from_cbor, returnsErrorIfReaderIsNull)
@@ -555,7 +555,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t error = cardano_drep_from_cbor(nullptr, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_from_cbor, returnsErrorIfDrepIsNull)
@@ -567,7 +567,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -603,7 +603,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_drep_from_cbor(reader, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 
   // Cleanup
@@ -758,7 +758,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_drep_from_cbor(reader, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 
   // Cleanup
@@ -779,7 +779,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfEventualMemoryAllocationFails2)
   cardano_error_t error = cardano_drep_from_cbor(reader, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 
   // Cleanup
@@ -800,7 +800,7 @@ TEST(cardano_drep_from_cbor, returnsErrorIfEventualMemoryAllocationFails3)
   cardano_error_t error = cardano_drep_from_cbor(reader, &drep);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(drep, (cardano_drep_t*)nullptr);
 
   // Cleanup
@@ -894,7 +894,7 @@ TEST(cardano_drep_get_type, returnNullIfTypeIsNull)
   cardano_error_t error = cardano_drep_get_type((cardano_drep_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_drep_set_type, returnErrorIfDrepIsNull)
@@ -903,5 +903,5 @@ TEST(cardano_drep_set_type, returnErrorIfDrepIsNull)
   cardano_error_t error = cardano_drep_set_type(nullptr, CARDANO_DREP_TYPE_KEY_HASH);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

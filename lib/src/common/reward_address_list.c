@@ -111,14 +111,14 @@ cardano_reward_address_list_new(cardano_reward_address_list_t** reward_address_l
 {
   if (reward_address_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_reward_address_list_t* list = _cardano_malloc(sizeof(cardano_reward_address_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -130,7 +130,7 @@ cardano_reward_address_list_new(cardano_reward_address_list_t** reward_address_l
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *reward_address_list = list;
@@ -157,19 +157,19 @@ cardano_reward_address_list_get(
 {
   if (reward_address_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(reward_address_list->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_reward_address_t*)((void*)object);
@@ -182,12 +182,12 @@ cardano_reward_address_list_add(cardano_reward_address_list_t* reward_address_li
 {
   if (reward_address_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(reward_address_list->array);
   const size_t new_size      = cardano_array_add(reward_address_list->array, (cardano_object_t*)((void*)element));

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_MULTI_ASSET_H
-#define CARDANO_MULTI_ASSET_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H
 
 /* INCLUDES ******************************************************************/
 
@@ -140,7 +140,7 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p multi_asset or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -215,7 +215,7 @@ CARDANO_EXPORT size_t cardano_multi_asset_get_policy_count(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets
  *         were successfully inserted, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \remark If the key already exists in the multi asset, the value associated with the policy id will be updated.
  *
@@ -271,7 +271,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_insert_assets(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets
  *         were successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the specified policy ID does not exist in the multi-asset container.
  *
  * Usage Example:
@@ -323,8 +323,8 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get_assets(
  *                   which accounts for possible negative quantities due to burning or other operations affecting asset balance.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the asset quantity was successfully retrieved,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL,
- *         or \ref CARDANO_ELEMENT_NOT_FOUND if either the specified policy ID or asset name does not exist within the multi-asset container.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL,
+ *         or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if either the specified policy ID or asset name does not exist within the multi-asset container.
  *
  * Usage Example:
  * \code{.c}
@@ -372,8 +372,8 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get(
  * \param[in] value The new quantity for the asset. This is a signed 64-bit integer, allowing for the subtraction or addition of asset quantities.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the asset quantity was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL,
- *         or \ref CARDANO_ELEMENT_NOT_FOUND if either the specified policy ID or asset name does not exist within the multi-asset container.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL,
+ *         or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if either the specified policy ID or asset name does not exist within the multi-asset container.
  *
  * Usage Example:
  * \code{.c}
@@ -419,7 +419,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_set(
  *                  The list is dynamically allocated and must be freed by the caller using \ref cardano_policy_id_list_unref when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the policy IDs were successfully retrieved,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the multi_asset pointer is NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the multi_asset pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -460,7 +460,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get_keys(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets were
  *         successfully combined, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -507,7 +507,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_add(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets were
  *         successfully subtracted, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -552,7 +552,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_subtract(
  *             when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was
- *         successful, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successful, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -595,7 +595,7 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get_positive(
  *             when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was
- *         successful, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successful, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -790,4 +790,4 @@ CARDANO_EXPORT const char* cardano_multi_asset_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_MULTI_ASSET_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_MULTI_ASSET_H

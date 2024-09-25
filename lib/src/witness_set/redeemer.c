@@ -92,24 +92,24 @@ cardano_redeemer_new(
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *redeemer = (cardano_redeemer_t*)_cardano_malloc(sizeof(cardano_redeemer_t));
 
   if (*redeemer == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*redeemer)->base.deallocator   = cardano_redeemer_deallocate;
@@ -133,12 +133,12 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t*      cbor_cache  = NULL;
@@ -264,12 +264,12 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (redeemer->cbor_cache != NULL)
@@ -286,7 +286,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_tag_result = cardano_cbor_writer_write_unsigned_int(
+  cardano_error_t write_tag_result = cardano_cbor_writer_write_uint(
     writer,
     (uint64_t)redeemer->tag);
 
@@ -295,7 +295,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
     return write_tag_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_index_result = cardano_cbor_writer_write_unsigned_int(
+  cardano_error_t write_index_result = cardano_cbor_writer_write_uint(
     writer,
     redeemer->index);
 
@@ -337,7 +337,7 @@ cardano_redeemer_set_tag(cardano_redeemer_t* redeemer, cardano_redeemer_tag_t ta
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   redeemer->tag = tag;
@@ -361,7 +361,7 @@ cardano_redeemer_set_index(cardano_redeemer_t* redeemer, uint64_t index)
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   redeemer->index = index;
@@ -386,12 +386,12 @@ cardano_redeemer_set_data(cardano_redeemer_t* redeemer, cardano_plutus_data_t* d
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_data_unref(&redeemer->data);
@@ -419,12 +419,12 @@ cardano_redeemer_set_ex_units(cardano_redeemer_t* redeemer, cardano_ex_units_t* 
 {
   if (redeemer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (ex_units == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_ex_units_unref(&redeemer->execution_units);

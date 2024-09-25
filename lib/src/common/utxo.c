@@ -85,26 +85,26 @@ cardano_utxo_new(
 {
   if (utxo == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (input == NULL)
   {
     *utxo = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (output == NULL)
   {
     *utxo = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *utxo = _cardano_malloc(sizeof(cardano_utxo_t));
 
   if (*utxo == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*utxo)->base.deallocator   = cardano_utxo_deallocate;
@@ -125,13 +125,13 @@ cardano_utxo_from_cbor(cardano_cbor_reader_t* reader, cardano_utxo_t** utxo)
 {
   if (utxo == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *utxo = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "utxo";
@@ -196,12 +196,12 @@ cardano_utxo_to_cbor(const cardano_utxo_t* utxo, cardano_cbor_writer_t* writer)
 {
   if (utxo == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -241,12 +241,12 @@ cardano_utxo_set_input(cardano_utxo_t* utxo, cardano_transaction_input_t* input)
 {
   if (utxo == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_input_ref(input);
@@ -274,12 +274,12 @@ cardano_utxo_set_output(cardano_utxo_t* utxo, cardano_transaction_output_t* outp
 {
   if (utxo == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (output == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_output_ref(output);

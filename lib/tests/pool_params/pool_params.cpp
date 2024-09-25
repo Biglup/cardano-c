@@ -139,13 +139,13 @@ TEST(cardano_pool_params_new, returnsErrorWhenGivenNullPointer)
   ASSERT_EQ(cardano_pool_params_get_metadata(pool_params, &metadata), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_pool_params_new(nullptr, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, nullptr, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, nullptr, reward_account, owners, relays, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, nullptr, owners, relays, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, nullptr, relays, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, nullptr, metadata, &pool_params), CARDANO_POINTER_IS_NULL);
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, nullptr), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(nullptr, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, nullptr, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, nullptr, reward_account, owners, relays, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, nullptr, owners, relays, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, nullptr, relays, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, nullptr, metadata, &pool_params), CARDANO_ERROR_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -194,7 +194,7 @@ TEST(cardano_pool_params_new, returnsErrorIfAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
-  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params2), CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(cardano_pool_params_new(operator_key_hash, vrf_vk_hash, pledge, cost, margin, reward_account, owners, relays, metadata, &pool_params2), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -219,7 +219,7 @@ TEST(cardano_pool_params_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_params_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -239,7 +239,7 @@ TEST(cardano_pool_params_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_pool_params_to_cbor(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -323,7 +323,7 @@ TEST(cardano_pool_params_from_cbor, returnErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -338,7 +338,7 @@ TEST(cardano_pool_params_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_pool_params_from_cbor(nullptr, &pool_params);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_from_cbor, returnsErrorIfInvalidHash)
@@ -638,7 +638,7 @@ TEST(cardano_pool_params_get_operator_key_hash, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_operator_key_hash(nullptr, &operator_key_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_operator_key_hash, returnsErrorIfOperatorKeyHashIsNull)
@@ -656,7 +656,7 @@ TEST(cardano_pool_params_get_operator_key_hash, returnsErrorIfOperatorKeyHashIsN
   error = cardano_pool_params_get_operator_key_hash(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -672,7 +672,7 @@ TEST(cardano_pool_params_get_vrf_vk_hash, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_vrf_vk_hash(nullptr, &vrf_vk_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_vrf_vk_hash, returnsErrorIfVrfVkHashIsNull)
@@ -690,7 +690,7 @@ TEST(cardano_pool_params_get_vrf_vk_hash, returnsErrorIfVrfVkHashIsNull)
   error = cardano_pool_params_get_vrf_vk_hash(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -708,7 +708,7 @@ TEST(cardano_pool_params_set_operator_key_hash, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_operator_key_hash(nullptr, operator_key_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&operator_key_hash);
@@ -731,7 +731,7 @@ TEST(cardano_pool_params_set_operator_key_hash, returnsErrorIfOperatorKeyHashIsN
   error = cardano_pool_params_set_operator_key_hash(pool_params, operator_key_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -776,7 +776,7 @@ TEST(cardano_pool_params_set_vrf_vk_hash, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_vrf_vk_hash(nullptr, vrf_vk_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&vrf_vk_hash);
@@ -799,7 +799,7 @@ TEST(cardano_pool_params_set_vrf_vk_hash, returnsErrorIfVrfVkHashIsNull)
   error = cardano_pool_params_set_vrf_vk_hash(pool_params, vrf_vk_hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -842,7 +842,7 @@ TEST(cardano_pool_params_get_pledge, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_pledge(nullptr, &pledge);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_pledge, returnsErrorIfPledgeIsNull)
@@ -860,7 +860,7 @@ TEST(cardano_pool_params_get_pledge, returnsErrorIfPledgeIsNull)
   error = cardano_pool_params_get_pledge(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -901,7 +901,7 @@ TEST(cardano_pool_params_set_pledge, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_pledge(nullptr, pledge);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_set_pledge, canSetThePledge)
@@ -937,7 +937,7 @@ TEST(cardano_pool_params_get_cost, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_cost(nullptr, &cost);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_cost, returnsErrorIfCostIsNull)
@@ -955,7 +955,7 @@ TEST(cardano_pool_params_get_cost, returnsErrorIfCostIsNull)
   error = cardano_pool_params_get_cost(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -996,7 +996,7 @@ TEST(cardano_pool_params_set_cost, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_cost(nullptr, cost);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_set_cost, canSetTheCost)
@@ -1032,7 +1032,7 @@ TEST(cardano_pool_params_get_margin, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_margin(nullptr, &margin);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_margin, returnsErrorIfMarginIsNull)
@@ -1052,7 +1052,7 @@ TEST(cardano_pool_params_get_margin, returnsErrorIfMarginIsNull)
   error = cardano_pool_params_get_margin(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1097,7 +1097,7 @@ TEST(cardano_pool_params_set_margin, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_margin(nullptr, margin);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&margin);
@@ -1120,7 +1120,7 @@ TEST(cardano_pool_params_set_margin, returnsErrorIfMarginIsNull)
   error = cardano_pool_params_set_margin(pool_params, margin);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1163,7 +1163,7 @@ TEST(cardano_pool_params_get_reward_account, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_reward_account(nullptr, &reward_account);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_reward_account, returnsErrorIfRewardAccountIsNull)
@@ -1183,7 +1183,7 @@ TEST(cardano_pool_params_get_reward_account, returnsErrorIfRewardAccountIsNull)
   error = cardano_pool_params_get_reward_account(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1227,7 +1227,7 @@ TEST(cardano_pool_params_set_reward_account, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_reward_account(nullptr, reward_account);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_reward_address_unref(&reward_account);
@@ -1252,7 +1252,7 @@ TEST(cardano_pool_params_set_reward_account, returnsErrorIfRewardAccountIsNull)
   error = cardano_pool_params_set_reward_account(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1296,7 +1296,7 @@ TEST(cardano_pool_params_get_owners, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_owners(nullptr, &owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_owners, returnsErrorIfOwnersIsNull)
@@ -1316,7 +1316,7 @@ TEST(cardano_pool_params_get_owners, returnsErrorIfOwnersIsNull)
   error = cardano_pool_params_get_owners(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1360,7 +1360,7 @@ TEST(cardano_pool_params_set_owners, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_owners(nullptr, owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_owners_unref(&owners);
@@ -1385,7 +1385,7 @@ TEST(cardano_pool_params_set_owners, returnsErrorIfOwnersIsNull)
   error = cardano_pool_params_set_owners(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1429,7 +1429,7 @@ TEST(cardano_pool_params_get_relays, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_relays(nullptr, &relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_relays, returnsErrorIfRelaysIsNull)
@@ -1449,7 +1449,7 @@ TEST(cardano_pool_params_get_relays, returnsErrorIfRelaysIsNull)
   error = cardano_pool_params_get_relays(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1493,7 +1493,7 @@ TEST(cardano_pool_params_set_relays, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_relays(nullptr, relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relays_unref(&relays);
@@ -1518,7 +1518,7 @@ TEST(cardano_pool_params_set_relays, returnsErrorIfRelaysIsNull)
   error = cardano_pool_params_set_relays(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1562,7 +1562,7 @@ TEST(cardano_pool_params_get_metadata, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_get_metadata(nullptr, &metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_params_get_metadata, returnsErrorIfMetadataIsNull)
@@ -1580,7 +1580,7 @@ TEST(cardano_pool_params_get_metadata, returnsErrorIfMetadataIsNull)
   error = cardano_pool_params_get_metadata(pool_params, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_params_unref(&pool_params);
@@ -1624,7 +1624,7 @@ TEST(cardano_pool_params_set_metadata, returnsErrorIfPoolParamsIsNull)
   cardano_error_t error = cardano_pool_params_set_metadata(nullptr, metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_metadata_unref(&metadata);

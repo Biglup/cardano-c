@@ -159,7 +159,7 @@ cardano_update_committee_action_from_cbor(cardano_cbor_reader_t* reader, cardano
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p update_committee_action or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -201,7 +201,7 @@ CARDANO_EXPORT cardano_error_t cardano_update_committee_action_to_cbor(
  * \param[in] members_to_be_removed A pointer to an initialized \ref cardano_credential_set_t object representing the committee members to be removed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the members to be removed were
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         update_committee_action pointer is NULL.
  *
  * Usage Example:
@@ -274,7 +274,7 @@ cardano_update_committee_action_get_members_to_be_removed(cardano_update_committ
  *            can be NULL if the members to be added are to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the members were
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         update_committee_action pointer is NULL.
  *
  * Usage Example:
@@ -349,7 +349,7 @@ cardano_update_committee_action_get_members_to_be_added(cardano_update_committee
  * \param[in] quorum A pointer to an initialized \ref cardano_unit_interval_t object representing the new quorum threshold.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the quorum was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
  *         input pointers are NULL.
  *
  * Usage Example:
@@ -423,7 +423,7 @@ cardano_update_committee_action_get_quorum(cardano_update_committee_action_t* up
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         update_committee_action pointer is NULL.
  *
  * Usage Example:

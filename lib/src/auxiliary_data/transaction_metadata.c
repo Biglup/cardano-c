@@ -137,14 +137,14 @@ cardano_transaction_metadata_new(cardano_transaction_metadata_t** transaction_me
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_metadata_t* map = _cardano_malloc(sizeof(cardano_transaction_metadata_t));
 
   if (map == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   map->base.ref_count     = 1;
@@ -156,7 +156,7 @@ cardano_transaction_metadata_new(cardano_transaction_metadata_t** transaction_me
   if (map->array == NULL)
   {
     _cardano_free(map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *transaction_metadata = map;
@@ -169,12 +169,12 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_metadata_t* map    = NULL;
@@ -241,7 +241,7 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
       cardano_metadatum_unref(&value);
       cardano_transaction_metadata_unref(&map);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       /* LCOV_EXCL_STOP */
     }
 
@@ -282,12 +282,12 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -314,7 +314,7 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
     cardano_transaction_metadata_kvp_t* kvp_data = (cardano_transaction_metadata_kvp_t*)((void*)kvp);
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, kvp_data->key);
+    result = cardano_cbor_writer_write_uint(writer, kvp_data->key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -359,12 +359,12 @@ cardano_transaction_metadata_get(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(transaction_metadata->array); ++i)
@@ -384,7 +384,7 @@ cardano_transaction_metadata_get(
     cardano_object_unref(&object);
   }
 
-  return CARDANO_ELEMENT_NOT_FOUND;
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
 }
 
 cardano_error_t
@@ -395,19 +395,19 @@ cardano_transaction_metadata_insert(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_metadata_kvp_t* kvp = _cardano_malloc(sizeof(cardano_transaction_metadata_kvp_t));
 
   if (kvp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   kvp->base.ref_count     = 0;
@@ -438,12 +438,12 @@ cardano_transaction_metadata_get_keys(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (keys == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_label_list_t* list = NULL;
@@ -487,17 +487,17 @@ cardano_transaction_metadata_get_key_at(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum_label == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(transaction_metadata->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*                   object = cardano_array_get(transaction_metadata->array, index);
@@ -518,17 +518,17 @@ cardano_transaction_metadata_get_value_at(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (amount == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(transaction_metadata->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*                   object = cardano_array_get(transaction_metadata->array, index);
@@ -551,22 +551,22 @@ cardano_transaction_metadata_get_key_value_at(
 {
   if (transaction_metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum_label == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(transaction_metadata->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*                   object = cardano_array_get(transaction_metadata->array, index);

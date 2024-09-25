@@ -111,44 +111,44 @@ cardano_pool_params_new(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (operator_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vrf_vk_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (margin == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reward_account == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relays == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *pool_params = _cardano_malloc(sizeof(cardano_pool_params_t));
 
   if (*pool_params == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*pool_params)->base.deallocator   = cardano_pool_params_deallocate;
@@ -187,13 +187,13 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *pool_params = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "pool_params";
@@ -384,12 +384,12 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_operator_key_hash_result = cardano_blake2b_hash_to_cbor(pool_params->operator_hash, writer);
@@ -406,14 +406,14 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
     return write_vrf_vk_hash_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_pledge_result = cardano_cbor_writer_write_unsigned_int(writer, pool_params->pledge);
+  cardano_error_t write_pledge_result = cardano_cbor_writer_write_uint(writer, pool_params->pledge);
 
   if (write_pledge_result != CARDANO_SUCCESS)
   {
     return write_pledge_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_cost_result = cardano_cbor_writer_write_unsigned_int(writer, pool_params->cost);
+  cardano_error_t write_cost_result = cardano_cbor_writer_write_uint(writer, pool_params->cost);
 
   if (write_cost_result != CARDANO_SUCCESS)
   {
@@ -466,12 +466,12 @@ cardano_pool_params_get_operator_key_hash(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (operator_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_ref(pool_params->operator_hash);
@@ -487,12 +487,12 @@ cardano_pool_params_set_operator_key_hash(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (operator_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_ref(operator_key_hash);
@@ -509,12 +509,12 @@ cardano_pool_params_get_vrf_vk_hash(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vrf_vk_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_ref(pool_params->vrf_vk_hash);
@@ -530,12 +530,12 @@ cardano_pool_params_set_vrf_vk_hash(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (vrf_vk_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_ref(vrf_vk_hash);
@@ -552,12 +552,12 @@ cardano_pool_params_get_pledge(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pledge == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *pledge = pool_params->pledge;
@@ -572,7 +572,7 @@ cardano_pool_params_set_pledge(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   pool_params->pledge = pledge;
@@ -587,12 +587,12 @@ cardano_pool_params_get_cost(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (cost == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *cost = pool_params->cost;
@@ -607,7 +607,7 @@ cardano_pool_params_set_cost(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   pool_params->cost = cost;
@@ -622,12 +622,12 @@ cardano_pool_params_get_margin(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (margin == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_params->margin);
@@ -643,12 +643,12 @@ cardano_pool_params_set_margin(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (margin == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(margin);
@@ -665,12 +665,12 @@ cardano_pool_params_get_reward_account(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reward_account == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_reward_address_ref(pool_params->reward_account);
@@ -686,12 +686,12 @@ cardano_pool_params_set_reward_account(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reward_account == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_reward_address_ref(reward_account);
@@ -708,12 +708,12 @@ cardano_pool_params_get_owners(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_pool_owners_ref(pool_params->owners);
@@ -729,12 +729,12 @@ cardano_pool_params_set_owners(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (owners == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_pool_owners_ref(owners);
@@ -751,12 +751,12 @@ cardano_pool_params_get_relays(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relays == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_relays_ref(pool_params->relays);
@@ -772,12 +772,12 @@ cardano_pool_params_set_relays(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relays == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_relays_ref(relays);
@@ -794,12 +794,12 @@ cardano_pool_params_get_metadata(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadata == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_pool_metadata_ref(pool_params->metadata);
@@ -815,7 +815,7 @@ cardano_pool_params_set_metadata(
 {
   if (pool_params == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadata == NULL)

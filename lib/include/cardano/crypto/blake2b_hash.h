@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CRYPTO_BLAKE2B_HASH_H
-#define CARDANO_CRYPTO_BLAKE2B_HASH_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H
 
 /* INCLUDES ******************************************************************/
 
@@ -228,7 +228,7 @@ cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_ha
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p blake2b_hash or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -575,4 +575,4 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_hex(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CRYPTO_BLAKE2B_HASH_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CRYPTO_BLAKE2B_HASH_H

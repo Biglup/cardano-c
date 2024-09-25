@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_BYRON_ADDRESS_CONTENT_H
-#define CARDANO_BYRON_ADDRESS_CONTENT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_CONTENT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_CONTENT_H
 
 /* INCLUDES ******************************************************************/
 
@@ -57,4 +57,4 @@ typedef struct cardano_byron_address_content_t
     cardano_byron_address_type_t       type;
 } cardano_byron_address_content_t;
 
-#endif // CARDANO_BYRON_ADDRESS_CONTENT_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_BYRON_ADDRESS_CONTENT_H

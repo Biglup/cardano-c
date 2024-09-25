@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_CBOR_INITIAL_BYTE_H
-#define CARDANO_CBOR_INITIAL_BYTE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_CBOR_INITIAL_BYTE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_CBOR_INITIAL_BYTE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -86,4 +86,4 @@ CARDANO_EXPORT cardano_cbor_additional_info_t cardano_cbor_initial_byte_get_addi
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_CBOR_INITIAL_BYTE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_INITIAL_BYTE_H

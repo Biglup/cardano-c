@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_TRANSACTION_INPUT_H
-#define CARDANO_TRANSACTION_INPUT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_INPUT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_INPUT_H
 
 /* INCLUDES ******************************************************************/
 
@@ -109,7 +109,7 @@ cardano_transaction_input_new(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the Transaction Input was successfully created from the hexadecimal string, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -196,7 +196,7 @@ cardano_transaction_input_from_cbor(cardano_cbor_reader_t* reader, cardano_trans
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p transaction_input or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -269,7 +269,7 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_transaction_input_get_id(cardano_
  * \param[in] id A pointer to an initialized \ref cardano_blake2b_hash_t object representing the transaction ID.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the transaction ID
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function increases the reference count of the transaction ID object; therefore, the caller retains ownership of their respective references.
  *       It is the caller's responsibility to release their reference to the transaction ID when it is no longer needed.
@@ -330,7 +330,7 @@ CARDANO_EXPORT uint64_t cardano_transaction_input_get_index(const cardano_transa
  * \param[in] index The index of the output in the previous transaction that is to be used as an input.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the index was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the transaction_input pointer is NULL.
  *
  * Usage Example:
@@ -561,4 +561,4 @@ CARDANO_EXPORT const char* cardano_transaction_input_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_TRANSACTION_INPUT_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_INPUT_H

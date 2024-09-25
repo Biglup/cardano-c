@@ -52,7 +52,7 @@ TEST(cardano_plutus_data_new_integer_from_int, returnsErrorWhenMemoryAllocationF
   cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -91,7 +91,7 @@ TEST(cardano_plutus_data_new_constr, returnErrorIfFirstArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_constr(nullptr, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_constr, returnErrorIfSecondArgIsNull)
@@ -106,7 +106,7 @@ TEST(cardano_plutus_data_new_constr, returnErrorIfSecondArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_constr(constr_plutus_data, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);
@@ -129,7 +129,7 @@ TEST(cardano_plutus_data_new_constr, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_new_constr(constr_plutus_data, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);
@@ -166,7 +166,7 @@ TEST(cardano_plutus_data_new_map, returnErrorIfFirstArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_map(nullptr, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_map, returnErrorIfSecondArgIsNull)
@@ -178,7 +178,7 @@ TEST(cardano_plutus_data_new_map, returnErrorIfSecondArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_map(map_plutus_data, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // cleanup
   cardano_plutus_map_unref(&map_plutus_data);
@@ -197,7 +197,7 @@ TEST(cardano_plutus_data_new_map, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_new_map(map_plutus_data, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // cleanup
   cardano_plutus_map_unref(&map_plutus_data);
@@ -233,7 +233,7 @@ TEST(cardano_plutus_data_new_list, returnErrorIfFirstArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_list(nullptr, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_list, returnErrorIfSecondArgIsNull)
@@ -245,7 +245,7 @@ TEST(cardano_plutus_data_new_list, returnErrorIfSecondArgIsNull)
   cardano_error_t error = cardano_plutus_data_new_list(list, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // cleanup
   cardano_plutus_list_unref(&list);
@@ -264,7 +264,7 @@ TEST(cardano_plutus_data_new_list, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_new_list(list, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // cleanup
   cardano_plutus_list_unref(&list);
@@ -293,7 +293,7 @@ TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfPlutusDataIsNull)
   cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfMemoryAllocationFails)
@@ -307,7 +307,7 @@ TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfMemoryAllocationFai
   cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -325,7 +325,7 @@ TEST(cardano_plutus_data_new_integer_from_int, returnsErrorIfEventualMemoryAlloc
   cardano_error_t error = cardano_plutus_data_new_integer_from_int(1, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -358,7 +358,7 @@ TEST(cardano_plutus_data_new_bytes, returnsErrorIfPlutusDataIsNull)
   cardano_error_t error = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_bytes, returnsErrorIfBytesIsNull)
@@ -371,7 +371,7 @@ TEST(cardano_plutus_data_new_bytes, returnsErrorIfBytesIsNull)
   cardano_error_t error = cardano_plutus_data_new_bytes(nullptr, sizeof(bytes), &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_bytes, returnsErrorIfMemoryAllocationFails)
@@ -388,7 +388,7 @@ TEST(cardano_plutus_data_new_bytes, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -409,7 +409,7 @@ TEST(cardano_plutus_data_new_bytes, returnsErrorIfMemoryEventuallyAllocationFail
   cardano_error_t error = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -442,7 +442,7 @@ TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfPlutusDataIsNull)
   cardano_error_t error = cardano_plutus_data_new_bytes_from_hex(hex, strlen(hex), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfHexIsNull)
@@ -454,7 +454,7 @@ TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfHexIsNull)
   cardano_error_t error = cardano_plutus_data_new_bytes_from_hex(nullptr, 0, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfMemoryAllocationFails)
@@ -471,7 +471,7 @@ TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfMemoryAllocationFails
   cardano_error_t error = cardano_plutus_data_new_bytes_from_hex(hex, strlen(hex), &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -492,7 +492,7 @@ TEST(cardano_plutus_data_new_bytes_from_hex, returnsErrorIfMemoryAllocationEvent
   cardano_error_t error = cardano_plutus_data_new_bytes_from_hex(hex, strlen(hex), &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -584,7 +584,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfMemoryInt)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -604,7 +604,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfMemoryInt2)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -640,7 +640,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfEventualMemoryAllocationFailsB
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -660,7 +660,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfEventualMemoryAllocationFailsB
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -720,7 +720,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfEventualMemoryAllocationFailsB
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -740,7 +740,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfEventualMemoryAllocationFailsB
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -793,7 +793,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfMemoryBytes)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -960,7 +960,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfMemoryMap)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1034,7 +1034,7 @@ TEST(cardano_plutus_data_from_cbor, returnsErrorIfEventualMemoryAllocationFailsC
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1241,7 +1241,7 @@ TEST(cardano_plutus_data_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_plutus_data_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -1260,7 +1260,7 @@ TEST(cardano_plutus_data_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_plutus_data_to_cbor(plutus_data, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1307,7 +1307,7 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfPlutusListIsNull)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1322,7 +1322,7 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_plutus_data_from_cbor(nullptr, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -1338,7 +1338,7 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, &plutus_data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(plutus_data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -1506,7 +1506,7 @@ TEST(cardano_plutus_data_get_kind, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_plutus_data_kind_t kind = CARDANO_PLUTUS_DATA_KIND_CONSTR;
 
-  EXPECT_EQ(cardano_plutus_data_get_kind(plutus_data, &kind), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_get_kind(plutus_data, &kind), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1522,7 +1522,7 @@ TEST(cardano_plutus_data_get_kind, returnsErrorIfKindIsNull)
 
   // Act
   cardano_plutus_data_kind_t kind = CARDANO_PLUTUS_DATA_KIND_CONSTR;
-  EXPECT_EQ(cardano_plutus_data_get_kind(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_get_kind(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(kind, CARDANO_PLUTUS_DATA_KIND_CONSTR);
 
   // Cleanup
@@ -1558,7 +1558,7 @@ TEST(cardano_plutus_data_to_integer, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_bigint_t* value = NULL;
 
-  EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1573,7 +1573,7 @@ TEST(cardano_plutus_data_to_integer, returnsErrorIfValueIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1627,7 +1627,7 @@ TEST(cardano_plutus_data_to_bytes, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_buffer_t* buffer = NULL;
 
-  EXPECT_EQ(cardano_plutus_data_to_bounded_bytes(plutus_data, &buffer), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_bounded_bytes(plutus_data, &buffer), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1642,7 +1642,7 @@ TEST(cardano_plutus_data_to_bytes, returnsErrorIfBufferIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_plutus_data_to_bounded_bytes(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_bounded_bytes(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1697,7 +1697,7 @@ TEST(cardano_plutus_data_to_constr, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_constr_plutus_data_t* constr_plutus_data = NULL;
 
-  EXPECT_EQ(cardano_plutus_data_to_constr(plutus_data, &constr_plutus_data), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_constr(plutus_data, &constr_plutus_data), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);
@@ -1712,7 +1712,7 @@ TEST(cardano_plutus_data_to_constr, returnsErrorIfConstrPlutusDataIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_plutus_data_to_constr(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_constr(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1768,7 +1768,7 @@ TEST(cardano_plutus_data_to_map, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_plutus_map_t* map = NULL;
 
-  EXPECT_EQ(cardano_plutus_data_to_map(plutus_data, &map), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_map(plutus_data, &map), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_map_unref(&map);
@@ -1788,7 +1788,7 @@ TEST(cardano_plutus_data_to_map, returnsErrorIfMapIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_plutus_data_to_map(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_map(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -1846,7 +1846,7 @@ TEST(cardano_plutus_data_to_list, returnsErrorIfPlutusDataIsNull)
   // Act
   cardano_plutus_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_plutus_data_to_list(plutus_data, &list), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_list(plutus_data, &list), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_list_unref(&list);
@@ -1866,7 +1866,7 @@ TEST(cardano_plutus_data_to_list, returnsErrorIfListIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_plutus_data_to_list(plutus_data, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_plutus_data_to_list(plutus_data, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_data_unref(&plutus_data);
@@ -2106,7 +2106,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfPlutusDataIsNull)
   cardano_error_t error = cardano_plutus_data_new_integer(nullptr, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer, returnsErrorIfIntegerIsNull)
@@ -2115,7 +2115,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfIntegerIsNull)
   cardano_error_t error = cardano_plutus_data_new_integer((const cardano_bigint_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
@@ -2133,7 +2133,7 @@ TEST(cardano_plutus_data_new_integer, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_data_new_integer(integer, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -2147,7 +2147,7 @@ TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfPlutusDataIsNull)
   cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfMemoryAllocationFails)
@@ -2162,7 +2162,7 @@ TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfMemoryAllocationFa
   cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -2181,7 +2181,7 @@ TEST(cardano_plutus_data_new_integer_from_uint, returnsErrorIfMemoryAllocationFa
   cardano_error_t error = cardano_plutus_data_new_integer_from_uint(0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(data, (cardano_plutus_data_t*)nullptr);
 
   // Cleanup
@@ -2216,7 +2216,7 @@ TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfPlutusDataIsNull
   cardano_error_t error = cardano_plutus_data_new_integer_from_string("0", 1, 10, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfStringIsNull)
@@ -2228,7 +2228,7 @@ TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfStringIsNull)
   cardano_error_t error = cardano_plutus_data_new_integer_from_string(nullptr, 0, 10, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfEmptyString)
@@ -2255,7 +2255,7 @@ TEST(cardano_plutus_data_new_integer_from_string, returnsErrorIfInvalidString)
   cardano_error_t error = cardano_plutus_data_new_integer_from_string("a", 1, 10, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_CONVERSION_ERROR);
+  EXPECT_EQ(error, CARDANO_ERROR_CONVERSION_FAILED);
 
   // Cleanup
   cardano_plutus_data_unref(&data);
@@ -2296,7 +2296,7 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFailsWhileReadi
   cardano_error_t        error = cardano_plutus_data_from_cbor(reader, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_plutus_data_unref(&data);
@@ -2317,7 +2317,7 @@ TEST(cardano_plutus_data_from_cbor, returnErrorIfMemoryAllocationFailsWhileReadi
   cardano_error_t        error = cardano_plutus_data_from_cbor(reader, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_plutus_data_unref(&data);

@@ -213,7 +213,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_from_cbor(nullptr, &mir_to_stake_creds_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMirCertIsNull)
@@ -225,7 +225,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -326,7 +326,7 @@ TEST(cardano_mir_to_stake_creds_cert_to_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -338,7 +338,7 @@ TEST(cardano_mir_to_stake_creds_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_to_cbor((cardano_mir_to_stake_creds_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_new, returnsErrorIfMirCertIsNull)
@@ -347,7 +347,7 @@ TEST(cardano_mir_to_stake_creds_cert_new, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_new, returnsErrorIfMemoryAllocationFails)
@@ -362,7 +362,7 @@ TEST(cardano_mir_to_stake_creds_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, &mir_to_stake_creds_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -381,7 +381,7 @@ TEST(cardano_mir_to_stake_creds_cert_new, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, &mir_to_stake_creds_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -397,7 +397,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_pot, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_pot(nullptr, &type);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_pot, returnsErrorIfPotTypeIsNull)
@@ -406,7 +406,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_pot, returnsErrorIfPotTypeIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_pot((cardano_mir_to_stake_creds_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFails)
@@ -418,7 +418,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFa
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
   cardano_error_t result = cardano_mir_to_stake_creds_cert_from_cbor(reader, &mir_to_stake_creds_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_cbor_reader_unref(&reader);
 
   cardano_set_allocators(malloc, realloc, free);
@@ -426,7 +426,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFa
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_nine_malloc, realloc, free);
   result = cardano_mir_to_stake_creds_cert_from_cbor(reader, &mir_to_stake_creds_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_cbor_reader_unref(&reader);
 
   cardano_set_allocators(malloc, realloc, free);
@@ -434,7 +434,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFa
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_fourteen_malloc, realloc, free);
   result = cardano_mir_to_stake_creds_cert_from_cbor(reader, &mir_to_stake_creds_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_cbor_reader_unref(&reader);
 
   cardano_set_allocators(malloc, realloc, free);
@@ -442,7 +442,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFa
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_twenty_nine_malloc, realloc, free);
   result = cardano_mir_to_stake_creds_cert_from_cbor(reader, &mir_to_stake_creds_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_cbor_reader_unref(&reader);
 
   cardano_set_allocators(malloc, realloc, free);
@@ -450,7 +450,7 @@ TEST(cardano_mir_to_stake_creds_cert_from_cbor, returnsErrorIfMemoryAllocationFa
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_thirty_malloc, realloc, free);
   result = cardano_mir_to_stake_creds_cert_from_cbor(reader, &mir_to_stake_creds_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_cbor_reader_unref(&reader);
 
   // Cleanup
@@ -464,7 +464,7 @@ TEST(cardano_mir_to_stake_creds_cert_set_pot, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_set_pot(nullptr, CARDANO_MIR_CERT_POT_TYPE_TREASURY);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_set_pot, canReturnPot)
@@ -530,7 +530,7 @@ TEST(cardano_mir_to_stake_creds_cert_insert, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_insert(nullptr, credential, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_insert, returnsErrorIfCredentialIsNull)
@@ -539,7 +539,7 @@ TEST(cardano_mir_to_stake_creds_cert_insert, returnsErrorIfCredentialIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_insert((cardano_mir_to_stake_creds_cert_t*)"", nullptr, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_insert, returnsErrorIfMemoryAllocationFails)
@@ -561,7 +561,7 @@ TEST(cardano_mir_to_stake_creds_cert_insert, returnsErrorIfMemoryAllocationFails
   result = cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -578,7 +578,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_at, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_key_at(nullptr, 0, &credential);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_key_at, returnsErrorIfCredentialIsNull)
@@ -587,7 +587,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_at, returnsErrorIfCredentialIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_key_at((cardano_mir_to_stake_creds_cert_t*)"", 0, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_key_at, returnsErrorIfIndexOutOfBounds)
@@ -609,7 +609,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_at, returnsErrorIfIndexOutOfBounds)
   result                    = cardano_mir_to_stake_creds_cert_get_key_at(mir_to_stake_creds_cert, 1, &key);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INDEX_OUT_OF_BOUNDS);
+  ASSERT_EQ(result, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -656,7 +656,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_value_at, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_value_at(nullptr, 0, &val);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_value_at, returnsErrorIfValueIsNull)
@@ -665,7 +665,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_value_at, returnsErrorIfValueIsNull)
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_value_at((cardano_mir_to_stake_creds_cert_t*)"", 0, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_value_at, returnsErrorIfIndexOutOfBounds)
@@ -687,7 +687,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_value_at, returnsErrorIfIndexOutOfBound
   result = cardano_mir_to_stake_creds_cert_get_value_at(mir_to_stake_creds_cert, 1, &val);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INDEX_OUT_OF_BOUNDS);
+  ASSERT_EQ(result, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -731,7 +731,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfMirCertIsNu
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_key_value_at(nullptr, 0, &credential, &val);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfCredentialIsNull)
@@ -741,7 +741,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfCredentialI
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_key_value_at((cardano_mir_to_stake_creds_cert_t*)"", 0, nullptr, &val);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfValueIsNull)
@@ -753,7 +753,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfValueIsNull
   cardano_error_t result = cardano_mir_to_stake_creds_cert_get_key_value_at((cardano_mir_to_stake_creds_cert_t*)"", 0, &credential, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfIndexOutOfBounds)
@@ -776,7 +776,7 @@ TEST(cardano_mir_to_stake_creds_cert_get_key_value_at, returnsErrorIfIndexOutOfB
   result = cardano_mir_to_stake_creds_cert_get_key_value_at(mir_to_stake_creds_cert, 1, &key, &val);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INDEX_OUT_OF_BOUNDS);
+  ASSERT_EQ(result, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);

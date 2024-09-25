@@ -101,7 +101,7 @@ TEST(cardano_costmdls_new, returnsErrorIfCostmdlsIsNull)
   cardano_error_t error = cardano_costmdls_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_costmdls_new, returnsErrorIfAllocationFails)
@@ -116,7 +116,7 @@ TEST(cardano_costmdls_new, returnsErrorIfAllocationFails)
   cardano_error_t error = cardano_costmdls_new(&costmdls);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_costmdls_to_cbor, canSerializeCostmdls)
@@ -246,7 +246,7 @@ TEST(cardano_costmdls_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_costmdls_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -265,7 +265,7 @@ TEST(cardano_costmdls_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_costmdls_to_cbor(costmdls, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_costmdls_unref(&costmdls);
@@ -298,7 +298,7 @@ TEST(cardano_costmdls_from_cbor, returnErrorIfCostmdlsIsNull)
   cardano_error_t error = cardano_costmdls_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -313,7 +313,7 @@ TEST(cardano_costmdls_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_costmdls_from_cbor(nullptr, &costmdls);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_costmdls_ref, increasesTheReferenceCount)
@@ -511,7 +511,7 @@ TEST(cardano_costmdls_from_cbor, errorIfMemoryAllocationFails)
   cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_THAT(costmdls, testing::IsNull());
 
   // Cleanup
@@ -572,7 +572,7 @@ TEST(cardano_costmdls_insert, returnErrorIfCostmdlsIsNull)
   error = cardano_costmdls_insert(costmdls, cost_model_v1);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model_v1);
@@ -592,7 +592,7 @@ TEST(cardano_costmdls_insert, returnErrorIfCostModelIsNull)
   error = cardano_costmdls_insert(costmdls, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_costmdls_unref(&costmdls);
@@ -709,7 +709,7 @@ TEST(cardano_costmdls_get, returnsErrorIfCostmdlsIsNull)
   cardano_error_t error = cardano_costmdls_get(nullptr, CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &model);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_costmdls_get, returnsErrorIfModelIsNull)
@@ -725,7 +725,7 @@ TEST(cardano_costmdls_get, returnsErrorIfModelIsNull)
   error = cardano_costmdls_get(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_costmdls_unref(&costmdls);
@@ -753,7 +753,7 @@ TEST(cardano_costmdls_get, returnErrorIfGivenInvalidLanguage)
   // Act
   cardano_cost_model_t* model = NULL;
 
-  ASSERT_EQ(cardano_costmdls_get(costmdls, (cardano_plutus_language_version_t)999, &model), CARDANO_INVALID_PLUTUS_COST_MODEL);
+  ASSERT_EQ(cardano_costmdls_get(costmdls, (cardano_plutus_language_version_t)999, &model), CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
 
   // Assert
   EXPECT_THAT(model, testing::IsNull());
@@ -1003,7 +1003,7 @@ TEST(cardano_costmdls_get_language_views_encoding, returnErrorWhenMemoryAllocati
 
   // Act
   cardano_buffer_t* views = NULL;
-  ASSERT_EQ(cardano_costmdls_get_language_views_encoding(costmdls, &views), CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(cardano_costmdls_get_language_views_encoding(costmdls, &views), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_costmdls_unref(&costmdls);

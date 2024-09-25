@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_VOTING_PROCEDURE_H
-#define CARDANO_VOTING_PROCEDURE_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H
 
 /* INCLUDES ******************************************************************/
 
@@ -145,7 +145,7 @@ cardano_voting_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_voting
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p voting_procedure or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -289,7 +289,7 @@ CARDANO_EXPORT cardano_anchor_t* cardano_voting_procedure_get_anchor(cardano_vot
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the anchor was successfully set or unset, or an appropriate error code indicating the
- *         failure reason, such as \ref CARDANO_POINTER_IS_NULL if the voting_procedure pointer is NULL.
+ *         failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the voting_procedure pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -438,4 +438,4 @@ CARDANO_EXPORT const char* cardano_voting_procedure_get_last_error(const cardano
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_VOTING_PROCEDURE_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_VOTING_PROCEDURE_H

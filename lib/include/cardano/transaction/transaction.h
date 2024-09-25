@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_TRANSACTION_H
-#define CARDANO_TRANSACTION_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_H
 
 /* INCLUDES ******************************************************************/
 
@@ -70,7 +70,7 @@ typedef struct cardano_transaction_t cardano_transaction_t;
  *                          the caller must release it by calling \ref cardano_transaction_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the transaction was successfully created,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if required inputs (body or witness_set) are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if required inputs (body or witness_set) are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -163,7 +163,7 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p transaction or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark In Cardano, transactions are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical transaction representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -247,7 +247,7 @@ CARDANO_EXPORT cardano_transaction_body_t* cardano_transaction_get_body(cardano_
  * \param[in] body A pointer to an initialized \ref cardano_transaction_body_t object representing the new transaction body.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the body was successfully set,
- *         or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if the transaction or body pointers are NULL.
+ *         or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction or body pointers are NULL.
  *
  * \note The reference count of the transaction body will be incremented by this function, so the caller retains ownership of
  *       the body object and is responsible for releasing it when it is no longer needed.
@@ -321,7 +321,7 @@ CARDANO_EXPORT cardano_witness_set_t* cardano_transaction_get_witness_set(cardan
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns
  *         \ref CARDANO_SUCCESS if the witness set was successfully added to the transaction,
  *         or an appropriate error code if any of the input pointers (transaction or
- *         witness_set) is NULL, such as \ref CARDANO_POINTER_IS_NULL.
+ *         witness_set) is NULL, such as \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \note This function increases the reference count of the \p witness_set object, meaning
  *       the caller retains ownership of the witness set and must release it by calling
@@ -403,7 +403,7 @@ CARDANO_EXPORT cardano_auxiliary_data_t* cardano_transaction_get_auxiliary_data(
  *                           This parameter can be NULL to unset the auxiliary data in the transaction.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the auxiliary data was successfully set. Returns \ref CARDANO_POINTER_IS_NULL if either
+ *         if the auxiliary data was successfully set. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if either
  *         the \p transaction or \p auxiliary_data is NULL.
  *
  * \note This function increases the reference count of the \p auxiliary_data object. The caller retains
@@ -488,7 +488,7 @@ CARDANO_EXPORT bool cardano_transaction_get_is_valid(cardano_transaction_t* tran
  *                     if set to \c false, it is expected to fail validation.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the validity flag was successfully set, or \ref CARDANO_POINTER_IS_NULL if the \p transaction
+ *         if the validity flag was successfully set, or \ref CARDANO_ERROR_POINTER_IS_NULL if the \p transaction
  *         pointer is NULL.
  *
  * \note A transaction with the validity flag set to \c false (indicating expected failure) can still be
@@ -744,4 +744,4 @@ CARDANO_EXPORT const char* cardano_transaction_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_TRANSACTION_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_H

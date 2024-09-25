@@ -232,7 +232,7 @@ TEST(cardano_vote_delegation_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_from_cbor(nullptr, &vote_delegation_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vote_delegation_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -244,7 +244,7 @@ TEST(cardano_vote_delegation_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -285,7 +285,7 @@ TEST(cardano_vote_delegation_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -297,7 +297,7 @@ TEST(cardano_vote_delegation_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_to_cbor((cardano_vote_delegation_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -331,7 +331,7 @@ TEST(cardano_vote_delegation_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_new(nullptr, nullptr, &vote_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vote_delegation_cert_new, returnsErrorIfSecondArgIsNull)
@@ -342,7 +342,7 @@ TEST(cardano_vote_delegation_cert_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_new((cardano_credential_t*)"", nullptr, &vote_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_vote_delegation_cert_new, returnsErrorIfCertIsNull)
@@ -352,7 +352,7 @@ TEST(cardano_vote_delegation_cert_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_new((cardano_credential_t*)"", (cardano_drep_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -372,7 +372,7 @@ TEST(cardano_vote_delegation_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_vote_delegation_cert_new(cred, drep, &vote_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -474,7 +474,7 @@ TEST(cardano_vote_delegation_cert_set_credential, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_set_credential(nullptr, cred);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -489,7 +489,7 @@ TEST(cardano_vote_delegation_cert_set_credential, returnsErrorIfCredentialIsNull
   cardano_error_t result = cardano_vote_delegation_cert_set_credential(vote_delegation_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vote_delegation_cert_unref(&vote_delegation_cert);
@@ -579,7 +579,7 @@ TEST(cardano_vote_delegation_cert_set_drep, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_set_drep(nullptr, drep);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_unref(&drep);
@@ -594,7 +594,7 @@ TEST(cardano_vote_delegation_cert_set_drep, returnsErrorIfDrepIsNull)
   cardano_error_t result = cardano_vote_delegation_cert_set_drep(vote_delegation_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vote_delegation_cert_unref(&vote_delegation_cert);

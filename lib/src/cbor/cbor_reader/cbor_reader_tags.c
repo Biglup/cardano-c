@@ -55,7 +55,7 @@ peek_tag_core(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag, size_t* by
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(tag != NULL);

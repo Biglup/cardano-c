@@ -83,7 +83,7 @@ cardano_anchor_new(
 {
   if (url == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((url_size == 0U) || (url_size > (size_t)ANCHOR_MAX_URL_LENGTH))
@@ -93,20 +93,20 @@ cardano_anchor_new(
 
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
     *anchor = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *anchor = _cardano_malloc(sizeof(cardano_anchor_t));
 
   if (*anchor == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*anchor)->base.deallocator   = cardano_anchor_deallocate;
@@ -152,13 +152,13 @@ cardano_anchor_from_hash_hex(
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *anchor = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_size != ((size_t)CARDANO_BLAKE2B_HASH_SIZE_256 * 2U))
@@ -199,13 +199,13 @@ cardano_anchor_from_hash_bytes(
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *anchor = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -241,13 +241,13 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *anchor = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "anchor";
@@ -325,12 +325,12 @@ cardano_anchor_to_cbor(
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, ANCHOR_EMBEDDED_GROUP_SIZE);
@@ -445,12 +445,12 @@ cardano_anchor_set_url(cardano_anchor_t* anchor, const char* url, const size_t u
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (url == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((url_size == 0U) || (url_size > (size_t)ANCHOR_MAX_URL_LENGTH))
@@ -470,12 +470,12 @@ cardano_anchor_set_hash(cardano_anchor_t* anchor, const cardano_blake2b_hash_t* 
 {
   if (anchor == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);

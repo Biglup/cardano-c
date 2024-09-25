@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_RELAYS_H
-#define CARDANO_RELAYS_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -132,7 +132,7 @@ cardano_relays_from_cbor(cardano_cbor_reader_t* reader, cardano_relays_t** relay
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p relays or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -391,4 +391,4 @@ CARDANO_EXPORT const char* cardano_relays_get_last_error(const cardano_relays_t*
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_RELAYS_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_RELAYS_H

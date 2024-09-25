@@ -84,12 +84,12 @@ static const char* ALL_SCRIPT2 =
 TEST(cardano_script_all_new, returnsErrorIfScriptIsNull)
 {
   cardano_script_all_t* all = NULL;
-  EXPECT_EQ(cardano_script_all_new(nullptr, &all), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_new(nullptr, &all), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_new, returnsErrorIfAllIsNull)
 {
-  EXPECT_EQ(cardano_script_all_new((cardano_native_script_list_t*)"", nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_new((cardano_native_script_list_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_new, returnsErrorIfMemoryAllocationFails)
@@ -102,7 +102,7 @@ TEST(cardano_script_all_new, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_script_all_t* all = NULL;
-  EXPECT_EQ(cardano_script_all_new(list, &all), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_all_new(list, &all), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -112,14 +112,14 @@ TEST(cardano_script_all_from_cbor, returnsErrorIfReaderIsNull)
 {
   cardano_script_all_t* all = NULL;
 
-  EXPECT_EQ(cardano_script_all_from_cbor(nullptr, &all), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_from_cbor(nullptr, &all), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_from_cbor, returnsErrorIfAllIsNull)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("8200", strlen("8200"));
 
-  EXPECT_EQ(cardano_script_all_from_cbor(reader, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_from_cbor(reader, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -148,7 +148,7 @@ TEST(cardano_script_all_to_cbor, returnsErrorIfAllIsNull)
 {
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
-  EXPECT_EQ(cardano_script_all_to_cbor(nullptr, writer), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_to_cbor(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_writer_unref(&writer);
 }
@@ -157,19 +157,19 @@ TEST(cardano_script_all_to_cbor, returnsErrorIfWriterIsNull)
 {
   cardano_script_all_t* all = (cardano_script_all_t*)"";
 
-  EXPECT_EQ(cardano_script_all_to_cbor(all, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_to_cbor(all, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_from_json, returnsErrorIfJsonIsNull)
 {
   cardano_script_all_t* all = NULL;
 
-  EXPECT_EQ(cardano_script_all_from_json(nullptr, 0, &all), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_from_json(nullptr, 0, &all), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_from_json, returnsErrorIfAllIsNull)
 {
-  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_from_json, returnsErrorIfMemoryAllocationFails)
@@ -181,7 +181,7 @@ TEST(cardano_script_all_from_json, returnsErrorIfMemoryAllocationFails)
   cardano_script_all_t* all = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &all), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &all), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -205,7 +205,7 @@ TEST(cardano_script_all_from_json, returnsErrorIfTypeIsInvalid)
 {
   cardano_script_all_t* all = NULL;
 
-  EXPECT_EQ(cardano_script_all_from_json("{\"type\": \"value\"}", strlen("{\"type\": \"value\"}"), &all), CARDANO_INVALID_NATIVE_SCRIPT_TYPE);
+  EXPECT_EQ(cardano_script_all_from_json("{\"type\": \"value\"}", strlen("{\"type\": \"value\"}"), &all), CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE);
 }
 
 TEST(cardano_script_all_get_length, returnsTheLengthOfTheAllScript)
@@ -262,7 +262,7 @@ TEST(cardano_script_all_get_scripts, returnsErrorIfAllIsNull)
   // Act
   cardano_native_script_list_t* scripts = NULL;
 
-  ASSERT_EQ(cardano_script_all_get_scripts(nullptr, &scripts), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_script_all_get_scripts(nullptr, &scripts), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_get_scripts, returnsErrorIfScriptsIsNull)
@@ -274,7 +274,7 @@ TEST(cardano_script_all_get_scripts, returnsErrorIfScriptsIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_script_all_get_scripts(all, nullptr), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_script_all_get_scripts(all, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_all_unref(&all);
@@ -286,7 +286,7 @@ TEST(cardano_script_all_set_scripts, returnsErrorIfAllIsNull)
   cardano_native_script_list_t* scripts = (cardano_native_script_list_t*)"";
 
   // Act
-  ASSERT_EQ(cardano_script_all_set_scripts(nullptr, scripts), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_script_all_set_scripts(nullptr, scripts), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_all_set_scripts, returnsErrorIfScriptsIsNull)
@@ -298,7 +298,7 @@ TEST(cardano_script_all_set_scripts, returnsErrorIfScriptsIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_script_all_set_scripts(all, nullptr), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_script_all_set_scripts(all, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_all_unref(&all);

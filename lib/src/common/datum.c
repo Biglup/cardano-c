@@ -83,20 +83,20 @@ cardano_datum_new_data_hash(const cardano_blake2b_hash_t* hash, cardano_datum_t*
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
     *datum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *datum = _cardano_malloc(sizeof(cardano_datum_t));
 
   if (*datum == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*datum)->base.deallocator   = cardano_datum_deallocate;
@@ -131,13 +131,13 @@ cardano_datum_new_data_hash_hex(const char* hex, size_t hex_size, cardano_datum_
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *datum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_size != ((size_t)CARDANO_BLAKE2B_HASH_SIZE_256 * 2U))
@@ -173,13 +173,13 @@ cardano_datum_new_data_hash_bytes(const byte_t* data, size_t data_size, cardano_
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *datum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -217,20 +217,20 @@ cardano_datum_new_inline_data(
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *datum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *datum = _cardano_malloc(sizeof(cardano_datum_t));
 
   if (*datum == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*datum)->base.deallocator   = cardano_datum_deallocate;
@@ -249,13 +249,13 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *datum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "Datum";
@@ -401,12 +401,12 @@ cardano_datum_to_cbor(
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, DATUM_ARRAY_SIZE);
@@ -416,7 +416,7 @@ cardano_datum_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, datum->type);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, datum->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -482,7 +482,7 @@ cardano_datum_to_cbor(
     default:
     {
       cardano_cbor_writer_set_last_error(writer, "Invalid datum type");
-      return CARDANO_INVALID_DATUM_TYPE;
+      return CARDANO_ERROR_INVALID_DATUM_TYPE;
     }
       /* LCOV_EXCL_STOP */
   }
@@ -569,12 +569,12 @@ cardano_datum_get_type(const cardano_datum_t* datum, cardano_datum_type_t* type)
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = datum->type;
@@ -587,12 +587,12 @@ cardano_datum_set_data_hash(cardano_datum_t* datum, const cardano_blake2b_hash_t
 {
   if (datum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);

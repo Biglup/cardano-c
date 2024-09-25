@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ENTERPRISE_ADDRESS_PACK_H
-#define CARDANO_ENTERPRISE_ADDRESS_PACK_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_PACK_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_PACK_H
 
 /* INCLUDES ******************************************************************/
 
@@ -67,4 +67,4 @@ _cardano_pack_enterprise_address(const cardano_address_t* address, byte_t* data,
 cardano_error_t
 _cardano_unpack_enterprise_address(const byte_t* data, size_t size, cardano_enterprise_address_t** address);
 
-#endif // CARDANO_ENTERPRISE_ADDRESS_PACK_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ENTERPRISE_ADDRESS_PACK_H

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_ADDRESS_STAKE_POINTER_H
-#define CARDANO_ADDRESS_STAKE_POINTER_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_STAKE_POINTER_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_STAKE_POINTER_H
 
 /* INCLUDES ******************************************************************/
 
@@ -64,4 +64,4 @@ typedef struct cardano_stake_pointer_t
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_ADDRESS_STAKE_POINTER_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ADDRESS_STAKE_POINTER_H

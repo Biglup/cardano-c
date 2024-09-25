@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_TRANSACTION_OUTPUT_H
-#define CARDANO_TRANSACTION_OUTPUT_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_OUTPUT_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_OUTPUT_H
 
 /* INCLUDES ******************************************************************/
 
@@ -64,7 +64,7 @@ typedef struct cardano_transaction_output_t cardano_transaction_output_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the transaction output was successfully created, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input address pointer is NULL.
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input address pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -149,7 +149,7 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p transaction_output or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -222,7 +222,7 @@ CARDANO_EXPORT cardano_address_t* cardano_transaction_output_get_address(cardano
  * \param[in] address A pointer to an initialized \ref cardano_address_t object representing the address.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the address
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function increases the reference count of the address object; therefore, the caller retains ownership of their respective references.
  *       It is the caller's responsibility to release their reference to the address when it is no longer needed.
@@ -288,7 +288,7 @@ CARDANO_EXPORT cardano_value_t* cardano_transaction_output_get_value(cardano_tra
  * \param[in] value The value to set for the transaction output.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the amount was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the output pointer is NULL.
  *
  * Usage Example:
@@ -358,7 +358,7 @@ CARDANO_EXPORT cardano_datum_t* cardano_transaction_output_get_datum(cardano_tra
  *                  This parameter can be NULL if the datum is to be removed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the datum was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the output pointer is NULL.
  *
  * \note This function increases the reference count of the datum object; therefore, the caller retains ownership of their respective references.
@@ -472,7 +472,7 @@ CARDANO_EXPORT bool cardano_transaction_output_equals(const cardano_transaction_
  *                       can be NULL if the intention is to remove an existing script reference from the output.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script reference
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the output pointer is NULL.
  *
  * Usage Example:
@@ -632,4 +632,4 @@ CARDANO_EXPORT const char* cardano_transaction_output_get_last_error(
 }
 #endif /* __cplusplus */
 
-#endif // CARDANO_TRANSACTION_OUTPUT_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_TRANSACTION_OUTPUT_H

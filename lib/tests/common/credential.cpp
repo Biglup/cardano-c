@@ -88,7 +88,7 @@ TEST(cardano_credential_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_credential_to_cbor(credential, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&credential);
@@ -103,7 +103,7 @@ TEST(cardano_credential_to_cbor, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_credential_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -212,7 +212,7 @@ TEST(cardano_credential_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t error = cardano_credential_from_cbor(nullptr, &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_from_cbor, returnsErrorIfCredentialIsNull)
@@ -224,7 +224,7 @@ TEST(cardano_credential_from_cbor, returnsErrorIfCredentialIsNull)
   cardano_error_t error = cardano_credential_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -299,7 +299,7 @@ TEST(cardano_credential_new, returnsErrorIfMemoryAllocationFails)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
@@ -381,7 +381,7 @@ TEST(cardano_credential_from_hash_hex, returnsErrorIfMemoryAllocationFails)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
@@ -404,7 +404,7 @@ TEST(cardano_credential_from_hash_hex, returnsErrorIfMemoryEventualAllocationFai
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
@@ -440,7 +440,7 @@ TEST(cardano_credential_from_hash_hex, returnsErrorIfHashIsNull)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
@@ -457,7 +457,7 @@ TEST(cardano_credential_from_hash_hex, returnsErrorIfCredentialIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&credential);
@@ -475,7 +475,7 @@ TEST(cardano_credential_new, returnsErrorIfHashIsNull)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
@@ -498,7 +498,7 @@ TEST(cardano_credential_new, returnsErrorIfCredentialIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -573,7 +573,7 @@ TEST(cardano_credential_from_hash_bytes, returnsErrorIfMemoryAllocationFails)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
@@ -605,7 +605,7 @@ TEST(cardano_credential_from_hash_bytes, returnsErrorIfEventualMemoryAllocationF
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
@@ -653,7 +653,7 @@ TEST(cardano_credential_from_hash_bytes, returnsErrorIfHashIsNull)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
@@ -677,7 +677,7 @@ TEST(cardano_credential_from_hash_bytes, returnsErrorIfCredentialIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -696,7 +696,7 @@ TEST(cardano_credential_from_hash_bytes, returnsErrorIfHashIsInvalid)
     &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 }
 
@@ -884,7 +884,7 @@ TEST(cardano_credential_get_type, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_credential_get_type(nullptr, &type);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_get_type, returnsErrorIfTypeIsNull)
@@ -893,7 +893,7 @@ TEST(cardano_credential_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t error = cardano_credential_get_type((cardano_credential_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_set_type, returnsErrorIfGivenANullPtr)
@@ -902,7 +902,7 @@ TEST(cardano_credential_set_type, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_credential_set_type(nullptr, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_set_type, returnsErrorIfTypeIsInvalid)
@@ -921,7 +921,7 @@ TEST(cardano_credential_set_type, returnsErrorIfTypeIsInvalid)
   error = cardano_credential_set_type(credential, (cardano_credential_type_t)3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INVALID_CREDENTIAL_TYPE);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CREDENTIAL_TYPE);
 
   // Cleanup
   cardano_credential_unref(&credential);
@@ -964,7 +964,7 @@ TEST(cardano_credential_set_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_credential_set_hash(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_set_hash, returnsErrorIfHashIsNull)
@@ -973,7 +973,7 @@ TEST(cardano_credential_set_hash, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_credential_set_hash((cardano_credential_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_credential_set_hash, canSetHash)

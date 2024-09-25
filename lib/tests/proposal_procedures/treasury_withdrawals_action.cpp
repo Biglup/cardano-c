@@ -229,7 +229,7 @@ TEST(cardano_treasury_withdrawals_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_from_cbor(nullptr, &treasury_withdrawals_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_treasury_withdrawals_action_from_cbor, returnsErrorIfActionIsNull)
@@ -241,7 +241,7 @@ TEST(cardano_treasury_withdrawals_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -282,7 +282,7 @@ TEST(cardano_treasury_withdrawals_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -294,7 +294,7 @@ TEST(cardano_treasury_withdrawals_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_to_cbor((cardano_treasury_withdrawals_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -377,7 +377,7 @@ TEST(cardano_treasury_withdrawals_action_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_new(nullptr, nullptr, &treasury_withdrawals_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_treasury_withdrawals_action_new, returnsErrorIfActionIsNull)
@@ -389,7 +389,7 @@ TEST(cardano_treasury_withdrawals_action_new, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_treasury_withdrawals_action_new(withdrawal_map, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -407,7 +407,7 @@ TEST(cardano_treasury_withdrawals_action_new, returnsErrorIfMemoryAllocationFail
 
   cardano_error_t result = cardano_treasury_withdrawals_action_new(withdrawal_map, nullptr, &treasury_withdrawals_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&treasury_withdrawals_action);
@@ -557,7 +557,7 @@ TEST(cardano_treasury_withdrawals_action_set_withdrawals, returnsErrorIfObjectIs
   cardano_error_t result = cardano_treasury_withdrawals_action_set_withdrawals(nullptr, withdrawal_map);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -572,7 +572,7 @@ TEST(cardano_treasury_withdrawals_action_set_withdrawals, returnsErrorIfWithdraw
   cardano_error_t result = cardano_treasury_withdrawals_action_set_withdrawals(treasury_withdrawals_action, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_treasury_withdrawals_action_unref(&treasury_withdrawals_action);
@@ -633,7 +633,7 @@ TEST(cardano_treasury_withdrawals_action_set_policy_hash, returnsErrorIfObjectIs
   cardano_error_t result = cardano_treasury_withdrawals_action_set_policy_hash(nullptr, policy_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_hash);

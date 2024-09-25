@@ -198,7 +198,7 @@ TEST(cardano_voting_procedure_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_voting_procedure_from_cbor(nullptr, &voting_procedure);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_from_cbor, returnsErrorIfCertIsNull)
@@ -210,7 +210,7 @@ TEST(cardano_voting_procedure_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_voting_procedure_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -287,7 +287,7 @@ TEST(cardano_voting_procedure_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_voting_procedure_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -299,7 +299,7 @@ TEST(cardano_voting_procedure_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_voting_procedure_to_cbor((cardano_voting_procedure_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -350,7 +350,7 @@ TEST(cardano_voting_procedure_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_voting_procedure_new(CARDANO_VOTE_NO, NULL, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_new, returnsErrorIfMemoryAllocationFails)
@@ -364,7 +364,7 @@ TEST(cardano_voting_procedure_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_voting_procedure_new(CARDANO_VOTE_NO, NULL, &voting_procedure);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -471,7 +471,7 @@ TEST(cardano_voting_procedure_set_anchor, returnsErrorIfObjectIsNull)
   result = cardano_voting_procedure_set_anchor(nullptr, anchor);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -487,7 +487,7 @@ TEST(cardano_voting_procedure_set_anchor, returnsErrorIfAnchorIsNull)
   cardano_error_t result = cardano_voting_procedure_set_anchor(voting_procedure, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_voting_procedure_unref(&voting_procedure);
@@ -539,7 +539,7 @@ TEST(cardano_voting_procedure_set_vote, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_voting_procedure_set_vote(nullptr, CARDANO_VOTE_NO);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_get_vote, returnsNoIfObjectIsNull)

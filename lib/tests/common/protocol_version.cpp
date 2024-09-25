@@ -59,7 +59,7 @@ TEST(cardano_protocol_version_new, returnsErrorIfProtocolVersionIsNull)
   cardano_error_t error = cardano_protocol_version_new(1, 3, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_version_new, returnsErrorIfmajorAllocationFails)
@@ -73,7 +73,7 @@ TEST(cardano_protocol_version_new, returnsErrorIfmajorAllocationFails)
   cardano_error_t error = cardano_protocol_version_new(1, 3, &protocol_version);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(protocol_version, (cardano_protocol_version_t*)nullptr);
 
   // Cleanup
@@ -121,7 +121,7 @@ TEST(cardano_protocol_version_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_protocol_version_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -140,7 +140,7 @@ TEST(cardano_protocol_version_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_protocol_version_to_cbor(protocol_version, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_version_unref(&protocol_version);
@@ -179,7 +179,7 @@ TEST(cardano_protocol_version_from_cbor, returnErrorIfProtocolVersionIsNull)
   cardano_error_t error = cardano_protocol_version_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -194,7 +194,7 @@ TEST(cardano_protocol_version_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_protocol_version_from_cbor(nullptr, &protocol_version);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_version_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -459,7 +459,7 @@ TEST(cardano_protocol_version_set_major, returnErrorIfProtocolVersionIsNull)
   cardano_error_t error = cardano_protocol_version_set_major(nullptr, 123456789);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_version_set_minor, setsTheminorStepsValue)
@@ -487,5 +487,5 @@ TEST(cardano_protocol_version_set_minor, returnErrorIfProtocolVersionIsNull)
   cardano_error_t error = cardano_protocol_version_set_minor(nullptr, 987654321);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

@@ -250,7 +250,7 @@ TEST(cardano_parameter_change_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_parameter_change_action_from_cbor(nullptr, &parameter_change_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_parameter_change_action_from_cbor, returnsErrorIfActionIsNull)
@@ -262,7 +262,7 @@ TEST(cardano_parameter_change_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_parameter_change_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -303,7 +303,7 @@ TEST(cardano_parameter_change_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_parameter_change_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -315,7 +315,7 @@ TEST(cardano_parameter_change_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_parameter_change_action_to_cbor((cardano_parameter_change_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -438,7 +438,7 @@ TEST(cardano_parameter_change_action_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_parameter_change_action_new(nullptr, nullptr, nullptr, &parameter_change_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_parameter_change_action_new, canSetPolicyHashToNull)
@@ -470,7 +470,7 @@ TEST(cardano_parameter_change_action_new, returnsErrorIfFourthArgIsNull)
   cardano_error_t result = cardano_parameter_change_action_new(protocol_param_update, nullptr, policy_hash, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -489,7 +489,7 @@ TEST(cardano_parameter_change_action_new, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_parameter_change_action_new(param_update, nullptr, policy_hash, &parameter_change_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_parameter_change_action_unref(&parameter_change_action);
@@ -690,7 +690,7 @@ TEST(cardano_parameter_change_action_set_governance_action_id, returnsErrorIfObj
   cardano_error_t result = cardano_parameter_change_action_set_governance_action_id(nullptr, governance_action_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);
@@ -766,7 +766,7 @@ TEST(cardano_parameter_change_action_set_protocol_param_update, returnsErrorIfOb
   cardano_error_t result = cardano_parameter_change_action_set_protocol_param_update(nullptr, protocol_param_update);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -842,7 +842,7 @@ TEST(cardano_parameter_change_action_set_policy_hash, returnsErrorIfObjectIsNull
   cardano_error_t result = cardano_parameter_change_action_set_policy_hash(nullptr, policy_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&policy_hash);
