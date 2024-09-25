@@ -716,7 +716,7 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
       }
       else if (bit_length <= 64U)
       {
-        result = cardano_cbor_writer_write_unsigned_int(writer, cardano_bigint_to_unsigned_int(plutus_data->integer));
+        result = cardano_cbor_writer_write_uint(writer, cardano_bigint_to_unsigned_int(plutus_data->integer));
       }
       else
       {

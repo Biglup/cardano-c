@@ -575,7 +575,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_map(cardano_cbor_wr
  * if (writer)
  * {
  *   uint64_t value = 12345; // Example unsigned integer
- *   cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, value);
+ *   cardano_error_t result = cardano_cbor_writer_write_uint(writer, value);
  *
  *   if (result != CARDANO_SUCCESS)
  *   {
@@ -587,7 +587,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_map(cardano_cbor_wr
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, uint64_t value);
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_uint(cardano_cbor_writer_t* writer, uint64_t value);
 
 /**
  * \brief Encodes and writes a signed integer value to the CBOR stream, using CBOR major types 0 or 1.

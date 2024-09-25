@@ -322,7 +322,7 @@ cardano_governance_action_id_to_cbor(
     return write_bytes_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, governance_action_id->index);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, governance_action_id->index);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

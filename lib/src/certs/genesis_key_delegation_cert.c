@@ -236,7 +236,7 @@ cardano_genesis_key_delegation_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {

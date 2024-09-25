@@ -526,7 +526,7 @@ cardano_transaction_output_to_cbor(
     return write_start_map_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_address_result = cardano_cbor_writer_write_unsigned_int(writer, 0U);
+  cardano_error_t write_address_result = cardano_cbor_writer_write_uint(writer, 0U);
 
   if (write_address_result != CARDANO_SUCCESS)
   {
@@ -543,7 +543,7 @@ cardano_transaction_output_to_cbor(
     return write_address_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_value_result = cardano_cbor_writer_write_unsigned_int(writer, 1U);
+  cardano_error_t write_value_result = cardano_cbor_writer_write_uint(writer, 1U);
 
   if (write_value_result != CARDANO_SUCCESS)
   {
@@ -559,7 +559,7 @@ cardano_transaction_output_to_cbor(
 
   if (transaction_output->datum != NULL)
   {
-    cardano_error_t write_datum_result = cardano_cbor_writer_write_unsigned_int(writer, 2U);
+    cardano_error_t write_datum_result = cardano_cbor_writer_write_uint(writer, 2U);
 
     if (write_datum_result != CARDANO_SUCCESS)
     {
@@ -576,7 +576,7 @@ cardano_transaction_output_to_cbor(
 
   if (transaction_output->script_ref != NULL)
   {
-    cardano_error_t write_script_result = cardano_cbor_writer_write_unsigned_int(writer, 3U);
+    cardano_error_t write_script_result = cardano_cbor_writer_write_uint(writer, 3U);
 
     if (write_script_result != CARDANO_SUCCESS)
     {

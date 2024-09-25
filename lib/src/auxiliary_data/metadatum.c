@@ -1158,7 +1158,7 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
       }
       else if (bit_length <= 64U)
       {
-        result = cardano_cbor_writer_write_unsigned_int(writer, cardano_bigint_to_unsigned_int(metadatum->integer));
+        result = cardano_cbor_writer_write_uint(writer, cardano_bigint_to_unsigned_int(metadatum->integer));
       }
       else
       {

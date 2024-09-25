@@ -315,7 +315,7 @@ cardano_mir_cert_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS);
+  result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS);
 
   if (result != CARDANO_SUCCESS)
   {

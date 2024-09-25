@@ -321,7 +321,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -339,7 +339,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
   }
   else
   {
-    cardano_error_t write_port_result = cardano_cbor_writer_write_unsigned_int(writer, *single_host_addr_relay->port);
+    cardano_error_t write_port_result = cardano_cbor_writer_write_uint(writer, *single_host_addr_relay->port);
 
     if (write_port_result != CARDANO_SUCCESS)
     {

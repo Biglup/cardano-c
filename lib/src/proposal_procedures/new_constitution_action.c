@@ -240,7 +240,7 @@ cardano_new_constitution_action_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_enum_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION);
+  cardano_error_t write_enum_result = cardano_cbor_writer_write_uint(writer, CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION);
 
   if (write_enum_result != CARDANO_SUCCESS)
   {

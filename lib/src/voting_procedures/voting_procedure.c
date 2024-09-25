@@ -212,7 +212,7 @@ cardano_voting_procedure_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, voting_procedure->vote);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voting_procedure->vote);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

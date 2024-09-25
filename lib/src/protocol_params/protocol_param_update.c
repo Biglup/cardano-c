@@ -800,14 +800,14 @@ write_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const u
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, *value);
+    result = cardano_cbor_writer_write_uint(writer, *value);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -842,7 +842,7 @@ write_unit_interval_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -884,7 +884,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -900,7 +900,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
         return result; // LCOV_EXCL_LINE
       }
 
-      result = cardano_cbor_writer_write_unsigned_int(writer, 0U);
+      result = cardano_cbor_writer_write_uint(writer, 0U);
 
       if (result != CARDANO_SUCCESS)
       {
@@ -917,7 +917,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, 1U);
+    result = cardano_cbor_writer_write_uint(writer, 1U);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -959,7 +959,7 @@ write_protocol_version_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1001,7 +1001,7 @@ write_cost_models_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1043,7 +1043,7 @@ write_ex_unit_prices_if_present(cardano_cbor_writer_t* writer, const uint64_t ke
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1085,7 +1085,7 @@ write_ex_units_if_present(cardano_cbor_writer_t* writer, const uint64_t key, con
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1127,7 +1127,7 @@ write_pool_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1169,7 +1169,7 @@ write_drep_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {

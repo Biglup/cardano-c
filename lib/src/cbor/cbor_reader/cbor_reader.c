@@ -496,7 +496,7 @@ cardano_cbor_reader_read_end_map(cardano_cbor_reader_t* reader)
 }
 
 cardano_error_t
-cardano_cbor_reader_read_boolean(cardano_cbor_reader_t* reader, bool* value)
+cardano_cbor_reader_read_bool(cardano_cbor_reader_t* reader, bool* value)
 {
   return _cbor_reader_read_boolean(reader, value);
 }

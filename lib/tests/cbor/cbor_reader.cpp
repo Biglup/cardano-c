@@ -730,7 +730,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadArrayOfSimpleValues)
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool bool_value = true;
-  result          = cardano_cbor_reader_read_boolean(reader, &bool_value);
+  result          = cardano_cbor_reader_read_bool(reader, &bool_value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(bool_value, false);
 
@@ -1308,7 +1308,7 @@ TEST(cardano_cbor_reader_read_null, canReadNullValues)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
+TEST(cardano_cbor_reader_read_bool, canReadBooleanValues)
 {
   const char* cbor_hex = "f4f5";
 
@@ -1322,7 +1322,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
   bool value = false;
-  result     = cardano_cbor_reader_read_boolean(reader, &value);
+  result     = cardano_cbor_reader_read_bool(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(value, false);
 
@@ -1330,7 +1330,7 @@ TEST(cardano_cbor_reader_read_boolean, canReadBooleanValues)
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(state, CARDANO_CBOR_READER_STATE_BOOLEAN);
 
-  result = cardano_cbor_reader_read_boolean(reader, &value);
+  result = cardano_cbor_reader_read_bool(reader, &value);
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(value, true);
 

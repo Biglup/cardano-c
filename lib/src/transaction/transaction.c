@@ -174,7 +174,7 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 
   if (array_size == ALONZO_ERA_FRAME_SIZE)
   {
-    cardano_error_t read_bool_result = cardano_cbor_reader_read_boolean(reader, &is_valid);
+    cardano_error_t read_bool_result = cardano_cbor_reader_read_bool(reader, &is_valid);
 
     if (read_bool_result != CARDANO_SUCCESS)
     {

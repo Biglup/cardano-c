@@ -495,14 +495,14 @@ cardano_redeemer_list_to_cbor(const cardano_redeemer_list_t* redeemer_list, card
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, cardano_redeemer_get_tag(redeemer));
+    result = cardano_cbor_writer_write_uint(writer, cardano_redeemer_get_tag(redeemer));
 
     if (result != CARDANO_SUCCESS)
     {
       return result; // LCOV_EXCL_LINE
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, cardano_redeemer_get_index(redeemer));
+    result = cardano_cbor_writer_write_uint(writer, cardano_redeemer_get_index(redeemer));
 
     if (result != CARDANO_SUCCESS)
     {

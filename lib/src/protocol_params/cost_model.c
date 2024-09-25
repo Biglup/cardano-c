@@ -227,7 +227,7 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
     return CARDANO_POINTER_IS_NULL;
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, cost_model->language_version);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, cost_model->language_version);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

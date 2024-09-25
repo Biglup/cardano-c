@@ -172,14 +172,14 @@ cardano_mir_to_pot_cert_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, mir_to_pot_cert->pot);
+  result = cardano_cbor_writer_write_uint(writer, mir_to_pot_cert->pot);
 
   if (result != CARDANO_SUCCESS)
   {
     return result; // LCOV_EXCL_LINE
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, mir_to_pot_cert->amount);
+  return cardano_cbor_writer_write_uint(writer, mir_to_pot_cert->amount);
 }
 
 cardano_error_t

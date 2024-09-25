@@ -185,14 +185,14 @@ cardano_ex_units_to_cbor(const cardano_ex_units_t* ex_units, cardano_cbor_writer
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, ex_units->memory);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, ex_units->memory);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, ex_units->cpu);
+  return cardano_cbor_writer_write_uint(writer, ex_units->cpu);
 }
 
 uint64_t

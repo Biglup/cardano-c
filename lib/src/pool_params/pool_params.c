@@ -406,14 +406,14 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
     return write_vrf_vk_hash_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_pledge_result = cardano_cbor_writer_write_unsigned_int(writer, pool_params->pledge);
+  cardano_error_t write_pledge_result = cardano_cbor_writer_write_uint(writer, pool_params->pledge);
 
   if (write_pledge_result != CARDANO_SUCCESS)
   {
     return write_pledge_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_cost_result = cardano_cbor_writer_write_unsigned_int(writer, pool_params->cost);
+  cardano_error_t write_cost_result = cardano_cbor_writer_write_uint(writer, pool_params->cost);
 
   if (write_cost_result != CARDANO_SUCCESS)
   {

@@ -101,7 +101,7 @@ _cardano_byron_address_encode_magic(cardano_cbor_writer_t* writer, const cardano
   assert(address != NULL);
 
   cardano_cbor_writer_t* magic_writer = cardano_cbor_writer_new();
-  cardano_error_t        result       = cardano_cbor_writer_write_unsigned_int(magic_writer, address->byron_content->attributes.magic);
+  cardano_error_t        result       = cardano_cbor_writer_write_uint(magic_writer, address->byron_content->attributes.magic);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -117,7 +117,7 @@ _cardano_byron_address_encode_magic(cardano_cbor_writer_t* writer, const cardano
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 2);
+    result = cardano_cbor_writer_write_uint(writer, 2);
     if (result == CARDANO_SUCCESS)
     {
       result = cardano_cbor_writer_write_bytestring(writer, magic_data, magic_size);
@@ -157,7 +157,7 @@ _cardano_byron_address_encode_derivation_path(cardano_cbor_writer_t* writer, con
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 1);
+    result = cardano_cbor_writer_write_uint(writer, 1);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -197,7 +197,7 @@ _cardano_byron_address_encode_attributes(cardano_cbor_writer_t* writer, const ca
     }
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, address->byron_content->type);
+  return cardano_cbor_writer_write_uint(writer, address->byron_content->type);
 }
 
 cardano_error_t
@@ -248,7 +248,7 @@ _cardano_byron_address_write_final_structure(
     return result; // LCOV_EXCL_LINE
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, crc);
+  return cardano_cbor_writer_write_uint(writer, crc);
 }
 
 cardano_error_t

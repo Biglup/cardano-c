@@ -57,7 +57,7 @@ CBOR Writer
 
 ------------
 
-.. doxygenfunction:: cardano_cbor_writer_write_unsigned_int
+.. doxygenfunction:: cardano_cbor_writer_write_uint
 
 ------------
 

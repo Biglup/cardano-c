@@ -274,7 +274,7 @@ cardano_transaction_input_to_cbor(
     return write_id_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, transaction_input->index);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, transaction_input->index);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

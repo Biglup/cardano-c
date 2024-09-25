@@ -234,7 +234,7 @@ cardano_resign_committee_cold_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_RESIGN_COMMITTEE_COLD);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_RESIGN_COMMITTEE_COLD);
 
   if (write_type_result != CARDANO_SUCCESS)
   {

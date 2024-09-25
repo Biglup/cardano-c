@@ -734,7 +734,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_map(cardano_cbor_rea
  * Usage Example:
  * \code{.c}
  * bool value;
- * cardano_error_t error = cardano_cbor_reader_read_boolean(reader, &value);
+ * cardano_error_t error = cardano_cbor_reader_read_bool(reader, &value);
  *
  * if (error == CARDANO_SUCCESS)
  * {
@@ -755,7 +755,7 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_map(cardano_cbor_rea
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_boolean(cardano_cbor_reader_t* reader, bool* value);
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_bool(cardano_cbor_reader_t* reader, bool* value);
 
 /**
  * \brief Reads the next data item as a null value (major type 7).

@@ -204,7 +204,7 @@ cardano_update_to_cbor(const cardano_update_t* update, cardano_cbor_writer_t* wr
     return error; // LCOV_EXCL_LINE
   }
 
-  error = cardano_cbor_writer_write_unsigned_int(writer, update->epoch);
+  error = cardano_cbor_writer_write_uint(writer, update->epoch);
 
   return error;
 }

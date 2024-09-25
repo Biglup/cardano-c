@@ -314,7 +314,7 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
     cardano_transaction_metadata_kvp_t* kvp_data = (cardano_transaction_metadata_kvp_t*)((void*)kvp);
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, kvp_data->key);
+    result = cardano_cbor_writer_write_uint(writer, kvp_data->key);
 
     if (result != CARDANO_SUCCESS)
     {

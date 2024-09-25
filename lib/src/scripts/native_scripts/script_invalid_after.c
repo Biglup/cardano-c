@@ -185,14 +185,14 @@ cardano_script_invalid_after_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_invalid_after->type);
+  result = cardano_cbor_writer_write_uint(writer, script_invalid_after->type);
 
   if (result != CARDANO_SUCCESS)
   {
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_invalid_after->slot);
+  result = cardano_cbor_writer_write_uint(writer, script_invalid_after->slot);
 
   return result;
 }

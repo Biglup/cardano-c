@@ -335,7 +335,7 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, mir_to_stake_creds_cert->pot);
+  result = cardano_cbor_writer_write_uint(writer, mir_to_stake_creds_cert->pot);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -374,7 +374,7 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
       /* LCOV_EXCL_STOP */
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, kvp_data->value);
+    result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {

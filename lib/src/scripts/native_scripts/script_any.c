@@ -197,7 +197,7 @@ cardano_script_any_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_any->type);
+  result = cardano_cbor_writer_write_uint(writer, script_any->type);
 
   if (result != CARDANO_SUCCESS)
   {

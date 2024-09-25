@@ -326,7 +326,7 @@ cardano_committee_members_map_to_cbor(const cardano_committee_members_map_t* com
       /* LCOV_EXCL_STOP */
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, kvp_data->value);
+    result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {

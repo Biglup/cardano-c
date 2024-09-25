@@ -190,14 +190,14 @@ cardano_protocol_version_to_cbor(const cardano_protocol_version_t* protocol_vers
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, protocol_version->major);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, protocol_version->major);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
     return write_uint_result; /* LCOV_EXCL_LINE */
   }
 
-  return cardano_cbor_writer_write_unsigned_int(writer, protocol_version->minor);
+  return cardano_cbor_writer_write_uint(writer, protocol_version->minor);
 }
 
 uint64_t

@@ -237,7 +237,7 @@ cardano_value_to_cbor(
 
   if ((value->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U))
   {
-    return cardano_cbor_writer_write_unsigned_int(writer, value->coin);
+    return cardano_cbor_writer_write_uint(writer, value->coin);
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, VALUE_ARRAY_REQUIRED_SIZE);
@@ -247,7 +247,7 @@ cardano_value_to_cbor(
     return write_start_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_coin_result = cardano_cbor_writer_write_unsigned_int(writer, value->coin);
+  cardano_error_t write_coin_result = cardano_cbor_writer_write_uint(writer, value->coin);
 
   if (write_coin_result != CARDANO_SUCCESS)
   {

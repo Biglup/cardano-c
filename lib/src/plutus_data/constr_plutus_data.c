@@ -348,7 +348,7 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  const cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, constr_plutus_data->alternative);
+  const cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, constr_plutus_data->alternative);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

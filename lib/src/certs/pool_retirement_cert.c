@@ -203,7 +203,7 @@ cardano_pool_retirement_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_POOL_RETIREMENT);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_POOL_RETIREMENT);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
@@ -217,7 +217,7 @@ cardano_pool_retirement_cert_to_cbor(
     return write_hash_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_epoch_result = cardano_cbor_writer_write_unsigned_int(writer, pool_retirement_cert->epoch);
+  cardano_error_t write_epoch_result = cardano_cbor_writer_write_uint(writer, pool_retirement_cert->epoch);
 
   if (write_epoch_result != CARDANO_SUCCESS)
   {

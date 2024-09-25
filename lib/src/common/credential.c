@@ -313,7 +313,7 @@ cardano_credential_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, credential->type);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, credential->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

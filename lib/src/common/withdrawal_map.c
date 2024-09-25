@@ -383,7 +383,7 @@ cardano_withdrawal_map_to_cbor(const cardano_withdrawal_map_t* withdrawal_map, c
       /* LCOV_EXCL_STOP */
     }
 
-    result = cardano_cbor_writer_write_unsigned_int(writer, kvp_data->value);
+    result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {

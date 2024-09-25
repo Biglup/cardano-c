@@ -199,7 +199,7 @@ cardano_script_pubkey_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_pubkey->type);
+  result = cardano_cbor_writer_write_uint(writer, script_pubkey->type);
 
   if (result != CARDANO_SUCCESS)
   {

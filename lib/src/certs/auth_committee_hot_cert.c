@@ -211,7 +211,7 @@ cardano_auth_committee_hot_cert_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT);
+  result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT);
 
   if (result != CARDANO_SUCCESS)
   {

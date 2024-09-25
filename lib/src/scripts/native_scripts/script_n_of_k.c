@@ -205,14 +205,14 @@ cardano_script_n_of_k_to_cbor(
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_n_of_k->type);
+  result = cardano_cbor_writer_write_uint(writer, script_n_of_k->type);
 
   if (result != CARDANO_SUCCESS)
   {
     return result; // LCOV_EXCL_LINE
   }
 
-  result = cardano_cbor_writer_write_unsigned_int(writer, script_n_of_k->required);
+  result = cardano_cbor_writer_write_uint(writer, script_n_of_k->required);
 
   if (result != CARDANO_SUCCESS)
   {

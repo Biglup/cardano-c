@@ -493,7 +493,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->metadata != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 0);
+    result = cardano_cbor_writer_write_uint(writer, 0);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -510,7 +510,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->native_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 1);
+    result = cardano_cbor_writer_write_uint(writer, 1);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -527,7 +527,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v1_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 2);
+    result = cardano_cbor_writer_write_uint(writer, 2);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -544,7 +544,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v2_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 3);
+    result = cardano_cbor_writer_write_uint(writer, 3);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -561,7 +561,7 @@ cardano_auxiliary_data_to_cbor(
 
   if (auxiliary_data->plutus_v3_scripts != NULL)
   {
-    result = cardano_cbor_writer_write_unsigned_int(writer, 4);
+    result = cardano_cbor_writer_write_uint(writer, 4);
 
     if (result != CARDANO_SUCCESS)
     {

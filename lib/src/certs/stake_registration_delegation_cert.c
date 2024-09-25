@@ -230,7 +230,7 @@ cardano_stake_registration_delegation_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
@@ -251,7 +251,7 @@ cardano_stake_registration_delegation_cert_to_cbor(
     return write_hash_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, stake_registration_delegation_cert->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, stake_registration_delegation_cert->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {

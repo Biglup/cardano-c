@@ -843,7 +843,7 @@ cardano_proposal_procedure_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, proposal_procedure->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, proposal_procedure->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {

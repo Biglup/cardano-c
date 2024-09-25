@@ -286,7 +286,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_tag_result = cardano_cbor_writer_write_unsigned_int(
+  cardano_error_t write_tag_result = cardano_cbor_writer_write_uint(
     writer,
     (uint64_t)redeemer->tag);
 
@@ -295,7 +295,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
     return write_tag_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_index_result = cardano_cbor_writer_write_unsigned_int(
+  cardano_error_t write_index_result = cardano_cbor_writer_write_uint(
     writer,
     redeemer->index);
 

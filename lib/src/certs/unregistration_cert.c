@@ -209,7 +209,7 @@ cardano_unregistration_cert_to_cbor(
     return write_array_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_type_result = cardano_cbor_writer_write_unsigned_int(writer, CARDANO_CERT_TYPE_UNREGISTRATION);
+  cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_UNREGISTRATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
@@ -223,7 +223,7 @@ cardano_unregistration_cert_to_cbor(
     return write_credential_result; // LCOV_EXCL_LINE
   }
 
-  cardano_error_t write_deposit_result = cardano_cbor_writer_write_unsigned_int(writer, unregistration_cert->deposit);
+  cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, unregistration_cert->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {

@@ -250,7 +250,7 @@ cardano_voter_to_cbor(
     return write_start_array_result; /* LCOV_EXCL_LINE */
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_unsigned_int(writer, voter->type);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voter->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {

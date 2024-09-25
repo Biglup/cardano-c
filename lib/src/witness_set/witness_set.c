@@ -503,7 +503,7 @@ write_vkey_witness_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -545,7 +545,7 @@ write_native_script_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -587,7 +587,7 @@ write_bootstrap_witness_set_if_present(cardano_cbor_writer_t* writer, const uint
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -629,7 +629,7 @@ write_plutus_v1_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -671,7 +671,7 @@ write_plutus_data_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -713,7 +713,7 @@ write_redeemer_list_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -755,7 +755,7 @@ write_plutus_v2_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -797,7 +797,7 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
   if (value != NULL)
   {
-    cardano_error_t result = cardano_cbor_writer_write_unsigned_int(writer, key);
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
     if (result != CARDANO_SUCCESS)
     {

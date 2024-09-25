@@ -432,7 +432,7 @@ cardano_cbor_writer_write_end_map(cardano_cbor_writer_t* writer)
 }
 
 cardano_error_t
-cardano_cbor_writer_write_unsigned_int(cardano_cbor_writer_t* writer, const uint64_t value)
+cardano_cbor_writer_write_uint(cardano_cbor_writer_t* writer, const uint64_t value)
 {
   if (writer == NULL)
   {
