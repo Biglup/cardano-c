@@ -1484,3 +1484,541 @@ TEST(cardano_array_pop, returnsTheLastItem)
   cardano_object_unref((cardano_object_t**)&ref_str2);
   cardano_object_unref((cardano_object_t**)&ref_str3);
 }
+
+TEST(cardano_array_erase, returnsNullWhenArrayIsNull)
+{
+  // Arrange
+  cardano_array_t* array = nullptr;
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST(cardano_array_erase, returnsNullWhenStartIndexIsGreaterThanArraySize)
+{
+  // Arrange
+  cardano_array_t*      array   = cardano_array_new(1);
+  ref_counted_string_t* ref_str = ref_counted_string_new("Hello, World!");
+
+  size_t new_size = cardano_array_push(array, &ref_str->base);
+  EXPECT_EQ(new_size, 1);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 2, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str);
+}
+
+TEST(cardano_array_erase, returnsNullWhenStartIndexIsEqualToArraySize)
+{
+  // Arrange
+  cardano_array_t*      array   = cardano_array_new(1);
+  ref_counted_string_t* ref_str = ref_counted_string_new("Hello, World!");
+
+  size_t new_size = cardano_array_push(array, &ref_str->base);
+  EXPECT_EQ(new_size, 1);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 1, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str);
+}
+
+TEST(cardano_array_erase, returnsNullWhenArrayIsEmpty)
+{
+  // Arrange
+  cardano_array_t* array = cardano_array_new(1);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+}
+
+TEST(cardano_array_erase, returnsAnEmtpyArrayWhenDeleteCountIsZero)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World!");
+
+  size_t new_size = cardano_array_push(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 0);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(result), 0);
+  EXPECT_EQ(cardano_array_get_capacity(result), 1);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+}
+
+TEST(cardano_array_erase, returnsTheDeletedElements)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(6);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+  ref_counted_string_t* ref_str4 = ref_counted_string_new("Hello, World! - 4");
+  ref_counted_string_t* ref_str5 = ref_counted_string_new("Hello, World! - 5");
+  ref_counted_string_t* ref_str6 = ref_counted_string_new("Hello, World! - 6");
+
+  size_t new_size = cardano_array_push(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_push(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_push(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  new_size = cardano_array_push(array, &ref_str4->base);
+  EXPECT_EQ(new_size, 4);
+
+  new_size = cardano_array_push(array, &ref_str5->base);
+  EXPECT_EQ(new_size, 5);
+
+  new_size = cardano_array_push(array, &ref_str6->base);
+  EXPECT_EQ(new_size, 6);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 2, 3);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 3);
+  EXPECT_EQ(cardano_array_get_size(result), 3);
+
+  cardano_object_t* item1 = cardano_array_get(result, 0);
+  cardano_object_t* item2 = cardano_array_get(result, 1);
+  cardano_object_t* item3 = cardano_array_get(result, 2);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item1)->string, "Hello, World! - 3");
+  EXPECT_STREQ(((ref_counted_string_t*)item2)->string, "Hello, World! - 4");
+  EXPECT_STREQ(((ref_counted_string_t*)item3)->string, "Hello, World! - 5");
+
+  cardano_object_unref((cardano_object_t**)&item1);
+  cardano_object_unref((cardano_object_t**)&item2);
+  cardano_object_unref((cardano_object_t**)&item3);
+
+  // Check Original Array contents
+  cardano_object_t* item4 = cardano_array_get(array, 0);
+  cardano_object_t* item5 = cardano_array_get(array, 1);
+  cardano_object_t* item6 = cardano_array_get(array, 2);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item4)->string, "Hello, World! - 1");
+  EXPECT_STREQ(((ref_counted_string_t*)item5)->string, "Hello, World! - 2");
+  EXPECT_STREQ(((ref_counted_string_t*)item6)->string, "Hello, World! - 6");
+
+  cardano_object_unref((cardano_object_t**)&item4);
+  cardano_object_unref((cardano_object_t**)&item5);
+  cardano_object_unref((cardano_object_t**)&item6);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+  cardano_object_unref((cardano_object_t**)&ref_str4);
+  cardano_object_unref((cardano_object_t**)&ref_str5);
+  cardano_object_unref((cardano_object_t**)&ref_str6);
+}
+
+TEST(cardano_array_erase, canHandleNegativeStart)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(9);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+  ref_counted_string_t* ref_str4 = ref_counted_string_new("Hello, World! - 4");
+  ref_counted_string_t* ref_str5 = ref_counted_string_new("Hello, World! - 5");
+  ref_counted_string_t* ref_str6 = ref_counted_string_new("Hello, World! - 6");
+
+  size_t new_size = cardano_array_push(array, &ref_str1->base);
+  EXPECT_EQ(new_size, 1);
+
+  new_size = cardano_array_push(array, &ref_str2->base);
+  EXPECT_EQ(new_size, 2);
+
+  new_size = cardano_array_push(array, &ref_str3->base);
+  EXPECT_EQ(new_size, 3);
+
+  new_size = cardano_array_push(array, &ref_str4->base);
+  EXPECT_EQ(new_size, 4);
+
+  new_size = cardano_array_push(array, &ref_str5->base);
+  EXPECT_EQ(new_size, 5);
+
+  new_size = cardano_array_push(array, &ref_str6->base);
+  EXPECT_EQ(new_size, 6);
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, -4, 3);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 3);
+  EXPECT_EQ(cardano_array_get_capacity(array), 9);
+
+  EXPECT_EQ(cardano_array_get_size(result), 3);
+  EXPECT_EQ(cardano_array_get_capacity(result), 3);
+
+  cardano_object_t* item1 = cardano_array_get(result, 0);
+  cardano_object_t* item2 = cardano_array_get(result, 1);
+  cardano_object_t* item3 = cardano_array_get(result, 2);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item1)->string, "Hello, World! - 3");
+
+  EXPECT_STREQ(((ref_counted_string_t*)item2)->string, "Hello, World! - 4");
+  EXPECT_STREQ(((ref_counted_string_t*)item3)->string, "Hello, World! - 5");
+
+  cardano_object_unref((cardano_object_t**)&item1);
+  cardano_object_unref((cardano_object_t**)&item2);
+  cardano_object_unref((cardano_object_t**)&item3);
+
+  // Check Original Array contents
+  cardano_object_t* item4 = cardano_array_get(array, 0);
+  cardano_object_t* item5 = cardano_array_get(array, 1);
+  cardano_object_t* item6 = cardano_array_get(array, 2);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item4)->string, "Hello, World! - 1");
+  EXPECT_STREQ(((ref_counted_string_t*)item5)->string, "Hello, World! - 2");
+  EXPECT_STREQ(((ref_counted_string_t*)item6)->string, "Hello, World! - 6");
+
+  cardano_object_unref((cardano_object_t**)&item4);
+  cardano_object_unref((cardano_object_t**)&item5);
+  cardano_object_unref((cardano_object_t**)&item6);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+  cardano_object_unref((cardano_object_t**)&ref_str4);
+  cardano_object_unref((cardano_object_t**)&ref_str5);
+  cardano_object_unref((cardano_object_t**)&ref_str6);
+}
+
+TEST(cardano_array_erase, returnsNullWhenDeleteCountExceedsAvailableElements)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(3);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Item 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Item 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Item 3");
+
+  size_t new_size = cardano_array_push(array, &ref_str1->base);
+
+  CARDANO_UNUSED(new_size);
+
+  new_size = cardano_array_push(array, &ref_str2->base);
+
+  CARDANO_UNUSED(new_size);
+
+  new_size = cardano_array_push(array, &ref_str3->base);
+
+  CARDANO_UNUSED(new_size);
+
+  // Act
+  // Attempt to delete 5 elements starting at index 1
+  cardano_array_t* result = cardano_array_erase(array, 1, 5);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+}
+
+TEST(cardano_array_erase, canDeleteAllElements)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(5);
+  ref_counted_string_t* ref_strs[5];
+  for (int i = 0; i < 5; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 5);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 0);
+  EXPECT_EQ(cardano_array_get_size(result), 5);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  for (int i = 0; i < 5; ++i)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_strs[i]);
+  }
+}
+
+TEST(cardano_array_erase, returnsNullWhenAdjustedStartIsNegative)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(3);
+  ref_counted_string_t* ref_strs[3];
+
+  for (int i = 0; i < 3; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  // Start index is -5, which adjusts to -2
+  cardano_array_t* result = cardano_array_erase(array, -5, 2);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  for (auto& ref_str: ref_strs)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_str);
+  }
+}
+
+TEST(cardano_array_erase, returnsNullWhenDeleteCountIsVeryLarge)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(3);
+  ref_counted_string_t* ref_strs[3];
+  for (int i = 0; i < 3; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  size_t           very_large_delete_count = SIZE_MAX - 1;
+  cardano_array_t* result                  = cardano_array_erase(array, 0, very_large_delete_count);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  for (int i = 0; i < 3; ++i)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_strs[i]);
+  }
+}
+
+TEST(cardano_array_erase, returnsNullWhenNegativeStartAdjustsBeyondArrayBounds)
+{
+  // Arrange
+  cardano_array_t* array = cardano_array_new(0);
+
+  // Act
+  // Start index is -10, array size is 0, adjusted start will be -10
+  cardano_array_t* result = cardano_array_erase(array, -10, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+}
+
+TEST(cardano_array_erase, canDeleteElementsFromStartIndexZero)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(3);
+  ref_counted_string_t* ref_strs[3];
+  for (int i = 0; i < 3; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 2);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 1);
+  EXPECT_EQ(cardano_array_get_size(result), 2);
+
+  cardano_object_t* item = cardano_array_get(array, 0);
+  EXPECT_STREQ(((ref_counted_string_t*)item)->string, "Item 3");
+  cardano_object_unref((cardano_object_t**)&item);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+
+  for (auto& ref_str: ref_strs)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_str);
+  }
+}
+
+TEST(cardano_array_erase, returnsEmptyArrayWhenDeleteCountIsZeroAtVariousStarts)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(3);
+  ref_counted_string_t* ref_strs[3];
+  for (int i = 0; i < 3; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  cardano_array_t* result1 = cardano_array_erase(array, 0, 0);
+  cardano_array_t* result2 = cardano_array_erase(array, 1, 0);
+  cardano_array_t* result3 = cardano_array_erase(array, 2, 0);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(result1), 0);
+  EXPECT_EQ(cardano_array_get_size(result2), 0);
+  EXPECT_EQ(cardano_array_get_size(result3), 0);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result1);
+  cardano_array_unref(&result2);
+  cardano_array_unref(&result3);
+
+  for (auto& ref_str: ref_strs)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_str);
+  }
+}
+
+TEST(cardano_array_erase, returnsNullWhenStartIndexIsVeryLarge)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(1);
+  ref_counted_string_t* ref_str  = ref_counted_string_new("Item 1");
+  size_t                new_size = cardano_array_push(array, &ref_str->base);
+  CARDANO_UNUSED(new_size);
+
+  // Act
+  int64_t          very_large_start = INT64_MAX;
+  cardano_array_t* result           = cardano_array_erase(array, very_large_start, 1);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str);
+}
+
+TEST(cardano_array_erase, properlyManagesReferenceCounts)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(2);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Item 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Item 2");
+
+  size_t new_size = cardano_array_push(array, &ref_str1->base);
+
+  CARDANO_UNUSED(new_size);
+
+  new_size = cardano_array_push(array, &ref_str2->base);
+
+  CARDANO_UNUSED(new_size);
+
+  // Get initial reference counts
+  size_t ref_count1 = ref_str1->base.ref_count;
+  size_t ref_count2 = ref_str2->base.ref_count;
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 0, 2);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 0);
+  EXPECT_EQ(cardano_array_get_size(result), 2);
+  EXPECT_EQ(ref_str1->base.ref_count, ref_count1);
+  EXPECT_EQ(ref_str2->base.ref_count, ref_count2);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+}
+
+TEST(cardano_array_erase, canDeleteLastElement)
+{
+  // Arrange
+  cardano_array_t*      array = cardano_array_new(3);
+  ref_counted_string_t* ref_strs[3];
+
+  for (int i = 0; i < 3; ++i)
+  {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Item %d", i + 1);
+    ref_strs[i]     = ref_counted_string_new(buffer);
+    size_t new_size = cardano_array_push(array, &ref_strs[i]->base);
+    CARDANO_UNUSED(new_size);
+  }
+
+  // Act
+  cardano_array_t* result = cardano_array_erase(array, 2, 1);
+
+  // Assert
+  EXPECT_EQ(cardano_array_get_size(array), 2);
+  EXPECT_EQ(cardano_array_get_size(result), 1);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+
+  for (auto& ref_str: ref_strs)
+  {
+    cardano_object_unref((cardano_object_t**)&ref_str);
+  }
+}
