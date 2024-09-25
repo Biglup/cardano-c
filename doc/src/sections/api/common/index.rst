@@ -22,4 +22,5 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./reward_address_list
     ./unit_interval
     ./utxo
+    ./utxo_list
     ./withdrawal_map
