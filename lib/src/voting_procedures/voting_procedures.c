@@ -564,7 +564,7 @@ cardano_voting_procedures_insert(
   cardano_voter_ref(voter);
 
   const size_t old_size = cardano_array_get_size(voting_procedures->array);
-  const size_t new_size = cardano_array_add(voting_procedures->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(voting_procedures->array, (cardano_object_t*)((void*)kvp));
 
   if (new_size != (old_size + 1U))
   {

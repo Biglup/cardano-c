@@ -414,7 +414,7 @@ _cbor_reader_push_data_item(cardano_cbor_reader_t* reader, const cardano_cbor_ma
   frame->current_key_offset = reader->current_frame.current_key_offset;
 
   const size_t old_size = cardano_array_get_size(reader->nested_items);
-  const size_t new_size = cardano_array_add(reader->nested_items, &frame->base);
+  const size_t new_size = cardano_array_push(reader->nested_items, &frame->base);
 
   if (new_size <= old_size)
   {

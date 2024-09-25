@@ -254,7 +254,7 @@ cardano_committee_members_map_from_cbor(cardano_cbor_reader_t* reader, cardano_c
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
 
@@ -425,7 +425,7 @@ cardano_committee_members_map_insert(
   cardano_credential_ref(key);
 
   const size_t old_size = cardano_array_get_size(committee_members_map->array);
-  const size_t new_size = cardano_array_add(committee_members_map->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(committee_members_map->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

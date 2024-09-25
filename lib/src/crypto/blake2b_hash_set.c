@@ -212,7 +212,7 @@ cardano_blake2b_hash_set_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2
     }
 
     const size_t old_size = cardano_array_get_size(list->array);
-    const size_t new_size = cardano_array_add(list->array, (cardano_object_t*)((void*)element));
+    const size_t new_size = cardano_array_push(list->array, (cardano_object_t*)((void*)element));
 
     cardano_blake2b_hash_unref(&element);
 
@@ -351,7 +351,7 @@ cardano_blake2b_hash_set_add(cardano_blake2b_hash_set_t* blake2b_hash_set, carda
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(blake2b_hash_set->array);
-  const size_t new_size      = cardano_array_add(blake2b_hash_set->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(blake2b_hash_set->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 

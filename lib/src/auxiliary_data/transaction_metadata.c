@@ -252,7 +252,7 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
 
@@ -419,7 +419,7 @@ cardano_transaction_metadata_insert(
   cardano_metadatum_ref(value);
 
   const size_t old_size = cardano_array_get_size(transaction_metadata->array);
-  const size_t new_size = cardano_array_add(transaction_metadata->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(transaction_metadata->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

@@ -188,9 +188,9 @@ TEST(cardano_set_from_array, addsElementsOnTheArrayToTheNewSet)
   ref_counted_string_t* ref_counted_string1 = ref_counted_string_new("Hello, World! - 1");
   ref_counted_string_t* ref_counted_string2 = ref_counted_string_new("Hello, World! - 2");
 
-  size_t new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string1);
+  size_t new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string1);
   EXPECT_EQ(new_size, 1);
-  new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string2);
+  new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string2);
   EXPECT_EQ(new_size, 2);
 
   // Act
@@ -217,11 +217,11 @@ TEST(cardano_set_from_array, doesntAddTheSameElementFromTheArrayTwice)
   ref_counted_string_t* ref_counted_string2 = ref_counted_string_new("Hello, World! - 1");
   ref_counted_string_t* ref_counted_string3 = ref_counted_string_new("Hello, World! - 2");
 
-  size_t new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string1);
+  size_t new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string1);
   EXPECT_EQ(new_size, 1);
-  new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string2);
+  new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string2);
   EXPECT_EQ(new_size, 2);
-  new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string3);
+  new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string3);
   EXPECT_EQ(new_size, 3);
 
   // Act
@@ -266,7 +266,7 @@ TEST(cardano_set_from_array, returnsNullIfThereIsEventualMemoryAllocFailure)
 
   cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
-  size_t new_size = cardano_array_add(array, (cardano_object_t*)ref_counted_string);
+  size_t new_size = cardano_array_push(array, (cardano_object_t*)ref_counted_string);
   EXPECT_EQ(new_size, 1);
 
   // Act

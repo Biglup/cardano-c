@@ -160,17 +160,20 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_object_t* cardano_array_get(const cardano_array_t* array, size_t index);
 
 /**
- * \brief Fetches a direct pointer to the array's data.
+ * \brief Adds an item to the end of the array.
  *
- * \warning This returns a pointer to the internal data, not a copy. Do not manually deallocate.
+ * This function appends the specified item to the end of the array, increasing the array's size by one.
+ * The item is added by reference, and the internal array's data pointer may change if the array is resized.
  *
- * \param[in] array Target array.
- * \param[in] item Pointer to the data to be added.
+ * \warning This function increases the reference count of item, caller must free its own reference by calling \ref cardano_array_unref.
  *
- * \return The new size of the array.
+ * \param[in] array Target array to which the item will be added.
+ * \param[in] item  Pointer to the item to be added to the array.
+ *
+ * \return The new size of the array after the item has been added.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT size_t cardano_array_add(cardano_array_t* array, cardano_object_t* item);
+CARDANO_EXPORT size_t cardano_array_push(cardano_array_t* array, cardano_object_t* item);
 
 /**
  * \brief Pops an item from the end of a cardano_array_t.

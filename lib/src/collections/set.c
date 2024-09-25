@@ -315,7 +315,7 @@ cardano_get_entries(cardano_set_t* set)
   {
     for (cardano_set_entry_t* entry = set->buckets[i]; entry != NULL; entry = entry->next)
     {
-      if (!cardano_array_add(array, entry->object))
+      if (!cardano_array_push(array, entry->object))
       {
         cardano_array_unref(&array);
         return NULL;

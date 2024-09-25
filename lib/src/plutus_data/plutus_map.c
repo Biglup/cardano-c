@@ -270,7 +270,7 @@ cardano_plutus_map_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_map_t
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
     CARDANO_UNUSED(old_size);
@@ -472,7 +472,7 @@ cardano_plutus_map_insert(
   cardano_plutus_data_ref(value);
 
   const size_t old_size = cardano_array_get_size(plutus_map->array);
-  const size_t new_size = cardano_array_add(plutus_map->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(plutus_map->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

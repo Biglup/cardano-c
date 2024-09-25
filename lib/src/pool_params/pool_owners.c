@@ -211,7 +211,7 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
     }
 
     const size_t old_size = cardano_array_get_size(list->array);
-    const size_t new_size = cardano_array_add(list->array, (cardano_object_t*)((void*)element));
+    const size_t new_size = cardano_array_push(list->array, (cardano_object_t*)((void*)element));
 
     cardano_blake2b_hash_unref(&element);
 
@@ -350,7 +350,7 @@ cardano_pool_owners_add(cardano_pool_owners_t* pool_owners, cardano_blake2b_hash
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(pool_owners->array);
-  const size_t new_size      = cardano_array_add(pool_owners->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(pool_owners->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 

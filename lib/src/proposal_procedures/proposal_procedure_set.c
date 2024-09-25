@@ -188,7 +188,7 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
     }
 
     const size_t old_size = cardano_array_get_size(list->array);
-    const size_t new_size = cardano_array_add(list->array, (cardano_object_t*)((void*)element));
+    const size_t new_size = cardano_array_push(list->array, (cardano_object_t*)((void*)element));
 
     cardano_proposal_procedure_unref(&element);
 
@@ -325,7 +325,7 @@ cardano_proposal_procedure_set_add(cardano_proposal_procedure_set_t* proposal_pr
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(proposal_procedure_set->array);
-  const size_t new_size      = cardano_array_add(proposal_procedure_set->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(proposal_procedure_set->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 

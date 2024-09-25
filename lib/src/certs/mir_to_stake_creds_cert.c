@@ -293,7 +293,7 @@ cardano_mir_to_stake_creds_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
     CARDANO_UNUSED(old_size);
@@ -464,7 +464,7 @@ cardano_mir_to_stake_creds_cert_insert(
   cardano_credential_ref(credential);
 
   const size_t old_size = cardano_array_get_size(mir_to_stake_creds_cert->array);
-  const size_t new_size = cardano_array_add(mir_to_stake_creds_cert->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(mir_to_stake_creds_cert->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

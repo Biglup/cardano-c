@@ -311,7 +311,7 @@ cardano_withdrawal_map_from_cbor(cardano_cbor_reader_t* reader, cardano_withdraw
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
 
@@ -482,7 +482,7 @@ cardano_withdrawal_map_insert(
   cardano_reward_address_ref(key);
 
   const size_t old_size = cardano_array_get_size(withdrawal_map->array);
-  const size_t new_size = cardano_array_add(withdrawal_map->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(withdrawal_map->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

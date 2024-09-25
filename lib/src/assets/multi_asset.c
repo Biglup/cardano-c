@@ -432,7 +432,7 @@ cardano_multi_asset_insert_assets(
   cardano_asset_name_map_ref(assets);
 
   const size_t old_size = cardano_array_get_size(multi_asset->array);
-  const size_t new_size = cardano_array_add(multi_asset->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(multi_asset->array, (cardano_object_t*)((void*)kvp));
 
   if (new_size != (old_size + 1U))
   {

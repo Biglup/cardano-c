@@ -241,7 +241,7 @@ cardano_metadatum_map_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum
     kvp->value              = value;
 
     const size_t old_size = cardano_array_get_size(map->array);
-    const size_t new_size = cardano_array_add(map->array, (cardano_object_t*)((void*)kvp));
+    const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
     assert((old_size + 1U) == new_size);
     CARDANO_UNUSED(old_size);
@@ -438,7 +438,7 @@ cardano_metadatum_map_insert(
   cardano_metadatum_ref(value);
 
   const size_t old_size = cardano_array_get_size(metadatum_map->array);
-  const size_t new_size = cardano_array_add(metadatum_map->array, (cardano_object_t*)((void*)kvp));
+  const size_t new_size = cardano_array_push(metadatum_map->array, (cardano_object_t*)((void*)kvp));
 
   assert((old_size + 1U) == new_size);
 

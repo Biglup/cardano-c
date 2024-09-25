@@ -157,7 +157,7 @@ cardano_voter_list_add(cardano_voter_list_t* voter_list, cardano_voter_t* elemen
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(voter_list->array);
-  const size_t new_size      = cardano_array_add(voter_list->array, (cardano_object_t*)((void*)element));
+  const size_t new_size      = cardano_array_push(voter_list->array, (cardano_object_t*)((void*)element));
 
   assert((original_size + 1U) == new_size);
 
