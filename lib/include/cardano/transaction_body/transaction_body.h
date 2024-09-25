@@ -75,7 +75,7 @@ typedef struct cardano_transaction_body_t cardano_transaction_body_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the transaction body was successfully created, or an appropriate error code indicating
- *         the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the required input pointers (inputs, outputs) are NULL.
+ *         the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the required input pointers (inputs, outputs) are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -178,7 +178,7 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p transaction_body or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark If the transaction body object was created by \ref cardano_transaction_body_from_cbor, the original CBOR encoding
  *         will be cached and reused by this function to prevent round-trip encoding issues that can change the transaction body hash
@@ -258,7 +258,7 @@ CARDANO_EXPORT cardano_transaction_input_set_t* cardano_transaction_body_get_inp
  *                   This parameter must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the inputs were successfully set.
- *         Returns \ref CARDANO_POINTER_IS_NULL if either the \p transaction_body or \p inputs is NULL.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if either the \p transaction_body or \p inputs is NULL.
  *
  * \note This function increases the reference count of the \p inputs object; the caller retains ownership of the inputs
  *       and must release their reference to the inputs when no longer needed by calling \ref cardano_transaction_input_set_unref.
@@ -334,7 +334,7 @@ CARDANO_EXPORT cardano_transaction_output_list_t* cardano_transaction_body_get_o
  *                    This value must not be NULL, and it will replace any existing outputs in the \p transaction_body.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the outputs were
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * \note This function increases the reference count of the \p outputs object, so the caller retains ownership of their respective references.
@@ -404,7 +404,7 @@ CARDANO_EXPORT uint64_t cardano_transaction_body_get_fee(cardano_transaction_bod
  * \param[in] fee The fee amount in lovelaces to be assigned to the transaction.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the fee
- *         was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         \p transaction_body pointer is NULL.
  *
  * Usage Example:
@@ -470,7 +470,7 @@ CARDANO_EXPORT const uint64_t* cardano_transaction_body_get_invalid_after(cardan
  * \param[in] epoch A constant pointer to a \c uint64_t representing the "invalid after" slot number. If `NULL`, this will unset the field.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the field was successfully set or unset,
- *         or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if \p transaction_body is NULL.
+ *         or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -541,7 +541,7 @@ CARDANO_EXPORT cardano_certificate_set_t* cardano_transaction_body_get_certifica
  *                         be assigned to the transaction body. The certificates must be properly initialized and cannot be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificates were
- *         successfully set, or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if either \p transaction_body or
+ *         successfully set, or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if either \p transaction_body or
  *         \p certificates is NULL.
  *
  * \note The function increases the reference count of the \p certificates object. The caller retains ownership of the certificate
@@ -620,7 +620,7 @@ CARDANO_EXPORT cardano_withdrawal_map_t* cardano_transaction_body_get_withdrawal
  *                        be assigned to the transaction body, or NULL to unset any previously set withdrawals.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the withdrawals were
- *         successfully set or unset, or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if \p transaction_body is NULL.
+ *         successfully set or unset, or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
  *
  * \note If \p withdrawals is non-NULL, the function increases the reference count of the \p withdrawals object. The caller retains
  *       ownership of the withdrawal map and is responsible for releasing it when it is no longer needed.
@@ -704,7 +704,7 @@ CARDANO_EXPORT cardano_update_t* cardano_transaction_body_get_update(cardano_tra
  *                   This parameter can be NULL, in which case the update field will be unset (cleared).
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the update was
- *         successfully set, or an appropriate error code if an error occurred (e.g., \ref CARDANO_POINTER_IS_NULL if the transaction body pointer is NULL).
+ *         successfully set, or an appropriate error code if an error occurred (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction body pointer is NULL).
  *
  * \note If a valid update object is provided, its reference count will be incremented. The caller retains ownership of their
  *       reference to the update object and is responsible for managing its lifecycle (e.g., by calling \ref cardano_update_unref
@@ -777,7 +777,7 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_transaction_body_get_aux_data_has
  *                          This parameter can be NULL to unset or clear the auxiliary data hash.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the auxiliary data hash was successfully set,
- *         or an appropriate error code, such as \ref CARDANO_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
+ *         or an appropriate error code, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
  *
  * \note If a valid auxiliary data hash object is provided, its reference count will be incremented. The caller retains ownership of their
  *       reference to the update object and is responsible for managing its lifecycle (e.g., by calling \ref cardano_blake2b_hash_unref
@@ -851,7 +851,7 @@ CARDANO_EXPORT const uint64_t* cardano_transaction_body_get_invalid_before(carda
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
  *         "invalid before" field was successfully set or unset, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the transaction body pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction body pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -932,7 +932,7 @@ CARDANO_EXPORT cardano_multi_asset_t* cardano_transaction_body_get_mint(cardano_
  *                 This parameter can be NULL if the mint field should be unset (i.e., no assets to mint or burn).
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the mint field
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the transaction_body pointer is NULL.
  *
  * \note This function increases the reference count of the mint object, if provided. The caller retains ownership of the provided
@@ -1009,7 +1009,7 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_transaction_body_get_script_data_
  *                             This parameter can be NULL if the script data hash is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script data hash
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the transaction_body pointer is NULL.
  *
  * \note If a script data hash was previously set, this function will replace it with the new value.
@@ -1082,7 +1082,7 @@ CARDANO_EXPORT cardano_transaction_input_set_t* cardano_transaction_body_get_col
  *                       This parameter can be NULL to unset the collateral inputs.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the collateral inputs were successfully set,
- *         or an appropriate error code such as \ref CARDANO_POINTER_IS_NULL if the transaction_body pointer is NULL.
+ *         or an appropriate error code such as \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction_body pointer is NULL.
  *
  * \note If the collateral is set, the reference count of the \p collateral object will be incremented. The caller retains ownership of their references
  *       and is responsible for releasing their reference when it is no longer needed.
@@ -1155,7 +1155,7 @@ CARDANO_EXPORT cardano_blake2b_hash_set_t* cardano_transaction_body_get_required
  *                             to unset the required signers.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the required signers were
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         transaction_body pointer is NULL.
  *
  * \note If the required signers are no longer needed or need to be cleared, passing a NULL value for the `required_signers` parameter will unset the field.
@@ -1227,7 +1227,7 @@ CARDANO_EXPORT const cardano_network_id_t* cardano_transaction_body_get_network_
  *                       if the network ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the network ID was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the transaction_body pointer is NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction_body pointer is NULL.
  *
  * \note If \p network_id is set to NULL, it will unset any previously set network ID in the transaction body.
  *
@@ -1298,7 +1298,7 @@ CARDANO_EXPORT cardano_transaction_output_t* cardano_transaction_body_get_collat
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
  *         collateral return output was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
  *
  * \note This function increases the reference count of the output object. It is the caller's responsibility to
  *       manage the lifetime of their references, including calling \ref cardano_transaction_output_unref
@@ -1454,7 +1454,7 @@ CARDANO_EXPORT cardano_transaction_input_set_t* cardano_transaction_body_get_ref
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
  *         reference inputs were successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
  *
  * \note If \p reference_inputs is NULL, any previously set reference inputs in the transaction body will be cleared.
  *
@@ -1529,7 +1529,7 @@ CARDANO_EXPORT cardano_voting_procedures_t* cardano_transaction_body_get_voting_
  *                              This parameter can be set to NULL to remove the voting procedures from the transaction body.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the voting procedures
- *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the transaction body pointer is NULL.
  *
  * \note The function increases the reference count of the \p voting_procedures object, and the caller retains ownership of their references.
@@ -1602,7 +1602,7 @@ CARDANO_EXPORT cardano_proposal_procedure_set_t* cardano_transaction_body_get_pr
  *                                This parameter can be NULL to unset the proposal procedures from the transaction body.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the proposal procedure set was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p transaction_body pointer is NULL.
  *
  * \note The function increases the reference count of the \p proposal_procedures object, so the caller retains ownership
@@ -1671,7 +1671,7 @@ CARDANO_EXPORT const uint64_t* cardano_transaction_body_get_treasury_value(carda
  * \param[in] treasury_value A pointer to a \c uint64_t representing the treasury value in lovelaces. This parameter can be NULL to unset the treasury value.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the treasury value was successfully set,
- *         or an appropriate error code if the operation failed, such as \ref CARDANO_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
+ *         or an appropriate error code if the operation failed, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the \p transaction_body pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -1736,7 +1736,7 @@ CARDANO_EXPORT const uint64_t* cardano_transaction_body_get_donation(cardano_tra
  *                     the donation value.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the donation value was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the transaction_body pointer is NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction_body pointer is NULL.
  *
  * Usage Example:
  * \code{.c}

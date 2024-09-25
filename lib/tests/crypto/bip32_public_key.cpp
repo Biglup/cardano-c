@@ -166,7 +166,7 @@ TEST(cardano_bip32_public_key_from_bytes, returnsNullIfGivenANullPtr)
   cardano_error_t             error      = cardano_bip32_public_key_from_bytes(nullptr, 0, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 }
 
@@ -187,7 +187,7 @@ TEST(cardano_bip32_public_key_from_bytes, returnsNullIfPublic_keyIsNull)
   cardano_error_t error = cardano_bip32_public_key_from_bytes(BIP32_PUBLIC_KEY, BIP32_PUBLIC_KEY_SIZE, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_from_bytes, returnsNullIfMemoryAllocationFails)
@@ -202,7 +202,7 @@ TEST(cardano_bip32_public_key_from_bytes, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_bip32_public_key_from_bytes(BIP32_PUBLIC_KEY, BIP32_PUBLIC_KEY_SIZE, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 
   // Cleanup
@@ -221,7 +221,7 @@ TEST(cardano_bip32_public_key_from_bytes, returnsNullIfMemoryEventualAllocationF
   cardano_error_t error = cardano_bip32_public_key_from_bytes(BIP32_PUBLIC_KEY, BIP32_PUBLIC_KEY_SIZE, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 
   // Cleanup
@@ -235,7 +235,7 @@ TEST(cardano_bip32_public_key_from_hex, returnsNullIfGivenANullPtr)
   cardano_error_t             error      = cardano_bip32_public_key_from_hex(nullptr, 0, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 }
 
@@ -245,7 +245,7 @@ TEST(cardano_bip32_public_key_from_hex, returnsNullIfpublic_keyIsNull)
   cardano_error_t error = cardano_bip32_public_key_from_hex(BIP32_PUBLIC_KEY_HEX, BIP32_PUBLIC_KEY_SIZE * 2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_from_hex, returnsNullIfGivenZeroLength)
@@ -271,7 +271,7 @@ TEST(cardano_bip32_public_key_from_hex, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_bip32_public_key_from_hex(BIP32_PUBLIC_KEY_HEX, BIP32_PUBLIC_KEY_SIZE * 2, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 
   // Cleanup
@@ -290,7 +290,7 @@ TEST(cardano_bip32_public_key_from_hex, returnsNullIfMemoryEventualAllocationFai
   cardano_error_t error = cardano_bip32_public_key_from_hex(BIP32_PUBLIC_KEY_HEX, BIP32_PUBLIC_KEY_SIZE * 2, &public_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(public_key, (cardano_bip32_public_key_t*)nullptr);
 
   // Cleanup
@@ -343,7 +343,7 @@ TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_bip32_public_key_to_bytes(public_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfBufferLengthIsZero)
@@ -358,7 +358,7 @@ TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfBufferLengthIsZero)
   error = cardano_bip32_public_key_to_bytes(public_key, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_bip32_public_key_unref(&public_key);
@@ -375,7 +375,7 @@ TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfPublicKeyLengthIsGreaterTh
   error = cardano_bip32_public_key_to_bytes(public_key, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_bip32_public_key_unref(&public_key);
@@ -395,7 +395,7 @@ TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfPublicKeyLengthIsZero)
   error = cardano_bip32_public_key_to_bytes(public_key, buffer, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_public_key_unref(&public_key);
@@ -413,7 +413,7 @@ TEST(cardano_bip32_public_key_to_bytes, returnsErrorIfPublicKeyIsNull)
   error = cardano_bip32_public_key_to_bytes(public_key, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_public_key_unref(&public_key);
@@ -477,7 +477,7 @@ TEST(cardano_bip32_public_key_to_ed25519_key, returnsErrorIfPublicKeyIsNull)
   cardano_error_t error = cardano_bip32_public_key_to_ed25519_key(public_key, &ed25519_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_to_ed25519_key, returnsErrorIfPublicKeyIsInvalid)
@@ -491,7 +491,7 @@ TEST(cardano_bip32_public_key_to_ed25519_key, returnsErrorIfPublicKeyIsInvalid)
   cardano_error_t ed25519_key = cardano_bip32_public_key_to_ed25519_key(public_key, nullptr);
 
   // Assert
-  EXPECT_EQ(ed25519_key, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(ed25519_key, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bip32_public_key_unref(&public_key);
@@ -533,7 +533,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfPublicKeyIsNull)
   cardano_error_t error = cardano_bip32_public_key_derive(public_key, indices, 3, &derived_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_derive, returnsErrorIfIndicesIsNull)
@@ -546,7 +546,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfIndicesIsNull)
   cardano_error_t error = cardano_bip32_public_key_derive(public_key, nullptr, 3, &derived_key);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_derive, returnsErrorIfIndicesLengthIsZero)
@@ -574,7 +574,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfDerivedKeyIsNull)
   cardano_error_t error = cardano_bip32_public_key_derive(public_key, indices, 3, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bip32_public_key_derive, deriveCorrectUnhardenedKey)
@@ -649,7 +649,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_public_key_derive(public_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_public_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -657,7 +657,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_public_key_derive(public_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_public_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -665,7 +665,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_public_key_derive(public_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_public_key_t*)nullptr);
 
   reset_allocators_run_count();
@@ -673,7 +673,7 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfMemoryAllocationFails)
 
   error = cardano_bip32_public_key_derive(public_key, indices, 3, &derived_key);
 
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(derived_key, (cardano_bip32_public_key_t*)nullptr);
 
   // Cleanup

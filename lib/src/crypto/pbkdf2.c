@@ -46,12 +46,12 @@ cardano_crypto_pbkdf2_hmac_sha512(
 {
   if ((password == NULL) || (salt == NULL) || (derived_key == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((password_length == 0U) || (salt_length == 0U) || (derived_key_length == 0U))
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   crypto_auth_hmacsha512_state initial_hmac_state   = { 0 };

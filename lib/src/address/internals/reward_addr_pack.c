@@ -44,7 +44,7 @@ _cardano_unpack_reward_address(const byte_t* data, size_t size, cardano_reward_a
 
   if (size < (ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224))
   {
-    return CARDANO_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
   }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);

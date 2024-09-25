@@ -85,12 +85,12 @@ cardano_transaction_input_new(
 {
   if (transaction_input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (cardano_blake2b_hash_get_bytes_size(id) != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -102,7 +102,7 @@ cardano_transaction_input_new(
 
   if (new_transaction_input == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_transaction_input->base.ref_count     = 1;
@@ -127,12 +127,12 @@ cardano_transaction_input_from_hex(
 {
   if (transaction_input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (id_hex == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((id_hex_size / 2U) != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -173,13 +173,13 @@ cardano_transaction_input_from_cbor(cardano_cbor_reader_t* reader, cardano_trans
 {
   if (transaction_input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *transaction_input = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "transaction_input";
@@ -252,12 +252,12 @@ cardano_transaction_input_to_cbor(
 {
   if (transaction_input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, TRANSACTION_INPUT_ARRAY_SIZE);
@@ -302,12 +302,12 @@ cardano_transaction_input_set_id(cardano_transaction_input_t* input, cardano_bla
 {
   if (input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_unref(&input->id);
@@ -334,7 +334,7 @@ cardano_transaction_input_set_index(cardano_transaction_input_t* transaction_inp
 {
   if (transaction_input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   transaction_input->index = index;

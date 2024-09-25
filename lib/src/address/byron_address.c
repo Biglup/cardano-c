@@ -45,19 +45,19 @@ cardano_byron_address_from_credentials(
 {
   if (root == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (byron_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_address_t* address = _cardano_malloc(sizeof(cardano_address_t));
 
   if (address == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   address->byron_content = _cardano_malloc(sizeof(cardano_byron_address_content_t));
@@ -65,7 +65,7 @@ cardano_byron_address_from_credentials(
   if (address->byron_content == NULL)
   {
     _cardano_free(address);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   address->base.ref_count            = 1;
@@ -116,17 +116,17 @@ cardano_byron_address_from_address(
 {
   if (address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (byron_address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (address->type != CARDANO_ADDRESS_TYPE_BYRON)
   {
-    return CARDANO_INVALID_ADDRESS_TYPE;
+    return CARDANO_ERROR_INVALID_ADDRESS_TYPE;
   }
 
   cardano_address_t*    address_copy = NULL;
@@ -170,7 +170,7 @@ cardano_byron_address_get_attributes(
 {
   if (address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const cardano_address_t* addr = _cardano_from_byron_to_address_const(address);
@@ -190,7 +190,7 @@ cardano_byron_address_get_type(
 {
   if (address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const cardano_address_t* addr = _cardano_from_byron_to_address_const(address);
@@ -211,7 +211,7 @@ cardano_byron_address_get_root(
   if (address == NULL)
   {
     *root = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const cardano_address_t* addr = _cardano_from_byron_to_address_const(address);
@@ -238,12 +238,12 @@ cardano_byron_address_from_bytes(
 {
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return _cardano_unpack_byron_address(data, size, address);
@@ -278,17 +278,17 @@ cardano_byron_address_from_base58(
 {
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size == 0U)
   {
-    return CARDANO_INVALID_ADDRESS_FORMAT;
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
   }
 
   if (address == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t data_size   = cardano_encoding_base58_get_decoded_length(data, size);
@@ -296,7 +296,7 @@ cardano_byron_address_from_base58(
 
   if (data_buffer == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   const cardano_error_t unpack_result = cardano_encoding_base58_decode(data, size, data_buffer, data_size);
@@ -331,7 +331,7 @@ cardano_byron_address_to_base58(
 
   if (size < base58_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(data, size, base58, base58_size);

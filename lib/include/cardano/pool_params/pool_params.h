@@ -180,7 +180,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p pool_params or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -225,7 +225,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_to_cbor(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the operator's key hash was successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input pool_params or output operator_key_hash is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pool_params or output operator_key_hash is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -261,7 +261,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_operator_key_hash(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the operator's key hash was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function increments the reference count of the operator_key_hash. It is the caller's responsibility to manage
  *       its own reference and ensure that it calls \ref cardano_blake2b_hash_unref when the hash is no longer needed.
@@ -298,7 +298,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_operator_key_hash(
  * \param[out] vrf_vk_hash On successful retrieval, this will point to the \ref cardano_blake2b_hash_t object containing the VRF key hash.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the VRF key hash was successfully retrieved,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input pointer is NULL or the
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pointer is NULL or the
  *         vrf_vk_hash pointer could not be set.
  *
  * Usage Example:
@@ -335,7 +335,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_vrf_vk_hash(
  * \param[in] vrf_vk_hash A pointer to an initialized \ref cardano_blake2b_hash_t object representing the VRF verification key hash.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the VRF key hash was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -371,7 +371,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_vrf_vk_hash(
  * \param[out] pledge Pointer to a uint64_t where the pledge amount will be stored upon successful retrieval.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the pledge amount was successfully retrieved,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -404,7 +404,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_pledge(
  * \param[in] pledge The new pledge amount in lovelaces (1 ADA = 1,000,000 lovelaces).
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the pledge amount
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the input pointer is NULL.
  *
  * Usage Example:
@@ -439,7 +439,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_pledge(
  * \param[out] cost Pointer to a variable where the operational cost will be stored upon successful retrieval.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the cost was
- *         successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -474,7 +474,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_cost(
  * \param[in] cost The new operational cost in lovelaces to be set for the pool.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the cost was
- *         successfully updated, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully updated, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -511,7 +511,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_cost(
  *                    this reference when it is no longer needed by calling \ref cardano_unit_interval_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the margin was
- *         successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -551,7 +551,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_margin(
  * \param[in] margin A pointer to an initialized \ref cardano_unit_interval_t object representing the new margin value.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the margin
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -591,7 +591,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_margin(
  * \param[out] reward_account On successful return, this will point to an initialized \ref cardano_reward_address_t object.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the reward account
- *         was successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully retrieved, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any input pointer is NULL.
  *
  * Usage Example:
@@ -631,7 +631,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_reward_account(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the reward account was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -673,7 +673,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_reward_account(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the owners were successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -710,7 +710,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_owners(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the owners were successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -749,7 +749,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_owners(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the relays were successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input pointer is NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -788,7 +788,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_relays(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the relays were successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note The function increments the reference count of the relays object. The caller must manage
  *       the lifecycle of its object by calling \ref cardano_relays_unref when it is no longer needed.
@@ -824,7 +824,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_set_relays(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the metadata was successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note The caller is responsible for managing the lifecycle of the returned metadata object and must call
  *       \ref cardano_pool_metadata_unref when it is no longer needed.
@@ -865,7 +865,7 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_get_metadata(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the metadata was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note It is the responsibility of the caller to manage the lifecycle of the metadata object passed to this function.
  *       The pool_params object will hold its own reference to the metadata object, so the caller must still unref their

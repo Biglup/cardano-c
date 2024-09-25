@@ -183,7 +183,7 @@ cardano_ipv4_from_cbor(cardano_cbor_reader_t* reader, cardano_ipv4_t** ipv4);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p ipv4 or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

@@ -204,14 +204,14 @@ cardano_asset_name_map_new(cardano_asset_name_map_t** asset_name_map)
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_map_t* map = _cardano_malloc(sizeof(cardano_asset_name_map_t));
 
   if (map == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   map->base.ref_count     = 1;
@@ -223,7 +223,7 @@ cardano_asset_name_map_new(cardano_asset_name_map_t** asset_name_map)
   if (map->array == NULL)
   {
     _cardano_free(map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *asset_name_map = map;
@@ -236,12 +236,12 @@ cardano_asset_name_map_from_cbor(cardano_cbor_reader_t* reader, cardano_asset_na
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_map_t* map    = NULL;
@@ -309,7 +309,7 @@ cardano_asset_name_map_from_cbor(cardano_cbor_reader_t* reader, cardano_asset_na
       cardano_asset_name_unref(&key);
       cardano_asset_name_map_unref(&map);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       /* LCOV_EXCL_STOP */
     }
 
@@ -350,12 +350,12 @@ cardano_asset_name_map_to_cbor(const cardano_asset_name_map_t* asset_name_map, c
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -417,17 +417,17 @@ cardano_asset_name_map_get(cardano_asset_name_map_t* asset_name_map, cardano_ass
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(asset_name_map->array); ++i)
@@ -446,7 +446,7 @@ cardano_asset_name_map_get(cardano_asset_name_map_t* asset_name_map, cardano_ass
     cardano_object_unref(&object);
   }
 
-  return CARDANO_ELEMENT_NOT_FOUND;
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
 }
 
 cardano_error_t
@@ -457,12 +457,12 @@ cardano_asset_name_map_insert(
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (key == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(asset_name_map->array); ++i)
@@ -484,7 +484,7 @@ cardano_asset_name_map_insert(
 
   if (kvp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   kvp->base.ref_count     = 0;
@@ -515,12 +515,12 @@ cardano_asset_name_map_get_keys(
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (keys == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_list_t* list = NULL;
@@ -564,17 +564,17 @@ cardano_asset_name_map_get_key_at(
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(asset_name_map->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*             object = cardano_array_get(asset_name_map->array, index);
@@ -596,17 +596,17 @@ cardano_asset_name_map_get_value_at(
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (amount == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(asset_name_map->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*             object = cardano_array_get(asset_name_map->array, index);
@@ -628,22 +628,22 @@ cardano_asset_name_map_get_key_value_at(
 {
   if (asset_name_map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (amount == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(asset_name_map->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t*             object = cardano_array_get(asset_name_map->array, index);
@@ -666,17 +666,17 @@ cardano_asset_name_map_add(
 {
   if (lhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (rhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (result == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_map_t* map = NULL;
@@ -761,17 +761,17 @@ cardano_asset_name_map_subtract(
 {
   if (lhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (rhs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (result == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_map_t* map = NULL;

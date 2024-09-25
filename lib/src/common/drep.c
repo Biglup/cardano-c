@@ -81,7 +81,7 @@ cardano_drep_new(const cardano_drep_type_t type, cardano_credential_t* credentia
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((type == CARDANO_DREP_TYPE_KEY_HASH) || (type == CARDANO_DREP_TYPE_SCRIPT_HASH))
@@ -89,7 +89,7 @@ cardano_drep_new(const cardano_drep_type_t type, cardano_credential_t* credentia
     if (credential == NULL)
     {
       *drep = NULL;
-      return CARDANO_POINTER_IS_NULL;
+      return CARDANO_ERROR_POINTER_IS_NULL;
     }
   }
   else
@@ -105,7 +105,7 @@ cardano_drep_new(const cardano_drep_type_t type, cardano_credential_t* credentia
 
   if (*drep == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*drep)->base.deallocator   = cardano_drep_deallocate;
@@ -131,13 +131,13 @@ cardano_drep_from_cbor(cardano_cbor_reader_t* reader, cardano_drep_t** drep)
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *drep = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "DRep";
@@ -243,12 +243,12 @@ cardano_drep_to_cbor(
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   int64_t array_size = ((drep->type == CARDANO_DREP_TYPE_NO_CONFIDENCE) || (drep->type == CARDANO_DREP_TYPE_ABSTAIN)) ? 1 : DREP_ARRAY_SIZE;
@@ -290,12 +290,12 @@ cardano_drep_get_credential(cardano_drep_t* drep, cardano_credential_t** credent
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((drep->type != CARDANO_DREP_TYPE_KEY_HASH) && (drep->type != CARDANO_DREP_TYPE_SCRIPT_HASH))
@@ -313,7 +313,7 @@ cardano_drep_set_credential(cardano_drep_t* drep, cardano_credential_t* credenti
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((drep->type != CARDANO_DREP_TYPE_KEY_HASH) && (drep->type != CARDANO_DREP_TYPE_SCRIPT_HASH))
@@ -324,7 +324,7 @@ cardano_drep_set_credential(cardano_drep_t* drep, cardano_credential_t* credenti
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
@@ -339,12 +339,12 @@ cardano_drep_get_type(const cardano_drep_t* drep, cardano_drep_type_t* type)
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = drep->type;
@@ -357,7 +357,7 @@ cardano_drep_set_type(cardano_drep_t* drep, const cardano_drep_type_t type)
 {
   if (drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   drep->type = type;

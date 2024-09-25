@@ -95,7 +95,7 @@ TEST(cardano_reward_address_list_new, createsANewInstanceOfRewardAddressList)
 
 TEST(cardano_reward_address_list_new, returnsErrorIfListIsNull)
 {
-  EXPECT_EQ(cardano_reward_address_list_new(nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_reward_address_list_new(nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_list_new, returnErrorIfMemoryAllocationFails)
@@ -105,7 +105,7 @@ TEST(cardano_reward_address_list_new, returnErrorIfMemoryAllocationFails)
 
   cardano_reward_address_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_reward_address_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_reward_address_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -119,7 +119,7 @@ TEST(cardano_reward_address_list_new, returnErrorIfMemoryAllocationFails2)
 
   cardano_reward_address_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_reward_address_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_reward_address_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -138,13 +138,13 @@ TEST(cardano_reward_address_list_get_length, returnsZeroIfListIsNull)
 TEST(cardano_reward_address_list_get, returnsNullIfListIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_reward_address_list_get(nullptr, 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_reward_address_list_get(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_list_get, returnsNullIfElementIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_reward_address_list_get((cardano_reward_address_list_t*)"", 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_reward_address_list_get((cardano_reward_address_list_t*)"", 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_list_get, returnsErrorIfIndexIsOutOfBounds)
@@ -160,7 +160,7 @@ TEST(cardano_reward_address_list_get, returnsErrorIfIndexIsOutOfBounds)
   error                                    = cardano_reward_address_list_get(list, 0, &reward_address);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_reward_address_list_unref(&list);
@@ -317,7 +317,7 @@ TEST(cardano_reward_address_list_add, returnsErrorIfListIsNull)
   cardano_error_t result = cardano_reward_address_list_add(nullptr, id);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_reward_address_list_add, returnsErrorIfScriptIsNull)
@@ -326,5 +326,5 @@ TEST(cardano_reward_address_list_add, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_reward_address_list_add((cardano_reward_address_list_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

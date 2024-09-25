@@ -120,17 +120,17 @@ cardano_asset_id_new(cardano_blake2b_hash_t* policy_id, cardano_asset_name_t* as
 {
   if (policy_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (asset_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (cardano_blake2b_hash_get_bytes_size(policy_id) != 28U)
@@ -142,7 +142,7 @@ cardano_asset_id_new(cardano_blake2b_hash_t* policy_id, cardano_asset_name_t* as
 
   if (new_asset_id == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_asset_id->base.deallocator   = cardano_asset_id_deallocate;
@@ -188,14 +188,14 @@ cardano_asset_id_new_lovelace(cardano_asset_id_t** asset_id)
 {
   if (asset_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_id_t* new_asset_id = _cardano_malloc(sizeof(cardano_asset_id_t));
 
   if (new_asset_id == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   new_asset_id->base.deallocator   = cardano_asset_id_deallocate;
@@ -224,17 +224,17 @@ cardano_asset_id_from_bytes(
 {
   if ((size > 0U) && (data == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size < 28U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (asset_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_blake2b_hash_t* policy_id  = NULL;
@@ -277,12 +277,12 @@ cardano_asset_id_from_hex(
 {
   if ((size > 0U) && (hex_string == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size < 56U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if ((size % 2U) != 0U)
@@ -292,7 +292,7 @@ cardano_asset_id_from_hex(
 
   if (asset_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   byte_t data[60] = { 0 };

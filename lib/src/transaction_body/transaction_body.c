@@ -357,7 +357,7 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
   }
 
   return cardano_cbor_reader_read_uint(reader, *field);
@@ -643,7 +643,7 @@ handle_network_id(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
   }
 
   return cardano_cbor_reader_read_uint(reader, (uint64_t*)((void*)*field));
@@ -1396,24 +1396,24 @@ cardano_transaction_body_new(
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (inputs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (outputs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *transaction_body = create_transaction_body_new();
 
   if (*transaction_body == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*transaction_body)->fee = (uint64_t*)_cardano_malloc(sizeof(uint64_t));
@@ -1422,7 +1422,7 @@ cardano_transaction_body_new(
   {
     cardano_transaction_body_deallocate(*transaction_body);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_transaction_input_set_ref(inputs);
@@ -1440,7 +1440,7 @@ cardano_transaction_body_new(
     {
       cardano_transaction_body_deallocate(*transaction_body);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     *(*transaction_body)->invalid_after = *ttl;
@@ -1454,7 +1454,7 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
 {
   if (!reader || !transaction_body)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *transaction_body                = NULL;
@@ -1462,7 +1462,7 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
 
   if (body == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_cbor_reader_t* reader_copy = NULL;
@@ -1545,12 +1545,12 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (transaction_body->cbor_cache != NULL)
@@ -1735,12 +1735,12 @@ cardano_transaction_body_set_inputs(cardano_transaction_body_t* transaction_body
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (inputs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_input_set_ref(inputs);
@@ -1768,12 +1768,12 @@ cardano_transaction_body_set_outputs(cardano_transaction_body_t* transaction_bod
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (outputs == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_output_list_ref(outputs);
@@ -1804,7 +1804,7 @@ cardano_transaction_body_set_fee(cardano_transaction_body_t* transaction_body, c
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (transaction_body->fee == NULL)
@@ -1814,7 +1814,7 @@ cardano_transaction_body_set_fee(cardano_transaction_body_t* transaction_body, c
 
     if (transaction_body->fee == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
     // LCOV_EXCL_STOP
   }
@@ -1840,7 +1840,7 @@ cardano_transaction_body_set_invalid_after(cardano_transaction_body_t* transacti
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (epoch == NULL)
@@ -1857,7 +1857,7 @@ cardano_transaction_body_set_invalid_after(cardano_transaction_body_t* transacti
 
     if (transaction_body->invalid_after == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 
@@ -1884,7 +1884,7 @@ cardano_transaction_body_set_certificates(cardano_transaction_body_t* transactio
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (certificates == NULL)
@@ -1920,7 +1920,7 @@ cardano_transaction_body_set_withdrawals(cardano_transaction_body_t* transaction
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (withdrawals == NULL)
@@ -1956,7 +1956,7 @@ cardano_transaction_body_set_update(cardano_transaction_body_t* transaction_body
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update == NULL)
@@ -1992,7 +1992,7 @@ cardano_transaction_body_set_aux_data_hash(cardano_transaction_body_t* transacti
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (aux_data_hash == NULL)
@@ -2026,7 +2026,7 @@ cardano_transaction_body_set_invalid_before(cardano_transaction_body_t* transact
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (epoch == NULL)
@@ -2043,7 +2043,7 @@ cardano_transaction_body_set_invalid_before(cardano_transaction_body_t* transact
 
     if (transaction_body->invalid_before == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 
@@ -2070,7 +2070,7 @@ cardano_transaction_body_set_mint(cardano_transaction_body_t* transaction_body, 
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mint == NULL)
@@ -2106,7 +2106,7 @@ cardano_transaction_body_set_script_data_hash(cardano_transaction_body_t* transa
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (script_data_hash == NULL)
@@ -2142,7 +2142,7 @@ cardano_transaction_body_set_collateral(cardano_transaction_body_t* transaction_
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (collateral == NULL)
@@ -2180,7 +2180,7 @@ cardano_transaction_body_set_required_signers(
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (required_signers == NULL)
@@ -2214,7 +2214,7 @@ cardano_transaction_body_set_network_id(cardano_transaction_body_t* transaction_
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (network_id == NULL)
@@ -2231,7 +2231,7 @@ cardano_transaction_body_set_network_id(cardano_transaction_body_t* transaction_
 
     if (transaction_body->network_id == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 
@@ -2258,7 +2258,7 @@ cardano_transaction_body_set_collateral_return(cardano_transaction_body_t* trans
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (output == NULL)
@@ -2292,7 +2292,7 @@ cardano_transaction_body_set_total_collateral(cardano_transaction_body_t* transa
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (total_collateral == NULL)
@@ -2308,7 +2308,7 @@ cardano_transaction_body_set_total_collateral(cardano_transaction_body_t* transa
 
     if (transaction_body->total_collateral == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 
@@ -2337,7 +2337,7 @@ cardano_transaction_body_set_reference_inputs(
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reference_inputs == NULL)
@@ -2375,7 +2375,7 @@ cardano_transaction_body_set_voting_procedures(
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (voting_procedures == NULL)
@@ -2413,7 +2413,7 @@ cardano_transaction_body_set_proposal_procedure(
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposal_procedures == NULL)
@@ -2447,7 +2447,7 @@ cardano_transaction_body_set_treasury_value(cardano_transaction_body_t* transact
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_value == NULL)
@@ -2464,7 +2464,7 @@ cardano_transaction_body_set_treasury_value(cardano_transaction_body_t* transact
 
     if (transaction_body->treasury_value == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 
@@ -2489,7 +2489,7 @@ cardano_transaction_body_set_donation(cardano_transaction_body_t* transaction_bo
 {
   if (transaction_body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (donation == NULL)
@@ -2506,7 +2506,7 @@ cardano_transaction_body_set_donation(cardano_transaction_body_t* transaction_bo
 
     if (transaction_body->donation == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
     }
   }
 

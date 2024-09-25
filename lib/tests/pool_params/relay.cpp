@@ -83,7 +83,7 @@ TEST(cardano_relay_new_single_host_addr, returnsErrorIfSingleHostAddrIsNull)
   cardano_error_t result = cardano_relay_new_single_host_addr(NULL, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(relay, nullptr);
 }
 
@@ -99,7 +99,7 @@ TEST(cardano_relay_new_single_host_addr, returnsErrorIfRelayIsNull)
   result = cardano_relay_new_single_host_addr(single_host_addr, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr);
@@ -123,7 +123,7 @@ TEST(cardano_relay_new_single_host_addr, returnsErrorIfMemoryAllocationFails)
   result = cardano_relay_new_single_host_addr(single_host_addr, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(relay, nullptr);
 
   // Cleanup
@@ -164,7 +164,7 @@ TEST(cardano_relay_new_single_host_name, returnsErrorIfSingleHostAddrIsNull)
   cardano_error_t result = cardano_relay_new_single_host_name(NULL, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(relay, nullptr);
 }
 
@@ -182,7 +182,7 @@ TEST(cardano_relay_new_single_host_name, returnsErrorIfRelayIsNull)
   result = cardano_relay_new_single_host_name(single_host_name, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_name_relay_unref(&single_host_name);
@@ -207,7 +207,7 @@ TEST(cardano_relay_new_single_host_name, returnsErrorIfMemoryAllocationFails)
   result = cardano_relay_new_single_host_name(single_host_name, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(relay, nullptr);
 
   // Cleanup
@@ -272,7 +272,7 @@ TEST(cardano_relay_new_multi_host_name, returnsErrorIfMultiHostNameIsNull)
   cardano_error_t result = cardano_relay_new_multi_host_name(NULL, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(relay, nullptr);
 }
 
@@ -290,7 +290,7 @@ TEST(cardano_relay_new_multi_host_name, returnsErrorIfRelayIsNull)
   result = cardano_relay_new_multi_host_name(multi_host_name, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_multi_host_name_relay_unref(&multi_host_name);
@@ -315,7 +315,7 @@ TEST(cardano_relay_new_multi_host_name, returnsErrorIfMemoryAllocationFails)
   result = cardano_relay_new_multi_host_name(multi_host_name, &relay);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(relay, nullptr);
 
   // Cleanup
@@ -418,7 +418,7 @@ TEST(cardano_relay_from_cbor, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_from_cbor(reader, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -541,7 +541,7 @@ TEST(cardano_relay_to_cbor, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_to_cbor(NULL, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -566,7 +566,7 @@ TEST(cardano_relay_to_cbor, returnsErrorIfWriterIsNull)
   result = cardano_relay_to_cbor(relay, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relay_unref(&relay);
@@ -583,7 +583,7 @@ TEST(cardano_relay_to_single_host_addr, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_to_single_host_addr(NULL, &single_host_addr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(single_host_addr, nullptr);
 }
 
@@ -624,7 +624,7 @@ TEST(cardano_relay_to_single_host_name, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_to_single_host_name(NULL, &single_host_name);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(single_host_name, nullptr);
 }
 
@@ -666,7 +666,7 @@ TEST(cardano_relay_to_multi_host_name, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_to_multi_host_name(NULL, &multi_host_name);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(multi_host_name, nullptr);
 }
 
@@ -869,7 +869,7 @@ TEST(cardano_relay_from_cbor, returnsErrorWhenReaderIsNull)
   cardano_error_t result = cardano_relay_from_cbor(nullptr, &relay);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(relay, nullptr);
 }
 
@@ -886,7 +886,7 @@ TEST(cardano_relay_from_cbor, returnsErrorWhenMemoryAllocationFails)
   cardano_error_t result = cardano_relay_from_cbor(reader, &relay);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(relay, nullptr);
 
   // Cleanup
@@ -971,7 +971,7 @@ TEST(cardano_relay_get_type, returnsErrorIfRelayIsNull)
   cardano_error_t result = cardano_relay_get_type(relay, &type);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_relay_get_type, returnsErrorIfTypeIsNull)
@@ -988,7 +988,7 @@ TEST(cardano_relay_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t result = cardano_relay_get_type(relay, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relay_unref(&relay);
@@ -1014,7 +1014,7 @@ TEST(cardano_relay_to_single_host_addr, returnsErrorIfSingleHostAddressIsNull)
   cardano_error_t result = cardano_relay_to_single_host_addr(relay, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relay_unref(&relay);
@@ -1069,7 +1069,7 @@ TEST(cardano_relay_to_single_host_name, returnsErrorIfSingleHostNameIsNull)
   cardano_error_t result = cardano_relay_to_single_host_name(relay, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relay_unref(&relay);
@@ -1152,7 +1152,7 @@ TEST(cardano_relay_to_multi_host_name, returnsErrorWhenMultiHostIsNull)
   cardano_error_t result = cardano_relay_to_multi_host_name(relay, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relay_unref(&relay);

@@ -88,19 +88,19 @@ cardano_new_constitution_action_new(
 {
   if (constitution == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_new_constitution_action_t* data = _cardano_malloc(sizeof(cardano_new_constitution_action_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -127,12 +127,12 @@ cardano_new_constitution_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "new_constitution_action";
@@ -225,12 +225,12 @@ cardano_new_constitution_action_to_cbor(
 {
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -283,12 +283,12 @@ cardano_new_constitution_action_set_constitution(
 {
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (constitution == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_constitution_ref(constitution);
@@ -319,7 +319,7 @@ cardano_new_constitution_action_set_governance_action_id(
 {
   if (new_constitution_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_governance_action_id_ref(governance_action_id);

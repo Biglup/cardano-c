@@ -166,7 +166,7 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p redeemer or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -285,7 +285,7 @@ CARDANO_EXPORT uint64_t cardano_redeemer_get_index(const cardano_redeemer_t* red
  * \param[in] index The new index to be assigned to the redeemer.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the index was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p redeemer pointer is NULL.
  *
  * Usage Example:
@@ -350,7 +350,7 @@ CARDANO_EXPORT cardano_plutus_data_t* cardano_redeemer_get_data(cardano_redeemer
  *                 This pointer can be NULL if the existing Plutus data is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
- *         Plutus data was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL
+ *         Plutus data was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p redeemer is NULL.
  *
  * \note The function increases the reference count of the Plutus data object, so the caller retains ownership
@@ -423,7 +423,7 @@ CARDANO_EXPORT cardano_ex_units_t* cardano_redeemer_get_ex_units(cardano_redeeme
  *                     This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the ExUnits
- *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         were successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if either the \p redeemer or \p ex_units pointers are NULL.
  *
  * \note This function increases the reference count of the \p ex_units object. The caller retains ownership of their respective

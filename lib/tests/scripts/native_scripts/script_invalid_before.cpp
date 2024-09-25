@@ -59,7 +59,7 @@ static const char* AFTER_SCRIPT2 =
 
 TEST(cardano_script_invalid_before_new, returnsErrorIfInvalidAfterIsNull)
 {
-  EXPECT_EQ(cardano_script_invalid_before_new(0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_new(0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_new, returnsErrorIfMemoryInvalidAfterocationFails)
@@ -70,7 +70,7 @@ TEST(cardano_script_invalid_before_new, returnsErrorIfMemoryInvalidAfterocationF
 
   // Act
   cardano_script_invalid_before_t* invalid_before = NULL;
-  EXPECT_EQ(cardano_script_invalid_before_new(0, &invalid_before), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_invalid_before_new(0, &invalid_before), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -80,14 +80,14 @@ TEST(cardano_script_invalid_before_from_cbor, returnsErrorIfReaderIsNull)
 {
   cardano_script_invalid_before_t* invalid_before = NULL;
 
-  EXPECT_EQ(cardano_script_invalid_before_from_cbor(nullptr, &invalid_before), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_from_cbor(nullptr, &invalid_before), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_from_cbor, returnsErrorIfInvalidAfterIsNull)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("8200", strlen("8200"));
 
-  EXPECT_EQ(cardano_script_invalid_before_from_cbor(reader, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_from_cbor(reader, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -116,7 +116,7 @@ TEST(cardano_script_invalid_before_to_cbor, returnsErrorIfInvalidAfterIsNull)
 {
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
-  EXPECT_EQ(cardano_script_invalid_before_to_cbor(nullptr, writer), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_to_cbor(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_writer_unref(&writer);
 }
@@ -125,19 +125,19 @@ TEST(cardano_script_invalid_before_to_cbor, returnsErrorIfWriterIsNull)
 {
   cardano_script_invalid_before_t* invalid_before = (cardano_script_invalid_before_t*)"";
 
-  EXPECT_EQ(cardano_script_invalid_before_to_cbor(invalid_before, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_to_cbor(invalid_before, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfJsonIsNull)
 {
   cardano_script_invalid_before_t* invalid_before = NULL;
 
-  EXPECT_EQ(cardano_script_invalid_before_from_json(nullptr, 0, &invalid_before), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_from_json(nullptr, 0, &invalid_before), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfInvalidAfterIsNull)
 {
-  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfMemoryInvalidAfterocationFails)
@@ -149,7 +149,7 @@ TEST(cardano_script_invalid_before_from_json, returnsErrorIfMemoryInvalidAfteroc
   cardano_script_invalid_before_t* invalid_before = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -454,7 +454,7 @@ TEST(cardano_script_invalid_before_get_slot, returnsZeroIfInvalidAfterIsNull)
   // Act
   uint64_t slot = 0;
 
-  EXPECT_EQ(cardano_script_invalid_before_get_slot(nullptr, &slot), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_get_slot(nullptr, &slot), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Assert
   EXPECT_EQ(slot, 0);
@@ -469,7 +469,7 @@ TEST(cardano_script_invalid_before_get_slot, returnsErrorIfSlotIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_script_invalid_before_get_slot(invalid_before, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_get_slot(invalid_before, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_invalid_before_unref(&invalid_before);
@@ -497,7 +497,7 @@ TEST(cardano_script_invalid_before_get_slot, returnsSlot)
 TEST(cardano_script_invalid_before_set_slot, returnsErrorIfInvalidAfterIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_script_invalid_before_set_slot(nullptr, 0), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_set_slot(nullptr, 0), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_set_slot, setsSlot)

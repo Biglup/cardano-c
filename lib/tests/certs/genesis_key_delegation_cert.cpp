@@ -194,7 +194,7 @@ TEST(cardano_genesis_key_delegation_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_from_cbor(nullptr, &genesis_key_delegation_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_genesis_key_delegation_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -206,7 +206,7 @@ TEST(cardano_genesis_key_delegation_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -247,7 +247,7 @@ TEST(cardano_genesis_key_delegation_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -259,7 +259,7 @@ TEST(cardano_genesis_key_delegation_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_to_cbor((cardano_genesis_key_delegation_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -306,7 +306,7 @@ TEST(cardano_genesis_key_delegation_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_new(nullptr, genesis_delegate_hash, vrf_key_hash, &genesis_key_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_delegate_hash);
@@ -328,7 +328,7 @@ TEST(cardano_genesis_key_delegation_cert_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_new(genesis_hash, nullptr, vrf_key_hash, &genesis_key_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_hash);
@@ -350,7 +350,7 @@ TEST(cardano_genesis_key_delegation_cert_new, returnsErrorIfThirdArgIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_new(genesis_hash, genesis_delegate_hash, nullptr, &genesis_key_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_hash);
@@ -372,7 +372,7 @@ TEST(cardano_genesis_key_delegation_cert_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_genesis_key_delegation_cert_new(genesis_hash, genesis_delegate_hash, vrf_key_hash, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_hash);
@@ -400,7 +400,7 @@ TEST(cardano_genesis_key_delegation_cert_new, returnsErrorIfMemoryAllocationFail
   cardano_error_t result = cardano_genesis_key_delegation_cert_new(genesis_hash, genesis_delegate_hash, vrf_key_hash, &genesis_key_delegation_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_hash);
@@ -590,7 +590,7 @@ TEST(cardano_genesis_key_delegation_cert_set_genesis_hash, returnsErrorIfCertIsN
   result = cardano_genesis_key_delegation_cert_set_genesis_hash(nullptr, genesis_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_hash);
@@ -606,7 +606,7 @@ TEST(cardano_genesis_key_delegation_cert_set_genesis_hash, returnsErrorIfHashIsN
   cardano_error_t result = cardano_genesis_key_delegation_cert_set_genesis_hash(genesis_key_delegation_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_genesis_key_delegation_cert_unref(&genesis_key_delegation_cert);
@@ -694,7 +694,7 @@ TEST(cardano_genesis_key_delegation_cert_set_genesis_delegate_hash, returnsError
   result = cardano_genesis_key_delegation_cert_set_genesis_delegate_hash(nullptr, genesis_delegate_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&genesis_delegate_hash);
@@ -710,7 +710,7 @@ TEST(cardano_genesis_key_delegation_cert_set_genesis_delegate_hash, returnsError
   cardano_error_t result = cardano_genesis_key_delegation_cert_set_genesis_delegate_hash(genesis_key_delegation_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_genesis_key_delegation_cert_unref(&genesis_key_delegation_cert);
@@ -798,7 +798,7 @@ TEST(cardano_genesis_key_delegation_cert_set_vrf_key_hash, returnsErrorIfCertIsN
   result = cardano_genesis_key_delegation_cert_set_vrf_key_hash(nullptr, vrf_key_hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&vrf_key_hash);
@@ -814,7 +814,7 @@ TEST(cardano_genesis_key_delegation_cert_set_vrf_key_hash, returnsErrorIfHashIsN
   cardano_error_t result = cardano_genesis_key_delegation_cert_set_vrf_key_hash(genesis_key_delegation_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_genesis_key_delegation_cert_unref(&genesis_key_delegation_cert);

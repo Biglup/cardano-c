@@ -204,7 +204,7 @@ TEST(cardano_witness_set_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_witness_set_from_cbor(nullptr, &witness_set);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_from_cbor, returnsErrorIfWitnessSetIsNull)
@@ -216,7 +216,7 @@ TEST(cardano_witness_set_from_cbor, returnsErrorIfWitnessSetIsNull)
   cardano_error_t result = cardano_witness_set_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -257,7 +257,7 @@ TEST(cardano_witness_set_to_cbor, returnsErrorIfWitnessSetIsNull)
   cardano_error_t result = cardano_witness_set_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -269,7 +269,7 @@ TEST(cardano_witness_set_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_witness_set_to_cbor((cardano_witness_set_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_new, canCreateNewInstance)
@@ -302,7 +302,7 @@ TEST(cardano_witness_set_new, returnsErroIfWitnessSetIsNull)
   cardano_error_t result = cardano_witness_set_new(nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_new, returnsErrorIfMemoryAllocationFails)
@@ -316,7 +316,7 @@ TEST(cardano_witness_set_new, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_witness_set_new(&witness_set);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -334,28 +334,28 @@ TEST(cardano_witness_set_from_cbor, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_witness_set_from_cbor(reader, &witness_set);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   result = cardano_witness_set_from_cbor(reader, &witness_set);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_two_malloc, realloc, free);
 
   result = cardano_witness_set_from_cbor(reader, &witness_set);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_three_malloc, realloc, free);
 
   result = cardano_witness_set_from_cbor(reader, &witness_set);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_four_malloc, realloc, free);
@@ -518,7 +518,7 @@ TEST(cardano_witness_set_set_vkeys, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_vkeys(nullptr, vkeys);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_vkeys, canSetVkeys)
@@ -600,7 +600,7 @@ TEST(cardano_witness_set_set_bootstrap, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_bootstrap(nullptr, bootstrap);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_bootstrap, canSetBootstrap)
@@ -682,7 +682,7 @@ TEST(cardano_witness_set_set_native_scripts, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_native_scripts(nullptr, native_scripts);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_native_scripts, canSetNativeScripts)
@@ -764,7 +764,7 @@ TEST(cardano_witness_set_set_plutus_v1_scripts, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_plutus_v1_scripts(nullptr, plutus_v1_scripts);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_plutus_v1_scripts, canSetPlutusV1Scripts)
@@ -846,7 +846,7 @@ TEST(cardano_witness_set_set_plutus_v2_scripts, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_plutus_v2_scripts(nullptr, plutus_v2_scripts);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_plutus_v2_scripts, canSetPlutusV2Scripts)
@@ -928,7 +928,7 @@ TEST(cardano_witness_set_set_plutus_v3_scripts, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_plutus_v3_scripts(nullptr, plutus_v3_scripts);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_plutus_v3_scripts, canSetPlutusV3Scripts)
@@ -1010,7 +1010,7 @@ TEST(cardano_witness_set_set_plutus_data, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_plutus_data(nullptr, plutus_data);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_plutus_data, canSetPlutusData)
@@ -1092,7 +1092,7 @@ TEST(cardano_witness_set_set_redeemers, returnsErrorIfWitnessSetNull)
   cardano_error_t result = cardano_witness_set_set_redeemers(nullptr, redeemers);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_witness_set_set_redeemers, canSetRedeemers)

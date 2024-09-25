@@ -59,7 +59,7 @@ TEST(cardano_ex_units_new, returnsErrorIfExUnitsIsNull)
   cardano_error_t error = cardano_ex_units_new(147852369874563U, 369852147852369U, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ex_units_new, returnsErrorIfMemoryAllocationFails)
@@ -73,7 +73,7 @@ TEST(cardano_ex_units_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_ex_units_new(147852369874563U, 369852147852369U, &ex_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(ex_units, (cardano_ex_units_t*)nullptr);
 
   // Cleanup
@@ -121,7 +121,7 @@ TEST(cardano_ex_units_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_ex_units_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -140,7 +140,7 @@ TEST(cardano_ex_units_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_ex_units_to_cbor(ex_units, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ex_units_unref(&ex_units);
@@ -179,7 +179,7 @@ TEST(cardano_ex_units_from_cbor, returnErrorIfExUnitsIsNull)
   cardano_error_t error = cardano_ex_units_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -194,7 +194,7 @@ TEST(cardano_ex_units_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_ex_units_from_cbor(nullptr, &ex_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ex_units_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -459,7 +459,7 @@ TEST(cardano_ex_units_set_memory, returnErrorIfExUnitsIsNull)
   cardano_error_t error = cardano_ex_units_set_memory(nullptr, 123456789);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ex_units_set_cpu_steps, setsTheCpuStepsValue)
@@ -487,5 +487,5 @@ TEST(cardano_ex_units_set_cpu_steps, returnErrorIfExUnitsIsNull)
   cardano_error_t error = cardano_ex_units_set_cpu_steps(nullptr, 987654321);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

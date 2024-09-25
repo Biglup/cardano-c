@@ -62,7 +62,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *                                            when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the pool registration certificate was
- *         successfully created, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         successfully created, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -143,7 +143,7 @@ cardano_pool_registration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p pool_registration_cert or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

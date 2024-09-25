@@ -212,7 +212,7 @@ TEST(cardano_no_confidence_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_no_confidence_action_from_cbor(nullptr, &no_confidence_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_no_confidence_action_from_cbor, returnsErrorIfActionIsNull)
@@ -224,7 +224,7 @@ TEST(cardano_no_confidence_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_no_confidence_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -265,7 +265,7 @@ TEST(cardano_no_confidence_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_no_confidence_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -277,7 +277,7 @@ TEST(cardano_no_confidence_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_no_confidence_action_to_cbor((cardano_no_confidence_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -352,7 +352,7 @@ TEST(cardano_no_confidence_action_new, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_no_confidence_action_new(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_no_confidence_action_new, returnsErrorIfMemoryAllocationFails)
@@ -365,7 +365,7 @@ TEST(cardano_no_confidence_action_new, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_no_confidence_action_new(nullptr, &no_confidence_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_no_confidence_action_unref(&no_confidence_action);
@@ -498,7 +498,7 @@ TEST(cardano_no_confidence_action_set_governance_action_id, returnsErrorIfObject
   cardano_error_t result = cardano_no_confidence_action_set_governance_action_id(nullptr, governance_action_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);

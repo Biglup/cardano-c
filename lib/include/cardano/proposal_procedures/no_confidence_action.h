@@ -146,7 +146,7 @@ cardano_no_confidence_action_from_cbor(cardano_cbor_reader_t* reader, cardano_no
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p no_confidence_action or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -189,7 +189,7 @@ CARDANO_EXPORT cardano_error_t cardano_no_confidence_action_to_cbor(
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         no_confidence_action pointer is NULL.
  *
  * Usage Example:

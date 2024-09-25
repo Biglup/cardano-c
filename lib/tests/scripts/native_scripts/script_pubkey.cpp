@@ -68,7 +68,7 @@ TEST(cardano_script_pubkey_new, returnsErrorIfPubKeyIsNull)
   cardano_error_t error = cardano_script_pubkey_new((cardano_blake2b_hash_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_new, returnsErrorIfKeyHashIsNull)
@@ -77,21 +77,21 @@ TEST(cardano_script_pubkey_new, returnsErrorIfKeyHashIsNull)
   cardano_error_t error = cardano_script_pubkey_new(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_from_cbor, returnsErrorIfReaderIsNull)
 {
   cardano_script_pubkey_t* pubkey = NULL;
 
-  EXPECT_EQ(cardano_script_pubkey_from_cbor(nullptr, &pubkey), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_from_cbor(nullptr, &pubkey), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_from_cbor, returnsErrorIfPubKeyIsNull)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("8200", strlen("8200"));
 
-  EXPECT_EQ(cardano_script_pubkey_from_cbor(reader, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_from_cbor(reader, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_reader_unref(&reader);
 }
@@ -120,7 +120,7 @@ TEST(cardano_script_pubkey_to_cbor, returnsErrorIfPubKeyIsNull)
 {
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
-  EXPECT_EQ(cardano_script_pubkey_to_cbor(nullptr, writer), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_to_cbor(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_cbor_writer_unref(&writer);
 }
@@ -129,19 +129,19 @@ TEST(cardano_script_pubkey_to_cbor, returnsErrorIfWriterIsNull)
 {
   cardano_script_pubkey_t* pubkey = (cardano_script_pubkey_t*)"";
 
-  EXPECT_EQ(cardano_script_pubkey_to_cbor(pubkey, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_to_cbor(pubkey, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_from_json, returnsErrorIfJsonIsNull)
 {
   cardano_script_pubkey_t* pubkey = NULL;
 
-  EXPECT_EQ(cardano_script_pubkey_from_json(nullptr, 0, &pubkey), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_from_json(nullptr, 0, &pubkey), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_from_json, returnsErrorIfPubKeyIsNull)
 {
-  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_pubkey_from_json, returnsErrorIfMemoryPubKeyocationFails)
@@ -153,7 +153,7 @@ TEST(cardano_script_pubkey_from_json, returnsErrorIfMemoryPubKeyocationFails)
   cardano_script_pubkey_t* pubkey = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -488,7 +488,7 @@ TEST(cardano_script_pubkey_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_script_pubkey_new((cardano_blake2b_hash_t*)"", &pubkey);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

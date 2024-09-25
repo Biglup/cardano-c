@@ -86,14 +86,14 @@ cardano_cost_model_new(
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *cost_model = _cardano_malloc(sizeof(cardano_cost_model_t));
 
   if (*cost_model == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   // Lets add a practical limit here (10 times current cost models size)
@@ -103,7 +103,7 @@ cardano_cost_model_new(
     _cardano_free(*cost_model);
     *cost_model = NULL;
 
-    return CARDANO_INVALID_PLUTUS_COST_MODEL;
+    return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
     // LCOV_EXCL_STOP
   }
 
@@ -116,7 +116,7 @@ cardano_cost_model_new(
     _cardano_free(*cost_model);
     *cost_model = NULL;
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 
@@ -138,13 +138,13 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *cost_model = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "cost_model";
@@ -178,7 +178,7 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
   {
     // LCOV_EXCL_START
     *cost_model = NULL;
-    return CARDANO_INVALID_PLUTUS_COST_MODEL;
+    return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
     // LCOV_EXCL_STOP
   }
 
@@ -219,12 +219,12 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, cost_model->language_version);
@@ -264,12 +264,12 @@ cardano_cost_model_set_cost(
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (operation >= cost_model->size)
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cost_model->costs[operation] = cost;
@@ -282,17 +282,17 @@ cardano_cost_model_get_cost(const cardano_cost_model_t* cost_model, size_t opera
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (operation >= cost_model->size)
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   if (cost == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *cost = cost_model->costs[operation];
@@ -329,12 +329,12 @@ cardano_cost_model_get_language(
 {
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (language == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *language = cost_model->language_version;

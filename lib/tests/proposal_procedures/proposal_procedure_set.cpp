@@ -86,7 +86,7 @@ TEST(cardano_proposal_procedure_set_new, returnsErrorIfProposalProcedureSetIsNul
   cardano_error_t error = cardano_proposal_procedure_set_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_set_new, returnsErrorIfMemoryAllocationFails)
@@ -100,7 +100,7 @@ TEST(cardano_proposal_procedure_set_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_proposal_procedure_set_new(&proposal_procedure_set);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposal_procedure_set, (cardano_proposal_procedure_set_t*)nullptr);
 
   // Cleanup
@@ -118,7 +118,7 @@ TEST(cardano_proposal_procedure_set_new, returnsErrorIfEventualMemoryAllocationF
   cardano_error_t error = cardano_proposal_procedure_set_new(&proposal_procedure_set);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposal_procedure_set, (cardano_proposal_procedure_set_t*)nullptr);
 
   // Cleanup
@@ -210,7 +210,7 @@ TEST(cardano_proposal_procedure_set_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_proposal_procedure_set_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -229,7 +229,7 @@ TEST(cardano_proposal_procedure_set_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_proposal_procedure_set_to_cbor(proposal_procedure_set, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_set_unref(&proposal_procedure_set);
@@ -367,7 +367,7 @@ TEST(cardano_proposal_procedure_set_from_cbor, returnErrorIfProposalProcedureSet
   cardano_error_t error = cardano_proposal_procedure_set_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -382,7 +382,7 @@ TEST(cardano_proposal_procedure_set_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_proposal_procedure_set_from_cbor(nullptr, &proposal_procedure_set);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_set_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -398,7 +398,7 @@ TEST(cardano_proposal_procedure_set_from_cbor, returnErrorIfMemoryAllocationFail
   cardano_error_t error = cardano_proposal_procedure_set_from_cbor(reader, &proposal_procedure_set);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposal_procedure_set, (cardano_proposal_procedure_set_t*)nullptr);
 
   // Cleanup
@@ -639,7 +639,7 @@ TEST(cardano_proposal_procedure_set_get, returnsErrorIfProposalProcedureSetIsNul
   cardano_error_t error = cardano_proposal_procedure_set_get(nullptr, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_set_get, returnsErrorIfDataIsNull)
@@ -654,7 +654,7 @@ TEST(cardano_proposal_procedure_set_get, returnsErrorIfDataIsNull)
   error = cardano_proposal_procedure_set_get(proposal_procedure_set, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_set_unref(&proposal_procedure_set);
@@ -673,7 +673,7 @@ TEST(cardano_proposal_procedure_set_get, returnsErrorIfIndexIsOutOfBounds)
   error                              = cardano_proposal_procedure_set_get(proposal_procedure_set, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_proposal_procedure_set_unref(&proposal_procedure_set);
@@ -688,7 +688,7 @@ TEST(cardano_proposal_procedure_set_add, returnsErrorIfProposalProcedureSetIsNul
   cardano_error_t error = cardano_proposal_procedure_set_add(nullptr, data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposal_procedure_set_add, returnsErrorIfDataIsNull)
@@ -703,7 +703,7 @@ TEST(cardano_proposal_procedure_set_add, returnsErrorIfDataIsNull)
   error = cardano_proposal_procedure_set_add(proposal_procedure_set, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposal_procedure_set_unref(&proposal_procedure_set);

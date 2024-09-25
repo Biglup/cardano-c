@@ -96,29 +96,29 @@ cardano_update_committee_action_new(
 {
   if (members_to_be_removed == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (members_to_be_added == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (new_quorum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_update_committee_action_t* data = _cardano_malloc(sizeof(cardano_update_committee_action_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count        = 1;
@@ -156,12 +156,12 @@ cardano_update_committee_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "update_committee_action";
@@ -276,12 +276,12 @@ cardano_update_committee_action_to_cbor(
 {
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -348,12 +348,12 @@ cardano_update_committee_action_set_members_to_be_removed(
 {
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (members_to_be_removed == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_set_ref(members_to_be_removed);
@@ -384,12 +384,12 @@ cardano_update_committee_action_set_members_to_be_added(
 {
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (members_to_be_added == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_committee_members_map_ref(members_to_be_added);
@@ -420,12 +420,12 @@ cardano_update_committee_action_set_quorum(
 {
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (quorum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(quorum);
@@ -455,7 +455,7 @@ cardano_update_committee_action_set_governance_action_id(
 {
   if (update_committee_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_governance_action_id_ref(governance_action_id);

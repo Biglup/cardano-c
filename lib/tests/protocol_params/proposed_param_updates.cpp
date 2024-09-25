@@ -59,7 +59,7 @@ TEST(cardano_proposed_param_updates_new, returnsErrorIfProposedParamUpdatesIsNul
   cardano_error_t error = cardano_proposed_param_updates_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_new, returnsErrorIfMemoryAllocationFails)
@@ -73,7 +73,7 @@ TEST(cardano_proposed_param_updates_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_proposed_param_updates_new(&proposed_param_updates);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposed_param_updates, (cardano_proposed_param_updates_t*)nullptr);
 
   // Cleanup
@@ -91,7 +91,7 @@ TEST(cardano_proposed_param_updates_new, returnsErrorIfEventualMemoryAllocationF
   cardano_error_t error = cardano_proposed_param_updates_new(&proposed_param_updates);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposed_param_updates, (cardano_proposed_param_updates_t*)nullptr);
 
   // Cleanup
@@ -139,7 +139,7 @@ TEST(cardano_proposed_param_updates_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_proposed_param_updates_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -158,7 +158,7 @@ TEST(cardano_proposed_param_updates_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_proposed_param_updates_to_cbor(proposed_param_updates, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -203,7 +203,7 @@ TEST(cardano_proposed_param_updates_from_cbor, returnErrorIfProposedParamUpdates
   cardano_error_t error = cardano_proposed_param_updates_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -218,7 +218,7 @@ TEST(cardano_proposed_param_updates_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_proposed_param_updates_from_cbor(nullptr, &proposed_param_updates);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -234,7 +234,7 @@ TEST(cardano_proposed_param_updates_from_cbor, returnErrorIfMemoryAllocationFail
   cardano_error_t error = cardano_proposed_param_updates_from_cbor(reader, &proposed_param_updates);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(proposed_param_updates, (cardano_proposed_param_updates_t*)nullptr);
 
   // Cleanup
@@ -477,7 +477,7 @@ TEST(cardano_proposed_param_updates_insert, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_proposed_param_updates_insert(nullptr, hash, update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_insert, returnsErrorIfHashIsNull)
@@ -494,7 +494,7 @@ TEST(cardano_proposed_param_updates_insert, returnsErrorIfHashIsNull)
   error = cardano_proposed_param_updates_insert(proposed_param_updates, nullptr, update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -518,7 +518,7 @@ TEST(cardano_proposed_param_updates_insert, returnsErrorIfUpdateIsNull)
   error = cardano_proposed_param_updates_insert(proposed_param_updates, hash, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -548,7 +548,7 @@ TEST(cardano_proposed_param_updates_insert, returnErrorIfMemoryAllocationFails)
   error = cardano_proposed_param_updates_insert(proposed_param_updates, hash, (cardano_protocol_param_update_t*)"");
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -632,7 +632,7 @@ TEST(cardano_proposed_param_updates_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get(nullptr, hash, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get, returnsErrorIfHashIsNull)
@@ -649,7 +649,7 @@ TEST(cardano_proposed_param_updates_get, returnsErrorIfHashIsNull)
   error = cardano_proposed_param_updates_get(proposed_param_updates, nullptr, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -673,7 +673,7 @@ TEST(cardano_proposed_param_updates_get, returnsErrorIfUpdateIsNull)
   error = cardano_proposed_param_updates_get(proposed_param_updates, hash, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -700,7 +700,7 @@ TEST(cardano_proposed_param_updates_get, returnsErrorIfElementNotFound)
   error = cardano_proposed_param_updates_get(proposed_param_updates, hash, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -809,7 +809,7 @@ TEST(cardano_proposed_param_updates_get_key_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get_key_at(nullptr, 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_key_at, returnsErrorIfOutIsNull)
@@ -818,7 +818,7 @@ TEST(cardano_proposed_param_updates_get_key_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get_key_at((cardano_proposed_param_updates_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_key_at, returnsErrorIfIndexIsOutOfBounds)
@@ -835,7 +835,7 @@ TEST(cardano_proposed_param_updates_get_key_at, returnsErrorIfIndexIsOutOfBounds
   error = cardano_proposed_param_updates_get_key_at(proposed_param_updates, 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -850,7 +850,7 @@ TEST(cardano_proposed_param_updates_get_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get_value_at(nullptr, 0, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_value_at, returnsErrorIfOutIsNull)
@@ -859,7 +859,7 @@ TEST(cardano_proposed_param_updates_get_value_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get_value_at((cardano_proposed_param_updates_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -876,7 +876,7 @@ TEST(cardano_proposed_param_updates_get_value_at, returnsErrorIfIndexIsOutOfBoun
   error = cardano_proposed_param_updates_get_value_at(proposed_param_updates, 0, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);
@@ -930,7 +930,7 @@ TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfObjectIsNull
   cardano_error_t error = cardano_proposed_param_updates_get_key_value_at(nullptr, 0, &hash, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfHashIsNull)
@@ -942,7 +942,7 @@ TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_proposed_param_updates_get_key_value_at((cardano_proposed_param_updates_t*)"", 0, nullptr, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfUpdateIsNull)
@@ -954,7 +954,7 @@ TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfUpdateIsNull
   cardano_error_t error = cardano_proposed_param_updates_get_key_value_at((cardano_proposed_param_updates_t*)"", 0, &hash, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -972,7 +972,7 @@ TEST(cardano_proposed_param_updates_get_key_value_at, returnsErrorIfIndexIsOutOf
   error = cardano_proposed_param_updates_get_key_value_at(proposed_param_updates, 0, &hash, &update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_proposed_param_updates_unref(&proposed_param_updates);

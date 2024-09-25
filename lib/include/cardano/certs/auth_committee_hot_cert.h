@@ -145,7 +145,7 @@ cardano_auth_committee_hot_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p auth_committee_hot or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -187,7 +187,7 @@ CARDANO_EXPORT cardano_error_t cardano_auth_committee_hot_cert_to_cbor(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the cold credential was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -222,7 +222,7 @@ CARDANO_EXPORT cardano_error_t cardano_auth_committee_hot_cert_set_cold_cred(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the cold credential was successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function returns a new reference to the cold credential. Both the source auth_committee_hot object
  *       and the retrieved credential must be unreferenced appropriately.
@@ -260,7 +260,7 @@ CARDANO_EXPORT cardano_error_t cardano_auth_committee_hot_cert_get_cold_cred(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the hot credential was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -295,7 +295,7 @@ CARDANO_EXPORT cardano_error_t cardano_auth_committee_hot_cert_set_hot_cred(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the hot credential was successfully retrieved, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function returns a new reference to the hot credential. Both the caller and the auth_committee_hot object
  *       must unreference the credential appropriately to avoid memory leaks.

@@ -50,27 +50,27 @@ typedef enum
   /**
    * \brief Insufficient buffer size.
    */
-  CARDANO_INSUFFICIENT_BUFFER_SIZE = 2,
+  CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE = 2,
 
   /**
    * \brief Operation over a null pointer.
    */
-  CARDANO_POINTER_IS_NULL = 3,
+  CARDANO_ERROR_POINTER_IS_NULL = 3,
 
   /**
    * \brief Memory could not be allocated.
    */
-  CARDANO_MEMORY_ALLOCATION_FAILED = 4,
+  CARDANO_ERROR_MEMORY_ALLOCATION_FAILED = 4,
 
   /**
    * \brief Out of bounds memory read.
    */
-  CARDANO_OUT_OF_BOUNDS_MEMORY_READ = 5,
+  CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ = 5,
 
   /**
    * \brief Out of bounds memory write.
    */
-  CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE = 6,
+  CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE = 6,
 
   /**
    * \brief Invalid argument.
@@ -85,7 +85,7 @@ typedef enum
   /**
    * \brief Element not found.
    */
-  CARDANO_ELEMENT_NOT_FOUND = 9,
+  CARDANO_ERROR_ELEMENT_NOT_FOUND = 9,
 
   /**
    * \brief Encoding failure.
@@ -110,27 +110,27 @@ typedef enum
   /**
    * \brief Size overflow.
    */
-  CARDANO_INTEGER_OVERFLOW = 14,
+  CARDANO_ERROR_INTEGER_OVERFLOW = 14,
 
   /**
    * \brief Size underflow.
    */
-  CARDANO_INTEGER_UNDERFLOW = 15,
+  CARDANO_ERROR_INTEGER_UNDERFLOW = 15,
 
   /**
    * \brief Conversion error.
    */
-  CARDANO_CONVERSION_ERROR = 16,
+  CARDANO_ERROR_CONVERSION_FAILED = 16,
 
   /**
    * \brief Index out of bounds.
    */
-  CARDANO_INDEX_OUT_OF_BOUNDS = 17,
+  CARDANO_ERROR_INDEX_OUT_OF_BOUNDS = 17,
 
   /**
    * \brief Invalid certificate type.
    */
-  CARDANO_INVALID_CERTIFICATE_TYPE = 18,
+  CARDANO_ERROR_INVALID_CERTIFICATE_TYPE = 18,
 
   /* Serialization errors */
 
@@ -213,19 +213,19 @@ typedef enum
   /**
    * \brief The address type is invalid.
    */
-  CARDANO_INVALID_ADDRESS_TYPE = 400,
+  CARDANO_ERROR_INVALID_ADDRESS_TYPE = 400,
 
   /**
    * \brief The address format is invalid.
    */
-  CARDANO_INVALID_ADDRESS_FORMAT = 401,
+  CARDANO_ERROR_INVALID_ADDRESS_FORMAT = 401,
 
   // Credential errors
 
   /**
    * \brief The credential type is invalid.
    */
-  CARDANO_INVALID_CREDENTIAL_TYPE = 500,
+  CARDANO_ERROR_INVALID_CREDENTIAL_TYPE = 500,
 
   // Plutus errors
 
@@ -237,31 +237,31 @@ typedef enum
   /**
    * \brief The Plutus datum type is invalid.
    */
-  CARDANO_INVALID_DATUM_TYPE = 601,
+  CARDANO_ERROR_INVALID_DATUM_TYPE = 601,
 
   // Script errors
 
   /**
    * \brief The script language is invalid.
    */
-  CARDANO_INVALID_SCRIPT_LANGUAGE = 700,
+  CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE = 700,
 
   /**
    * \brief The native script type is invalid.
    */
-  CARDANO_INVALID_NATIVE_SCRIPT_TYPE = 701,
+  CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE = 701,
 
   /**
    * \brief The Plutus cost model is invalid.
    */
-  CARDANO_INVALID_PLUTUS_COST_MODEL = 702,
+  CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL = 702,
 
   // Proposal procedure errors
 
   /**
    * \brief The governance action type is invalid.
    */
-  CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE = 800,
+  CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE = 800,
 
   // Auxiliary data errors
 

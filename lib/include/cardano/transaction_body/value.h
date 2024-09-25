@@ -151,7 +151,7 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p value or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -225,7 +225,7 @@ CARDANO_EXPORT cardano_multi_asset_t* cardano_value_get_multi_asset(cardano_valu
  * \param[in] assets A pointer to an initialized \ref cardano_multi_asset_t object representing the collection of native tokens.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the multi-asset
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note This function increases the reference count of the multi-asset object; therefore, the caller retains ownership of their respective references.
  *       It is the caller's responsibility to release their reference to the multi-asset when it is no longer needed.
@@ -287,7 +287,7 @@ CARDANO_EXPORT uint64_t cardano_value_get_coin(const cardano_value_t* value);
  * \param[in] coin The amount of ADA in lovelaces to set.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the coin amount was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the value pointer is NULL.
  *
  * Usage Example:
@@ -321,8 +321,8 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin);
  * \param[in] coin The amount of coin (in lovelaces) to add to the value object.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the coin amount was
- *         successfully added, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
- *         if the value pointer is NULL, or \ref CARDANO_INTEGER_OVERFLOW if the addition results in an overflow.
+ *         successfully added, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the value pointer is NULL, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the addition results in an overflow.
  *
  * Usage Example:
  * \code{.c}
@@ -341,7 +341,7 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin);
  * }
  * \endcode
  *
- * \note Be cautious of potential overflow when adding large coin amounts. The function will return \ref CARDANO_INTEGER_OVERFLOW
+ * \note Be cautious of potential overflow when adding large coin amounts. The function will return \ref CARDANO_ERROR_INTEGER_OVERFLOW
  *       if the new coin amount exceeds the maximum value representable by a 64-bit unsigned integer.
  */
 CARDANO_NODISCARD
@@ -359,8 +359,8 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin);
  * \param[in] coin The amount of coin (in lovelaces) to subtract from the value object.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the coin amount was
- *         successfully subtracted, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
- *         if the value pointer is NULL, or \ref CARDANO_INTEGER_UNDERFLOW if the subtraction results in a negative coin amount.
+ *         successfully subtracted, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if the value pointer is NULL, or \ref CARDANO_ERROR_INTEGER_UNDERFLOW if the subtraction results in a negative coin amount.
  *
  * Usage Example:
  * \code{.c}
@@ -378,7 +378,7 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin);
  * }
  * \endcode
  *
- * \note Be cautious of potential underflow when subtracting coin amounts. The function will return \ref CARDANO_INTEGER_UNDERFLOW
+ * \note Be cautious of potential underflow when subtracting coin amounts. The function will return \ref CARDANO_ERROR_INTEGER_UNDERFLOW
  *       if the subtraction results in a negative coin amount, as coin amounts cannot be negative.
  */
 CARDANO_NODISCARD
@@ -399,7 +399,7 @@ cardano_value_subtract_coin(cardano_value_t* value, uint64_t coin);
  *                        The pointer must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the multi-asset
- *         was successfully added, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully added, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * \note The function handles the reference counting for the multi-asset components appropriately. The caller retains
@@ -442,7 +442,7 @@ cardano_value_add_multi_asset(cardano_value_t* value, cardano_multi_asset_t* mul
  *                        The pointer must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the multi-asset
- *         was successfully subtracted, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully subtracted, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * \note The function handles the reference counting for the multi-asset components appropriately. The caller retains
@@ -492,8 +492,8 @@ cardano_value_subtract_multi_asset(cardano_value_t* value, cardano_multi_asset_t
  *
  * \return \ref cardano_error_t indicating the outcome of the operation.
  *         Returns \ref CARDANO_SUCCESS if the values were successfully added,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
- *         or \ref CARDANO_INTEGER_OVERFLOW if the addition results in an overflow for the coin amount.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the addition results in an overflow for the coin amount.
  *
  * \note This function handles internal reference counting for the multi-asset components appropriately.
  *       The caller retains ownership of the provided \p lhs and \p rhs and is responsible for releasing them
@@ -547,8 +547,8 @@ CARDANO_EXPORT cardano_error_t cardano_value_add(cardano_value_t* lhs, cardano_v
  *
  * \return \ref cardano_error_t indicating the outcome of the operation.
  *         Returns \ref CARDANO_SUCCESS if the values were successfully subtracted,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL,
- *         or \ref CARDANO_INTEGER_UNDERFLOW if the subtraction results in a negative coin amount.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL,
+ *         or \ref CARDANO_ERROR_INTEGER_UNDERFLOW if the subtraction results in a negative coin amount.
  *
  * \note This function handles internal reference counting for the multi-asset components appropriately.
  *       The caller retains ownership of the provided \p lhs and \p rhs and is responsible for releasing them
@@ -599,7 +599,7 @@ CARDANO_EXPORT cardano_error_t cardano_value_subtract(cardano_value_t* lhs, card
  *             by calling \ref cardano_asset_id_list_unref when it is no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -646,7 +646,7 @@ CARDANO_EXPORT cardano_error_t cardano_value_get_intersection(cardano_value_t* l
  *             between the two value objects. The result is set to 0 if there are no intersecting assets or if any input is NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}

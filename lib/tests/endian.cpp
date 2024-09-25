@@ -72,7 +72,7 @@ TEST(cardano_write_uint16_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint16_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint16_le, positiveOffsetBufferIsInsufficientSize)
@@ -86,7 +86,7 @@ TEST(cardano_write_uint16_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint16_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint16_le, serializesToLittleEndian)
@@ -132,7 +132,7 @@ TEST(cardano_write_uint32_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint32_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint32_le, positiveOffsetBufferIsInsufficientSize)
@@ -146,7 +146,7 @@ TEST(cardano_write_uint32_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint32_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint32_le, serializesToLittleEndian)
@@ -192,7 +192,7 @@ TEST(cardano_write_uint64_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint64_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint64_le, positiveOffsetBufferIsInsufficientSize)
@@ -206,7 +206,7 @@ TEST(cardano_write_uint64_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint64_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint64_le, serializesToLittleEndian)
@@ -252,7 +252,7 @@ TEST(cardano_write_int16_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int16_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int16_le, positiveOffsetBufferIsInsufficientSize)
@@ -266,7 +266,7 @@ TEST(cardano_write_int16_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int16_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int16_le, serializesToLittleEndian)
@@ -312,7 +312,7 @@ TEST(cardano_write_int32_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int32_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int32_le, positiveOffsetBufferIsInsufficientSize)
@@ -326,7 +326,7 @@ TEST(cardano_write_int32_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int32_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int32_le, serializesToLittleEndian)
@@ -372,7 +372,7 @@ TEST(cardano_write_int64_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int64_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int64_le, positiveOffsetBufferIsInsufficientSize)
@@ -386,7 +386,7 @@ TEST(cardano_write_int64_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int64_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int64_le, serializesToLittleEndian)
@@ -432,7 +432,7 @@ TEST(cardano_write_float_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_float_le(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_float_le, positiveOffsetBufferIsInsufficientSize)
@@ -446,7 +446,7 @@ TEST(cardano_write_float_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_float_le(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_float_le, serializesToLittleEndian)
@@ -524,7 +524,7 @@ TEST(cardano_write_uint16_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint16_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint16_be, positiveOffsetBufferIsInsufficientSize)
@@ -538,7 +538,7 @@ TEST(cardano_write_uint16_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint16_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint16_be, serializesToBigEndian)
@@ -584,7 +584,7 @@ TEST(cardano_write_uint32_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint32_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint32_be, positiveOffsetBufferIsInsufficientSize)
@@ -598,7 +598,7 @@ TEST(cardano_write_uint32_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint32_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint32_be, serializesToBigEndian)
@@ -644,7 +644,7 @@ TEST(cardano_write_uint64_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint64_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint64_be, positiveOffsetBufferIsInsufficientSize)
@@ -658,7 +658,7 @@ TEST(cardano_write_uint64_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_uint64_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_uint64_be, serializesToBigEndian)
@@ -704,7 +704,7 @@ TEST(cardano_write_int16_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int16_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int16_be, positiveOffsetBufferIsInsufficientSize)
@@ -718,7 +718,7 @@ TEST(cardano_write_int16_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int16_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int16_be, serializesToBigEndian)
@@ -764,7 +764,7 @@ TEST(cardano_write_int32_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int32_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int32_be, positiveOffsetBufferIsInsufficientSize)
@@ -778,7 +778,7 @@ TEST(cardano_write_int32_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int32_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int32_be, serializesToBigEndian)
@@ -824,7 +824,7 @@ TEST(cardano_write_int64_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int64_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int64_be, positiveOffsetBufferIsInsufficientSize)
@@ -838,7 +838,7 @@ TEST(cardano_write_int64_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_int64_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_int64_be, serializesToBigEndian)
@@ -884,7 +884,7 @@ TEST(cardano_write_float_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_write_float_be(value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_float_be, positiveOffsetBufferIsInsufficientSize)
@@ -898,7 +898,7 @@ TEST(cardano_write_float_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_write_float_be(value, buffer, size, 4);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_write_float_be, serializesToBigEndian)
@@ -976,7 +976,7 @@ TEST(cardano_read_uint16_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint16_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint16_le, positiveOffsetBufferIsInsufficientSize)
@@ -990,7 +990,7 @@ TEST(cardano_read_uint16_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint16_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint16_le, deserializesFromBigEndian)
@@ -1034,7 +1034,7 @@ TEST(cardano_read_uint32_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint32_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint32_le, positiveOffsetBufferIsInsufficientSize)
@@ -1048,7 +1048,7 @@ TEST(cardano_read_uint32_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint32_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint32_le, deserializesFromBigEndian)
@@ -1092,7 +1092,7 @@ TEST(cardano_read_uint64_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint64_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint64_le, positiveOffsetBufferIsInsufficientSize)
@@ -1106,7 +1106,7 @@ TEST(cardano_read_uint64_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint64_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint64_le, deserializesFromBigEndian)
@@ -1150,7 +1150,7 @@ TEST(cardano_read_int16_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int16_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int16_le, positiveOffsetBufferIsInsufficientSize)
@@ -1164,7 +1164,7 @@ TEST(cardano_read_int16_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int16_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int16_le, deserializesFromBigEndian)
@@ -1208,7 +1208,7 @@ TEST(cardano_read_int32_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int32_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int32_le, positiveOffsetBufferIsInsufficientSize)
@@ -1222,7 +1222,7 @@ TEST(cardano_read_int32_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int32_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int32_le, deserializesFromBigEndian)
@@ -1266,7 +1266,7 @@ TEST(cardano_read_int64_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int64_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int64_le, positiveOffsetBufferIsInsufficientSize)
@@ -1280,7 +1280,7 @@ TEST(cardano_read_int64_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int64_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int64_le, deserializesFromBigEndian)
@@ -1324,7 +1324,7 @@ TEST(cardano_read_float_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_float_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_float_le, positiveOffsetBufferIsInsufficientSize)
@@ -1338,7 +1338,7 @@ TEST(cardano_read_float_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_float_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_float_le, deserializesFromBigEndian)
@@ -1382,7 +1382,7 @@ TEST(cardano_read_double_le, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_double_le(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_double_le, positiveOffsetBufferIsInsufficientSize)
@@ -1396,7 +1396,7 @@ TEST(cardano_read_double_le, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_double_le(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_double_le, deserializesFromBigEndian)
@@ -1440,7 +1440,7 @@ TEST(cardano_read_uint16_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint16_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint16_be, positiveOffsetBufferIsInsufficientSize)
@@ -1454,7 +1454,7 @@ TEST(cardano_read_uint16_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint16_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint16_be, deserializesFromBigEndian)
@@ -1498,7 +1498,7 @@ TEST(cardano_read_uint32_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint32_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint32_be, positiveOffsetBufferIsInsufficientSize)
@@ -1512,7 +1512,7 @@ TEST(cardano_read_uint32_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint32_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint32_be, deserializesFromBigEndian)
@@ -1556,7 +1556,7 @@ TEST(cardano_read_uint64_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint64_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint64_be, positiveOffsetBufferIsInsufficientSize)
@@ -1570,7 +1570,7 @@ TEST(cardano_read_uint64_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_uint64_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_uint64_be, deserializesFromBigEndian)
@@ -1614,7 +1614,7 @@ TEST(cardano_read_int16_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int16_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int16_be, positiveOffsetBufferIsInsufficientSize)
@@ -1628,7 +1628,7 @@ TEST(cardano_read_int16_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int16_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int16_be, deserializesFromBigEndian)
@@ -1672,7 +1672,7 @@ TEST(cardano_read_int32_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int32_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int32_be, positiveOffsetBufferIsInsufficientSize)
@@ -1686,7 +1686,7 @@ TEST(cardano_read_int32_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int32_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int32_be, deserializesFromBigEndian)
@@ -1730,7 +1730,7 @@ TEST(cardano_read_int64_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int64_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int64_be, positiveOffsetBufferIsInsufficientSize)
@@ -1744,7 +1744,7 @@ TEST(cardano_read_int64_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_int64_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_int64_be, deserializesFromBigEndian)
@@ -1788,7 +1788,7 @@ TEST(cardano_read_float_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_float_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_float_be, positiveOffsetBufferIsInsufficientSize)
@@ -1802,7 +1802,7 @@ TEST(cardano_read_float_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_float_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_float_be, deserializesFromBigEndian)
@@ -1846,7 +1846,7 @@ TEST(cardano_read_double_be, bufferIsInsufficientSize)
   cardano_error_t result = cardano_read_double_be(&value, buffer, size, 0);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_double_be, positiveOffsetBufferIsInsufficientSize)
@@ -1860,7 +1860,7 @@ TEST(cardano_read_double_be, positiveOffsetBufferIsInsufficientSize)
   cardano_error_t result = cardano_read_double_be(&value, buffer, size, 3);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_read_double_be, deserializesFromBigEndian)

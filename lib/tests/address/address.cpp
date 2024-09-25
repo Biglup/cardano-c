@@ -194,7 +194,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenDataIsNull)
   cardano_error_t result = cardano_address_from_bytes(NULL, 0, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -204,7 +204,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenAddressIsNull)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes), NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_from_bytes, returnErrorWhenDataSizeIsZero)
@@ -216,7 +216,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenDataSizeIsZero)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::basePaymentKeyStakeKeyBytes, 0, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -229,7 +229,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenBaseAddressnsInvalid)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes) - 1, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -242,7 +242,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenEnterpriseAddressnsInvalid)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::enterpriseKeyBytes, sizeof(Cip19TestVectors::enterpriseKeyBytes) - 1, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -272,7 +272,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenAddressIsInvalid)
   cardano_error_t result = cardano_address_from_bytes(invalid_byron_address, sizeof(invalid_byron_address), &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -285,7 +285,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenPointerAddressnsInvalid)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::pointerKeyBytes, 29, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -298,7 +298,7 @@ TEST(cardano_address_from_bytes, returnErrorWhenRewardAddressnsInvalid)
   cardano_error_t result = cardano_address_from_bytes(Cip19TestVectors::rewardKeyBytes, sizeof(Cip19TestVectors::rewardKeyBytes) - 1, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -718,7 +718,7 @@ TEST(cardano_address_to_bytes, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_address_to_bytes(NULL, bytes, sizeof(bytes));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_to_bytes, returnsErrorWhenBufferIsNull)
@@ -731,7 +731,7 @@ TEST(cardano_address_to_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_address_to_bytes(address, NULL, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_address_unref(&address);
@@ -749,7 +749,7 @@ TEST(cardano_address_to_bytes, returnsErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_address_to_bytes(address, bytes, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_address_unref(&address);
@@ -764,7 +764,7 @@ TEST(cardano_address_from_string, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_address_from_string(NULL, 0, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -790,7 +790,7 @@ TEST(cardano_address_from_string, returnsErrorWhenAddressSizeIsZero)
   cardano_error_t result = cardano_address_from_string("", 0, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -803,7 +803,7 @@ TEST(cardano_address_from_string, returnsErrorWhenAddressIsTooSmall)
   cardano_error_t result = cardano_address_from_string("a", 1, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -813,7 +813,7 @@ TEST(cardano_address_from_string, returnsErrorWhenAddressOutIsNull)
   cardano_error_t result = cardano_address_from_string("a", 1, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_from_string, returnsErrorWhenInvalidHrp)
@@ -825,7 +825,7 @@ TEST(cardano_address_from_string, returnsErrorWhenInvalidHrp)
   cardano_error_t result = cardano_address_from_string("addrqx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x", strlen("addrqx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x"), &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -838,7 +838,7 @@ TEST(cardano_address_from_string, returnsErrorWhenNoData)
   cardano_error_t result = cardano_address_from_string("addr_test1", strlen("addr_test1"), &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
@@ -880,7 +880,7 @@ TEST(cardano_address_from_string, returnsErrorWhenMemoryAllocationFails)
   cardano_error_t result = cardano_address_from_string("2222222222222222", strlen("2222222222222222"), &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(address, nullptr);
 
   cardano_set_allocators(malloc, realloc, free);
@@ -942,7 +942,7 @@ TEST(cardano_address_to_string, returnErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_address_to_string(address, buffer, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_address_unref(&address);
@@ -957,7 +957,7 @@ TEST(cardano_address_to_string, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_address_to_string(NULL, buffer, sizeof(buffer));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_to_string, returnsErrorWhenBufferIsNull)
@@ -970,7 +970,7 @@ TEST(cardano_address_to_string, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_address_to_string(address, NULL, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Clean up
   cardano_address_unref(&address);
@@ -988,7 +988,7 @@ TEST(cardano_address_to_string, returnsErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_address_to_string(address, buffer, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_address_unref(&address);
@@ -1166,7 +1166,7 @@ TEST(cardano_address_get_type, returnsErrorWhenAddressIsNull)
 {
   // Act
   cardano_address_type_t type;
-  EXPECT_EQ(cardano_address_get_type(NULL, &type), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_address_get_type(NULL, &type), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_get_type, returnsErrorWhenTypeIsNull)
@@ -1176,7 +1176,7 @@ TEST(cardano_address_get_type, returnsErrorWhenTypeIsNull)
   EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_address_get_type(address, NULL), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_address_get_type(address, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Clean up
   cardano_address_unref(&address);
@@ -1204,7 +1204,7 @@ TEST(cardano_address_get_network_id, returnsErrorWhenAddressIsNull)
 {
   // Act
   cardano_network_id_t network_id;
-  EXPECT_EQ(cardano_address_get_network_id(NULL, &network_id), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_address_get_network_id(NULL, &network_id), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_address_get_network_id, returnsErrorWhenNetworkIdIsNull)
@@ -1214,7 +1214,7 @@ TEST(cardano_address_get_network_id, returnsErrorWhenNetworkIdIsNull)
   EXPECT_EQ(cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_address_get_network_id(address, NULL), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_address_get_network_id(address, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Clean up
   cardano_address_unref(&address);
@@ -1228,7 +1228,7 @@ TEST(cardano_address_get_network_id, returnsErrorWhenAddressIsInvalid)
 
   // Act
   cardano_network_id_t network_id;
-  EXPECT_EQ(cardano_address_get_network_id(address, &network_id), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_address_get_network_id(address, &network_id), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Clean up
   cardano_address_unref(&address);
@@ -1250,7 +1250,7 @@ TEST(cardano_address_get_network_id, returnsErrorWhenByronAddressIsInvalid)
 
   // Act
   cardano_network_id_t network_id;
-  EXPECT_EQ(cardano_address_get_network_id(byron_address, &network_id), CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(cardano_address_get_network_id(byron_address, &network_id), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
 
   // Clean up
   cardano_address_unref(&byron_address);
@@ -1320,7 +1320,7 @@ TEST(cardano_address_get_network_id, returnsErrorIfAddressInternalStateIsInvalid
 
   // Act
   cardano_network_id_t network_id;
-  EXPECT_EQ(cardano_address_get_network_id(address, &network_id), CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(cardano_address_get_network_id(address, &network_id), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
 
   // Clean up
   cardano_address_unref(&address);

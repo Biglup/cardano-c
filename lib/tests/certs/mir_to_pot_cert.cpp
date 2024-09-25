@@ -212,7 +212,7 @@ TEST(cardano_mir_to_pot_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_from_cbor(nullptr, &mir_to_pot_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_from_cbor, returnsErrorIfMirCertIsNull)
@@ -224,7 +224,7 @@ TEST(cardano_mir_to_pot_cert_from_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -318,7 +318,7 @@ TEST(cardano_mir_to_pot_cert_to_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -330,7 +330,7 @@ TEST(cardano_mir_to_pot_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_to_cbor((cardano_mir_to_pot_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_new, returnsErrorIfMirCertIsNull)
@@ -339,7 +339,7 @@ TEST(cardano_mir_to_pot_cert_new, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, 1000000, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_new, returnsErrorIfMemoryAllocationFails)
@@ -354,7 +354,7 @@ TEST(cardano_mir_to_pot_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_mir_to_pot_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, 1000000, &mir_to_pot_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
@@ -370,7 +370,7 @@ TEST(cardano_mir_to_pot_cert_get_pot, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_get_pot(nullptr, &type);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_get_pot, returnsErrorIfPotTypeIsNull)
@@ -379,7 +379,7 @@ TEST(cardano_mir_to_pot_cert_get_pot, returnsErrorIfPotTypeIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_get_pot((cardano_mir_to_pot_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_get_amount, returnsErrorIfMirCertIsNull)
@@ -391,7 +391,7 @@ TEST(cardano_mir_to_pot_cert_get_amount, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_get_amount(nullptr, &amount);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_get_amount, returnsErrorIfAmountIsNull)
@@ -400,7 +400,7 @@ TEST(cardano_mir_to_pot_cert_get_amount, returnsErrorIfAmountIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_get_amount((cardano_mir_to_pot_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_get_amount, canGetAmount)
@@ -430,7 +430,7 @@ TEST(cardano_mir_to_pot_cert_set_pot, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_set_pot(nullptr, CARDANO_MIR_CERT_POT_TYPE_TREASURY);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_set_amount, returnsErrorIfMirCertIsNull)
@@ -439,7 +439,7 @@ TEST(cardano_mir_to_pot_cert_set_amount, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_to_pot_cert_set_amount(nullptr, 1000000);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_to_pot_cert_set_amount, canSetAmount)

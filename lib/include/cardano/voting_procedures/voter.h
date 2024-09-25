@@ -147,7 +147,7 @@ cardano_voter_from_cbor(cardano_cbor_reader_t* reader, cardano_voter_t** voter);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p voter or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -189,7 +189,7 @@ CARDANO_EXPORT cardano_error_t cardano_voter_to_cbor(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the voter type was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -312,7 +312,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_voter_get_credential(cardano_voter_
  * \param[in] credential A pointer to the \ref cardano_credential_t object that will be associated with the voter.
  *
  * \return \ref CARDANO_SUCCESS if the credential was successfully set, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}

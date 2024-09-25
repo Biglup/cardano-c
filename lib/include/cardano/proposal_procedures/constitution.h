@@ -157,7 +157,7 @@ cardano_constitution_from_cbor(cardano_cbor_reader_t* reader, cardano_constituti
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p constitution or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -198,7 +198,7 @@ CARDANO_EXPORT cardano_error_t cardano_constitution_to_cbor(
  * \param[in] anchor A pointer to an initialized \ref cardano_anchor_t object representing the new anchor.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the anchor was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
  *         input pointers are NULL.
  *
  * Usage Example:
@@ -268,7 +268,7 @@ cardano_constitution_get_anchor(cardano_constitution_t* constitution);
  *            can be NULL if the script hash is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script hash was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         constitution pointer is NULL.
  *
  * Usage Example:

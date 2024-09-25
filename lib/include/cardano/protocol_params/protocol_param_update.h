@@ -141,7 +141,7 @@ cardano_protocol_param_update_from_cbor(cardano_cbor_reader_t* reader, cardano_p
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p protocol_param_update or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -182,7 +182,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_cbor(
  * \param[out] min_fee_a Pointer to where the minimum fee A value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the minimum fee A was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND if the
+ *         if the minimum fee A was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
  *         parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -199,7 +199,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_cbor(
  * {
  *   printf("Min Fee A: %lu\n", min_fee_a);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Min Fee A is not proposed for change.\n");
  * }
@@ -223,7 +223,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_fee_a(
  * \param[out] min_fee_b Pointer to where the minimum fee B value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the minimum fee B was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND if the
+ *         if the minimum fee B was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
  *         parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -240,7 +240,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_fee_a(
  * {
  *   printf("Min Fee B: %lu\n", min_fee_b);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Min Fee B is not proposed for change.\n");
  * }
@@ -264,7 +264,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_fee_b(
  * \param[out] max_block_body_size Pointer to where the maximum block body size value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum block body size was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum block body size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -280,7 +280,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_fee_b(
  * {
  *   printf("Max Block Body Size: %lu\n", max_block_body_size);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Max Block Body Size is not proposed for change.\n");
  * }
@@ -304,7 +304,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_body_
  * \param[out] max_tx_size Pointer to where the maximum transaction size value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum transaction size was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum transaction size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -320,7 +320,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_body_
  * {
  *   printf("Max Transaction Size: %lu\n", max_tx_size);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Max Transaction Size is not proposed for change.\n");
  * }
@@ -344,7 +344,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_tx_size(
  * \param[out] max_block_header_size Pointer to where the maximum block header size value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum block header size was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum block header size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -360,7 +360,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_tx_size(
  * {
  *   printf("Max Block Header Size: %lu\n", max_block_header_size);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Max Block Header Size is not proposed for change.\n");
  * }
@@ -384,7 +384,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_heade
  * \param[out] key_deposit           Pointer to where the key deposit value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the key deposit was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the key deposit was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -400,7 +400,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_heade
  * {
  *   printf("Key Deposit: %lu\n", key_deposit);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Key Deposit is not proposed for change.\n");
  * }
@@ -424,7 +424,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_key_deposit(
  * \param[out] pool_deposit          Pointer to where the pool deposit value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the pool deposit was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the pool deposit was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -440,7 +440,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_key_deposit(
  * {
  *   printf("Pool Deposit: %lu\n", pool_deposit);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Pool Deposit is not proposed for change.\n");
  * }
@@ -464,7 +464,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_deposit(
  * \param[out] max_epoch             Pointer to where the max epoch value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the max epoch was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the max epoch was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -480,7 +480,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_deposit(
  * {
  *   printf("Max Epoch: %lu\n", max_epoch);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Max Epoch is not proposed for change.\n");
  * }
@@ -504,7 +504,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_epoch(
  * \param[out] n_opt                 Pointer to where the desired number of stake pools will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the desired number of stake pools was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the desired number of stake pools was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -520,7 +520,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_epoch(
  * {
  *   printf("Desired number of stake pools (nOpt): %lu\n", n_opt);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Desired number of stake pools (nOpt) is not proposed for change.\n");
  * }
@@ -544,7 +544,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_n_opt(
  * \param[out] pool_pledge_influence   Pointer to where the pool pledge influence value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the pool pledge influence was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the pool pledge influence was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -561,7 +561,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_n_opt(
  * {
  *   printf("Pool pledge influence: %f\n", unit_interval_to_float(pool_pledge_influence));
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Pool pledge influence is not proposed for change.\n");
  * }
@@ -585,7 +585,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_pledge_inf
  * \param[out] expansion_rate Pointer to where the expansion rate value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the expansion rate was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the expansion rate was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -602,7 +602,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_pledge_inf
  * {
  *   printf("Expansion rate: %f\n", unit_interval_to_float(expansion_rate));
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Expansion rate is not proposed for change.\n");
  * }
@@ -626,7 +626,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_expansion_rate(
  * \param[out] treasury_growth_rate Pointer to where the treasury growth rate value will be stored.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the treasury growth rate was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the treasury growth rate was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -643,7 +643,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_expansion_rate(
  * {
  *   printf("Treasury growth rate: %f\n", unit_interval_to_float(treasury_growth_rate));
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Treasury growth rate is not proposed for change.\n");
  * }
@@ -665,10 +665,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_treasury_growth
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] d                     On successful retrieval, this will point to the decentralization parameter (d).
- *                                   If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                   If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the decentralization parameter was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the decentralization parameter was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -686,7 +686,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_treasury_growth
  *   // Use the decentralization parameter
  *   printf("Decentralization parameter: %f\n", unit_interval_to_float(d));
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Decentralization parameter is not set.\n");
  * }
@@ -713,10 +713,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_d(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] extra_entropy Pointer to where the extra entropy value will be stored.
- *                           If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                           If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the extra entropy was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the extra entropy was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -733,7 +733,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_d(
  *   // Use the extra entropy
  *   printf("Extra entropy retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Extra entropy is not proposed for change.\n");
  * }
@@ -760,10 +760,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_extra_entropy(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] protocol_version Pointer to where the protocol version will be stored.
- *                              If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                              If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the protocol version was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the protocol version was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -781,7 +781,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_extra_entropy(
  *   // Use the protocol version
  *   printf("Protocol version retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Protocol version is not proposed for change.\n");
  * }
@@ -808,10 +808,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_protocol_versio
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] min_pool_cost Pointer to where the minimum pool cost will be stored.
- *                           If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                           If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the minimum pool cost was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the minimum pool cost was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -828,7 +828,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_protocol_versio
  * {
  *   printf("Minimum pool cost retrieved: %lu.\n", min_pool_cost);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Minimum pool cost is not proposed for change.\n");
  * }
@@ -854,10 +854,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_pool_cost(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] ada_per_utxo_byte Pointer to where the ADA per UTXO byte will be stored.
- *                               If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                               If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the ADA per UTXO byte was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the ADA per UTXO byte was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -874,7 +874,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_pool_cost(
  * {
  *   printf("ADA per UTXO byte retrieved: %lu.\n", ada_per_utxo_byte);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("ADA per UTXO byte is not proposed for change.\n");
  * }
@@ -901,10 +901,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ada_per_utxo_by
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] cost_models Pointer to where the cost models object will be stored.
- *                         If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                         If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the cost models were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the cost models were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -921,7 +921,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ada_per_utxo_by
  * {
  *   printf("Cost models retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Cost models are not proposed for change.\n");
  * }
@@ -949,10 +949,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_cost_models(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] execution_costs Pointer to where the execution costs object will be stored.
- *                             If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the execution costs were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the execution costs were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -969,7 +969,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_cost_models(
  * {
  *   printf("Execution costs retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Execution costs are not proposed for change.\n");
  * }
@@ -997,10 +997,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_execution_costs
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] max_tx_ex_units Pointer to where the maximum transaction execution units object will be stored.
- *                             If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum transaction execution units were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum transaction execution units were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1017,7 +1017,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_execution_costs
  * {
  *   printf("Maximum transaction execution units retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Maximum transaction execution units are not proposed for change.\n");
  * }
@@ -1045,10 +1045,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_tx_ex_units
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] max_block_ex_units Pointer to where the maximum block execution units object will be stored.
- *                                If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum block execution units were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum block execution units were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1065,7 +1065,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_tx_ex_units
  * {
  *   printf("Maximum block execution units retrieved.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Maximum block execution units are not proposed for change.\n");
  * }
@@ -1093,10 +1093,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_ex_un
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] max_value_size Pointer to where the maximum value size will be stored. If the parameter is not set,
- *                            the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                            the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum value size was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum value size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1113,7 +1113,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_block_ex_un
  * {
  *   printf("Maximum value size retrieved: %lu bytes.\n", max_value_size);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Maximum value size is not proposed for change.\n");
  * }
@@ -1139,10 +1139,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_value_size(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] collateral_percentage Pointer to where the collateral percentage will be stored. If the parameter is not set,
- *                                   the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                   the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the collateral percentage was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the collateral percentage was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1159,7 +1159,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_value_size(
  * {
  *   printf("Collateral percentage retrieved: %lu.\n", collateral_percentage);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Collateral percentage is not proposed for change.\n");
  * }
@@ -1185,10 +1185,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_collateral_perc
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] max_collateral_inputs Pointer to where the maximum number of collateral inputs will be stored.
- *                                   If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                   If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the maximum number of collateral inputs was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the maximum number of collateral inputs was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1205,7 +1205,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_collateral_perc
  * {
  *   printf("Max collateral inputs retrieved: %lu.\n", max_collateral_inputs);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Max collateral inputs is not proposed for change.\n");
  * }
@@ -1231,10 +1231,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_collateral_
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] pool_voting_thresholds Pointer to where the pool voting thresholds will be stored.
- *                                    If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                    If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the pool voting thresholds were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the pool voting thresholds were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1251,7 +1251,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_collateral_
  * {
  *   printf("Pool voting thresholds retrieved successfully.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Pool voting thresholds are not proposed for change.\n");
  * }
@@ -1278,10 +1278,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_voting_thr
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] drep_voting_thresholds Pointer to where the DRep voting thresholds will be stored.
- *                                    If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                    If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the DRep voting thresholds were successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the DRep voting thresholds were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1298,7 +1298,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_pool_voting_thr
  * {
  *   printf("DRep voting thresholds retrieved successfully.\n");
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("DRep voting thresholds are not proposed for change.\n");
  * }
@@ -1325,10 +1325,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_voting_thr
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] min_committee_size Pointer to where the minimum committee size will be stored.
- *                                If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the minimum committee size was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the minimum committee size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1345,7 +1345,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_voting_thr
  * {
  *   printf("Minimum committee size retrieved successfully: %lu.\n", min_committee_size);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Minimum committee size is not proposed for change.\n");
  * }
@@ -1371,10 +1371,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_committee_s
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] committee_term_limit Pointer to where the committee term limit will be stored.
- *                                  If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                  If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the committee term limit was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the committee term limit was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1391,7 +1391,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_committee_s
  * {
  *   printf("Committee term limit retrieved successfully: %lu.\n", committee_term_limit);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Committee term limit is not proposed for change.\n");
  * }
@@ -1417,10 +1417,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_committee_term_
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] governance_action_validity_period Pointer to where the governance action validity period will be stored.
- *                                               If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                               If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the governance action validity period was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the governance action validity period was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1437,7 +1437,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_committee_term_
  * {
  *   printf("Governance action validity period retrieved successfully: %lu.\n", governance_action_validity_period);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Governance action validity period is not proposed for change.\n");
  * }
@@ -1463,10 +1463,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_governance_acti
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] governance_action_deposit Pointer to where the governance action deposit will be stored.
- *                                       If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                       If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the governance action deposit was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the governance action deposit was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1483,7 +1483,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_governance_acti
  * {
  *   printf("Governance action deposit retrieved successfully: %lu.\n", governance_action_deposit);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Governance action deposit is not proposed for change.\n");
  * }
@@ -1509,10 +1509,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_governance_acti
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] drep_deposit Pointer to where the DRep deposit will be stored. If the parameter is not set,
- *                          the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                          the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the DRep deposit was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the DRep deposit was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1529,7 +1529,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_governance_acti
  * {
  *   printf("DRep deposit retrieved successfully: %lu.\n", drep_deposit);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("DRep deposit is not proposed for change.\n");
  * }
@@ -1555,10 +1555,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_deposit(
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] drep_inactivity_period Pointer to where the DRep inactivity period will be stored. If the parameter is not set,
- *                                    the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                    the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the DRep inactivity period was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the DRep inactivity period was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1575,7 +1575,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_deposit(
  * {
  *   printf("DRep inactivity period retrieved successfully: %lu.\n", drep_inactivity_period);
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("DRep inactivity period is not proposed for change.\n");
  * }
@@ -1601,10 +1601,10 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_inactivity
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
  * \param[out] ref_script_cost_per_byte Pointer to where the reference script cost per byte will be stored.
- *                                      If the parameter is not set, the function will return \ref CARDANO_ELEMENT_NOT_FOUND.
+ *                                      If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the reference script cost per byte was successfully retrieved, or \ref CARDANO_ELEMENT_NOT_FOUND
+ *         if the reference script cost per byte was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
@@ -1621,7 +1621,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_drep_inactivity
  * {
  *   printf("Reference script cost per byte retrieved successfully: %f.\n", cardano_unit_interval_to_double(ref_script_cost_per_byte));
  * }
- * else if (result == CARDANO_ELEMENT_NOT_FOUND)
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
  *   printf("Reference script cost per byte is not proposed for change.\n");
  * }

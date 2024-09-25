@@ -274,7 +274,7 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p datum or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -546,7 +546,7 @@ cardano_datum_get_type(const cardano_datum_t* datum, cardano_datum_type_t* type)
  *                 This parameter must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the hash was successfully set. If the \p datum or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         if the hash was successfully set. If the \p datum or \p hash is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

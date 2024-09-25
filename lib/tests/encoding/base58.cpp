@@ -231,7 +231,7 @@ TEST(cardano_encoding_base58_encode, returnPointerIsNullIfGivenNullPtr)
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_encoding_base58_encode, returnInsufficientBufferSizeIfGivenEmptyData)
@@ -246,7 +246,7 @@ TEST(cardano_encoding_base58_encode, returnInsufficientBufferSizeIfGivenEmptyDat
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }
@@ -263,7 +263,7 @@ TEST(cardano_encoding_base58_encode, returnPointerIsNullIfGivenNullOutput)
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_encoding_base58_encode, returnInsufficientBufferSizeIfGivenEmptyOutput)
@@ -278,7 +278,7 @@ TEST(cardano_encoding_base58_encode, returnInsufficientBufferSizeIfGivenEmptyOut
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }
@@ -295,7 +295,7 @@ TEST(cardano_encoding_base58_encode, returnInsufficientBufferSizeIfGivenSmallOut
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }
@@ -314,7 +314,7 @@ TEST(cardano_encoding_base58_encode, returnErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_encoding_base58_encode(data, data_length, (char*)output_data, 100);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -332,7 +332,7 @@ TEST(cardano_encoding_base58_decode, returnPointerIsNullIfGivenNullPtr)
   cardano_error_t result = cardano_encoding_base58_decode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_encoding_base58_decode, returnInsufficientBufferSizeIfGivenEmptyData)
@@ -347,7 +347,7 @@ TEST(cardano_encoding_base58_decode, returnInsufficientBufferSizeIfGivenEmptyDat
   cardano_error_t result = cardano_encoding_base58_decode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }
@@ -364,7 +364,7 @@ TEST(cardano_encoding_base58_decode, returnPointerIsNullIfGivenNullOutput)
   cardano_error_t result = cardano_encoding_base58_decode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_encoding_base58_decode, returnInsufficientBufferSizeIfGivenEmptyOutput)
@@ -379,7 +379,7 @@ TEST(cardano_encoding_base58_decode, returnInsufficientBufferSizeIfGivenEmptyOut
   cardano_error_t result = cardano_encoding_base58_decode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }
@@ -396,7 +396,7 @@ TEST(cardano_encoding_base58_decode, returnInsufficientBufferSizeIfGivenSmallOut
   cardano_error_t result = cardano_encoding_base58_decode(data, data_length, output, output_length);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(output);
 }

@@ -84,12 +84,12 @@ cardano_single_host_name_relay_new(const uint16_t* port, const char* dns, const 
 {
   if (single_host_name_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dns == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((str_size > 64U) || (str_size == 0U))
@@ -101,7 +101,7 @@ cardano_single_host_name_relay_new(const uint16_t* port, const char* dns, const 
 
   if (*single_host_name_relay == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*single_host_name_relay)->base.deallocator   = cardano_single_host_name_relay_deallocate;
@@ -125,7 +125,7 @@ cardano_single_host_name_relay_new(const uint16_t* port, const char* dns, const 
   if ((*single_host_name_relay)->port == NULL)
   {
     cardano_single_host_name_relay_unref(single_host_name_relay);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *(*single_host_name_relay)->port = *port;
@@ -138,13 +138,13 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (single_host_name_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *single_host_name_relay = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "single_host_name_relay";
@@ -244,12 +244,12 @@ cardano_single_host_name_relay_to_cbor(const cardano_single_host_name_relay_t* s
 {
   if (single_host_name_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -309,7 +309,7 @@ cardano_single_host_name_relay_set_port(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (port == NULL)
@@ -329,7 +329,7 @@ cardano_single_host_name_relay_set_port(
 
     if (relay->port == NULL)
     {
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -370,12 +370,12 @@ cardano_single_host_name_relay_set_dns(
 {
   if (single_host_name_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dns == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((dns_size > 64U) || (dns_size == 0U))

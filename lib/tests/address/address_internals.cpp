@@ -46,8 +46,8 @@ TEST(_cardano_get_payment_credential_type, returnsErrorWhenGivenInvalidCredentia
   cardano_credential_type_t    cred;
 
   // Act
-  EXPECT_EQ(_cardano_get_payment_credential_type(type, &cred), CARDANO_INVALID_ADDRESS_TYPE);
-  EXPECT_EQ(_cardano_get_stake_credential_type(type, &cred), CARDANO_INVALID_ADDRESS_TYPE);
+  EXPECT_EQ(_cardano_get_payment_credential_type(type, &cred), CARDANO_ERROR_INVALID_ADDRESS_TYPE);
+  EXPECT_EQ(_cardano_get_stake_credential_type(type, &cred), CARDANO_ERROR_INVALID_ADDRESS_TYPE);
 }
 
 TEST(_cardano_is_valid_payment_address_prefix, returnsFalseWehnGivenNullPointer)
@@ -66,7 +66,7 @@ TEST(_cardano_unpack_base_address, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_after_four_malloc, _cardano_realloc, _cardano_free);
 
   // Act
-  EXPECT_EQ(_cardano_unpack_base_address(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes), &address), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(_cardano_unpack_base_address(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes), &address), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
 }
 
@@ -83,7 +83,7 @@ TEST(_cardano_byron_address_extract_cbor_data, returnsErrorIfMemoryAllocationFai
   cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
 
   // Act
-  EXPECT_EQ(_cardano_byron_address_extract_cbor_data(writer, &data, &data_size), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(_cardano_byron_address_extract_cbor_data(writer, &data, &data_size), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Clean up
   cardano_cbor_writer_unref(&writer);
@@ -103,7 +103,7 @@ TEST(_cardano_byron_address_finalize_writer, returnsErrorIfMemoryAllocationFails
   cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
 
   // Act
-  EXPECT_EQ(_cardano_byron_address_finalize_writer(writer, &data, &data_size), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(_cardano_byron_address_finalize_writer(writer, &data, &data_size), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Clean up
   cardano_cbor_writer_unref(&writer);

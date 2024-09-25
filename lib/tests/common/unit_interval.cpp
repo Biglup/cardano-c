@@ -59,7 +59,7 @@ TEST(cardano_unit_interval_new, returnsErrorIfUnitIntervalIsNull)
   cardano_error_t error = cardano_unit_interval_new(1, 5, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_unit_interval_new, returnsErrorIfdenominatorAllocationFails)
@@ -73,7 +73,7 @@ TEST(cardano_unit_interval_new, returnsErrorIfdenominatorAllocationFails)
   cardano_error_t error = cardano_unit_interval_new(1, 5, &unit_interval);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(unit_interval, (cardano_unit_interval_t*)nullptr);
 
   // Cleanup
@@ -121,7 +121,7 @@ TEST(cardano_unit_interval_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_unit_interval_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -140,7 +140,7 @@ TEST(cardano_unit_interval_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_unit_interval_to_cbor(unit_interval, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&unit_interval);
@@ -179,7 +179,7 @@ TEST(cardano_unit_interval_from_cbor, returnErrorIfUnitIntervalIsNull)
   cardano_error_t error = cardano_unit_interval_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -194,7 +194,7 @@ TEST(cardano_unit_interval_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_unit_interval_from_cbor(nullptr, &unit_interval);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_unit_interval_from_cbor, returnErrorIfCborDataIsMissingTheTag)
@@ -476,7 +476,7 @@ TEST(cardano_unit_interval_set_denominator, returnErrorIfUnitIntervalIsNull)
   cardano_error_t error = cardano_unit_interval_set_denominator(nullptr, 123456789);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_unit_interval_set_numerator, setsTheNumeratorStepsValue)
@@ -504,7 +504,7 @@ TEST(cardano_unit_interval_set_numerator, returnErrorIfUnitIntervalIsNull)
   cardano_error_t error = cardano_unit_interval_set_numerator(nullptr, 987654321);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_unit_interval_to_double, returnsTheDoubleValue)

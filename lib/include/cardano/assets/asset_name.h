@@ -61,7 +61,7 @@ typedef struct cardano_asset_name_t cardano_asset_name_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the asset name was successfully created from the provided bytes, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input data pointer is NULL,
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input data pointer is NULL,
  *         or \ref CARDANO_ERROR_INVALID_ARGUMENT if the size exceeds the maximum length or other constraints.
  *
  * Usage Example:
@@ -108,7 +108,7 @@ cardano_asset_name_from_bytes(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the asset name was successfully created from the provided hex string, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input hex pointer is NULL,
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input hex pointer is NULL,
  *         or \ref CARDANO_ERROR_INVALID_ARGUMENT if the size is incorrect or the hex string is not valid.
  *
  * Usage Example:
@@ -157,7 +157,7 @@ cardano_asset_name_from_hex(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the asset name was successfully created from the provided string, or an appropriate error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the input string pointer is NULL,
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input string pointer is NULL,
  *         or \ref CARDANO_ERROR_INVALID_ARGUMENT if the size is incorrect or other constraints are not met.
  *
  * Usage Example:
@@ -240,7 +240,7 @@ cardano_asset_name_from_cbor(cardano_cbor_reader_t* reader, cardano_asset_name_t
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p asset_name or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

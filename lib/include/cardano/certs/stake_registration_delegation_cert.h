@@ -63,7 +63,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *                                            The caller is responsible for managing the lifecycle of this object, including releasing it when no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate was successfully created, or an error code
- *         indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any input pointers are NULL.
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -148,7 +148,7 @@ cardano_stake_registration_delegation_cert_from_cbor(cardano_cbor_reader_t* read
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p stake_registration or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -222,7 +222,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_stake_registration_delegation_cert_
  *                       be properly unreferenced after it is no longer needed by the caller.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the stake credential
- *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL
+ *         was successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if any of the input pointers are NULL.
  *
  * Usage Example:
@@ -287,7 +287,7 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_stake_registration_delegation_cer
  *                  The pool parameters object will take a reference to this hash, so it must remain valid as long as it is in use by the certificate.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the pool key hash was successfully set,
- *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -344,7 +344,7 @@ CARDANO_EXPORT uint64_t cardano_stake_registration_delegation_cert_get_deposit(c
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the deposit amount was successfully set, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if the input certificate pointer is NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if the input certificate pointer is NULL.
  *
  * Usage Example:
  * \code{.c}

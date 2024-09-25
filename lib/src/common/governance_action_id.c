@@ -78,20 +78,20 @@ cardano_governance_action_id_new(const cardano_blake2b_hash_t* hash, const uint6
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
     *governance_action_id = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *governance_action_id = _cardano_malloc(sizeof(cardano_governance_action_id_t));
 
   if (*governance_action_id == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*governance_action_id)->base.deallocator   = cardano_governance_action_id_deallocate;
@@ -125,13 +125,13 @@ cardano_governance_action_id_from_hash_hex(const char* hex, size_t hex_size, uin
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *governance_action_id = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_size != ((size_t)CARDANO_BLAKE2B_HASH_SIZE_256 * 2U))
@@ -171,13 +171,13 @@ cardano_governance_action_id_from_hash_bytes(
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *governance_action_id = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -213,13 +213,13 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *governance_action_id = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "governance_action_id";
@@ -300,12 +300,12 @@ cardano_governance_action_id_to_cbor(
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, GOVERNANCE_ACTION_ID_ARRAY_SIZE);
@@ -400,12 +400,12 @@ cardano_governance_action_id_get_index(
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *index = governance_action_id->index;
@@ -420,7 +420,7 @@ cardano_governance_action_id_set_index(
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   governance_action_id->index = index;
@@ -433,12 +433,12 @@ cardano_governance_action_id_set_hash(cardano_governance_action_id_t* governance
 {
   if (governance_action_id == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);

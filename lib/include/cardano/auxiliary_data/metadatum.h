@@ -591,8 +591,8 @@ CARDANO_EXPORT size_t cardano_metadatum_get_json_size(cardano_metadatum_t* metad
  * \param[in] json_size The size of the \p json buffer in bytes, including space for the null terminator.
  *
  * \return \ref CARDANO_SUCCESS if the conversion was successful.
- *         Returns \ref CARDANO_POINTER_IS_NULL if \p metadatum or \p json is NULL.
- *         Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if \p json_size is insufficient to hold the JSON string.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if \p metadatum or \p json is NULL.
+ *         Returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if \p json_size is insufficient to hold the JSON string.
  *
  * \note The JSON string will be encoded in UTF-8.
  *
@@ -656,7 +656,7 @@ CARDANO_EXPORT cardano_error_t cardano_metadatum_to_json(
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p metadatum or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -964,8 +964,8 @@ CARDANO_EXPORT size_t cardano_metadatum_get_string_size(cardano_metadatum_t* met
  * \param[in] buffer_size The size of the \p buffer in bytes, including space for the null terminator.
  *
  * \return \ref CARDANO_SUCCESS if the conversion was successful.
- *         Returns \ref CARDANO_POINTER_IS_NULL if \p metadatum or \p buffer is NULL.
- *         Returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if \p buffer_size is insufficient to hold the string.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if \p metadatum or \p buffer is NULL.
+ *         Returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if \p buffer_size is insufficient to hold the string.
  *
  * Usage Example:
  * \code{.c}

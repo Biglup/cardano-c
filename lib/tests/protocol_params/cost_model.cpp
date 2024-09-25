@@ -135,16 +135,16 @@ TEST(cardano_cost_model_new, returnErrorIfInvalidCostModel)
 
   // Act
   cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], 4096, &cost_model);
-  EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
 
   error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V2, &costs[0], 4096, &cost_model);
-  EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
 
   error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V3, &costs[0], 4096, &cost_model);
-  EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
 
   error = cardano_cost_model_new((cardano_plutus_language_version_t)99, &costs[0], 4096, &cost_model);
-  EXPECT_EQ(error, CARDANO_INVALID_PLUTUS_COST_MODEL);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
 }
 
 TEST(cardano_cost_model_new, returnsErrorIfCostModelIsNull)
@@ -156,7 +156,7 @@ TEST(cardano_cost_model_new, returnsErrorIfCostModelIsNull)
   cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], costs.size(), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cost_model_new, returnsErrorIfAllocationFails)
@@ -172,7 +172,7 @@ TEST(cardano_cost_model_new, returnsErrorIfAllocationFails)
   cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], costs.size(), &cost_model);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_cost_model_to_cbor, canSerializeCostModel)
@@ -214,7 +214,7 @@ TEST(cardano_cost_model_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_cost_model_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -234,7 +234,7 @@ TEST(cardano_cost_model_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_cost_model_to_cbor(cost_model, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);
@@ -351,7 +351,7 @@ TEST(cardano_cost_model_from_cbor, returnErrorIfCostModelIsNull)
   cardano_error_t error = cardano_cost_model_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -366,7 +366,7 @@ TEST(cardano_cost_model_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_cost_model_from_cbor(nullptr, &cost_model);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cost_model_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -565,7 +565,7 @@ TEST(cardano_cost_model_set_cost, returnErrroIfGivenNull)
   cardano_error_t error = cardano_cost_model_set_cost(cost_model, 0, 100);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cost_model_set_cost, returnErrorIfIndexIsOutOfBounds)
@@ -582,7 +582,7 @@ TEST(cardano_cost_model_set_cost, returnErrorIfIndexIsOutOfBounds)
   error = cardano_cost_model_set_cost(cost_model, 99999, 100);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);
@@ -622,7 +622,7 @@ TEST(cardano_cost_model_get_cost, returnErrorIfGivenNull)
   cardano_error_t error = cardano_cost_model_get_cost(cost_model, 0, &c);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cost_model_get_cost, returnErrorIfIndexIsOutOfBounds)
@@ -640,7 +640,7 @@ TEST(cardano_cost_model_get_cost, returnErrorIfIndexIsOutOfBounds)
   error     = cardano_cost_model_get_cost(cost_model, 99999, &c);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);
@@ -661,7 +661,7 @@ TEST(cardano_cost_model_get_cost, returnErrorIfCostIsNull)
   cardano_error_t get_error = cardano_cost_model_get_cost(cost_model, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(get_error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(get_error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);
@@ -758,7 +758,7 @@ TEST(cardano_cost_model_get_language, returnErrorIfGivenNull)
   cardano_error_t                   error = cardano_cost_model_get_language(nullptr, &language);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cost_model_get_language, returnErrorIfLanguageIsNull)
@@ -775,7 +775,7 @@ TEST(cardano_cost_model_get_language, returnErrorIfLanguageIsNull)
   cardano_error_t get_error = cardano_cost_model_get_language(cost_model, nullptr);
 
   // Assert
-  EXPECT_EQ(get_error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(get_error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);

@@ -115,19 +115,19 @@ cardano_mir_cert_new_to_other_pot(
 {
   if (to_other_pot_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_mir_cert_t* data = cardano_mir_cert_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_mir_to_pot_cert_ref(to_other_pot_cert);
@@ -147,19 +147,19 @@ cardano_mir_cert_new_to_stake_creds(
 {
   if (to_stake_creds_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_mir_cert_t* data = cardano_mir_cert_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_mir_to_stake_creds_cert_ref(to_stake_creds_cert);
@@ -177,12 +177,12 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "mir_cert";
@@ -290,7 +290,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
     return create_mir_cert_result;
   }
 
-  return CARDANO_INVALID_CERTIFICATE_TYPE;
+  return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
 }
 
 cardano_error_t
@@ -300,12 +300,12 @@ cardano_mir_cert_to_cbor(
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -336,7 +336,7 @@ cardano_mir_cert_to_cbor(
     }
     // LCOV_EXCL_START
     default:
-      return CARDANO_INVALID_CERTIFICATE_TYPE;
+      return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
       // LCOV_EXCL_STOP
   }
 
@@ -348,12 +348,12 @@ cardano_mir_cert_get_type(const cardano_mir_cert_t* mir_cert, cardano_mir_cert_t
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = mir_cert->type;
@@ -368,17 +368,17 @@ cardano_mir_cert_as_to_other_pot(
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (to_other_pot_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_cert->type != CARDANO_MIR_CERT_TYPE_TO_POT)
   {
-    return CARDANO_INVALID_CERTIFICATE_TYPE;
+    return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
   }
 
   cardano_mir_to_pot_cert_ref(mir_cert->mir_to_pot_cert);
@@ -395,17 +395,17 @@ cardano_mir_cert_as_to_stake_creds(
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (to_stake_creds_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_cert->type != CARDANO_MIR_CERT_TYPE_TO_STAKE_CREDS)
   {
-    return CARDANO_INVALID_CERTIFICATE_TYPE;
+    return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
   }
 
   cardano_mir_to_stake_creds_cert_ref(mir_cert->mir_to_stake_creds_cert);

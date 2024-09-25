@@ -275,7 +275,7 @@ TEST(cardano_update_committee_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_update_committee_action_from_cbor(nullptr, &update_committee_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_update_committee_action_from_cbor, returnsErrorIfActionIsNull)
@@ -287,7 +287,7 @@ TEST(cardano_update_committee_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_update_committee_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -328,7 +328,7 @@ TEST(cardano_update_committee_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_update_committee_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -340,7 +340,7 @@ TEST(cardano_update_committee_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_update_committee_action_to_cbor((cardano_update_committee_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -431,7 +431,7 @@ TEST(cardano_update_committee_action_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_update_committee_action_new(nullptr, nullptr, nullptr, nullptr, &update_committee_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_update_committee_action_new, returnsErrorIfSecondArgIsNull)
@@ -442,7 +442,7 @@ TEST(cardano_update_committee_action_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_update_committee_action_new((cardano_credential_set_t*)"", nullptr, nullptr, nullptr, &update_committee_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_update_committee_action_new, returnsErrorIfThirdArgIsNull)
@@ -453,7 +453,7 @@ TEST(cardano_update_committee_action_new, returnsErrorIfThirdArgIsNull)
   cardano_error_t result = cardano_update_committee_action_new((cardano_credential_set_t*)"", (cardano_committee_members_map_t*)"", nullptr, nullptr, &update_committee_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_update_committee_action_new, returnsErrorIfFifthArgIsNull)
@@ -464,7 +464,7 @@ TEST(cardano_update_committee_action_new, returnsErrorIfFifthArgIsNull)
   cardano_error_t result = cardano_update_committee_action_new((cardano_credential_set_t*)"", (cardano_committee_members_map_t*)"", (cardano_unit_interval_t*)"", nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_update_committee_action_new, returnsErrorIfMemoryAllocationFails)
@@ -480,7 +480,7 @@ TEST(cardano_update_committee_action_new, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_update_committee_action_new(credential_set, members_to_be_added, quorum, nullptr, &update_committee_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_update_committee_action_unref(&update_committee_action);
@@ -664,7 +664,7 @@ TEST(cardano_update_committee_action_set_governance_action_id, returnsErrorIfObj
   cardano_error_t result = cardano_update_committee_action_set_governance_action_id(nullptr, governance_action_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);
@@ -755,7 +755,7 @@ TEST(cardano_update_committee_action_set_members_to_be_removed, returnsErrorIfOb
   cardano_error_t result = cardano_update_committee_action_set_members_to_be_removed(nullptr, credential_set);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_set_unref(&credential_set);
@@ -770,7 +770,7 @@ TEST(cardano_update_committee_action_set_members_to_be_removed, returnsErrorIfMe
   cardano_error_t result = cardano_update_committee_action_set_members_to_be_removed(update_committee_action, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&update_committee_action);
@@ -831,7 +831,7 @@ TEST(cardano_update_committee_action_set_members_to_be_added, returnsErrorIfObje
   cardano_error_t result = cardano_update_committee_action_set_members_to_be_added(nullptr, members_to_be_added);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&members_to_be_added);
@@ -846,7 +846,7 @@ TEST(cardano_update_committee_action_set_members_to_be_added, returnsErrorIfMemb
   cardano_error_t result = cardano_update_committee_action_set_members_to_be_added(update_committee_action, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&update_committee_action);
@@ -907,7 +907,7 @@ TEST(cardano_update_committee_action_set_quorum, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_update_committee_action_set_quorum(nullptr, quorum);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&quorum);
@@ -922,7 +922,7 @@ TEST(cardano_update_committee_action_set_quorum, returnsErrorIfQuorumIsNull)
   cardano_error_t result = cardano_update_committee_action_set_quorum(update_committee_action, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_committee_action_unref(&update_committee_action);

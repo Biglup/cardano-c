@@ -90,19 +90,19 @@ cardano_unregistration_cert_new(
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (unregister_drep == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unregistration_cert_t* data = _cardano_malloc(sizeof(cardano_unregistration_cert_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -124,12 +124,12 @@ cardano_unregistration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_unr
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (unregistration_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "unregistration_cert";
@@ -194,12 +194,12 @@ cardano_unregistration_cert_to_cbor(
 {
   if (unregistration_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -251,12 +251,12 @@ cardano_unregistration_cert_set_credential(cardano_unregistration_cert_t* certif
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_credential_ref(credential);
@@ -284,7 +284,7 @@ cardano_unregistration_cert_set_deposit(
 {
   if (certificate == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   certificate->deposit = deposit;

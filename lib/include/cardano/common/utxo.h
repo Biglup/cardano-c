@@ -61,7 +61,7 @@ typedef struct cardano_utxo_t cardano_utxo_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the UTXO was successfully created. If either \p input, \p output, or \p utxo is NULL,
- *         returns \ref CARDANO_POINTER_IS_NULL.
+ *         returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \note A UTXO links a specific input to its corresponding output, representing spendable value
  *       in the Cardano blockchain. The newly created UTXO object must be properly freed by the
@@ -152,7 +152,7 @@ cardano_utxo_from_cbor(cardano_cbor_reader_t* reader, cardano_utxo_t** utxo);
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p utxo or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -237,7 +237,7 @@ CARDANO_EXPORT cardano_transaction_input_t* cardano_utxo_get_input(cardano_utxo_
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the transaction input was successfully set. If either \p utxo or \p input is NULL, returns
- *         \ref CARDANO_POINTER_IS_NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \note This function increases the reference count of the \p input object, meaning the caller retains
  *       ownership of the input and must release it by calling \ref cardano_transaction_input_unref
@@ -320,7 +320,7 @@ CARDANO_EXPORT cardano_transaction_output_t* cardano_utxo_get_output(cardano_utx
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the transaction output was successfully set. If either \p utxo or \p output is NULL,
- *         returns \ref CARDANO_POINTER_IS_NULL.
+ *         returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \note This function increases the reference count of the \p output object, meaning the caller retains
  *       ownership of the output and must release it by calling \ref cardano_transaction_output_unref

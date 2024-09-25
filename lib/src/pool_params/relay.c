@@ -120,19 +120,19 @@ cardano_relay_new_single_host_addr(
 {
   if (single_host_addr_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_relay_t* data = cardano_relay_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->type                   = CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS;
@@ -152,19 +152,19 @@ cardano_relay_new_single_host_name(
 {
   if (single_host_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_relay_t* data = cardano_relay_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->type                   = CARDANO_RELAY_TYPE_SINGLE_HOST_NAME;
@@ -184,19 +184,19 @@ cardano_relay_new_multi_host_name(
 {
   if (multi_host_name_relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_relay_t* data = cardano_relay_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->type                  = CARDANO_RELAY_TYPE_MULTI_HOST_NAME;
@@ -214,12 +214,12 @@ cardano_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_relay_t** relay)
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_cbor_reader_t* reader_clone = NULL;
@@ -309,7 +309,7 @@ cardano_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_relay_t** relay)
     }
     /* LCOV_EXCL_START */
     default:
-      result = CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+      result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
       /* LCOV_EXCL_STOP */
   }
@@ -324,12 +324,12 @@ cardano_relay_to_cbor(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -353,7 +353,7 @@ cardano_relay_to_cbor(
     }
     /* LCOV_EXCL_START */
     default:
-      result = CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+      result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
       /* LCOV_EXCL_STOP */
   }
@@ -368,12 +368,12 @@ cardano_relay_get_type(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = relay->type;
@@ -388,12 +388,12 @@ cardano_relay_to_single_host_addr(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (single_host_addr == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay->type != CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS)
@@ -415,12 +415,12 @@ cardano_relay_to_single_host_name(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (single_host_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay->type != CARDANO_RELAY_TYPE_SINGLE_HOST_NAME)
@@ -442,12 +442,12 @@ cardano_relay_to_multi_host_name(
 {
   if (relay == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (multi_host_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (relay->type != CARDANO_RELAY_TYPE_MULTI_HOST_NAME)

@@ -88,7 +88,7 @@ _cardano_byron_address_extract_cbor_data(cardano_cbor_writer_t* writer, byte_t**
 
   if (*data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return cardano_cbor_writer_encode(writer, *data, *size);
@@ -212,7 +212,7 @@ _cardano_byron_address_finalize_writer(cardano_cbor_writer_t* writer, byte_t** d
 
   if (*data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return cardano_cbor_writer_encode(writer, *data, *size);
@@ -303,7 +303,7 @@ _cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, cons
 
   if (!writer)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = _cardano_byron_address_initialize(writer, address);
@@ -355,7 +355,7 @@ _cardano_byron_address_initialize_cbor_reader(const byte_t* data, size_t size, c
 
   if (*reader == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return CARDANO_SUCCESS;
@@ -441,7 +441,7 @@ _cardano_byron_address_unpack_inner_cbor_content(
     // LCOV_EXCL_START
     cardano_buffer_unref(&address_data_encoded);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 
@@ -472,7 +472,7 @@ _cardano_byron_address_process_derivation_path(
   {
     // LCOV_EXCL_START
     cardano_buffer_unref(&encoded_derivation_path);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 
@@ -522,7 +522,7 @@ _cardano_byron_address_process_magic(cardano_cbor_reader_t* inner_reader, cardan
   {
     // LCOV_EXCL_START
     cardano_buffer_unref(&encoded_magic);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     // LCOV_EXCL_STOP
   }
 

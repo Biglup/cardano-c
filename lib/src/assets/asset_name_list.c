@@ -79,14 +79,14 @@ cardano_asset_name_list_new(cardano_asset_name_list_t** asset_name)
 {
   if (asset_name == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_asset_name_list_t* list = _cardano_malloc(sizeof(cardano_asset_name_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -98,7 +98,7 @@ cardano_asset_name_list_new(cardano_asset_name_list_t** asset_name)
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *asset_name = list;
@@ -125,19 +125,19 @@ cardano_asset_name_list_get(
 {
   if (asset_name_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(asset_name_list->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_asset_name_t*)((void*)object);
@@ -150,12 +150,12 @@ cardano_asset_name_list_add(cardano_asset_name_list_t* asset_name_list, cardano_
 {
   if (asset_name_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(asset_name_list->array);
   const size_t new_size      = cardano_array_add(asset_name_list->array, (cardano_object_t*)((void*)element));

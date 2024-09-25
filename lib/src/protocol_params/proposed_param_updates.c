@@ -149,14 +149,14 @@ cardano_proposed_param_updates_new(cardano_proposed_param_updates_t** proposed_p
 {
   if (proposed_params_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposed_param_updates_t* map = _cardano_malloc(sizeof(cardano_proposed_param_updates_t));
 
   if (map == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   map->base.ref_count     = 1;
@@ -168,7 +168,7 @@ cardano_proposed_param_updates_new(cardano_proposed_param_updates_t** proposed_p
   if (map->array == NULL)
   {
     _cardano_free(map);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *proposed_params_updates = map;
@@ -181,12 +181,12 @@ cardano_proposed_param_updates_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (proposed_params_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposed_param_updates_t* map    = NULL;
@@ -255,7 +255,7 @@ cardano_proposed_param_updates_from_cbor(cardano_cbor_reader_t* reader, cardano_
       cardano_protocol_param_update_unref(&value);
       cardano_proposed_param_updates_unref(&map);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       // LCOV_EXCL_STOP
     }
 
@@ -293,12 +293,12 @@ cardano_proposed_param_updates_to_cbor(const cardano_proposed_param_updates_t* p
 {
   if (proposed_params_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t          map_size = cardano_array_get_size(proposed_params_updates->array);
@@ -368,24 +368,24 @@ cardano_proposed_param_updates_insert(
 {
   if (proposed_param_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (genesis_delegate_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_proposed_param_updates_kvp_t* kvp = _cardano_malloc(sizeof(cardano_proposed_param_updates_kvp_t));
 
   if (kvp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   kvp->base.ref_count     = 0;
@@ -418,17 +418,17 @@ cardano_proposed_param_updates_get(
 {
   if (proposed_param_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (genesis_delegate_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(proposed_param_updates->array); ++i)
@@ -448,7 +448,7 @@ cardano_proposed_param_updates_get(
     cardano_object_unref(&object);
   }
 
-  return CARDANO_ELEMENT_NOT_FOUND;
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
 }
 
 cardano_error_t
@@ -459,17 +459,17 @@ cardano_proposed_param_updates_get_key_at(
 {
   if (proposed_param_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (genesis_delegate_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(proposed_param_updates->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t* object = cardano_array_get(proposed_param_updates->array, index);
@@ -493,17 +493,17 @@ cardano_proposed_param_updates_get_value_at(
 {
   if (proposed_param_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(proposed_param_updates->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t* object = cardano_array_get(proposed_param_updates->array, index);
@@ -528,22 +528,22 @@ cardano_proposed_param_updates_get_key_value_at(
 {
   if (proposed_param_updates == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (genesis_delegate_key_hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_param_update == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (index >= cardano_array_get_size(proposed_param_updates->array))
   {
-    return CARDANO_INDEX_OUT_OF_BOUNDS;
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
   }
 
   cardano_object_t* object = cardano_array_get(proposed_param_updates->array, index);

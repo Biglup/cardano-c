@@ -152,7 +152,7 @@ cardano_vkey_witness_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_witne
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p vkey_witness or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -234,7 +234,7 @@ CARDANO_EXPORT cardano_ed25519_public_key_t* cardano_vkey_witness_get_vkey(
  *                 is properly managed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the verification key
- *         was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_POINTER_IS_NULL if
+ *         was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         either \p vkey_witness or \p vkey is NULL.
  *
  * \note The function does not take ownership of the \p vkey, meaning the caller is still responsible for freeing the
@@ -313,7 +313,7 @@ CARDANO_EXPORT cardano_ed25519_signature_t* cardano_vkey_witness_get_signature(
  *                      This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the signature
- *         was successfully set. Returns \ref CARDANO_POINTER_IS_NULL if either \p vkey_witness or \p signature is NULL.
+ *         was successfully set. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if either \p vkey_witness or \p signature is NULL.
  *
  * \note This function increases the reference count of the \p signature object; therefore, the caller retains ownership
  *       of their reference and must release their copy when it is no longer needed using \ref cardano_ed25519_signature_unref.

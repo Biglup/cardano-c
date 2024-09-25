@@ -194,7 +194,7 @@ check_and_format(char* dest, const char* address, const size_t length)
 
   if (low_addr == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   char* high_addr = (char*)_cardano_malloc(length + NULL_TERMINATOR_LENGTH);
@@ -203,7 +203,7 @@ check_and_format(char* dest, const char* address, const size_t length)
   {
     _cardano_free(low_addr);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   to_lower_string(low_addr, address, length);
@@ -332,7 +332,7 @@ create_checksum(const char* hrp, size_t hrp_length, const byte_t* data, const si
 
   if (expanded_hrp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   const size_t values_length = expanded_hrp_length + data_length + BECH32_CHECKSUM_LENGTH;
@@ -341,7 +341,7 @@ create_checksum(const char* hrp, size_t hrp_length, const byte_t* data, const si
   if (values == NULL)
   {
     _cardano_free(expanded_hrp);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_safe_memcpy(values, values_length, expanded_hrp, expanded_hrp_length);
@@ -400,7 +400,7 @@ string_to_squashed_bytes(const char* input, const size_t input_length, byte_t** 
 
   if (tmp == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   for (size_t i = 0; i < input_length; ++i)
@@ -450,7 +450,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
 
   if (formatted_address == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   if (check_and_format(formatted_address, address, address_length) != CARDANO_SUCCESS)
@@ -501,7 +501,7 @@ decode_squashed(const char* address, const size_t address_length, char* hrp, con
     _cardano_free(formatted_address);
     _cardano_free(squashed);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_safe_memcpy(*data, *data_length, squashed, *data_length);
@@ -535,7 +535,7 @@ squashed_bytes_to_string(const byte_t* input, const size_t input_length, char** 
 
   if (*output == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   for (size_t i = 0; i < input_length; ++i)
@@ -579,7 +579,7 @@ encode_squashed(
 
   if (checksum == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = create_checksum(hrp, hrp_length, data, data_length, checksum);
@@ -596,7 +596,7 @@ encode_squashed(
   if (combined == NULL)
   {
     _cardano_free(checksum);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_safe_memcpy(combined, combined_length, data, data_length);
@@ -619,7 +619,7 @@ encode_squashed(
   if (output_length < required_output_length)
   {
     _cardano_free(encoded);
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   int32_t format_result = snprintf(output, output_length, "%s1%s", hrp, encoded);
@@ -668,7 +668,7 @@ byte_squasher(const byte_t* input, const size_t input_length, const size_t input
 
   if (*output == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   size_t current_output_length = 0;
@@ -744,22 +744,22 @@ cardano_encoding_bech32_encode(
 {
   if (hrp == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((data == NULL) && (data_length > 0U))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (output == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (output_length == 0U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   byte_t* squashed_data   = NULL;
@@ -841,17 +841,17 @@ cardano_encoding_bech32_decode(
 {
   if (input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hrp == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   byte_t* squashed_data   = NULL;
@@ -879,7 +879,7 @@ cardano_encoding_bech32_decode(
   if (output_length > data_length)
   {
     _cardano_free(output_data);
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(data, data_length, output_data, output_length);

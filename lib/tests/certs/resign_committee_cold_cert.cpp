@@ -214,7 +214,7 @@ TEST(cardano_resign_committee_cold_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_from_cbor(nullptr, &resign_committee_cold_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_resign_committee_cold_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -226,7 +226,7 @@ TEST(cardano_resign_committee_cold_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -303,7 +303,7 @@ TEST(cardano_resign_committee_cold_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -315,7 +315,7 @@ TEST(cardano_resign_committee_cold_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_to_cbor((cardano_resign_committee_cold_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -373,7 +373,7 @@ TEST(cardano_resign_committee_cold_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_new(nullptr, NULL, &resign_committee_cold_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_resign_committee_cold_cert_new, returnsErrorIfCertIsNull)
@@ -383,7 +383,7 @@ TEST(cardano_resign_committee_cold_cert_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_new((cardano_credential_t*)"", NULL, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -402,7 +402,7 @@ TEST(cardano_resign_committee_cold_cert_new, returnsErrorIfMemoryAllocationFails
   cardano_error_t result = cardano_resign_committee_cold_cert_new(cred, NULL, &resign_committee_cold_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -503,7 +503,7 @@ TEST(cardano_resign_committee_cold_cert_set_credential, returnsErrorIfObjectIsNu
   cardano_error_t result = cardano_resign_committee_cold_cert_set_credential(nullptr, cred);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&cred);
@@ -518,7 +518,7 @@ TEST(cardano_resign_committee_cold_cert_set_credential, returnsErrorIfCredential
   cardano_error_t result = cardano_resign_committee_cold_cert_set_credential(resign_committee_cold_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_resign_committee_cold_cert_unref(&resign_committee_cold_cert);
@@ -605,7 +605,7 @@ TEST(cardano_resign_committee_cold_cert_set_anchor, returnsErrorIfObjectIsNull)
   result = cardano_resign_committee_cold_cert_set_anchor(nullptr, anchor);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -621,7 +621,7 @@ TEST(cardano_resign_committee_cold_cert_set_anchor, returnsErrorIfAnchorIsNull)
   cardano_error_t result = cardano_resign_committee_cold_cert_set_anchor(resign_committee_cold_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_resign_committee_cold_cert_unref(&resign_committee_cold_cert);

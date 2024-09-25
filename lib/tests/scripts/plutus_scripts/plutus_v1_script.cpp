@@ -86,7 +86,7 @@ TEST(cardano_plutus_v1_script_new, returnsErrorIfGivenNullScript)
   cardano_error_t             error  = cardano_plutus_v1_script_new_bytes(NULL, 0, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_new, returnsErrorIfGivenNullScriptPointer)
@@ -95,7 +95,7 @@ TEST(cardano_plutus_v1_script_new, returnsErrorIfGivenNullScriptPointer)
   cardano_error_t error = cardano_plutus_v1_script_new_bytes(PLUTUS_V1_SCRIPT_BYTES, sizeof(PLUTUS_V1_SCRIPT_BYTES), NULL);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_new, returnsErrorIfGivenEmptyScript)
@@ -105,7 +105,7 @@ TEST(cardano_plutus_v1_script_new, returnsErrorIfGivenEmptyScript)
   cardano_error_t             error  = cardano_plutus_v1_script_new_bytes(PLUTUS_V1_SCRIPT_BYTES, 0, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_plutus_v1_script_new, returnsErrorIfMemoryAllocationFails)
@@ -120,7 +120,7 @@ TEST(cardano_plutus_v1_script_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_v1_script_new_bytes(PLUTUS_V1_SCRIPT_BYTES, sizeof(PLUTUS_V1_SCRIPT_BYTES), &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_plutus_v1_script_new, returnsErrorIfMemoryAllocationFails2)
@@ -135,7 +135,7 @@ TEST(cardano_plutus_v1_script_new, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t error = cardano_plutus_v1_script_new_bytes(PLUTUS_V1_SCRIPT_BYTES, sizeof(PLUTUS_V1_SCRIPT_BYTES), &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_plutus_v1_script_new_bytes_from_hex, canCreateAPlutusV1ScriptFromHex)
@@ -177,7 +177,7 @@ TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfGivenNullHex)
   cardano_error_t             error  = cardano_plutus_v1_script_new_bytes_from_hex(NULL, 0, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfGivenEmptyHex)
@@ -187,7 +187,7 @@ TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfGivenEmptyHex)
   cardano_error_t             error  = cardano_plutus_v1_script_new_bytes_from_hex(PLUTUS_V1_SCRIPT, 0, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfGivenNullScriptPointer)
@@ -196,7 +196,7 @@ TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfGivenNullScriptP
   cardano_error_t error = cardano_plutus_v1_script_new_bytes_from_hex(PLUTUS_V1_SCRIPT, strlen(PLUTUS_V1_SCRIPT), NULL);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfMemoryAllocationFails)
@@ -211,7 +211,7 @@ TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfMemoryAllocation
   cardano_error_t error = cardano_plutus_v1_script_new_bytes_from_hex(PLUTUS_V1_SCRIPT, strlen(PLUTUS_V1_SCRIPT), &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfMemoryAllocationFails2)
@@ -226,7 +226,7 @@ TEST(cardano_plutus_v1_script_new_bytes_from_hex, returnsErrorIfMemoryAllocation
   cardano_error_t error = cardano_plutus_v1_script_new_bytes_from_hex(PLUTUS_V1_SCRIPT, strlen(PLUTUS_V1_SCRIPT), &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_plutus_v1_script_from_cbor, canCreateAPlutusV1ScriptFromCbor)
@@ -271,7 +271,7 @@ TEST(cardano_plutus_v1_script_from_cbor, returnsErrorIfGivenNullReader)
   cardano_error_t             error  = cardano_plutus_v1_script_from_cbor(NULL, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_from_cbor, returnsErrorIfGivenNullScriptPointer)
@@ -280,7 +280,7 @@ TEST(cardano_plutus_v1_script_from_cbor, returnsErrorIfGivenNullScriptPointer)
   cardano_error_t error = cardano_plutus_v1_script_from_cbor((cardano_cbor_reader_t*)"", NULL);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_from_cbor, returnsErrorIfMemoryAllocationFails)
@@ -296,7 +296,7 @@ TEST(cardano_plutus_v1_script_from_cbor, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_plutus_v1_script_from_cbor(reader, &script);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // cleanup
   cardano_cbor_reader_unref(&reader);
@@ -309,7 +309,7 @@ TEST(cardano_plutus_v1_script_to_cbor, returnsErrorIfGivenNullScript)
   cardano_error_t        error  = cardano_plutus_v1_script_to_cbor(NULL, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // cleanup
   cardano_cbor_writer_unref(&writer);
@@ -321,7 +321,7 @@ TEST(cardano_plutus_v1_script_to_cbor, returnsErrorIfGivenNullWriter)
   cardano_error_t error = cardano_plutus_v1_script_to_cbor((cardano_plutus_v1_script_t*)"", NULL);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_to_raw_bytes, canConvertPlutusV1ScriptToRawBytes)
@@ -360,7 +360,7 @@ TEST(cardano_plutus_v1_script_to_raw_bytes, returnsErrorIfGivenNullScript)
   cardano_error_t   error  = cardano_plutus_v1_script_to_raw_bytes(NULL, &buffer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_plutus_v1_script_to_raw_bytes, returnsErrorIfGivenNullBufferPointer)
@@ -375,7 +375,7 @@ TEST(cardano_plutus_v1_script_to_raw_bytes, returnsErrorIfGivenNullBufferPointer
   error = cardano_plutus_v1_script_to_raw_bytes(script, NULL);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // cleanup
   cardano_plutus_v1_script_unref(&script);

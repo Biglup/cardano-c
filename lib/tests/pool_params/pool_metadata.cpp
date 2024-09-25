@@ -71,7 +71,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfUrlIsNull)
   cardano_error_t error = cardano_pool_metadata_new(nullptr, 0, hash, &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -86,7 +86,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_pool_metadata_new(URL, strlen(URL), nullptr, &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_metadata_new, returnsErrorIfPoolMetadataIsNull)
@@ -101,7 +101,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfPoolMetadataIsNull)
   cardano_error_t error = cardano_pool_metadata_new(URL, strlen(URL), hash, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -135,7 +135,7 @@ TEST(cardano_pool_metadata_from_hash_hex, returnsErrorIfPoolMetadataIsNull)
   cardano_error_t error = cardano_pool_metadata_from_hash_hex(URL, strlen(URL), HASH, strlen(HASH), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -155,7 +155,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfAllocationFails)
   cardano_error_t error = cardano_pool_metadata_new(URL, strlen(URL), hash, &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pool_metadata, (cardano_pool_metadata_t*)nullptr);
 
   // Cleanup
@@ -175,7 +175,7 @@ TEST(cardano_pool_metadata_from_hash_hex, returnsErrorIfUrlIsNull)
   cardano_error_t error = cardano_pool_metadata_from_hash_hex(nullptr, 0, HASH, strlen(HASH), &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -193,7 +193,7 @@ TEST(cardano_pool_metadata_from_hash_hex, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_pool_metadata_from_hash_hex(URL, strlen(URL), nullptr, 0, &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -276,7 +276,7 @@ TEST(cardano_pool_metadata_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_metadata_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -295,7 +295,7 @@ TEST(cardano_pool_metadata_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_pool_metadata_to_cbor(pool_metadata, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_metadata_unref(&pool_metadata);
@@ -343,7 +343,7 @@ TEST(cardano_pool_metadata_from_cbor, returnErrorIfPoolMetadataIsNull)
   cardano_error_t error = cardano_pool_metadata_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -358,7 +358,7 @@ TEST(cardano_pool_metadata_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_pool_metadata_from_cbor(nullptr, &pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_metadata_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -603,7 +603,7 @@ TEST(cardano_pool_metadata_set_url, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_metadata_set_url(URL, strlen(URL), nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsNull)
@@ -619,7 +619,7 @@ TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsNull)
   error = cardano_pool_metadata_set_url(nullptr, 0, pool_metadata);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_metadata_unref(&pool_metadata);
@@ -672,7 +672,7 @@ TEST(cardano_pool_metadata_get_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_metadata_get_hash(nullptr, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_metadata_get_hash, returnsErrorIfHashIsNull)
@@ -688,7 +688,7 @@ TEST(cardano_pool_metadata_get_hash, returnsErrorIfHashIsNull)
   error = cardano_pool_metadata_get_hash(pool_metadata, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_metadata_unref(&pool_metadata);
@@ -730,7 +730,7 @@ TEST(cardano_pool_metadata_set_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_metadata_set_hash(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_metadata_set_hash, returnsErrorIfHashIsNull)
@@ -746,7 +746,7 @@ TEST(cardano_pool_metadata_set_hash, returnsErrorIfHashIsNull)
   error = cardano_pool_metadata_set_hash(pool_metadata, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_metadata_unref(&pool_metadata);

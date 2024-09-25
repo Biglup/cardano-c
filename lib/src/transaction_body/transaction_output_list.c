@@ -80,14 +80,14 @@ cardano_transaction_output_list_new(cardano_transaction_output_list_t** transact
 {
   if (transaction_output_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_output_list_t* list = _cardano_malloc(sizeof(cardano_transaction_output_list_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -99,7 +99,7 @@ cardano_transaction_output_list_new(cardano_transaction_output_list_t** transact
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *transaction_output_list = list;
@@ -112,12 +112,12 @@ cardano_transaction_output_list_from_cbor(cardano_cbor_reader_t* reader, cardano
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (transaction_output_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_output_list_t* list   = NULL;
@@ -202,12 +202,12 @@ cardano_transaction_output_list_to_cbor(const cardano_transaction_output_list_t*
 {
   if (transaction_output_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(transaction_output_list->array != NULL);
@@ -266,19 +266,19 @@ cardano_transaction_output_list_get(
 {
   if (transaction_output_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(transaction_output_list->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_transaction_output_t*)((void*)object);
@@ -291,12 +291,12 @@ cardano_transaction_output_list_add(cardano_transaction_output_list_t* transacti
 {
   if (transaction_output_list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(transaction_output_list->array);
   const size_t new_size      = cardano_array_add(transaction_output_list->array, (cardano_object_t*)((void*)element));

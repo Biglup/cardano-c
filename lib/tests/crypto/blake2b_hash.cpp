@@ -99,7 +99,7 @@ TEST(cardano_blake2b_hash, returnErrorIfMemoryAllocationFails)
 
   cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
 
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(hash, nullptr);
 
   // Cleanup
@@ -115,7 +115,7 @@ TEST(cardano_blake2b_hash, returnErrorIfMemoryAllocationEventuallyFails)
 
   cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
 
-  ASSERT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(hash, nullptr);
 
   // Cleanup
@@ -127,7 +127,7 @@ TEST(cardano_blake2b_hash, returnErrorWhenDataIsNull)
   cardano_blake2b_hash_t* hash  = nullptr;
   cardano_error_t         error = cardano_blake2b_compute_hash(nullptr, 0, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
 
-  ASSERT_EQ(error, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(hash, nullptr);
 }
 
@@ -136,7 +136,7 @@ TEST(cardano_blake2b_hash, returnErrorWhenDataLengthIsZero)
   cardano_blake2b_hash_t* hash  = nullptr;
   cardano_error_t         error = cardano_blake2b_compute_hash((const byte_t*)"data", 0, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
 
-  ASSERT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
   ASSERT_EQ(hash, nullptr);
 }
 
@@ -252,7 +252,7 @@ TEST(cardano_blake2b_hash_from_bytes, returnsNullIfGivenANullPtr)
   cardano_error_t         error = cardano_blake2b_hash_from_bytes(nullptr, 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
@@ -263,7 +263,7 @@ TEST(cardano_blake2b_hash_from_bytes, returnsNullIfGivenZeroLength)
   cardano_error_t         error = cardano_blake2b_hash_from_bytes((const byte_t*)"data", 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
@@ -273,7 +273,7 @@ TEST(cardano_blake2b_hash_from_bytes, returnsNullIfHashIsNull)
   cardano_error_t error = cardano_blake2b_hash_from_bytes((const byte_t*)"data", 4, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_from_bytes, returnsNullIfMemoryAllocationFails)
@@ -288,7 +288,7 @@ TEST(cardano_blake2b_hash_from_bytes, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_blake2b_hash_from_bytes((const byte_t*)"data", 4, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 
   // Cleanup
@@ -307,7 +307,7 @@ TEST(cardano_blake2b_hash_from_bytes, returnsNullIfMemoryEventualAllocationFails
   cardano_error_t error = cardano_blake2b_hash_from_bytes((const byte_t*)"data", 4, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 
   // Cleanup
@@ -321,7 +321,7 @@ TEST(cardano_blake2b_hash_from_hex, returnsNullIfGivenANullPtr)
   cardano_error_t         error = cardano_blake2b_hash_from_hex(nullptr, 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
@@ -331,7 +331,7 @@ TEST(cardano_blake2b_hash_from_hex, returnsNullIfHashIsNull)
   cardano_error_t error = cardano_blake2b_hash_from_hex("data", 4, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_from_hex, returnsNullIfGivenZeroLength)
@@ -341,7 +341,7 @@ TEST(cardano_blake2b_hash_from_hex, returnsNullIfGivenZeroLength)
   cardano_error_t         error = cardano_blake2b_hash_from_hex("data", 0, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
@@ -357,7 +357,7 @@ TEST(cardano_blake2b_hash_from_hex, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_blake2b_hash_from_hex("data", 4, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 
   // Cleanup
@@ -376,7 +376,7 @@ TEST(cardano_blake2b_hash_from_hex, returnsNullIfMemoryEventualAllocationFails)
   cardano_error_t error = cardano_blake2b_hash_from_hex("data", 4, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 
   // Cleanup
@@ -430,7 +430,7 @@ TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_blake2b_hash_to_bytes(hash, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfBufferLengthIsZero)
@@ -446,7 +446,7 @@ TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfBufferLengthIsZero)
   error = cardano_blake2b_hash_to_bytes(hash, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -464,7 +464,7 @@ TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfHashLengthIsGreaterThanBufferL
   error = cardano_blake2b_hash_to_bytes(hash, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -483,7 +483,7 @@ TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfHashLengthIsZero)
   error = cardano_blake2b_hash_to_bytes(hash, &data[0], 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -502,7 +502,7 @@ TEST(cardano_blake2b_hash_to_bytes, returnsErrorIfHashIsNull)
   error = cardano_blake2b_hash_to_bytes(hash, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -514,7 +514,7 @@ TEST(cardano_blake2b_compute_hash, returnErrorIfHashIsNull)
   cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_to_bytes, returnsHashBytes)
@@ -550,7 +550,7 @@ TEST(cardano_blake2b_hash_from_cbor, returnsNullIfGivenANullPtr)
   cardano_error_t         error = cardano_blake2b_hash_from_cbor(nullptr, &hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
@@ -562,7 +562,7 @@ TEST(cardano_blake2b_hash_from_cbor, returnsNullIfHashIsNull)
   cardano_error_t error = cardano_blake2b_hash_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -621,7 +621,7 @@ TEST(cardano_blake2b_hash_to_cbor, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_blake2b_hash_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -633,7 +633,7 @@ TEST(cardano_blake2b_hash_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_blake2b_hash_to_cbor((cardano_blake2b_hash_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_to_cbor, canEncodeHashToCbor)

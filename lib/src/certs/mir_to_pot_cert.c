@@ -80,14 +80,14 @@ cardano_mir_to_pot_cert_new(
 {
   if (mir_to_pot_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_mir_to_pot_cert_t* data = _cardano_malloc(sizeof(cardano_mir_to_pot_cert_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -107,12 +107,12 @@ cardano_mir_to_pot_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_to_
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (mir_to_pot_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "mir_to_pot_cert";
@@ -157,12 +157,12 @@ cardano_mir_to_pot_cert_to_cbor(
 {
   if (mir_to_pot_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -187,12 +187,12 @@ cardano_mir_to_pot_cert_get_pot(const cardano_mir_to_pot_cert_t* mir_cert, carda
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = mir_cert->pot;
@@ -205,7 +205,7 @@ cardano_mir_to_pot_cert_set_pot(cardano_mir_to_pot_cert_t* mir_cert, cardano_mir
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   mir_cert->pot = type;
@@ -218,12 +218,12 @@ cardano_mir_to_pot_cert_get_amount(const cardano_mir_to_pot_cert_t* mir_cert, ui
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (amount == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *amount = mir_cert->amount;
@@ -236,7 +236,7 @@ cardano_mir_to_pot_cert_set_amount(cardano_mir_to_pot_cert_t* mir_cert, uint64_t
 {
   if (mir_cert == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   mir_cert->amount = amount;

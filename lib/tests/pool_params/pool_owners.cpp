@@ -66,7 +66,7 @@ TEST(cardano_pool_owners_new, returnsErrorIfPoolOwnersIsNull)
   cardano_error_t error = cardano_pool_owners_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_owners_new, returnsErrorIfMemoryAllocationFails)
@@ -80,7 +80,7 @@ TEST(cardano_pool_owners_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_pool_owners_new(&pool_owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pool_owners, (cardano_pool_owners_t*)nullptr);
 
   // Cleanup
@@ -98,7 +98,7 @@ TEST(cardano_pool_owners_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_pool_owners_new(&pool_owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pool_owners, (cardano_pool_owners_t*)nullptr);
 
   // Cleanup
@@ -234,7 +234,7 @@ TEST(cardano_pool_owners_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_pool_owners_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -253,7 +253,7 @@ TEST(cardano_pool_owners_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_pool_owners_to_cbor(pool_owners, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_owners_unref(&pool_owners);
@@ -395,7 +395,7 @@ TEST(cardano_pool_owners_from_cbor, returnErrorIfPoolOwnersIsNull)
   cardano_error_t error = cardano_pool_owners_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -410,7 +410,7 @@ TEST(cardano_pool_owners_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_pool_owners_from_cbor(nullptr, &pool_owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_owners_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -426,7 +426,7 @@ TEST(cardano_pool_owners_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_pool_owners_from_cbor(reader, &pool_owners);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pool_owners, (cardano_pool_owners_t*)nullptr);
 
   // Cleanup
@@ -667,7 +667,7 @@ TEST(cardano_pool_owners_get, returnsErrorIfPoolOwnersIsNull)
   cardano_error_t error = cardano_pool_owners_get(nullptr, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_owners_get, returnsErrorIfDataIsNull)
@@ -682,7 +682,7 @@ TEST(cardano_pool_owners_get, returnsErrorIfDataIsNull)
   error = cardano_pool_owners_get(pool_owners, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_owners_unref(&pool_owners);
@@ -701,7 +701,7 @@ TEST(cardano_pool_owners_get, returnsErrorIfIndexIsOutOfBounds)
   error                        = cardano_pool_owners_get(pool_owners, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_pool_owners_unref(&pool_owners);
@@ -716,7 +716,7 @@ TEST(cardano_pool_owners_add, returnsErrorIfPoolOwnersIsNull)
   cardano_error_t error = cardano_pool_owners_add(nullptr, data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_owners_add, returnsErrorIfDataIsNull)
@@ -731,7 +731,7 @@ TEST(cardano_pool_owners_add, returnsErrorIfDataIsNull)
   error = cardano_pool_owners_add(pool_owners, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_owners_unref(&pool_owners);

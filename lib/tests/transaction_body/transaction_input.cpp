@@ -211,7 +211,7 @@ TEST(cardano_transaction_input_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_transaction_input_from_cbor(nullptr, &transaction_input);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_input_from_cbor, returnsErrorIfInputIsNull)
@@ -223,7 +223,7 @@ TEST(cardano_transaction_input_from_cbor, returnsErrorIfInputIsNull)
   cardano_error_t result = cardano_transaction_input_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -264,7 +264,7 @@ TEST(cardano_transaction_input_to_cbor, returnsErrorIfInputIsNull)
   cardano_error_t result = cardano_transaction_input_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -276,7 +276,7 @@ TEST(cardano_transaction_input_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_transaction_input_to_cbor((cardano_transaction_input_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Input specific tests
@@ -308,7 +308,7 @@ TEST(cardano_transaction_input_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_transaction_input_new(nullptr, 0, &transaction_input);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_input_new, returnsErrorIfInputIsNull)
@@ -318,7 +318,7 @@ TEST(cardano_transaction_input_new, returnsErrorIfInputIsNull)
   cardano_error_t result = cardano_transaction_input_new((cardano_blake2b_hash_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -337,7 +337,7 @@ TEST(cardano_transaction_input_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_transaction_input_new(hash, 0, &transaction_input);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -439,7 +439,7 @@ TEST(cardano_transaction_input_set_id, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_transaction_input_set_id(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -454,7 +454,7 @@ TEST(cardano_transaction_input_set_id, returnsErrorIfHashIsNull)
   cardano_error_t result = cardano_transaction_input_set_id(transaction_input, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_transaction_input_unref(&transaction_input);
@@ -536,7 +536,7 @@ TEST(cardano_transaction_input_set_index, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_transaction_input_set_index(nullptr, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_input_equals, canCompare)
@@ -641,7 +641,7 @@ TEST(cardano_transaction_input_from_hex, returnsErrorIfHexIsNull)
   cardano_error_t result = cardano_transaction_input_from_hex(nullptr, 0, 0, &transaction_input);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_input_from_hex, returnsErrorIfHexIsInvalid)
@@ -662,7 +662,7 @@ TEST(cardano_transaction_input_from_hex, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_transaction_input_from_hex(TX_ID_HASH, strlen(TX_ID_HASH), 0, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_transaction_input_new, returnErrorIfInvalidHashSize)

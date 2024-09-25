@@ -78,7 +78,7 @@ TEST(cardano_withdrawal_map_new, returnsErrorIfProposedParamUpdatesIsNull)
   cardano_error_t error = cardano_withdrawal_map_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_new, returnsErrorIfMemoryAllocationFails)
@@ -92,7 +92,7 @@ TEST(cardano_withdrawal_map_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_withdrawal_map_new(&withdrawal_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(withdrawal_map, (cardano_withdrawal_map_t*)nullptr);
 
   // Cleanup
@@ -110,7 +110,7 @@ TEST(cardano_withdrawal_map_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_withdrawal_map_new(&withdrawal_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(withdrawal_map, (cardano_withdrawal_map_t*)nullptr);
 
   // Cleanup
@@ -158,7 +158,7 @@ TEST(cardano_withdrawal_map_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_withdrawal_map_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -177,7 +177,7 @@ TEST(cardano_withdrawal_map_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_withdrawal_map_to_cbor(withdrawal_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -222,7 +222,7 @@ TEST(cardano_withdrawal_map_from_cbor, returnErrorIfProposedParamUpdatesIsNull)
   cardano_error_t error = cardano_withdrawal_map_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -237,7 +237,7 @@ TEST(cardano_withdrawal_map_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_withdrawal_map_from_cbor(nullptr, &withdrawal_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -253,7 +253,7 @@ TEST(cardano_withdrawal_map_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_withdrawal_map_from_cbor(reader, &withdrawal_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(withdrawal_map, (cardano_withdrawal_map_t*)nullptr);
 
   // Cleanup
@@ -436,7 +436,7 @@ TEST(cardano_withdrawal_map_from_cbor, returnErrorIfInvalidWithdrawl)
   cardano_error_t error = cardano_withdrawal_map_from_cbor(reader, &withdrawal_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -501,7 +501,7 @@ TEST(cardano_withdrawal_map_insert, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_withdrawal_map_insert(nullptr, address, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_insert, returnsErrorIfHashIsNull)
@@ -516,7 +516,7 @@ TEST(cardano_withdrawal_map_insert, returnsErrorIfHashIsNull)
   error = cardano_withdrawal_map_insert(withdrawal_map, nullptr, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -539,7 +539,7 @@ TEST(cardano_withdrawal_map_insert, returnErrorIfMemoryAllocationFails)
   error = cardano_withdrawal_map_insert(withdrawal_map, address, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -600,7 +600,7 @@ TEST(cardano_withdrawal_map_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_withdrawal_map_get(nullptr, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get, returnsErrorIfHashIsNull)
@@ -615,7 +615,7 @@ TEST(cardano_withdrawal_map_get, returnsErrorIfHashIsNull)
   error = cardano_withdrawal_map_get(withdrawal_map, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -633,7 +633,7 @@ TEST(cardano_withdrawal_map_get, returnsErrorIfAmountIsNull)
   error = cardano_withdrawal_map_get(withdrawal_map, (cardano_reward_address_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -654,7 +654,7 @@ TEST(cardano_withdrawal_map_get, returnsErrorIfElementNotFound)
   error = cardano_withdrawal_map_get(withdrawal_map, address, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -757,7 +757,7 @@ TEST(cardano_withdrawal_map_get, returnsTheRightElementIfMoreThanOne2)
 TEST(cardano_withdrawal_map_get_keys, returnsNullIfObjectIsNull)
 {
   // Assert
-  EXPECT_EQ(cardano_withdrawal_map_get_keys(nullptr, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_withdrawal_map_get_keys(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_keys, returnsNullIfKeysIsNull)
@@ -769,7 +769,7 @@ TEST(cardano_withdrawal_map_get_keys, returnsNullIfKeysIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(cardano_withdrawal_map_get_keys(withdrawal_map, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_withdrawal_map_get_keys(withdrawal_map, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -864,7 +864,7 @@ TEST(cardano_withdrawal_map_get_key_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_key_at(nullptr, 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_key_at, returnsErrorIfOutIsNull)
@@ -873,7 +873,7 @@ TEST(cardano_withdrawal_map_get_key_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_key_at((cardano_withdrawal_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
@@ -890,7 +890,7 @@ TEST(cardano_withdrawal_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_withdrawal_map_get_key_at(withdrawal_map, 0, &reward_address);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -939,7 +939,7 @@ TEST(cardano_withdrawal_map_get_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_value_at(nullptr, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_value_at, returnsErrorIfOutIsNull)
@@ -948,7 +948,7 @@ TEST(cardano_withdrawal_map_get_value_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_value_at((cardano_withdrawal_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -965,7 +965,7 @@ TEST(cardano_withdrawal_map_get_value_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_withdrawal_map_get_value_at(withdrawal_map, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
@@ -1010,7 +1010,7 @@ TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_key_value_at(nullptr, 0, &reward_address, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfHashIsNull)
@@ -1022,7 +1022,7 @@ TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_key_value_at((cardano_withdrawal_map_t*)"", 0, nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfUpdateIsNull)
@@ -1034,7 +1034,7 @@ TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfUpdateIsNull)
   cardano_error_t error = cardano_withdrawal_map_get_key_value_at((cardano_withdrawal_map_t*)"", 0, &reward_address, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -1052,7 +1052,7 @@ TEST(cardano_withdrawal_map_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_withdrawal_map_get_key_value_at(withdrawal_map, 0, &reward_address, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);

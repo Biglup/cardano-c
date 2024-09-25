@@ -151,7 +151,7 @@ TEST(cardano_ed25519_signature_from_bytes, returnsNullIfGivenANullPtr)
   cardano_error_t              error     = cardano_ed25519_signature_from_bytes(nullptr, 0, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 }
 
@@ -172,7 +172,7 @@ TEST(cardano_ed25519_signature_from_bytes, returnsNullIfSignatureIsNull)
   cardano_error_t error = cardano_ed25519_signature_from_bytes(SIGNATURE_BYTES, SIGNATURE_SIZE, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_signature_from_bytes, returnsNullIfMemoryAllocationFails)
@@ -187,7 +187,7 @@ TEST(cardano_ed25519_signature_from_bytes, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_ed25519_signature_from_bytes(SIGNATURE_BYTES, SIGNATURE_SIZE, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 
   // Cleanup
@@ -206,7 +206,7 @@ TEST(cardano_ed25519_signature_from_bytes, returnsNullIfMemoryEventualAllocation
   cardano_error_t error = cardano_ed25519_signature_from_bytes(SIGNATURE_BYTES, SIGNATURE_SIZE, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 
   // Cleanup
@@ -220,7 +220,7 @@ TEST(cardano_ed25519_signature_from_hex, returnsNullIfGivenANullPtr)
   cardano_error_t              error     = cardano_ed25519_signature_from_hex(nullptr, 0, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 }
 
@@ -230,7 +230,7 @@ TEST(cardano_ed25519_signature_from_hex, returnsNullIfsignatureIsNull)
   cardano_error_t error = cardano_ed25519_signature_from_hex(SIGNATURE_HEX, SIGNATURE_SIZE * 2, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_signature_from_hex, returnsErrorIfGivenZeroLength)
@@ -256,7 +256,7 @@ TEST(cardano_ed25519_signature_from_hex, returnsNullIfMemoryAllocationFails)
   cardano_error_t error = cardano_ed25519_signature_from_hex(SIGNATURE_HEX, SIGNATURE_SIZE * 2, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 
   // Cleanup
@@ -275,7 +275,7 @@ TEST(cardano_ed25519_signature_from_hex, returnsNullIfMemoryEventualAllocationFa
   cardano_error_t error = cardano_ed25519_signature_from_hex(SIGNATURE_HEX, SIGNATURE_SIZE * 2, &signature);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
 
   // Cleanup
@@ -328,7 +328,7 @@ TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfBufferIsNull)
   cardano_error_t error = cardano_ed25519_signature_to_bytes(signature, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfBufferLengthIsZero)
@@ -343,7 +343,7 @@ TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfBufferLengthIsZero)
   error = cardano_ed25519_signature_to_bytes(signature, (byte_t*)"data", 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_ed25519_signature_unref(&signature);
@@ -360,7 +360,7 @@ TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfsignatureLengthIsGreaterT
   error = cardano_ed25519_signature_to_bytes(signature, (byte_t*)"data", 3);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_ed25519_signature_unref(&signature);
@@ -379,7 +379,7 @@ TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfsignatureLengthIsZero)
   error = cardano_ed25519_signature_to_bytes(signature, &buffer[0], 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE);
 
   // Cleanup
   cardano_ed25519_signature_unref(&signature);
@@ -397,7 +397,7 @@ TEST(cardano_ed25519_signature_to_bytes, returnsErrorIfSignatureIsNull)
   error = cardano_ed25519_signature_to_bytes(signature, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_signature_unref(&signature);

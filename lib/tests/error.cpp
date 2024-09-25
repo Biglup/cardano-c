@@ -55,7 +55,7 @@ TEST(cardano_error_to_string, canConvertGeneric)
 TEST(cardano_error_to_string, canConvertInsufficientBufferSize)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INSUFFICIENT_BUFFER_SIZE;
+  cardano_error_t error = CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -67,7 +67,7 @@ TEST(cardano_error_to_string, canConvertInsufficientBufferSize)
 TEST(cardano_error_to_string, canConvertPointerIsNull)
 {
   // Arrange
-  cardano_error_t error = CARDANO_POINTER_IS_NULL;
+  cardano_error_t error = CARDANO_ERROR_POINTER_IS_NULL;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -79,7 +79,7 @@ TEST(cardano_error_to_string, canConvertPointerIsNull)
 TEST(cardano_error_to_string, canConvertMemoryAllocationFailed)
 {
   // Arrange
-  cardano_error_t error = CARDANO_MEMORY_ALLOCATION_FAILED;
+  cardano_error_t error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -91,7 +91,7 @@ TEST(cardano_error_to_string, canConvertMemoryAllocationFailed)
 TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryRead)
 {
   // Arrange
-  cardano_error_t error = CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+  cardano_error_t error = CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -103,7 +103,7 @@ TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryRead)
 TEST(cardano_error_to_string, canConvertOutOfBoundsMemoryWrite)
 {
   // Arrange
-  cardano_error_t error = CARDANO_OUT_OF_BOUNDS_MEMORY_WRITE;
+  cardano_error_t error = CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -307,7 +307,7 @@ TEST(cardano_error_to_string, canConvertInvalidCborMapSize)
 TEST(cardano_error_to_string, canConvertInvalidAddressType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_ADDRESS_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_ADDRESS_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -319,7 +319,7 @@ TEST(cardano_error_to_string, canConvertInvalidAddressType)
 TEST(cardano_error_to_string, canConvertInvalidAddressFormat)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_ADDRESS_FORMAT;
+  cardano_error_t error = CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -331,7 +331,7 @@ TEST(cardano_error_to_string, canConvertInvalidAddressFormat)
 TEST(cardano_error_to_string, canConvertInvalidCredentialType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_CREDENTIAL_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_CREDENTIAL_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -367,7 +367,7 @@ TEST(cardano_error_to_string, canConvertInvalidPlutusDataConversion)
 TEST(cardano_error_to_string, canConvertElementNotFound)
 {
   // Arrange
-  cardano_error_t error = CARDANO_ELEMENT_NOT_FOUND;
+  cardano_error_t error = CARDANO_ERROR_ELEMENT_NOT_FOUND;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -379,7 +379,7 @@ TEST(cardano_error_to_string, canConvertElementNotFound)
 TEST(cardano_error_to_string, canConvertInvalidDatumType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_DATUM_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_DATUM_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -391,7 +391,7 @@ TEST(cardano_error_to_string, canConvertInvalidDatumType)
 TEST(cardano_error_to_string, canConvertInvalidScriptLanguage)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_SCRIPT_LANGUAGE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -403,7 +403,7 @@ TEST(cardano_error_to_string, canConvertInvalidScriptLanguage)
 TEST(cardano_error_to_string, canConvertInvalidNativeScriptType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_NATIVE_SCRIPT_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -424,10 +424,10 @@ TEST(CARDANO_ERROR_INVALID_JSON, canConvertInvalidJson)
   ASSERT_STREQ(message, "Invalid operation. Invalid JSON");
 }
 
-TEST(CARDANO_INTEGER_OVERFLOW, canConvertIntegerOverflow)
+TEST(CARDANO_ERROR_INTEGER_OVERFLOW, canConvertIntegerOverflow)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INTEGER_OVERFLOW;
+  cardano_error_t error = CARDANO_ERROR_INTEGER_OVERFLOW;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -436,10 +436,10 @@ TEST(CARDANO_INTEGER_OVERFLOW, canConvertIntegerOverflow)
   ASSERT_STREQ(message, "Invalid operation. Integer overflow");
 }
 
-TEST(CARDANO_INTEGER_UNDERFLOW, canConvertIntegerUnderflow)
+TEST(CARDANO_ERROR_INTEGER_UNDERFLOW, canConvertIntegerUnderflow)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INTEGER_UNDERFLOW;
+  cardano_error_t error = CARDANO_ERROR_INTEGER_UNDERFLOW;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -448,10 +448,10 @@ TEST(CARDANO_INTEGER_UNDERFLOW, canConvertIntegerUnderflow)
   ASSERT_STREQ(message, "Invalid operation. Integer underflow");
 }
 
-TEST(CARDANO_CONVERSION_ERROR, canConvertConversionError)
+TEST(CARDANO_ERROR_CONVERSION_FAILED, canConvertConversionError)
 {
   // Arrange
-  cardano_error_t error = CARDANO_CONVERSION_ERROR;
+  cardano_error_t error = CARDANO_ERROR_CONVERSION_FAILED;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -463,7 +463,7 @@ TEST(CARDANO_CONVERSION_ERROR, canConvertConversionError)
 TEST(cardano_error_to_string, canConvertInvalidPlutusCostModel)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_PLUTUS_COST_MODEL;
+  cardano_error_t error = CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -475,7 +475,7 @@ TEST(cardano_error_to_string, canConvertInvalidPlutusCostModel)
 TEST(cardano_error_to_string, canConvertIndexOutOfBounds)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INDEX_OUT_OF_BOUNDS;
+  cardano_error_t error = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -511,7 +511,7 @@ TEST(cardano_error_to_string, canConvertInvalidCborMapKey)
 TEST(cardano_error_to_string, canConvertInvalidCertificateType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_CERTIFICATE_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);
@@ -523,7 +523,7 @@ TEST(cardano_error_to_string, canConvertInvalidCertificateType)
 TEST(cardano_error_to_string, canConvertInvalidProcedureProposalType)
 {
   // Arrange
-  cardano_error_t error = CARDANO_INVALID_PROCEDURE_PROPOSAL_TYPE;
+  cardano_error_t error = CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
 
   // Act
   const char* message = cardano_error_to_string(error);

@@ -59,7 +59,7 @@ TEST(cardano_relays_new, returnsErrorIfRelaysIsNull)
   cardano_error_t error = cardano_relays_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_relays_new, returnsErrorIfMemoryAllocationFails)
@@ -73,7 +73,7 @@ TEST(cardano_relays_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_relays_new(&relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(relays, (cardano_relays_t*)nullptr);
 
   // Cleanup
@@ -91,7 +91,7 @@ TEST(cardano_relays_new, returnsErrorIfEventualMemoryAllocationFails)
   cardano_error_t error = cardano_relays_new(&relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(relays, (cardano_relays_t*)nullptr);
 
   // Cleanup
@@ -184,7 +184,7 @@ TEST(cardano_relays_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_relays_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -203,7 +203,7 @@ TEST(cardano_relays_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_relays_to_cbor(relays, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relays_unref(&relays);
@@ -305,7 +305,7 @@ TEST(cardano_relays_from_cbor, returnErrorIfRelaysIsNull)
   cardano_error_t error = cardano_relays_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -320,7 +320,7 @@ TEST(cardano_relays_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_relays_from_cbor(nullptr, &relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_relays_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -336,7 +336,7 @@ TEST(cardano_relays_from_cbor, returnErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_relays_from_cbor(reader, &relays);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(relays, (cardano_relays_t*)nullptr);
 
   // Cleanup
@@ -561,7 +561,7 @@ TEST(cardano_relays_get, returnsErrorIfRelaysIsNull)
   cardano_error_t error = cardano_relays_get(nullptr, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_relays_get, returnsErrorIfDataIsNull)
@@ -576,7 +576,7 @@ TEST(cardano_relays_get, returnsErrorIfDataIsNull)
   error = cardano_relays_get(relays, 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relays_unref(&relays);
@@ -595,7 +595,7 @@ TEST(cardano_relays_get, returnsErrorIfIndexIsOutOfBounds)
   error                 = cardano_relays_get(relays, 0, &data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_relays_unref(&relays);
@@ -610,7 +610,7 @@ TEST(cardano_relays_add, returnsErrorIfRelaysIsNull)
   cardano_error_t error = cardano_relays_add(nullptr, data);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_relays_add, returnsErrorIfDataIsNull)
@@ -625,7 +625,7 @@ TEST(cardano_relays_add, returnsErrorIfDataIsNull)
   error = cardano_relays_add(relays, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_relays_unref(&relays);

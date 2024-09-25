@@ -45,7 +45,7 @@ TEST(cardano_enterprise_address_from_credentials, returnsErrorWhenPaymentIsNull)
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, NULL, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -58,7 +58,7 @@ TEST(cardano_enterprise_address_from_credentials, returnsErrorWhenenterpriseAddr
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_enterprise_address_from_credentials, canCreateAEnterpriseAddressFromCredential)
@@ -109,7 +109,7 @@ TEST(cardano_enterprise_address_from_credentials, returnErrorIfMemoryAllocationF
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(enterprise_address, nullptr);
 
   // Clean up
@@ -138,7 +138,7 @@ TEST(cardano_enterprise_address_from_credentials, returnErrorIfEventualMemoryAll
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(enterprise_address, nullptr);
 
   // Clean up
@@ -155,7 +155,7 @@ TEST(cardano_enterprise_address_from_address, returnsErrorWhenAddressIsNull)
   cardano_error_t result = cardano_enterprise_address_from_address(NULL, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -169,7 +169,7 @@ TEST(cardano_enterprise_address_from_address, returnsErrorWhenenterpriseAddressI
   cardano_error_t result = cardano_enterprise_address_from_address(address, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -185,7 +185,7 @@ TEST(cardano_enterprise_address_from_address, returnsErrorWhenAddressTypeIsInval
   cardano_error_t result = cardano_enterprise_address_from_address(address, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_TYPE);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_TYPE);
   EXPECT_EQ(enterprise_address, nullptr);
 
   // Cleanup
@@ -207,7 +207,7 @@ TEST(cardano_enterprise_address_from_address, returnsErrorIfMemoryAllocationFail
   cardano_error_t result = cardano_enterprise_address_from_address(address, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(enterprise_address, nullptr);
 
   // Cleanup
@@ -329,7 +329,7 @@ TEST(cardano_enterprise_address_from_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_enterprise_address_from_bytes(NULL, 0, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -342,7 +342,7 @@ TEST(cardano_enterprise_address_from_bytes, returnsErrorWhenenterpriseAddressIsN
   cardano_error_t result = cardano_enterprise_address_from_bytes(Cip19TestVectors::enterpriseKeyBytes, sizeof(Cip19TestVectors::enterpriseKeyBytes), NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -355,7 +355,7 @@ TEST(cardano_enterprise_address_from_bytes, returnsErrorWhenInvalidSize)
   cardano_error_t result = cardano_enterprise_address_from_bytes(Cip19TestVectors::enterpriseKeyBytes, 0, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -421,7 +421,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorIfMemoryAllocationFails
   cardano_error_t result = cardano_enterprise_address_from_bech32(Cip19TestVectors::enterpriseKey.c_str(), Cip19TestVectors::enterpriseKey.size(), &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -434,7 +434,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorIfSizeIsZero)
   cardano_error_t result = cardano_enterprise_address_from_bech32(Cip19TestVectors::enterpriseKey.c_str(), 0, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -444,7 +444,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorIfAddressIsNull)
   cardano_error_t result = cardano_enterprise_address_from_bech32("a", 1, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_enterprise_address_from_bech32, returnErrorIfInvalidPrefix)
@@ -456,7 +456,7 @@ TEST(cardano_enterprise_address_from_bech32, returnErrorIfInvalidPrefix)
   cardano_error_t result = cardano_enterprise_address_from_bech32("split1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfjcf7r", strlen("split1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfjcf7r"), &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -527,7 +527,7 @@ TEST(cardano_enterprise_address_to_bytes, returnsErrorWhenenterprise_addressIsNu
   cardano_error_t result = cardano_enterprise_address_to_bytes(NULL, bytes, sizeof(bytes));
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_enterprise_address_to_bytes, returnsErrorWhenBufferIsNull)
@@ -540,7 +540,7 @@ TEST(cardano_enterprise_address_to_bytes, returnsErrorWhenBufferIsNull)
   cardano_error_t result = cardano_enterprise_address_to_bytes(enterprise_address, NULL, 0);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_enterprise_address_unref(&enterprise_address);
@@ -558,7 +558,7 @@ TEST(cardano_enterprise_address_to_bytes, returnsErrorWhenBufferIsTooSmall)
   cardano_error_t result = cardano_enterprise_address_to_bytes(enterprise_address, bytes, 1);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   // Clean up
   cardano_enterprise_address_unref(&enterprise_address);
@@ -573,7 +573,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorWhenenterprise_addressI
   cardano_error_t result = cardano_enterprise_address_from_bech32(NULL, 0, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 
@@ -586,7 +586,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorWhenenterprise_addressI
   cardano_error_t result = cardano_enterprise_address_from_bech32("invalid_enterprise_address", 15, &enterprise_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(enterprise_address, nullptr);
 }
 

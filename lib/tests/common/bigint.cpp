@@ -75,7 +75,7 @@ TEST(cardano_bigint_from_string, doesntCrashIfGivenANullPtr)
 
   cardano_error_t result = cardano_bigint_from_string(NULL, 0, 10, &bigint);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_bigint_unref(&bigint);
 }
@@ -89,7 +89,7 @@ TEST(cardano_bigint_from_string, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_bigint_from_string("123456789", strlen("123456789"), 10, &bigint);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_bigint_unref(&bigint);
@@ -143,7 +143,7 @@ TEST(cardano_bigint_from_string, returnErrorIfInvalidString)
 
   cardano_error_t result = cardano_bigint_from_string("123456789a", strlen("123456789a"), 10, &bigint);
 
-  ASSERT_EQ(result, CARDANO_CONVERSION_ERROR);
+  ASSERT_EQ(result, CARDANO_ERROR_CONVERSION_FAILED);
 
   cardano_bigint_unref(&bigint);
 }
@@ -187,7 +187,7 @@ TEST(cardano_bigint_from_int, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_bigint_from_int(123456789, &bigint);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_bigint_unref(&bigint);
   cardano_set_allocators(malloc, realloc, free);
@@ -197,7 +197,7 @@ TEST(cardano_bigint_from_int, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_from_int(123456789, NULL);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_from_unsigned_int, canCreateABignumFromUnsignedInt)
@@ -232,7 +232,7 @@ TEST(cardano_bigint_from_unsigned_int, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_bigint_from_unsigned_int(123456789, &bigint);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_bigint_unref(&bigint);
   cardano_set_allocators(malloc, realloc, free);
@@ -242,7 +242,7 @@ TEST(cardano_bigint_from_unsigned_int, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_from_unsigned_int(123456789, NULL);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_from_bytes, fromBytesBigEndian)
@@ -313,7 +313,7 @@ TEST(cardano_bigint_to_string, returnErrorIfBufferTooSmall)
 
   result = cardano_bigint_to_string(bigint, buffer, size - 1, 10);
 
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(buffer);
 
@@ -333,7 +333,7 @@ TEST(cardano_bigint_from_bytes, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_bigint_from_bytes(expected, sizeof(expected), CARDANO_BYTE_ORDER_LITTLE_ENDIAN, &bigint);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_bigint_unref(&bigint);
   cardano_set_allocators(malloc, realloc, free);
@@ -343,14 +343,14 @@ TEST(cardano_bigint_from_bytes, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_from_bytes(NULL, 0, CARDANO_BYTE_ORDER_LITTLE_ENDIAN, NULL);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_to_string, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_to_string(NULL, NULL, 10, 0);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_to_bytes, returnsErrorIfBuffIsToSmall)
@@ -367,7 +367,7 @@ TEST(cardano_bigint_to_bytes, returnsErrorIfBuffIsToSmall)
 
   result = cardano_bigint_to_bytes(bigint, CARDANO_BYTE_ORDER_BIG_ENDIAN, buffer, size - 1);
 
-  ASSERT_EQ(result, CARDANO_INSUFFICIENT_BUFFER_SIZE);
+  ASSERT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 
   free(buffer);
 
@@ -416,7 +416,7 @@ TEST(cardano_bigint_clone, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_bigint_clone(lhs, &rhs);
 
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_bigint_unref(&lhs);
   cardano_bigint_unref(&rhs);
@@ -426,7 +426,7 @@ TEST(cardano_bigint_clone, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_clone(NULL, NULL);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_to_int, canConvertToAnInt)
@@ -479,7 +479,7 @@ TEST(cardano_bigint_to_bytes, returnsErrorIfPointerIsNull)
 {
   cardano_error_t result = cardano_bigint_to_bytes(NULL, CARDANO_BYTE_ORDER_BIG_ENDIAN, NULL, 0);
 
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bigint_add, canAddTwoNumbers)

@@ -88,7 +88,7 @@ TEST(cardano_anchor_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_anchor_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -112,7 +112,7 @@ TEST(cardano_anchor_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_anchor_to_cbor(anchor, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -127,7 +127,7 @@ TEST(cardano_anchor_new, returnErrorIfUrlIsNull)
   cardano_error_t error = cardano_anchor_new(nullptr, 0, nullptr, &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -153,7 +153,7 @@ TEST(cardano_anchor_new, returnErrorIfHashIsNull)
   cardano_error_t error = cardano_anchor_new(URL, strlen(URL), nullptr, &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -163,7 +163,7 @@ TEST(cardano_anchor_new, returnErrorIfAnchorIsNull)
   cardano_error_t error = cardano_anchor_new(URL, strlen(URL), (cardano_blake2b_hash_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_new, ifHashIsTheWrongSize)
@@ -280,7 +280,7 @@ TEST(cardano_anchor_set_url, returnErrorIfUrlIsNull)
   error = cardano_anchor_set_url(anchor, nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_anchor_unref(&anchor);
@@ -292,7 +292,7 @@ TEST(cardano_anchor_set_url, returnErrorIfAnchorIsNull)
   cardano_error_t error = cardano_anchor_set_url(nullptr, URL, strlen(URL));
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_set_url, returnErrorIfUrlIsEmpty)
@@ -368,7 +368,7 @@ TEST(cardano_anchor_from_hash_hex, returnsErrorIfUrlIsNull)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -404,7 +404,7 @@ TEST(cardano_anchor_from_hash_hex, returnsErrorIfHashIsNull)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -419,7 +419,7 @@ TEST(cardano_anchor_from_hash_hex, returnsErrorIfAnchorIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_from_hash_hex, returnsErrorIfHashIsInvalid)
@@ -465,7 +465,7 @@ TEST(cardano_anchor_from_hash_bytes, returnsErrorIfMemoryAllocationFails)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 
   // Cleanup
@@ -490,7 +490,7 @@ TEST(cardano_anchor_from_hash_hex, returnsErrorIfMemoryAllocationFails)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 
   // Cleanup
@@ -534,7 +534,7 @@ TEST(cardano_anchor_from_cbor, returnErrorIfAnchorIsNull)
   cardano_error_t error = cardano_anchor_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -549,7 +549,7 @@ TEST(cardano_anchor_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_anchor_from_cbor(nullptr, &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -628,7 +628,7 @@ TEST(cardano_anchor_from_hash_bytes, returnsErrorIfEventualMemoryAllocationFails
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 
   // Cleanup
@@ -678,7 +678,7 @@ TEST(cardano_anchor_from_hash_bytes, returnsErrorIfHashIsNull)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -703,7 +703,7 @@ TEST(cardano_anchor_from_hash_bytes, returnsErrorIfanchorIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -723,7 +723,7 @@ TEST(cardano_anchor_from_hash_bytes, returnsErrorIfHashIsInvalid)
     &anchor);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(anchor, (cardano_anchor_t*)nullptr);
 }
 
@@ -915,7 +915,7 @@ TEST(cardano_anchor_set_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_anchor_set_hash(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_set_hash, returnsErrorIfHashIsNull)
@@ -924,7 +924,7 @@ TEST(cardano_anchor_set_hash, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_anchor_set_hash((cardano_anchor_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_anchor_set_hash, canSetHash)

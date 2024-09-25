@@ -94,31 +94,31 @@ cardano_encoding_base58_encode(
 {
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length == 0U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (output == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t encoded_length = cardano_encoding_base58_get_encoded_length(data, data_length);
 
   if (output_length < encoded_length)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   uint8_t* temp = (uint8_t*)_cardano_malloc(encoded_length);
 
   if (!temp)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   CARDANO_UNUSED(memset(temp, 0, encoded_length));
@@ -195,24 +195,24 @@ cardano_encoding_base58_decode(
 {
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_length == 0U)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (input == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t decoded_length = cardano_encoding_base58_get_decoded_length(input, input_length);
 
   if (data_length < decoded_length)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   CARDANO_UNUSED(memset(data, 0, data_length));

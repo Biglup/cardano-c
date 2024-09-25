@@ -88,19 +88,19 @@ cardano_hard_fork_initiation_action_new(
 {
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_hard_fork_initiation_action_t* data = _cardano_malloc(sizeof(cardano_hard_fork_initiation_action_t));
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->base.ref_count     = 1;
@@ -127,12 +127,12 @@ cardano_hard_fork_initiation_action_from_cbor(cardano_cbor_reader_t* reader, car
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "hard_fork_initiation_action";
@@ -225,12 +225,12 @@ cardano_hard_fork_initiation_action_to_cbor(
 {
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
@@ -283,12 +283,12 @@ cardano_hard_fork_initiation_action_set_protocol_version(
 {
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (protocol_version == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_protocol_version_ref(protocol_version);
@@ -319,7 +319,7 @@ cardano_hard_fork_initiation_action_set_governance_action_id(
 {
   if (hard_fork_initiation_action == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_governance_action_id_ref(governance_action_id);

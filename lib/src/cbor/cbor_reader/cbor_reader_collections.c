@@ -128,7 +128,7 @@ _cbor_reader_read_start_indefinite_length_string(cardano_cbor_reader_t* reader, 
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t remaining_bytes = cardano_buffer_get_size(reader->buffer);
@@ -280,7 +280,7 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
       cardano_buffer_unref(&data);
       cardano_buffer_unref(&concat);
 
-      return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+      return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
     }
 
     initial_byte = cardano_buffer_get_data(data)[i];

@@ -141,12 +141,12 @@ cardano_ipv4_new(const byte_t* data, const size_t size, cardano_ipv4_t** ipv4)
 {
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size != 4U)
@@ -158,7 +158,7 @@ cardano_ipv4_new(const byte_t* data, const size_t size, cardano_ipv4_t** ipv4)
 
   if (*ipv4 == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ipv4)->base.deallocator   = cardano_ipv4_deallocate;
@@ -176,12 +176,12 @@ cardano_ipv4_from_string(const char* string, const size_t size, cardano_ipv4_t**
 {
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (string == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((size < 7U) || (size > 15U))
@@ -193,7 +193,7 @@ cardano_ipv4_from_string(const char* string, const size_t size, cardano_ipv4_t**
 
   if (*ipv4 == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*ipv4)->base.deallocator   = cardano_ipv4_deallocate;
@@ -221,13 +221,13 @@ cardano_ipv4_from_cbor(cardano_cbor_reader_t* reader, cardano_ipv4_t** ipv4)
 {
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *ipv4 = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* buffer           = NULL;
@@ -250,12 +250,12 @@ cardano_ipv4_to_cbor(const cardano_ipv4_t* ipv4, cardano_cbor_writer_t* writer)
 {
   if (ipv4 == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_cbor_writer_write_bytestring(writer, ipv4->ip_bytes, sizeof(ipv4->ip_bytes));

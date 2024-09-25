@@ -232,7 +232,7 @@ TEST(cardano_hard_fork_initiation_action_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_from_cbor(nullptr, &hard_fork_initiation_action);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_hard_fork_initiation_action_from_cbor, returnsErrorIfActionIsNull)
@@ -244,7 +244,7 @@ TEST(cardano_hard_fork_initiation_action_from_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -285,7 +285,7 @@ TEST(cardano_hard_fork_initiation_action_to_cbor, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -297,7 +297,7 @@ TEST(cardano_hard_fork_initiation_action_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_to_cbor((cardano_hard_fork_initiation_action_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Action specific tests
@@ -380,7 +380,7 @@ TEST(cardano_hard_fork_initiation_action_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_new(nullptr, nullptr, &hard_fork_initiation_action);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_hard_fork_initiation_action_new, returnsErrorIfActionIsNull)
@@ -392,7 +392,7 @@ TEST(cardano_hard_fork_initiation_action_new, returnsErrorIfActionIsNull)
   cardano_error_t result = cardano_hard_fork_initiation_action_new(protocol_version, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_version_unref(&protocol_version);
@@ -410,7 +410,7 @@ TEST(cardano_hard_fork_initiation_action_new, returnsErrorIfMemoryAllocationFail
 
   cardano_error_t result = cardano_hard_fork_initiation_action_new(protocol_version, nullptr, &hard_fork_initiation_action);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&hard_fork_initiation_action);
@@ -560,7 +560,7 @@ TEST(cardano_hard_fork_initiation_action_set_protocol_version, returnsErrorIfObj
   cardano_error_t result = cardano_hard_fork_initiation_action_set_protocol_version(nullptr, protocol_version);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_version_unref(&protocol_version);
@@ -575,7 +575,7 @@ TEST(cardano_hard_fork_initiation_action_set_protocol_version, returnsErrorIfPro
   cardano_error_t result = cardano_hard_fork_initiation_action_set_protocol_version(hard_fork_initiation_action, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_hard_fork_initiation_action_unref(&hard_fork_initiation_action);
@@ -636,7 +636,7 @@ TEST(cardano_hard_fork_initiation_action_set_governance_action_id, returnsErrorI
   cardano_error_t result = cardano_hard_fork_initiation_action_set_governance_action_id(nullptr, governance_action_id);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);

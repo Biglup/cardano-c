@@ -400,7 +400,7 @@ _cbor_reader_push_data_item(cardano_cbor_reader_t* reader, const cardano_cbor_ma
   if (frame == NULL)
   {
     cardano_object_set_last_error(&reader->base, "Failed to allocate memory for stack frame.");
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   frame->base.ref_count     = 0;
@@ -421,7 +421,7 @@ _cbor_reader_push_data_item(cardano_cbor_reader_t* reader, const cardano_cbor_ma
     cardano_object_unref((cardano_object_t**)((void*)&frame));
     cardano_object_set_last_error(&reader->base, "Failed to add stack frame to nested items.");
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   reader->current_frame.type               = type;
@@ -821,12 +821,12 @@ _cbor_reader_peek_state(cardano_cbor_reader_t* reader, cardano_cbor_reader_state
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (state == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader->cached_state == CARDANO_CBOR_READER_STATE_UNDEFINED)

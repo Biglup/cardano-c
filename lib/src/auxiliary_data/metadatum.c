@@ -510,19 +510,19 @@ cardano_metadatum_new_map(
 {
   if (map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_metadatum_map_ref(map);
@@ -542,19 +542,19 @@ cardano_metadatum_new_list(
 {
   if (list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_metadatum_list_ref(list);
@@ -574,19 +574,19 @@ cardano_metadatum_new_integer(
 {
   if (bigint == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = cardano_bigint_clone(bigint, &data->integer);
@@ -611,7 +611,7 @@ cardano_metadatum_new_integer_from_int(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_bigint_t* bigint = NULL;
@@ -636,7 +636,7 @@ cardano_metadatum_new_integer_from_uint(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_bigint_t* bigint = NULL;
@@ -663,13 +663,13 @@ cardano_metadatum_new_integer_from_string(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (string == NULL)
   {
     *metadatum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_bigint_t* bigint = NULL;
@@ -695,20 +695,20 @@ cardano_metadatum_new_bytes(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bytes == NULL)
   {
     *metadatum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_buffer_t* buffer = cardano_buffer_new_from(bytes, size);
@@ -716,7 +716,7 @@ cardano_metadatum_new_bytes(
   if (buffer == NULL)
   {
     cardano_metadatum_deallocate(data);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->bytes = buffer;
@@ -735,20 +735,20 @@ cardano_metadatum_new_bytes_from_hex(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *metadatum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_buffer_t* buffer = cardano_buffer_from_hex(hex, size);
@@ -756,7 +756,7 @@ cardano_metadatum_new_bytes_from_hex(
   if (buffer == NULL)
   {
     cardano_metadatum_deallocate(data);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->bytes = buffer;
@@ -775,20 +775,20 @@ cardano_metadatum_new_string(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (string == NULL)
   {
     *metadatum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_buffer_t* buffer = cardano_buffer_new_from((const byte_t*)((const void*)string), size);
@@ -796,7 +796,7 @@ cardano_metadatum_new_string(
   if (buffer == NULL)
   {
     cardano_metadatum_deallocate(data);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   data->text = buffer;
@@ -812,20 +812,20 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *metadatum = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_metadatum_t* data = cardano_metadatum_new();
 
   if (data == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -1023,7 +1023,7 @@ cardano_metadatum_from_json(const char* json, size_t json_size, cardano_metadatu
 {
   if ((json == NULL) || (metadatum == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (json_size == 0U)
@@ -1060,7 +1060,7 @@ cardano_metadatum_to_json(
 {
   if ((metadatum == NULL) || (json == NULL))
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   json_object* json_obj = convert_metadatum_to_json_object(metadatum);
@@ -1076,7 +1076,7 @@ cardano_metadatum_to_json(
   if (json_size < required_size)
   {
     json_object_put(json_obj);
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(json, json_size, json_str, required_size);
@@ -1114,12 +1114,12 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -1231,12 +1231,12 @@ cardano_metadatum_get_kind(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (kind == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *kind = metadatum->kind;
@@ -1251,12 +1251,12 @@ cardano_metadatum_to_map(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (map == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum->kind != CARDANO_METADATUM_KIND_MAP)
@@ -1277,12 +1277,12 @@ cardano_metadatum_to_list(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (list == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum->kind != CARDANO_METADATUM_KIND_LIST)
@@ -1303,12 +1303,12 @@ cardano_metadatum_to_integer(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (integer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum->kind != CARDANO_METADATUM_KIND_INTEGER)
@@ -1328,12 +1328,12 @@ cardano_metadatum_to_bounded_bytes(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bounded_bytes == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum->kind != CARDANO_METADATUM_KIND_BYTES)
@@ -1371,12 +1371,12 @@ cardano_metadatum_to_string(
 {
   if (metadatum == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (metadatum->kind != CARDANO_METADATUM_KIND_TEXT)
@@ -1388,7 +1388,7 @@ cardano_metadatum_to_string(
 
   if ((size + 1U) > buffer_size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(buffer, size, cardano_buffer_get_data(metadatum->text), cardano_buffer_get_size(metadatum->text));

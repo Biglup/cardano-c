@@ -228,7 +228,7 @@ TEST(cardano_certificate_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_certificate_from_cbor(nullptr, &certificate);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_from_cbor, returnsErrorIfCertIsNull)
@@ -240,7 +240,7 @@ TEST(cardano_certificate_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -281,7 +281,7 @@ TEST(cardano_certificate_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -293,7 +293,7 @@ TEST(cardano_certificate_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_certificate_to_cbor((cardano_certificate_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -329,7 +329,7 @@ TEST(cardano_certificate_new_auth_committee_hot, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_auth_committee_hot(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_auth_committee_hot, returnsErrorIfCertIsInvalid)
@@ -338,7 +338,7 @@ TEST(cardano_certificate_new_auth_committee_hot, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_auth_committee_hot((cardano_auth_committee_hot_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_auth_committee_hot, returnsErrorIfMemoryAllocationFails)
@@ -358,7 +358,7 @@ TEST(cardano_certificate_new_auth_committee_hot, returnsErrorIfMemoryAllocationF
 
   result = cardano_certificate_new_auth_committee_hot(auth_committee_hot_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -398,7 +398,7 @@ TEST(cardano_certificate_new_genesis_key_delegation, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_genesis_key_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_genesis_key_delegation, returnsErrorIfCertIsInvalid)
@@ -407,7 +407,7 @@ TEST(cardano_certificate_new_genesis_key_delegation, returnsErrorIfCertIsInvalid
   cardano_error_t result = cardano_certificate_new_genesis_key_delegation((cardano_genesis_key_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_genesis_key_delegation, returnsErrorIfMemoryAllocationFails)
@@ -427,7 +427,7 @@ TEST(cardano_certificate_new_genesis_key_delegation, returnsErrorIfMemoryAllocat
 
   result = cardano_certificate_new_genesis_key_delegation(genesis_key_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -467,7 +467,7 @@ TEST(cardano_certificate_new_mir, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_mir(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_mir, returnsErrorIfCertIsInvalid)
@@ -476,7 +476,7 @@ TEST(cardano_certificate_new_mir, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_mir((cardano_mir_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_mir, returnsErrorIfMemoryAllocationFails)
@@ -496,7 +496,7 @@ TEST(cardano_certificate_new_mir, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_certificate_new_mir(mir, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -536,7 +536,7 @@ TEST(cardano_certificate_new_pool_registration, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_pool_registration(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_pool_registration, returnsErrorIfCertIsInvalid)
@@ -545,7 +545,7 @@ TEST(cardano_certificate_new_pool_registration, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_pool_registration((cardano_pool_registration_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_pool_registration, returnsErrorIfMemoryAllocationFails)
@@ -565,7 +565,7 @@ TEST(cardano_certificate_new_pool_registration, returnsErrorIfMemoryAllocationFa
 
   result = cardano_certificate_new_pool_registration(pool_registration_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -605,7 +605,7 @@ TEST(cardano_certificate_new_pool_retirement, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_pool_retirement(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_pool_retirement, returnsErrorIfCertIsInvalid)
@@ -614,7 +614,7 @@ TEST(cardano_certificate_new_pool_retirement, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_pool_retirement((cardano_pool_retirement_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_pool_retirement, returnsErrorIfMemoryAllocationFails)
@@ -634,7 +634,7 @@ TEST(cardano_certificate_new_pool_retirement, returnsErrorIfMemoryAllocationFail
 
   result = cardano_certificate_new_pool_retirement(pool_retirement_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -674,7 +674,7 @@ TEST(cardano_certificate_new_register_drep, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_register_drep(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_register_drep, returnsErrorIfCertIsInvalid)
@@ -683,7 +683,7 @@ TEST(cardano_certificate_new_register_drep, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_register_drep((cardano_register_drep_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_register_drep, returnsErrorIfMemoryAllocationFails)
@@ -703,7 +703,7 @@ TEST(cardano_certificate_new_register_drep, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_certificate_new_register_drep(register_drep_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -743,7 +743,7 @@ TEST(cardano_certificate_new_registration, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_registration(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_registration, returnsErrorIfCertIsInvalid)
@@ -752,7 +752,7 @@ TEST(cardano_certificate_new_registration, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_registration((cardano_registration_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_registration, returnsErrorIfMemoryAllocationFails)
@@ -772,7 +772,7 @@ TEST(cardano_certificate_new_registration, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_certificate_new_registration(registration_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -812,7 +812,7 @@ TEST(cardano_certificate_new_resign_committee_cold, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_resign_committee_cold(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_resign_committee_cold, returnsErrorIfCertIsInvalid)
@@ -821,7 +821,7 @@ TEST(cardano_certificate_new_resign_committee_cold, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_resign_committee_cold((cardano_resign_committee_cold_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_resign_committee_cold, returnsErrorIfMemoryAllocationFails)
@@ -841,7 +841,7 @@ TEST(cardano_certificate_new_resign_committee_cold, returnsErrorIfMemoryAllocati
 
   result = cardano_certificate_new_resign_committee_cold(resign_committee_cold_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -881,7 +881,7 @@ TEST(cardano_certificate_new_stake_delegation, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_stake_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_delegation, returnsErrorIfCertIsInvalid)
@@ -890,7 +890,7 @@ TEST(cardano_certificate_new_stake_delegation, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_stake_delegation((cardano_stake_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_delegation, returnsErrorIfMemoryAllocationFails)
@@ -910,7 +910,7 @@ TEST(cardano_certificate_new_stake_delegation, returnsErrorIfMemoryAllocationFai
 
   result = cardano_certificate_new_stake_delegation(stake_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -950,7 +950,7 @@ TEST(cardano_certificate_new_stake_deregistration, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_stake_deregistration(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_deregistration, returnsErrorIfCertIsInvalid)
@@ -959,7 +959,7 @@ TEST(cardano_certificate_new_stake_deregistration, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_stake_deregistration((cardano_stake_deregistration_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_deregistration, returnsErrorIfMemoryAllocationFails)
@@ -979,7 +979,7 @@ TEST(cardano_certificate_new_stake_deregistration, returnsErrorIfMemoryAllocatio
 
   result = cardano_certificate_new_stake_deregistration(stake_deregistration_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1019,7 +1019,7 @@ TEST(cardano_certificate_new_stake_registration, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_stake_registration(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_registration, returnsErrorIfCertIsInvalid)
@@ -1028,7 +1028,7 @@ TEST(cardano_certificate_new_stake_registration, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_stake_registration((cardano_stake_registration_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_registration, returnsErrorIfMemoryAllocationFails)
@@ -1048,7 +1048,7 @@ TEST(cardano_certificate_new_stake_registration, returnsErrorIfMemoryAllocationF
 
   result = cardano_certificate_new_stake_registration(stake_registration_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1088,7 +1088,7 @@ TEST(cardano_certificate_new_stake_registration_delegation, returnsErrorIfCertIs
   cardano_error_t result = cardano_certificate_new_stake_registration_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_registration_delegation, returnsErrorIfCertIsInvalid)
@@ -1097,7 +1097,7 @@ TEST(cardano_certificate_new_stake_registration_delegation, returnsErrorIfCertIs
   cardano_error_t result = cardano_certificate_new_stake_registration_delegation((cardano_stake_registration_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_registration_delegation, returnsErrorIfMemoryAllocationFails)
@@ -1117,7 +1117,7 @@ TEST(cardano_certificate_new_stake_registration_delegation, returnsErrorIfMemory
 
   result = cardano_certificate_new_stake_registration_delegation(stake_registration_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1157,7 +1157,7 @@ TEST(cardano_certificate_new_stake_vote_delegation, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_stake_vote_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_vote_delegation, returnsErrorIfCertIsInvalid)
@@ -1166,7 +1166,7 @@ TEST(cardano_certificate_new_stake_vote_delegation, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_stake_vote_delegation((cardano_stake_vote_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_vote_delegation, returnsErrorIfMemoryAllocationFails)
@@ -1186,7 +1186,7 @@ TEST(cardano_certificate_new_stake_vote_delegation, returnsErrorIfMemoryAllocati
 
   result = cardano_certificate_new_stake_vote_delegation(stake_vote_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1226,7 +1226,7 @@ TEST(cardano_certificate_new_stake_vote_registration_delegation, returnsErrorIfC
   cardano_error_t result = cardano_certificate_new_stake_vote_registration_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_vote_registration_delegation, returnsErrorIfCertIsInvalid)
@@ -1235,7 +1235,7 @@ TEST(cardano_certificate_new_stake_vote_registration_delegation, returnsErrorIfC
   cardano_error_t result = cardano_certificate_new_stake_vote_registration_delegation((cardano_stake_vote_registration_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_stake_vote_registration_delegation, returnsErrorIfMemoryAllocationFails)
@@ -1255,7 +1255,7 @@ TEST(cardano_certificate_new_stake_vote_registration_delegation, returnsErrorIfM
 
   result = cardano_certificate_new_stake_vote_registration_delegation(stake_vote_registration_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1295,7 +1295,7 @@ TEST(cardano_certificate_new_unregister_drep, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_unregister_drep(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_unregister_drep, returnsErrorIfCertIsInvalid)
@@ -1304,7 +1304,7 @@ TEST(cardano_certificate_new_unregister_drep, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_unregister_drep((cardano_unregister_drep_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_unregister_drep, returnsErrorIfMemoryAllocationFails)
@@ -1324,7 +1324,7 @@ TEST(cardano_certificate_new_unregister_drep, returnsErrorIfMemoryAllocationFail
 
   result = cardano_certificate_new_unregister_drep(unregister_drep_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1364,7 +1364,7 @@ TEST(cardano_certificate_new_unregistration, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_unregistration(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_unregistration, returnsErrorIfCertIsInvalid)
@@ -1373,7 +1373,7 @@ TEST(cardano_certificate_new_unregistration, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_unregistration((cardano_unregistration_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_unregistration, returnsErrorIfMemoryAllocationFails)
@@ -1393,7 +1393,7 @@ TEST(cardano_certificate_new_unregistration, returnsErrorIfMemoryAllocationFails
 
   result = cardano_certificate_new_unregistration(unregistration_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1433,7 +1433,7 @@ TEST(cardano_certificate_new_update_drep, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_update_drep(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_update_drep, returnsErrorIfCertIsInvalid)
@@ -1442,7 +1442,7 @@ TEST(cardano_certificate_new_update_drep, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_update_drep((cardano_update_drep_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_update_drep, returnsErrorIfMemoryAllocationFails)
@@ -1462,7 +1462,7 @@ TEST(cardano_certificate_new_update_drep, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_certificate_new_update_drep(update_drep_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1502,7 +1502,7 @@ TEST(cardano_certificate_new_vote_delegation, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_certificate_new_vote_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_vote_delegation, returnsErrorIfCertIsInvalid)
@@ -1511,7 +1511,7 @@ TEST(cardano_certificate_new_vote_delegation, returnsErrorIfCertIsInvalid)
   cardano_error_t result = cardano_certificate_new_vote_delegation((cardano_vote_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_vote_delegation, returnsErrorIfMemoryAllocationFails)
@@ -1531,7 +1531,7 @@ TEST(cardano_certificate_new_vote_delegation, returnsErrorIfMemoryAllocationFail
 
   result = cardano_certificate_new_vote_delegation(vote_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1571,7 +1571,7 @@ TEST(cardano_certificate_new_vote_registration_delegation, returnsErrorIfCertIsN
   cardano_error_t result = cardano_certificate_new_vote_registration_delegation(NULL, &cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_vote_registration_delegation, returnsErrorIfCertIsInvalid)
@@ -1580,7 +1580,7 @@ TEST(cardano_certificate_new_vote_registration_delegation, returnsErrorIfCertIsI
   cardano_error_t result = cardano_certificate_new_vote_registration_delegation((cardano_vote_registration_delegation_cert_t*)"", NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_certificate_new_vote_registration_delegation, returnsErrorIfMemoryAllocationFails)
@@ -1600,7 +1600,7 @@ TEST(cardano_certificate_new_vote_registration_delegation, returnsErrorIfMemoryA
 
   result = cardano_certificate_new_vote_registration_delegation(vote_registration_delegation_cert, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref((cardano_certificate_t**)&cert);
@@ -1621,7 +1621,7 @@ TEST(cardano_certificate_from_cbor, returnsErrorIfMemoryAllocationFails)
 
   cardano_error_t result = cardano_certificate_from_cbor(reader, &cert);
 
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -2832,7 +2832,7 @@ TEST(cardano_cert_get_type, returnsErrorIfCertificateIsNull)
   // Act
   cardano_cert_type_t type;
 
-  ASSERT_EQ(cardano_cert_get_type(cert, &type), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_cert_get_type(cert, &type), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cert_get_type, returnsErrorIfTypeIsNull)
@@ -2843,7 +2843,7 @@ TEST(cardano_cert_get_type, returnsErrorIfTypeIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_cert_get_type(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_cert_get_type(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -2877,7 +2877,7 @@ TEST(cardano_certificate_to_auth_committee_hot, returnsErrorIfCertificateIsNull)
   cardano_auth_committee_hot_cert_t* auth_committee_hot_cert = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, &auth_committee_hot_cert), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, &auth_committee_hot_cert), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
@@ -2891,7 +2891,7 @@ TEST(cardano_certificate_to_auth_committee_hot, returnsErrorIfAuthCommitteeIsNul
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -2907,7 +2907,7 @@ TEST(cardano_auth_committee_hot_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, &auth_committee_hot_cert), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_auth_committee_hot(cert, &auth_committee_hot_cert), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -2942,7 +2942,7 @@ TEST(cardano_certificate_to_genesis_key_delegation, returnsErrorIfCertificateIsN
   cardano_genesis_key_delegation_cert_t* genesis_key_delegation_cert = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, &genesis_key_delegation_cert), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, &genesis_key_delegation_cert), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_genesis_key_delegation_cert_unref(&genesis_key_delegation_cert);
@@ -2956,7 +2956,7 @@ TEST(cardano_certificate_to_genesis_key_delegation, returnsErrorIfGenesisKeyDele
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -2972,7 +2972,7 @@ TEST(cardano_genesis_key_delegation_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, &genesis_key_delegation_cert), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_genesis_key_delegation(cert, &genesis_key_delegation_cert), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3007,7 +3007,7 @@ TEST(cardano_certificate_to_mir, returnsErrorIfCertificateIsNull)
   cardano_mir_cert_t*    mir_cert = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_mir(cert, &mir_cert), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_mir(cert, &mir_cert), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_mir_cert_unref(&mir_cert);
@@ -3021,7 +3021,7 @@ TEST(cardano_certificate_to_mir, returnsErrorIfMirIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_mir(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_mir(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3037,7 +3037,7 @@ TEST(cardano_certificate_to_mir, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_mir(cert, &mir_cert), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_mir(cert, &mir_cert), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3072,7 +3072,7 @@ TEST(cardano_certificate_to_pool_registration, returnsErrorIfCertificateIsNull)
   cardano_pool_registration_cert_t* pool_cert = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, &pool_cert), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, &pool_cert), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_registration_cert_unref(&pool_cert);
@@ -3086,7 +3086,7 @@ TEST(cardano_certificate_to_pool_registration, returnsErrorIfPoolRegistrationIsN
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3102,7 +3102,7 @@ TEST(cardano_pool_registration_cert_get_pool_id, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, &pool_cert), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_pool_registration(cert, &pool_cert), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3137,7 +3137,7 @@ TEST(cardano_certificate_to_pool_retirement, returnsErrorIfCertificateIsNull)
   cardano_pool_retirement_cert_t* pool_retirement = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, &pool_retirement), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, &pool_retirement), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_retirement_cert_unref(&pool_retirement);
@@ -3151,7 +3151,7 @@ TEST(cardano_certificate_to_pool_retirement, returnsErrorIfPoolRetirementIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3167,7 +3167,7 @@ TEST(cardano_pool_retirement_cert_get_pool_id, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, &pool_retirement), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_pool_retirement(cert, &pool_retirement), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3202,7 +3202,7 @@ TEST(cardano_certificate_to_register_drep, returnsErrorIfCertificateIsNull)
   cardano_register_drep_cert_t* register_drep = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_register_drep(cert, &register_drep), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_register_drep(cert, &register_drep), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_register_drep_cert_unref(&register_drep);
@@ -3216,7 +3216,7 @@ TEST(cardano_certificate_to_register_drep, returnsErrorIfRegisterDrepIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_register_drep(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_register_drep(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3232,7 +3232,7 @@ TEST(cardano_register_drep_cert_get_pool_id, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_register_drep(cert, &register_drep), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_register_drep(cert, &register_drep), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3267,7 +3267,7 @@ TEST(cardano_certificate_to_registration, returnsErrorIfCertificateIsNull)
   cardano_registration_cert_t* registration = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_registration(cert, &registration), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_registration(cert, &registration), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_registration_cert_unref(&registration);
@@ -3281,7 +3281,7 @@ TEST(cardano_certificate_to_registration, returnsErrorIfRegistrationIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_registration(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_registration(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3297,7 +3297,7 @@ TEST(cardano_registration_cert_get_pool_id, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_registration(cert, &registration), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_registration(cert, &registration), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3332,7 +3332,7 @@ TEST(cardano_certificate_to_resign_committee_cold, returnsErrorIfCertificateIsNu
   cardano_resign_committee_cold_cert_t* resign_committee_cold = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, &resign_committee_cold), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, &resign_committee_cold), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_resign_committee_cold_cert_unref(&resign_committee_cold);
@@ -3346,7 +3346,7 @@ TEST(cardano_certificate_to_resign_committee_cold, returnsErrorIfResignCommittee
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3362,7 +3362,7 @@ TEST(cardano_resign_committee_cold_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, &resign_committee_cold), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_resign_committee_cold(cert, &resign_committee_cold), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3397,7 +3397,7 @@ TEST(cardano_certificate_to_stake_delegation, returnsErrorIfCertificateIsNull)
   cardano_stake_delegation_cert_t* stake_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, &stake_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, &stake_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_delegation_cert_unref(&stake_delegation);
@@ -3411,7 +3411,7 @@ TEST(cardano_certificate_to_stake_delegation, returnsErrorIfStakeDelegationIsNul
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3427,7 +3427,7 @@ TEST(cardano_stake_delegation_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, &stake_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_delegation(cert, &stake_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3462,7 +3462,7 @@ TEST(cardano_certificate_to_stake_deregistration, returnsErrorIfCertificateIsNul
   cardano_stake_deregistration_cert_t* stake_deregistration = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, &stake_deregistration), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, &stake_deregistration), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_deregistration_cert_unref(&stake_deregistration);
@@ -3476,7 +3476,7 @@ TEST(cardano_certificate_to_stake_deregistration, returnsErrorIfStakeDeregistrat
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3492,7 +3492,7 @@ TEST(cardano_stake_deregistration_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, &stake_deregistration), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_deregistration(cert, &stake_deregistration), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3527,7 +3527,7 @@ TEST(cardano_certificate_to_stake_registration, returnsErrorIfCertificateIsNull)
   cardano_stake_registration_cert_t* stake_registration = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, &stake_registration), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, &stake_registration), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_registration_cert_unref(&stake_registration);
@@ -3541,7 +3541,7 @@ TEST(cardano_certificate_to_stake_registration, returnsErrorIfStakeRegistrationI
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3557,7 +3557,7 @@ TEST(cardano_stake_registration_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, &stake_registration), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_registration(cert, &stake_registration), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3592,7 +3592,7 @@ TEST(cardano_certificate_to_stake_registration_delegation, returnsErrorIfCertifi
   cardano_stake_registration_delegation_cert_t* stake_registration_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, &stake_registration_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, &stake_registration_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_registration_delegation_cert_unref(&stake_registration_delegation);
@@ -3606,7 +3606,7 @@ TEST(cardano_certificate_to_stake_registration_delegation, returnsErrorIfStakeRe
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3622,7 +3622,7 @@ TEST(cardano_stake_registration_delegation_cert_get_key, returnErrorIfInvalidTyp
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, &stake_registration_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_registration_delegation(cert, &stake_registration_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3657,7 +3657,7 @@ TEST(cardano_certificate_to_stake_vote_delegation, returnsErrorIfCertificateIsNu
   cardano_stake_vote_delegation_cert_t* stake_vote_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, &stake_vote_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, &stake_vote_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_vote_delegation_cert_unref(&stake_vote_delegation);
@@ -3671,7 +3671,7 @@ TEST(cardano_certificate_to_stake_vote_delegation, returnsErrorIfStakeVoteDelega
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3687,7 +3687,7 @@ TEST(cardano_stake_vote_delegation_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, &stake_vote_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_delegation(cert, &stake_vote_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3722,7 +3722,7 @@ TEST(cardano_certificate_to_stake_vote_registration_delegation, returnsErrorIfCe
   cardano_stake_vote_registration_delegation_cert_t* stake_vote_registration_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, &stake_vote_registration_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, &stake_vote_registration_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_stake_vote_registration_delegation_cert_unref(&stake_vote_registration_delegation);
@@ -3736,7 +3736,7 @@ TEST(cardano_certificate_to_stake_vote_registration_delegation, returnsErrorIfSt
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3752,7 +3752,7 @@ TEST(cardano_stake_vote_registration_delegation_cert_get_key, returnErrorIfInval
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, &stake_vote_registration_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_stake_vote_registration_delegation(cert, &stake_vote_registration_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3787,7 +3787,7 @@ TEST(cardano_certificate_to_unregister_drep, returnsErrorIfCertificateIsNull)
   cardano_unregister_drep_cert_t* unregister_drep = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, &unregister_drep), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, &unregister_drep), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unregister_drep_cert_unref(&unregister_drep);
@@ -3801,7 +3801,7 @@ TEST(cardano_certificate_to_unregister_drep, returnsErrorIfUnregisterDrepIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3817,7 +3817,7 @@ TEST(cardano_unregister_drep_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, &unregister_drep), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_unregister_drep(cert, &unregister_drep), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3852,7 +3852,7 @@ TEST(cardano_certificate_to_unregistration, returnsErrorIfCertificateIsNull)
   cardano_unregistration_cert_t* unregistration = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregistration(cert, &unregistration), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_unregistration(cert, &unregistration), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unregistration_cert_unref(&unregistration);
@@ -3866,7 +3866,7 @@ TEST(cardano_certificate_to_unregistration, returnsErrorIfUnregistrationIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregistration(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_unregistration(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3882,7 +3882,7 @@ TEST(cardano_unregistration_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_unregistration(cert, &unregistration), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_unregistration(cert, &unregistration), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3917,7 +3917,7 @@ TEST(cardano_certificate_to_update_drep, returnsErrorIfCertificateIsNull)
   cardano_update_drep_cert_t* update_drep = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_update_drep(cert, &update_drep), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_update_drep(cert, &update_drep), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_update_drep_cert_unref(&update_drep);
@@ -3931,7 +3931,7 @@ TEST(cardano_certificate_to_update_drep, returnsErrorIfUpdateDrepIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_update_drep(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_update_drep(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3947,7 +3947,7 @@ TEST(cardano_update_drep_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_update_drep(cert, &update_drep), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_update_drep(cert, &update_drep), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -3982,7 +3982,7 @@ TEST(cardano_certificate_to_vote_delegation, returnsErrorIfCertificateIsNull)
   cardano_vote_delegation_cert_t* vote_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, &vote_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, &vote_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vote_delegation_cert_unref(&vote_delegation);
@@ -3996,7 +3996,7 @@ TEST(cardano_certificate_to_vote_delegation, returnsErrorIfVoteDelegationIsNull)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -4012,7 +4012,7 @@ TEST(cardano_vote_delegation_cert_get_key, returnErrorIfInvalidType)
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, &vote_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_vote_delegation(cert, &vote_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -4047,7 +4047,7 @@ TEST(cardano_certificate_to_vote_registration_delegation, returnsErrorIfCertific
   cardano_vote_registration_delegation_cert_t* vote_registration_delegation = NULL;
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, &vote_registration_delegation), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, &vote_registration_delegation), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_vote_registration_delegation_cert_unref(&vote_registration_delegation);
@@ -4061,7 +4061,7 @@ TEST(cardano_certificate_to_vote_registration_delegation, returnsErrorIfVoteRegi
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, NULL), CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, NULL), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_certificate_unref(&cert);
@@ -4077,7 +4077,7 @@ TEST(cardano_vote_registration_delegation_cert_get_key, returnErrorIfInvalidType
   ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
 
   // Act
-  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, &vote_registration_delegation), CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(cardano_certificate_to_vote_registration_delegation(cert, &vote_registration_delegation), CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_certificate_unref(&cert);

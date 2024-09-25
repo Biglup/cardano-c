@@ -89,24 +89,24 @@ cardano_transaction_new(
 {
   if (body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *transaction = _cardano_malloc(sizeof(cardano_transaction_t));
 
   if (*transaction == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*transaction)->base.deallocator   = cardano_transaction_deallocate;
@@ -129,13 +129,13 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *transaction = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "transaction";
@@ -277,12 +277,12 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -355,12 +355,12 @@ cardano_transaction_set_body(cardano_transaction_t* transaction, cardano_transac
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (body == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_transaction_body_unref(&transaction->body);
@@ -390,12 +390,12 @@ cardano_transaction_set_witness_set(cardano_transaction_t* transaction, cardano_
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (witness_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_witness_set_unref(&transaction->witness_set);
@@ -425,7 +425,7 @@ cardano_transaction_set_auxiliary_data(cardano_transaction_t* transaction, carda
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_auxiliary_data_unref(&transaction->auxiliary_data);
@@ -453,7 +453,7 @@ cardano_transaction_set_is_valid(cardano_transaction_t* transaction, const bool 
 {
   if (transaction == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   transaction->is_valid = is_valid;

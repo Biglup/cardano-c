@@ -389,7 +389,7 @@ CARDANO_EXPORT cardano_error_t cardano_asset_id_map_get_key_value_at(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets were
  *         successfully combined, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -439,7 +439,7 @@ CARDANO_EXPORT cardano_error_t cardano_asset_id_map_add(
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the assets were
  *         successfully subtracted, or an appropriate error code indicating the failure reason,
- *         such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}

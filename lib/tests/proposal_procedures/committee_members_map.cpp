@@ -86,7 +86,7 @@ TEST(cardano_committee_members_map_new, returnsErrorIfProposedParamUpdatesIsNull
   cardano_error_t error = cardano_committee_members_map_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_new, returnsErrorIfMemoryAllocationFails)
@@ -100,7 +100,7 @@ TEST(cardano_committee_members_map_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_committee_members_map_new(&committee_members_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(committee_members_map, (cardano_committee_members_map_t*)nullptr);
 
   // Cleanup
@@ -118,7 +118,7 @@ TEST(cardano_committee_members_map_new, returnsErrorIfEventualMemoryAllocationFa
   cardano_error_t error = cardano_committee_members_map_new(&committee_members_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(committee_members_map, (cardano_committee_members_map_t*)nullptr);
 
   // Cleanup
@@ -166,7 +166,7 @@ TEST(cardano_committee_members_map_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_committee_members_map_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -185,7 +185,7 @@ TEST(cardano_committee_members_map_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_committee_members_map_to_cbor(committee_members_map, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -230,7 +230,7 @@ TEST(cardano_committee_members_map_from_cbor, returnErrorIfProposedParamUpdatesI
   cardano_error_t error = cardano_committee_members_map_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -245,7 +245,7 @@ TEST(cardano_committee_members_map_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_committee_members_map_from_cbor(nullptr, &committee_members_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_from_cbor, returnErrorIfMemoryAllocationFails)
@@ -261,7 +261,7 @@ TEST(cardano_committee_members_map_from_cbor, returnErrorIfMemoryAllocationFails
   cardano_error_t error = cardano_committee_members_map_from_cbor(reader, &committee_members_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(committee_members_map, (cardano_committee_members_map_t*)nullptr);
 
   // Cleanup
@@ -523,7 +523,7 @@ TEST(cardano_committee_members_map_insert, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_committee_members_map_insert(nullptr, credential, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_insert, returnsErrorIfHashIsNull)
@@ -538,7 +538,7 @@ TEST(cardano_committee_members_map_insert, returnsErrorIfHashIsNull)
   error = cardano_committee_members_map_insert(committee_members_map, nullptr, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -561,7 +561,7 @@ TEST(cardano_committee_members_map_insert, returnErrorIfMemoryAllocationFails)
   error = cardano_committee_members_map_insert(committee_members_map, credential, 5);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -632,7 +632,7 @@ TEST(cardano_committee_members_map_get, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_committee_members_map_get(nullptr, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get, returnsErrorIfHashIsNull)
@@ -647,7 +647,7 @@ TEST(cardano_committee_members_map_get, returnsErrorIfHashIsNull)
   error = cardano_committee_members_map_get(committee_members_map, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -665,7 +665,7 @@ TEST(cardano_committee_members_map_get, returnsErrorIfEpochIsNull)
   error = cardano_committee_members_map_get(committee_members_map, (cardano_credential_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -686,7 +686,7 @@ TEST(cardano_committee_members_map_get, returnsErrorIfElementNotFound)
   error = cardano_committee_members_map_get(committee_members_map, credential, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -789,7 +789,7 @@ TEST(cardano_committee_members_map_get, returnsTheRightElementIfMoreThanOne2)
 TEST(cardano_committee_members_map_get_keys, returnsNullIfObjectIsNull)
 {
   // Assert
-  EXPECT_EQ(cardano_committee_members_map_get_keys(nullptr, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_committee_members_map_get_keys(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_keys, returnsNullIfKeysIsNull)
@@ -801,7 +801,7 @@ TEST(cardano_committee_members_map_get_keys, returnsNullIfKeysIsNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(cardano_committee_members_map_get_keys(committee_members_map, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_committee_members_map_get_keys(committee_members_map, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -890,7 +890,7 @@ TEST(cardano_committee_members_map_get_key_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_committee_members_map_get_key_at(nullptr, 0, &committee_members_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_key_at, returnsErrorIfOutIsNull)
@@ -899,7 +899,7 @@ TEST(cardano_committee_members_map_get_key_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_committee_members_map_get_key_at((cardano_committee_members_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
@@ -916,7 +916,7 @@ TEST(cardano_committee_members_map_get_key_at, returnsErrorIfIndexIsOutOfBounds)
   error = cardano_committee_members_map_get_key_at(committee_members_map, 0, &credential);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -966,7 +966,7 @@ TEST(cardano_committee_members_map_get_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_committee_members_map_get_value_at(nullptr, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_value_at, returnsErrorIfOutIsNull)
@@ -975,7 +975,7 @@ TEST(cardano_committee_members_map_get_value_at, returnsErrorIfOutIsNull)
   cardano_error_t error = cardano_committee_members_map_get_value_at((cardano_committee_members_map_t*)"", 0, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -992,7 +992,7 @@ TEST(cardano_committee_members_map_get_value_at, returnsErrorIfIndexIsOutOfBound
   error = cardano_committee_members_map_get_value_at(committee_members_map, 0, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);
@@ -1037,7 +1037,7 @@ TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfObjectIsNull)
   cardano_error_t error = cardano_committee_members_map_get_key_value_at(nullptr, 0, &credential, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfHashIsNull)
@@ -1049,7 +1049,7 @@ TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_committee_members_map_get_key_value_at((cardano_committee_members_map_t*)"", 0, nullptr, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfUpdateIsNull)
@@ -1061,7 +1061,7 @@ TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfUpdateIsNull)
   cardano_error_t error = cardano_committee_members_map_get_key_value_at((cardano_committee_members_map_t*)"", 0, &credential, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
@@ -1079,7 +1079,7 @@ TEST(cardano_committee_members_map_get_key_value_at, returnsErrorIfIndexIsOutOfB
   error = cardano_committee_members_map_get_key_value_at(committee_members_map, 0, &credential, &value);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
 
   // Cleanup
   cardano_committee_members_map_unref(&committee_members_map);

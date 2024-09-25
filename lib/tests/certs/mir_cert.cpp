@@ -257,10 +257,10 @@ TEST(cardano_mir_cert_new_to_other_pot, returnsErrorIfToOtherPotCertIsNull)
 
   // Act
   cardano_error_t result = cardano_mir_cert_new_to_other_pot(nullptr, &mir_cert);
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   result = cardano_mir_cert_new_to_other_pot((cardano_mir_to_pot_cert_t*)"", NULL);
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_new_to_stake_creds, canCreateNewToCreds)
@@ -290,10 +290,10 @@ TEST(cardano_mir_cert_new_to_stake_creds, returnsErrorIfToStakeCredsCertIsNull)
 
   // Act
   cardano_error_t result = cardano_mir_cert_new_to_stake_creds(nullptr, &mir_cert);
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   result = cardano_mir_cert_new_to_stake_creds((cardano_mir_to_stake_creds_cert_t*)"", NULL);
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_new_to_other_pot, returnsErrorIfMemoryAllocationFails)
@@ -310,7 +310,7 @@ TEST(cardano_mir_cert_new_to_other_pot, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   result = cardano_mir_cert_new_to_other_pot(mir_to_pot_cert, &mir_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
@@ -333,7 +333,7 @@ TEST(cardano_mir_cert_new_to_stake_creds, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   result = cardano_mir_cert_new_to_stake_creds(mir_to_stake_creds_cert, &mir_cert);
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
@@ -351,7 +351,7 @@ TEST(cardano_mir_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_mir_cert_from_cbor(nullptr, &mir_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_from_cbor, returnsErrorIfMirCertIsNull)
@@ -363,7 +363,7 @@ TEST(cardano_mir_cert_from_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -464,7 +464,7 @@ TEST(cardano_mir_cert_from_cbor, returnsErrorIfInvalidToPotCert2)
   cardano_error_t result = cardano_mir_cert_from_cbor(reader, &mir_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_mir_cert_unref(&mir_cert);
@@ -572,7 +572,7 @@ TEST(cardano_mir_cert_to_cbor, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -584,7 +584,7 @@ TEST(cardano_mir_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_mir_cert_to_cbor((cardano_mir_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_get_type, returnsErrorIfMirCertIsNull)
@@ -596,7 +596,7 @@ TEST(cardano_mir_cert_get_type, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_cert_get_type(nullptr, &type);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_get_type, returnsErrorIfTypeIsNull)
@@ -605,7 +605,7 @@ TEST(cardano_mir_cert_get_type, returnsErrorIfTypeIsNull)
   cardano_error_t result = cardano_mir_cert_get_type((cardano_mir_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_as_to_other_pot, returnsErrorIfMirCertIsNull)
@@ -617,12 +617,12 @@ TEST(cardano_mir_cert_as_to_other_pot, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_cert_as_to_other_pot(nullptr, &mir_to_pot_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   result = cardano_mir_cert_as_to_other_pot((cardano_mir_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_as_to_other_pot, returnsErrorIfMirCertIsNotToPot)
@@ -640,7 +640,7 @@ TEST(cardano_mir_cert_as_to_other_pot, returnsErrorIfMirCertIsNotToPot)
   result = cardano_mir_cert_as_to_other_pot(mir_cert, &mir_to_pot_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_mir_cert_unref(&mir_cert);
@@ -657,12 +657,12 @@ TEST(cardano_mir_cert_as_to_stake_creds, returnsErrorIfMirCertIsNull)
   cardano_error_t result = cardano_mir_cert_as_to_stake_creds(nullptr, &mir_to_stake_creds_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   result = cardano_mir_cert_as_to_stake_creds((cardano_mir_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_mir_cert_as_to_stake_creds, returnsErrorIfMirCertIsNotToCreds)
@@ -680,7 +680,7 @@ TEST(cardano_mir_cert_as_to_stake_creds, returnsErrorIfMirCertIsNotToCreds)
   result = cardano_mir_cert_as_to_stake_creds(mir_cert, &mir_to_stake_creds_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_CERTIFICATE_TYPE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CERTIFICATE_TYPE);
 
   // Cleanup
   cardano_mir_cert_unref(&mir_cert);

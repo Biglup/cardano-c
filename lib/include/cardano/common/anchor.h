@@ -257,7 +257,7 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p anchor or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -521,8 +521,8 @@ cardano_anchor_get_url(const cardano_anchor_t* anchor);
  * \param[in] url A pointer to a character array containing the new URL to be set for the anchor.
  * \param[in] url_size The size of the URL character array in bytes, excluding any null-terminator.
  *
- * \return \ref CARDANO_SUCCESS if the URL was successfully set. Returns \ref CARDANO_POINTER_IS_NULL if any of the
- *         inputs are NULL, \ref CARDANO_INSUFFICIENT_BUFFER_SIZE if the URL size exceeds internal limits, or
+ * \return \ref CARDANO_SUCCESS if the URL was successfully set. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
+ *         inputs are NULL, \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE if the URL size exceeds internal limits, or
  *         other error codes as appropriate for other failure reasons.
  *
  * Usage Example:
@@ -559,7 +559,7 @@ cardano_anchor_set_url(cardano_anchor_t* anchor, const char* url, size_t url_siz
  *                 This parameter must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the hash was successfully set. If the \p anchor or \p hash is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         if the hash was successfully set. If the \p anchor or \p hash is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

@@ -286,7 +286,7 @@ _cardano_get_payment_credential_type(const cardano_address_type_t type, cardano_
       break;
     case CARDANO_ADDRESS_TYPE_BYRON:
     default:
-      return CARDANO_INVALID_ADDRESS_TYPE;
+      return CARDANO_ERROR_INVALID_ADDRESS_TYPE;
   }
 
   return CARDANO_SUCCESS;
@@ -315,7 +315,7 @@ _cardano_get_stake_credential_type(cardano_address_type_t type, cardano_credenti
     case CARDANO_ADDRESS_TYPE_REWARD_KEY:
     case CARDANO_ADDRESS_TYPE_BYRON:
     default:
-      return CARDANO_INVALID_ADDRESS_TYPE;
+      return CARDANO_ERROR_INVALID_ADDRESS_TYPE;
   }
 
   return CARDANO_SUCCESS;

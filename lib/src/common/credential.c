@@ -78,20 +78,20 @@ cardano_credential_new(const cardano_blake2b_hash_t* hash, const cardano_credent
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
     *credential = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *credential = _cardano_malloc(sizeof(cardano_credential_t));
 
   if (*credential == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*credential)->base.deallocator   = cardano_credential_deallocate;
@@ -125,13 +125,13 @@ cardano_credential_from_hash_hex(const char* hex, size_t hex_size, cardano_crede
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex == NULL)
   {
     *credential = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hex_size != ((size_t)CARDANO_BLAKE2B_HASH_SIZE_224 * 2U))
@@ -171,13 +171,13 @@ cardano_credential_from_hash_bytes(
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
     *credential = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_224)
@@ -213,13 +213,13 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *credential = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "Credential";
@@ -298,12 +298,12 @@ cardano_credential_to_cbor(
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(writer, CREDENTIAL_ARRAY_SIZE);
@@ -396,12 +396,12 @@ cardano_credential_get_type(const cardano_credential_t* credential, cardano_cred
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (type == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *type = credential->type;
@@ -414,12 +414,12 @@ cardano_credential_set_type(cardano_credential_t* credential, cardano_credential
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if ((type != CARDANO_CREDENTIAL_TYPE_KEY_HASH) && (type != CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH))
   {
-    return CARDANO_INVALID_CREDENTIAL_TYPE;
+    return CARDANO_ERROR_INVALID_CREDENTIAL_TYPE;
   }
 
   credential->type = type;
@@ -432,12 +432,12 @@ cardano_credential_set_hash(cardano_credential_t* credential, const cardano_blak
 {
   if (credential == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hash == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);

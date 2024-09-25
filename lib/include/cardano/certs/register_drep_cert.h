@@ -71,7 +71,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the DRep registration certificate was successfully created, or an appropriate error code indicating
- *         the failure reason (e.g., \ref CARDANO_POINTER_IS_NULL if any input pointers are NULL).
+ *         the failure reason (e.g., \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -158,7 +158,7 @@ cardano_register_drep_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_regi
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p register_drep_cert or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -231,7 +231,7 @@ CARDANO_EXPORT cardano_credential_t* cardano_register_drep_cert_get_credential(c
  * \param[in] credential A pointer to an initialized \ref cardano_credential_t object representing the new DRep credential.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the DRep credential
- *         was successfully updated, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if
+ *         was successfully updated, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any of the input pointers are NULL.
  *
  * Usage Example:
@@ -291,7 +291,7 @@ CARDANO_EXPORT uint64_t cardano_register_drep_cert_get_deposit(const cardano_reg
  * \param[in] deposit The deposit amount in lovelace (1 ADA = 1,000,000 lovelace) to be set in the certificate.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the deposit was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         certificate pointer is NULL.
  *
  * Usage Example:
@@ -355,7 +355,7 @@ CARDANO_EXPORT cardano_anchor_t* cardano_register_drep_cert_get_anchor(cardano_r
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the anchor was successfully updated, or an appropriate error code indicating the
- *         failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * Usage Example:
  * \code{.c}

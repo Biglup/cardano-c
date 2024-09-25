@@ -236,12 +236,12 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (bigint == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_bigint_t* copy   = NULL;
@@ -278,7 +278,7 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
   {
     cardano_bigint_unref(&copy);
 
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   result = cardano_bigint_to_bytes(copy, CARDANO_BYTE_ORDER_BIG_ENDIAN, data, size);
@@ -306,7 +306,7 @@ cardano_cbor_writer_write_bool(cardano_cbor_writer_t* writer, const bool value)
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   byte_t cbor_bool_val = (byte_t)(value ? 245 : 244);
@@ -319,12 +319,12 @@ cardano_cbor_writer_write_bytestring(cardano_cbor_writer_t* writer, const byte_t
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_BYTE_STRING, size);
@@ -342,12 +342,12 @@ cardano_cbor_writer_write_textstring(cardano_cbor_writer_t* writer, const char* 
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t result = write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UTF8_STRING, size);
@@ -365,12 +365,12 @@ cardano_cbor_writer_write_encoded(cardano_cbor_writer_t* writer, const byte_t* d
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_write(writer->buffer, data, size);
@@ -383,7 +383,7 @@ cardano_cbor_writer_write_start_array(cardano_cbor_writer_t* writer, const int64
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size < 0)
@@ -401,7 +401,7 @@ cardano_cbor_writer_write_end_array(cardano_cbor_writer_t* writer)
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_write(writer->buffer, &indefiniteLengthBreakByte, sizeof(indefiniteLengthBreakByte));
@@ -414,7 +414,7 @@ cardano_cbor_writer_write_start_map(cardano_cbor_writer_t* writer, const int64_t
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (size < 0)
@@ -436,7 +436,7 @@ cardano_cbor_writer_write_uint(cardano_cbor_writer_t* writer, const uint64_t val
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
@@ -447,7 +447,7 @@ cardano_cbor_writer_write_signed_int(cardano_cbor_writer_t* writer, const int64_
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (value < 0)
@@ -463,7 +463,7 @@ cardano_cbor_writer_write_null(cardano_cbor_writer_t* writer)
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static byte_t cbor_null = 0xf6U;
@@ -476,7 +476,7 @@ cardano_cbor_writer_write_undefined(cardano_cbor_writer_t* writer)
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static byte_t cbor_undefined = 0xf7U;
@@ -489,7 +489,7 @@ cardano_cbor_writer_write_tag(cardano_cbor_writer_t* writer, const cardano_cbor_
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_TAG, tag);
@@ -511,19 +511,19 @@ cardano_cbor_writer_encode(cardano_cbor_writer_t* writer, byte_t* data, const si
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (data == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t buffer_size = cardano_buffer_get_size(writer->buffer);
 
   if (buffer_size > size)
   {
-    return CARDANO_INSUFFICIENT_BUFFER_SIZE;
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   cardano_safe_memcpy(data, size, cardano_buffer_get_data(writer->buffer), buffer_size);
@@ -536,19 +536,19 @@ cardano_cbor_writer_encode_in_buffer(cardano_cbor_writer_t* writer, cardano_buff
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (buffer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *buffer = cardano_buffer_new(cardano_buffer_get_size(writer->buffer));
 
   if (*buffer == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = cardano_buffer_write(*buffer, cardano_buffer_get_data(writer->buffer), cardano_buffer_get_size(writer->buffer));
@@ -577,12 +577,12 @@ cardano_cbor_writer_encode_hex(const cardano_cbor_writer_t* writer, char* dest, 
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (dest == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_buffer_to_hex(writer->buffer, dest, dest_size);
@@ -593,7 +593,7 @@ cardano_cbor_writer_reset(cardano_cbor_writer_t* writer)
 {
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_unref(&writer->buffer);

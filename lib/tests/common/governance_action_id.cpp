@@ -88,7 +88,7 @@ TEST(cardano_governance_action_id_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_governance_action_id_to_cbor(governance_action_id, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);
@@ -103,7 +103,7 @@ TEST(cardano_governance_action_id_to_cbor, returnsErrorIfGovernanceActionIdIsNul
   cardano_error_t error = cardano_governance_action_id_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -212,7 +212,7 @@ TEST(cardano_governance_action_id_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t error = cardano_governance_action_id_from_cbor(nullptr, &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_from_cbor, returnsErrorIfEventualMemoryAllocationFails)
@@ -228,7 +228,7 @@ TEST(cardano_governance_action_id_from_cbor, returnsErrorIfEventualMemoryAllocat
   cardano_error_t error = cardano_governance_action_id_from_cbor(reader, &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -245,7 +245,7 @@ TEST(cardano_governance_action_id_from_cbor, returnsErrorIfGovernanceActionIdIsN
   cardano_error_t error = cardano_governance_action_id_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -320,7 +320,7 @@ TEST(cardano_governance_action_id_new, returnsErrorIfMemoryAllocationFails)
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -402,7 +402,7 @@ TEST(cardano_governance_action_id_from_hash_hex, returnsErrorIfMemoryAllocationF
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -425,7 +425,7 @@ TEST(cardano_governance_action_id_from_hash_hex, returnsErrorIfMemoryEventualAll
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -461,7 +461,7 @@ TEST(cardano_governance_action_id_from_hash_hex, returnsErrorIfHashIsNull)
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 }
 
@@ -478,7 +478,7 @@ TEST(cardano_governance_action_id_from_hash_hex, returnsErrorIfGovernanceActionI
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);
@@ -496,7 +496,7 @@ TEST(cardano_governance_action_id_new, returnsErrorIfHashIsNull)
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 }
 
@@ -519,7 +519,7 @@ TEST(cardano_governance_action_id_new, returnsErrorIfGovernanceActionIdIsNull)
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -594,7 +594,7 @@ TEST(cardano_governance_action_id_from_hash_bytes, returnsErrorIfMemoryAllocatio
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -626,7 +626,7 @@ TEST(cardano_governance_action_id_from_hash_bytes, returnsErrorIfEventualMemoryA
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
@@ -674,7 +674,7 @@ TEST(cardano_governance_action_id_from_hash_bytes, returnsErrorIfHashIsNull)
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 }
 
@@ -698,7 +698,7 @@ TEST(cardano_governance_action_id_from_hash_bytes, returnsErrorIfGovernanceActio
     nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
@@ -717,7 +717,7 @@ TEST(cardano_governance_action_id_from_hash_bytes, returnsErrorIfHashIsInvalid)
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 }
 
@@ -905,7 +905,7 @@ TEST(cardano_governance_action_id_get_index, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_governance_action_id_get_index(nullptr, &index);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_get_index, returnsErrorIfIndexIsNull)
@@ -914,7 +914,7 @@ TEST(cardano_governance_action_id_get_index, returnsErrorIfIndexIsNull)
   cardano_error_t error = cardano_governance_action_id_get_index((cardano_governance_action_id_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_set_index, returnsErrorIfGivenANullPtr)
@@ -923,7 +923,7 @@ TEST(cardano_governance_action_id_set_index, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_governance_action_id_set_index(nullptr, 0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_set_index, canSetIndex)
@@ -963,7 +963,7 @@ TEST(cardano_governance_action_id_set_hash, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_governance_action_id_set_hash(nullptr, hash);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_set_hash, returnsErrorIfHashIsNull)
@@ -972,7 +972,7 @@ TEST(cardano_governance_action_id_set_hash, returnsErrorIfHashIsNull)
   cardano_error_t error = cardano_governance_action_id_set_hash((cardano_governance_action_id_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_governance_action_id_set_hash, canSetHash)

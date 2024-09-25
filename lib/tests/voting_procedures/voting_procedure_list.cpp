@@ -101,7 +101,7 @@ TEST(cardano_voting_procedure_list_new, createsANewInstanceOfGovernanceActionIdL
 
 TEST(cardano_voting_procedure_list_new, returnsErrorIfListIsNull)
 {
-  EXPECT_EQ(cardano_voting_procedure_list_new(nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_voting_procedure_list_new(nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_list_new, returnErrorIfMemoryAllocationFails)
@@ -111,7 +111,7 @@ TEST(cardano_voting_procedure_list_new, returnErrorIfMemoryAllocationFails)
 
   cardano_voting_procedure_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_voting_procedure_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_voting_procedure_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -125,7 +125,7 @@ TEST(cardano_voting_procedure_list_new, returnErrorIfMemoryAllocationFails2)
 
   cardano_voting_procedure_list_t* list = NULL;
 
-  EXPECT_EQ(cardano_voting_procedure_list_new(&list), CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_voting_procedure_list_new(&list), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   ASSERT_EQ(list, nullptr);
 
@@ -144,13 +144,13 @@ TEST(cardano_voting_procedure_list_get_length, returnsZeroIfListIsNull)
 TEST(cardano_voting_procedure_list_get, returnsNullIfListIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_voting_procedure_list_get(nullptr, 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_voting_procedure_list_get(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_list_get, returnsNullIfElementIsNull)
 {
   // Act
-  EXPECT_EQ(cardano_voting_procedure_list_get((cardano_voting_procedure_list_t*)"", 0, nullptr), CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_voting_procedure_list_get((cardano_voting_procedure_list_t*)"", 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_list_get, returnsErrorIfIndexIsOutOfBounds)
@@ -166,7 +166,7 @@ TEST(cardano_voting_procedure_list_get, returnsErrorIfIndexIsOutOfBounds)
   error                                 = cardano_voting_procedure_list_get(list, 0, &action_id);
 
   // Assert
-  ASSERT_EQ(error, CARDANO_OUT_OF_BOUNDS_MEMORY_READ);
+  ASSERT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
 
   // Cleanup
   cardano_voting_procedure_list_unref(&list);
@@ -322,7 +322,7 @@ TEST(cardano_voting_procedure_list_add, returnsErrorIfListIsNull)
   cardano_error_t result = cardano_voting_procedure_list_add(nullptr, id);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_voting_procedure_list_add, returnsErrorIfScriptIsNull)
@@ -331,5 +331,5 @@ TEST(cardano_voting_procedure_list_add, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_voting_procedure_list_add((cardano_voting_procedure_list_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

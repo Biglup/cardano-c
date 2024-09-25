@@ -192,7 +192,7 @@ TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_pool_registration_cert_from_cbor(nullptr, &pool_registration_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -204,7 +204,7 @@ TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -245,7 +245,7 @@ TEST(cardano_pool_registration_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_registration_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -257,7 +257,7 @@ TEST(cardano_pool_registration_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_pool_registration_cert_to_cbor((cardano_pool_registration_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -293,7 +293,7 @@ TEST(cardano_pool_registration_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_pool_registration_cert_new(nullptr, &pool_registration_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_registration_cert_new, returnsErrorIfCertIsNull)
@@ -302,7 +302,7 @@ TEST(cardano_pool_registration_cert_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_registration_cert_new((cardano_pool_params_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_registration_cert_new, returnsErrorIfMemoryAllocationFails)
@@ -321,7 +321,7 @@ TEST(cardano_pool_registration_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_pool_registration_cert_new(params, &pool_registration_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_pool_params_unref(&params);
@@ -405,7 +405,7 @@ TEST(cardano_pool_registration_cert_get_params, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_registration_cert_get_params(nullptr, &params);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_registration_cert_get_params, returnsErrorIfParamsIsNull)
@@ -418,7 +418,7 @@ TEST(cardano_pool_registration_cert_get_params, returnsErrorIfParamsIsNull)
   cardano_error_t result = cardano_pool_registration_cert_get_params(pool_registration_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_registration_cert_unref(&pool_registration_cert);
@@ -453,7 +453,7 @@ TEST(cardano_pool_registration_cert_set_params, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_pool_registration_cert_set_params(nullptr, params);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_pool_registration_cert_set_params, returnsErrorIfParamsIsNull)
@@ -466,7 +466,7 @@ TEST(cardano_pool_registration_cert_set_params, returnsErrorIfParamsIsNull)
   cardano_error_t result = cardano_pool_registration_cert_set_params(pool_registration_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_registration_cert_unref(&pool_registration_cert);

@@ -206,7 +206,7 @@ TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_auxiliary_data_from_cbor(nullptr, &auxiliary_data);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfCertIsNull)
@@ -218,7 +218,7 @@ TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_auxiliary_data_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -311,7 +311,7 @@ TEST(cardano_auxiliary_data_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_auxiliary_data_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -323,7 +323,7 @@ TEST(cardano_auxiliary_data_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_auxiliary_data_to_cbor((cardano_auxiliary_data_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -351,7 +351,7 @@ TEST(cardano_auxiliary_data_new, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_auxiliary_data_new(nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -367,7 +367,7 @@ TEST(cardano_auxiliary_data_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_auxiliary_data_new(&auxiliary_data);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -403,7 +403,7 @@ TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_auxiliary_data_from_cbor(reader, &auxiliary_data);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -423,7 +423,7 @@ TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t result = cardano_auxiliary_data_from_cbor(reader, &auxiliary_data);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -443,7 +443,7 @@ TEST(cardano_auxiliary_data_from_cbor, returnsErrorIfMemoryAllocationFails3)
   cardano_error_t result = cardano_auxiliary_data_from_cbor(reader, &auxiliary_data);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -744,7 +744,7 @@ TEST(cardano_auxiliary_data_set_transaction_metadata, returnsErrorIfObjectIsNull
   cardano_error_t result = cardano_auxiliary_data_set_transaction_metadata(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_set_transaction_metadata, canSetMetadataToNull)
@@ -839,7 +839,7 @@ TEST(cardano_auxiliary_data_set_native_scripts, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auxiliary_data_set_native_scripts(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_set_native_scripts, canSetScriptsToNull)
@@ -934,7 +934,7 @@ TEST(cardano_auxiliary_data_set_plutus_v1_scripts, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auxiliary_data_set_plutus_v1_scripts(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_set_plutus_v1_scripts, canSetScriptsToNull)
@@ -1029,7 +1029,7 @@ TEST(cardano_auxiliary_data_set_plutus_v2_scripts, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auxiliary_data_set_plutus_v2_scripts(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_set_plutus_v2_scripts, canSetScriptsToNull)
@@ -1124,7 +1124,7 @@ TEST(cardano_auxiliary_data_set_plutus_v3_scripts, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auxiliary_data_set_plutus_v3_scripts(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auxiliary_data_set_plutus_v3_scripts, canSetScriptsToNull)

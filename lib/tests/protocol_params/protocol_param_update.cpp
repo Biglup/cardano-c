@@ -63,7 +63,7 @@ TEST(cardano_protocol_param_update_new, returnsErrorIfProtocolParamUpdateIsNull)
   cardano_error_t error = cardano_protocol_param_update_new(nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_new, returnsErrorIfdenominatorAllocationFails)
@@ -77,7 +77,7 @@ TEST(cardano_protocol_param_update_new, returnsErrorIfdenominatorAllocationFails
   cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(protocol_param_update, (cardano_protocol_param_update_t*)nullptr);
 
   // Cleanup
@@ -127,7 +127,7 @@ TEST(cardano_protocol_param_update_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_protocol_param_update_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -146,7 +146,7 @@ TEST(cardano_protocol_param_update_to_cbor, returnsErrorIfWriterIsNull)
   error = cardano_protocol_param_update_to_cbor(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -179,7 +179,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnErrorIfProtocolParamUpdateIs
   cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -194,7 +194,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_protocol_param_update_from_cbor(nullptr, &protocol_param_update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_ref, increasesTheReferenceCount)
@@ -358,7 +358,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfMemoryAllocationErro
   cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -587,7 +587,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnErrorIfMemoryAllocationFailS
   cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -655,7 +655,7 @@ TEST(cardano_protocol_param_update_get_min_fee_a, returnsErrorIfProtocolParamUpd
   cardano_error_t error = cardano_protocol_param_update_get_min_fee_a(nullptr, &min_fee_a);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_fee_a, returnsErrorIfMinFeeAIsNull)
@@ -669,7 +669,7 @@ TEST(cardano_protocol_param_update_get_min_fee_a, returnsErrorIfMinFeeAIsNull)
   cardano_error_t error = cardano_protocol_param_update_get_min_fee_a(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -705,7 +705,7 @@ TEST(cardano_protocol_param_update_get_min_fee_b, returnsErrorIfProtocolParamUpd
   cardano_error_t error = cardano_protocol_param_update_get_min_fee_b(nullptr, &min_fee_b);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_fee_b, returnsErrorIfMinFeeBIsNull)
@@ -719,7 +719,7 @@ TEST(cardano_protocol_param_update_get_min_fee_b, returnsErrorIfMinFeeBIsNull)
   cardano_error_t error = cardano_protocol_param_update_get_min_fee_b(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -755,7 +755,7 @@ TEST(cardano_protocol_param_update_get_max_block_body_size, returnsErrorIfProtoc
   cardano_error_t error = cardano_protocol_param_update_get_max_block_body_size(nullptr, &max_block_body_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_block_body_size, returnsErrorIfMaxBlockBodySizeIsNull)
@@ -769,7 +769,7 @@ TEST(cardano_protocol_param_update_get_max_block_body_size, returnsErrorIfMaxBlo
   cardano_error_t error = cardano_protocol_param_update_get_max_block_body_size(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -805,7 +805,7 @@ TEST(cardano_protocol_param_update_get_max_tx_size, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_get_max_tx_size(nullptr, &max_tx_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_tx_size, returnsErrorIfMaxTxSizeIsNull)
@@ -819,7 +819,7 @@ TEST(cardano_protocol_param_update_get_max_tx_size, returnsErrorIfMaxTxSizeIsNul
   cardano_error_t error = cardano_protocol_param_update_get_max_tx_size(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -855,7 +855,7 @@ TEST(cardano_protocol_param_update_get_max_block_header_size, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_get_max_block_header_size(nullptr, &max_block_header_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_block_header_size, returnsErrorIfMaxBlockHeaderSizeIsNull)
@@ -869,7 +869,7 @@ TEST(cardano_protocol_param_update_get_max_block_header_size, returnsErrorIfMaxB
   cardano_error_t error = cardano_protocol_param_update_get_max_block_header_size(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -905,7 +905,7 @@ TEST(cardano_protocol_param_update_get_key_deposit, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_get_key_deposit(nullptr, &key_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_key_deposit, returnsErrorIfKeyDepositIsNull)
@@ -919,7 +919,7 @@ TEST(cardano_protocol_param_update_get_key_deposit, returnsErrorIfKeyDepositIsNu
   cardano_error_t error = cardano_protocol_param_update_get_key_deposit(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -955,7 +955,7 @@ TEST(cardano_protocol_param_update_get_pool_deposit, returnsErrorIfProtocolParam
   cardano_error_t error = cardano_protocol_param_update_get_pool_deposit(nullptr, &pool_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_pool_deposit, returnsErrorIfPoolDepositIsNull)
@@ -969,7 +969,7 @@ TEST(cardano_protocol_param_update_get_pool_deposit, returnsErrorIfPoolDepositIs
   cardano_error_t error = cardano_protocol_param_update_get_pool_deposit(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -1005,7 +1005,7 @@ TEST(cardano_protocol_param_update_get_e_max, returnsErrorIfProtocolParamUpdateI
   cardano_error_t error = cardano_protocol_param_update_get_max_epoch(nullptr, &e_max);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_e_max, returnsErrorIfEMaxIsNull)
@@ -1019,7 +1019,7 @@ TEST(cardano_protocol_param_update_get_e_max, returnsErrorIfEMaxIsNull)
   cardano_error_t error = cardano_protocol_param_update_get_max_epoch(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -1055,7 +1055,7 @@ TEST(cardano_protocol_param_update_get_n_opt, returnsErrorIfProtocolParamUpdateI
   cardano_error_t error = cardano_protocol_param_update_get_n_opt(nullptr, &n_opt);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_n_opt, returnsErrorIfNOptIsNull)
@@ -1069,7 +1069,7 @@ TEST(cardano_protocol_param_update_get_n_opt, returnsErrorIfNOptIsNull)
   cardano_error_t error = cardano_protocol_param_update_get_n_opt(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -1105,7 +1105,7 @@ TEST(cardano_protocol_param_update_get_pool_pledge_influence, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_get_pool_pledge_influence(nullptr, &a0);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_pool_pledge_influence, returnsErrorIfA0IsNull)
@@ -1117,7 +1117,7 @@ TEST(cardano_protocol_param_update_get_pool_pledge_influence, returnsErrorIfA0Is
   cardano_error_t error = cardano_protocol_param_update_get_pool_pledge_influence(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_expansion_rate, returnsTheExpansionRate)
@@ -1149,7 +1149,7 @@ TEST(cardano_protocol_param_update_get_expansion_rate, returnsErrorIfProtocolPar
   cardano_error_t error = cardano_protocol_param_update_get_expansion_rate(nullptr, &expansion_rate);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_expansion_rate, returnsErrorIfExpansionRateIsNull)
@@ -1161,7 +1161,7 @@ TEST(cardano_protocol_param_update_get_expansion_rate, returnsErrorIfExpansionRa
   cardano_error_t error = cardano_protocol_param_update_get_expansion_rate(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_treasury_growth_rate, returnsTheTreasuryGrowthRate)
@@ -1193,7 +1193,7 @@ TEST(cardano_protocol_param_update_get_treasury_growth_rate, returnsErrorIfProto
   cardano_error_t error = cardano_protocol_param_update_get_treasury_growth_rate(nullptr, &treasury_growth_rate);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_treasury_growth_rate, returnsErrorIfTreasuryGrowthRateIsNull)
@@ -1205,7 +1205,7 @@ TEST(cardano_protocol_param_update_get_treasury_growth_rate, returnsErrorIfTreas
   cardano_error_t error = cardano_protocol_param_update_get_treasury_growth_rate(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_d, returnsTheDecentralization)
@@ -1237,7 +1237,7 @@ TEST(cardano_protocol_param_update_get_d, returnsErrorIfProtocolParamUpdateIsNul
   cardano_error_t error = cardano_protocol_param_update_get_d(nullptr, &decentralization);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_d, returnsErrorIfDecentralizationIsNull)
@@ -1249,7 +1249,7 @@ TEST(cardano_protocol_param_update_get_d, returnsErrorIfDecentralizationIsNull)
   cardano_error_t error = cardano_protocol_param_update_get_d(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_extra_entropy, returnsTheExtraEntropy)
@@ -1286,7 +1286,7 @@ TEST(cardano_protocol_param_update_get_extra_entropy, returnsErrorIfProtocolPara
   cardano_error_t error = cardano_protocol_param_update_get_extra_entropy(nullptr, &extra_entropy);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_extra_entropy, returnsErrorIfExtraEntropyIsNull)
@@ -1298,7 +1298,7 @@ TEST(cardano_protocol_param_update_get_extra_entropy, returnsErrorIfExtraEntropy
   cardano_error_t error = cardano_protocol_param_update_get_extra_entropy(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_protocol_version, returnsTheProtocolVersion)
@@ -1331,7 +1331,7 @@ TEST(cardano_protocol_param_update_get_protocol_version, returnsErrorIfProtocolP
   cardano_error_t error = cardano_protocol_param_update_get_protocol_version(nullptr, &protocol_version);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_protocol_version, returnsErrorIfProtocolVersionIsNull)
@@ -1343,7 +1343,7 @@ TEST(cardano_protocol_param_update_get_protocol_version, returnsErrorIfProtocolV
   cardano_error_t error = cardano_protocol_param_update_get_protocol_version(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_pool_cost, returnsTheMinPoolCost)
@@ -1374,7 +1374,7 @@ TEST(cardano_protocol_param_update_get_min_pool_cost, returnsErrorIfProtocolPara
   cardano_error_t error = cardano_protocol_param_update_get_min_pool_cost(nullptr, &min_pool_cost);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_pool_cost, returnsErrorIfMinPoolCostIsNull)
@@ -1386,7 +1386,7 @@ TEST(cardano_protocol_param_update_get_min_pool_cost, returnsErrorIfMinPoolCostI
   cardano_error_t error = cardano_protocol_param_update_get_min_pool_cost(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_ada_per_utxo_byte, returnsTheMaxValueSize)
@@ -1417,7 +1417,7 @@ TEST(cardano_protocol_param_update_get_ada_per_utxo_byte, returnsErrorIfProtocol
   cardano_error_t error = cardano_protocol_param_update_get_ada_per_utxo_byte(nullptr, &ada_per_utxo_byte);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_ada_per_utxo_byte, returnsErrorIfAdaPerUtxoByteIsNull)
@@ -1429,7 +1429,7 @@ TEST(cardano_protocol_param_update_get_ada_per_utxo_byte, returnsErrorIfAdaPerUt
   cardano_error_t error = cardano_protocol_param_update_get_ada_per_utxo_byte(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_cost_models, returnsTheCostModels)
@@ -1462,7 +1462,7 @@ TEST(cardano_protocol_param_update_get_cost_models, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_get_cost_models(nullptr, &cost_models);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_cost_models, returnsErrorIfCostModelsIsNull)
@@ -1474,7 +1474,7 @@ TEST(cardano_protocol_param_update_get_cost_models, returnsErrorIfCostModelsIsNu
   cardano_error_t error = cardano_protocol_param_update_get_cost_models(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_execution_costs, returnsTheExecutionCosts)
@@ -1503,7 +1503,7 @@ TEST(cardano_protocol_param_update_get_execution_costs, returnsErrorIfProtocolPa
   cardano_error_t error = cardano_protocol_param_update_get_execution_costs(nullptr, &execution_costs);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_execution_costs, returnsErrorIfExecutionCostsIsNull)
@@ -1515,7 +1515,7 @@ TEST(cardano_protocol_param_update_get_execution_costs, returnsErrorIfExecutionC
   cardano_error_t error = cardano_protocol_param_update_get_execution_costs(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_tx_execution_units, returnsTheMaxTxExecutionUnits)
@@ -1545,7 +1545,7 @@ TEST(cardano_protocol_param_update_get_max_tx_execution_units, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_get_max_tx_ex_units(nullptr, &max_tx_execution_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_tx_execution_units, returnsErrorIfMaxTxExecutionUnitsIsNull)
@@ -1557,7 +1557,7 @@ TEST(cardano_protocol_param_update_get_max_tx_execution_units, returnsErrorIfMax
   cardano_error_t error = cardano_protocol_param_update_get_max_tx_ex_units(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_block_execution_units, returnsTheMaxBlockExecutionUnits)
@@ -1587,7 +1587,7 @@ TEST(cardano_protocol_param_update_get_max_block_execution_units, returnsErrorIf
   cardano_error_t error = cardano_protocol_param_update_get_max_block_ex_units(nullptr, &max_block_execution_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_block_execution_units, returnsErrorIfMaxBlockExecutionUnitsIsNull)
@@ -1599,7 +1599,7 @@ TEST(cardano_protocol_param_update_get_max_block_execution_units, returnsErrorIf
   cardano_error_t error = cardano_protocol_param_update_get_max_block_ex_units(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_value_size, returnsTheMaxValueSize)
@@ -1630,7 +1630,7 @@ TEST(cardano_protocol_param_update_get_max_value_size, returnsErrorIfProtocolPar
   cardano_error_t error = cardano_protocol_param_update_get_max_value_size(nullptr, &max_value_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_value_size, returnsErrorIfMaxValueSizeIsNull)
@@ -1642,7 +1642,7 @@ TEST(cardano_protocol_param_update_get_max_value_size, returnsErrorIfMaxValueSiz
   cardano_error_t error = cardano_protocol_param_update_get_max_value_size(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_collateral_percentage, returnsTheCollateralPercentage)
@@ -1674,7 +1674,7 @@ TEST(cardano_protocol_param_update_get_collateral_percentage, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_get_collateral_percentage(nullptr, &collateral_percentage);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_collateral_percentage, returnsErrorIfCollateralPercentageIsNull)
@@ -1686,7 +1686,7 @@ TEST(cardano_protocol_param_update_get_collateral_percentage, returnsErrorIfColl
   cardano_error_t error = cardano_protocol_param_update_get_collateral_percentage(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_collateral_inputs, returnsTheMaxCollateralInputs)
@@ -1718,7 +1718,7 @@ TEST(cardano_protocol_param_update_get_max_collateral_inputs, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_get_max_collateral_inputs(nullptr, &max_collateral_inputs);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_max_collateral_inputs, returnsErrorIfMaxCollateralInputsIsNull)
@@ -1730,7 +1730,7 @@ TEST(cardano_protocol_param_update_get_max_collateral_inputs, returnsErrorIfMaxC
   cardano_error_t error = cardano_protocol_param_update_get_max_collateral_inputs(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_pool_voting_thresholds, returnsThePoolVotingThresholds)
@@ -1760,7 +1760,7 @@ TEST(cardano_protocol_param_update_get_pool_voting_thresholds, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_get_pool_voting_thresholds(nullptr, &pool_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_pool_voting_thresholds, returnsErrorIfPoolVotingThresholdsIsNull)
@@ -1772,7 +1772,7 @@ TEST(cardano_protocol_param_update_get_pool_voting_thresholds, returnsErrorIfPoo
   cardano_error_t error = cardano_protocol_param_update_get_pool_voting_thresholds(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_voting_thresholds, returnsTheDRepVotingThresholds)
@@ -1802,7 +1802,7 @@ TEST(cardano_protocol_param_update_get_drep_voting_thresholds, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_get_drep_voting_thresholds(nullptr, &d_rep_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_voting_thresholds, returnsErrorIfDRepVotingThresholdsIsNull)
@@ -1814,7 +1814,7 @@ TEST(cardano_protocol_param_update_get_drep_voting_thresholds, returnsErrorIfDRe
   cardano_error_t error = cardano_protocol_param_update_get_drep_voting_thresholds(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_committee_size, returnsTheMinCommitteeSize)
@@ -1846,7 +1846,7 @@ TEST(cardano_protocol_param_update_get_min_committee_size, returnsErrorIfProtoco
   cardano_error_t error = cardano_protocol_param_update_get_min_committee_size(nullptr, &min_committee_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_min_committee_size, returnsErrorIfMinCommitteeSizeIsNull)
@@ -1858,7 +1858,7 @@ TEST(cardano_protocol_param_update_get_min_committee_size, returnsErrorIfMinComm
   cardano_error_t error = cardano_protocol_param_update_get_min_committee_size(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_committee_term_limit, returnsTheCommitteeTermLimit)
@@ -1890,7 +1890,7 @@ TEST(cardano_protocol_param_update_get_committee_term_limit, returnsErrorIfProto
   cardano_error_t error = cardano_protocol_param_update_get_committee_term_limit(nullptr, &committee_term_limit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_committee_term_limit, returnsErrorIfCommitteeTermLimitIsNull)
@@ -1902,7 +1902,7 @@ TEST(cardano_protocol_param_update_get_committee_term_limit, returnsErrorIfCommi
   cardano_error_t error = cardano_protocol_param_update_get_committee_term_limit(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_governance_action_validity_period, returnsTheGovernanceActionValidityPeriod)
@@ -1934,7 +1934,7 @@ TEST(cardano_protocol_param_update_get_governance_action_validity_period, return
   cardano_error_t error = cardano_protocol_param_update_get_governance_action_validity_period(nullptr, &governance_action_validity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_governance_action_validity_period, returnsErrorIfGovernanceActionValidityPeriodIsNull)
@@ -1946,7 +1946,7 @@ TEST(cardano_protocol_param_update_get_governance_action_validity_period, return
   cardano_error_t error = cardano_protocol_param_update_get_governance_action_validity_period(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_governance_action_deposit, returnsTheGovernanceActionDeposit)
@@ -1978,7 +1978,7 @@ TEST(cardano_protocol_param_update_get_governance_action_deposit, returnsErrorIf
   cardano_error_t error = cardano_protocol_param_update_get_governance_action_deposit(nullptr, &governance_action_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_governance_action_deposit, returnsErrorIfGovernanceActionDepositIsNull)
@@ -1990,7 +1990,7 @@ TEST(cardano_protocol_param_update_get_governance_action_deposit, returnsErrorIf
   cardano_error_t error = cardano_protocol_param_update_get_governance_action_deposit(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_deposit, returnsTheDRepDeposit)
@@ -2022,7 +2022,7 @@ TEST(cardano_protocol_param_update_get_drep_deposit, returnsErrorIfProtocolParam
   cardano_error_t error = cardano_protocol_param_update_get_drep_deposit(nullptr, &d_rep_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_deposit, returnsErrorIfDRepDepositIsNull)
@@ -2034,7 +2034,7 @@ TEST(cardano_protocol_param_update_get_drep_deposit, returnsErrorIfDRepDepositIs
   cardano_error_t error = cardano_protocol_param_update_get_drep_deposit(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_inactivity_period, returnsTheDRepInactivityPeriod)
@@ -2066,7 +2066,7 @@ TEST(cardano_protocol_param_update_get_drep_inactivity_period, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_get_drep_inactivity_period(nullptr, &d_rep_inactivity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_drep_inactivity_period, returnsErrorIfDRepInactivityPeriodIsNull)
@@ -2078,7 +2078,7 @@ TEST(cardano_protocol_param_update_get_drep_inactivity_period, returnsErrorIfDRe
   cardano_error_t error = cardano_protocol_param_update_get_drep_inactivity_period(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_ref_script_cost_per_byte, returnsTheRefScriptCostPerByte)
@@ -2111,7 +2111,7 @@ TEST(cardano_protocol_param_update_get_ref_script_cost_per_byte, returnsErrorIfP
   cardano_error_t error = cardano_protocol_param_update_get_ref_script_cost_per_byte(nullptr, &ref_script_cost_per_byte);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_ref_script_cost_per_byte, returnsErrorIfRefScriptCostPerByteIsNull)
@@ -2123,7 +2123,7 @@ TEST(cardano_protocol_param_update_get_ref_script_cost_per_byte, returnsErrorIfR
   cardano_error_t error = cardano_protocol_param_update_get_ref_script_cost_per_byte(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_get_, returnsElementNotFoundIfMissingField)
@@ -2136,71 +2136,71 @@ TEST(cardano_protocol_param_update_get_, returnsElementNotFoundIfMissingField)
 
   // Act
   uint64_t min_fee_a = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_a(protocol_param_update, &min_fee_a), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_a(protocol_param_update, &min_fee_a), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t min_fee_b = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_b(protocol_param_update, &min_fee_b), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_b(protocol_param_update, &min_fee_b), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t max_block_body_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_body_size(protocol_param_update, &max_block_body_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_body_size(protocol_param_update, &max_block_body_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t max_tx_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_size(protocol_param_update, &max_tx_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_size(protocol_param_update, &max_tx_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t max_block_header_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_header_size(protocol_param_update, &max_block_header_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_header_size(protocol_param_update, &max_block_header_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t key_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_key_deposit(protocol_param_update, &key_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_key_deposit(protocol_param_update, &key_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t pool_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_deposit(protocol_param_update, &pool_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_deposit(protocol_param_update, &pool_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t e_max = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_epoch(protocol_param_update, &e_max), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_epoch(protocol_param_update, &e_max), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t n_opt = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_n_opt(protocol_param_update, &n_opt), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_n_opt(protocol_param_update, &n_opt), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* rho = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_pledge_influence(protocol_param_update, &rho), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_pledge_influence(protocol_param_update, &rho), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* tau = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_expansion_rate(protocol_param_update, &tau), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_expansion_rate(protocol_param_update, &tau), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* a_0 = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_treasury_growth_rate(protocol_param_update, &a_0), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_treasury_growth_rate(protocol_param_update, &a_0), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* d = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_d(protocol_param_update, &d), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_d(protocol_param_update, &d), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_buffer_t* extra_entropy = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_extra_entropy(protocol_param_update, &extra_entropy), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_extra_entropy(protocol_param_update, &extra_entropy), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_protocol_version_t* protocol_version = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_protocol_version(protocol_param_update, &protocol_version), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_protocol_version(protocol_param_update, &protocol_version), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t min_pool_cost = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_pool_cost(protocol_param_update, &min_pool_cost), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_pool_cost(protocol_param_update, &min_pool_cost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t ada_per_utxo_byte = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_ada_per_utxo_byte(protocol_param_update, &ada_per_utxo_byte), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_ada_per_utxo_byte(protocol_param_update, &ada_per_utxo_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_costmdls_t* cost_models = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_cost_models(protocol_param_update, &cost_models), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_cost_models(protocol_param_update, &cost_models), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_ex_unit_prices_t* execution_costs = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_execution_costs(protocol_param_update, &execution_costs), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_execution_costs(protocol_param_update, &execution_costs), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_ex_units_t* max_tx_execution_units = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_ex_units(protocol_param_update, &max_tx_execution_units), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_ex_units(protocol_param_update, &max_tx_execution_units), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_ex_units_t* max_block_execution_units = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_ex_units(protocol_param_update, &max_block_execution_units), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_ex_units(protocol_param_update, &max_block_execution_units), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t max_value_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_value_size(protocol_param_update, &max_value_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_value_size(protocol_param_update, &max_value_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t collateral_percentage = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_collateral_percentage(protocol_param_update, &collateral_percentage), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_collateral_percentage(protocol_param_update, &collateral_percentage), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t max_collateral_inputs = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_collateral_inputs(protocol_param_update, &max_collateral_inputs), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_collateral_inputs(protocol_param_update, &max_collateral_inputs), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_pool_voting_thresholds_t* pool_voting_thresholds = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_voting_thresholds(protocol_param_update, &pool_voting_thresholds), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_voting_thresholds(protocol_param_update, &pool_voting_thresholds), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_drep_voting_thresholds_t* d_rep_voting_thresholds = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_voting_thresholds(protocol_param_update, &d_rep_voting_thresholds), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_voting_thresholds(protocol_param_update, &d_rep_voting_thresholds), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t min_committee_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_committee_size(protocol_param_update, &min_committee_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_committee_size(protocol_param_update, &min_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t committee_term_limit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_committee_term_limit(protocol_param_update, &committee_term_limit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_committee_term_limit(protocol_param_update, &committee_term_limit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t governance_action_validity_period = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_validity_period(protocol_param_update, &governance_action_validity_period), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_validity_period(protocol_param_update, &governance_action_validity_period), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t governance_action_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_deposit(protocol_param_update, &governance_action_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_deposit(protocol_param_update, &governance_action_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t d_rep_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_deposit(protocol_param_update, &d_rep_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_deposit(protocol_param_update, &d_rep_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t d_rep_inactivity_period = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_inactivity_period(protocol_param_update, &d_rep_inactivity_period), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_inactivity_period(protocol_param_update, &d_rep_inactivity_period), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* ref_script_cost_per_byte = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_script_cost_per_byte(protocol_param_update, &ref_script_cost_per_byte), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_script_cost_per_byte(protocol_param_update, &ref_script_cost_per_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2235,7 +2235,7 @@ TEST(cardano_protocol_param_update_set_min_fee_a, returnsErrorIfProtocolParamUpd
   cardano_error_t error = cardano_protocol_param_update_set_min_fee_a(nullptr, &min_fee_a);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_min_fee_a, canUnsetParameterByPassingNull)
@@ -2252,7 +2252,7 @@ TEST(cardano_protocol_param_update_set_min_fee_a, canUnsetParameterByPassingNull
 
   // Assert
   min_fee_a = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_a(protocol_param_update, &min_fee_a), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_a(protocol_param_update, &min_fee_a), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2275,7 +2275,7 @@ TEST(cardano_protocol_param_update_set_min_fee_a, returnsErrorIfMemoryAllocation
   error = cardano_protocol_param_update_set_min_fee_a(protocol_param_update, &min_fee_a);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2311,7 +2311,7 @@ TEST(cardano_protocol_param_update_set_min_fee_b, returnsErrorIfProtocolParamUpd
   cardano_error_t error = cardano_protocol_param_update_set_min_fee_b(nullptr, &min_fee_b);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_min_fee_b, canUnsetParameterByPassingNull)
@@ -2328,7 +2328,7 @@ TEST(cardano_protocol_param_update_set_min_fee_b, canUnsetParameterByPassingNull
 
   // Assert
   min_fee_b = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_b(protocol_param_update, &min_fee_b), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_fee_b(protocol_param_update, &min_fee_b), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2351,7 +2351,7 @@ TEST(cardano_protocol_param_update_set_min_fee_b, returnsErrorIfMemoryAllocation
   error = cardano_protocol_param_update_set_min_fee_b(protocol_param_update, &min_fee_b);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2387,7 +2387,7 @@ TEST(cardano_protocol_param_update_set_max_block_body_size, returnsErrorIfProtoc
   cardano_error_t error = cardano_protocol_param_update_set_max_block_body_size(nullptr, &max_block_body_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_block_body_size, canUnsetParameterByPassingNull)
@@ -2404,7 +2404,7 @@ TEST(cardano_protocol_param_update_set_max_block_body_size, canUnsetParameterByP
 
   // Assert
   max_block_body_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_body_size(protocol_param_update, &max_block_body_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_body_size(protocol_param_update, &max_block_body_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2427,7 +2427,7 @@ TEST(cardano_protocol_param_update_set_max_block_body_size, returnsErrorIfMemory
   error = cardano_protocol_param_update_set_max_block_body_size(protocol_param_update, &max_block_body_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2463,7 +2463,7 @@ TEST(cardano_protocol_param_update_set_max_tx_size, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_set_max_tx_size(nullptr, &max_tx_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_tx_size, canUnsetParameterByPassingNull)
@@ -2480,7 +2480,7 @@ TEST(cardano_protocol_param_update_set_max_tx_size, canUnsetParameterByPassingNu
 
   // Assert
   max_tx_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_size(protocol_param_update, &max_tx_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_size(protocol_param_update, &max_tx_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2503,7 +2503,7 @@ TEST(cardano_protocol_param_update_set_max_tx_size, returnsErrorIfMemoryAllocati
   error = cardano_protocol_param_update_set_max_tx_size(protocol_param_update, &max_tx_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2539,7 +2539,7 @@ TEST(cardano_protocol_param_update_set_max_block_header_size, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_set_max_block_header_size(nullptr, &max_block_header_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_block_header_size, canUnsetParameterByPassingNull)
@@ -2556,7 +2556,7 @@ TEST(cardano_protocol_param_update_set_max_block_header_size, canUnsetParameterB
 
   // Assert
   max_block_header_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_header_size(protocol_param_update, &max_block_header_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_header_size(protocol_param_update, &max_block_header_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2579,7 +2579,7 @@ TEST(cardano_protocol_param_update_set_max_block_header_size, returnsErrorIfMemo
   error = cardano_protocol_param_update_set_max_block_header_size(protocol_param_update, &max_block_header_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2615,7 +2615,7 @@ TEST(cardano_protocol_param_update_set_key_deposit, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_set_key_deposit(nullptr, &key_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_key_deposit, canUnsetParameterByPassingNull)
@@ -2632,7 +2632,7 @@ TEST(cardano_protocol_param_update_set_key_deposit, canUnsetParameterByPassingNu
 
   // Assert
   key_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_key_deposit(protocol_param_update, &key_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_key_deposit(protocol_param_update, &key_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2655,7 +2655,7 @@ TEST(cardano_protocol_param_update_set_key_deposit, returnsErrorIfMemoryAllocati
   error = cardano_protocol_param_update_set_key_deposit(protocol_param_update, &key_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2691,7 +2691,7 @@ TEST(cardano_protocol_param_update_set_pool_deposit, returnsErrorIfProtocolParam
   cardano_error_t error = cardano_protocol_param_update_set_pool_deposit(nullptr, &pool_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_pool_deposit, canUnsetParameterByPassingNull)
@@ -2708,7 +2708,7 @@ TEST(cardano_protocol_param_update_set_pool_deposit, canUnsetParameterByPassingN
 
   // Assert
   pool_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_deposit(protocol_param_update, &pool_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_deposit(protocol_param_update, &pool_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2731,7 +2731,7 @@ TEST(cardano_protocol_param_update_set_pool_deposit, returnsErrorIfMemoryAllocat
   error = cardano_protocol_param_update_set_pool_deposit(protocol_param_update, &pool_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2767,7 +2767,7 @@ TEST(cardano_protocol_param_update_set_max_epoch, returnsErrorIfProtocolParamUpd
   cardano_error_t error = cardano_protocol_param_update_set_max_epoch(nullptr, &e_max);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_epoch, canUnsetParameterByPassingNull)
@@ -2784,7 +2784,7 @@ TEST(cardano_protocol_param_update_set_max_epoch, canUnsetParameterByPassingNull
 
   // Assert
   e_max = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_epoch(protocol_param_update, &e_max), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_epoch(protocol_param_update, &e_max), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2807,7 +2807,7 @@ TEST(cardano_protocol_param_update_set_max_epoch, returnsErrorIfMemoryAllocation
   error = cardano_protocol_param_update_set_max_epoch(protocol_param_update, &e_max);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2843,7 +2843,7 @@ TEST(cardano_protocol_param_update_set_n_opt, returnsErrorIfProtocolParamUpdateI
   cardano_error_t error = cardano_protocol_param_update_set_n_opt(nullptr, &n_opt);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_n_opt, canUnsetParameterByPassingNull)
@@ -2860,7 +2860,7 @@ TEST(cardano_protocol_param_update_set_n_opt, canUnsetParameterByPassingNull)
 
   // Assert
   n_opt = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_n_opt(protocol_param_update, &n_opt), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_n_opt(protocol_param_update, &n_opt), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2883,7 +2883,7 @@ TEST(cardano_protocol_param_update_set_n_opt, returnsErrorIfMemoryAllocationFail
   error = cardano_protocol_param_update_set_n_opt(protocol_param_update, &n_opt);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -2924,7 +2924,7 @@ TEST(cardano_protocol_param_update_set_pool_pledge_influence, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_set_pool_pledge_influence(nullptr, rho);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&rho);
@@ -2939,7 +2939,7 @@ TEST(cardano_protocol_param_update_set_pool_pledge_influence, returnsErrorIfPool
   cardano_error_t error = cardano_protocol_param_update_set_pool_pledge_influence(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_pool_pledge_influence, canUnsetParameterByPassingNull)
@@ -2958,7 +2958,7 @@ TEST(cardano_protocol_param_update_set_pool_pledge_influence, canUnsetParameterB
 
   // Assert
   cardano_unit_interval_t* rho_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_pledge_influence(protocol_param_update, &rho_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_pledge_influence(protocol_param_update, &rho_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_unit_interval_unref(&rho);
@@ -2999,7 +2999,7 @@ TEST(cardano_protocol_param_update_set_expansion_rate, returnsErrorIfProtocolPar
   cardano_error_t error = cardano_protocol_param_update_set_expansion_rate(nullptr, tau);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&tau);
@@ -3014,7 +3014,7 @@ TEST(cardano_protocol_param_update_set_expansion_rate, returnsErrorIfExpansionRa
   cardano_error_t error = cardano_protocol_param_update_set_expansion_rate(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_expansion_rate, canUnsetParameterByPassingNull)
@@ -3033,7 +3033,7 @@ TEST(cardano_protocol_param_update_set_expansion_rate, canUnsetParameterByPassin
 
   // Assert
   cardano_unit_interval_t* tau_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_expansion_rate(protocol_param_update, &tau_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_expansion_rate(protocol_param_update, &tau_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_unit_interval_unref(&tau);
@@ -3074,7 +3074,7 @@ TEST(cardano_protocol_param_update_set_treasury_growth_rate, returnsErrorIfProto
   cardano_error_t error = cardano_protocol_param_update_set_treasury_growth_rate(nullptr, tau);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&tau);
@@ -3089,7 +3089,7 @@ TEST(cardano_protocol_param_update_set_treasury_growth_rate, returnsErrorIfTreas
   cardano_error_t error = cardano_protocol_param_update_set_treasury_growth_rate(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_treasury_growth_rate, canUnsetParameterByPassingNull)
@@ -3108,7 +3108,7 @@ TEST(cardano_protocol_param_update_set_treasury_growth_rate, canUnsetParameterBy
 
   // Assert
   cardano_unit_interval_t* tau_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_treasury_growth_rate(protocol_param_update, &tau_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_treasury_growth_rate(protocol_param_update, &tau_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_unit_interval_unref(&tau);
@@ -3149,7 +3149,7 @@ TEST(cardano_protocol_param_update_set_d, returnsErrorIfProtocolParamUpdateIsNul
   cardano_error_t error = cardano_protocol_param_update_set_d(nullptr, d);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&d);
@@ -3164,7 +3164,7 @@ TEST(cardano_protocol_param_update_set_d, returnsErrorIfDecentralisationParamIsN
   cardano_error_t error = cardano_protocol_param_update_set_d(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_d, canUnsetParameterByPassingNull)
@@ -3183,7 +3183,7 @@ TEST(cardano_protocol_param_update_set_d, canUnsetParameterByPassingNull)
 
   // Assert
   cardano_unit_interval_t* d_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_d(protocol_param_update, &d_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_d(protocol_param_update, &d_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_unit_interval_unref(&d);
@@ -3255,7 +3255,7 @@ TEST(cardano_protocol_param_update_set_extra_entropy, returnsErrorIfProtocolPara
   cardano_error_t error = cardano_protocol_param_update_set_extra_entropy(nullptr, extra_entropy);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&extra_entropy);
@@ -3276,7 +3276,7 @@ TEST(cardano_protocol_param_update_set_extra_entropy, canUnsetParameterByPassing
 
   // Assert
   cardano_buffer_t* extra_entropy_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_extra_entropy(protocol_param_update, &extra_entropy_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_extra_entropy(protocol_param_update, &extra_entropy_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_buffer_unref(&extra_entropy);
@@ -3318,7 +3318,7 @@ TEST(cardano_protocol_param_update_set_protocol_version, returnsErrorIfProtocolP
   cardano_error_t error = cardano_protocol_param_update_set_protocol_version(nullptr, protocol_version);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_protocol_version_unref(&protocol_version);
@@ -3333,7 +3333,7 @@ TEST(cardano_protocol_param_update_set_protocol_version, returnsErrorIfProtocolV
   cardano_error_t error = cardano_protocol_param_update_set_protocol_version(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_protocol_version, canUnsetParameterByPassingNull)
@@ -3352,7 +3352,7 @@ TEST(cardano_protocol_param_update_set_protocol_version, canUnsetParameterByPass
 
   // Assert
   cardano_protocol_version_t* protocol_version_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_protocol_version(protocol_param_update, &protocol_version_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_protocol_version(protocol_param_update, &protocol_version_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_version_unref(&protocol_version);
@@ -3389,7 +3389,7 @@ TEST(cardano_protocol_param_update_set_min_pool_cost, returnsErrorIfProtocolPara
   cardano_error_t error = cardano_protocol_param_update_set_min_pool_cost(nullptr, &min_pool_cost);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_min_pool_cost, canUnsetParameterByPassingNull)
@@ -3407,7 +3407,7 @@ TEST(cardano_protocol_param_update_set_min_pool_cost, canUnsetParameterByPassing
 
   // Assert
   min_pool_cost = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_pool_cost(protocol_param_update, &min_pool_cost), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_pool_cost(protocol_param_update, &min_pool_cost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3430,7 +3430,7 @@ TEST(cardano_protocol_param_update_set_min_pool_cost, returnsErrorIfMemoryAlloca
   error = cardano_protocol_param_update_set_min_pool_cost(protocol_param_update, &min_pool_cost);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3466,7 +3466,7 @@ TEST(cardano_protocol_param_update_set_ada_per_utxo_byte, returnsErrorIfProtocol
   cardano_error_t error = cardano_protocol_param_update_set_ada_per_utxo_byte(nullptr, &ada_per_utxo_byte);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_ada_per_utxo_byte, canUnsetParameterByPassingNull)
@@ -3484,7 +3484,7 @@ TEST(cardano_protocol_param_update_set_ada_per_utxo_byte, canUnsetParameterByPas
 
   // Assert
   ada_per_utxo_byte = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_ada_per_utxo_byte(protocol_param_update, &ada_per_utxo_byte), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_ada_per_utxo_byte(protocol_param_update, &ada_per_utxo_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3507,7 +3507,7 @@ TEST(cardano_protocol_param_update_set_ada_per_utxo_byte, returnsErrorIfMemoryAl
   error = cardano_protocol_param_update_set_ada_per_utxo_byte(protocol_param_update, &ada_per_utxo_byte);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3550,7 +3550,7 @@ TEST(cardano_protocol_param_update_set_cost_models, returnsErrorIfProtocolParamU
   cardano_error_t error = cardano_protocol_param_update_set_cost_models(nullptr, cost_model);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_costmdls_unref(&cost_model);
@@ -3566,7 +3566,7 @@ TEST(cardano_protocol_param_update_set_cost_models, returnsErrorIfCostModelsIsNu
   cardano_error_t error = cardano_protocol_param_update_set_cost_models(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_cost_models, canUnsetParameterByPassingNull)
@@ -3586,7 +3586,7 @@ TEST(cardano_protocol_param_update_set_cost_models, canUnsetParameterByPassingNu
 
   // Assert
   cardano_costmdls_t* cost_model_out = nullptr;
-  EXPECT_EQ(cardano_protocol_param_update_get_cost_models(protocol_param_update, &cost_model_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_cost_models(protocol_param_update, &cost_model_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_costmdls_unref(&cost_model);
@@ -3631,7 +3631,7 @@ TEST(cardano_protocol_param_update_set_execution_costs, returnsErrorIfProtocolPa
   cardano_error_t error = cardano_protocol_param_update_set_execution_costs(nullptr, execution_costs);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ex_unit_prices_unref(&execution_costs);
@@ -3647,7 +3647,7 @@ TEST(cardano_protocol_param_update_set_execution_costs, returnsErrorIfExecutionC
   cardano_error_t error = cardano_protocol_param_update_set_execution_costs(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_execution_costs, canUnsetParameterByPassingNull)
@@ -3667,7 +3667,7 @@ TEST(cardano_protocol_param_update_set_execution_costs, canUnsetParameterByPassi
 
   // Assert
   cardano_ex_unit_prices_t* execution_costs_out = nullptr;
-  EXPECT_EQ(cardano_protocol_param_update_get_execution_costs(protocol_param_update, &execution_costs_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_execution_costs(protocol_param_update, &execution_costs_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_ex_unit_prices_unref(&execution_costs);
@@ -3710,7 +3710,7 @@ TEST(cardano_protocol_param_update_set_max_tx_ex_units, returnsErrorIfProtocolPa
   cardano_error_t error = cardano_protocol_param_update_set_max_tx_ex_units(nullptr, max_tx_ex_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ex_units_unref(&max_tx_ex_units);
@@ -3725,7 +3725,7 @@ TEST(cardano_protocol_param_update_set_max_tx_ex_units, returnsErrorIfMaxTxExUni
   cardano_error_t error = cardano_protocol_param_update_set_max_tx_ex_units(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_tx_ex_units, canUnsetParameterByPassingNull)
@@ -3744,7 +3744,7 @@ TEST(cardano_protocol_param_update_set_max_tx_ex_units, canUnsetParameterByPassi
 
   // Assert
   cardano_ex_units_t* max_tx_ex_units_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_ex_units(protocol_param_update, &max_tx_ex_units_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_tx_ex_units(protocol_param_update, &max_tx_ex_units_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_ex_units_unref(&max_tx_ex_units);
@@ -3786,7 +3786,7 @@ TEST(cardano_protocol_param_update_set_max_block_ex_units, returnsErrorIfProtoco
   cardano_error_t error = cardano_protocol_param_update_set_max_block_ex_units(nullptr, max_block_ex_units);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ex_units_unref(&max_block_ex_units);
@@ -3801,7 +3801,7 @@ TEST(cardano_protocol_param_update_set_max_block_ex_units, returnsErrorIfMaxBloc
   cardano_error_t error = cardano_protocol_param_update_set_max_block_ex_units(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_block_ex_units, canUnsetParameterByPassingNull)
@@ -3820,7 +3820,7 @@ TEST(cardano_protocol_param_update_set_max_block_ex_units, canUnsetParameterByPa
 
   // Assert
   cardano_ex_units_t* max_block_ex_units_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_block_ex_units(protocol_param_update, &max_block_ex_units_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_block_ex_units(protocol_param_update, &max_block_ex_units_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_ex_units_unref(&max_block_ex_units);
@@ -3857,7 +3857,7 @@ TEST(cardano_protocol_param_update_set_max_value_size, returnsErrorIfProtocolPar
   cardano_error_t error = cardano_protocol_param_update_set_max_value_size(nullptr, &max_value_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_value_size, canUnsetParameterByPassingNull)
@@ -3875,7 +3875,7 @@ TEST(cardano_protocol_param_update_set_max_value_size, canUnsetParameterByPassin
 
   // Assert
   max_value_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_value_size(protocol_param_update, &max_value_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_value_size(protocol_param_update, &max_value_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3898,7 +3898,7 @@ TEST(cardano_protocol_param_update_set_max_value_size, returnsErrorIfMemoryAlloc
   error = cardano_protocol_param_update_set_max_value_size(protocol_param_update, &max_value_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3934,7 +3934,7 @@ TEST(cardano_protocol_param_update_set_collateral_percentage, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_set_collateral_percentage(nullptr, &collateral_percentage);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_collateral_percentage, canUnsetParameterByPassingNull)
@@ -3952,7 +3952,7 @@ TEST(cardano_protocol_param_update_set_collateral_percentage, canUnsetParameterB
 
   // Assert
   collateral_percentage = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_collateral_percentage(protocol_param_update, &collateral_percentage), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_collateral_percentage(protocol_param_update, &collateral_percentage), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -3975,7 +3975,7 @@ TEST(cardano_protocol_param_update_set_collateral_percentage, returnsErrorIfMemo
   error = cardano_protocol_param_update_set_collateral_percentage(protocol_param_update, &collateral_percentage);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4011,7 +4011,7 @@ TEST(cardano_protocol_param_update_set_max_collateral_inputs, returnsErrorIfProt
   cardano_error_t error = cardano_protocol_param_update_set_max_collateral_inputs(nullptr, &max_collateral_inputs);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_max_collateral_inputs, canUnsetParameterByPassingNull)
@@ -4029,7 +4029,7 @@ TEST(cardano_protocol_param_update_set_max_collateral_inputs, canUnsetParameterB
 
   // Assert
   max_collateral_inputs = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_max_collateral_inputs(protocol_param_update, &max_collateral_inputs), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_max_collateral_inputs(protocol_param_update, &max_collateral_inputs), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4052,7 +4052,7 @@ TEST(cardano_protocol_param_update_set_max_collateral_inputs, returnsErrorIfMemo
   error = cardano_protocol_param_update_set_max_collateral_inputs(protocol_param_update, &max_collateral_inputs);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4095,7 +4095,7 @@ TEST(cardano_protocol_param_update_set_pool_voting_thresholds, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_set_pool_voting_thresholds(nullptr, pool_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -4111,7 +4111,7 @@ TEST(cardano_protocol_param_update_set_pool_voting_thresholds, returnsErrorIfPoo
   cardano_error_t error = cardano_protocol_param_update_set_pool_voting_thresholds(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_pool_voting_thresholds, canUnsetParameterByPassingNull)
@@ -4131,7 +4131,7 @@ TEST(cardano_protocol_param_update_set_pool_voting_thresholds, canUnsetParameter
 
   // Assert
   cardano_pool_voting_thresholds_t* pool_voting_thresholds_out = nullptr;
-  EXPECT_EQ(cardano_protocol_param_update_get_pool_voting_thresholds(protocol_param_update, &pool_voting_thresholds_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_pool_voting_thresholds(protocol_param_update, &pool_voting_thresholds_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
@@ -4176,7 +4176,7 @@ TEST(cardano_protocol_param_update_set_drep_voting_thresholds, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_set_drep_voting_thresholds(nullptr, drep_voting_thresholds);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -4192,7 +4192,7 @@ TEST(cardano_protocol_param_update_set_drep_voting_thresholds, returnsErrorIfDre
   cardano_error_t error = cardano_protocol_param_update_set_drep_voting_thresholds(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_drep_voting_thresholds, canUnsetParameterByPassingNull)
@@ -4212,7 +4212,7 @@ TEST(cardano_protocol_param_update_set_drep_voting_thresholds, canUnsetParameter
 
   // Assert
   cardano_drep_voting_thresholds_t* drep_voting_thresholds_out = nullptr;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_voting_thresholds(protocol_param_update, &drep_voting_thresholds_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_voting_thresholds(protocol_param_update, &drep_voting_thresholds_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_drep_voting_thresholds_unref(&drep_voting_thresholds);
@@ -4250,7 +4250,7 @@ TEST(cardano_protocol_param_update_set_min_committee_size, returnsErrorIfProtoco
   cardano_error_t error = cardano_protocol_param_update_set_min_committee_size(nullptr, &min_committee_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_min_committee_size, canUnsetParameterByPassingNull)
@@ -4268,7 +4268,7 @@ TEST(cardano_protocol_param_update_set_min_committee_size, canUnsetParameterByPa
 
   // Assert
   min_committee_size = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_min_committee_size(protocol_param_update, &min_committee_size), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_min_committee_size(protocol_param_update, &min_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4291,7 +4291,7 @@ TEST(cardano_protocol_param_update_set_min_committee_size, returnsErrorIfMemoryA
   error = cardano_protocol_param_update_set_min_committee_size(protocol_param_update, &min_committee_size);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4327,7 +4327,7 @@ TEST(cardano_protocol_param_update_set_committee_term_limit, returnsErrorIfProto
   cardano_error_t error = cardano_protocol_param_update_set_committee_term_limit(nullptr, &committee_term_limit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_committee_term_limit, canUnsetParameterByPassingNull)
@@ -4345,7 +4345,7 @@ TEST(cardano_protocol_param_update_set_committee_term_limit, canUnsetParameterBy
 
   // Assert
   committee_term_limit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_committee_term_limit(protocol_param_update, &committee_term_limit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_committee_term_limit(protocol_param_update, &committee_term_limit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4368,7 +4368,7 @@ TEST(cardano_protocol_param_update_set_committee_term_limit, returnsErrorIfMemor
   error = cardano_protocol_param_update_set_committee_term_limit(protocol_param_update, &committee_term_limit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4404,7 +4404,7 @@ TEST(cardano_protocol_param_update_set_governance_action_validity_period, return
   cardano_error_t error = cardano_protocol_param_update_set_governance_action_validity_period(nullptr, &governance_action_validity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_governance_action_validity_period, canUnsetParameterByPassingNull)
@@ -4422,7 +4422,7 @@ TEST(cardano_protocol_param_update_set_governance_action_validity_period, canUns
 
   // Assert
   governance_action_validity_period = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_validity_period(protocol_param_update, &governance_action_validity_period), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_validity_period(protocol_param_update, &governance_action_validity_period), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4445,7 +4445,7 @@ TEST(cardano_protocol_param_update_set_governance_action_validity_period, return
   error = cardano_protocol_param_update_set_governance_action_validity_period(protocol_param_update, &governance_action_validity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4481,7 +4481,7 @@ TEST(cardano_protocol_param_update_set_governance_action_deposit, returnsErrorIf
   cardano_error_t error = cardano_protocol_param_update_set_governance_action_deposit(nullptr, &governance_action_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_governance_action_deposit, canUnsetParameterByPassingNull)
@@ -4499,7 +4499,7 @@ TEST(cardano_protocol_param_update_set_governance_action_deposit, canUnsetParame
 
   // Assert
   governance_action_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_deposit(protocol_param_update, &governance_action_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_governance_action_deposit(protocol_param_update, &governance_action_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4522,7 +4522,7 @@ TEST(cardano_protocol_param_update_set_governance_action_deposit, returnsErrorIf
   error = cardano_protocol_param_update_set_governance_action_deposit(protocol_param_update, &governance_action_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4558,7 +4558,7 @@ TEST(cardano_protocol_param_update_set_drep_deposit, returnsErrorIfProtocolParam
   cardano_error_t error = cardano_protocol_param_update_set_drep_deposit(nullptr, &drep_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_drep_deposit, canUnsetParameterByPassingNull)
@@ -4576,7 +4576,7 @@ TEST(cardano_protocol_param_update_set_drep_deposit, canUnsetParameterByPassingN
 
   // Assert
   drep_deposit = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_deposit(protocol_param_update, &drep_deposit), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_deposit(protocol_param_update, &drep_deposit), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4599,7 +4599,7 @@ TEST(cardano_protocol_param_update_set_drep_deposit, returnsErrorIfMemoryAllocat
   error = cardano_protocol_param_update_set_drep_deposit(protocol_param_update, &drep_deposit);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4635,7 +4635,7 @@ TEST(cardano_protocol_param_update_set_drep_inactivity_period, returnsErrorIfPro
   cardano_error_t error = cardano_protocol_param_update_set_drep_inactivity_period(nullptr, &drep_inactivity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_drep_inactivity_period, canUnsetParameterByPassingNull)
@@ -4653,7 +4653,7 @@ TEST(cardano_protocol_param_update_set_drep_inactivity_period, canUnsetParameter
 
   // Assert
   drep_inactivity_period = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_drep_inactivity_period(protocol_param_update, &drep_inactivity_period), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_drep_inactivity_period(protocol_param_update, &drep_inactivity_period), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4676,7 +4676,7 @@ TEST(cardano_protocol_param_update_set_drep_inactivity_period, returnsErrorIfMem
   error = cardano_protocol_param_update_set_drep_inactivity_period(protocol_param_update, &drep_inactivity_period);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -4719,7 +4719,7 @@ TEST(cardano_protocol_param_update_set_ref_script_cost_per_byte, returnsErrorIfP
   cardano_error_t error_set = cardano_protocol_param_update_set_ref_script_cost_per_byte(nullptr, ref_script_cost_per_byte);
 
   // Assert
-  EXPECT_EQ(error_set, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error_set, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_unit_interval_unref(&ref_script_cost_per_byte);
@@ -4734,7 +4734,7 @@ TEST(cardano_protocol_param_update_set_ref_script_cost_per_byte, returnsErrorIfR
   cardano_error_t error = cardano_protocol_param_update_set_ref_script_cost_per_byte(protocol_param_update, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_protocol_param_update_set_ref_script_cost_per_byte, canUnsetParameterByPassingNull)
@@ -4754,7 +4754,7 @@ TEST(cardano_protocol_param_update_set_ref_script_cost_per_byte, canUnsetParamet
 
   // Assert
   cardano_unit_interval_t* ref_script_cost_per_byte_out = NULL;
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_script_cost_per_byte(protocol_param_update, &ref_script_cost_per_byte_out), CARDANO_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_script_cost_per_byte(protocol_param_update, &ref_script_cost_per_byte_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);

@@ -53,7 +53,7 @@ typedef const char* (*enum_to_string_callback_t)(uint64_t value);
  * \return \ref CARDANO_SUCCESS if the array contains exactly \p n elements. If the array contains a different
  *         number of elements, or if the next element is not an array, appropriate error codes are returned,
  *         such as \ref CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE or \ref CARDANO_ERROR_UNEXPECTED_CBOR_TYPE. If \p reader is NULL,
- *         \ref CARDANO_POINTER_IS_NULL is returned.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL is returned.
  *
  * Usage Example:
  * \code{.c}

@@ -80,14 +80,14 @@ cardano_plutus_v2_script_set_new(cardano_plutus_v2_script_set_t** plutus_v2_scri
 {
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_v2_script_set_t* list = _cardano_malloc(sizeof(cardano_plutus_v2_script_set_t));
 
   if (list == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   list->base.ref_count     = 1;
@@ -100,7 +100,7 @@ cardano_plutus_v2_script_set_new(cardano_plutus_v2_script_set_t** plutus_v2_scri
   if (list->array == NULL)
   {
     _cardano_free(list);
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   *plutus_v2_script_set = list;
@@ -113,12 +113,12 @@ cardano_plutus_v2_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
 {
   if (reader == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_v2_script_set_t* list   = NULL;
@@ -224,12 +224,12 @@ cardano_plutus_v2_script_set_to_cbor(const cardano_plutus_v2_script_set_t* plutu
 {
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   assert(plutus_v2_script_set->array != NULL);
@@ -298,19 +298,19 @@ cardano_plutus_v2_script_set_get(
 {
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_object_t* object = cardano_array_get(plutus_v2_script_set->array, index);
 
   if (object == NULL)
   {
-    return CARDANO_OUT_OF_BOUNDS_MEMORY_READ;
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   *element = (cardano_plutus_v2_script_t*)((void*)object);
@@ -323,12 +323,12 @@ cardano_plutus_v2_script_set_add(cardano_plutus_v2_script_set_t* plutus_v2_scrip
 {
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (element == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
   const size_t original_size = cardano_array_get_size(plutus_v2_script_set->array);
   const size_t new_size      = cardano_array_add(plutus_v2_script_set->array, (cardano_object_t*)((void*)element));
@@ -357,7 +357,7 @@ cardano_plutus_v2_script_set_set_use_tag(cardano_plutus_v2_script_set_t* plutus_
 {
   if (plutus_v2_script_set == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   plutus_v2_script_set->uses_tags = use_tag;

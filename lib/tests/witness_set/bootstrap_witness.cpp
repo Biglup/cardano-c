@@ -243,7 +243,7 @@ TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_bootstrap_witness_from_cbor(nullptr, &bootstrap_witness);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfCertIsNull)
@@ -255,7 +255,7 @@ TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -296,7 +296,7 @@ TEST(cardano_bootstrap_witness_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_bootstrap_witness_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -308,7 +308,7 @@ TEST(cardano_bootstrap_witness_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_bootstrap_witness_to_cbor((cardano_bootstrap_witness_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -346,7 +346,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_bootstrap_witness_new(nullptr, nullptr, nullptr, nullptr, &bootstrap_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bootstrap_witness_new, returnsErrorIfSecondArgIsNull)
@@ -357,7 +357,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_bootstrap_witness_new((cardano_ed25519_public_key_t*)"", nullptr, nullptr, nullptr, &bootstrap_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_bootstrap_witness_new, returnsErrorIfThirdArgIsNull)
@@ -367,7 +367,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfThirdArgIsNull)
   cardano_error_t result = cardano_bootstrap_witness_new((cardano_ed25519_public_key_t*)"", (cardano_ed25519_signature_t*)"", nullptr, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -379,7 +379,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfFourthArgIsNull)
   cardano_error_t result = cardano_bootstrap_witness_new((cardano_ed25519_public_key_t*)"", (cardano_ed25519_signature_t*)"", (cardano_buffer_t*)"", nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -391,7 +391,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfWitnessArgIsNull)
   cardano_error_t result = cardano_bootstrap_witness_new((cardano_ed25519_public_key_t*)"", (cardano_ed25519_signature_t*)"", (cardano_buffer_t*)"", (cardano_buffer_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
 }
@@ -413,7 +413,7 @@ TEST(cardano_bootstrap_witness_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_bootstrap_witness_new(vk, sig, cc, attr, &bootstrap_witness);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_buffer_unref(&cc);
@@ -569,7 +569,7 @@ TEST(cardano_bootstrap_witness_set_vkey, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_vkey(nullptr, vkey);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_public_key_unref(&vkey);
@@ -584,7 +584,7 @@ TEST(cardano_bootstrap_witness_set_vkey, returnsErrorIfVkeyIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_vkey(bootstrap_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);
@@ -643,7 +643,7 @@ TEST(cardano_bootstrap_witness_set_signature, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_signature(nullptr, sig);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_ed25519_signature_unref(&sig);
@@ -658,7 +658,7 @@ TEST(cardano_bootstrap_witness_set_signature, returnsErrorIfSignatureIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_signature(bootstrap_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);
@@ -717,7 +717,7 @@ TEST(cardano_bootstrap_witness_set_chain_code, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_chain_code(nullptr, cc);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&cc);
@@ -732,7 +732,7 @@ TEST(cardano_bootstrap_witness_set_chain_code, returnsErrorIfChainCodeIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);
@@ -791,7 +791,7 @@ TEST(cardano_bootstrap_witness_set_attributes, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_attributes(nullptr, attr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_buffer_unref(&attr);
@@ -806,7 +806,7 @@ TEST(cardano_bootstrap_witness_set_attributes, returnsErrorIfAttributesIsNull)
   cardano_error_t result = cardano_bootstrap_witness_set_attributes(bootstrap_witness, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);

@@ -91,7 +91,7 @@ TEST(cardano_single_host_addr_relay_new, returnsErrorIfRelayIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_new(nullptr, nullptr, nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_new, returnsErrorIfMemoryAllocationFails)
@@ -111,7 +111,7 @@ TEST(cardano_single_host_addr_relay_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t error = cardano_single_host_addr_relay_new(NULL, ipv4_addr, ipv6_addr, &single_host_addr_relay);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -139,7 +139,7 @@ TEST(cardano_single_host_addr_relay_new, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t error = cardano_single_host_addr_relay_new(&port, ipv4_addr, ipv6_addr, &single_host_addr_relay);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -264,7 +264,7 @@ TEST(cardano_single_host_addr_relay_to_cbor, returnsErrorIfGivenANullPtr)
   cardano_error_t error = cardano_single_host_addr_relay_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -285,7 +285,7 @@ TEST(cardano_single_host_addr_relay_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_to_cbor(single_host_addr_relay, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -320,7 +320,7 @@ TEST(cardano_single_host_addr_relay_from_cbor, returnErrorIfUrlIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_from_cbor(reader, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -335,7 +335,7 @@ TEST(cardano_single_host_addr_relay_from_cbor, returnErrorIfReaderIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_from_cbor(nullptr, &single_host_addr_relay);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_from_cbor, returnErrorIfCborDataStartWithAnInvalidArray)
@@ -622,7 +622,7 @@ TEST(cardano_single_host_addr_relay_to_cbor, returnErrorIfWriterIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_to_cbor(single_host_addr_relay, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -639,7 +639,7 @@ TEST(cardano_single_host_addr_relay_to_cbor, returnErrorIfObjectIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_to_cbor(nullptr, writer);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -716,7 +716,7 @@ TEST(cardano_single_host_addr_relay_get_ipv4, returnsNullIfObjectIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_get_ipv4(nullptr, &ipv4_addr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_get_ipv4, returnsErrorIfIpv4IsNull)
@@ -725,7 +725,7 @@ TEST(cardano_single_host_addr_relay_get_ipv4, returnsErrorIfIpv4IsNull)
   cardano_error_t error = cardano_single_host_addr_relay_get_ipv4((cardano_single_host_addr_relay_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_get_ipv6, returnsIpv6)
@@ -765,7 +765,7 @@ TEST(cardano_single_host_addr_relay_get_ipv6, returnsNullIfObjectIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_get_ipv6(nullptr, &ipv6_addr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_get_ipv6, returnsErrorIfIpv6IsNull)
@@ -774,7 +774,7 @@ TEST(cardano_single_host_addr_relay_get_ipv6, returnsErrorIfIpv6IsNull)
   cardano_error_t error = cardano_single_host_addr_relay_get_ipv6((cardano_single_host_addr_relay_t*)"", nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_set_port, canSetPort)
@@ -863,7 +863,7 @@ TEST(cardano_single_host_addr_relay_set_port, returnErrorIfRelayIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_set_port(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_set_port, canSetPortThatWasNull)
@@ -912,7 +912,7 @@ TEST(cardano_single_host_addr_relay_set_port, returnsMemoryAllocationErrorWhileS
   cardano_error_t error = cardano_single_host_addr_relay_set_port(single_host_addr_relay, &new_port);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -969,7 +969,7 @@ TEST(cardano_single_host_addr_relay_set_ipv4, returnsErrorIfIpv4IsNull)
   error = cardano_single_host_addr_relay_set_ipv4(single_host_addr_relay, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -982,7 +982,7 @@ TEST(cardano_single_host_addr_relay_set_ipv4, returnErrorIfRelayIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_set_ipv4(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_single_host_addr_relay_set_ipv6, canSetIpv6)
@@ -1033,7 +1033,7 @@ TEST(cardano_single_host_addr_relay_set_ipv6, returnsErrorIfIpv6IsNull)
   error = cardano_single_host_addr_relay_set_ipv6(single_host_addr_relay, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_single_host_addr_relay_unref(&single_host_addr_relay);
@@ -1046,5 +1046,5 @@ TEST(cardano_single_host_addr_relay_set_ipv6, returnErrorIfRelayIsNull)
   cardano_error_t error = cardano_single_host_addr_relay_set_ipv6(nullptr, nullptr);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

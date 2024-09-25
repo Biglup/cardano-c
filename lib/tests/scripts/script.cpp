@@ -110,7 +110,7 @@ TEST(cardano_script_new_native, returnsErrorIfNativeScriptIsNull)
   cardano_error_t result = cardano_script_new_native(NULL, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(script, nullptr);
 }
 
@@ -127,7 +127,7 @@ TEST(cardano_script_new_native, returnsErrorIfScriptIsNull)
   result = cardano_script_new_native(native_script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_native_script_unref(&native_script);
@@ -150,7 +150,7 @@ TEST(cardano_script_new_native, returnsErrorIfMemoryAllocationFails)
   result = cardano_script_new_native(native_script, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
 
   // Cleanup
@@ -188,7 +188,7 @@ TEST(cardano_script_new_plutus_v1, returnsErrorIfPlutusV1ScriptIsNull)
   cardano_error_t result = cardano_script_new_plutus_v1(NULL, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(script, nullptr);
 }
 
@@ -205,7 +205,7 @@ TEST(cardano_script_new_plutus_v1, returnsErrorIfScriptIsNull)
   result = cardano_script_new_plutus_v1(plutus_script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_v1_script_unref(&plutus_script);
@@ -228,7 +228,7 @@ TEST(cardano_script_new_plutus_v1, returnsErrorIfMemoryAllocationFails)
   result = cardano_script_new_plutus_v1(plutus_script, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
 
   // Cleanup
@@ -266,7 +266,7 @@ TEST(cardano_script_new_plutus_v2, returnsErrorIfPlutusV2ScriptIsNull)
   cardano_error_t result = cardano_script_new_plutus_v2(NULL, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(script, nullptr);
 }
 
@@ -283,7 +283,7 @@ TEST(cardano_script_new_plutus_v2, returnsErrorIfScriptIsNull)
   result = cardano_script_new_plutus_v2(plutus_script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_v2_script_unref(&plutus_script);
@@ -306,7 +306,7 @@ TEST(cardano_script_new_plutus_v2, returnsErrorIfMemoryAllocationFails)
   result = cardano_script_new_plutus_v2(plutus_script, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
 
   // Cleanup
@@ -344,7 +344,7 @@ TEST(cardano_script_new_plutus_v3, returnsErrorIfPlutusV3ScriptIsNull)
   cardano_error_t result = cardano_script_new_plutus_v3(NULL, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(script, nullptr);
 }
 
@@ -361,7 +361,7 @@ TEST(cardano_script_new_plutus_v3, returnsErrorIfScriptIsNull)
   result = cardano_script_new_plutus_v3(plutus_script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_plutus_v3_script_unref(&plutus_script);
@@ -384,7 +384,7 @@ TEST(cardano_script_new_plutus_v3, returnsErrorIfMemoryAllocationFails)
   result = cardano_script_new_plutus_v3(plutus_script, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
 
   // Cleanup
@@ -549,7 +549,7 @@ TEST(cardano_script_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_script_from_cbor(NULL, &script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(script, nullptr);
 }
 
@@ -562,7 +562,7 @@ TEST(cardano_script_from_cbor, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_from_cbor(reader, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -681,7 +681,7 @@ TEST(cardano_script_to_cbor, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_to_cbor(NULL, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -705,7 +705,7 @@ TEST(cardano_script_to_cbor, returnsErrorIfWriterIsNull)
   result = cardano_script_to_cbor(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -749,7 +749,7 @@ TEST(cardano_script_get_language, returnsErrorIfGivenNull)
   cardano_error_t result = cardano_script_get_language(NULL, &language);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_get_language, returnsErrorIfLanguageIsNull)
@@ -770,7 +770,7 @@ TEST(cardano_script_get_language, returnsErrorIfLanguageIsNull)
   result = cardano_script_get_language(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -815,7 +815,7 @@ TEST(cardano_script_to_native, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_to_native(NULL, &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(native_script, nullptr);
 }
 
@@ -837,7 +837,7 @@ TEST(cardano_script_to_native, returnsErrorIfNativeScriptIsNull)
   result = cardano_script_to_native(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -864,7 +864,7 @@ TEST(cardano_script_to_native, returnsErrorIfNotNativeScript)
   result = cardano_script_to_native(script, &native_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_SCRIPT_LANGUAGE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   ASSERT_EQ(native_script, nullptr);
 
   // Cleanup
@@ -910,7 +910,7 @@ TEST(cardano_script_to_plutus_v1, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_to_plutus_v1(NULL, &plutus_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(plutus_script, nullptr);
 }
 
@@ -932,7 +932,7 @@ TEST(cardano_script_to_plutus_v1, returnsErrorIfPlutusV1ScriptIsNull)
   result = cardano_script_to_plutus_v1(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -959,7 +959,7 @@ TEST(cardano_script_to_plutus_v1, returnsErrorIfNotPlutusV1Script)
   result = cardano_script_to_plutus_v1(script, &plutus_script2);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_SCRIPT_LANGUAGE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   ASSERT_EQ(plutus_script2, nullptr);
 
   // Cleanup
@@ -1005,7 +1005,7 @@ TEST(cardano_script_to_plutus_v2, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_to_plutus_v2(NULL, &plutus_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(plutus_script, nullptr);
 }
 
@@ -1027,7 +1027,7 @@ TEST(cardano_script_to_plutus_v2, returnsErrorIfPlutusV2ScriptIsNull)
   result = cardano_script_to_plutus_v2(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -1054,7 +1054,7 @@ TEST(cardano_script_to_plutus_v2, returnsErrorIfNotPlutusV2Script)
   result = cardano_script_to_plutus_v2(script, &plutus_script2);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_SCRIPT_LANGUAGE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   ASSERT_EQ(plutus_script2, nullptr);
 
   // Cleanup
@@ -1100,7 +1100,7 @@ TEST(cardano_script_to_plutus_v3, returnsErrorIfScriptIsNull)
   cardano_error_t result = cardano_script_to_plutus_v3(NULL, &plutus_script);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   ASSERT_EQ(plutus_script, nullptr);
 }
 
@@ -1122,7 +1122,7 @@ TEST(cardano_script_to_plutus_v3, returnsErrorIfPlutusV3ScriptIsNull)
   result = cardano_script_to_plutus_v3(script, NULL);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_script_unref(&script);
@@ -1149,7 +1149,7 @@ TEST(cardano_script_to_plutus_v3, returnsErrorIfNotPlutusV3Script)
   result = cardano_script_to_plutus_v3(script, &plutus_script2);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_INVALID_SCRIPT_LANGUAGE);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   ASSERT_EQ(plutus_script2, nullptr);
 
   // Cleanup

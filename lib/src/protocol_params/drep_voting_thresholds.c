@@ -108,64 +108,64 @@ cardano_drep_voting_thresholds_new(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_constitution == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_network_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_economic_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_technical_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_governance_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_withdrawal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *drep_voting_thresholds = _cardano_malloc(sizeof(cardano_drep_voting_thresholds_t));
 
   if (*drep_voting_thresholds == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*drep_voting_thresholds)->base.deallocator   = cardano_drep_voting_thresholds_deallocate;
@@ -210,13 +210,13 @@ cardano_drep_voting_thresholds_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *drep_voting_thresholds = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "drep_voting_thresholds";
@@ -426,12 +426,12 @@ cardano_drep_voting_thresholds_to_cbor(const cardano_drep_voting_thresholds_t* d
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -516,12 +516,12 @@ cardano_drep_voting_thresholds_get_motion_no_confidence(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->motion_no_confidence);
@@ -537,12 +537,12 @@ cardano_drep_voting_thresholds_get_committee_normal(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->committee_normal);
@@ -558,12 +558,12 @@ cardano_drep_voting_thresholds_get_committee_no_confidence(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->committee_no_confidence);
@@ -579,12 +579,12 @@ cardano_drep_voting_thresholds_get_update_constitution(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_constitution == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->update_constitution);
@@ -600,12 +600,12 @@ cardano_drep_voting_thresholds_get_hard_fork_initiation(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->hard_fork_initiation);
@@ -621,12 +621,12 @@ cardano_drep_voting_thresholds_get_pp_network_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_network_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->pp_network_group);
@@ -642,12 +642,12 @@ cardano_drep_voting_thresholds_get_pp_economic_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_economic_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->pp_economic_group);
@@ -663,12 +663,12 @@ cardano_drep_voting_thresholds_get_pp_technical_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_technical_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->pp_technical_group);
@@ -684,12 +684,12 @@ cardano_drep_voting_thresholds_get_pp_governance_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_governance_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->pp_governance_group);
@@ -705,12 +705,12 @@ cardano_drep_voting_thresholds_get_treasury_withdrawal(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_withdrawal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(drep_voting_thresholds->treasury_withdrawal);
@@ -726,12 +726,12 @@ cardano_drep_voting_thresholds_set_motion_no_confidence(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->motion_no_confidence);
@@ -748,12 +748,12 @@ cardano_drep_voting_thresholds_set_committee_normal(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->committee_normal);
@@ -770,12 +770,12 @@ cardano_drep_voting_thresholds_set_committee_no_confidence(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->committee_no_confidence);
@@ -792,12 +792,12 @@ cardano_drep_voting_thresholds_set_update_constitution(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (update_constitution == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->update_constitution);
@@ -814,12 +814,12 @@ cardano_drep_voting_thresholds_set_hard_fork_initiation(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->hard_fork_initiation);
@@ -836,12 +836,12 @@ cardano_drep_voting_thresholds_set_pp_network_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_network_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->pp_network_group);
@@ -858,12 +858,12 @@ cardano_drep_voting_thresholds_set_pp_economic_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_economic_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->pp_economic_group);
@@ -880,12 +880,12 @@ cardano_drep_voting_thresholds_set_pp_technical_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_technical_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->pp_technical_group);
@@ -902,12 +902,12 @@ cardano_drep_voting_thresholds_set_pp_governance_group(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (pp_governance_group == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->pp_governance_group);
@@ -924,12 +924,12 @@ cardano_drep_voting_thresholds_set_treasury_withdrawal(
 {
   if (drep_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (treasury_withdrawal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&drep_voting_thresholds->treasury_withdrawal);

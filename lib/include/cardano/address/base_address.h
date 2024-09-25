@@ -66,7 +66,7 @@ typedef struct cardano_base_address_t cardano_base_address_t;
  *                           if the function succeeds.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully created, otherwise it returns an
- *         error code indicating what went wrong (e.g., CARDANO_POINTER_IS_NULL if any input pointers are NULL).
+ *         error code indicating what went wrong (e.g., CARDANO_ERROR_POINTER_IS_NULL if any input pointers are NULL).
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_base_address_t object,
  *       which includes freeing it when it is no longer needed by calling \ref cardano_base_address_unref.
@@ -106,8 +106,8 @@ CARDANO_EXPORT cardano_error_t cardano_base_address_from_credentials(
  *                           base address object if the conversion is successful.
  *
  * \return Returns \ref CARDANO_SUCCESS if the conversion is successful. If the address is not of a
- *         base address type, returns an appropriate error code such as \ref CARDANO_INVALID_ADDRESS_TYPE.
- *         If the \p address is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         base address type, returns an appropriate error code such as \ref CARDANO_ERROR_INVALID_ADDRESS_TYPE.
+ *         If the \p address is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \note The newly created \ref cardano_base_address_t object is fully managed by the caller, who is responsible
  *       for freeing it when it is no longer needed by calling \ref cardano_base_address_unref.
@@ -370,8 +370,8 @@ CARDANO_EXPORT const byte_t* cardano_base_address_get_bytes(const cardano_base_a
  *                 returned by \ref cardano_base_address_get_bytes_size to ensure successful serialization.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the buffer is too small,
- *         returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE. If the \p address or \p data is NULL, returns
- *         \ref CARDANO_POINTER_IS_NULL.
+ *         returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE. If the \p address or \p data is NULL, returns
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -418,8 +418,8 @@ CARDANO_EXPORT cardano_error_t cardano_base_address_to_bytes(
  *                     successful, this will be set to point to the newly created base address object.
  *
  * \return Returns \ref CARDANO_SUCCESS if the base address is successfully created from the Bech32 string.
- *         Returns \ref CARDANO_INVALID_ADDRESS_FORMAT if the Bech32 string does not conform to the expected format or
- *         if the decoding fails. Returns \ref CARDANO_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 string does not conform to the expected format or
+ *         if the decoding fails. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
  *
  * \note The caller is responsible for freeing the created \ref cardano_base_address_t object using the
  *       \ref cardano_base_address_unref function when it is no longer needed.
@@ -500,8 +500,8 @@ CARDANO_EXPORT size_t cardano_base_address_get_bech32_size(const cardano_base_ad
  *                 successful encoding.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully encoded into Bech32 format.
- *         If the provided buffer is too small, returns \ref CARDANO_INSUFFICIENT_BUFFER_SIZE.
- *         If \p address or \p data is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         If the provided buffer is too small, returns \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE.
+ *         If \p address or \p data is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}

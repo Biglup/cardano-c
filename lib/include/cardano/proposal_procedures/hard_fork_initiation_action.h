@@ -150,7 +150,7 @@ cardano_hard_fork_initiation_action_from_cbor(cardano_cbor_reader_t* reader, car
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p hard_fork_initiation_action or \p writer
- *         is NULL, returns \ref CARDANO_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * Usage Example:
  * \code{.c}
@@ -192,7 +192,7 @@ CARDANO_EXPORT cardano_error_t cardano_hard_fork_initiation_action_to_cbor(
  * \param[in] protocol_version A pointer to an initialized \ref cardano_protocol_version_t object representing the new protocol version.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the protocol version was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if any of the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
  *         input pointers are NULL.
  *
  * Usage Example:
@@ -263,7 +263,7 @@ cardano_hard_fork_initiation_action_get_protocol_version(cardano_hard_fork_initi
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_POINTER_IS_NULL if the
+ *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if the
  *         hard_fork_initiation_action pointer is NULL.
  *
  * Usage Example:

@@ -93,39 +93,39 @@ cardano_pool_voting_thresholds_new(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (security_relevant_param == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *pool_voting_thresholds = _cardano_malloc(sizeof(cardano_pool_voting_thresholds_t));
 
   if (*pool_voting_thresholds == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*pool_voting_thresholds)->base.deallocator   = cardano_pool_voting_thresholds_deallocate;
@@ -155,14 +155,14 @@ cardano_pool_voting_thresholds_from_cbor(cardano_cbor_reader_t* reader, cardano_
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *pool_voting_thresholds = NULL;
 
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   static const char* validator_name = "pool_voting_thresholds";
@@ -279,12 +279,12 @@ cardano_pool_voting_thresholds_to_cbor(const cardano_pool_voting_thresholds_t* p
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -334,12 +334,12 @@ cardano_pool_voting_thresholds_get_motion_no_confidence(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_voting_thresholds->motion_no_confidence);
@@ -355,12 +355,12 @@ cardano_pool_voting_thresholds_get_committee_normal(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_voting_thresholds->committee_normal);
@@ -376,12 +376,12 @@ cardano_pool_voting_thresholds_get_committee_no_confidence(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_voting_thresholds->committee_no_confidence);
@@ -397,12 +397,12 @@ cardano_pool_voting_thresholds_get_hard_fork_initiation(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_voting_thresholds->hard_fork_initiation);
@@ -418,12 +418,12 @@ cardano_pool_voting_thresholds_get_security_relevant_param(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (security_relevant_param == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_ref(pool_voting_thresholds->security_relevant_param);
@@ -439,12 +439,12 @@ cardano_pool_voting_thresholds_set_motion_no_confidence(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (motion_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&pool_voting_thresholds->motion_no_confidence);
@@ -461,12 +461,12 @@ cardano_pool_voting_thresholds_set_committee_normal(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_normal == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&pool_voting_thresholds->committee_normal);
@@ -483,12 +483,12 @@ cardano_pool_voting_thresholds_set_committee_no_confidence(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (committee_no_confidence == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&pool_voting_thresholds->committee_no_confidence);
@@ -505,12 +505,12 @@ cardano_pool_voting_thresholds_set_hard_fork_initiation(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (hard_fork_initiation == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&pool_voting_thresholds->hard_fork_initiation);
@@ -527,12 +527,12 @@ cardano_pool_voting_thresholds_set_security_relevant_param(
 {
   if (pool_voting_thresholds == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (security_relevant_param == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_unit_interval_unref(&pool_voting_thresholds->security_relevant_param);

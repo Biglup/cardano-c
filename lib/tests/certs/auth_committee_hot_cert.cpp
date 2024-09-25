@@ -212,7 +212,7 @@ TEST(cardano_auth_committee_hot_cert_from_cbor, returnsErrorIfReaderIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_from_cbor(nullptr, &auth_committee_hot_cert);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auth_committee_hot_cert_from_cbor, returnsErrorIfCertIsNull)
@@ -224,7 +224,7 @@ TEST(cardano_auth_committee_hot_cert_from_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_from_cbor(reader, nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -265,7 +265,7 @@ TEST(cardano_auth_committee_hot_cert_to_cbor, returnsErrorIfCertIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_to_cbor(nullptr, writer);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
@@ -277,7 +277,7 @@ TEST(cardano_auth_committee_hot_cert_to_cbor, returnsErrorIfWriterIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_to_cbor((cardano_auth_committee_hot_cert_t*)"", nullptr);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_POINTER_IS_NULL);
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 // Cert specific tests
@@ -314,7 +314,7 @@ TEST(cardano_auth_committee_hot_cert_new, returnsErrorIfFirstArgIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_new(nullptr, cold, &auth_committee_hot_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&cold);
@@ -331,7 +331,7 @@ TEST(cardano_auth_committee_hot_cert_new, returnsErrorIfSecondArgIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_new(hot, nullptr, &auth_committee_hot_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&hot);
@@ -347,7 +347,7 @@ TEST(cardano_auth_committee_hot_cert_new, returnsErrorIfThirdArgIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_new(hot, cold, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&hot);
@@ -369,7 +369,7 @@ TEST(cardano_auth_committee_hot_cert_new, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_auth_committee_hot_cert_new(hot, cold, &auth_committee_hot_cert);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_credential_unref(&hot);
@@ -471,7 +471,7 @@ TEST(cardano_auth_committee_hot_cert_set_cold_cred, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_set_cold_cred(nullptr, cold);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&cold);
@@ -486,7 +486,7 @@ TEST(cardano_auth_committee_hot_cert_set_cold_cred, returnsErrorIfCredentialIsNu
   cardano_error_t result = cardano_auth_committee_hot_cert_set_cold_cred(auth_committee_hot_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
@@ -522,7 +522,7 @@ TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_get_cold_cred(nullptr, &cold_out);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfCredentialIsNull)
@@ -534,7 +534,7 @@ TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfCredentialIsNu
   cardano_error_t result = cardano_auth_committee_hot_cert_get_cold_cred(auth_committee_hot_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
@@ -566,7 +566,7 @@ TEST(cardano_auth_committee_hot_cert_set_hot_cred, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_set_hot_cred(nullptr, hot);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_credential_unref(&hot);
@@ -581,7 +581,7 @@ TEST(cardano_auth_committee_hot_cert_set_hot_cred, returnsErrorIfCredentialIsNul
   cardano_error_t result = cardano_auth_committee_hot_cert_set_hot_cred(auth_committee_hot_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
@@ -617,7 +617,7 @@ TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfObjectIsNull)
   cardano_error_t result = cardano_auth_committee_hot_cert_get_hot_cred(nullptr, &hot_out);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfCredentialIsNull)
@@ -629,7 +629,7 @@ TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfCredentialIsNul
   cardano_error_t result = cardano_auth_committee_hot_cert_get_hot_cred(auth_committee_hot_cert, nullptr);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);

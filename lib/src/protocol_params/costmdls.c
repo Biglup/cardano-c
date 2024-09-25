@@ -113,14 +113,14 @@ cardano_costmdls_new(cardano_costmdls_t** costmdls)
 {
   if (costmdls == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *costmdls = _cardano_malloc(sizeof(cardano_costmdls_t));
 
   if (*costmdls == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*costmdls)->base.deallocator   = cardano_costmdls_deallocate;
@@ -138,13 +138,13 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
 {
   if (costmdls == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (reader == NULL)
   {
     *costmdls = NULL;
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   int64_t map_size = 0U;
@@ -211,7 +211,7 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
       default:
         cardano_costmdls_unref(&costmdls_data);
         *costmdls = NULL;
-        return CARDANO_INVALID_PLUTUS_COST_MODEL;
+        return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
         // LCOV_EXCL_STOP
     }
   }
@@ -226,12 +226,12 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 {
   if (costmdls == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (writer == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t map_size = get_map_size(costmdls);
@@ -283,12 +283,12 @@ cardano_costmdls_insert(
 {
   if (costmdls == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_plutus_language_version_t language;
@@ -320,7 +320,7 @@ cardano_costmdls_insert(
       break;
     /* LCOV_EXCL_START */
     default:
-      return CARDANO_INVALID_PLUTUS_COST_MODEL;
+      return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
       /* LCOV_EXCL_STOP */
   }
 
@@ -335,12 +335,12 @@ cardano_costmdls_get(
 {
   if (costmdls == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (cost_model == NULL)
   {
-    return CARDANO_POINTER_IS_NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   switch (language)
@@ -358,7 +358,7 @@ cardano_costmdls_get(
       cardano_cost_model_ref(costmdls->plutus_v3_costs);
       break;
     default:
-      return CARDANO_INVALID_PLUTUS_COST_MODEL;
+      return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
   }
 
   return CARDANO_SUCCESS;
@@ -396,7 +396,7 @@ cardano_costmdls_get_language_views_encoding(
 
   if (writer == NULL)
   {
-    return CARDANO_MEMORY_ALLOCATION_FAILED;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   const size_t map_size = get_map_size(costmdls);
@@ -447,7 +447,7 @@ cardano_costmdls_get_language_views_encoding(
       // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
 
-      return CARDANO_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       // LCOV_EXCL_STOP
     }
 

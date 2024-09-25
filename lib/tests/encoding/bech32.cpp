@@ -292,7 +292,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -314,7 +314,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfOutputBufferIsTooSmall)
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, 1);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_INSUFFICIENT_BUFFER_SIZE));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE));
 
   // Cleanup
   free(bech32_string);
@@ -337,7 +337,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfEventualMemoryAllocationFails1
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -363,7 +363,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfEventualMemoryAllocationFails2
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -389,7 +389,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfEventualMemoryAllocationFails3
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -415,7 +415,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfEventualMemoryAllocationFails4
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -441,7 +441,7 @@ TEST(cardano_encoding_bech32_encode, returnErrorIfEventualMemoryAllocationFails5
   cardano_error_t result = cardano_encoding_bech32_encode(hpr, hrp_size, data.data(), data.size(), bech32_string, bech32_size);
 
   // Assert
-  ASSERT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  ASSERT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(bech32_string);
@@ -513,7 +513,7 @@ TEST(cardano_encoding_bech32_decode, returnErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_encoding_bech32_decode(bech32.c_str(), bech32.size(), hrp, hrp_size, data, data_size);
 
   // Assert
-  EXPECT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  EXPECT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(hrp);
@@ -669,7 +669,7 @@ TEST(cardano_encoding_bech32_decode, returnErrorIfEventualMemoryAllocationFails6
   cardano_error_t result = cardano_encoding_bech32_decode(bech32.c_str(), bech32.size(), hrp, hrp_size, data, data_size);
 
   // Assert
-  EXPECT_THAT(result, testing::Eq(CARDANO_MEMORY_ALLOCATION_FAILED));
+  EXPECT_THAT(result, testing::Eq(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
 
   // Cleanup
   free(hrp);
