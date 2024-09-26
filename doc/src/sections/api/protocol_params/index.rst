@@ -17,4 +17,5 @@ Examples of important Cardano protocol parameters include the maximum block size
    pool_voting_thresholds
    proposed_param_updates
    protocol_param_update
+   protocol_parameters
    update

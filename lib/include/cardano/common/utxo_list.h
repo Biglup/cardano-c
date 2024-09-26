@@ -47,11 +47,11 @@ typedef struct cardano_utxo_t cardano_utxo_t;
 typedef struct cardano_utxo_list_t cardano_utxo_list_t;
 
 /**
- * \brief Function pointer type that compares two objects of the same type and returns a value
- * indicating whether one object is less than, equal to, or greater than the other.
+ * \brief Function pointer type that compares two utxos and returns a value
+ * indicating whether one utxo is less than, equal to, or greater than the other.
  *
- * \param[in] lhs The left-hand side object to compare.
- * \param[in] rhs The right-hand side object to compare.
+ * \param[in] lhs The left-hand side utxo to compare.
+ * \param[in] rhs The right-hand side utxo to compare.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
@@ -59,13 +59,13 @@ typedef struct cardano_utxo_list_t cardano_utxo_list_t;
 typedef int (*cardano_utxo_list_compare_item_t)(cardano_utxo_t* lhs, cardano_utxo_t* rhs);
 
 /**
- * \brief Defines a function pointer for evaluating whether a specific object meets a defined set of criteria.
+ * \brief Defines a function pointer for evaluating whether a specific utxo meets a defined set of criteria.
  *
  * This typedef defines a function pointer type that represents a predicate function. A predicate function
- * takes an object of type `cardano_object_t` and an optional context as parameters and evaluates whether
- * the object meets a specific set of criteria.
+ * takes an utxo of type `cardano_utxo_t` and an optional context as parameters and evaluates whether
+ * the utxo meets a specific set of criteria.
  *
- * \param[in] item The object to be evaluated against the predicate's criteria.
+ * \param[in] item The utxo to be evaluated against the predicate's criteria.
  * \param[in] context An optional context providing additional data or parameters for the predicate evaluation.
  *
  * \return Returns \c true if the `item` satisfies the predicate's conditions, \c false otherwise.
