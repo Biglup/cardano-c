@@ -720,12 +720,88 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
       }
       else
       {
-        result = cardano_cbor_writer_write_bigint(writer, plutus_data->integer);
+        const size_t size  = cardano_bigint_get_bytes_size(plutus_data->integer);
+        byte_t*      bytes = _cardano_malloc(size);
+
+        result = cardano_bigint_to_bytes(plutus_data->integer, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          _cardano_free(bytes);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        result = cardano_cbor_writer_write_tag(writer, (cardano_bigint_signum(plutus_data->integer) < 0) ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          _cardano_free(bytes);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        static const uint64_t max_byte_string_chunk_size = 64;
+
+        if (size <= max_byte_string_chunk_size)
+        {
+          result = cardano_cbor_writer_write_bytestring(writer, bytes, size);
+          _cardano_free(bytes);
+
+          return result;
+        }
+
+        static const byte_t indefinite_byte_string = 95;
+
+        const size_t chunks = size / max_byte_string_chunk_size;
+        const size_t rest   = size % max_byte_string_chunk_size;
+        result              = cardano_cbor_writer_write_encoded(writer, &indefinite_byte_string, sizeof(indefinite_byte_string));
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          _cardano_free(bytes);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        for (size_t i = 0; i < chunks; ++i)
+        {
+          result = cardano_cbor_writer_write_bytestring(
+            writer, &bytes[i * max_byte_string_chunk_size], max_byte_string_chunk_size);
+
+          if (result != CARDANO_SUCCESS)
+          {
+            // LCOV_EXCL_START
+            _cardano_free(bytes);
+            return result;
+            // LCOV_EXCL_STOP
+          }
+        }
+
+        if (rest > 0U)
+        {
+          result = cardano_cbor_writer_write_bytestring(
+            writer, &bytes[chunks * max_byte_string_chunk_size], rest);
+
+          if (result != CARDANO_SUCCESS)
+          {
+            // LCOV_EXCL_START
+            _cardano_free(bytes);
+            return result;
+            // LCOV_EXCL_STOP
+          }
+        }
+
+        _cardano_free(bytes);
+        result = cardano_cbor_writer_write_end_array(writer);
       }
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result; /* LCOV_EXCL_LINE */
       }
 
       break;
