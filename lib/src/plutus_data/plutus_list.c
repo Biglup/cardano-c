@@ -402,6 +402,15 @@ cardano_plutus_list_clear_cbor_cache(cardano_plutus_list_t* plutus_list)
   }
 
   cardano_buffer_unref(&plutus_list->cbor_cache);
+
+  for (size_t i = 0; i < cardano_array_get_size(plutus_list->array); ++i)
+  {
+    cardano_object_t* element = cardano_array_get(plutus_list->array, i);
+    cardano_object_unref(&element);
+
+    cardano_plutus_data_clear_cbor_cache((cardano_plutus_data_t*)(void*)element);
+  }
+
   plutus_list->cbor_cache = NULL;
 }
 
