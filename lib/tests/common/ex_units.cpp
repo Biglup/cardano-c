@@ -23,7 +23,6 @@
 
 #include <cardano/error.h>
 
-#include <cardano/buffer.h>
 #include <cardano/common/ex_units.h>
 
 #include "../allocators_helpers.h"

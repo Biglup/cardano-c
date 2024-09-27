@@ -279,33 +279,6 @@ cardano_no_confidence_action_get_governance_action_id(cardano_no_confidence_acti
 CARDANO_EXPORT void cardano_no_confidence_action_unref(cardano_no_confidence_action_t** no_confidence_action);
 
 /**
- * \brief Decrements the reference count of a cardano_no_confidence_action_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_no_confidence_action_t object
- * by decreasing its reference count. When the reference count reaches zero, the no_confidence_action is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] no_confidence_action A pointer to the pointer of the no_confidence_action object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_no_confidence_action_t* no_confidence_action = cardano_no_confidence_action_new(major, minor);
- *
- * // Perform operations with the no_confidence_action...
- *
- * cardano_no_confidence_action_unref(&no_confidence_action);
- * // At this point, no_confidence_action is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_no_confidence_action_unref, the pointer to the \ref cardano_no_confidence_action_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_no_confidence_action_unref(cardano_no_confidence_action_t** no_confidence_action);
-
-/**
  * \brief Increases the reference count of the cardano_no_confidence_action_t object.
  *
  * This function is used to manually increment the reference count of an cardano_no_confidence_action_t

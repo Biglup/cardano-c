@@ -307,6 +307,25 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
   return create_pubkey_new_result;
 }
 
+cardano_error_t
+cardano_script_pubkey_get_key_hash(cardano_script_pubkey_t* script_pubkey, cardano_blake2b_hash_t** key_hash)
+{
+  if (script_pubkey == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (key_hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_ref(script_pubkey->key_hash);
+  *key_hash = script_pubkey->key_hash;
+
+  return CARDANO_SUCCESS;
+}
+
 bool
 cardano_script_pubkey_equals(const cardano_script_pubkey_t* lhs, const cardano_script_pubkey_t* rhs)
 {

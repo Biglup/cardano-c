@@ -999,3 +999,177 @@ TEST(cardano_redeemer_list_clear_cbor_cache, doesNothingIfRedeemerSetIsNull)
   // Act
   cardano_redeemer_list_clear_cbor_cache(nullptr);
 }
+
+TEST(cardano_redeemer_list_set_ex_units, returnsErrorIfRedeemerSetIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_redeemer_list_set_ex_units(nullptr, CARDANO_REDEEMER_TAG_SPEND, 0, 0, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_redeemer_list_set_ex_units, returnsErrorIfElementWithTagAndIndexNotFound)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_error_t          error         = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_redeemer_list_set_ex_units(redeemer_list, CARDANO_REDEEMER_TAG_SPEND, 0, 0, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+}
+
+TEST(cardano_redeemer_list_set_ex_units, canSetTheExecutionUnits)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_error_t          error         = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* redeemers[] = { REDEEMER1_CBOR, REDEEMER2_CBOR, REDEEMER3_CBOR, REDEEMER4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_redeemer_t* redeemer = new_default_redeemer(redeemers[i]);
+
+    EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer), CARDANO_SUCCESS);
+
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  // Act
+  error = cardano_redeemer_list_set_ex_units(redeemer_list, CARDANO_REDEEMER_TAG_SPEND, 0, 1, 2);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  cardano_redeemer_t* elem1 = NULL;
+
+  EXPECT_EQ(cardano_redeemer_list_get(redeemer_list, 0, &elem1), CARDANO_SUCCESS);
+
+  cardano_ex_units_t* ex_units = cardano_redeemer_get_ex_units(elem1);
+
+  uint64_t cpu    = cardano_ex_units_get_cpu_steps(ex_units);
+  uint64_t memory = cardano_ex_units_get_memory(ex_units);
+
+  EXPECT_EQ(cpu, 2);
+  EXPECT_EQ(memory, 1);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_redeemer_unref(&elem1);
+  cardano_ex_units_unref(&ex_units);
+}
+
+TEST(cardano_redeemer_list_clone, returnsErrorIfRedeemerSetIsNull)
+{
+  // Act
+  cardano_redeemer_list_t* cloned = nullptr;
+  cardano_error_t          error  = cardano_redeemer_list_clone(nullptr, &cloned);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cloned, (cardano_redeemer_list_t*)nullptr);
+}
+
+TEST(cardano_redeemer_list_clone, returnsErrorIfClonedIsNull)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_error_t          error         = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_redeemer_list_clone(redeemer_list, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+}
+
+TEST(cardano_redeemer_list_clone, canCloneRedeemerSet)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_error_t          error         = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* redeemers[] = { REDEEMER1_CBOR, REDEEMER2_CBOR, REDEEMER3_CBOR, REDEEMER4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_redeemer_t* redeemer = new_default_redeemer(redeemers[i]);
+
+    EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer), CARDANO_SUCCESS);
+
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  // Act
+  cardano_redeemer_list_t* cloned = nullptr;
+  error                           = cardano_redeemer_list_clone(redeemer_list, &cloned);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(cloned, testing::Not((cardano_redeemer_list_t*)nullptr));
+
+  const size_t length = cardano_redeemer_list_get_length(cloned);
+
+  EXPECT_EQ(length, 4);
+
+  cardano_redeemer_t* elem1 = NULL;
+  cardano_redeemer_t* elem2 = NULL;
+  cardano_redeemer_t* elem3 = NULL;
+  cardano_redeemer_t* elem4 = NULL;
+
+  EXPECT_EQ(cardano_redeemer_list_get(cloned, 0, &elem1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_get(cloned, 1, &elem2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_get(cloned, 2, &elem3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_get(cloned, 3, &elem4), CARDANO_SUCCESS);
+
+  const char* redeemers2[] = { REDEEMER1_CBOR, REDEEMER4_CBOR, REDEEMER3_CBOR, REDEEMER2_CBOR };
+
+  cardano_redeemer_t* redeemers_array[] = { elem1, elem2, elem3, elem4 };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+    error = cardano_redeemer_to_cbor(redeemers_array[i], writer);
+
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+    EXPECT_EQ(hex_size, strlen(redeemers2[i]) + 1);
+
+    char* actual_cbor = (char*)malloc(hex_size);
+
+    error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    EXPECT_STREQ(actual_cbor, redeemers2[i]);
+
+    cardano_cbor_writer_unref(&writer);
+    free(actual_cbor);
+  }
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_redeemer_list_unref(&cloned);
+  cardano_redeemer_unref(&elem1);
+  cardano_redeemer_unref(&elem2);
+  cardano_redeemer_unref(&elem3);
+  cardano_redeemer_unref(&elem4);
+}

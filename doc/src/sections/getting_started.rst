@@ -26,6 +26,7 @@ Option                    Meaning                                               
 ``CMAKE_INSTALL_PREFIX``  Installation prefix                                       System-dependent         ``/usr/local/lib``, ...
 ``DOXYGEN_ENABLED``       Generate this documentation                               ``OFF``                  ``ON``, ``OFF``
 ``TESTING_ENABLED``       Build unit tests                                          ``OFF``                  ``ON``, ``OFF``
+``EXAMPLES_ENABLED``      Build examples                                            ``OFF``                  ``ON``, ``OFF``
 ========================  =======================================================   ======================  =====================================================================================================================
 
 The following configuration options will also be defined as macros [#]_ in ``config.h`` and can therefore be used in code:

@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "redeemer_tag.h"
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
@@ -282,6 +283,89 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_list_get(const cardano_redeemer_
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_redeemer_list_add(cardano_redeemer_list_t* redeemer_list, cardano_redeemer_t* element);
+
+/**
+ * \brief Sets the execution units (memory and steps) for a specific redeemer in the redeemer list.
+ *
+ * This function sets the execution units (memory and steps) for a given redeemer identified by its tag and index within the \ref cardano_redeemer_list_t.
+ *
+ * \param[in,out] redeemer_list A pointer to an initialized \ref cardano_redeemer_list_t object where the execution units will be set.
+ *                              This parameter must not be NULL.
+ * \param[in] tag The \ref cardano_redeemer_tag_t representing the type of the redeemer (e.g., spending, minting).
+ * \param[in] index The index of the redeemer for which the execution units will be set.
+ * \param[in] mem The amount of memory required for the redeemer execution.
+ * \param[in] steps The number of steps required for the redeemer execution.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the execution units were successfully set,
+ *         or an appropriate error code indicating the failure reason (e.g., \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS if the specified index is invalid).
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_redeemer_list_t* redeemer_list = ...; // Assume redeemer_list is initialized
+ * cardano_redeemer_tag_t tag = CARDANO_REDEEMER_TAG_SPEND;
+ * uint64_t index = 0;
+ * uint64_t mem = 5000;
+ * uint64_t steps = 10000;
+ *
+ * cardano_error_t result = cardano_redeemer_list_set_ex_units(redeemer_list, tag, index, mem, steps);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Execution units set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set execution units: %d\n", result);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_redeemer_list_set_ex_units(
+  cardano_redeemer_list_t* redeemer_list,
+  cardano_redeemer_tag_t   tag,
+  uint64_t                 index,
+  uint64_t                 mem,
+  uint64_t                 steps);
+
+/**
+ * \brief Deep clones a redeemer list.
+ *
+ * This function creates a deep copy of the specified \ref cardano_redeemer_list_t object. The cloned list contains copies of all the redeemers
+ * and their associated data, ensuring that modifications to the original list do not affect the cloned list and vice versa.
+ *
+ * \param[in] redeemer_list A pointer to an initialized \ref cardano_redeemer_list_t object that will be cloned.
+ *                          This parameter must not be NULL.
+ * \param[out] cloned_redeemer_list On success, this will point to a newly created \ref cardano_redeemer_list_t object that is a deep copy of the original list.
+ *                                  The caller is responsible for managing the lifecycle of the cloned list and must call \ref cardano_redeemer_list_unref to release it when no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the redeemer list was successfully cloned,
+ *         or an appropriate error code indicating the failure reason (e.g., \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation fails).
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_redeemer_list_t* redeemer_list = ...; // Assume redeemer_list is initialized
+ * cardano_redeemer_list_t* cloned_redeemer_list = NULL;
+ *
+ * cardano_error_t result = cardano_redeemer_list_clone(redeemer_list, &cloned_redeemer_list);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Redeemer list successfully cloned.\n");
+ *   // Use the cloned list
+ *
+ *   // Free the cloned list when no longer needed
+ *   cardano_redeemer_list_unref(&cloned_redeemer_list);
+ * }
+ * else
+ * {
+ *   printf("Failed to clone redeemer list: %d\n", result);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_redeemer_list_clone(
+  cardano_redeemer_list_t*  redeemer_list,
+  cardano_redeemer_list_t** cloned_redeemer_list);
 
 /**
  * \brief Clears the cached CBOR representation from a redeemer list.

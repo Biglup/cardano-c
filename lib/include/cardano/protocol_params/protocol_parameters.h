@@ -289,10 +289,7 @@ CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_pool_deposit(
   const cardano_protocol_parameters_t* protocol_parameters);
 
 /**
- * \brief Retrieves the maximum epoch value from the protocol parameters.
- *
- * This function returns the maximum epoch duration allowed in the Cardano blockchain, as specified
- * in the given \ref cardano_protocol_parameters_t object.
+ * \brief Retrieves the max pool retirement epoch bounds.
  *
  * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
  *                                This parameter must not be NULL.

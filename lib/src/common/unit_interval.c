@@ -86,17 +86,27 @@ compute_greatest_common_divisor(const uint64_t a, const uint64_t b)
 static void
 float_to_fraction(const double value, uint64_t* numerator, uint64_t* denominator)
 {
-  double dec_part = value - floor(value);
+  double int_part = floor(value);
+  double dec_part = value - int_part;
+
+  if (dec_part == 0.0)
+  {
+    *numerator   = (uint64_t)int_part;
+    *denominator = 1;
+    return;
+  }
 
   int64_t num_digits = snprintf(NULL, 0, "%.15f", dec_part) - 2;
 
-  *numerator   = (int64_t)floor(dec_part * pow(10, (double)num_digits));
-  *denominator = (int64_t)pow(10, (double)num_digits);
+  *numerator   = (uint64_t)floor(dec_part * pow(10, (double)num_digits));
+  *denominator = (uint64_t)pow(10, (double)num_digits);
 
   uint64_t greatest_common_divisor = compute_greatest_common_divisor(*numerator, *denominator);
 
   *numerator   /= greatest_common_divisor;
   *denominator /= greatest_common_divisor;
+
+  *numerator += (uint64_t)int_part * (*denominator);
 }
 
 /* STRUCTURES ****************************************************************/

@@ -354,33 +354,6 @@ cardano_constitution_get_script_hash(cardano_constitution_t* constitution);
 CARDANO_EXPORT void cardano_constitution_unref(cardano_constitution_t** constitution);
 
 /**
- * \brief Decrements the reference count of a cardano_constitution_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_constitution_t object
- * by decreasing its reference count. When the reference count reaches zero, the constitution is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] constitution A pointer to the pointer of the constitution object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_constitution_t* constitution = cardano_constitution_new(major, minor);
- *
- * // Perform operations with the constitution...
- *
- * cardano_constitution_unref(&constitution);
- * // At this point, constitution is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_constitution_unref, the pointer to the \ref cardano_constitution_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_constitution_unref(cardano_constitution_t** constitution);
-
-/**
  * \brief Increases the reference count of the cardano_constitution_t object.
  *
  * This function is used to manually increment the reference count of an cardano_constitution_t

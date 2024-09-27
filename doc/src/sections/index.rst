@@ -83,6 +83,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/pool_params/index
     api/proposal_procedures/index
     api/protocol_params/index
+    api/providers/index
     api/scripts/index
     api/transaction/index
     api/transaction_body/index

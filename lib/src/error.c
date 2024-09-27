@@ -39,133 +39,139 @@ cardano_error_to_string(const cardano_error_t error)
       message = "Generic error";
       break;
     case CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE:
-      message = "Invalid operation. Insufficient buffer size";
+      message = "Insufficient buffer size";
       break;
     case CARDANO_ERROR_POINTER_IS_NULL:
-      message = "Invalid operation. Argument is a NULL pointer";
+      message = "Argument is a NULL pointer";
       break;
     case CARDANO_ERROR_MEMORY_ALLOCATION_FAILED:
-      message = "Invalid operation. Requested memory could not be allocated";
+      message = "Requested memory could not be allocated";
       break;
     case CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ:
-      message = "Invalid operation. Out of bounds memory read";
+      message = "Out of bounds memory read";
       break;
     case CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_WRITE:
-      message = "Invalid operation. Out of bounds memory write";
+      message = "Out of bounds memory write";
       break;
     case CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE:
-      message = "Invalid operation. Invalid Blake2b hash size";
+      message = "Invalid Blake2b hash size";
       break;
     case CARDANO_ERROR_INVALID_ED25519_SIGNATURE_SIZE:
-      message = "Invalid operation. Invalid Ed25519 signature size";
+      message = "Invalid Ed25519 signature size";
       break;
     case CARDANO_ERROR_INVALID_ED25519_PUBLIC_KEY_SIZE:
-      message = "Invalid operation. Invalid Ed25519 public key size";
+      message = "Invalid Ed25519 public key size";
       break;
     case CARDANO_ERROR_INVALID_ED25519_PRIVATE_KEY_SIZE:
-      message = "Invalid operation. Invalid Ed25519 private key size";
+      message = "Invalid Ed25519 private key size";
       break;
     case CARDANO_ERROR_INVALID_BIP32_PUBLIC_KEY_SIZE:
-      message = "Invalid operation. Invalid BIP32 public key size";
+      message = "Invalid BIP32 public key size";
       break;
     case CARDANO_ERROR_INVALID_BIP32_PRIVATE_KEY_SIZE:
-      message = "Invalid operation. Invalid BIP32 private key size";
+      message = "Invalid BIP32 private key size";
       break;
     case CARDANO_ERROR_INVALID_ARGUMENT:
-      message = "Invalid operation. Invalid argument";
+      message = "Invalid argument";
       break;
     case CARDANO_ERROR_INVALID_URL:
       message = "Invalid argument. Invalid URL";
       break;
     case CARDANO_ERROR_ELEMENT_NOT_FOUND:
-      message = "Invalid operation. Element not found";
+      message = "Element not found";
       break;
     case CARDANO_ERROR_INVALID_BIP32_DERIVATION_INDEX:
-      message = "Invalid operation. Invalid BIP32 derivation index";
+      message = "Invalid BIP32 derivation index";
       break;
     case CARDANO_ERROR_ENCODING:
-      message = "Invalid operation. Encoding failure";
+      message = "Encoding failure";
       break;
     case CARDANO_ERROR_DECODING:
-      message = "Invalid operation. Decoding failure";
+      message = "Decoding failure";
       break;
     case CARDANO_ERROR_CHECKSUM_MISMATCH:
-      message = "Invalid operation. Checksum mismatch";
+      message = "Checksum mismatch";
       break;
     case CARDANO_ERROR_INVALID_JSON:
-      message = "Invalid operation. Invalid JSON";
+      message = "Invalid JSON";
       break;
     case CARDANO_ERROR_INTEGER_OVERFLOW:
-      message = "Invalid operation. Integer overflow";
+      message = "Integer overflow";
       break;
     case CARDANO_ERROR_INTEGER_UNDERFLOW:
-      message = "Invalid operation. Integer underflow";
+      message = "Integer underflow";
       break;
     case CARDANO_ERROR_CONVERSION_FAILED:
-      message = "Invalid operation. Conversion error";
+      message = "Conversion error";
       break;
     case CARDANO_ERROR_LOSS_OF_PRECISION:
-      message = "Invalid operation. Loss of precision";
+      message = "Loss of precision";
       break;
     case CARDANO_ERROR_UNEXPECTED_CBOR_TYPE:
-      message = "Invalid operation. Unexpected CBOR type";
+      message = "Unexpected CBOR type";
       break;
     case CARDANO_ERROR_INVALID_CBOR_VALUE:
-      message = "Invalid operation. Invalid CBOR value";
+      message = "Invalid CBOR value";
       break;
     case CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE:
-      message = "Invalid operation. Invalid CBOR array size";
+      message = "Invalid CBOR array size";
       break;
     case CARDANO_ERROR_INVALID_CBOR_MAP_SIZE:
-      message = "Invalid operation. Invalid CBOR map size";
+      message = "Invalid CBOR map size";
       break;
     case CARDANO_ERROR_INVALID_ADDRESS_TYPE:
-      message = "Invalid operation. Invalid address type";
+      message = "Invalid address type";
       break;
     case CARDANO_ERROR_INVALID_ADDRESS_FORMAT:
-      message = "Invalid operation. Invalid address format";
+      message = "Invalid address format";
       break;
     case CARDANO_ERROR_INVALID_CREDENTIAL_TYPE:
-      message = "Invalid operation. Invalid credential type";
+      message = "Invalid credential type";
       break;
     case CARDANO_ERROR_INVALID_PLUTUS_DATA_CONVERSION:
-      message = "Invalid operation. Invalid Plutus data conversion";
+      message = "Invalid Plutus data conversion";
       break;
     case CARDANO_ERROR_INVALID_DATUM_TYPE:
-      message = "Invalid operation. Invalid datum type";
+      message = "Invalid datum type";
       break;
     case CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE:
-      message = "Invalid operation. Invalid script language";
+      message = "Invalid script language";
       break;
     case CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE:
-      message = "Invalid operation. Invalid native script type";
+      message = "Invalid native script type";
       break;
     case CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL:
-      message = "Invalid operation. Invalid Plutus cost model";
+      message = "Invalid Plutus cost model";
       break;
     case CARDANO_ERROR_INDEX_OUT_OF_BOUNDS:
-      message = "Invalid operation. Index out of bounds";
+      message = "Index out of bounds";
       break;
     case CARDANO_ERROR_INVALID_CERTIFICATE_TYPE:
-      message = "Invalid operation. Invalid certificate type";
+      message = "Invalid certificate type";
+      break;
+    case CARDANO_ERROR_NOT_IMPLEMENTED:
+      message = "Not implemented";
       break;
     case CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY:
-      message = "Invalid operation. Duplicated CBOR map key";
+      message = "Duplicated CBOR map key";
       break;
     case CARDANO_ERROR_INVALID_CBOR_MAP_KEY:
-      message = "Invalid operation. Invalid CBOR map key";
+      message = "Invalid CBOR map key";
       break;
     case CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE:
-      message = "Invalid operation. Invalid procedure proposal type";
+      message = "Invalid procedure proposal type";
       break;
     case CARDANO_ERROR_INVALID_METADATUM_CONVERSION:
-      message = "Invalid operation. Invalid metadatum conversion";
+      message = "Invalid metadatum conversion";
       break;
     case CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE:
-      message = "Invalid operation. Invalid metadatum text string size, must be less than 64 bytes";
+      message = "Invalid metadatum text string size, must be less than 64 bytes";
       break;
     case CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE:
-      message = "Invalid operation. Invalid metadatum bounded bytes size, must be less than 64 bytes";
+      message = "Invalid metadatum bounded bytes size, must be less than 64 bytes";
+      break;
+    case CARDANO_ERROR_INVALID_HTTP_REQUEST:
+      message = "Invalid HTTP request";
       break;
     default:
       message = "Unknown error code";

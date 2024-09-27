@@ -357,33 +357,6 @@ cardano_treasury_withdrawals_action_get_policy_hash(cardano_treasury_withdrawals
 CARDANO_EXPORT void cardano_treasury_withdrawals_action_unref(cardano_treasury_withdrawals_action_t** treasury_withdrawals_action);
 
 /**
- * \brief Decrements the reference count of a cardano_treasury_withdrawals_action_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_treasury_withdrawals_action_t object
- * by decreasing its reference count. When the reference count reaches zero, the treasury_withdrawals_action is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] treasury_withdrawals_action A pointer to the pointer of the treasury_withdrawals_action object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_treasury_withdrawals_action_t* treasury_withdrawals_action = cardano_treasury_withdrawals_action_new(major, minor);
- *
- * // Perform operations with the treasury_withdrawals_action...
- *
- * cardano_treasury_withdrawals_action_unref(&treasury_withdrawals_action);
- * // At this point, treasury_withdrawals_action is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_treasury_withdrawals_action_unref, the pointer to the \ref cardano_treasury_withdrawals_action_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_treasury_withdrawals_action_unref(cardano_treasury_withdrawals_action_t** treasury_withdrawals_action);
-
-/**
  * \brief Increases the reference count of the cardano_treasury_withdrawals_action_t object.
  *
  * This function is used to manually increment the reference count of an cardano_treasury_withdrawals_action_t

@@ -6,6 +6,7 @@ SET(PROJECT_NAME "cardano-c")
 # Option that the user can optionally select
 OPTION (TESTING_ENABLED "Enables unit test build." ON)
 OPTION (DOXYGEN_ENABLED "Build documentation" OFF)
+OPTION (EXAMPLES_ENABLED "Build examples" OFF)
 
 # Find external dependencies
 LIST (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -67,6 +68,7 @@ MESSAGE ( STATUS "CMAKE_PREFIX_PATH    = ${CMAKE_PREFIX_PATH}" )
 MESSAGE ( STATUS "ARCHITECTURE         = ${ARCHITECTURE}" )
 MESSAGE ( STATUS "TESTING ENABLED      = ${TESTING_ENABLED}")
 MESSAGE ( STATUS "DOXYGEN ENABLED      = ${DOXYGEN_ENABLED}")
+MESSAGE ( STATUS "EXAMPLES ENABLED     = ${EXAMPLES_ENABLED}")
 MESSAGE ( STATUS "CMAKE_C_CLANG_TIDY   = ${CMAKE_C_CLANG_TIDY}")
 MESSAGE ( STATUS )
 MESSAGE ( STATUS "change a configuration variable with: cmake -D<Variable>=<Value>" )
@@ -159,6 +161,10 @@ IF (CMAKE_BUILD_TYPE STREQUAL "Fuzz")
     ADD_SUBDIRECTORY (fuzz ${BUILD_DIR}/fuzz)
 ENDIF ()
 
+# Build examples
+IF (EXAMPLES_ENABLED)
+    ADD_SUBDIRECTORY (examples ${BUILD_DIR}/examples)
+ENDIF ()
 
 # Packaging.
 SET (CPACK_SOURCE_IGNORE_FILES ".git,.swp")

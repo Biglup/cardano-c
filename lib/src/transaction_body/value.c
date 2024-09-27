@@ -132,6 +132,103 @@ cardano_value_new(
 }
 
 cardano_error_t
+cardano_value_from_asset_map(
+  cardano_asset_id_map_t* asset_map,
+  cardano_value_t**       value)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (asset_map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  uint64_t               coin        = 0U;
+  cardano_multi_asset_t* multi_asset = NULL;
+
+  cardano_error_t result = cardano_multi_asset_new(&multi_asset);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    // LCOV_EXCL_START
+    *value = NULL;
+    return result;
+    // LCOV_EXCL_STOP
+  }
+
+  const size_t asset_count = cardano_asset_id_map_get_length(asset_map);
+
+  for (size_t i = 0U; i < asset_count; ++i)
+  {
+    cardano_asset_id_t* asset_id = NULL;
+    int64_t             amount   = 0;
+
+    result = cardano_asset_id_map_get_key_value_at(asset_map, i, &asset_id, &amount);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_multi_asset_unref(&multi_asset);
+
+      *value = NULL;
+      return result;
+      // LCOV_EXCL_STOP
+    }
+
+    if (cardano_asset_id_is_lovelace(asset_id))
+    {
+      coin = (uint64_t)amount;
+
+      cardano_asset_id_unref(&asset_id);
+    }
+    else
+    {
+      cardano_asset_name_t*   asset_name = cardano_asset_id_get_asset_name(asset_id);
+      cardano_blake2b_hash_t* policy_id  = cardano_asset_id_get_policy_id(asset_id);
+
+      cardano_asset_id_unref(&asset_id);
+
+      if ((asset_name == NULL) || (policy_id == NULL))
+      {
+        // LCOV_EXCL_START
+        cardano_multi_asset_unref(&multi_asset);
+        cardano_asset_name_unref(&asset_name);
+        cardano_blake2b_hash_unref(&policy_id);
+
+        *value = NULL;
+
+        return CARDANO_ERROR_POINTER_IS_NULL;
+        // LCOV_EXCL_STOP
+      }
+
+      result = cardano_multi_asset_set(multi_asset, policy_id, asset_name, amount);
+
+      cardano_asset_name_unref(&asset_name);
+      cardano_blake2b_hash_unref(&policy_id);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_multi_asset_unref(&multi_asset);
+
+        *value = NULL;
+        return result;
+        // LCOV_EXCL_STOP
+      }
+    }
+  }
+
+  result = cardano_value_new(coin, multi_asset, value);
+
+  cardano_multi_asset_unref(&multi_asset);
+
+  return result;
+}
+
+cardano_error_t
 cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
 {
   if (value == NULL)

@@ -9,6 +9,10 @@ Value
 
 ------------
 
+.. doxygenfunction:: cardano_value_from_asset_map
+
+------------
+
 .. doxygenfunction:: cardano_value_from_cbor
 
 ------------
