@@ -493,3 +493,58 @@ TEST(cardano_script_pubkey_new, returnsErrorIfMemoryAllocationFails)
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
 }
+
+TEST(cardano_script_pubkey_get_key_hash, returnsErrorIfPubKeyIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_script_pubkey_get_key_hash(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_script_pubkey_get_key_hash, returnsErrorIfKeyHashIsNull)
+{
+  // Arrange
+  cardano_script_pubkey_t* pubkey = nullptr;
+
+  cardano_error_t error = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_script_pubkey_get_key_hash(pubkey, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_script_pubkey_unref(&pubkey);
+}
+
+TEST(cardano_script_pubkey_get_key_hash, returnsTheKey)
+{
+  // Arrange
+  cardano_script_pubkey_t* pubkey   = nullptr;
+  cardano_blake2b_hash_t*  key_hash = nullptr;
+
+  cardano_error_t error = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_script_pubkey_get_key_hash(pubkey, &key_hash);
+
+  // key_hash convert to hex
+  const size_t hex_size = cardano_blake2b_hash_get_hex_size(key_hash);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(key_hash, hex, hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37");
+
+  // Cleanup
+  cardano_script_pubkey_unref(&pubkey);
+  free(hex);
+  cardano_blake2b_hash_unref(&key_hash);
+}

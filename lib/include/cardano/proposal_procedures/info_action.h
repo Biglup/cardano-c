@@ -26,8 +26,6 @@
 
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
-#include <cardano/common/governance_action_id.h>
-#include <cardano/common/protocol_version.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 
@@ -166,33 +164,6 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_info_action_to_cbor(
   const cardano_info_action_t* info_action,
   cardano_cbor_writer_t*       writer);
-
-/**
- * \brief Decrements the reference count of a cardano_info_action_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_info_action_t object
- * by decreasing its reference count. When the reference count reaches zero, the info_action is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] info_action A pointer to the pointer of the info_action object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_info_action_t* info_action = cardano_info_action_new(major, minor);
- *
- * // Perform operations with the info_action...
- *
- * cardano_info_action_unref(&info_action);
- * // At this point, info_action is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_info_action_unref, the pointer to the \ref cardano_info_action_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_info_action_unref(cardano_info_action_t** info_action);
 
 /**
  * \brief Decrements the reference count of a cardano_info_action_t object.

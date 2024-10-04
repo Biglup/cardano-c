@@ -353,33 +353,6 @@ cardano_hard_fork_initiation_action_get_governance_action_id(cardano_hard_fork_i
 CARDANO_EXPORT void cardano_hard_fork_initiation_action_unref(cardano_hard_fork_initiation_action_t** hard_fork_initiation_action);
 
 /**
- * \brief Decrements the reference count of a cardano_hard_fork_initiation_action_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_hard_fork_initiation_action_t object
- * by decreasing its reference count. When the reference count reaches zero, the hard_fork_initiation_action is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] hard_fork_initiation_action A pointer to the pointer of the hard_fork_initiation_action object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_hard_fork_initiation_action_t* hard_fork_initiation_action = cardano_hard_fork_initiation_action_new(major, minor);
- *
- * // Perform operations with the hard_fork_initiation_action...
- *
- * cardano_hard_fork_initiation_action_unref(&hard_fork_initiation_action);
- * // At this point, hard_fork_initiation_action is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_hard_fork_initiation_action_unref, the pointer to the \ref cardano_hard_fork_initiation_action_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_hard_fork_initiation_action_unref(cardano_hard_fork_initiation_action_t** hard_fork_initiation_action);
-
-/**
  * \brief Increases the reference count of the cardano_hard_fork_initiation_action_t object.
  *
  * This function is used to manually increment the reference count of an cardano_hard_fork_initiation_action_t

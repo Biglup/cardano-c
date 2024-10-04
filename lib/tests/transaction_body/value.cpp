@@ -2121,3 +2121,59 @@ TEST(cardano_value_equals, returnFalseIfOneIsNull)
   // Cleanup
   cardano_value_unref(&value);
 }
+
+TEST(cardano_value_from_asset_map, canCreateValueFromAssetMap)
+{
+  // Arrange
+  cardano_value_t*        valA         = new_default_value(CBOR_VALUE_WITH_TWICE_THE_ASSETS);
+  cardano_asset_id_map_t* asset_id_map = cardano_value_as_assets_map(valA);
+
+  // Act
+  cardano_value_t* value = NULL;
+
+  EXPECT_EQ(cardano_value_from_asset_map(asset_id_map, &value), CARDANO_SUCCESS);
+
+  // to cbor
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_value_to_cbor(value, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+
+  EXPECT_EQ(hex_size, strlen(CBOR_VALUE_WITH_TWICE_THE_ASSETS) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, CBOR_VALUE_WITH_TWICE_THE_ASSETS);
+
+  // Cleanup
+  cardano_asset_id_map_unref(&asset_id_map);
+  cardano_value_unref(&value);
+  cardano_value_unref(&valA);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_value_from_asset_map, returnErrorIfValueIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_value_from_asset_map(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_from_asset_map, returnErrorIfAssetMapIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_value_from_asset_map(nullptr, (cardano_value_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}

@@ -604,6 +604,118 @@ cardano_redeemer_list_add(cardano_redeemer_list_t* redeemer_list, cardano_redeem
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_redeemer_list_set_ex_units(
+  cardano_redeemer_list_t*     redeemer_list,
+  const cardano_redeemer_tag_t tag,
+  const uint64_t               index,
+  const uint64_t               mem,
+  const uint64_t               steps)
+{
+  if (redeemer_list == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  for (size_t i = 0U; i < cardano_redeemer_list_get_length(redeemer_list); ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+
+    cardano_error_t result = cardano_redeemer_list_get(redeemer_list, i, &redeemer);
+    cardano_redeemer_unref(&redeemer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+
+    if ((cardano_redeemer_get_tag(redeemer) == tag) && (cardano_redeemer_get_index(redeemer) == index))
+    {
+      cardano_ex_units_t* ex_units = cardano_redeemer_get_ex_units(redeemer);
+      cardano_ex_units_unref(&ex_units);
+
+      if (ex_units == NULL)
+      {
+        return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+      }
+
+      cardano_error_t set_result = cardano_ex_units_set_memory(ex_units, mem);
+
+      if (set_result != CARDANO_SUCCESS)
+      {
+        return set_result; // LCOV_EXCL_LINE
+      }
+
+      set_result = cardano_ex_units_set_cpu_steps(ex_units, steps);
+
+      return set_result;
+    }
+  }
+
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+}
+
+cardano_error_t
+cardano_redeemer_list_clone(
+  cardano_redeemer_list_t*  redeemer_list,
+  cardano_redeemer_list_t** cloned_redeemer_list)
+{
+  if (redeemer_list == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (cloned_redeemer_list == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+  }
+
+  cardano_error_t result = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    // LCOV_EXCL_START
+    cardano_cbor_writer_unref(&writer);
+    return result;
+    // LCOV_EXCL_STOP
+  }
+
+  cardano_buffer_t* buffer = NULL;
+  result                   = cardano_cbor_writer_encode_in_buffer(writer, &buffer);
+
+  cardano_cbor_writer_unref(&writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result; // LCOV_EXCL_LINE
+  }
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_buffer_unref(&buffer);
+
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+  }
+
+  result = cardano_redeemer_list_from_cbor(reader, cloned_redeemer_list);
+
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_redeemer_list_clear_cbor_cache(*cloned_redeemer_list);
+
+  cardano_array_sort(redeemer_list->array, compare_by_key);
+
+  return result;
+}
+
 void
 cardano_redeemer_list_clear_cbor_cache(cardano_redeemer_list_t* redeemer_list)
 {

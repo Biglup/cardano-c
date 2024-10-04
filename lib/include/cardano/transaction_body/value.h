@@ -98,6 +98,51 @@ cardano_value_new(
   cardano_value_t**      value);
 
 /**
+ * \brief Creates a \ref cardano_value_t from an asset map.
+ *
+ * This function creates a \ref cardano_value_t object from a given asset map (\ref cardano_asset_id_map_t).
+ * The resulting value represents the sum of the assets contained in the map, where each entry in the map is
+ * an asset ID and its corresponding quantity.
+ *
+ * \param[in] asset_map A pointer to an initialized \ref cardano_asset_id_map_t object containing the assets.
+ *                      This parameter must not be NULL.
+ * \param[out] value On successful creation, this will point to the newly created \ref cardano_value_t object.
+ *                   The caller is responsible for managing the lifecycle of the object and must call
+ *                   \ref cardano_value_unref when it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the value was successfully created, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of both the \ref cardano_value_t object and the \ref cardano_asset_id_map_t.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_asset_id_map_t* asset_map = ...; // Assume asset_map is initialized
+ * cardano_value_t* value = NULL;
+ *
+ * cardano_error_t result = cardano_value_from_asset_map(asset_map, &value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Value successfully created from asset map.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to create value from asset map.\n");
+ * }
+ *
+ * // Clean up when done
+ * cardano_asset_id_map_unref(&asset_map);
+ * cardano_value_unref(&value);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_value_from_asset_map(
+  cardano_asset_id_map_t* asset_map,
+  cardano_value_t**       value);
+
+/**
  * \brief Creates a \ref cardano_value_t from a CBOR reader.
  *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_value_t object.

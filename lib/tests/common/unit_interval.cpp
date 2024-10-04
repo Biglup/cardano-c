@@ -552,6 +552,24 @@ TEST(cardano_unit_interval_from_double, setsTheDoubleValue)
   cardano_unit_interval_unref(&unit_interval);
 }
 
+TEST(cardano_unit_interval_from_double, canConvertDooubleWithoutDecimal)
+{
+  // Arrange
+  cardano_unit_interval_t* unit_interval = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_unit_interval_from_double(15.0, &unit_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(unit_interval, testing::Not((cardano_unit_interval_t*)nullptr));
+  EXPECT_EQ(cardano_unit_interval_get_numerator(unit_interval), 15);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(unit_interval), 1);
+
+  // Cleanup
+  cardano_unit_interval_unref(&unit_interval);
+}
+
 TEST(cardano_unit_interval_from_double, returnErrorIfValueIsNegative)
 {
   // Arrange

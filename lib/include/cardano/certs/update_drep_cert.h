@@ -325,33 +325,6 @@ cardano_update_drep_cert_set_anchor(cardano_update_drep_cert_t* certificate, car
 CARDANO_EXPORT void cardano_update_drep_cert_unref(cardano_update_drep_cert_t** update_drep_cert);
 
 /**
- * \brief Decrements the reference count of a cardano_update_drep_cert_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_update_drep_cert_t object
- * by decreasing its reference count. When the reference count reaches zero, the update_drep_cert is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] update_drep_cert A pointer to the pointer of the update_drep_cert object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_update_drep_cert_t* update_drep_cert = cardano_update_drep_cert_new(major, minor);
- *
- * // Perform operations with the update_drep_cert...
- *
- * cardano_update_drep_cert_unref(&update_drep_cert);
- * // At this point, update_drep_cert is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_update_drep_cert_unref, the pointer to the \ref cardano_update_drep_cert_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_update_drep_cert_unref(cardano_update_drep_cert_t** update_drep_cert);
-
-/**
  * \brief Increases the reference count of the cardano_update_drep_cert_t object.
  *
  * This function is used to manually increment the reference count of an cardano_update_drep_cert_t

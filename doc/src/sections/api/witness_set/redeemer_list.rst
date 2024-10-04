@@ -29,6 +29,14 @@ Redeemer List
 
 ------------
 
+.. doxygenfunction:: cardano_redeemer_list_set_ex_units
+
+------------
+
+.. doxygenfunction:: cardano_redeemer_list_clone
+
+------------
+
 .. doxygenfunction:: cardano_redeemer_list_clear_cbor_cache
 
 ------------

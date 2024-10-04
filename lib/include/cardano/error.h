@@ -132,6 +132,11 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_CERTIFICATE_TYPE = 18,
 
+  /**
+   * \brief The operation is not implemented.
+   */
+  CARDANO_ERROR_NOT_IMPLEMENTED = 19,
+
   /* Serialization errors */
 
   /**
@@ -279,6 +284,13 @@ typedef enum
    * \brief The metadatum bounded bytes size.
    */
   CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE = 902,
+
+  // HTTP
+
+  /**
+   * \brief The HTTP request is invalid.
+   */
+  CARDANO_ERROR_INVALID_HTTP_REQUEST = 1000,
 
 } cardano_error_t;
 

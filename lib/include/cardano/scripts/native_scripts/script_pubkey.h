@@ -257,7 +257,7 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_script_pubkey_get_key_hash(const cardano_script_pubkey_t* script_pubkey, cardano_blake2b_hash_t** key_hash);
+CARDANO_EXPORT cardano_error_t cardano_script_pubkey_get_key_hash(cardano_script_pubkey_t* script_pubkey, cardano_blake2b_hash_t** key_hash);
 
 /**
  * \brief Sets the key hash for a script_pubkey.

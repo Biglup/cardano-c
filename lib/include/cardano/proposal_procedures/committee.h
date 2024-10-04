@@ -528,33 +528,6 @@ CARDANO_EXPORT cardano_error_t cardano_committee_get_key_value_at(
 CARDANO_EXPORT void cardano_committee_unref(cardano_committee_t** committee);
 
 /**
- * \brief Decrements the reference count of a cardano_committee_t object.
- *
- * This function is responsible for managing the lifecycle of a \ref cardano_committee_t object
- * by decreasing its reference count. When the reference count reaches zero, the committee is
- * finalized; its associated resources are released, and its memory is deallocated.
- *
- * \param[in,out] committee A pointer to the pointer of the committee object. This double
- *                            indirection allows the function to set the caller's pointer to
- *                            NULL, avoiding dangling pointer issues after the object has been
- *                            freed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_committee_t* committee = cardano_committee_new(major, minor);
- *
- * // Perform operations with the committee...
- *
- * cardano_committee_unref(&committee);
- * // At this point, committee is NULL and cannot be used.
- * \endcode
- *
- * \note After calling \ref cardano_committee_unref, the pointer to the \ref cardano_committee_t object
- *       will be set to NULL to prevent its reuse.
- */
-CARDANO_EXPORT void cardano_committee_unref(cardano_committee_t** committee);
-
-/**
  * \brief Increases the reference count of the cardano_committee_t object.
  *
  * This function is used to manually increment the reference count of an cardano_committee_t
