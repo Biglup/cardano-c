@@ -35,3 +35,21 @@ TEST(cardano_get_lib_version, returns_version)
   const char* version = cardano_get_lib_version();
   ASSERT_THAT(version, testing::StrEq(LIB_CARDANO_C_VERSION));
 }
+
+TEST(cardano_memzero, zeroes_buffer)
+{
+  uint8_t buffer[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+
+  cardano_memzero(buffer, sizeof buffer);
+
+  for (size_t i = 0; i < sizeof buffer; ++i)
+  {
+    ASSERT_EQ(buffer[i], 0);
+  }
+}
+
+TEST(cardano_memzero, doesntCrashIfGivenNullOrEmpty)
+{
+  cardano_memzero(NULL, 0);
+  cardano_memzero(NULL, 12);
+}

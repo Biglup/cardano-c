@@ -27,6 +27,7 @@
 #include <cardano/error.h>
 #include <cardano/export.h>
 
+#include <include/cardano/key_handlers/account_derivation_path.h>
 #include <include/cardano/key_handlers/secure_key_handler_impl.h>
 
 /* DECLARATIONS **************************************************************/
@@ -145,35 +146,13 @@ CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_sign_transaction
   cardano_vkey_witness_set_t**     vkey_witness_set);
 
 /**
- * \brief Retrieves the Ed25519 public key for a given BIP32 derivation path.
+ * \brief Retrieves the extended BIP32 account public key for a given derivation path.
  *
- * This function securely derives and retrieves the Ed25519 public key corresponding to the provided BIP32
- * `derivation_path` using the `cardano_secure_key_handler_t`. The function handles the cryptographic operations necessary
- * to derive the public key for the specified path, ensuring security throughout the process.
- *
- * \param[in] secure_key_handler A pointer to the secure key handler managing the cryptographic key operations.
- * \param[in] derivation_path The BIP32 derivation path used to derive the corresponding Ed25519 public key.
- * \param[out] public_key A pointer to the Ed25519 public key that will be retrieved and returned.
- *                   The caller must manage the lifecycle of the returned public key and release it when done.
- *
- * \returns `cardano_error_t` indicating success or the type of error encountered during the key retrieval.
- *
- * \note The caller is responsible for managing the lifecycle of the `public_key` object, ensuring it is properly released
- *       to avoid memory leaks.
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_get_public_key(
-  cardano_secure_key_handler_t*  secure_key_handler,
-  cardano_derivation_path_t      derivation_path,
-  cardano_ed25519_public_key_t** public_key);
-
-/**
- * \brief Retrieves the extended BIP32 public key for a given derivation path.
- *
- * This function securely derives and retrieves the extended BIP32 public key for the `cardano_secure_key_handler_t`. The extended
+ * This function securely derives and retrieves the extended BIP32 account public key for the `cardano_secure_key_handler_t`. The extended
  * BIP32 public key includes both the Ed25519 public key and chain code, enabling further key derivations within the BIP32 standard.
  *
  * \param[in] secure_key_handler A pointer to the secure key handler managing the cryptographic key operations.
+ * \param[in] derivation_path The BIP32 derivation path used to derive the extended account public key.
  * \param[out] bip32_public_key A pointer to the extended BIP32 public key that will be retrieved and returned.
  *                         The caller must manage the lifecycle of the returned `bip32_public_key` and release it when done.
  *
@@ -182,11 +161,11 @@ CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_get_public_key(
  * \note The caller is responsible for managing the lifecycle of the `bip32_public_key` object, ensuring it is properly released
  *       to avoid memory leaks.
  */
-
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_get_extended_public_key(
-  cardano_secure_key_handler_t* secure_key_handler,
-  cardano_bip32_public_key_t**  bip32_public_key);
+CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_get_extended_account_public_key(
+  cardano_secure_key_handler_t*     secure_key_handler,
+  cardano_account_derivation_path_t derivation_path,
+  cardano_bip32_public_key_t**      bip32_public_key);
 
 /**
  * \brief Signs a transaction using Ed25519 keys.
@@ -280,6 +259,28 @@ CARDANO_EXPORT void cardano_secure_key_handler_unref(cardano_secure_key_handler_
  * call to \ref cardano_secure_key_handler_unref to prevent memory leaks.
  */
 CARDANO_EXPORT void cardano_secure_key_handler_ref(cardano_secure_key_handler_t* secure_key_handler);
+
+/**
+ * \brief Serializes the state of a secure key handler.
+ *
+ * The `cardano_secure_key_handler_serialize` function serializes the internal state or key material associated
+ * with a secure key handler into a buffer. This allows the key handler to be stored or transferred in a secure, serialized format.
+ *
+ * This function is expected to:
+ * - Serialize the current state of the secure key handler into the provided `serialized_data` buffer.
+ *
+ * \param secure_key_handler A pointer to the secure key handler that manages cryptographic operations.
+ * \param serialized_data A pointer to the buffer that will be populated with the serialized state of the key handler.
+ *                        This buffer must be managed and freed by the caller to prevent memory leaks.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during serialization.
+ *
+ * \note The caller is responsible for releasing the serialized buffer after use to avoid memory leaks.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_serialize(
+  cardano_secure_key_handler_t* secure_key_handler,
+  cardano_buffer_t**            serialized_data);
 
 /**
  * \brief Retrieves the current reference count of the cardano_secure_key_handler_t object.

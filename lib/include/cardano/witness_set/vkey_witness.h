@@ -185,6 +185,41 @@ CARDANO_EXPORT cardano_error_t cardano_vkey_witness_to_cbor(
   cardano_cbor_writer_t*        writer);
 
 /**
+ * \brief Checks if a vkey_witness contains a specific public key.
+ *
+ * This function checks if the provided \ref cardano_vkey_witness_t object contains the specified Ed25519 public key.
+ * It is useful for determining if a particular witness corresponds to a given public key.
+ *
+ * \param[in] vkey_witness A constant pointer to the \ref cardano_vkey_witness_t object to be checked.
+ * \param[in] vkey A constant pointer to the \ref cardano_ed25519_public_key_t object representing the public key to search for.
+ *
+ * \return `true` if the public key is found in the vkey_witness; otherwise, `false`.
+ *
+ * \note This function only compares the public key, and not the associated signature or any other witness data.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_t* vkey_witness = { ... };
+ * cardano_ed25519_public_key_t* public_key = { ... };
+ *
+ * // Check if the vkey_witness contains the specified public key
+ * bool has_key = cardano_vkey_witness_has_public_key(vkey_witness, public_key);
+ *
+ * if (has_key)
+ * {
+ *   // The vkey_witness contains the public key
+ * }
+ * else
+ * {
+ *   // The public key is not present in the vkey_witness
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool
+cardano_vkey_witness_has_public_key(const cardano_vkey_witness_t* vkey_witness, const cardano_ed25519_public_key_t* vkey);
+
+/**
  * \brief Retrieves the verification key (VKey) from a Vkey Witness.
  *
  * This function returns the \ref cardano_ed25519_public_key_t object representing the public verification key

@@ -248,6 +248,22 @@ cardano_vkey_witness_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+bool
+cardano_vkey_witness_has_public_key(const cardano_vkey_witness_t* vkey_witness, const cardano_ed25519_public_key_t* vkey)
+{
+  if ((vkey_witness == NULL) || (vkey == NULL))
+  {
+    return false;
+  }
+
+  const byte_t* key_bytes  = cardano_ed25519_public_key_get_data(vkey);
+  const size_t  key_size   = cardano_ed25519_public_key_get_bytes_size(vkey);
+  const byte_t* vkey_bytes = cardano_ed25519_public_key_get_data(vkey_witness->vkey);
+  const size_t  vkey_size  = cardano_ed25519_public_key_get_bytes_size(vkey_witness->vkey);
+
+  return (key_size == vkey_size) && (memcmp(key_bytes, vkey_bytes, key_size) == 0);
+}
+
 cardano_ed25519_public_key_t*
 cardano_vkey_witness_get_vkey(
   cardano_vkey_witness_t* vkey_witness)

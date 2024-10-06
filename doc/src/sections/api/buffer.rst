@@ -69,6 +69,10 @@ Buffer
 
 ------------
 
+.. doxygenfunction:: cardano_buffer_memzero
+
+------------
+
 .. doxygenfunction:: cardano_buffer_get_size
 
 ------------
@@ -226,3 +230,7 @@ Buffer
 ------------
 
 .. doxygenfunction:: cardano_buffer_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_memzero

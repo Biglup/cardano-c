@@ -29,6 +29,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <conio.h>
+#include <windows.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#endif
+
 /* CONSTANTS *****************************************************************/
 
 static const char* FOREGROUND_COLOR_FORMAT = "\033[3%dm";
@@ -256,4 +264,144 @@ console_reset_color()
   g_foreground_color = CONSOLE_COLOR_DEFAULT;
   g_background_color = CONSOLE_COLOR_DEFAULT;
   reset_color();
+}
+
+void
+console_read_line(char* buffer, size_t max_length)
+{
+  if (fgets(buffer, (int32_t)max_length, stdin) == NULL)
+  {
+    buffer[0] = '\0';
+  }
+  else
+  {
+    size_t len = strlen(buffer);
+
+    if (len > 0 && buffer[len - 1] == '\n')
+    {
+      buffer[len - 1] = '\0';
+    }
+  }
+}
+
+int
+console_read_key()
+{
+#if defined(_WIN32) || defined(_WIN64)
+  return _getch();
+#else
+  struct termios oldt, newt;
+  int            ch;
+
+  // Save old terminal settings
+  if (tcgetattr(STDIN_FILENO, &oldt) != 0)
+  {
+    return -1;
+  }
+  newt = oldt;
+
+  // Disable canonical mode and echo
+  newt.c_lflag &= ~(ICANON | ECHO);
+
+  // Set new terminal settings
+  if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0)
+  {
+    return -1;
+  }
+
+  // Read character
+  ch = getchar();
+
+  // Restore old terminal settings
+  if (tcsetattr(STDIN_FILENO, TCSANOW, &oldt) != 0)
+  {
+    return -1;
+  }
+
+  return ch;
+#endif
+}
+
+int
+console_read_password(char* buffer, const size_t max_length)
+{
+#if defined(_WIN32) || defined(_WIN64)
+  size_t i = 0;
+  int    c;
+
+  while (i < max_length - 1)
+  {
+    c = _getch();
+
+    if (c == '\r' || c == '\n')
+    {
+      break;
+    }
+    else if (c == '\b')
+    {
+      if (i > 0)
+      {
+        --i;
+      }
+    }
+    else
+    {
+      buffer[i++] = c;
+    }
+  }
+  buffer[i] = '\0';
+  printf("\n");
+
+  return (int32_t)i;
+#else
+  struct termios oldt, newt;
+  size_t         i = 0;
+  int            c;
+
+  if (tcgetattr(STDIN_FILENO, &oldt) != 0)
+  {
+    return -1;
+  }
+
+  // Disable echo
+  newt          = oldt;
+  newt.c_lflag &= ~(ECHO);
+
+  if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0)
+  {
+    return -1;
+  }
+
+  // Read password
+  while (i < max_length - 1)
+  {
+    c = getchar();
+
+    if (c == '\n' || c == EOF)
+    {
+      break;
+    }
+    else if (c == '\b' || c == 127)
+    {
+      if (i > 0)
+      {
+        --i;
+      }
+    }
+    else
+    {
+      buffer[i++] = (char)c;
+    }
+  }
+  buffer[i] = '\0';
+
+  if (tcsetattr(STDIN_FILENO, TCSANOW, &oldt) != 0)
+  {
+    return -1;
+  }
+
+  printf("\n");
+
+  return (int32_t)i;
+#endif
 }

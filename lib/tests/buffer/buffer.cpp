@@ -3147,3 +3147,30 @@ TEST(cardano_buffer_compare, returnsZeroIfBothAreEmpty)
   cardano_buffer_unref(&buffer1);
   cardano_buffer_unref(&buffer2);
 }
+
+TEST(cardano_buffer_memzero, setsBufferToZero)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new(4);
+  byte_t            data[] = { 0x01, 0x02, 0x03, 0x04 };
+  EXPECT_EQ(cardano_buffer_write(buffer, data, sizeof(data)), CARDANO_SUCCESS);
+
+  // Act
+  cardano_buffer_memzero(buffer);
+
+  // Assert
+  const byte_t* buffer_data = cardano_buffer_get_data(buffer);
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_EQ(buffer_data[i], 0);
+  }
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_buffer_memzero, doesNotCrashIfGivenNull)
+{
+  // Act
+  cardano_buffer_memzero(nullptr);
+}

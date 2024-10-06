@@ -557,6 +557,22 @@ cardano_buffer_get_data(const cardano_buffer_t* buffer)
   return buffer->data;
 }
 
+void
+cardano_buffer_memzero(cardano_buffer_t* buffer)
+{
+  if (buffer == NULL)
+  {
+    return;
+  }
+
+  if (buffer->data == NULL)
+  {
+    return; // LCOV_EXCL_LINE
+  }
+
+  sodium_memzero(buffer->data, buffer->size);
+}
+
 size_t
 cardano_buffer_get_size(const cardano_buffer_t* buffer)
 {

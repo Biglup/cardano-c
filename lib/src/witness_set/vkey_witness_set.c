@@ -73,6 +73,22 @@ cardano_vkey_witness_set_deallocate(void* object)
   _cardano_free(list);
 }
 
+/**
+ * \brief Determines if a vkey_witness public key is equal to a given public key.
+ *
+ * \param item The vkey_witness object to compare.
+ * \param context The public key to compare against.
+ * \return true if the public key is equal to the given public key, false otherwise.
+ */
+static bool
+is_pub_key_equal(const cardano_object_t* item, const void* context)
+{
+  const cardano_vkey_witness_t*       vkey_witness = (const cardano_vkey_witness_t*)((const void*)item);
+  const cardano_ed25519_public_key_t* pubkey       = (const cardano_ed25519_public_key_t*)context;
+
+  return cardano_vkey_witness_has_public_key(vkey_witness, pubkey);
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -330,6 +346,34 @@ cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, carda
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
+
+  cardano_ed25519_public_key_t* vkey = cardano_vkey_witness_get_vkey(element);
+  cardano_ed25519_signature_t*  sig  = cardano_vkey_witness_get_signature(element);
+
+  cardano_ed25519_signature_unref(&sig);
+  cardano_ed25519_public_key_unref(&vkey);
+
+  if ((vkey == NULL) || (sig == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+  }
+
+  cardano_vkey_witness_t* found_elem = (cardano_vkey_witness_t*)((void*)cardano_array_find(vkey_witness_set->array, is_pub_key_equal, (void*)vkey));
+
+  cardano_vkey_witness_unref(&found_elem);
+
+  if (found_elem != NULL)
+  {
+    cardano_error_t result = cardano_vkey_witness_set_signature(found_elem, sig);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+
+    return CARDANO_SUCCESS;
+  }
+
   const size_t original_size = cardano_array_get_size(vkey_witness_set->array);
   const size_t new_size      = cardano_array_push(vkey_witness_set->array, (cardano_object_t*)((void*)element));
 
@@ -337,6 +381,44 @@ cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, carda
 
   CARDANO_UNUSED(original_size);
   CARDANO_UNUSED(new_size);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_vkey_witness_set_apply(
+  cardano_vkey_witness_set_t* vkey_witness_set,
+  cardano_vkey_witness_set_t* new_vkey_witnesses)
+{
+  if (vkey_witness_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (new_vkey_witnesses == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  for (size_t i = 0; i < cardano_array_get_size(new_vkey_witnesses->array); ++i)
+  {
+    cardano_vkey_witness_t* element = NULL;
+
+    cardano_error_t result = cardano_vkey_witness_set_get(new_vkey_witnesses, i, &element);
+    cardano_vkey_witness_unref(&element);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+
+    result = cardano_vkey_witness_set_add(vkey_witness_set, element);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+  }
 
   return CARDANO_SUCCESS;
 }

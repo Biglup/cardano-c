@@ -17,11 +17,7 @@ Secure Key Handler
 
 ------------
 
-.. doxygenfunction:: cardano_secure_key_handler_bip32_get_public_key
-
-------------
-
-.. doxygenfunction:: cardano_secure_key_handler_bip32_get_extended_public_key
+.. doxygenfunction:: cardano_secure_key_handler_bip32_get_extended_account_public_key
 
 ------------
 
@@ -38,6 +34,10 @@ Secure Key Handler
 ------------
 
 .. doxygenfunction:: cardano_secure_key_handler_ref
+
+------------
+
+.. doxygenfunction:: cardano_secure_key_handler_serialize
 
 ------------
 

@@ -26,6 +26,7 @@
 
 #include <cardano/crypto/bip32_public_key.h>
 #include <cardano/crypto/ed25519_public_key.h>
+#include <cardano/key_handlers/account_derivation_path.h>
 #include <cardano/key_handlers/derivation_path.h>
 #include <cardano/key_handlers/secure_key_handler_type.h>
 #include <cardano/object.h>
@@ -92,52 +93,29 @@ typedef cardano_error_t (*cardano_bip32_sign_transaction_func_t)(
   cardano_vkey_witness_set_t**       vkey_witness_set);
 
 /**
- * \brief Callback function type for retrieving a BIP32 (HD) public key.
+ * \brief Callback function type for retrieving a BIP32 extended account public key.
  *
- * The `cardano_bip32_get_public_key_func_t` typedef defines the signature for a callback function responsible for
- * deriving and retrieving a BIP32 (Hierarchical Deterministic) public key from the secure key handler implementation.
- *
- * This function is expected to:
- * - Use the provided `secure_key_handler_impl` to securely handle the cryptographic key operations required for deriving
- *   the public key based on the provided `derivation_path`.
- * - Return the derived public key in the form of an `ed25519_public_key` structure.
- *
- * \param secure_key_handler_impl A pointer to the secure key handler implementation that manages cryptographic operations.
- * \param derivation_path The BIP32 derivation path used to derive the public key.
- * \param public_key A pointer to the location where the derived public key will be stored. The caller is responsible for
- *                   managing the lifecycle of the public key, ensuring proper cleanup after use.
- *
- * \returns `cardano_error_t` indicating success or the type of error encountered during the derivation process.
- *
- * \note The `public_key` object must be managed and released by the caller to avoid memory leaks.
- */
-typedef cardano_error_t (*cardano_bip32_get_public_key_func_t)(
-  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
-  cardano_derivation_path_t          derivation_path,
-  cardano_ed25519_public_key_t**     public_key);
-
-/**
- * \brief Callback function type for retrieving a BIP32 extended public key.
- *
- * The `cardano_bip32_get_extended_public_key_func_t` typedef defines the signature for a callback function that is
- * responsible for deriving and retrieving a BIP32 (Hierarchical Deterministic) extended public key. This key includes both the
+ * The `cardano_bip32_get_extended_account_public_key_func_t` typedef defines the signature for a callback function that is
+ * responsible for deriving and retrieving a BIP32 (Hierarchical Deterministic) extended account public key. This key includes both the
  * public key and the associated chain code, as required by BIP32.
  *
  * This function is expected to:
  * - Use the provided `secure_key_handler_impl` to securely handle the cryptographic key operations for deriving the extended
- *   public key based on the provided `derivation_path`.
- * - Return the BIP32 extended public key, which includes both the public key and the chain code.
+ *   account public key based on the provided `derivation_path`.
+ * - Return the BIP32 extended account public key, which includes both the public key and the chain code.
  *
  * \param secure_key_handler_impl A pointer to the secure key handler implementation responsible for key management and operations.
- * \param bip32_public_key A pointer to the location where the extended public key (including chain code) will be stored.
+ * \param account_derivation_path The BIP32 derivation path used to derive the extended account public key.
+ * \param bip32_public_key A pointer to the location where the extended account public key (including chain code) will be stored.
  *                         The caller is responsible for managing the lifecycle of this object, ensuring proper cleanup after use.
  *
  * \returns `cardano_error_t` indicating success or providing details on any errors encountered during the process.
  *
  * \note The `bip32_public_key` object must be managed and released by the caller to avoid memory leaks.
  */
-typedef cardano_error_t (*cardano_bip32_get_extended_public_key_func_t)(
+typedef cardano_error_t (*cardano_bip32_get_extended_account_public_key_func_t)(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_account_derivation_path_t  account_derivation_path,
   cardano_bip32_public_key_t**       bip32_public_key);
 
 /**
@@ -188,6 +166,28 @@ typedef cardano_error_t (*cardano_ed25519_sign_transaction_func_t)(
 typedef cardano_error_t (*cardano_ed25519_get_public_key_func_t)(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
   cardano_ed25519_public_key_t**     public_key);
+
+/**
+ * \brief Callback function type for serializing a secure key handler.
+ *
+ * The `cardano_serialize_secure_key_handler_func_t` typedef defines the signature for a callback function responsible for
+ * serializing the state associated with a secure key handler implementation into a buffer.
+ *
+ * This function is expected to:
+ * - Use the provided `secure_key_handler_impl` to access the internal state or key material.
+ * - Serialize the key handler data into a `cardano_buffer_t` that can be stored or transmitted.
+ * - The serialized data must not contain any sensitive information, such as private keys, unless encrypted.
+ *
+ * \param secure_key_handler_impl A pointer to the secure key handler implementation that manages cryptographic operations.
+ * \param serialized_data A pointer to a `cardano_buffer_t` that will be populated with the serialized data.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during serialization.
+ *
+ * \note The `serialized_data` must be properly managed and released by the caller to avoid memory leaks.
+ */
+typedef cardano_error_t (*cardano_serialize_secure_key_handler_func_t)(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_buffer_t**                 serialized_data);
 
 /* STRUCTURES ****************************************************************/
 
@@ -262,26 +262,15 @@ typedef struct cardano_secure_key_handler_impl_t
     cardano_bip32_sign_transaction_func_t bip32_sign_transaction;
 
     /**
-     * \brief Callback function to retrieve a BIP32 public key.
+     * \brief Callback function to retrieve a BIP32 extended account public key.
      *
      * \note
      * This function is only applicable to key handlers of type `CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32`. For other key types,
      * this field should not be used.
      *
-     * \see cardano_bip32_get_public_key_func_t for more details on the function signature.
+     * \see cardano_bip32_get_extended_account_public_key_func_t for more details on the function signature.
      */
-    cardano_bip32_get_public_key_func_t bip32_get_public_key;
-
-    /**
-     * \brief Callback function to retrieve a BIP32 extended public key.
-     *
-     * \note
-     * This function is only applicable to key handlers of type `CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32`. For other key types,
-     * this field should not be used.
-     *
-     * \see cardano_bip32_get_extended_public_key_func_t for more details on the function signature.
-     */
-    cardano_bip32_get_extended_public_key_func_t bip32_get_extended_public_key;
+    cardano_bip32_get_extended_account_public_key_func_t bip32_get_extended_account_public_key;
 
     /**
      * \brief Callback function to sign a transaction using an Ed25519 key.
@@ -304,6 +293,13 @@ typedef struct cardano_secure_key_handler_impl_t
      * \see cardano_ed25519_get_public_key_func_t for more details on the function signature.
      */
     cardano_ed25519_get_public_key_func_t ed25519_get_public_key;
+
+    /**
+     * \brief Callback function to serialize the secure key handler implementation.
+     *
+     * \see cardano_serialize_secure_key_handler_func_t for more details on the function signature.
+     */
+    cardano_serialize_secure_key_handler_func_t serialize;
 } cardano_secure_key_handler_impl_t;
 
 #ifdef __cplusplus

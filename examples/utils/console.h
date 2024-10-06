@@ -22,6 +22,10 @@
 #ifndef BIGLUP_LABS_INCLUDE_CONSOLE_H
 #define BIGLUP_LABS_INCLUDE_CONSOLE_H
 
+/* INCLUDES ******************************************************************/
+
+#include <cardano/typedefs.h>
+
 /* ENUMERATIONS **************************************************************/
 
 /**
@@ -167,6 +171,31 @@ console_color_t console_get_foreground_color();
  * Sets the foreground and background console colors to their defaults.
  */
 void console_reset_color();
+
+/**
+ * Reads a line of input from the user.
+ *
+ * \param buffer The buffer to store the input.
+ * \param max_length The maximum length of the input (including null terminator).
+ */
+void console_read_line(char* buffer, size_t max_length);
+
+/**
+ * Reads a single key press from the user without waiting for a newline.
+ *
+ * \return The character code of the key pressed.
+ */
+int32_t console_read_key();
+
+/**
+ * Reads a password from the terminal, hiding the input as they type.
+ *
+ * \param buffer The buffer to store the password.
+ * \param max_length The maximum length of the password (including null terminator).
+ *
+ * \return 0 on success, -1 on failure.
+ */
+int32_t console_read_password(char* buffer, size_t max_length);
 
 #ifdef __cplusplus
 }

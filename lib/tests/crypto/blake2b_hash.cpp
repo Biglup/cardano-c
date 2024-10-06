@@ -850,3 +850,39 @@ TEST(cardano_blake2b_hash_compare, returnPositiveIfRhsIsNull)
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
 }
+
+TEST(cardano_blake2b_hash_get_data, returnsNullIfHashIsNull)
+{
+  // Act
+  const byte_t* data = cardano_blake2b_hash_get_data(nullptr);
+
+  // Assert
+  EXPECT_EQ(data, (const byte_t*)nullptr);
+}
+
+TEST(cardano_blake2b_hash_get_bytes_size, returnsZeroIfHashIsNull)
+{
+  // Act
+  size_t size = cardano_blake2b_hash_get_bytes_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_blake2b_hash_get_hex_size, returnsZeroIfHashIsNull)
+{
+  // Act
+  size_t size = cardano_blake2b_hash_get_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_blake2b_hash_to_hex, returnsErrorIfHashIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_to_hex(nullptr, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}

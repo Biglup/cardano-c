@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/export.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -37,52 +38,52 @@ extern "C" {
 /**
  * \brief The coin_type value for Cardano is 1815 (Ada Lovelace year of birth).
  */
-const uint64_t CARDANO_CIP_1852_COIN_TYPE = 1815U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_COIN_TYPE;
 
 /* PURPOSE *******************************************************************/
 
 /**
  * \brief To associate standard wallet key derivation purpose.
  */
-const uint64_t CARDANO_CIP_1852_PURPOSE_STANDARD = 1852U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_PURPOSE_STANDARD;
 
 /**
  * \brief To associate multi-signature keys to a wallet, CIP-1854 reserves
  * purpose=1854' to distinguish multisig wallets from standard wallets.
  */
-const uint64_t CARDANO_CIP_1852_PURPOSE_MULTI_SIG = 1854U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_PURPOSE_MULTI_SIG;
 
 /* ROLES *********************************************************************/
 
 /**
  * \brief External chain role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_EXTERNAL = 0U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_EXTERNAL;
 
 /**
  * \brief Internal chain role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_INTERNAL = 1U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_INTERNAL;
 
 /**
  * \brief Staking Key role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_STAKING = 2U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_STAKING;
 
 /**
  * \brief DRep Key (CIP-0105) role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_DREP = 3U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_DREP;
 
 /**
  * \brief Constitutional Committee Cold Key (CIP-0105) role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_CC_COLD = 4U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_CC_COLD;
 
 /**
  * \brief Constitutional Committee Hot Key (CIP-0105) role.
  */
-const uint64_t CARDANO_CIP_1852_ROLE_CC_HOT = 5U;
+CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_CC_HOT;
 
 #ifdef __cplusplus
 }

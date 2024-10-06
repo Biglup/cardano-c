@@ -52,7 +52,10 @@ static const pbkdf2_hmac_sha512_vectors_t pbkdf2_hmac_sha512_test_vectors[] = {
   { (const byte_t*)"passwordPASSWORDpassword", strlen("passwordPASSWORDpassword"), (const byte_t*)"saltSALTsaltSALTsaltSALTsaltSALTsalt", strlen("saltSALTsaltSALTsaltSALTsaltSALTsalt"), 4096, 40, "8c0511f4c6e597c6ac6315d8f0362e225f3c501495ba23b868c005174dc4ee71115b59f9e60cd953" },
   { (const byte_t*)"pass\u00000word", 10, (const byte_t*)"sa\u00000lt", 6, 4096, 16, "336d14366099e8aac2c46c94a8f178d2" },
   { (const byte_t*)"password", strlen("password"), (const byte_t*)"salt", strlen("salt"), 1, 10, "867f70cf1ade02cff375" },
-  { (const byte_t*)"password", strlen("password"), (const byte_t*)"salt", strlen("salt"), 1, 100, "867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5d513554e1c8cf252c02d470a285a0501bad999bfe943c08f050235d7d68b1da55e63f73b60a57fce7b532e206c2967d4c7d2ffa460539fc4d4e5eec70125d74c6c7cf86d25284f297907fcea" }
+  { (const byte_t*)"password", strlen("password"), (const byte_t*)"salt", strlen("salt"), 1, 100, "867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5d513554e1c8cf252c02d470a285a0501bad999bfe943c08f050235d7d68b1da55e63f73b60a57fce7b532e206c2967d4c7d2ffa460539fc4d4e5eec70125d74c6c7cf86d25284f297907fcea" },
+  { (const byte_t*)"password", 0, (const byte_t*)"salt", strlen("salt"), 1, 100, "00ef42cdbfc98d29db20976608e455567fdddf141f6eb03b5a85addd25974f5d2375bd5082b803e8f4cfa88ae1bd25256fcbddd2318676566ff2797792302aee6ca733014ec4a8969e9b4d25a196e71b38d7e3434496810e7ffedd58624f2fd53874cfa5" },
+  { NULL, 0, (const byte_t*)"salt", strlen("salt"), 1, 100, "00ef42cdbfc98d29db20976608e455567fdddf141f6eb03b5a85addd25974f5d2375bd5082b803e8f4cfa88ae1bd25256fcbddd2318676566ff2797792302aee6ca733014ec4a8969e9b4d25a196e71b38d7e3434496810e7ffedd58624f2fd53874cfa5" },
+  { NULL, 0, (const byte_t*)"salt", strlen("salt"), 19162, 32, "879094d1113e95e3bc05c4a2d2b2a66cbc7876d454ee3c886cdf1a14c72188c7" }
 };
 
 /* UNIT TESTS ****************************************************************/
@@ -89,25 +92,6 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVectors)
   }
 }
 
-TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullPassword)
-{
-  // Arrange
-  byte_t derived_key[64U] = { 0 };
-
-  // Act
-  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
-    NULL,
-    0U,
-    (const byte_t*)"salt",
-    strlen("salt"),
-    1U,
-    derived_key,
-    sizeof(derived_key));
-
-  // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
-}
-
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullSalt)
 {
   // Arrange
@@ -141,25 +125,6 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnNullDerivedKey)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
-}
-
-TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroPasswordLength)
-{
-  // Arrange
-  byte_t derived_key[64U] = { 0 };
-
-  // Act
-  cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
-    (const byte_t*)"password",
-    0U,
-    (const byte_t*)"salt",
-    strlen("salt"),
-    1U,
-    derived_key,
-    sizeof(derived_key));
-
-  // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
 }
 
 TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroSaltLength)

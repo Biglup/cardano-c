@@ -592,6 +592,42 @@ TEST(cardano_error_to_string, canConvertInvalidHttpRequest)
   ASSERT_STREQ(message, "Invalid HTTP request");
 }
 
+TEST(cardano_error_to_string, invalidMagic)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_MAGIC;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid magic");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidChecksum)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_CHECKSUM;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid checksum");
+}
+
+TEST(cardano_error_to_string, canConvertInvalidPassphrase)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_INVALID_PASSPHRASE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Invalid passphrase");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

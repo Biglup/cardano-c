@@ -580,3 +580,12 @@ TEST(cardano_vkey_witness_set_signature, returnsErrorIfSignatureIsNull)
   // Cleanup
   cardano_vkey_witness_unref(&vkey_witness);
 }
+
+TEST(cardano_vkey_witness_has_public_key, returnFalseIfVkeyIsNull)
+{
+  // Act
+  bool has_public_key = cardano_vkey_witness_has_public_key(nullptr, nullptr);
+
+  // Assert
+  EXPECT_FALSE(has_public_key);
+}

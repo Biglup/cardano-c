@@ -145,47 +145,22 @@ cardano_secure_key_handler_bip32_sign_transaction(
 }
 
 cardano_error_t
-cardano_secure_key_handler_bip32_get_public_key(
-  cardano_secure_key_handler_t*  secure_key_handler,
-  cardano_derivation_path_t      derivation_path,
-  cardano_ed25519_public_key_t** public_key)
-{
-  if ((secure_key_handler == NULL) || (public_key == NULL))
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (secure_key_handler->impl.bip32_get_public_key == NULL)
-  {
-    return CARDANO_ERROR_NOT_IMPLEMENTED;
-  }
-
-  cardano_error_t result = secure_key_handler->impl.bip32_get_public_key(&secure_key_handler->impl, derivation_path, public_key);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
-  }
-
-  return result;
-}
-
-cardano_error_t
-cardano_secure_key_handler_bip32_get_extended_public_key(
-  cardano_secure_key_handler_t* secure_key_handler,
-  cardano_bip32_public_key_t**  bip32_public_key)
+cardano_secure_key_handler_bip32_get_extended_account_public_key(
+  cardano_secure_key_handler_t*           secure_key_handler,
+  const cardano_account_derivation_path_t derivation_path,
+  cardano_bip32_public_key_t**            bip32_public_key)
 {
   if ((secure_key_handler == NULL) || (bip32_public_key == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (secure_key_handler->impl.bip32_get_extended_public_key == NULL)
+  if (secure_key_handler->impl.bip32_get_extended_account_public_key == NULL)
   {
     return CARDANO_ERROR_NOT_IMPLEMENTED;
   }
 
-  cardano_error_t result = secure_key_handler->impl.bip32_get_extended_public_key(&secure_key_handler->impl, bip32_public_key);
+  cardano_error_t result = secure_key_handler->impl.bip32_get_extended_account_public_key(&secure_key_handler->impl, derivation_path, bip32_public_key);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -237,6 +212,32 @@ cardano_secure_key_handler_ed25519_get_public_key(
   }
 
   cardano_error_t result = secure_key_handler->impl.ed25519_get_public_key(&secure_key_handler->impl, public_key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+  }
+
+  return result;
+}
+
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_secure_key_handler_serialize(
+  cardano_secure_key_handler_t* secure_key_handler,
+  cardano_buffer_t**            serialized_data)
+{
+  if ((secure_key_handler == NULL) || (serialized_data == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (secure_key_handler->impl.serialize == NULL)
+  {
+    return CARDANO_ERROR_NOT_IMPLEMENTED;
+  }
+
+  cardano_error_t result = secure_key_handler->impl.serialize(&secure_key_handler->impl, serialized_data);
 
   if (result != CARDANO_SUCCESS)
   {
