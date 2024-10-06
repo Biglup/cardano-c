@@ -189,6 +189,28 @@ typedef cardano_error_t (*cardano_ed25519_get_public_key_func_t)(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
   cardano_ed25519_public_key_t**     public_key);
 
+/**
+ * \brief Callback function type for serializing a secure key handler.
+ *
+ * The `cardano_serialize_secure_key_handler_func_t` typedef defines the signature for a callback function responsible for
+ * serializing the state associated with a secure key handler implementation into a buffer.
+ *
+ * This function is expected to:
+ * - Use the provided `secure_key_handler_impl` to access the internal state or key material.
+ * - Serialize the key handler data into a `cardano_buffer_t` that can be stored or transmitted.
+ * - The serialized data must not contain any sensitive information, such as private keys, unless encrypted.
+ *
+ * \param secure_key_handler_impl A pointer to the secure key handler implementation that manages cryptographic operations.
+ * \param serialized_data A pointer to a `cardano_buffer_t` that will be populated with the serialized data.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during serialization.
+ *
+ * \note The `serialized_data` must be properly managed and released by the caller to avoid memory leaks.
+ */
+typedef cardano_error_t (*cardano_serialize_secure_key_handler_func_t)(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_buffer_t**                 serialized_data);
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -304,6 +326,13 @@ typedef struct cardano_secure_key_handler_impl_t
      * \see cardano_ed25519_get_public_key_func_t for more details on the function signature.
      */
     cardano_ed25519_get_public_key_func_t ed25519_get_public_key;
+
+    /**
+     * \brief Callback function to serialize the secure key handler implementation.
+     *
+     * \see cardano_serialize_secure_key_handler_func_t for more details on the function signature.
+     */
+    cardano_serialize_secure_key_handler_func_t serialize;
 } cardano_secure_key_handler_impl_t;
 
 #ifdef __cplusplus

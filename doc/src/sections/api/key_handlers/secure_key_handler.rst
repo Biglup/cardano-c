@@ -33,6 +33,10 @@ Secure Key Handler
 
 ------------
 
+.. doxygenfunction:: cardano_secure_key_handler_serialize
+
+------------
+
 .. doxygenfunction:: cardano_secure_key_handler_unref
 
 ------------

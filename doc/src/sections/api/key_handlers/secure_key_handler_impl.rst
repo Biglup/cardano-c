@@ -22,3 +22,7 @@ Secure Key Handler Implentation
 ------------
 
 .. doxygentypedef:: cardano_ed25519_get_public_key_func_t
+
+------------
+
+.. doxygentypedef:: cardano_serialize_secure_key_handler_func_t

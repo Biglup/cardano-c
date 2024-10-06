@@ -282,6 +282,28 @@ CARDANO_EXPORT void cardano_secure_key_handler_unref(cardano_secure_key_handler_
 CARDANO_EXPORT void cardano_secure_key_handler_ref(cardano_secure_key_handler_t* secure_key_handler);
 
 /**
+ * \brief Serializes the state of a secure key handler.
+ *
+ * The `cardano_secure_key_handler_serialize` function serializes the internal state or key material associated
+ * with a secure key handler into a buffer. This allows the key handler to be stored or transferred in a secure, serialized format.
+ *
+ * This function is expected to:
+ * - Serialize the current state of the secure key handler into the provided `serialized_data` buffer.
+ *
+ * \param secure_key_handler A pointer to the secure key handler that manages cryptographic operations.
+ * \param serialized_data A pointer to the buffer that will be populated with the serialized state of the key handler.
+ *                        This buffer must be managed and freed by the caller to prevent memory leaks.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during serialization.
+ *
+ * \note The caller is responsible for releasing the serialized buffer after use to avoid memory leaks.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_serialize(
+  cardano_secure_key_handler_t* secure_key_handler,
+  cardano_buffer_t**            serialized_data);
+
+/**
  * \brief Retrieves the current reference count of the cardano_secure_key_handler_t object.
  *
  * This function returns the number of active references to an cardano_secure_key_handler_t object. It's useful
