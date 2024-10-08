@@ -108,9 +108,9 @@ cardano_secure_key_handler_impl_new()
     return CARDANO_SUCCESS;
   };
 
-  impl.cardano_secure_key_handler_serialize = [](
-                                                cardano_secure_key_handler_t*,
-                                                cardano_buffer_t**) -> cardano_error_t
+  impl.serialize = [](
+                     cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+                     cardano_buffer_t**                 serialized_data) -> cardano_error_t
   {
     return CARDANO_SUCCESS;
   };
