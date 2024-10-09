@@ -220,6 +220,34 @@ extern "C" {
  */
 CARDANO_EXPORT const char* cardano_get_lib_version(void);
 
+/**
+ * \brief Securely wipes the contents of a buffer from memory.
+ *
+ * The `cardano_memzero` function is used to securely erase the sensitive data stored in the provided \p buffer.
+ * This ensures that the data is no longer recoverable from memory after it has been used.
+ *
+ * After use, sensitive data should be overwritten. However, traditional approaches like `memset()` or hand-written
+ * memory clearing routines can be stripped away by optimizing compilers or linkers, potentially leaving sensitive
+ * information exposed.
+ *
+ * The `cardano_memzero` function guarantees that the memory is cleared, even in the presence of compiler optimizations.
+ * It is especially important to call this function before freeing memory that contains sensitive information, such as
+ * cryptographic keys or decrypted data, to prevent the data from remaining in memory.
+ *
+ * \param[in] buffer A pointer to the buffer whose contents should be securely erased.
+ * \param[in] size The size of the buffer in bytes.
+ *
+ * \example
+ * \code
+ * // Example usage after processing sensitive data
+ * char sensitive_data[64] = ...; // Buffer containing sensitive data
+ *
+ * // Wipe the buffer contents securely
+ * cardano_memzero(sensitive_data, 64);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_memzero(void* const buffer, size_t size);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

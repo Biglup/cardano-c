@@ -128,3 +128,31 @@ TEST(cardano_crypto_emip3_decrypt, correctlyDecryptsCipherForTestVectors)
     EXPECT_STREQ(decrypted_data_hex, vector->hex_data);
   }
 }
+
+TEST(cardano_crypto_emip3_encrypt, returnsErrorIfDataIsNull)
+{
+  cardano_buffer_t* encrypted_data = NULL;
+  cardano_error_t   result         = cardano_crypto_emip3_encrypt(NULL, 0, (const byte_t*)"password", strlen("password"), &encrypted_data);
+  ASSERT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
+}
+
+TEST(cardano_crypto_emip3_encrypt, returnsErrorIfOutputIsNull)
+{
+  byte_t          data[1] = { 0 };
+  cardano_error_t result  = cardano_crypto_emip3_encrypt(data, sizeof data, (const byte_t*)"password", strlen("password"), NULL);
+  ASSERT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
+}
+
+TEST(cardano_crypto_emip3_decrypt, returnsErrorIfDataIsNull)
+{
+  cardano_buffer_t* decrypted_data = NULL;
+  cardano_error_t   result         = cardano_crypto_emip3_decrypt(NULL, 0, (const byte_t*)"password", strlen("password"), &decrypted_data);
+  ASSERT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+}
+
+TEST(cardano_crypto_emip3_decrypt, returnsErrorIfOutputIsNull)
+{
+  byte_t          data[1] = { 0 };
+  cardano_error_t result  = cardano_crypto_emip3_decrypt(data, sizeof data, (const byte_t*)"password", strlen("password"), NULL);
+  ASSERT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+}

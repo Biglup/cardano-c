@@ -24,6 +24,7 @@
 #include <cardano/cardano.h>
 
 #include "./config.h"
+#include <sodium.h>
 
 /* DEFINITIONS ***************************************************************/
 
@@ -31,4 +32,15 @@ const char*
 cardano_get_lib_version(void)
 {
   return LIB_CARDANO_C_VERSION;
+}
+
+void
+cardano_memzero(void* const buffer, size_t size)
+{
+  if (buffer == NULL || size == 0)
+  {
+    return;
+  }
+
+  sodium_memzero(buffer, size);
 }
