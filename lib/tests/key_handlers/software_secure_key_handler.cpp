@@ -62,6 +62,8 @@ static const char* VK_WITNESS_KEYS[] = {
   VK_WITNESS_KEY_4
 };
 
+static const char* SERIALIZED_BIP32_KEY_HANDLER = "0a0a0a0a01010000005c97db5e09b3a4919ec75ed1126056241a1e5278731c2e0b01bea0a5f42c22db4131e0a4bbe75633677eb0e60e2ecd3520178f85c7e0d4be77a449087fe9674ee52f946b07c1b56d228c496ec0d36dd44212ba8af0f6eed1a82194dd69f479c603";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -143,7 +145,7 @@ TEST(cardano_software_secure_key_handler_new, canCreateABip32SecureKeyHandler)
   free(key_handler);
 }
 
-TEST(cardano_software_secure_key_handler_new, canSignTransactionWithBip32SecureKeyHandler)
+TEST(cardano_software_secure_key_handler_bip32_sign_transaction, canSignTransactionWithBip32SecureKeyHandler)
 {
   // Arrange
   cardano_transaction_t* transaction = nullptr;
@@ -225,4 +227,58 @@ TEST(cardano_software_secure_key_handler_new, canSignTransactionWithBip32SecureK
   cardano_vkey_witness_set_unref(&vkey_witness_set);
   cardano_transaction_unref(&transaction);
   cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_serialize, canSerializeBip32SecureKeyHandler)
+{
+  // Arrange
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+
+  cardano_error_t error = cardano_software_secure_key_handler_new(
+    entropy_bytes,
+    sizeof entropy_bytes,
+    (const byte_t*)&PASSWORD[0],
+    strlen(PASSWORD),
+    &get_passphrase,
+    &key_handler);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_buffer_t* buffer = NULL;
+
+  error = cardano_secure_key_handler_serialize(key_handler, &buffer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // deserialize it and compare key
+  cardano_secure_key_handler_t* deserialized_key_handler = nullptr;
+
+  error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &deserialized_key_handler);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_bip32_public_key_t* extended_account_0_pub_key = nullptr;
+
+  error = cardano_secure_key_handler_bip32_get_extended_account_public_key(deserialized_key_handler, { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U }, &extended_account_0_pub_key);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_bip32_public_key_get_hex_size(extended_account_0_pub_key);
+  char         hex[hex_size];
+
+  error = cardano_bip32_public_key_to_hex(extended_account_0_pub_key, hex, hex_size);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, EXTENDED_ACCOUNT_0_PUB_KEY);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_secure_key_handler_unref(&key_handler);
+  cardano_secure_key_handler_unref(&deserialized_key_handler);
+  cardano_bip32_public_key_unref(&extended_account_0_pub_key);
 }

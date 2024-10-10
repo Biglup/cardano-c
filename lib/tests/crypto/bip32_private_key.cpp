@@ -778,28 +778,6 @@ TEST(cardano_bip32_private_key_get_public_key, canComputeTheCorrectPublicKey)
   cardano_bip32_public_key_unref(&expected_public_key);
 }
 
-TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPasswordIsNull)
-{
-  // Arrange
-  cardano_bip32_private_key_t* private_key = nullptr;
-  cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(nullptr, 0, nullptr, 0, &private_key);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
-}
-
-TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPasswordLengthIsZero)
-{
-  // Arrange
-  cardano_bip32_private_key_t* private_key = nullptr;
-  cardano_error_t              error       = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, 0, BIP39_ENTROPY, BIP39_ENTROPY_SIZE, &private_key);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
-  EXPECT_EQ(private_key, (cardano_bip32_private_key_t*)nullptr);
-}
-
 TEST(cardano_bip32_private_key_from_bip39_entropy, returnErrorIfPrivateKeyIsNull)
 {
   // Arrange

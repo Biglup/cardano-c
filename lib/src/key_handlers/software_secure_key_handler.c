@@ -58,10 +58,9 @@ static const uint8_t  SW_SECURE_KEY_BINARY_FORMAT_VERSION       = 0x01;
  */
 typedef struct software_secure_key_handler_context_t
 {
-    cardano_object_t                  base;
-    cardano_secure_key_handler_type_t type;
-    cardano_buffer_t*                 encrypted_data;
-    cardano_get_passphrase_func_t     get_passphrase;
+    cardano_object_t              base;
+    cardano_buffer_t*             encrypted_data;
+    cardano_get_passphrase_func_t get_passphrase;
 } software_secure_key_handler_context_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -112,7 +111,6 @@ cardano_software_secure_key_handler_context_new(void)
   data->base.deallocator   = cardano_secure_key_handler_deallocate;
   data->encrypted_data     = NULL;
   data->get_passphrase     = NULL;
-  data->type               = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
 
   return data;
 }
@@ -195,7 +193,7 @@ serialize(
     return result;
   }
 
-  result = cardano_buffer_write(buffer, (const byte_t*)&context->type, 1);
+  result = cardano_buffer_write(buffer, (const byte_t*)&secure_key_handler_impl->type, 1);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -854,6 +852,7 @@ cardano_software_secure_key_handler_new(
   impl.ed25519_get_public_key                = NULL;
   impl.ed25519_sign_transaction              = NULL;
   impl.serialize                             = serialize;
+  impl.type                                  = CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32;
 
   context->get_passphrase = get_passphrase;
 
@@ -921,6 +920,7 @@ cardano_software_secure_key_handler_ed25519_new(
   impl.ed25519_get_public_key                = ed25519_get_public_key;
   impl.ed25519_sign_transaction              = ed25519_sign_transaction;
   impl.serialize                             = serialize;
+  impl.type                                  = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
 
   context->get_passphrase = get_passphrase;
 
@@ -957,14 +957,11 @@ cardano_software_secure_key_handler_deserialize(
     return result;
   }
 
-  uint32_t                          magic           = 0U;
-  uint8_t                           version         = 0U;
-  cardano_secure_key_handler_type_t type            = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
-  cardano_buffer_t*                 encrypted_data  = NULL;
-  cardano_buffer_t*                 pub_key_data    = NULL;
-  uint32_t                          checksum        = 0U;
-  cardano_bip32_public_key_t*       root_public_key = NULL;
-  cardano_ed25519_public_key_t*     public_key      = NULL;
+  uint32_t                          magic          = 0U;
+  uint8_t                           version        = 0U;
+  cardano_secure_key_handler_type_t type           = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
+  cardano_buffer_t*                 encrypted_data = NULL;
+  uint32_t                          checksum       = 0U;
 
   result = cardano_buffer_read_uint32_be(data, &magic);
 
@@ -1027,6 +1024,16 @@ cardano_software_secure_key_handler_deserialize(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
+  result = cardano_buffer_set_size(encrypted_data, encrypted_data_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_buffer_unref(&encrypted_data);
+    cardano_buffer_unref(&data);
+
+    return result;
+  }
+
   result = cardano_buffer_read(data, cardano_buffer_get_data(encrypted_data), encrypted_data_size);
 
   if (result != CARDANO_SUCCESS)
@@ -1037,61 +1044,20 @@ cardano_software_secure_key_handler_deserialize(
     return result;
   }
 
-  uint32_t pub_key_size = 0U;
-
-  result = cardano_buffer_read_uint32_be(data, &pub_key_size);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_buffer_unref(&encrypted_data);
-    cardano_buffer_unref(&data);
-
-    return result;
-  }
-
-  if (pub_key_size == 0U)
-  {
-    cardano_buffer_unref(&encrypted_data);
-    return CARDANO_ERROR_DECODING;
-  }
-
-  pub_key_data = cardano_buffer_new(pub_key_size);
-
-  if (pub_key_data == NULL)
-  {
-    cardano_buffer_unref(&encrypted_data);
-    cardano_buffer_unref(&data);
-
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  result = cardano_buffer_read(data, cardano_buffer_get_data(pub_key_data), pub_key_size);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_buffer_unref(&pub_key_data);
-    cardano_buffer_unref(&encrypted_data);
-    cardano_buffer_unref(&data);
-
-    return result;
-  }
-
   result = cardano_buffer_read_uint32_be(data, &checksum);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_buffer_unref(&pub_key_data);
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
     return result;
   }
 
-  const uint32_t expected_checksum = cardano_checksum_crc32(serialized_data, (serialized_data_len - 2U));
+  const uint32_t expected_checksum = cardano_checksum_crc32(serialized_data, (serialized_data_len - 4U));
 
   if (checksum != expected_checksum)
   {
-    cardano_buffer_unref(&pub_key_data);
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
@@ -1104,7 +1070,6 @@ cardano_software_secure_key_handler_deserialize(
 
   if (context == NULL)
   {
-    cardano_buffer_unref(&pub_key_data);
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
@@ -1115,18 +1080,6 @@ cardano_software_secure_key_handler_deserialize(
   {
     case CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519:
     {
-      result = cardano_ed25519_public_key_from_bytes(cardano_buffer_get_data(pub_key_data), cardano_buffer_get_size(pub_key_data), &public_key);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_buffer_unref(&pub_key_data);
-        cardano_buffer_unref(&encrypted_data);
-        cardano_buffer_unref(&data);
-        cardano_secure_key_handler_deallocate(context);
-
-        return result;
-      }
-
       cardano_safe_memcpy(impl.name, 256, "Ed25519 Software Secure Key Handler", 256);
       impl.bip32_get_extended_account_public_key = NULL;
       impl.bip32_sign_transaction                = NULL;
@@ -1136,26 +1089,14 @@ cardano_software_secure_key_handler_deserialize(
 
       context->get_passphrase = get_passphrase;
       context->encrypted_data = encrypted_data;
-      context->type           = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
 
+      impl.type    = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
       impl.context = (cardano_object_t*)((void*)context);
 
       break;
     }
     case CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32:
     {
-      result = cardano_bip32_public_key_from_bytes(cardano_buffer_get_data(pub_key_data), cardano_buffer_get_size(pub_key_data), &root_public_key);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_buffer_unref(&pub_key_data);
-        cardano_buffer_unref(&encrypted_data);
-        cardano_buffer_unref(&data);
-        cardano_secure_key_handler_deallocate(context);
-
-        return result;
-      }
-
       cardano_safe_memcpy(impl.name, 256, "BIP32 Software Secure Key Handler", 256);
 
       impl.bip32_get_extended_account_public_key = bip32_get_extended_account_public_key;
@@ -1166,8 +1107,8 @@ cardano_software_secure_key_handler_deserialize(
 
       context->get_passphrase = get_passphrase;
       context->encrypted_data = encrypted_data;
-      context->type           = CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32;
 
+      impl.type    = CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32;
       impl.context = (cardano_object_t*)((void*)context);
 
       break;
@@ -1175,7 +1116,6 @@ cardano_software_secure_key_handler_deserialize(
     default:
     {
       cardano_secure_key_handler_deallocate(context);
-      cardano_buffer_unref(&pub_key_data);
       cardano_buffer_unref(&encrypted_data);
       cardano_buffer_unref(&data);
 
@@ -1183,8 +1123,6 @@ cardano_software_secure_key_handler_deserialize(
     }
   }
 
-  cardano_buffer_unref(&pub_key_data);
-  cardano_buffer_unref(&encrypted_data);
   cardano_buffer_unref(&data);
 
   return cardano_secure_key_handler_new(impl, secure_key_handler);
