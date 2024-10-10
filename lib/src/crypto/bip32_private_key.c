@@ -171,7 +171,7 @@ cardano_bip32_private_key_from_bip39_entropy(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (password == NULL)
+  if ((password == NULL) && (password_length > 0U))
   {
     *key = NULL;
 
@@ -183,13 +183,6 @@ cardano_bip32_private_key_from_bip39_entropy(
     *key = NULL;
 
     return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (password_length == 0U)
-  {
-    *key = NULL;
-
-    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   if (entropy_length == 0U)
@@ -458,12 +451,22 @@ cardano_bip32_private_key_get_public_key(
 const byte_t*
 cardano_bip32_private_key_get_data(const cardano_bip32_private_key_t* bip32_private_key)
 {
+  if (bip32_private_key == NULL)
+  {
+    return NULL;
+  }
+
   return cardano_buffer_get_data(bip32_private_key->key_material);
 }
 
 size_t
 cardano_bip32_private_key_get_bytes_size(const cardano_bip32_private_key_t* bip32_private_key)
 {
+  if (bip32_private_key == NULL)
+  {
+    return 0U;
+  }
+
   return cardano_buffer_get_size(bip32_private_key->key_material);
 }
 
@@ -484,6 +487,11 @@ cardano_bip32_private_key_to_bytes(
 size_t
 cardano_bip32_private_key_get_hex_size(const cardano_bip32_private_key_t* bip32_private_key)
 {
+  if (bip32_private_key == NULL)
+  {
+    return 0U;
+  }
+
   return cardano_buffer_get_hex_size(bip32_private_key->key_material);
 }
 
@@ -493,6 +501,11 @@ cardano_bip32_private_key_to_hex(
   char*                              hex,
   const size_t                       hex_length)
 {
+  if (bip32_private_key == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   return cardano_buffer_to_hex(bip32_private_key->key_material, hex, hex_length);
 }
 

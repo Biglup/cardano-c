@@ -282,7 +282,7 @@ bip32_get_extended_account_public_key(
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  cardano_buffer_t* decrypted_data = cardano_buffer_new(cardano_buffer_get_size(context->encrypted_data));
+  cardano_buffer_t* decrypted_data = NULL;
 
   cardano_error_t result = cardano_crypto_emip3_decrypt(
     cardano_buffer_get_data(context->encrypted_data),
@@ -298,10 +298,10 @@ bip32_get_extended_account_public_key(
     return result;
   }
 
-  cardano_bip32_private_key_t* root_private_key = NULL;
-  cardano_bip32_public_key_t*  root_public_key  = NULL;
+  cardano_bip32_private_key_t* root_private_key    = NULL;
+  cardano_bip32_private_key_t* account_private_key = NULL;
 
-  result = cardano_bip32_private_key_from_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &root_private_key);
+  result = cardano_bip32_private_key_from_bip39_entropy(NULL, 0, cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &root_private_key);
 
   cardano_buffer_memzero(decrypted_data);
   cardano_buffer_unref(&decrypted_data);
@@ -311,7 +311,13 @@ bip32_get_extended_account_public_key(
     return result;
   }
 
-  result = cardano_bip32_private_key_get_public_key(root_private_key, &root_public_key);
+  const uint32_t path[3] = {
+    cardano_bip32_harden(derivation_path.purpose),
+    cardano_bip32_harden(derivation_path.coin_type),
+    cardano_bip32_harden(derivation_path.account)
+  };
+
+  result = cardano_bip32_private_key_derive(root_private_key, path, sizeof(path) / sizeof(uint32_t), &account_private_key);
 
   cardano_bip32_private_key_unref(&root_private_key);
 
@@ -322,15 +328,9 @@ bip32_get_extended_account_public_key(
 
   cardano_bip32_public_key_t* account_public_key = NULL;
 
-  const uint32_t path[3] = {
-    cardano_bip32_harden(derivation_path.purpose),
-    cardano_bip32_harden(derivation_path.coin_type),
-    cardano_bip32_harden(derivation_path.account)
-  };
+  result = cardano_bip32_private_key_get_public_key(account_private_key, &account_public_key);
 
-  result = cardano_bip32_public_key_derive(root_public_key, &path[0], 3, &account_public_key);
-
-  cardano_bip32_public_key_unref(&root_public_key);
+  cardano_bip32_private_key_unref(&account_private_key);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -387,12 +387,7 @@ bip32_sign_transaction(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_buffer_t* decrypted_data = cardano_buffer_new(cardano_buffer_get_size(context->encrypted_data));
-
-  if (decrypted_data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
+  cardano_buffer_t* decrypted_data = NULL;
 
   byte_t passphrase[128] = { 0 };
 
@@ -424,7 +419,7 @@ bip32_sign_transaction(
 
   cardano_bip32_private_key_t* root_private_key = NULL;
 
-  result = cardano_bip32_private_key_from_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &root_private_key);
+  result = cardano_bip32_private_key_from_bip39_entropy(NULL, 0, cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &root_private_key);
 
   cardano_buffer_memzero(decrypted_data);
   cardano_buffer_unref(&decrypted_data);
@@ -591,12 +586,7 @@ ed25519_get_public_key(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_buffer_t* decrypted_data = cardano_buffer_new(cardano_buffer_get_size(context->encrypted_data));
-
-  if (decrypted_data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
+  cardano_buffer_t* decrypted_data = NULL;
 
   byte_t  passphrase[128] = { 0 };
   int32_t pass_len        = context->get_passphrase(&passphrase[0], sizeof(passphrase));
@@ -684,12 +674,7 @@ ed25519_sign_transaction(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_buffer_t* decrypted_data = cardano_buffer_new(cardano_buffer_get_size(context->encrypted_data));
-
-  if (decrypted_data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
+  cardano_buffer_t* decrypted_data = NULL;
 
   byte_t passphrase[128] = { 0 };
 

@@ -219,12 +219,22 @@ cardano_ed25519_signature_refcount(const cardano_ed25519_signature_t* ed25519_si
 const byte_t*
 cardano_ed25519_signature_get_data(const cardano_ed25519_signature_t* ed25519_signature)
 {
+  if (ed25519_signature == NULL)
+  {
+    return NULL;
+  }
+
   return cardano_buffer_get_data(ed25519_signature->buffer);
 }
 
 size_t
 cardano_ed25519_signature_get_bytes_size(const cardano_ed25519_signature_t* ed25519_signature)
 {
+  if (ed25519_signature == NULL)
+  {
+    return 0;
+  }
+
   return cardano_buffer_get_size(ed25519_signature->buffer);
 }
 
@@ -245,6 +255,11 @@ cardano_ed25519_signature_to_bytes(
 size_t
 cardano_ed25519_signature_get_hex_size(const cardano_ed25519_signature_t* ed25519_signature)
 {
+  if (ed25519_signature == NULL)
+  {
+    return 0;
+  }
+
   return cardano_buffer_get_hex_size(ed25519_signature->buffer);
 }
 
@@ -254,5 +269,10 @@ cardano_ed25519_signature_to_hex(
   char*                              hex,
   const size_t                       hex_length)
 {
+  if (ed25519_signature == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   return cardano_buffer_to_hex(ed25519_signature->buffer, hex, hex_length);
 }

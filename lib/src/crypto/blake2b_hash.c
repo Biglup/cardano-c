@@ -417,12 +417,22 @@ cardano_blake2b_hash_refcount(const cardano_blake2b_hash_t* blake2b_hash)
 const byte_t*
 cardano_blake2b_hash_get_data(const cardano_blake2b_hash_t* blake2b_hash)
 {
+  if (blake2b_hash == NULL)
+  {
+    return NULL;
+  }
+
   return cardano_buffer_get_data(blake2b_hash->buffer);
 }
 
 size_t
 cardano_blake2b_hash_get_bytes_size(const cardano_blake2b_hash_t* blake2b_hash)
 {
+  if (blake2b_hash == NULL)
+  {
+    return 0U;
+  }
+
   return cardano_buffer_get_size(blake2b_hash->buffer);
 }
 
@@ -443,6 +453,11 @@ cardano_blake2b_hash_to_bytes(
 size_t
 cardano_blake2b_hash_get_hex_size(const cardano_blake2b_hash_t* blake2b_hash)
 {
+  if (blake2b_hash == NULL)
+  {
+    return 0U;
+  }
+
   return cardano_buffer_get_hex_size(blake2b_hash->buffer);
 }
 
@@ -452,5 +467,10 @@ cardano_blake2b_hash_to_hex(
   char*                         hex_hash,
   const size_t                  hash_len)
 {
+  if (blake2b_hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   return cardano_buffer_to_hex(blake2b_hash->buffer, hex_hash, hash_len);
 }
