@@ -144,6 +144,16 @@ typedef enum
    */
   CARDANO_ERROR_LOSS_OF_PRECISION = 100,
 
+  /**
+   * \brief The magic number is invalid.
+   */
+  CARDANO_ERROR_INVALID_MAGIC = 101,
+
+  /**
+   * \brief The checksum is invalid.
+   */
+  CARDANO_ERROR_INVALID_CHECKSUM = 102,
+
   /* Crypto errors */
 
   /**

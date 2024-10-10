@@ -37,7 +37,7 @@ cardano_get_lib_version(void)
 void
 cardano_memzero(void* const buffer, size_t size)
 {
-  if (buffer == NULL || size == 0)
+  if ((buffer == NULL) || (size == 0U))
   {
     return;
   }

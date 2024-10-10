@@ -78,17 +78,10 @@ cardano_secure_key_handler_impl_new()
     return CARDANO_SUCCESS;
   };
 
-  impl.bip32_get_public_key = [](
-                                cardano_secure_key_handler_impl_t*,
-                                cardano_derivation_path_t,
-                                cardano_ed25519_public_key_t**) -> cardano_error_t
-  {
-    return CARDANO_SUCCESS;
-  };
-
-  impl.bip32_get_extended_public_key = [](
-                                         cardano_secure_key_handler_impl_t*,
-                                         cardano_bip32_public_key_t**) -> cardano_error_t
+  impl.bip32_get_extended_account_public_key = [](
+                                                 cardano_secure_key_handler_impl_t*,
+                                                 cardano_account_derivation_path_t,
+                                                 cardano_bip32_public_key_t**) -> cardano_error_t
   {
     return CARDANO_SUCCESS;
   };
@@ -142,11 +135,10 @@ cardano_empty_secure_key_handler_impl_new()
   CARDANO_UNUSED(memset(impl.name, 0, sizeof(impl.name)));
   CARDANO_UNUSED(memccpy((void*)&impl.name[0], "Empty Provider", strlen("Empty Provider"), sizeof(impl.name)));
 
-  impl.bip32_get_extended_public_key = NULL;
-  impl.bip32_get_public_key          = NULL;
-  impl.bip32_sign_transaction        = NULL;
-  impl.ed25519_get_public_key        = NULL;
-  impl.ed25519_sign_transaction      = NULL;
+  impl.bip32_get_extended_account_public_key = NULL;
+  impl.bip32_sign_transaction                = NULL;
+  impl.ed25519_get_public_key                = NULL;
+  impl.ed25519_sign_transaction              = NULL;
 
   return impl;
 }
@@ -395,86 +387,33 @@ TEST(cardano_secure_key_handler_bip32_sign_transaction, returnsSuccessIfBip32Sig
   cardano_secure_key_handler_unref(&secure_key_handler);
 }
 
-TEST(cardano_secure_key_handler_bip32_get_public_key, returnsErrorIfGivenANullPtr)
+TEST(cardano_secure_key_handler_bip32_get_extended_account_public_key, returnsErrorIfGivenANullPtr)
 {
   // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_derivation_path_t     path               = { .purpose = 0, .coin_type = 0, .account = 0, .role = 0, .index = 0 };
-  cardano_ed25519_public_key_t* public_key         = nullptr;
+  cardano_secure_key_handler_t*     secure_key_handler = nullptr;
+  cardano_bip32_public_key_t*       bip32_public_key   = nullptr;
+  cardano_account_derivation_path_t derivation_path    = { .purpose = 0, .coin_type = 0, .account = 0 };
 
   // Act
-  cardano_error_t error = cardano_secure_key_handler_bip32_get_public_key(secure_key_handler, path, &public_key);
+  cardano_error_t error = cardano_secure_key_handler_bip32_get_extended_account_public_key(secure_key_handler, derivation_path, &bip32_public_key);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
-TEST(cardano_secure_key_handler_bip32_get_public_key, returnsErrorIfBip32GetPublicKeyIsNotImplemented)
+TEST(cardano_secure_key_handler_bip32_get_extended_account_public_key, returnsErrorIfBip32GetExtendedPublicKeyIsNotImplemented)
 {
   // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_ed25519_public_key_t* public_key         = nullptr;
+  cardano_secure_key_handler_t*     secure_key_handler = nullptr;
+  cardano_bip32_public_key_t*       bip32_public_key   = nullptr;
+  cardano_account_derivation_path_t derivation_path    = { .purpose = 0, .coin_type = 0, .account = 0 };
 
   cardano_error_t error = cardano_secure_key_handler_new(cardano_empty_secure_key_handler_impl_new(), &secure_key_handler);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  error = cardano_secure_key_handler_bip32_get_public_key(secure_key_handler, { .purpose = 0, .coin_type = 0, .account = 0, .role = 0, .index = 0 }, &public_key);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
-
-  // Cleanup
-  cardano_secure_key_handler_unref(&secure_key_handler);
-}
-
-TEST(cardano_secure_key_handler_bip32_get_public_key, returnsSuccessIfBip32GetPublicKeyIsImplemented)
-{
-  // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_ed25519_public_key_t* public_key         = nullptr;
-
-  cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
-
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  error = cardano_secure_key_handler_bip32_get_public_key(secure_key_handler, { .purpose = 0, .coin_type = 0, .account = 0, .role = 0, .index = 0 }, &public_key);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_SUCCESS);
-
-  // Cleanup
-  cardano_ed25519_public_key_unref(&public_key);
-  cardano_secure_key_handler_unref(&secure_key_handler);
-}
-
-TEST(cardano_secure_key_handler_bip32_get_extended_public_key, returnsErrorIfGivenANullPtr)
-{
-  // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_bip32_public_key_t*   bip32_public_key   = nullptr;
-
-  // Act
-  cardano_error_t error = cardano_secure_key_handler_bip32_get_extended_public_key(secure_key_handler, &bip32_public_key);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
-}
-
-TEST(cardano_secure_key_handler_bip32_get_extended_public_key, returnsErrorIfBip32GetExtendedPublicKeyIsNotImplemented)
-{
-  // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_bip32_public_key_t*   bip32_public_key   = nullptr;
-
-  cardano_error_t error = cardano_secure_key_handler_new(cardano_empty_secure_key_handler_impl_new(), &secure_key_handler);
-
-  ASSERT_EQ(error, CARDANO_SUCCESS);
-
-  // Act
-  error = cardano_secure_key_handler_bip32_get_extended_public_key(secure_key_handler, &bip32_public_key);
+  error = cardano_secure_key_handler_bip32_get_extended_account_public_key(secure_key_handler, derivation_path, &bip32_public_key);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
@@ -486,15 +425,16 @@ TEST(cardano_secure_key_handler_bip32_get_extended_public_key, returnsErrorIfBip
 TEST(cardano_secure_key_handler_bip32_get_extended_public_key, returnsSuccessIfBip32GetExtendedPublicKeyIsImplemented)
 {
   // Arrange
-  cardano_secure_key_handler_t* secure_key_handler = nullptr;
-  cardano_bip32_public_key_t*   bip32_public_key   = nullptr;
+  cardano_secure_key_handler_t*     secure_key_handler = nullptr;
+  cardano_bip32_public_key_t*       bip32_public_key   = nullptr;
+  cardano_account_derivation_path_t derivation_path    = { .purpose = 0, .coin_type = 0, .account = 0 };
 
   cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  error = cardano_secure_key_handler_bip32_get_extended_public_key(secure_key_handler, &bip32_public_key);
+  error = cardano_secure_key_handler_bip32_get_extended_account_public_key(secure_key_handler, derivation_path, &bip32_public_key);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);

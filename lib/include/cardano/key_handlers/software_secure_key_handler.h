@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/crypto/ed25519_private_key.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/key_handlers/secure_key_handler.h>
@@ -64,7 +65,7 @@ extern "C" {
  * within the callback, such as temporary buffers, is securely erased after use to protect against
  * potential memory inspection or side-channel attacks.
  */
-typedef cardano_error_t (*cardano_get_passphrase_func_t)(byte_t* buffer, size_t buffer_len);
+typedef int32_t (*cardano_get_passphrase_func_t)(byte_t* buffer, size_t buffer_len);
 
 /**
  * \brief Creates a new software-based secure key handler with encrypted entropy.
@@ -108,6 +109,68 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_software_secure_key_handler_new(
   const byte_t*                  entropy_bytes,
   size_t                         entropy_bytes_len,
+  const byte_t*                  passphrase,
+  size_t                         passphrase_len,
+  cardano_get_passphrase_func_t  get_passphrase,
+  cardano_secure_key_handler_t** secure_key_handler);
+
+/**
+ * \brief Creates a new software secure key handler for an Ed25519 private key.
+ *
+ * The `cardano_software_secure_key_handler_ed25519_new` function initializes a secure key handler to manage
+ * cryptographic operations using a pre-derived Ed25519 private key. Unlike BIP32-based handlers, this function
+ * is specifically designed for handling Ed25519 keys and does not support hierarchical key derivation (BIP32).
+ *
+ * The handler encrypts the provided Ed25519 private key with the given passphrase immediately upon creation and
+ * securely stores it. All sensitive data (e.g., the private key and passphrase) are wiped from memory after use to
+ * ensure that no residual sensitive information remains in memory.
+ *
+ * The function takes a reference to the `ed25519_private_key`, meaning the caller must manage the lifecycle of this
+ * object. The caller is responsible for releasing their reference by calling `cardano_ed25519_private_key_unref`
+ * when it is no longer needed. The `cardano_ed25519_private_key_unref` function safely wipes the memory before
+ * releasing it when its reference count reaches 0.
+ *
+ * The `get_passphrase` callback is invoked every time the private key needs to be decrypted for cryptographic
+ * operations such as signing. Once decrypted, the key is used for a short period, and it is securely erased from memory
+ * after the operation is complete.
+ *
+ * \param[in] ed25519_private_key A pointer to the `cardano_ed25519_private_key_t` that will be managed by the key handler.
+ * \param[in] passphrase A pointer to the passphrase used for encrypting the private key.
+ * \param[in] passphrase_len The length of the passphrase in bytes.
+ * \param[in] get_passphrase A callback function for retrieving the passphrase when needed to decrypt the private key.
+ * \param[out] secure_key_handler A pointer to the secure key handler that will be created.
+ *
+ * \returns `cardano_error_t` indicating success or failure of the operation.
+ *
+ * \note The private key is encrypted upon creation and only decrypted when necessary.
+ * The caller must ensure that the passphrase and private key are securely erased from memory after passing them
+ * to this function. The caller must also manage the lifecycle of the `ed25519_private_key` object and call
+ * `cardano_ed25519_private_key_unref` when it is no longer needed. The key handler will manage the memory securely,
+ * wiping out any sensitive data after use.
+ *
+ * Example:
+ * \code
+ * cardano_ed25519_private_key_t* ed25519_private_key = ...; // Pre-derived Ed25519 private key
+ * const byte_t* passphrase = ...;                           // Passphrase to encrypt the key
+ * cardano_secure_key_handler_t* secure_handler = NULL;
+ *
+ * cardano_software_secure_key_handler_ed25519_new(
+ *     ed25519_private_key,
+ *     passphrase,
+ *     passphrase_len,
+ *     get_passphrase_callback,
+ *     &secure_handler);
+ *
+ * // When finished, the caller should release the private key reference.
+ * cardano_ed25519_private_key_unref(ed25519_private_key);
+ * \endcode
+ *
+ * \see cardano_software_secure_key_handler_new for BIP32-based key handler creation.
+ * \see cardano_ed25519_private_key_unref for safely managing the memory of Ed25519 private keys.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_software_secure_key_handler_ed25519_new(
+  cardano_ed25519_private_key_t* ed25519_private_key,
   const byte_t*                  passphrase,
   size_t                         passphrase_len,
   cardano_get_passphrase_func_t  get_passphrase,
