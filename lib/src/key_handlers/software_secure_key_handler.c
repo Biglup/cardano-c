@@ -614,7 +614,14 @@ ed25519_get_public_key(
 
   cardano_ed25519_private_key_t* ed25519_private_key = NULL;
 
-  result = cardano_ed25519_private_key_from_extended_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &ed25519_private_key);
+  if (cardano_buffer_get_size(decrypted_data) == 64U)
+  {
+    result = cardano_ed25519_private_key_from_extended_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &ed25519_private_key);
+  }
+  else
+  {
+    result = cardano_ed25519_private_key_from_normal_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &ed25519_private_key);
+  }
 
   cardano_buffer_memzero(decrypted_data);
   cardano_buffer_unref(&decrypted_data);
@@ -707,7 +714,14 @@ ed25519_sign_transaction(
   cardano_ed25519_signature_t*   signature   = NULL;
   cardano_vkey_witness_t*        witness     = NULL;
 
-  result = cardano_ed25519_private_key_from_normal_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &private_key);
+  if (cardano_buffer_get_size(decrypted_data) == 64U)
+  {
+    result = cardano_ed25519_private_key_from_extended_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &private_key);
+  }
+  else
+  {
+    result = cardano_ed25519_private_key_from_normal_bytes(cardano_buffer_get_data(decrypted_data), cardano_buffer_get_size(decrypted_data), &private_key);
+  }
 
   cardano_buffer_memzero(decrypted_data);
   cardano_buffer_unref(&decrypted_data);
