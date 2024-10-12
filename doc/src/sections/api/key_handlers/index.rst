@@ -6,7 +6,9 @@ A key handler securely manages cryptographic key operations, providing a unified
 .. toctree::
    :maxdepth: 1
 
+   account_derivation_path
    derivation_path
    secure_key_handler
    secure_key_handler_impl
    secure_key_handler_type
+   software_secure_key_handler

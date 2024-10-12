@@ -17,6 +17,10 @@ VKey Witness
 
 ------------
 
+.. doxygenfunction:: cardano_vkey_witness_has_public_key
+
+------------
+
 .. doxygenfunction:: cardano_vkey_witness_get_vkey
 
 ------------

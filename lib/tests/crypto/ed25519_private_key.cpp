@@ -807,3 +807,51 @@ TEST(cardano_ed25519_private_key_sign, returnsNullIfEventualMemoryAllocationFail
   cardano_set_allocators(malloc, realloc, free);
   cardano_ed25519_private_key_unref(&private_key);
 }
+
+TEST(cardano_ed25519_private_key_get_data, returnsNullIfPrivateKeyIsNull)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  // Act
+  const byte_t* private_key_data = cardano_ed25519_private_key_get_data(private_key);
+
+  // Assert
+  EXPECT_EQ(private_key_data, (const byte_t*)nullptr);
+}
+
+TEST(cardano_ed25519_private_key_get_bytes_size, returnsZeroIfPrivateKeyIsNull)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  // Act
+  size_t private_key_size = cardano_ed25519_private_key_get_bytes_size(private_key);
+
+  // Assert
+  EXPECT_EQ(private_key_size, 0);
+}
+
+TEST(cardano_ed25519_private_key_get_hex_size, returnsZeroIfPrivateKeyIsNull)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  // Act
+  size_t private_key_size = cardano_ed25519_private_key_get_hex_size(private_key);
+
+  // Assert
+  EXPECT_EQ(private_key_size, 0);
+}
+
+TEST(cardano_ed25519_private_key_to_hex, returnsNullIfPrivateKeyIsNull)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_ed25519_private_key_to_hex(private_key, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}

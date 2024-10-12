@@ -450,3 +450,42 @@ TEST(cardano_ed25519_signature_to_hex, returnsSignatureHex)
   // Cleanup
   cardano_ed25519_signature_unref(&signature);
 }
+
+TEST(cardano_ed25519_signature_get_data, returnsNullIfSignatureIsNull)
+{
+  // Act
+  const byte_t* signature_data = cardano_ed25519_signature_get_data(nullptr);
+
+  // Assert
+  EXPECT_EQ(signature_data, (const byte_t*)nullptr);
+}
+
+TEST(cardano_ed25519_signature_get_bytes_size, returnsZeroIfSignatureIsNull)
+{
+  // Act
+  size_t signature_size = cardano_ed25519_signature_get_bytes_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(signature_size, 0);
+}
+
+TEST(cardano_ed25519_signature_get_hex_size, returnsZeroIfSignatureIsNull)
+{
+  // Act
+  size_t signature_size = cardano_ed25519_signature_get_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(signature_size, 0);
+}
+
+TEST(cardano_ed25519_signature_to_hex, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  cardano_ed25519_signature_t* signature = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_ed25519_signature_to_hex(signature, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}

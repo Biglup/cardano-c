@@ -107,6 +107,12 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_LOSS_OF_PRECISION:
       message = "Loss of precision";
       break;
+    case CARDANO_ERROR_INVALID_MAGIC:
+      message = "Invalid magic";
+      break;
+    case CARDANO_ERROR_INVALID_CHECKSUM:
+      message = "Invalid checksum";
+      break;
     case CARDANO_ERROR_UNEXPECTED_CBOR_TYPE:
       message = "Unexpected CBOR type";
       break;
@@ -172,6 +178,9 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     case CARDANO_ERROR_INVALID_HTTP_REQUEST:
       message = "Invalid HTTP request";
+      break;
+    case CARDANO_ERROR_INVALID_PASSPHRASE:
+      message = "Invalid passphrase";
       break;
     default:
       message = "Unknown error code";

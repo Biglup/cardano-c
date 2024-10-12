@@ -1,5 +1,5 @@
 /**
- * \file derivation_path.h
+ * \file account_derivation_path.h
  *
  * \author angel.castillo
  * \date   Oct 06, 2024
@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef BIGLUP_LABS_INCLUDE_CARDANO_DERIVATION_PATH_H
-#define BIGLUP_LABS_INCLUDE_CARDANO_DERIVATION_PATH_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_ACCOUNT_DERIVATION_PATH_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_ACCOUNT_DERIVATION_PATH_H
 
 /* INCLUDES ******************************************************************/
 
@@ -33,10 +33,9 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Cardano extends the BIP44 by adding new chains used for different purposes.
- * It defines 5 levels in BIP32 path: m / purpose' / coin_type' / account' / role / index.
+ * \brief BIP44 account derivation path.
  */
-typedef struct cardano_derivation_path_t
+typedef struct cardano_account_derivation_path_t
 {
     /**
      * \brief Purpose is a constant set to either 1852' (standard wallets) or 1854' (multisig wallets).
@@ -67,31 +66,10 @@ typedef struct cardano_derivation_path_t
      * Hardened derivation is used at this level.
      */
     uint64_t account;
-
-    /**
-     * \brief The role as of Conway era can be one of the followings:
-     *
-     * - External chain (0): Same as defined in BIP44.
-     * - Internal chain (1): Same as defined in BIP44.
-     * - Staking Key (2): See CIP-0011.
-     * - DRep Key (3): See CIP-0105.
-     * - Constitutional Committee Cold Key (4): See CIP-0105.
-     * - Constitutional Committee Hot Key (5): See CIP-0105.
-     *
-     * Non-hardened derivation is used at this level.
-     */
-    uint64_t role;
-
-    /**
-     * \brief The index is the last part of the derivation path.
-     *
-     * Non-hardened derivation is used at this level.
-     */
-    uint64_t index;
-} cardano_derivation_path_t;
+} cardano_account_derivation_path_t;
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif // BIGLUP_LABS_INCLUDE_CARDANO_DERIVATION_PATH_H
+#endif // BIGLUP_LABS_INCLUDE_CARDANO_ACCOUNT_DERIVATION_PATH_H

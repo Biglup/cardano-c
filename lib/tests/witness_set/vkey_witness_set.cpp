@@ -185,14 +185,14 @@ TEST(cardano_vkey_witness_set_to_cbor, canSerializeCredentialSet)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  EXPECT_EQ(hex_size, strlen(CBOR) + 1);
+  EXPECT_EQ(hex_size, strlen("d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a") + 1);
 
   char* actual_cbor = (char*)malloc(hex_size);
 
   error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(actual_cbor, CBOR);
+  EXPECT_STREQ(actual_cbor, "d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a");
 
   // Cleanup
   cardano_vkey_witness_set_unref(&vkey_witness_set);
@@ -228,14 +228,14 @@ TEST(cardano_vkey_witness_set_to_cbor, canSerializeCredentialSetSorted)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  EXPECT_EQ(hex_size, strlen(CBOR) + 1);
+  EXPECT_EQ(hex_size, strlen("d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a") + 1);
 
   char* actual_cbor = (char*)malloc(hex_size);
 
   error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(actual_cbor, CBOR);
+  EXPECT_STREQ(actual_cbor, "d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a");
 
   // Cleanup
   cardano_vkey_witness_set_unref(&vkey_witness_set);
@@ -780,4 +780,110 @@ TEST(cardano_vkey_witness_get_set_use_tag, returnsFalseIfGivenNull)
 {
   // Act
   EXPECT_EQ(cardano_vkey_witness_set_get_use_tag(nullptr), false);
+}
+
+TEST(cardano_vkey_witness_set_add, replaceSignatureIfElementAlreadyExists)
+{
+  // Arrange
+  cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
+  cardano_error_t             error            = cardano_vkey_witness_set_new(&vkey_witness_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_vkey_witness_t* vkey_witness1 = new_default_vkey_witness(VKEY_WITNESS1_CBOR);
+  cardano_vkey_witness_t* vkey_witness2 = new_default_vkey_witness(VKEY_WITNESS2_CBOR);
+
+  EXPECT_EQ(cardano_vkey_witness_set_add(vkey_witness_set, vkey_witness1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_set_add(vkey_witness_set, vkey_witness2), CARDANO_SUCCESS);
+
+  // Act
+  cardano_vkey_witness_t* vkey_witness3 = new_default_vkey_witness(VKEY_WITNESS3_CBOR);
+  EXPECT_EQ(cardano_vkey_witness_set_add(vkey_witness_set, vkey_witness3), CARDANO_SUCCESS);
+
+  // Assert
+  cardano_vkey_witness_t* elem1 = NULL;
+
+  EXPECT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+  EXPECT_EQ(cardano_vkey_witness_set_get(vkey_witness_set, 0, &elem1), CARDANO_SUCCESS);
+
+  const char* vkey_witnesss[] = { VKEY_WITNESS1_CBOR };
+
+  cardano_vkey_witness_t* vkey_witnesss_array[] = { elem1 };
+
+  for (size_t i = 0; i < 1; ++i)
+  {
+    cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+    error = cardano_vkey_witness_to_cbor(vkey_witnesss_array[i], writer);
+
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+
+    char* actual_cbor = (char*)malloc(hex_size);
+
+    error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+    EXPECT_STREQ(actual_cbor, vkey_witnesss[i]);
+
+    cardano_cbor_writer_unref(&writer);
+    free(actual_cbor);
+  }
+
+  // Cleanup
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_vkey_witness_unref(&vkey_witness1);
+  cardano_vkey_witness_unref(&vkey_witness2);
+  cardano_vkey_witness_unref(&vkey_witness3);
+  cardano_vkey_witness_unref(&elem1);
+}
+
+TEST(cardano_vkey_witness_set_apply, canApplyVkeyWitness)
+{
+  // Arrange
+  cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+
+  cardano_vkey_witness_set_t* vkey_witness_set_new = nullptr;
+  cardano_cbor_reader_t*      reader2              = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+
+  cardano_error_t error = cardano_vkey_witness_set_from_cbor(reader, &vkey_witness_set);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_vkey_witness_set_from_cbor(reader2, &vkey_witness_set_new);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_vkey_witness_set_apply(vkey_witness_set, vkey_witness_set_new);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_vkey_witness_set_unref(&vkey_witness_set_new);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_reader_unref(&reader2);
+}
+
+TEST(cardano_vkey_witness_set_apply, returnsErrorIfGivenANullPtr)
+{
+  // Act
+  cardano_error_t error = cardano_vkey_witness_set_apply(nullptr, (cardano_vkey_witness_set_t*)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_vkey_witness_set_apply, returnsErrorIfGivenANullPtr2)
+{
+  // Act
+  cardano_error_t error = cardano_vkey_witness_set_apply((cardano_vkey_witness_set_t*)"", nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

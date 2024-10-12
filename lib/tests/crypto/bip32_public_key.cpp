@@ -680,3 +680,42 @@ TEST(cardano_bip32_public_key_derive, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
   cardano_bip32_public_key_unref(&public_key);
 }
+
+TEST(cardano_bip32_public_key_get_data, returnsNullIfPublicKeyIsNull)
+{
+  // Act
+  const byte_t* data = cardano_bip32_public_key_get_data(nullptr);
+
+  // Assert
+  EXPECT_EQ(data, (byte_t*)nullptr);
+}
+
+TEST(cardano_bip32_public_key_get_bytes_size, returnsZeroIfPublicKeyIsNull)
+{
+  // Act
+  size_t size = cardano_bip32_public_key_get_bytes_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_bip32_public_key_get_hex_size, returnsZeroIfPublicKeyIsNull)
+{
+  // Act
+  size_t size = cardano_bip32_public_key_get_hex_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_bip32_public_key_to_hex, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  cardano_bip32_public_key_t* public_key = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_bip32_public_key_to_hex(public_key, nullptr, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}

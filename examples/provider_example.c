@@ -27,7 +27,6 @@
 #include "utils/utils.h"
 #include <cardano/cardano.h>
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 

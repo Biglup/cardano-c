@@ -237,12 +237,14 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_get(const cardano_vkey_witness_set_t* vkey_witness_set, size_t index, cardano_vkey_witness_t** element);
 
 /**
- * \brief Adds an element to a vkey_witness list.
+ * \brief Adds an element to a vkey_witness list, replacing existing signatures for duplicate public keys.
  *
  * This function adds the specified element to the end of the provided \ref cardano_vkey_witness_set_t object.
+ * If an element with the same public key is already present in the set, the signature for that public key will be replaced
+ * with the new signature provided by the added \ref cardano_vkey_witness_t element.
  *
- * \param[in] vkey_witness_set A constant pointer to the \ref cardano_vkey_witness_set_t object to which
- *                        the element is to be added.
+ * \param[in] vkey_witness_set A pointer to the \ref cardano_vkey_witness_set_t object to which
+ *                             the element is to be added.
  * \param[in] element Pointer to the \ref cardano_vkey_witness_t object that is to be added to the vkey_witness_set.
  *                    The element will be referenced by the vkey_witness_set after addition.
  *
@@ -270,6 +272,40 @@ CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_get(const cardano_vkey_w
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, cardano_vkey_witness_t* element);
+
+/**
+ * \brief Merges new vkey_witnesses into an existing vkey_witness_set.
+ *
+ * This function applies the elements from the \c new_vkey_witnesses set into the \c vkey_witness_set.
+ * If a witness in the new set has the same public key as one already in the original set, the signature in the
+ * original witness will be replaced with the new signature from the \c new_vkey_witnesses set.
+ *
+ * \param[in] vkey_witness_set A pointer to the \ref cardano_vkey_witness_set_t object where new vkey_witnesses will be applied.
+ * \param[in] new_vkey_witnesses A pointer to the \ref cardano_vkey_witness_set_t object containing the new witnesses to apply.
+ *
+ * \return \ref CARDANO_SUCCESS if the merge was successful, or an appropriate error code indicating failure.
+ *
+ * \note This function ensures that any existing witness signatures for the same public key in the original set
+ * are replaced with new ones from the \c new_vkey_witnesses set.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t* original_witnesses = cardano_vkey_witness_set_new();
+ * cardano_vkey_witness_set_t* new_witnesses = cardano_vkey_witness_set_new();
+ *
+ * // Populate new_witnesses and original_witnesses
+ *
+ * // Apply the new witnesses to the original set
+ * cardano_error_t result = cardano_vkey_witness_set_apply(original_witnesses, new_witnesses);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The new witnesses were successfully applied to the original set
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_apply(cardano_vkey_witness_set_t* vkey_witness_set, cardano_vkey_witness_set_t* new_vkey_witnesses);
 
 /**
  * \brief Checks if the vkey witness set uses tagged encoding (Conway era feature).
