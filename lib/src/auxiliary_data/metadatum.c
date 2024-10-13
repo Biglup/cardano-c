@@ -1070,8 +1070,10 @@ cardano_metadatum_to_json(
     return CARDANO_ERROR_INVALID_METADATUM_CONVERSION;
   }
 
-  const char* json_str      = json_object_to_json_string_ext(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE);
-  size_t      required_size = strlen(json_str) + 1U;
+  size_t      required_size = 0U;
+  const char* json_str      = json_object_to_json_string_length(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE, &required_size);
+
+  required_size += 1U;
 
   if (json_size < required_size)
   {
@@ -1101,8 +1103,11 @@ cardano_metadatum_get_json_size(cardano_metadatum_t* metadatum)
     return 0U;
   }
 
-  const char* json_str = json_object_to_json_string_ext(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE);
-  size_t      size     = strlen(json_str) + 1U;
+  size_t      size     = 0U;
+  const char* json_str = json_object_to_json_string_length(json_obj, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_NOSLASHESCAPE, &size);
+  CARDANO_UNUSED(json_str);
+
+  size += 1U;
 
   json_object_put(json_obj);
 

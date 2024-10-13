@@ -1,0 +1,9 @@
+exclude_paths:
+  - "tests/*"
+  - "examples/*"
+  - "fuzz/*"
+  - "scripts/*"
+  - "doc/*"
+  - "project_catalyst/*"
+  - "cmake/*"
+  - "assets/*"
