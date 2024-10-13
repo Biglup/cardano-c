@@ -27,8 +27,8 @@
 #include <cardano/error.h>
 #include <cardano/export.h>
 
-#include <include/cardano/key_handlers/account_derivation_path.h>
-#include <include/cardano/key_handlers/secure_key_handler_impl.h>
+#include <cardano/key_handlers/account_derivation_path.h>
+#include <cardano/key_handlers/secure_key_handler_impl.h>
 
 /* DECLARATIONS **************************************************************/
 

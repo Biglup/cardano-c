@@ -41,7 +41,7 @@ static const char* TX_CBOR                      = "84a40081825820f6dd880fb30480a
  * \param buffer The buffer where to write the password.
  * \param buffer_len The size of the buffer.
  *
- * \return 0 if the password was successfully retrieved, -1 otherwise.
+ * \return The length of the password (or -1 on error).
  */
 static int32_t
 get_passphrase(byte_t* buffer, const size_t buffer_len)
