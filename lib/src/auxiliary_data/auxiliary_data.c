@@ -169,8 +169,6 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  static const char* validator_name = "auxiliary_data";
-
   cardano_auxiliary_data_t* new_auxiliary_data = NULL;
 
   cardano_error_t create_aux_data_result = cardano_auxiliary_data_new(&new_auxiliary_data);

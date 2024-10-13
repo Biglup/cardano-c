@@ -55,7 +55,7 @@ get_passphrase(byte_t* buffer, const size_t buffer_len)
     return -1;
   }
 
-  (void)memcpy(buffer, &password[0], password_len);
+  cardano_utils_safe_memcpy(buffer, buffer_len, &password[0], password_len);
 
   // Clear local password from memory
   cardano_memzero(password, sizeof(password));
@@ -77,7 +77,7 @@ main(void)
   console_debug("libcardano-c:  V-%s", cardano_get_lib_version());
   console_info("Use passphrase: 'password'\n");
 
-  cardano_buffer_t*             serialized_key_handler = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, strlen(SERIALIZED_BIP32_KEY_HANDLER));
+  cardano_buffer_t*             serialized_key_handler = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, cardano_utils_safe_strlen(SERIALIZED_BIP32_KEY_HANDLER, 256));
   cardano_secure_key_handler_t* key_handler            = NULL;
 
   cardano_error_t error = cardano_software_secure_key_handler_deserialize(
@@ -129,7 +129,7 @@ main(void)
   // Sign transaction
   console_info("Requesting signature for transaction...");
   cardano_transaction_t* transaction = NULL;
-  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, strlen(TX_CBOR));
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, cardano_utils_safe_strlen(TX_CBOR, 1500));
 
   error = cardano_transaction_from_cbor(reader, &transaction);
 

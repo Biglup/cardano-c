@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "console.h"
+#include "utils.h"
 #include <cardano/typedefs.h>
 
 #include <stdarg.h>
@@ -275,7 +276,7 @@ console_read_line(char* buffer, size_t max_length)
   }
   else
   {
-    size_t len = strlen(buffer);
+    size_t len = cardano_utils_safe_strlen(buffer, max_length);
 
     if (len > 0 && buffer[len - 1] == '\n')
     {
@@ -356,7 +357,6 @@ console_read_password(char* buffer, const size_t max_length)
 #else
   struct termios oldt, newt;
   size_t         i = 0;
-  int            c;
 
   if (tcgetattr(STDIN_FILENO, &oldt) != 0)
   {
@@ -375,7 +375,7 @@ console_read_password(char* buffer, const size_t max_length)
   // Read password
   while (i < max_length - 1)
   {
-    c = getchar();
+    int c = getchar();
 
     if (c == '\n' || c == EOF)
     {
