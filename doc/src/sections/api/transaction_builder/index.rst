@@ -6,4 +6,6 @@ The Transaction Builder is a utility designed to simplify the process of creatin
 .. toctree::
     :maxdepth: 1
 
+    ./coin_selector
+    ./coin_selector_impl
     ./fee

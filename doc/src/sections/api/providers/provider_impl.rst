@@ -7,7 +7,6 @@ Provider Implementation
 
 .. doxygentypedef:: cardano_get_parameters_func_t
 
-
 ------------
 
 .. doxygentypedef:: cardano_get_unspent_outputs_func_t
