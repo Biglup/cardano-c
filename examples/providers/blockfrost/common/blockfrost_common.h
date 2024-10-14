@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <include/cardano/common/network_magic.h>
-#include <include/cardano/providers/provider.h>
-#include <include/cardano/typedefs.h>
+#include <cardano/common/network_magic.h>
+#include <cardano/providers/provider.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 

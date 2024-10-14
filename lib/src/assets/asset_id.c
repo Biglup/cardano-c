@@ -48,7 +48,7 @@ typedef struct cardano_asset_id_t
     bool                    is_lovelace;
     byte_t                  data[60];
     size_t                  size;
-    char                    hex[120];
+    char                    hex[121];
     size_t                  hex_size;
 } cardano_asset_id_t;
 
@@ -163,9 +163,9 @@ cardano_asset_id_new(cardano_blake2b_hash_t* policy_id, cardano_asset_name_t* as
   cardano_safe_memcpy(&new_asset_id->data[28], 32U, cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name));
   new_asset_id->size = cardano_blake2b_hash_get_bytes_size(policy_id) + cardano_asset_name_get_bytes_size(asset_name);
 
-  CARDANO_UNUSED(memset(new_asset_id->hex, 0, 120));
+  CARDANO_UNUSED(memset(new_asset_id->hex, 0, 121));
 
-  cardano_error_t to_hex_result = to_hex_string(new_asset_id->data, new_asset_id->size, new_asset_id->hex, 120);
+  cardano_error_t to_hex_result = to_hex_string(new_asset_id->data, new_asset_id->size, new_asset_id->hex, 121);
 
   if (to_hex_result != CARDANO_SUCCESS)
   {
@@ -176,7 +176,7 @@ cardano_asset_id_new(cardano_blake2b_hash_t* policy_id, cardano_asset_name_t* as
     // LCOV_EXCL_STOP
   }
 
-  new_asset_id->hex_size = cardano_safe_strlen(new_asset_id->hex, 120);
+  new_asset_id->hex_size = cardano_safe_strlen(new_asset_id->hex, 121);
 
   *asset_id = new_asset_id;
 
@@ -208,7 +208,7 @@ cardano_asset_id_new_lovelace(cardano_asset_id_t** asset_id)
   CARDANO_UNUSED(memset(new_asset_id->data, 0, 60));
   new_asset_id->size = 0;
 
-  CARDANO_UNUSED(memset(new_asset_id->hex, 0, 120));
+  CARDANO_UNUSED(memset(new_asset_id->hex, 0, 121));
   new_asset_id->hex_size = 0;
 
   *asset_id = new_asset_id;

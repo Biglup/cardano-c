@@ -42,7 +42,7 @@ typedef struct cardano_asset_name_t
     cardano_object_t base;
     byte_t           data[32];
     uint64_t         size;
-    char             hex[64];
+    char             hex[65];
     uint64_t         hex_size;
 } cardano_asset_name_t;
 
@@ -137,7 +137,8 @@ cardano_asset_name_from_bytes(
   cardano_safe_memcpy(new_asset_name->data, 32, data, size);
   new_asset_name->size = size;
 
-  cardano_error_t to_hex_result = to_hex_string(data, size, new_asset_name->hex, 64);
+  CARDANO_UNUSED(memset(new_asset_name->hex, 0, 65));
+  cardano_error_t to_hex_result = to_hex_string(data, size, new_asset_name->hex, 65);
 
   if (to_hex_result != CARDANO_SUCCESS)
   {

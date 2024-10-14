@@ -24,10 +24,10 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <include/cardano/error.h>
-#include <include/cardano/export.h>
-#include <include/cardano/providers/provider_impl.h>
-#include <include/cardano/typedefs.h>
+#include <cardano/error.h>
+#include <cardano/export.h>
+#include <cardano/providers/provider_impl.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 

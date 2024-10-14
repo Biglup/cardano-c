@@ -25,7 +25,7 @@
 #include "../utils/console.h"
 #include "utils.h"
 
-#include <include/cardano/export.h>
+#include <cardano/export.h>
 
 #include <curl/curl.h>
 #include <json-c/json.h>
