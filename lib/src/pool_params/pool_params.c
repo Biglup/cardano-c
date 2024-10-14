@@ -196,8 +196,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  static const char* validator_name = "pool_params";
-
   cardano_blake2b_hash_t*   operator_key_hash = NULL;
   cardano_blake2b_hash_t*   vrf_vk_hash       = NULL;
   uint64_t                  pledge            = 0;
