@@ -187,6 +187,9 @@
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_body/transaction_output_list.h>
 #include <cardano/transaction_body/value.h>
+#include <cardano/transaction_builder/coin_selection/coin_selector.h>
+#include <cardano/transaction_builder/coin_selection/coin_selector_impl.h>
+#include <cardano/transaction_builder/fee.h>
 #include <cardano/typedefs.h>
 #include <cardano/voting_procedures/governance_action_id_list.h>
 #include <cardano/voting_procedures/vote.h>
