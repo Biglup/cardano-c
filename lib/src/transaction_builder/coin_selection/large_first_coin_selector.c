@@ -39,7 +39,7 @@
 
 /* STATIC FUNCTIONS **********************************************************/
 
-uint64_t
+static uint64_t
 get_asset_amount(
   cardano_value_t*    value,
   cardano_asset_id_t* asset_id)
@@ -66,7 +66,7 @@ get_asset_amount(
   return amount;
 }
 
-int32_t
+static int32_t
 compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 {
   CARDANO_UNUSED(context);
@@ -82,7 +82,7 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 
   if (lhs_asset_count != rhs_asset_count)
   {
-    int32_t result = (int32_t)(lhs_asset_count - rhs_asset_count);
+    int32_t result = (int32_t)((int32_t)lhs_asset_count - (int32_t)rhs_asset_count);
 
     cardano_value_unref(&lhs_value);
     cardano_value_unref(&rhs_value);
@@ -95,7 +95,7 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
   uint64_t lhs_ada = cardano_value_get_coin(lhs_value);
   uint64_t rhs_ada = cardano_value_get_coin(rhs_value);
 
-  int32_t result = (int32_t)(rhs_ada - lhs_ada);
+  int32_t result = (int32_t)((int32_t)rhs_ada - (int32_t)lhs_ada);
 
   cardano_value_unref(&lhs_value);
   cardano_value_unref(&rhs_value);
@@ -105,7 +105,7 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
   return result;
 }
 
-cardano_error_t
+static cardano_error_t
 select_utxos_for_ada(
   const uint64_t       required_ada,
   cardano_utxo_list_t* available_utxos,
@@ -132,7 +132,7 @@ select_utxos_for_ada(
 
     uint64_t utxo_ada = cardano_value_get_coin(utxo_value);
 
-    if (utxo_ada > 0)
+    if (utxo_ada > 0U)
     {
       result = cardano_utxo_list_add(selected_utxos, utxo);
 
@@ -209,7 +209,7 @@ value_greater_than_or_equal(
     op_result = cardano_asset_id_map_get_keys(rhs_asset_id_map, &asset_ids);
     cardano_asset_id_list_unref(&asset_ids);
 
-    if (result != CARDANO_SUCCESS)
+    if (op_result != CARDANO_SUCCESS)
     {
       cardano_asset_id_map_unref(&lhs_asset_id_map);
       cardano_asset_id_map_unref(&rhs_asset_id_map);
@@ -277,7 +277,7 @@ value_greater_than_or_equal(
   return CARDANO_SUCCESS;
 }
 
-int32_t
+static int32_t
 compare_utxos_by_asset_desc(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 {
   cardano_asset_id_t* asset_id = (cardano_asset_id_t*)context;
@@ -388,7 +388,7 @@ check_preselected_utxos(
   return CARDANO_SUCCESS;
 }
 
-cardano_error_t
+static cardano_error_t
 select_utxos_for_asset(
   cardano_asset_id_t*  asset_req,
   int64_t              required_amount,
@@ -429,7 +429,7 @@ select_utxos_for_asset(
 
   size_t utxo_count = cardano_utxo_list_get_length(available_utxos);
 
-  for (size_t i = 0U; i < utxo_count && (accumulated_amount < required_amount); ++i)
+  for (size_t i = 0U; (i < utxo_count) && (accumulated_amount < required_amount); ++i)
   {
     cardano_utxo_t* utxo = NULL;
     result               = cardano_utxo_list_get(available_utxos, i, &utxo);
