@@ -26,20 +26,28 @@
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/object.h>
-#include <cardano/transaction_body/value.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
-#include <cardano/typedefs.h>
 
-#include "../../allocators.h"
 #include "../../string_safe.h"
 
-#include <assert.h>
 #include <string.h>
 
 /* STATIC FUNCTIONS **********************************************************/
 
-static uint64_t
+/**
+ * \brief Retrieves the amount of a specific asset from a Cardano value.
+ *
+ * This function retrieves the amount of a specific asset identified by `asset_id` from a `cardano_value_t` object.
+ *
+ * \param[in] value A pointer to the \ref cardano_value_t object representing the value containing multiple assets.
+ * \param[in] asset_id A pointer to the \ref cardano_asset_id_t object identifying the specific asset to look up.
+ * \param[out] amount A pointer to an int64_t where the asset amount will be stored.
+ *
+ * \return \ref CARDANO_SUCCESS if the asset amount was successfully retrieved, or an appropriate error code indicating failure.
+ */
+
+static cardano_error_t
 get_asset_amount(
   cardano_value_t*    value,
   cardano_asset_id_t* asset_id)
@@ -66,6 +74,18 @@ get_asset_amount(
   return amount;
 }
 
+/**
+ * \brief Compares two UTXOs based on ADA amounts, with a secondary comparison based on the number of additional assets.
+ *
+ * This function compares two UTXOs first by the number of assets (other than ADA) they contain, and if equal, by their ADA value.
+ * It ensures proper cleanup of referenced objects after comparison.
+ *
+ * \param[in] lhs A pointer to the first \ref cardano_utxo_t to be compared.
+ * \param[in] rhs A pointer to the second \ref cardano_utxo_t to be compared.
+ * \param[in] context Unused parameter, passed for compatibility with callback signature.
+ *
+ * \return A negative value if `lhs` is considered less than `rhs`, zero if they are equal, or a positive value if `lhs` is greater than `rhs`.
+ */
 static int32_t
 compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 {
@@ -82,7 +102,7 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 
   if (lhs_asset_count != rhs_asset_count)
   {
-    int32_t result = (int32_t)((int32_t)lhs_asset_count - (int32_t)rhs_asset_count);
+    int32_t result = (lhs_asset_count < rhs_asset_count) ? (int32_t)-1 : (int32_t)1;
 
     cardano_value_unref(&lhs_value);
     cardano_value_unref(&rhs_value);
@@ -95,7 +115,7 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
   uint64_t lhs_ada = cardano_value_get_coin(lhs_value);
   uint64_t rhs_ada = cardano_value_get_coin(rhs_value);
 
-  int32_t result = (int32_t)((int32_t)rhs_ada - (int32_t)lhs_ada);
+  int32_t result = (lhs_ada < rhs_ada) ? (int32_t)1 : ((lhs_ada > rhs_ada) ? (int32_t)-1 : (int32_t)0);
 
   cardano_value_unref(&lhs_value);
   cardano_value_unref(&rhs_value);
@@ -105,6 +125,19 @@ compare_utxos_for_ada(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
   return result;
 }
 
+/**
+ * \brief Selects UTXOs to meet a required ADA amount.
+ *
+ * This function sorts the available UTXOs by their ADA amounts and selects UTXOs from the list until the required ADA
+ * amount is accumulated. Selected UTXOs are added to the `selected_utxos` list and removed from the `available_utxos` list.
+ *
+ * \param[in] required_ada The minimum ADA amount required.
+ * \param[in] available_utxos A list of available UTXOs to select from.
+ * \param[out] selected_utxos A list to which selected UTXOs will be added.
+ *
+ * \return \ref CARDANO_SUCCESS if the required ADA amount was met, or \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if
+ *         there were not enough UTXOs to meet the required amount. Other errors may be returned for internal failures.
+ */
 static cardano_error_t
 select_utxos_for_ada(
   const uint64_t       required_ada,
@@ -167,6 +200,21 @@ select_utxos_for_ada(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Compares two cardano_value_t objects to check if lhs is greater than or equal to rhs.
+ *
+ * This function compares the ADA and multi-asset values in the lhs and rhs `cardano_value_t` objects.
+ * It sets the result to `true` if lhs >= rhs for all assets (including ADA), and `false` otherwise.
+ *
+ * \param[in] lhs The left-hand side value to compare.
+ * \param[in] rhs The right-hand side value to compare.
+ * \param[out] result Pointer to a boolean that will be set to true if lhs >= rhs, otherwise false.
+ *
+ * \return \ref CARDANO_SUCCESS if the comparison was successful, or an appropriate error code indicating failure.
+ *
+ * \note This function only compares ADA and multi-asset amounts between the two values. If rhs has any asset that is
+ * greater than the same asset in lhs, the result will be set to `false`.
+ */
 static cardano_error_t
 value_greater_than_or_equal(
   cardano_value_t* lhs,
@@ -277,6 +325,19 @@ value_greater_than_or_equal(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Compares two UTXOs by a specific asset amount in descending order.
+ *
+ * This function compares the specified asset amounts in the values of two UTXOs. It sorts in descending order,
+ * meaning the UTXO with the greater amount of the asset comes first.
+ *
+ * \param[in] lhs The left-hand side UTXO to compare.
+ * \param[in] rhs The right-hand side UTXO to compare.
+ * \param[in] context A pointer to the specific \ref cardano_asset_id_t representing the asset to compare.
+ *
+ * \return A negative value if lhs has more of the asset than rhs, a positive value if rhs has more of the asset than lhs,
+ *         or 0 if they are equal in terms of the asset amount.
+ */
 static int32_t
 compare_utxos_by_asset_desc(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
 {
@@ -314,6 +375,20 @@ compare_utxos_by_asset_desc(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* cont
   return result;
 }
 
+/**
+ * \brief Checks if the pre-selected UTXOs satisfy the target value.
+ *
+ * This function iterates over the provided list of pre-selected UTXOs and accumulates their value.
+ * It checks whether the accumulated value satisfies the target value.
+ *
+ * \param[in] pre_selected_utxo A list of pre-selected UTXOs.
+ * \param[in] target_value The target value to satisfy with the pre-selected UTXOs.
+ * \param[out] accumulated_value A pointer to a \ref cardano_value_t object where the accumulated value will be stored.
+ * \param[out] satisfies_target A boolean flag that will be set to true if the accumulated value satisfies the target value,
+ *                              false otherwise.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were processed successfully, or an appropriate error code.
+ */
 static cardano_error_t
 check_preselected_utxos(
   cardano_utxo_list_t* pre_selected_utxo,
@@ -388,6 +463,22 @@ check_preselected_utxos(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Selects UTXOs containing the specified asset to satisfy the required amount.
+ *
+ * This function iterates over the available UTXOs and selects those that contain the specified asset,
+ * accumulating their value until the required amount is met or exceeded.
+ *
+ * \param[in] asset_req The asset ID for which UTXOs are being selected.
+ * \param[in] required_amount The amount of the asset required.
+ * \param[in] available_utxos A list of available UTXOs to select from.
+ * \param[out] selected_utxos A list where the selected UTXOs will be added.
+ * \param[out] accumulated_value A pointer to a \ref cardano_value_t object that will accumulate the selected asset's value.
+ *
+ * \return \ref CARDANO_SUCCESS if UTXOs were successfully selected, or an appropriate error code indicating failure.
+ *
+ * \note The caller is responsible for managing the memory of the `selected_utxos` and `accumulated_value` lists.
+ */
 static cardano_error_t
 select_utxos_for_asset(
   cardano_asset_id_t*  asset_req,
@@ -502,6 +593,21 @@ select_utxos_for_asset(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Selects UTXOs from the available list and pre-selected UTXOs to meet the target value.
+ *
+ * This function selects UTXOs from both the pre-selected UTXO list and available UTXOs to meet a specified target value.
+ * The selected UTXOs are stored in the `selection` list, and any remaining UTXOs are stored in the `remaining_utxo` list.
+ *
+ * \param[in] coin_selector A pointer to the coin selector implementation object.
+ * \param[in] pre_selected_utxo A list of pre-selected UTXOs that must be included in the final selection.
+ * \param[in] available_utxo A list of available UTXOs to select from.
+ * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and assets.
+ * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
+ * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected and remain available for future transactions.
+ *
+ * \return \ref CARDANO_SUCCESS if UTXOs were successfully selected, or an appropriate error code indicating failure.
+ */
 static cardano_error_t
 select(
   cardano_coin_selector_impl_t* coin_selector,
