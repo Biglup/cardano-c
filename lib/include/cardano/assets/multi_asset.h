@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/assets/asset_id.h>
 #include <cardano/assets/asset_name.h>
 #include <cardano/assets/asset_name_map.h>
 #include <cardano/assets/policy_id_list.h>
@@ -355,6 +356,42 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get(
   const cardano_multi_asset_t* multi_asset,
   cardano_blake2b_hash_t*      policy_id,
   cardano_asset_name_t*        asset,
+  int64_t*                     value);
+
+/**
+ * \brief Retrieves the amount associated with a specific asset ID from a multi-asset object.
+ *
+ * The `cardano_multi_asset_get_with_id` function allows you to retrieve the amount of a specific asset within
+ * a \ref cardano_multi_asset_t object by providing the asset’s unique identifier.
+ *
+ * \param[in] multi_asset A pointer to the \ref cardano_multi_asset_t object from which to retrieve the asset amount.
+ * \param[in] id A pointer to the \ref cardano_asset_id_t representing the unique identifier of the asset.
+ * \param[out] value A pointer to an int64_t where the amount of the specified asset will be stored if it exists.
+ *                   If the asset is not present, the function will store zero in this location.
+ *
+ * \return \ref CARDANO_SUCCESS if the amount was successfully retrieved or zeroed out if the asset is absent,
+ *         or an appropriate error code indicating failure (e.g., if the asset ID is invalid).
+ *
+ * \note This function does not modify the `multi_asset` object but requires a valid, non-null `id` and `value` pointer.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_multi_asset_t* multi_asset = ...;  // Multi-asset object containing various assets
+ * cardano_asset_id_t* asset_id = ...;              // The asset ID of the asset to retrieve
+ * int64_t amount = 0;
+ *
+ * cardano_error_t result = cardano_multi_asset_get_with_id(multi_asset, asset_id, &amount);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // 'amount' now holds the quantity of the specified asset, or zero if not present
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_multi_asset_get_with_id(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_asset_id_t*          id,
   int64_t*                     value);
 
 /**

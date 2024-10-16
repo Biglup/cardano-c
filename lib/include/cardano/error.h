@@ -307,6 +307,35 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_HTTP_REQUEST = 1000,
 
+  // Coin Selection
+
+  /**
+   * \brief Total value of the entries within the initial UTxO set (the amount of money available)
+   * is less than the the total value of all entries in the requested output set (the amount of money required).
+   */
+  CARDANO_ERROR_BALANCE_INSUFFICIENT = 1100,
+
+  /**
+   * \brief The number of entries in the initial UTxO set is smaller than the number of entries in the requested output set,
+   * for algorithms that impose the restriction that a single UTxO entry can only be used to pay for at most one output.
+   */
+  CARDANO_ERROR_UTXO_NOT_FRAGMENTED_ENOUGH = 1101,
+
+  /**
+   * \brief The algorithm depletes all entries from the initial UTxO set
+   * before it is able to pay for all outputs in the requested output set.
+   * This can happen even if the total value of entries within the initial UTxO set
+   * is greater than the total value of all entries in the requested output set,
+   * due to various restrictions that coin selection algorithms impose on themselves when selecting UTxO entries.
+   */
+  CARDANO_ERROR_UTXO_FULLY_DEPLETED = 1102,
+
+  /**
+   * \brief Another input must be selected by the algorithm in order to continue making progress,
+   * but doing so will increase the size of the resulting selection beyond an acceptable limit,
+   * specified by the maximum input count parameter.
+   */
+  CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED = 1103
 } cardano_error_t;
 
 /**
