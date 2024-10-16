@@ -52,11 +52,12 @@ typedef struct cardano_utxo_list_t cardano_utxo_list_t;
  *
  * \param[in] lhs The left-hand side utxo to compare.
  * \param[in] rhs The right-hand side utxo to compare.
+ * \param[in] context An optional context pointer that will be passed to the comparison function.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
  */
-typedef int (*cardano_utxo_list_compare_item_t)(cardano_utxo_t* lhs, cardano_utxo_t* rhs);
+typedef int (*cardano_utxo_list_compare_item_t)(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context);
 
 /**
  * \brief Defines a function pointer for evaluating whether a specific utxo meets a defined set of criteria.
@@ -231,7 +232,7 @@ CARDANO_EXPORT void cardano_utxo_list_clear(cardano_utxo_list_t* utxo_list);
  * @param[in] compare The comparison function used to determine the order of the elements.
  *                    The function must not modify the elements.
  */
-CARDANO_EXPORT void cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare);
+CARDANO_EXPORT void cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare, void* context);
 
 /**
  * Searches for an element in the utxo_list that satisfies a predicate.

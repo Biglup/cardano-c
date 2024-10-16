@@ -115,15 +115,18 @@ cardano_committee_members_map_kvp_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
  *
  * \return A negative value if the credential of lhs is less than the credential of rhs, zero if they are equal,
  *         and a positive value if the credential of lhs is greater than the credential of rhs.
  */
 static int32_t
-compare_by_credentials(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_credentials(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_committee_members_map_kvp_t* lhs_kvp = (const cardano_committee_members_map_kvp_t*)((const void*)lhs);
   const cardano_committee_members_map_kvp_t* rhs_kvp = (const cardano_committee_members_map_kvp_t*)((const void*)rhs);
@@ -261,7 +264,7 @@ cardano_committee_members_map_from_cbor(cardano_cbor_reader_t* reader, cardano_c
     CARDANO_UNUSED(old_size);
     CARDANO_UNUSED(new_size);
 
-    cardano_array_sort(map->array, compare_by_credentials);
+    cardano_array_sort(map->array, compare_by_credentials, NULL);
   }
 
   result = cardano_cbor_validate_end_map("committee_members_map", reader);
@@ -432,7 +435,7 @@ cardano_committee_members_map_insert(
   CARDANO_UNUSED(old_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(committee_members_map->array, compare_by_credentials);
+  cardano_array_sort(committee_members_map->array, compare_by_credentials, NULL);
 
   return CARDANO_SUCCESS;
 }

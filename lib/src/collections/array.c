@@ -135,9 +135,10 @@ cardano_array_deallocate(void* object)
  *                less than 0 if the first argument is considered to go before the second, 0 if they are considered
  *                equivalent, and a value greater than 0 if the first argument is considered to go after the second.
  *                This comparison function defines the ordering of the elements in the sorted array.
+ *  \param context A pointer to an optional context object that can be passed to the comparison function.
  */
 static void
-insertion_sort(cardano_object_t** array, const size_t size, const cardano_array_compare_item_t compare)
+insertion_sort(cardano_object_t** array, const size_t size, const cardano_array_compare_item_t compare, void* context)
 {
   assert(array != NULL);
   assert(compare != NULL);
@@ -149,7 +150,7 @@ insertion_sort(cardano_object_t** array, const size_t size, const cardano_array_
     key      = array[i];
     size_t j = i;
 
-    while ((j > 0u) && (compare(array[j - 1u], key) > 0))
+    while ((j > 0u) && (compare(array[j - 1u], key, context) > 0))
     {
       array[j] = array[j - 1u];
       --j;
@@ -533,7 +534,7 @@ cardano_array_clear(cardano_array_t* array)
 }
 
 void
-cardano_array_sort(cardano_array_t* array, cardano_array_compare_item_t compare)
+cardano_array_sort(cardano_array_t* array, cardano_array_compare_item_t compare, void* context)
 {
   if (array == NULL)
   {
@@ -545,7 +546,7 @@ cardano_array_sort(cardano_array_t* array, cardano_array_compare_item_t compare)
     return;
   }
 
-  insertion_sort(array->items, array->size, compare);
+  insertion_sort(array->items, array->size, compare, context);
 }
 
 cardano_object_t*

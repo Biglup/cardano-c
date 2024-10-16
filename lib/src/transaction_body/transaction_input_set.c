@@ -81,15 +81,18 @@ cardano_transaction_input_set_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
  *
  * \return A negative value if the id of lhs is less than the id of rhs, zero if they are equal,
  *         and a positive value if the id of lhs is greater than the id of rhs.
  */
 static int32_t
-compare_by_input(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_input(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_transaction_input_t* lhs_input = (const cardano_transaction_input_t*)((const void*)lhs);
   const cardano_transaction_input_t* rhs_input = (const cardano_transaction_input_t*)((const void*)rhs);
@@ -238,7 +241,7 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
     /* LCOV_EXCL_STOP */
   }
 
-  cardano_array_sort(list->array, compare_by_input);
+  cardano_array_sort(list->array, compare_by_input, NULL);
 
   *transaction_input_set = list;
 
@@ -361,7 +364,7 @@ cardano_transaction_input_set_add(cardano_transaction_input_set_t* transaction_i
   CARDANO_UNUSED(original_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(transaction_input_set->array, compare_by_input);
+  cardano_array_sort(transaction_input_set->array, compare_by_input, NULL);
 
   return CARDANO_SUCCESS;
 }

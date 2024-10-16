@@ -128,15 +128,18 @@ cardano_multi_asset_kvp_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused context parameter.
  *
  * \return A negative value if the hash of lhs is less than the hash of rhs, zero if they are equal,
  *         and a positive value if the hash of lhs is greater than the hash of rhs.
  */
 static int32_t
-compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_multi_asset_kvp_t* lhs_kvp = (const cardano_multi_asset_kvp_t*)((const void*)lhs);
   const cardano_multi_asset_kvp_t* rhs_kvp = (const cardano_multi_asset_kvp_t*)((const void*)rhs);
@@ -301,7 +304,7 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
     cardano_asset_name_map_unref(&asset_name_map);
   }
 
-  cardano_array_sort(data->array, compare_by_hash);
+  cardano_array_sort(data->array, compare_by_hash, NULL);
 
   *multi_asset = data;
 
@@ -442,7 +445,7 @@ cardano_multi_asset_insert_assets(
     /* LCOV_EXCL_STOP */
   }
 
-  cardano_array_sort(multi_asset->array, compare_by_hash);
+  cardano_array_sort(multi_asset->array, compare_by_hash, NULL);
 
   return CARDANO_SUCCESS;
 }

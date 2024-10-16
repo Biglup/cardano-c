@@ -80,15 +80,18 @@ cardano_pool_owners_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
  *
  * \return A negative value if the hash of lhs is less than the hash of rhs, zero if they are equal,
  *         and a positive value if the hash of lhs is greater than the hash of rhs.
  */
 static int32_t
-compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_blake2b_hash_t* lhs_hash = (const cardano_blake2b_hash_t*)((const void*)lhs);
   const cardano_blake2b_hash_t* rhs_hash = (const cardano_blake2b_hash_t*)((const void*)rhs);
@@ -234,7 +237,7 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
     /* LCOV_EXCL_STOP */
   }
 
-  cardano_array_sort(list->array, compare_by_hash);
+  cardano_array_sort(list->array, compare_by_hash, NULL);
 
   *pool_owners = list;
 
@@ -357,7 +360,7 @@ cardano_pool_owners_add(cardano_pool_owners_t* pool_owners, cardano_blake2b_hash
   CARDANO_UNUSED(original_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(pool_owners->array, compare_by_hash);
+  cardano_array_sort(pool_owners->array, compare_by_hash, NULL);
 
   return CARDANO_SUCCESS;
 }

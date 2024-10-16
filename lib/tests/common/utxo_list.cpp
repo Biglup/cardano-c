@@ -386,8 +386,10 @@ TEST(cardano_utxo_list_clear, removesAllElementsFromTheList)
 TEST(cardano_utxo_list_sort, doesNothingIfListIsNull)
 {
   // Act
-  cardano_utxo_list_sort(nullptr, [](cardano_utxo_t* a, cardano_utxo_t* b)
-                         { return 0; });
+  cardano_utxo_list_sort(
+    nullptr, [](cardano_utxo_t* a, cardano_utxo_t* b, void* context)
+    { return 0; },
+    nullptr);
 
   // Assert
   // Nothing to assert.
@@ -399,7 +401,7 @@ TEST(cardano_utxo_list_sort, doesNothingIfComparatorIsNull)
   cardano_utxo_list_t* list = new_default_utxo_list();
 
   // Act
-  cardano_utxo_list_sort(list, nullptr);
+  cardano_utxo_list_sort(list, nullptr, nullptr);
 
   // Assert
   // Nothing to assert.
@@ -414,8 +416,9 @@ TEST(cardano_utxo_list_sort, sortsTheListUsingTheComparator)
   cardano_utxo_list_t* list = new_utxo_list_diff_vals();
 
   // Act
-  cardano_utxo_list_sort(list, [](cardano_utxo_t* a, cardano_utxo_t* b) -> int32_t
-                         {
+  cardano_utxo_list_sort(
+    list, [](cardano_utxo_t* a, cardano_utxo_t* b, void*) -> int32_t
+    {
     cardano_transaction_output_t* output_a = cardano_utxo_get_output(a);
     cardano_transaction_output_t* output_b = cardano_utxo_get_output(b);
     cardano_value_t* value_a = cardano_transaction_output_get_value(output_a);
@@ -428,7 +431,8 @@ TEST(cardano_utxo_list_sort, sortsTheListUsingTheComparator)
     cardano_value_unref(&value_a);
     cardano_value_unref(&value_b);
 
-    return (int32_t)((int64_t)coin_a - (int64_t)coin_b); });
+    return (int32_t)((int64_t)coin_a - (int64_t)coin_b); },
+    nullptr);
 
   // Assert
   ASSERT_EQ(cardano_utxo_list_get_length(list), 3);

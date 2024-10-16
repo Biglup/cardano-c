@@ -126,15 +126,18 @@ cardano_proposed_param_updates_kvp_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context A pointer to a context object. This parameter is not used in this function.
  *
  * \return A negative value if the hash of lhs is less than the hash of rhs, zero if they are equal,
  *         and a positive value if the hash of lhs is greater than the hash of rhs.
  */
 static int32_t
-compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_proposed_param_updates_kvp_t* kvp_lhs = (const cardano_proposed_param_updates_kvp_t*)((const void*)lhs);
   const cardano_proposed_param_updates_kvp_t* kvp_rhs = (const cardano_proposed_param_updates_kvp_t*)((const void*)rhs);
@@ -405,7 +408,7 @@ cardano_proposed_param_updates_insert(
   CARDANO_UNUSED(old_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(proposed_param_updates->array, compare_by_hash);
+  cardano_array_sort(proposed_param_updates->array, compare_by_hash, NULL);
 
   return CARDANO_SUCCESS;
 }

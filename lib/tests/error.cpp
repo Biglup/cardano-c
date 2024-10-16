@@ -628,6 +628,54 @@ TEST(cardano_error_to_string, canConvertInvalidPassphrase)
   ASSERT_STREQ(message, "Invalid passphrase");
 }
 
+TEST(cardano_error_to_string, canConvertBalanceInsufficient)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_BALANCE_INSUFFICIENT;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Insufficient balance");
+}
+
+TEST(cardano_error_to_string, canConvertUtxoNotFragmentedEnough)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_UTXO_NOT_FRAGMENTED_ENOUGH;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "UTXO not fragmented enough");
+}
+
+TEST(cardano_error_to_string, canConvertUtxoFullyDepleted)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_UTXO_FULLY_DEPLETED;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "UTXO fully depleted");
+}
+
+TEST(cardano_error_to_string, canConvertMaximumInputCountExceeded)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Maximum input count exceeded");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

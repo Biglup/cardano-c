@@ -182,7 +182,7 @@ cardano_utxo_list_clear(cardano_utxo_list_t* utxo_list)
 }
 
 void
-cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare)
+cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare, void* context)
 {
   if (utxo_list == NULL)
   {
@@ -195,7 +195,7 @@ cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare
   }
 
   // cppcheck-suppress misra-c2012-11.1; Reason: We need this so we can have typesafe parameters.
-  cardano_array_sort(utxo_list->array, (cardano_array_compare_item_t)(void*)compare);
+  cardano_array_sort(utxo_list->array, (cardano_array_compare_item_t)(void*)compare, context);
 }
 
 cardano_utxo_t*

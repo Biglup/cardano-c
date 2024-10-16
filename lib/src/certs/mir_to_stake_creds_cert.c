@@ -132,15 +132,18 @@ cardano_mir_to_stake_creds_cert_kvp_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
  *
  * \return A negative value if the hash of lhs is less than the hash of rhs, zero if they are equal,
  *         and a positive value if the hash of lhs is greater than the hash of rhs.
  */
 static int32_t
-compare_by_credential(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_credential(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_mir_to_stake_creds_cert_kvp_t* kvp_lhs = (const cardano_mir_to_stake_creds_cert_kvp_t*)((const void*)lhs);
   const cardano_mir_to_stake_creds_cert_kvp_t* kvp_rhs = (const cardano_mir_to_stake_creds_cert_kvp_t*)((const void*)rhs);
@@ -471,7 +474,7 @@ cardano_mir_to_stake_creds_cert_insert(
   CARDANO_UNUSED(old_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(mir_to_stake_creds_cert->array, compare_by_credential);
+  cardano_array_sort(mir_to_stake_creds_cert->array, compare_by_credential, NULL);
 
   return CARDANO_SUCCESS;
 }

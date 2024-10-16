@@ -1061,7 +1061,7 @@ TEST(cardano_array_sort, doesNothingWhenArrayIsNull)
   cardano_array_t* array = nullptr;
 
   // Act
-  cardano_array_sort(array, nullptr);
+  cardano_array_sort(array, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(cardano_array_get_size(array), 0);
@@ -1073,7 +1073,7 @@ TEST(cardano_array_sort, doesNothingWhenComparatorIsNull)
   cardano_array_t* array = cardano_array_new(1);
 
   // Act
-  cardano_array_sort(array, nullptr);
+  cardano_array_sort(array, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(cardano_array_get_size(array), 0);
@@ -1100,12 +1100,14 @@ TEST(cardano_array_sort, sortsTheArray)
   EXPECT_EQ(new_size, 3);
 
   // Act
-  cardano_array_sort(array, [](const cardano_object_t* a, const cardano_object_t* b) -> int
-                     {
+  cardano_array_sort(
+    array, [](const cardano_object_t* a, const cardano_object_t* b, void* context) -> int
+    {
     ref_counted_string_t* str1 = (ref_counted_string_t*)a;
     ref_counted_string_t* str2 = (ref_counted_string_t*)b;
 
-    return strcmp(str1->string, str2->string); });
+    return strcmp(str1->string, str2->string); },
+    nullptr);
 
   // Assert
   cardano_object_t* item1 = cardano_array_get(array, 0);
