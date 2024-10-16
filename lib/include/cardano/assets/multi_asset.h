@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/assets/asset_id.h>
 #include <cardano/assets/asset_name.h>
 #include <cardano/assets/asset_name_map.h>
 #include <cardano/assets/policy_id_list.h>
@@ -355,6 +356,12 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_get(
   const cardano_multi_asset_t* multi_asset,
   cardano_blake2b_hash_t*      policy_id,
   cardano_asset_name_t*        asset,
+  int64_t*                     value);
+
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_multi_asset_get_with_id(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_asset_id_t*          id,
   int64_t*                     value);
 
 /**

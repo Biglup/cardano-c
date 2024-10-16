@@ -208,6 +208,9 @@ CARDANO_EXPORT cardano_error_t cardano_utxo_list_get(const cardano_utxo_list_t* 
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_utxo_list_add(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element);
 
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_utxo_list_remove(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element);
+
 /**
  * Clears the contents of the specified utxo_list.
  *

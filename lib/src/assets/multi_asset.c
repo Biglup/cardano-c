@@ -536,6 +536,41 @@ cardano_multi_asset_get(
 }
 
 cardano_error_t
+cardano_multi_asset_get_with_id(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_asset_id_t*          id,
+  int64_t*                     value)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* policy_id = cardano_asset_id_get_policy_id(id);
+  cardano_asset_name_t*   name      = cardano_asset_id_get_asset_name(id);
+
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_asset_name_unref(&name);
+
+  if ((policy_id == NULL) || (name == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return cardano_multi_asset_get(multi_asset, policy_id, name, value);
+}
+
+cardano_error_t
 cardano_multi_asset_set(
   cardano_multi_asset_t*  multi_asset,
   cardano_blake2b_hash_t* policy_id,
