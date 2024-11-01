@@ -21,6 +21,10 @@ UTxO List
 
 ------------
 
+.. doxygenfunction:: cardano_utxo_list_remove
+
+------------
+
 .. doxygenfunction:: cardano_utxo_list_clear
 
 ------------

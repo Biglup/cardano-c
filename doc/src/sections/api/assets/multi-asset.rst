@@ -33,6 +33,10 @@ Multi Asset
 
 ------------
 
+.. doxygenfunction:: cardano_multi_asset_get_with_id
+
+------------
+
 .. doxygenfunction:: cardano_multi_asset_set
 
 ------------

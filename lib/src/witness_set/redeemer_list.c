@@ -80,15 +80,18 @@ cardano_redeemer_list_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
  *
  * \return A negative value if the redeemer of lhs is less than the redeemer of rhs, zero if they are equal,
  *         and a positive value if the redeemer of lhs is greater than the redeemer of rhs.
  */
 static int32_t
-compare_by_key(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_key(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_redeemer_t* lhs_redeemer = (const cardano_redeemer_t*)((const void*)lhs);
   const cardano_redeemer_t* rhs_redeemer = (const cardano_redeemer_t*)((const void*)rhs);
@@ -376,7 +379,7 @@ cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_
       // LCOV_EXCL_STOP
     }
 
-    cardano_array_sort(list->array, compare_by_key);
+    cardano_array_sort(list->array, compare_by_key, NULL);
 
     *redeemer_list = list;
 
@@ -442,7 +445,7 @@ cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_
     }
   }
 
-  cardano_array_sort(list->array, compare_by_key);
+  cardano_array_sort(list->array, compare_by_key, NULL);
 
   *redeemer_list = list;
 
@@ -599,7 +602,7 @@ cardano_redeemer_list_add(cardano_redeemer_list_t* redeemer_list, cardano_redeem
   CARDANO_UNUSED(original_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(redeemer_list->array, compare_by_key);
+  cardano_array_sort(redeemer_list->array, compare_by_key, NULL);
 
   return CARDANO_SUCCESS;
 }
@@ -711,7 +714,7 @@ cardano_redeemer_list_clone(
 
   cardano_redeemer_list_clear_cbor_cache(*cloned_redeemer_list);
 
-  cardano_array_sort(redeemer_list->array, compare_by_key);
+  cardano_array_sort(redeemer_list->array, compare_by_key, NULL);
 
   return result;
 }

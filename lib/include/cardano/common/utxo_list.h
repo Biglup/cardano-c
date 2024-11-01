@@ -52,11 +52,12 @@ typedef struct cardano_utxo_list_t cardano_utxo_list_t;
  *
  * \param[in] lhs The left-hand side utxo to compare.
  * \param[in] rhs The right-hand side utxo to compare.
+ * \param[in] context An optional context pointer that will be passed to the comparison function.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
  */
-typedef int (*cardano_utxo_list_compare_item_t)(cardano_utxo_t* lhs, cardano_utxo_t* rhs);
+typedef int (*cardano_utxo_list_compare_item_t)(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context);
 
 /**
  * \brief Defines a function pointer for evaluating whether a specific utxo meets a defined set of criteria.
@@ -209,11 +210,43 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_utxo_list_add(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element);
 
 /**
+ * \brief Removes a specific UTXO from a UTXO list.
+ *
+ * The `cardano_utxo_list_remove` function allows you to remove a specified UTXO from a \ref cardano_utxo_list_t object.
+ *
+ * \param[in,out] utxo_list A pointer to the \ref cardano_utxo_list_t from which the specified UTXO will be removed.
+ * \param[in] element A pointer to the \ref cardano_utxo_t object representing the UTXO to be removed.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXO was successfully removed from the list, or an appropriate error code if
+ *         the UTXO could not be found or removed.
+ *
+ * \note This function does not modify the original UTXO object referenced by `element`, only removes it from the list.
+ *
+ * \note The caller is responsible for managing the memory of both `utxo_list` and `element`, ensuring that
+ *       unreferenced UTXOs are properly deallocated to avoid memory leaks.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_utxo_list_t* utxo_list = ...;  // List of UTXOs
+ * cardano_utxo_t* utxo_to_remove = ...;  // UTXO element to be removed
+ *
+ * cardano_error_t result = cardano_utxo_list_remove(utxo_list, utxo_to_remove);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // UTXO was successfully removed from the list
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_utxo_list_remove(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element);
+
+/**
  * Clears the contents of the specified utxo_list.
  *
  * This function removes all elements from the utxo_list, leaving it empty.
  *
- * @param[in,out] utxo_list The utxo_list to clear.
+ * \param[in,out] utxo_list The utxo_list to clear.
  */
 CARDANO_EXPORT void cardano_utxo_list_clear(cardano_utxo_list_t* utxo_list);
 
@@ -224,11 +257,12 @@ CARDANO_EXPORT void cardano_utxo_list_clear(cardano_utxo_list_t* utxo_list);
  * than the second, zero if they are equal, and a positive value if the first is greater
  * than the second.
  *
- * @param[in,out] utxo_list The utxo_list to sort.
- * @param[in] compare The comparison function used to determine the order of the elements.
+ * \param[in,out] utxo_list The utxo_list to sort.
+ * \param[in] compare The comparison function used to determine the order of the elements.
  *                    The function must not modify the elements.
+ * \param[in] context An optional context pointer that will be passed to the comparison function.
  */
-CARDANO_EXPORT void cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare);
+CARDANO_EXPORT void cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare, void* context);
 
 /**
  * Searches for an element in the utxo_list that satisfies a predicate.
@@ -236,12 +270,12 @@ CARDANO_EXPORT void cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, carda
  * Iterates over the utxo_list elements and returns the first element for which
  * the predicate returns true. If no such element is found, returns NULL.
  *
- * @param[in] utxo_list The utxo_list to search in.
- * @param[in] predicate The unary predicate function used to evaluate each element.
+ * \param[in] utxo_list The utxo_list to search in.
+ * \param[in] predicate The unary predicate function used to evaluate each element.
  *                      The function should return true for the target element
  *                      and false otherwise.
- * @param[in] context An optional context pointer that will be passed to the predicate function.
- * @return A pointer to the first element satisfying the predicate, or NULL if
+ * \param[in] context An optional context pointer that will be passed to the predicate function.
+ * \return A pointer to the first element satisfying the predicate, or NULL if
  *         no such element is found.
  */
 CARDANO_NODISCARD
@@ -255,12 +289,12 @@ cardano_utxo_t* cardano_utxo_list_find(const cardano_utxo_list_t* utxo_list, car
  * Elements for which the predicate returns true are included in the new utxo_list. The original utxo_list remains
  * unchanged. The caller is responsible for managing the unreferencing of the returned utxo_list to avoid memory leaks.
  *
- * @param[in] utxo_list The source utxo_list to filter.
- * @param[in] predicate The unary predicate function used to test each element. Elements that
+ * \param[in] utxo_list The source utxo_list to filter.
+ * \param[in] predicate The unary predicate function used to test each element. Elements that
  *                      satisfy the predicate (i.e., for which the predicate returns true) are
  *                      included in the new utxo_list.
- * @param[in] context An optional context pointer that will be passed to the predicate function.
- * @return A new utxo_list containing only elements that satisfy the predicate. Returns NULL if
+ * \param[in] context An optional context pointer that will be passed to the predicate function.
+ * \return A new utxo_list containing only elements that satisfy the predicate. Returns NULL if
  *         the operation fails due to memory allocation errors. The caller is responsible for unreferencing
  *         the returned utxo_list.
  */

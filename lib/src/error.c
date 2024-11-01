@@ -182,6 +182,18 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_PASSPHRASE:
       message = "Invalid passphrase";
       break;
+    case CARDANO_ERROR_BALANCE_INSUFFICIENT:
+      message = "Insufficient balance";
+      break;
+    case CARDANO_ERROR_UTXO_NOT_FRAGMENTED_ENOUGH:
+      message = "UTXO not fragmented enough";
+      break;
+    case CARDANO_ERROR_UTXO_FULLY_DEPLETED:
+      message = "UTXO fully depleted";
+      break;
+    case CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED:
+      message = "Maximum input count exceeded";
+      break;
     default:
       message = "Unknown error code";
       break;

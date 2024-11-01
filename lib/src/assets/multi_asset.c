@@ -128,15 +128,18 @@ cardano_multi_asset_kvp_deallocate(void* object)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused context parameter.
  *
  * \return A negative value if the hash of lhs is less than the hash of rhs, zero if they are equal,
  *         and a positive value if the hash of lhs is greater than the hash of rhs.
  */
 static int32_t
-compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_hash(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_multi_asset_kvp_t* lhs_kvp = (const cardano_multi_asset_kvp_t*)((const void*)lhs);
   const cardano_multi_asset_kvp_t* rhs_kvp = (const cardano_multi_asset_kvp_t*)((const void*)rhs);
@@ -301,7 +304,7 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
     cardano_asset_name_map_unref(&asset_name_map);
   }
 
-  cardano_array_sort(data->array, compare_by_hash);
+  cardano_array_sort(data->array, compare_by_hash, NULL);
 
   *multi_asset = data;
 
@@ -442,7 +445,7 @@ cardano_multi_asset_insert_assets(
     /* LCOV_EXCL_STOP */
   }
 
-  cardano_array_sort(multi_asset->array, compare_by_hash);
+  cardano_array_sort(multi_asset->array, compare_by_hash, NULL);
 
   return CARDANO_SUCCESS;
 }
@@ -533,6 +536,41 @@ cardano_multi_asset_get(
   cardano_asset_name_map_unref(&assets);
 
   return get_result;
+}
+
+cardano_error_t
+cardano_multi_asset_get_with_id(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_asset_id_t*          id,
+  int64_t*                     value)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* policy_id = cardano_asset_id_get_policy_id(id);
+  cardano_asset_name_t*   name      = cardano_asset_id_get_asset_name(id);
+
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_asset_name_unref(&name);
+
+  if ((policy_id == NULL) || (name == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+  }
+
+  return cardano_multi_asset_get(multi_asset, policy_id, name, value);
 }
 
 cardano_error_t

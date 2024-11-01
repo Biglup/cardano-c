@@ -41,11 +41,12 @@ extern "C" {
  *
  * \param[in] lhs The left-hand side object to compare.
  * \param[in] rhs The right-hand side object to compare.
+ * \param[in] context An optional context providing additional data or parameters for the compare function.
  *
  * \return A negative value if `lhs` is less than `rhs`, 0 if `lhs` is equal to `rhs`, or a positive
  * value if `lhs` is greater than `rhs`.
  */
-typedef int (*cardano_array_compare_item_t)(const cardano_object_t* lhs, const cardano_object_t* rhs);
+typedef int (*cardano_array_compare_item_t)(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context);
 
 /**
  * \brief Defines a function pointer for evaluating whether a specific object meets a defined set of criteria.
@@ -252,8 +253,9 @@ CARDANO_EXPORT void cardano_array_clear(cardano_array_t* array);
  * @param[in,out] array The array to sort.
  * @param[in] compare The comparison function used to determine the order of the elements.
  *                    The function must not modify the elements.
+ * @param[in] context An optional context pointer that will be passed to the compare function.
  */
-CARDANO_EXPORT void cardano_array_sort(cardano_array_t* array, cardano_array_compare_item_t compare);
+CARDANO_EXPORT void cardano_array_sort(cardano_array_t* array, cardano_array_compare_item_t compare, void* context);
 
 /**
  * Searches for an element in the array that satisfies a predicate.

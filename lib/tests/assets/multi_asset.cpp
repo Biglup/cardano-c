@@ -2211,3 +2211,11 @@ TEST(cardano_multi_asset_get_negative, returnsErrorIfSecondArgumentIsNull)
   // Cleanup
   cardano_multi_asset_unref(&multi_asset);
 }
+
+TEST(cardano_multi_asset_get_with_id, returnsErrorIfMultiAssetIsNull)
+{
+  // Act
+  EXPECT_EQ(cardano_multi_asset_get_with_id(nullptr, (cardano_asset_id_t*)"", (int64_t*)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_multi_asset_get_with_id((cardano_multi_asset_t*)"", nullptr, (int64_t*)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_multi_asset_get_with_id((cardano_multi_asset_t*)"", (cardano_asset_id_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+}

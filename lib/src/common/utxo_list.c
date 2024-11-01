@@ -182,7 +182,7 @@ cardano_utxo_list_clear(cardano_utxo_list_t* utxo_list)
 }
 
 void
-cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare)
+cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare_item_t compare, void* context)
 {
   if (utxo_list == NULL)
   {
@@ -195,7 +195,7 @@ cardano_utxo_list_sort(cardano_utxo_list_t* utxo_list, cardano_utxo_list_compare
   }
 
   // cppcheck-suppress misra-c2012-11.1; Reason: We need this so we can have typesafe parameters.
-  cardano_array_sort(utxo_list->array, (cardano_array_compare_item_t)(void*)compare);
+  cardano_array_sort(utxo_list->array, (cardano_array_compare_item_t)(void*)compare, context);
 }
 
 cardano_utxo_t*
@@ -339,6 +339,51 @@ cardano_utxo_list_erase(
   }
 
   return result;
+}
+
+cardano_error_t
+cardano_utxo_list_remove(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element)
+{
+  int32_t found_at = -1;
+
+  const size_t length = cardano_utxo_list_get_length(utxo_list);
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxo_list, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+
+    if (cardano_utxo_equals(element, utxo) == true)
+    {
+      found_at = (int32_t)i;
+      break;
+    }
+  }
+
+  if (found_at >= 0)
+  {
+    cardano_utxo_list_t* erased = cardano_utxo_list_erase(utxo_list, found_at, 1);
+
+    if (erased == NULL)
+    {
+      // LCOV_EXCL_START
+      cardano_utxo_list_unref(&erased);
+
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      // LCOV_EXCL_STOP
+    }
+
+    cardano_utxo_list_unref(&erased);
+  }
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_utxo_list_t*

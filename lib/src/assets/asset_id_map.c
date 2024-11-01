@@ -158,15 +158,18 @@ asset_id_equals(const cardano_asset_id_t* lhs, const cardano_asset_id_t* rhs)
  *
  * \param[in] lhs Pointer to the first cardano_object_t object.
  * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused context parameter.
  *
  * \return A negative value if the address of lhs is less than the address of rhs, zero if they are equal,
  *         and a positive value if the address of lhs is greater than the address of rhs.
  */
 static int32_t
-compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs)
+compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
 {
   assert(lhs != NULL);
   assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
 
   const cardano_asset_id_map_kvp_t* lhs_kvp = (const cardano_asset_id_map_kvp_t*)((const void*)lhs);
   const cardano_asset_id_map_kvp_t* rhs_kvp = (const cardano_asset_id_map_kvp_t*)((const void*)rhs);
@@ -342,7 +345,7 @@ cardano_asset_id_map_insert(
   CARDANO_UNUSED(old_size);
   CARDANO_UNUSED(new_size);
 
-  cardano_array_sort(asset_id_map->array, compare_by_bytes);
+  cardano_array_sort(asset_id_map->array, compare_by_bytes, NULL);
 
   return CARDANO_SUCCESS;
 }
