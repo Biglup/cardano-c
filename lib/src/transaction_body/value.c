@@ -53,7 +53,7 @@ static const int64_t VALUE_ARRAY_REQUIRED_SIZE = 2;
 typedef struct cardano_value_t
 {
     cardano_object_t       base;
-    uint64_t               coin;
+    int64_t                coin;
     cardano_multi_asset_t* multi_asset;
 } cardano_value_t;
 
@@ -88,7 +88,7 @@ cardano_value_deallocate(void* object)
 
 cardano_error_t
 cardano_value_new(
-  uint64_t               coin,
+  int64_t                coin,
   cardano_multi_asset_t* assets,
   cardano_value_t**      value)
 {
@@ -129,6 +129,17 @@ cardano_value_new(
   *value = new_value;
 
   return CARDANO_SUCCESS;
+}
+
+cardano_value_t*
+cardano_value_new_zero(void)
+{
+  cardano_value_t* value = NULL;
+
+  cardano_error_t result = cardano_value_new(0, NULL, &value);
+  CARDANO_UNUSED(result);
+
+  return value;
 }
 
 cardano_error_t
@@ -180,7 +191,7 @@ cardano_value_from_asset_map(
 
     if (cardano_asset_id_is_lovelace(asset_id))
     {
-      coin = (uint64_t)amount;
+      coin = amount;
 
       cardano_asset_id_unref(&asset_id);
     }
@@ -221,7 +232,7 @@ cardano_value_from_asset_map(
     }
   }
 
-  result = cardano_value_new(coin, multi_asset, value);
+  result = cardano_value_new((int64_t)coin, multi_asset, value);
 
   cardano_multi_asset_unref(&multi_asset);
 
@@ -268,7 +279,7 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
       // LCOV_EXCL_STOP
     }
 
-    return cardano_value_new(coin, NULL, value);
+    return cardano_value_new((int64_t)coin, NULL, value);
   }
   else
   {
@@ -309,7 +320,7 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
       // LCOV_EXCL_STOP
     }
 
-    cardano_error_t new_val_result = cardano_value_new(coin, multi_asset, value);
+    cardano_error_t new_val_result = cardano_value_new((int64_t)coin, multi_asset, value);
 
     cardano_multi_asset_unref(&multi_asset);
 
@@ -382,7 +393,7 @@ cardano_value_set_multi_asset(cardano_value_t* value, cardano_multi_asset_t* ass
   return CARDANO_SUCCESS;
 }
 
-uint64_t
+int64_t
 cardano_value_get_coin(const cardano_value_t* value)
 {
   if (value == NULL)
@@ -394,7 +405,7 @@ cardano_value_get_coin(const cardano_value_t* value)
 }
 
 cardano_error_t
-cardano_value_set_coin(cardano_value_t* value, uint64_t coin)
+cardano_value_set_coin(cardano_value_t* value, const int64_t coin)
 {
   if (value == NULL)
   {
@@ -407,7 +418,7 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin)
 }
 
 cardano_error_t
-cardano_value_add_coin(cardano_value_t* value, uint64_t coin)
+cardano_value_add_coin(cardano_value_t* value, const int64_t coin)
 {
   if (value == NULL)
   {
@@ -420,16 +431,11 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin)
 }
 
 cardano_error_t
-cardano_value_subtract_coin(cardano_value_t* value, uint64_t coin)
+cardano_value_subtract_coin(cardano_value_t* value, const int64_t coin)
 {
   if (value == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (value->coin < coin)
-  {
-    return CARDANO_ERROR_INTEGER_UNDERFLOW;
   }
 
   value->coin -= coin;
@@ -519,7 +525,7 @@ cardano_value_add(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value_t** 
     return cardano_value_new(lhs->coin + rhs->coin, lhs->multi_asset, result);
   }
 
-  uint64_t               coin        = lhs->coin + rhs->coin;
+  int64_t                coin        = lhs->coin + rhs->coin;
   cardano_multi_asset_t* multi_asset = NULL;
 
   cardano_error_t multi_asset_result = cardano_multi_asset_add(lhs->multi_asset, rhs->multi_asset, &multi_asset);
@@ -555,11 +561,6 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 
   if ((lhs->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(lhs->multi_asset) == 0U))
   {
-    if (lhs->coin < rhs->coin)
-    {
-      return CARDANO_ERROR_INTEGER_UNDERFLOW;
-    }
-
     cardano_error_t new_val_result = cardano_value_new(lhs->coin - rhs->coin, NULL, result);
 
     if (new_val_result != CARDANO_SUCCESS)
@@ -575,20 +576,10 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 
   if ((rhs->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(rhs->multi_asset) == 0U))
   {
-    if (lhs->coin < rhs->coin)
-    {
-      return CARDANO_ERROR_INTEGER_UNDERFLOW;
-    }
-
     return cardano_value_new(lhs->coin - rhs->coin, lhs->multi_asset, result);
   }
 
-  if (lhs->coin < rhs->coin)
-  {
-    return CARDANO_ERROR_INTEGER_UNDERFLOW;
-  }
-
-  uint64_t               coin        = lhs->coin - rhs->coin;
+  int64_t                coin        = lhs->coin - rhs->coin;
   cardano_multi_asset_t* multi_asset = NULL;
 
   cardano_error_t multi_asset_result = cardano_multi_asset_subtract(lhs->multi_asset, rhs->multi_asset, &multi_asset);
@@ -621,7 +612,7 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
     return get_intersection_result; // LCOV_EXCL_LINE
   }
 
-  if ((lhs->coin > 0U) && (rhs->coin > 0U))
+  if ((lhs->coin > 0) && (rhs->coin > 0))
   {
     cardano_asset_id_t* lovelace_asset_id = NULL;
 
@@ -713,7 +704,7 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
       // LCOV_EXCL_STOP
     }
 
-    for (size_t j = 0; j < cardano_asset_name_list_get_length(lhs_asset_names); ++j)
+    for (size_t j = 0U; j < cardano_asset_name_list_get_length(lhs_asset_names); ++j)
     {
       cardano_asset_name_t* asset_name = NULL;
 
@@ -851,7 +842,7 @@ cardano_value_as_assets_map(cardano_value_t* value)
     return NULL; // LCOV_EXCL_LINE
   }
 
-  if (value->coin > 0U)
+  if (value->coin > 0)
   {
     cardano_asset_id_t* lovelace_asset_id = NULL;
     result                                = cardano_asset_id_new_lovelace(&lovelace_asset_id);
@@ -1026,7 +1017,7 @@ cardano_value_get_asset_count(const cardano_value_t* value)
 
   uint64_t asset_count = 0U;
 
-  if (value->coin > 0U)
+  if (value->coin > 0)
   {
     ++asset_count;
   }
@@ -1088,7 +1079,7 @@ cardano_value_is_zero(const cardano_value_t* value)
     return true;
   }
 
-  return (value->coin == 0U) && (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U);
+  return (value->coin == 0) && (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U);
 }
 
 bool

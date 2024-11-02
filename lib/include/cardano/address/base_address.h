@@ -566,6 +566,45 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_base_address_get_string(const cardano_base_address_t* address);
 
 /**
+ * \brief Retrieves the network ID from a given Cardano base address.
+ *
+ * This function extracts the network identifier from the provided \ref cardano_base_address_t object.
+ * The network ID indicates whether the address belongs to the test network or the main network.
+ *
+ * \param[in] address A constant pointer to the \ref cardano_base_address_t object from which the network ID is to be retrieved.
+ * \param[out] network_id A pointer to \ref cardano_network_id_t where the network ID will be stored upon successful
+ *                        extraction. This parameter cannot be NULL.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the network ID was successfully retrieved.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the input address or network_id pointer is NULL.
+ *         Returns other error codes as defined in \ref cardano_error_t if the network ID cannot be retrieved due to
+ *         malformed or unrecognized address formats.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_base_address_t* address = NULL;
+ * cardano_network_id_t network_id;
+ *
+ * cardano_error_t get_network_id = cardano_base_address_get_network_id(address, &network_id);
+ *
+ * if (get_network_id != CARDANO_SUCCESS)
+ * {
+ *   printf("Failed to determine the network id.\n");
+ * }
+ * else
+ * {
+ *   printf("Network ID: %d\n", network_id);
+ * }
+ *
+ * cardano_base_address_unref(&address);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_base_address_get_network_id(
+  const cardano_base_address_t* address,
+  cardano_network_id_t*         network_id);
+
+/**
  * \brief Decrements the base address's reference count.
  *
  * If the reference count reaches zero, the base address memory is deallocated.

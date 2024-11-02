@@ -17,7 +17,7 @@ Reward Address
 
 ------------
 
-.. doxygenfunction:: cardano_reward_address_get_payment_credential
+.. doxygenfunction:: cardano_reward_address_get_credential
 
 ------------
 
@@ -50,6 +50,10 @@ Reward Address
 ------------
 
 .. doxygenfunction:: cardano_reward_address_get_string
+
+------------
+
+.. doxygenfunction:: cardano_reward_address_get_network_id
 
 ------------
 

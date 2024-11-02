@@ -343,6 +343,12 @@ cardano_base_address_get_string(const cardano_base_address_t* address)
   return cardano_address_get_string(_cardano_from_base_to_address_const(address));
 }
 
+cardano_error_t
+cardano_base_address_get_network_id(const cardano_base_address_t* address, cardano_network_id_t* network_id)
+{
+  return cardano_address_get_network_id(_cardano_from_base_to_address_const(address), network_id);
+}
+
 void
 cardano_base_address_unref(cardano_base_address_t** address)
 {

@@ -61,6 +61,10 @@ Byron Address
 
 ------------
 
+.. doxygenfunction:: cardano_byron_address_get_network_id
+
+------------
+
 .. doxygenfunction:: cardano_byron_address_unref
 
 ------------

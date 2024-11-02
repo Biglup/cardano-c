@@ -573,7 +573,7 @@ CARDANO_EXPORT cardano_error_t cardano_address_get_type(
  *
  *   if (get_network_id != CARDANO_SUCCESS)
  *   {
- *     printf("Failed to determine the address type.\n");
+ *     printf("Failed to determine the address network id.\n");
  *   }
  *   else
  *   {

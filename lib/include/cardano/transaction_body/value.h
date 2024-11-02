@@ -68,7 +68,7 @@ typedef struct cardano_value_t cardano_value_t;
  *
  * Usage Example:
  * \code{.c}
- * uint64_t coin = 1000000; // Equivalent to 1 ADA
+ * int64_t coin = 1000000; // Equivalent to 1 ADA
  * cardano_multi_asset_t* assets = cardano_multi_asset_new(...); // Assume assets are already initialized
  * cardano_value_t* value = NULL;
  *
@@ -93,9 +93,39 @@ typedef struct cardano_value_t cardano_value_t;
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_value_new(
-  uint64_t               coin,
+  int64_t                coin,
   cardano_multi_asset_t* assets,
   cardano_value_t**      value);
+
+/**
+ * \brief Creates a new `cardano_value_t` object initialized to zero.
+ *
+ * The `cardano_value_new_zero` function allocates and returns a new `cardano_value_t` object
+ * that represents a value initialized to zero for both ADA and any associated assets.
+ *
+ * \return A pointer to the newly created `cardano_value_t` object with zeroed values, or `NULL`
+ * if memory allocation fails.
+ *
+ * \note The caller is responsible for managing the memory of the returned `cardano_value_t` object
+ * and must call `cardano_value_unref` to properly release it when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_value_t* value = cardano_value_new_zero();
+ *
+ * if (value != NULL)
+ * {
+ *   // Successfully created a new zeroed value
+ *   // Use the `value` as needed
+ *
+ *   // Release the value object when done
+ *   cardano_value_unref(&value);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_value_t*
+cardano_value_new_zero(void);
 
 /**
  * \brief Creates a \ref cardano_value_t from an asset map.
@@ -315,12 +345,12 @@ cardano_value_set_multi_asset(cardano_value_t* value, cardano_multi_asset_t* ass
  * \code{.c}
  * const cardano_value_t* value = ...; // Assume value is already initialized
  *
- * uint64_t coin = cardano_value_get_coin(value);
+ * int64_t coin = cardano_value_get_coin(value);
  * printf("Coin amount: %llu lovelaces\n", coin);
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT uint64_t cardano_value_get_coin(const cardano_value_t* value);
+CARDANO_EXPORT int64_t cardano_value_get_coin(const cardano_value_t* value);
 
 /**
  * \brief Sets the coin amount (in lovelaces) for a Cardano value object.
@@ -338,7 +368,7 @@ CARDANO_EXPORT uint64_t cardano_value_get_coin(const cardano_value_t* value);
  * Usage Example:
  * \code{.c}
  * cardano_value_t* value = ...; // Assume value is already initialized
- * uint64_t coin = 1000000; // Set 1 ADA
+ * int64_t coin = 1000000; // Set 1 ADA
  *
  * cardano_error_t result = cardano_value_set_coin(value, coin);
  * if (result == CARDANO_SUCCESS)
@@ -353,7 +383,7 @@ CARDANO_EXPORT uint64_t cardano_value_get_coin(const cardano_value_t* value);
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_value_set_coin(cardano_value_t* value, uint64_t coin);
+cardano_value_set_coin(cardano_value_t* value, int64_t coin);
 
 /**
  * \brief Adds a specified coin amount to a Cardano value object.
@@ -372,7 +402,7 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin);
  * Usage Example:
  * \code{.c}
  * cardano_value_t* value = ...; // Assume value is already initialized
- * uint64_t coin_to_add = 500000; // Add 0.5 ADA (since 1 ADA = 1,000,000 lovelaces)
+ * int64_t coin_to_add = 500000; // Add 0.5 ADA (since 1 ADA = 1,000,000 lovelaces)
  *
  * cardano_error_t result = cardano_value_add_coin(value, coin_to_add);
  *
@@ -391,7 +421,7 @@ cardano_value_set_coin(cardano_value_t* value, uint64_t coin);
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_value_add_coin(cardano_value_t* value, uint64_t coin);
+cardano_value_add_coin(cardano_value_t* value, int64_t coin);
 
 /**
  * \brief Subtracts a specified coin amount from a Cardano value object.
@@ -410,7 +440,7 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin);
  * Usage Example:
  * \code{.c}
  * cardano_value_t* value = ...; // Assume value is already initialized
- * uint64_t coin_to_subtract = 500000; // Subtract 0.5 ADA (since 1 ADA = 1,000,000 lovelaces)
+ * int64_t coin_to_subtract = 500000; // Subtract 0.5 ADA (since 1 ADA = 1,000,000 lovelaces)
  *
  * cardano_error_t result = cardano_value_subtract_coin(value, coin_to_subtract);
  * if (result == CARDANO_SUCCESS)
@@ -428,7 +458,7 @@ cardano_value_add_coin(cardano_value_t* value, uint64_t coin);
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_value_subtract_coin(cardano_value_t* value, uint64_t coin);
+cardano_value_subtract_coin(cardano_value_t* value, int64_t coin);
 
 /**
  * \brief Adds a specified multi-asset collection to a Cardano value object.

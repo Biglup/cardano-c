@@ -145,6 +145,12 @@ get_unspent_outputs(
     result = cardano_blockfrost_http_get(provider_impl, url, cardano_utils_safe_strlen(url, 256U), &response_code, &response_buffer);
     free(url);
 
+    if (response_code == 404U)
+    {
+      cardano_buffer_unref(&response_buffer);
+      return cardano_utxo_list_new(utxo_list);
+    }
+
     if ((response_code != 200U) || (result != CARDANO_SUCCESS))
     {
       cardano_blockfrost_parse_error(provider_impl, response_buffer);
@@ -212,6 +218,15 @@ get_rewards_balance(cardano_provider_impl_t* provider_impl, cardano_reward_addre
   cardano_error_t result = cardano_blockfrost_http_get(provider_impl, url, cardano_utils_safe_strlen(url, 256U), &response_code, &response_buffer);
   free(url);
 
+  if (response_code == 404U)
+  {
+    *rewards = 0;
+
+    cardano_buffer_unref(&response_buffer);
+
+    return CARDANO_SUCCESS;
+  }
+
   if ((response_code != 200U) || (result != CARDANO_SUCCESS))
   {
     cardano_blockfrost_parse_error(provider_impl, response_buffer);
@@ -264,6 +279,12 @@ get_unspent_outputs_with_asset(
 
     result = cardano_blockfrost_http_get(provider_impl, url, cardano_utils_safe_strlen(url, 256U), &response_code, &response_buffer);
     free(url);
+
+    if (response_code == 404U)
+    {
+      cardano_buffer_unref(&response_buffer);
+      return cardano_utxo_list_new(utxo_list);
+    }
 
     if ((response_code != 200U) || (result != CARDANO_SUCCESS))
     {

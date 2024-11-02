@@ -1987,23 +1987,23 @@ TEST(cardano_transaction_body_set_voting_procedures, canSetVotingProcedures)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_transaction_body_get_proposal_procedure, returnsNullIfTransactionBodyIsNull)
+TEST(cardano_transaction_body_get_proposal_procedures, returnsNullIfTransactionBodyIsNull)
 {
   // Act
-  cardano_proposal_procedure_set_t* proposal_procedure = cardano_transaction_body_get_proposal_procedure(nullptr);
+  cardano_proposal_procedure_set_t* proposal_procedure = cardano_transaction_body_get_proposal_procedures(nullptr);
 
   // Assert
   EXPECT_EQ(proposal_procedure, nullptr);
 }
 
-TEST(cardano_transaction_body_get_proposal_procedure, returnsProposalProcedure)
+TEST(cardano_transaction_body_get_proposal_procedures, returnsProposalProcedure)
 {
   // Arrange
   cardano_transaction_body_t* transaction_body = new_default_transaction_body();
   EXPECT_NE(transaction_body, nullptr);
 
   // Act
-  cardano_proposal_procedure_set_t* proposal_procedure = cardano_transaction_body_get_proposal_procedure(transaction_body);
+  cardano_proposal_procedure_set_t* proposal_procedure = cardano_transaction_body_get_proposal_procedures(transaction_body);
 
   // Assert
   EXPECT_NE(proposal_procedure, nullptr);
@@ -2024,7 +2024,7 @@ TEST(cardano_transaction_body_set_proposal_procedure, canSetProposalProcedureToN
 
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_transaction_body_get_proposal_procedure(transaction_body), nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_proposal_procedures(transaction_body), nullptr);
 
   // Cleanup
   cardano_transaction_body_unref(&transaction_body);
@@ -2056,7 +2056,7 @@ TEST(cardano_transaction_body_set_proposal_procedure, canSetProposalProcedure)
   // Act
   cardano_error_t result = cardano_transaction_body_set_proposal_procedure(transaction_body, proposal_procedure);
 
-  cardano_proposal_procedure_set_t* proposal_procedure_from_transaction_body = cardano_transaction_body_get_proposal_procedure(transaction_body);
+  cardano_proposal_procedure_set_t* proposal_procedure_from_transaction_body = cardano_transaction_body_get_proposal_procedures(transaction_body);
 
   EXPECT_EQ(proposal_procedure_from_transaction_body, proposal_procedure);
 

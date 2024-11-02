@@ -1002,3 +1002,21 @@ TEST(cardano_base_address_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_base_address_unref(&base_address);
 }
+
+TEST(cardano_base_address_get_network_id, canGetNetworkId)
+{
+  // Arrange
+  cardano_base_address_t* address = NULL;
+  EXPECT_EQ(cardano_base_address_from_bech32(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  cardano_network_id_t network_id;
+
+  EXPECT_EQ(cardano_base_address_get_network_id(address, &network_id), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(network_id, CARDANO_NETWORK_ID_MAIN_NET);
+
+  // Clean up
+  cardano_base_address_unref(&address);
+}

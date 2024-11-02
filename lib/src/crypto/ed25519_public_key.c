@@ -30,6 +30,7 @@
 #include "../allocators.h"
 
 #include <assert.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <sodium.h>
 #include <string.h>
 
@@ -304,4 +305,25 @@ cardano_ed25519_public_key_to_hex(
   }
 
   return cardano_buffer_to_hex(ed25519_public_key->key_material, hex, hex_length);
+}
+
+cardano_error_t
+cardano_ed25519_public_key_to_hash(
+  const cardano_ed25519_public_key_t* public_key,
+  cardano_blake2b_hash_t**            hash)
+{
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (public_key == NULL)
+  {
+    *hash = NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const byte_t* data = cardano_buffer_get_data(public_key->key_material);
+
+  return cardano_blake2b_compute_hash(data, cardano_buffer_get_size(public_key->key_material), CARDANO_BLAKE2B_HASH_SIZE_224, hash);
 }

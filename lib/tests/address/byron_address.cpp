@@ -904,3 +904,21 @@ TEST(cardano_byron_address_get_root, returnsErrorIfMemoryAllocationFails)
   // Cleanup
   cardano_byron_address_unref(&byron_address);
 }
+
+TEST(cardano_byron_address_get_network_id, canGetNetworkId)
+{
+  // Arrange
+  cardano_byron_address_t* address = NULL;
+  EXPECT_EQ(cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  cardano_network_id_t network_id;
+
+  EXPECT_EQ(cardano_byron_address_get_network_id(address, &network_id), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(network_id, CARDANO_NETWORK_ID_MAIN_NET);
+
+  // Clean up
+  cardano_byron_address_unref(&address);
+}

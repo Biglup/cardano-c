@@ -52,26 +52,26 @@ extern "C" {
 typedef struct cardano_reward_address_t cardano_reward_address_t;
 
 /**
- * \brief Creates a reward address from network and payment credentials.
+ * \brief Creates a reward address from network and credentials.
  *
  * This function constructs a \ref cardano_reward_address_t object by using a network identifier and
- * payment credentials.
+ * credentials.
  *
  * \param[in] network_id The network identifier, which specifies the Cardano network (e.g., mainnet, testnet).
- * \param[in] payment A pointer to a \ref cardano_credential_t object representing the payment credentials,
+ * \param[in] credential A pointer to a \ref cardano_credential_t object representing the credentials,
  *                    typically linked to a staking key.
  * \param[out] reward_address A pointer to a pointer to \ref cardano_reward_address_t that will be set to
  *                            the address of the newly created reward address object upon successful
  *                            address creation.
  *
  * \return Returns \ref CARDANO_SUCCESS if the reward address was successfully created. Returns
- *         \ref CARDANO_ERROR_POINTER_IS_NULL if any of the pointers (\p payment or \p reward_address) are NULL.
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if any of the pointers (\p  or \p reward_address) are NULL.
  *
  * Usage Example:
  * \code{.c}
- * cardano_credential_t payment_credentials = {...};  // Initialized elsewhere
+ * cardano_credential_t credential = {...};  // Initialized elsewhere
  * cardano_reward_address_t* reward_address = NULL;
- * cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, &payment_credentials, &reward_address);
+ * cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, &credential, &reward_address);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -88,7 +88,7 @@ typedef struct cardano_reward_address_t cardano_reward_address_t;
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_reward_address_from_credentials(
   cardano_network_id_t       network_id,
-  cardano_credential_t*      payment,
+  cardano_credential_t*      credential,
   cardano_reward_address_t** reward_address);
 
 /**
@@ -170,11 +170,11 @@ CARDANO_EXPORT cardano_address_t* cardano_reward_address_to_address(
   const cardano_reward_address_t* reward_address);
 
 /**
- * \brief Retrieves the payment credential from a reward address.
+ * \brief Retrieves the credential from a reward address.
  *
- * This function extracts the payment credential from a \ref cardano_reward_address_t object.
+ * This function extracts the credential from a \ref cardano_reward_address_t object.
  *
- * \param[in] reward_address A pointer to the \ref cardano_reward_address_t object from which the payment
+ * \param[in] reward_address A pointer to the \ref cardano_reward_address_t object from which the
  *                           credential is to be retrieved.
  *
  * \note The lifecycle of the returned \ref cardano_credential_t object must be managed by the caller. It is important to
@@ -184,22 +184,22 @@ CARDANO_EXPORT cardano_address_t* cardano_reward_address_to_address(
  * \code{.c}
  * cardano_reward_address_t* reward_address = NULL;
  * // Assume reward_address is previously created and represents a valid reward address
- * const cardano_credential_t* payment_credential = cardano_reward_address_get_payment_credential(reward_address);
+ * const cardano_credential_t* _credential = cardano_reward_address_get__credential(reward_address);
  *
- * if (payment_credential != NULL)
+ * if (_credential != NULL)
  * {
- *   // The payment credential can be used for transactions or other purposes
+ *   // The credential can be used for transactions or other purposes
  *
- *   cardano_credential_unref(&payment_credential);
+ *   cardano_credential_unref(&_credential);
  * }
  * else
  * {
- *   printf("Failed to retrieve payment credential from reward address\n");
+ *   printf("Failed to retrieve credential from reward address\n");
  * }
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_credential_t* cardano_reward_address_get_payment_credential(
+CARDANO_EXPORT cardano_credential_t* cardano_reward_address_get_credential(
   cardano_reward_address_t* reward_address);
 
 /**
@@ -373,7 +373,7 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bytes(
   size_t                          size);
 
 /**
- * \brief Creates an enterprise address from a Bech32-encoded string.
+ * \brief Creates an  reward address from a Bech32-encoded string.
  *
  * This function constructs a \ref cardano_reward_address_t object by decoding the provided
  * Bech32-encoded string that represents the address data.
@@ -381,11 +381,11 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bytes(
  * \param[in] data A pointer to a character array containing the Bech32-encoded representation of the address.
  * \param[in] size The size of the Bech32 string in bytes.
  * \param[out] address A pointer to a pointer to \ref cardano_reward_address_t that will be set to the address
- *                     of the newly created enterprise address object upon successful decoding.
+ *                     of the newly created  reward address object upon successful decoding.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 data
- *         could not be decoded into a valid enterprise address.
+ *         could not be decoded into a valid  reward address.
  *
  * Usage Example:
  * \code{.c}
@@ -397,14 +397,14 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bytes(
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the enterprise address
+ *   // Use the  reward address
  *
- *   // Once done, ensure to clean up and release the enterprise address
+ *   // Once done, ensure to clean up and release the  reward address
  *   cardano_reward_address_unref(&cardano_reward_address);
  * }
  * else
  * {
- *   printf("Failed to decode enterprise address from Bech32: %d\n", result);
+ *   printf("Failed to decode  reward address from Bech32: %d\n", result);
  * }
  * \endcode
  */
@@ -415,7 +415,7 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_from_bech32(
   cardano_reward_address_t** address);
 
 /**
- * \brief Retrieves the size in bytes of the Bech32-encoded representation of an enterprise address.
+ * \brief Retrieves the size in bytes of the Bech32-encoded representation of an  reward address.
  *
  * This function calculates the size necessary to store the Bech32-encoded representation of a given
  * \ref cardano_reward_address_t address object. This size includes the characters needed to represent
@@ -453,7 +453,7 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_reward_address_get_bech32_size(const cardano_reward_address_t* address);
 
 /**
- * \brief Converts an enterprise address to a Bech32-encoded string.
+ * \brief Converts an  reward address to a Bech32-encoded string.
  *
  * This function takes a \ref cardano_reward_address_t object and converts it into a Bech32 string,
  * writing the result into the provided \p data buffer. The buffer must be large enough to hold the entire
@@ -487,7 +487,7 @@ CARDANO_EXPORT size_t cardano_reward_address_get_bech32_size(const cardano_rewar
  *   }
  *   else
  *   {
- *     printf("Failed to convert enterprise address to Bech32: %d\n", result);
+ *     printf("Failed to convert  reward address to Bech32: %d\n", result);
  *   }
  *   free(bech32_string);
  * }
@@ -504,14 +504,14 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bech32(
   size_t                          size);
 
 /**
- * \brief Retrieves the string representation of an enterprise address.
+ * \brief Retrieves the string representation of an  reward address.
  *
  * This function provides access to the string form of a \ref cardano_reward_address_t object. It allows for
  * easy display and logging of the address in a human-readable format.
  *
  * \param[in] address A pointer to the \ref cardano_reward_address_t object whose string representation is to be retrieved.
  *
- * \return A pointer to a constant character string representing the enterprise address. Returns NULL if the \p address
+ * \return A pointer to a constant character string representing the  reward address. Returns NULL if the \p address
  *         pointer is NULL or if the address cannot be properly serialized into a string form.
  *
  * \note The returned string is managed internally and should not be freed or modified by the caller. It remains
@@ -529,12 +529,51 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bech32(
  * }
  * else
  * {
- *   printf("Failed to retrieve string representation of the enterprise address\n");
+ *   printf("Failed to retrieve string representation of the  reward address\n");
  * }
  * \endcode
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_reward_address_get_string(const cardano_reward_address_t* address);
+
+/**
+ * \brief Retrieves the network ID from a given Cardano reward address.
+ *
+ * This function extracts the network identifier from the provided \ref cardano_reward_address_t object.
+ * The network ID indicates whether the address belongs to the test network or the main network.
+ *
+ * \param[in] address A constant pointer to the \ref cardano_reward_address_t object from which the network ID is to be retrieved.
+ * \param[out] network_id A pointer to \ref cardano_network_id_t where the network ID will be stored upon successful
+ *                        extraction. This parameter cannot be NULL.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the network ID was successfully retrieved.
+ *         Returns \ref CARDANO_ERROR_POINTER_IS_NULL if the input address or network_id pointer is NULL.
+ *         Returns other error codes as defined in \ref cardano_error_t if the network ID cannot be retrieved due to
+ *         malformed or unrecognized address formats.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_reward_address_t* address = NULL;
+ * cardano_network_id_t network_id;
+ *
+ * cardano_error_t get_network_id = cardano_reward_address_get_network_id(address, &network_id);
+ *
+ * if (get_network_id != CARDANO_SUCCESS)
+ * {
+ *   printf("Failed to determine the network id.\n");
+ * }
+ * else
+ * {
+ *   printf("Network ID: %d\n", network_id);
+ * }
+ *
+ * cardano_reward_address_unref(&address);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_reward_address_get_network_id(
+  const cardano_reward_address_t* address,
+  cardano_network_id_t*           network_id);
 
 /**
  * \brief Decrements the reward address's reference count.
