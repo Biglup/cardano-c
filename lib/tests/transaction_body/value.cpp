@@ -773,22 +773,6 @@ TEST(cardano_value_subtract_coin, canSubtractCoin)
   cardano_value_unref(&value);
 }
 
-TEST(cardano_value_subtract_coin, returnsUnderflowIfTooBigValue)
-{
-  // Arrange
-  cardano_value_t* value = new_default_value(CBOR);
-
-  // Act
-  cardano_error_t error = cardano_value_subtract_coin(value, 2000000);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
-  EXPECT_EQ(cardano_value_get_coin(value), 1000000);
-
-  // Cleanup
-  cardano_value_unref(&value);
-}
-
 TEST(cardano_value_subtract_coin, returnsErrorIfValueIsNull)
 {
   // Act
@@ -1350,88 +1334,6 @@ TEST(cardano_value_subtract, canSubtractTwoValuesRhsHasAssetsLhsOnlyCoin)
   cardano_multi_asset_unref(&multi_asset);
   cardano_cbor_writer_unref(&writer);
   free(actual_cbor);
-}
-
-TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinNoAssets)
-{
-  // Arrange
-  cardano_value_t* value1 = new_default_value("01");
-  cardano_value_t* value2 = new_default_value("02");
-  cardano_value_t* result = NULL;
-
-  // Act
-  cardano_error_t error = cardano_value_subtract(value1, value2, &result);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
-  EXPECT_EQ(cardano_value_get_coin(result), 0);
-
-  // Cleanup
-  cardano_value_unref(&value1);
-  cardano_value_unref(&value2);
-  cardano_value_unref(&result);
-}
-
-TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinLhsHasAssets)
-{
-  // Arrange
-  cardano_value_t* value1 = new_default_value(CBOR);
-  cardano_value_t* value2 = new_default_value("1a000f4242");
-  cardano_value_t* result = NULL;
-
-  // Act
-  cardano_error_t error = cardano_value_subtract(value1, value2, &result);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
-  EXPECT_EQ(cardano_value_get_coin(result), 0);
-
-  // Cleanup
-  cardano_value_unref(&value1);
-  cardano_value_unref(&value2);
-  cardano_value_unref(&result);
-}
-
-TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinRhsHasAssets)
-{
-  // Arrange
-  cardano_value_t* value1 = new_default_value("01");
-  cardano_value_t* value2 = new_default_value(CBOR);
-  cardano_value_t* result = NULL;
-
-  // Act
-  cardano_error_t error = cardano_value_subtract(value1, value2, &result);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
-  EXPECT_EQ(cardano_value_get_coin(result), 0);
-
-  // Cleanup
-  cardano_value_unref(&value1);
-  cardano_value_unref(&value2);
-  cardano_value_unref(&result);
-}
-
-TEST(cardano_value_subtract, returnsUnderflowIfRhsCoinIsGreaterThanLhsCoinBothHasAssets)
-{
-  // Arrange
-  cardano_value_t* value1 = new_default_value(CBOR);
-  cardano_value_t* value2 = new_default_value(CBOR);
-  cardano_value_t* result = NULL;
-
-  EXPECT_EQ(cardano_value_set_coin(value2, 20000000000), CARDANO_SUCCESS);
-
-  // Act
-  cardano_error_t error = cardano_value_subtract(value1, value2, &result);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INTEGER_UNDERFLOW);
-  EXPECT_EQ(cardano_value_get_coin(result), 0);
-
-  // Cleanup
-  cardano_value_unref(&value1);
-  cardano_value_unref(&value2);
-  cardano_value_unref(&result);
 }
 
 TEST(cardano_value_get_intersection, canGetIntersection)
@@ -2176,4 +2078,16 @@ TEST(cardano_value_from_asset_map, returnErrorIfAssetMapIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_new_zero, canCreateZeroValue)
+{
+  // Act
+  cardano_value_t* value = cardano_value_new_zero();
+
+  // Assert
+  EXPECT_TRUE(cardano_value_is_zero(value));
+
+  // Cleanup
+  cardano_value_unref(&value);
 }

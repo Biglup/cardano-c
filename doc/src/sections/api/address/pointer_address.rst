@@ -57,6 +57,10 @@ Pointer Address
 
 ------------
 
+.. doxygenfunction:: cardano_pointer_address_get_network_id
+
+------------
+
 .. doxygenfunction:: cardano_pointer_address_unref
 
 ------------

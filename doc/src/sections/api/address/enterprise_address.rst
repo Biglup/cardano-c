@@ -53,6 +53,10 @@ Enterprise Address
 
 ------------
 
+.. doxygenfunction:: cardano_enterprise_address_get_network_id
+
+------------
+
 .. doxygenfunction:: cardano_enterprise_address_unref
 
 ------------

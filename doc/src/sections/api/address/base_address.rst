@@ -57,6 +57,10 @@ Base Address
 
 ------------
 
+.. doxygenfunction:: cardano_base_address_get_network_id
+
+------------
+
 .. doxygenfunction:: cardano_base_address_unref
 
 ------------

@@ -2394,7 +2394,7 @@ cardano_transaction_body_set_voting_procedures(
 }
 
 cardano_proposal_procedure_set_t*
-cardano_transaction_body_get_proposal_procedure(cardano_transaction_body_t* transaction_body)
+cardano_transaction_body_get_proposal_procedures(cardano_transaction_body_t* transaction_body)
 {
   if (transaction_body == NULL)
   {

@@ -43,10 +43,10 @@ static const size_t ADDRESS_HEADER_SIZE = 1;
 cardano_error_t
 cardano_reward_address_from_credentials(
   const cardano_network_id_t network_id,
-  cardano_credential_t*      payment,
+  cardano_credential_t*      credential,
   cardano_reward_address_t** reward_address)
 {
-  if (payment == NULL)
+  if (credential == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -69,7 +69,7 @@ cardano_reward_address_from_credentials(
 
   cardano_credential_type_t credential_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
 
-  const cardano_error_t get_type_result = cardano_credential_get_type(payment, &credential_type);
+  const cardano_error_t get_type_result = cardano_credential_get_type(credential, &credential_type);
   assert(get_type_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(get_type_result);
 
@@ -87,7 +87,7 @@ cardano_reward_address_from_credentials(
   }
 
   *address->network_id        = network_id;
-  address->payment_credential = payment;
+  address->payment_credential = credential;
   address->stake_credential   = NULL;
   address->byron_content      = NULL;
   address->stake_pointer      = NULL;
@@ -102,7 +102,7 @@ cardano_reward_address_from_credentials(
     address->address_str,
     1024);
 
-  cardano_credential_ref(payment);
+  cardano_credential_ref(credential);
 
   *reward_address = _cardano_from_address_to_reward(address);
 
@@ -166,7 +166,7 @@ cardano_reward_address_to_address(const cardano_reward_address_t* reward_address
 }
 
 cardano_credential_t*
-cardano_reward_address_get_payment_credential(cardano_reward_address_t* reward_address)
+cardano_reward_address_get_credential(cardano_reward_address_t* reward_address)
 {
   if (reward_address == NULL)
   {
@@ -302,6 +302,12 @@ const char*
 cardano_reward_address_get_string(const cardano_reward_address_t* address)
 {
   return cardano_address_get_string(_cardano_from_reward_to_address_const(address));
+}
+
+cardano_error_t
+cardano_reward_address_get_network_id(const cardano_reward_address_t* address, cardano_network_id_t* network_id)
+{
+  return cardano_address_get_network_id(_cardano_from_reward_to_address_const(address), network_id);
 }
 
 void

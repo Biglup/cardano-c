@@ -843,3 +843,21 @@ TEST(cardano_pointer_address_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_pointer_address_unref(&pointer_address);
 }
+
+TEST(cardano_pointer_address_get_network_id, canGetNetworkId)
+{
+  // Arrange
+  cardano_pointer_address_t* address = NULL;
+  EXPECT_EQ(cardano_pointer_address_from_bech32(Cip19TestVectors::pointerKey.c_str(), Cip19TestVectors::pointerKey.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  cardano_network_id_t network_id;
+
+  EXPECT_EQ(cardano_pointer_address_get_network_id(address, &network_id), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(network_id, CARDANO_NETWORK_ID_MAIN_NET);
+
+  // Clean up
+  cardano_pointer_address_unref(&address);
+}

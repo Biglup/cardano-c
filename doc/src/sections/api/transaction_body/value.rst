@@ -9,6 +9,10 @@ Value
 
 ------------
 
+.. doxygenfunction:: cardano_value_new_zero
+
+------------
+
 .. doxygenfunction:: cardano_value_from_asset_map
 
 ------------

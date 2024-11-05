@@ -161,7 +161,7 @@ Transaction Body
 
 ------------
 
-.. doxygenfunction:: cardano_transaction_body_get_proposal_procedure
+.. doxygenfunction:: cardano_transaction_body_get_proposal_procedures
 
 ------------
 

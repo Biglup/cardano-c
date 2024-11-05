@@ -268,16 +268,16 @@ TEST(cardano_reward_address_to_address, returnErrorIfMemoryAllocationFails)
   cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
 }
 
-TEST(cardano_reward_address_get_payment_credential, returnsErrorWhenrewardAddressIsNull)
+TEST(cardano_reward_address_get_credential, returnsErrorWhenrewardAddressIsNull)
 {
   // Act
-  cardano_credential_t* payment = cardano_reward_address_get_payment_credential(NULL);
+  cardano_credential_t* payment = cardano_reward_address_get_credential(NULL);
 
   // Assert
   EXPECT_EQ(payment, nullptr);
 }
 
-TEST(cardano_reward_address_get_payment_credential, canGetPaymentCredential)
+TEST(cardano_reward_address_get_credential, canGetPaymentCredential)
 {
   // Arrange
   cardano_reward_address_t* reward_address = NULL;
@@ -294,7 +294,7 @@ TEST(cardano_reward_address_get_payment_credential, canGetPaymentCredential)
   EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &reward_address), CARDANO_SUCCESS);
 
   // Act
-  cardano_credential_t* payment_credential = cardano_reward_address_get_payment_credential(reward_address);
+  cardano_credential_t* payment_credential = cardano_reward_address_get_credential(reward_address);
 
   // Assert
   EXPECT_NE(payment_credential, nullptr);
@@ -783,4 +783,22 @@ TEST(cardano_reward_address_set_last_error, doesNothingWhenWhenMessageIsNull)
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_reward_address_get_network_id, canGetNetworkId)
+{
+  // Arrange
+  cardano_reward_address_t* address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &address), CARDANO_SUCCESS);
+
+  // Act
+  cardano_network_id_t network_id;
+
+  EXPECT_EQ(cardano_reward_address_get_network_id(address, &network_id), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(network_id, CARDANO_NETWORK_ID_MAIN_NET);
+
+  // Clean up
+  cardano_reward_address_unref(&address);
 }

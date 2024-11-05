@@ -1573,7 +1573,7 @@ cardano_transaction_body_set_voting_procedures(cardano_transaction_body_t* trans
  * Usage Example:
  * \code{.c}
  * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is already initialized
- * cardano_proposal_procedure_set_t* proposal_procedure_set = cardano_transaction_body_get_proposal_procedure(transaction_body);
+ * cardano_proposal_procedure_set_t* proposal_procedure_set = cardano_transaction_body_get_proposal_procedures(transaction_body);
  *
  * if (proposal_procedure_set != NULL)
  * {
@@ -1589,7 +1589,7 @@ cardano_transaction_body_set_voting_procedures(cardano_transaction_body_t* trans
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_proposal_procedure_set_t* cardano_transaction_body_get_proposal_procedure(cardano_transaction_body_t* transaction_body);
+CARDANO_EXPORT cardano_proposal_procedure_set_t* cardano_transaction_body_get_proposal_procedures(cardano_transaction_body_t* transaction_body);
 
 /**
  * \brief Sets the proposal procedure set for a transaction body.

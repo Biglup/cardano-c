@@ -31,6 +31,7 @@
 #include "bip32_key_derivation.h"
 
 #include <assert.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -384,4 +385,25 @@ cardano_bip32_public_key_to_hex(
   }
 
   return cardano_buffer_to_hex(bip32_public_key->key_material, hex, hex_length);
+}
+
+cardano_error_t
+cardano_bip32_public_key_to_hash(
+  const cardano_bip32_public_key_t* bip32_public_key,
+  cardano_blake2b_hash_t**          hash)
+{
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (bip32_public_key == NULL)
+  {
+    *hash = NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const byte_t* data = cardano_buffer_get_data(bip32_public_key->key_material);
+
+  return cardano_blake2b_compute_hash(data, cardano_buffer_get_size(bip32_public_key->key_material), CARDANO_BLAKE2B_HASH_SIZE_224, hash);
 }

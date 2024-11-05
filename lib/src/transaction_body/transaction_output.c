@@ -103,7 +103,7 @@ cardano_transaction_output_new(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  cardano_error_t new_val_result = cardano_value_new(amount, NULL, &new_transaction_output->value);
+  cardano_error_t new_val_result = cardano_value_new((int64_t)amount, NULL, &new_transaction_output->value);
 
   if (new_val_result != CARDANO_SUCCESS)
   {

@@ -719,3 +719,57 @@ TEST(cardano_bip32_public_key_to_hex, returnsErrorIfBufferIsNull)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_bip32_public_key_to_hash, returnsErrorIfPublicKeyIsNull)
+{
+  // Arrange
+  cardano_bip32_public_key_t* public_key = nullptr;
+  cardano_blake2b_hash_t*     hash       = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_bip32_public_key_to_hash(public_key, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_bip32_public_key_unref(&public_key);
+}
+
+TEST(cardano_bip32_public_key_to_hash, returnsErrorIfHashIsNull)
+{
+  // Arrange
+  cardano_bip32_public_key_t* public_key = nullptr;
+  cardano_error_t             error      = cardano_bip32_public_key_from_hex(BIP32_PUBLIC_KEY_HEX, BIP32_PUBLIC_KEY_SIZE * 2, &public_key);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t hash_error = cardano_bip32_public_key_to_hash(public_key, nullptr);
+
+  // Assert
+  EXPECT_EQ(hash_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_bip32_public_key_unref(&public_key);
+}
+
+TEST(cardano_bip32_public_key_to_hash, canComputeTheHash)
+{
+  // Arrange
+  cardano_bip32_public_key_t* public_key = nullptr;
+  cardano_error_t             error      = cardano_bip32_public_key_from_hex(BIP32_PUBLIC_KEY_HEX, BIP32_PUBLIC_KEY_SIZE * 2, &public_key);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  // Act
+  cardano_error_t hash_error = cardano_bip32_public_key_to_hash(public_key, &hash);
+
+  // Assert
+  EXPECT_EQ(hash_error, CARDANO_SUCCESS);
+  EXPECT_THAT(hash, testing::Not((cardano_blake2b_hash_t*)nullptr));
+
+  // Cleanup
+  cardano_bip32_public_key_unref(&public_key);
+  cardano_blake2b_hash_unref(&hash);
+}
