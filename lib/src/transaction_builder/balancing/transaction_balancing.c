@@ -24,6 +24,7 @@
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/fee.h>
+#include <src/transaction_builder/balancing/internals/unique_signers.h>
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -457,8 +458,9 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
 cardano_error_t
 cardano_balance_transaction(
   cardano_transaction_t*         unbalanced_tx,
-  const size_t                   signature_count,
+  const size_t                   foreign_signature_count,
   cardano_protocol_parameters_t* protocol_params,
+  cardano_utxo_list_t*           reference_inputs,
   cardano_utxo_list_t*           pre_selected_utxo,
   cardano_utxo_list_t*           available_utxo,
   cardano_coin_selector_t*       coin_selector,
@@ -486,10 +488,7 @@ cardano_balance_transaction(
   cardano_transaction_output_list_t* shallow_cloned_outputs = shallow_clone_outputs(original_outputs);
   cardano_transaction_output_list_unref(&original_outputs);
 
-  const int64_t  vk_witnesses_cost = compute_vk_witnesses_cost(signature_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
-  const uint64_t suggested_fee     = cardano_transaction_body_get_fee(body);
-
-  uint64_t fee            = ((suggested_fee == 0U) ? (uint64_t)vk_witnesses_cost : (uint64_t)suggested_fee);
+  uint64_t fee            = cardano_transaction_body_get_fee(body);
   uint64_t change_padding = 0U;
 
   while (!is_balanced)
@@ -736,11 +735,29 @@ cardano_balance_transaction(
       resolved_inputs = cardano_utxo_list_concat(pre_selected_utxo, selection);
     }
 
-    result       = cardano_compute_transaction_fee(unbalanced_tx, resolved_inputs, protocol_params, &computed_fee);
+    cardano_blake2b_hash_set_t* unique_signers = NULL;
+
+    result = _cardano_get_unique_signers(unbalanced_tx, resolved_inputs, &unique_signers);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_utxo_list_unref(&resolved_inputs);
+      return result;
+      // LCOV_EXCL_STOP
+    }
+
+    result = cardano_compute_transaction_fee(unbalanced_tx, reference_inputs, protocol_params, &computed_fee);
+
+    const uint64_t signer_count      = foreign_signature_count + cardano_blake2b_hash_set_get_length(unique_signers);
+    const int64_t  vk_witnesses_cost = compute_vk_witnesses_cost(signer_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
+
     computed_fee += (uint64_t)vk_witnesses_cost;
 
     cardano_utxo_list_unref(&selection);
     cardano_utxo_list_unref(&remaining_utxo);
+    cardano_blake2b_hash_set_unref(&unique_signers);
 
     if (result != CARDANO_SUCCESS)
     {

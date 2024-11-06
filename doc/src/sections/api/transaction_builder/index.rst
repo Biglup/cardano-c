@@ -8,6 +8,7 @@ The Transaction Builder is a utility designed to simplify the process of creatin
 
     ./coin_selector
     ./transaction_balancing
+    ./transaction_builder
     ./large_first_coin_selector
     ./coin_selector_impl
     ./fee

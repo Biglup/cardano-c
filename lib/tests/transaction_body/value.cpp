@@ -2091,3 +2091,161 @@ TEST(cardano_value_new_zero, canCreateZeroValue)
   // Cleanup
   cardano_value_unref(&value);
 }
+
+TEST(cardano_value_new_from_coin, canCreateValueFromCoin)
+{
+  // Act
+  cardano_value_t* value = cardano_value_new_from_coin(1000000);
+
+  // Assert
+  EXPECT_EQ(cardano_value_get_coin(value), 1000000);
+
+  // Cleanup
+  cardano_value_unref(&value);
+}
+
+TEST(cardano_value_add_asset, canAddAssetToValue)
+{
+  // Arrange
+  cardano_value_t*        value      = cardano_value_new_zero();
+  cardano_asset_name_t*   asset_name = new_default_asset_name(ASSET_NAME_CBOR_1);
+  cardano_blake2b_hash_t* policy     = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+
+  // Act
+  cardano_error_t error = cardano_value_add_asset(value, policy, asset_name, 100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // check asset presence
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+
+  int64_t val = 0;
+
+  EXPECT_EQ(cardano_multi_asset_get(multi_asset, policy, asset_name, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(val, 100);
+
+  // Cleanup
+  cardano_value_unref(&value);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_multi_asset_unref(&multi_asset);
+}
+
+TEST(cardano_value_add_asset, returnErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_value_add_asset(nullptr, nullptr, nullptr, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset((cardano_value_t*)"", nullptr, nullptr, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset((cardano_value_t*)"", (cardano_blake2b_hash_t*)"", nullptr, 100), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_add_asset_ex, canAddAssetToValue)
+{
+  // Arrange
+  cardano_value_t*        value      = cardano_value_new_zero();
+  cardano_asset_name_t*   asset_name = new_default_asset_name(ASSET_NAME_CBOR_1);
+  cardano_blake2b_hash_t* policy     = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+
+  // Act
+  cardano_error_t error = cardano_value_add_asset_ex(value, POLICY_ID_HEX_1B, strlen(POLICY_ID_HEX_1B), "736b7977616c6b6571", strlen("736b7977616c6b6571"), 100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // check asset presence
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+
+  int64_t val = 0;
+
+  EXPECT_EQ(cardano_multi_asset_get(multi_asset, policy, asset_name, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(val, 100);
+
+  // Cleanup
+  cardano_value_unref(&value);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_multi_asset_unref(&multi_asset);
+}
+
+TEST(cardano_value_add_asset_ex, returnErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_value_add_asset_ex(nullptr, nullptr, 0, nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset_ex((cardano_value_t*)"", nullptr, 0, nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset_ex((cardano_value_t*)"", (const char*)"", 0, nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_add_asset_with_id, canAddAssetToValue)
+{
+  // Arrange
+  cardano_value_t*        value      = cardano_value_new_zero();
+  cardano_asset_id_t*     asset_id   = NULL;
+  cardano_asset_name_t*   asset_name = new_default_asset_name(ASSET_NAME_CBOR_1);
+  cardano_blake2b_hash_t* policy     = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+
+  EXPECT_EQ(cardano_asset_id_new(policy, asset_name, &asset_id), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_value_add_asset_with_id(value, asset_id, 100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // check asset presence
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+
+  int64_t val = 0;
+
+  EXPECT_EQ(cardano_multi_asset_get(multi_asset, policy, asset_name, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(val, 100);
+
+  // Cleanup
+  cardano_value_unref(&value);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_multi_asset_unref(&multi_asset);
+  cardano_asset_id_unref(&asset_id);
+}
+
+TEST(cardano_value_add_asset_with_id, returnsErrorWhenGivenNull)
+{
+  EXPECT_EQ(cardano_value_add_asset_with_id(nullptr, nullptr, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset_with_id((cardano_value_t*)"", nullptr, 100), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_add_asset_with_id_ex, canAddAssetToValue)
+{
+  // Arrange
+  cardano_value_t*        value      = cardano_value_new_zero();
+  cardano_asset_name_t*   asset_name = new_default_asset_name(ASSET_NAME_CBOR_1);
+  cardano_blake2b_hash_t* policy     = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+
+  // Act
+  cardano_error_t error = cardano_value_add_asset_with_id_ex(
+    value,
+    "00000000000000000000000000000000000000000000000000000000736b7977616c6b6571",
+    strlen("00000000000000000000000000000000000000000000000000000000736b7977616c6b6571"),
+    100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // check asset presence
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+
+  int64_t val = 0;
+
+  EXPECT_EQ(cardano_multi_asset_get(multi_asset, policy, asset_name, &val), CARDANO_SUCCESS);
+  EXPECT_EQ(val, 100);
+
+  // Cleanup
+  cardano_value_unref(&value);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_multi_asset_unref(&multi_asset);
+}
+
+TEST(cardano_value_add_asset_with_id_ex, returnsErrorWhenGivenNull)
+{
+  EXPECT_EQ(cardano_value_add_asset_with_id_ex(nullptr, nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_value_add_asset_with_id_ex((cardano_value_t*)"", nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+}

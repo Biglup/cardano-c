@@ -128,6 +128,34 @@ CARDANO_EXPORT cardano_value_t*
 cardano_value_new_zero(void);
 
 /**
+ * \brief Creates a new value instance from a specified amount of Lovelace.
+ *
+ * This function initializes a new `cardano_value_t` instance with a specific amount of Lovelace, allowing the caller
+ * to create a value that represents only ADA (without any multi-asset components).
+ *
+ * \param[in] lovelace The amount of Lovelace (smallest unit of ADA) to set for the new value instance.
+ *
+ * \returns A pointer to a newly created \ref cardano_value_t instance containing the specified amount of Lovelace,
+ *          or `NULL` if memory allocation fails.
+ *
+ * Usage Example:
+ * \code{.c}
+ * int64_t lovelace_amount = 1000000; // 1 ADA in Lovelace
+ * cardano_value_t* value = cardano_value_new_from_coin(lovelace_amount);
+ *
+ * if (value != NULL)
+ * {
+ *     // Successfully created a value instance with 1 ADA
+ * }
+ *
+ * cardano_value_unref(&value);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_value_t*
+cardano_value_new_from_coin(int64_t lovelace);
+
+/**
  * \brief Creates a \ref cardano_value_t from an asset map.
  *
  * This function creates a \ref cardano_value_t object from a given asset map (\ref cardano_asset_id_map_t).
@@ -545,6 +573,186 @@ cardano_value_add_multi_asset(cardano_value_t* value, cardano_multi_asset_t* mul
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_value_subtract_multi_asset(cardano_value_t* value, cardano_multi_asset_t* multi_asset);
+
+/**
+ * \brief Adds an asset to the specified value instance.
+ *
+ * This function adds a specific asset (identified by a policy ID and asset name) and quantity to an existing
+ * `cardano_value_t` instance. This enables multi-asset representation within the value.
+ *
+ * \param[in,out] value       A pointer to the \ref cardano_value_t instance to which the asset will be added.
+ *                            Must be a valid instance.
+ * \param[in]     policy_id   The policy ID (as a \ref cardano_blake2b_hash_t) identifying the asset's issuance policy.
+ * \param[in]     asset_name  The name of the asset within the policy (as a \ref cardano_asset_name_t).
+ * \param[in]     quantity    The amount of the asset to add. Positive values increase, negative values decrease
+ *                            the asset quantity within the value instance.
+ *
+ * \returns \ref CARDANO_SUCCESS if the asset was successfully added to the value, or an error code if the operation fails.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_value_t* value = cardano_value_new_zero();
+ * cardano_blake2b_hash_t* policy_id = ...;  // Initialized policy ID for the asset
+ * cardano_asset_name_t* asset_name = ...;   // Initialized asset name
+ * int64_t quantity = 500;                   // Quantity of the asset to add
+ *
+ * cardano_error_t result = cardano_value_add_asset(value, policy_id, asset_name, quantity);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // Asset added successfully
+ * }
+ *
+ * // Clean up resources
+ * cardano_value_unref(&value);
+ * cardano_blake2b_hash_unref(&policy_id);
+ * cardano_asset_name_unref(&asset_name);
+ * \endcode
+ *
+ * \note The caller is responsible for ensuring that `policy_id` and `asset_name` are valid. Any memory allocated for
+ *       these inputs should be freed appropriately when they are no longer needed.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_value_add_asset(
+  cardano_value_t*        value,
+  cardano_blake2b_hash_t* policy_id,
+  cardano_asset_name_t*   asset_name,
+  int64_t                 quantity);
+
+/**
+ * \brief Adds an asset to the specified value instance using hex-encoded identifiers.
+ *
+ * This function allows you to add a specific asset (identified by a hex-encoded policy ID and asset name)
+ * and quantity to an existing `cardano_value_t` instance. This enables multi-asset representation within the value.
+ *
+ * \param[in,out] value              A pointer to the \ref cardano_value_t instance to which the asset will be added.
+ *                                   Must be a valid instance.
+ * \param[in]     policy_id_hex      A hex-encoded string representing the policy ID that uniquely identifies the asset's issuance policy.
+ * \param[in]     policy_id_hex_len  The length of the hex-encoded policy ID string.
+ * \param[in]     asset_name_hex     A hex-encoded string representing the asset's name within the policy.
+ * \param[in]     asset_name_hex_len The length of the hex-encoded asset name string.
+ * \param[in]     quantity           The amount of the asset to add. Positive values increase, negative values decrease
+ *                                   the asset quantity within the value instance.
+ *
+ * \returns \ref CARDANO_SUCCESS if the asset was successfully added to the value, or an error code indicating failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_value_t* value = cardano_value_new_zero();
+ * const char* policy_id_hex = "a0b1c2...";  // Hex string of the policy ID
+ * size_t policy_id_hex_len = strlen(policy_id_hex);
+ * const char* asset_name_hex = "abcd1234...";  // Hex string of the asset name
+ * size_t asset_name_hex_len = strlen(asset_name_hex);
+ * int64_t quantity = 500;  // Quantity of the asset to add
+ *
+ * cardano_error_t result = cardano_value_add_asset_ex(value, policy_id_hex, policy_id_hex_len, asset_name_hex, asset_name_hex_len, quantity);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // Asset added successfully
+ * }
+ *
+ * // Clean up resources
+ * cardano_value_unref(&value);
+ * \endcode
+ *
+ * \note This function interprets `policy_id_hex` and `asset_name_hex` as hex-encoded strings, which are converted internally.
+ *       It is the caller's responsibility to ensure these strings are correctly formatted and freed if they are dynamically allocated.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_value_add_asset_ex(
+  cardano_value_t* value,
+  const char*      policy_id_hex,
+  size_t           policy_id_hex_len,
+  const char*      asset_name_hex,
+  size_t           asset_name_hex_len,
+  int64_t          quantity);
+
+/**
+ * \brief Adds an asset to the specified value instance using an asset ID.
+ *
+ * This function allows you to add a specific asset, identified by its `cardano_asset_id_t`, and a quantity to
+ * an existing `cardano_value_t` instance. This enables the representation of multi-assets within a single value.
+ *
+ * \param[in,out] value     A pointer to the \ref cardano_value_t instance to which the asset will be added.
+ *                          Must be a valid instance.
+ * \param[in]     asset_id  A pointer to a \ref cardano_asset_id_t representing the unique identifier of the asset,
+ *                          including its policy ID and asset name.
+ * \param[in]     quantity  The quantity of the asset to add. Positive values increase, and negative values decrease
+ *                          the asset quantity within the value instance.
+ *
+ * \returns \ref CARDANO_SUCCESS if the asset was successfully added to the value, or an error code indicating failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_value_t* value = cardano_value_new_zero();
+ * cardano_asset_id_t* asset_id = ...;  // Initialized asset ID
+ * int64_t quantity = 500;  // Quantity of the asset to add
+ *
+ * cardano_error_t result = cardano_value_add_asset_with_id(value, asset_id, quantity);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Asset added successfully
+ * }
+ *
+ * // Clean up resources
+ * cardano_asset_id_unref(&asset_id);
+ * cardano_value_unref(&value);
+ * \endcode
+ *
+ * \note The caller must ensure the `cardano_asset_id_t` provided is valid. Proper memory management of the `cardano_value_t`
+ *       instance is required, and it should be freed using `cardano_value_unref` when no longer needed.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_value_add_asset_with_id(
+  cardano_value_t*    value,
+  cardano_asset_id_t* asset_id,
+  int64_t             quantity);
+
+/**
+ * \brief Adds an asset to the specified value instance using a hexadecimal asset ID.
+ *
+ * This function allows you to add a specific asset, identified by its asset ID in hexadecimal form,
+ * and a quantity to an existing `cardano_value_t` instance. It enables representing multi-assets within a single value.
+ *
+ * \param[in,out] value          A pointer to the \ref cardano_value_t instance to which the asset will be added.
+ *                               Must be a valid instance.
+ * \param[in]     asset_id_hex   A pointer to a hexadecimal string representing the asset ID, which includes
+ *                               the policy ID and asset name in hex format.
+ * \param[in]     asset_id_hex_len The length of the hexadecimal string for the asset ID.
+ * \param[in]     quantity       The quantity of the asset to add. Positive values increase and negative values decrease
+ *                               the asset quantity within the value instance.
+ *
+ * \returns \ref CARDANO_SUCCESS if the asset was successfully added to the value, or an error code indicating failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_value_t* value = cardano_value_new_zero();
+ * const char* asset_id_hex = "abcdef1234567890";  // Example asset ID in hexadecimal
+ * size_t asset_id_hex_len = strlen(asset_id_hex);
+ * int64_t quantity = 500;  // Quantity of the asset to add
+ *
+ * cardano_error_t result = cardano_value_add_asset_with_id_ex(value, asset_id_hex, asset_id_hex_len, quantity);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *     // Asset added successfully
+ * }
+ *
+ * // Clean up resources
+ * cardano_value_unref(&value);
+ * \endcode
+ *
+ * \note The caller must ensure the `asset_id_hex` is a valid hexadecimal representation of the asset ID. Proper memory management
+ *       of the `cardano_value_t` instance is required, and it should be freed using `cardano_value_unref` when no longer needed.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_value_add_asset_with_id_ex(
+  cardano_value_t* value,
+  const char*      asset_id_hex,
+  size_t           asset_id_hex_len,
+  int64_t          quantity);
 
 /**
  * \brief Combines two Cardano value objects by adding their coin amounts and multi-asset components.

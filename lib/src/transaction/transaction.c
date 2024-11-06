@@ -485,6 +485,58 @@ cardano_transaction_clear_cbor_cache(cardano_transaction_t* transaction)
   cardano_auxiliary_data_clear_cbor_cache(transaction->auxiliary_data);
 }
 
+cardano_error_t
+cardano_transaction_apply_vkey_witnesses(
+  cardano_transaction_t*      transaction,
+  cardano_vkey_witness_set_t* new_vkeys)
+{
+  if (transaction == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (new_vkeys == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(transaction);
+
+  cardano_witness_set_unref(&witness_set);
+
+  if (witness_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+  }
+
+  cardano_error_t             result;
+  cardano_vkey_witness_set_t* inner_vkeys = cardano_witness_set_get_vkeys(witness_set);
+
+  if (inner_vkeys == NULL)
+  {
+    result = cardano_vkey_witness_set_new(&inner_vkeys);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+
+    result = cardano_witness_set_set_vkeys(witness_set, inner_vkeys);
+    cardano_vkey_witness_set_unref(&inner_vkeys);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result; // LCOV_EXCL_LINE
+    }
+  }
+  else
+  {
+    cardano_vkey_witness_set_unref(&inner_vkeys);
+  }
+
+  return cardano_vkey_witness_set_apply(inner_vkeys, new_vkeys);
+}
+
 void
 cardano_transaction_unref(cardano_transaction_t** transaction)
 {

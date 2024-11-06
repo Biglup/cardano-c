@@ -94,6 +94,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/buffer
     api/error
     api/object
+    api/time
 
 .. _libsodium: https://github.com/jedisct1/libsodium
 .. _libjsonc: https://github.com/json-c/json-c

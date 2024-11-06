@@ -48,14 +48,15 @@ extern "C" {
  * - Computing the cost of script execution.
  * - Calculating the change output to ensure the transaction has the correct total ADA and assets.
  *
- * \param[in, out] unbalanced_tx       A pointer to the transaction that needs balancing.
- * \param[in]      signature_count     The number of expected signatures, used to calculate witness size and fees.
- * \param[in]      protocol_params     A pointer to the protocol parameters required for fee calculation and balancing.
- * \param[in]      pre_selected_utxo   A list of UTXOs that must be included in the transaction inputs.
- * \param[in]      available_utxo      A list of available UTXOs to select from, if additional inputs are needed.
- * \param[in]      coin_selector       A pointer to the coin selector used for choosing appropriate UTXOs.
- * \param[in]      change_address      The address where any remaining balance (change) will be sent.
- * \param[in]      evaluator           A transaction evaluator instance for determining the execution cost of scripts.
+ * \param[in, out] unbalanced_tx           A pointer to the transaction that needs balancing.
+ * \param[in]      foreign_signature_count The number of expected extra signatures, not specified in the transaction.
+ * \param[in]      protocol_params         A pointer to the protocol parameters required for fee calculation and balancing.
+ * \param[in]      reference_inputs        A list of resolved reference inputs that have already been included in the transaction.
+ * \param[in]      pre_selected_utxo       A list of UTXOs that must be included in the transaction inputs.
+ * \param[in]      available_utxo          A list of available UTXOs to select from, if additional inputs are needed.
+ * \param[in]      coin_selector           A pointer to the coin selector used for choosing appropriate UTXOs.
+ * \param[in]      change_address          The address where any remaining balance (change) will be sent.
+ * \param[in]      evaluator               A transaction evaluator instance for determining the execution cost of scripts.
  *
  * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, or an appropriate error code indicating the type of failure.
  *
@@ -65,15 +66,16 @@ extern "C" {
  * Usage Example:
  * \code{.c}
  * cardano_transaction_t* tx = ...;              // Unbalanced transaction
- * size_t signature_count = 2;                   // Example number of signatures
+ * size_t foreign_signature_count = 2;                   // Example number of signatures
  * cardano_protocol_parameters_t* params = ...;  // Protocol parameters
+ * cardano_utxo_list_t* ref_inputs = ...;        // Resolved reference inputs
  * cardano_utxo_list_t* preselected = ...;       // Pre-selected UTXOs
  * cardano_utxo_list_t* available = ...;         // Available UTXOs
  * cardano_coin_selector_t* selector = ...;      // Coin selector instance
  * cardano_address_t* change_addr = ...;         // Change address
  * cardano_tx_evaluator_t* eval = ...;           // Evaluator instance
  *
- * cardano_error_t result = cardano_balance_transaction(tx, signature_count, params, preselected, available, selector, change_addr, eval);
+ * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, available, selector, change_addr, eval);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -85,8 +87,9 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_balance_transaction(
   cardano_transaction_t*         unbalanced_tx,
-  size_t                         signature_count,
+  size_t                         foreign_signature_count,
   cardano_protocol_parameters_t* protocol_params,
+  cardano_utxo_list_t*           reference_inputs,
   cardano_utxo_list_t*           pre_selected_utxo,
   cardano_utxo_list_t*           available_utxo,
   cardano_coin_selector_t*       coin_selector,

@@ -113,6 +113,17 @@ cardano_provider_get_name(const cardano_provider_t* provider)
   return provider->impl.name;
 }
 
+cardano_network_magic_t
+cardano_provider_get_network_magic(const cardano_provider_t* provider)
+{
+  if (provider == NULL)
+  {
+    return CARDANO_NETWORK_MAGIC_PREPROD;
+  }
+
+  return provider->impl.network_magic;
+}
+
 cardano_error_t
 cardano_provider_get_parameters(
   cardano_provider_t*             provider,

@@ -26,6 +26,7 @@
 
 #include <cardano/address/address.h>
 #include <cardano/assets/asset_id.h>
+#include <cardano/common/network_magic.h>
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/crypto/blake2b_hash.h>
@@ -240,6 +241,11 @@ typedef struct cardano_provider_impl_t
      * \brief Error message buffer for provider-specific error messages.
      */
     char error_message[1024];
+
+    /**
+     * \brief Cardano network magic number this provider is connected to.
+     */
+    cardano_network_magic_t network_magic;
 
     /**
      * \brief Opaque pointer to the implementation-specific context.

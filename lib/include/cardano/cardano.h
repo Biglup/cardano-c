@@ -180,6 +180,7 @@
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
 #include <cardano/scripts/script.h>
 #include <cardano/scripts/script_language.h>
+#include <cardano/time.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
@@ -196,6 +197,7 @@
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator_impl.h>
 #include <cardano/transaction_builder/fee.h>
+#include <cardano/transaction_builder/transaction_builder.h>
 #include <cardano/typedefs.h>
 #include <cardano/voting_procedures/governance_action_id_list.h>
 #include <cardano/voting_procedures/vote.h>

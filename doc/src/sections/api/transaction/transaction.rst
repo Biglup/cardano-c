@@ -57,6 +57,10 @@ Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_apply_vkey_witnesses
+
+------------
+
 .. doxygenfunction:: cardano_transaction_unref
 
 ------------

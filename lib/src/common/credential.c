@@ -341,7 +341,6 @@ cardano_credential_get_hash(const cardano_credential_t* credential)
   cardano_blake2b_hash_t* hash             = NULL;
   cardano_error_t         read_hash_result = cardano_blake2b_hash_from_bytes(credential->hash_bytes, sizeof(credential->hash_bytes), &hash);
 
-  assert(read_hash_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(read_hash_result);
 
   return hash;

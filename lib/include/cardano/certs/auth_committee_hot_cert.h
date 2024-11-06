@@ -37,7 +37,12 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief This certificate registers the Hot and Cold credentials of a committee member.
+ * \brief Constitutional Committee members maintain operational integrity by managing two credentials: a cold credential and a hot credential.
+ *
+ * One of the purposes of this credential management system is to provide multiple layers of security to help committee members prevent losing control
+ * over a cold credential and to give good options for recovery if necessary.
+ *
+ * This certificates registers the Hot credentials of a committee member and requires a signature from the CC member Cold key.
  */
 typedef struct cardano_auth_committee_hot_cert_t cardano_auth_committee_hot_cert_t;
 
