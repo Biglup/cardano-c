@@ -50,8 +50,31 @@ typedef struct cardano_no_confidence_action_t cardano_no_confidence_action_t;
  * which represents an action to propose a state of no-confidence in the current constitutional committee within the Cardano network.
  * This action allows Ada holders to challenge the authority of the committee, potentially leading to its reconstitution.
  *
- * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the unique identifier
- *                                 for this governance action. This parameter can be NULL if no specific governance action is associated.
+ * The action requires a governance action ID to reference the most recent enacted action of the
+ * same type. You can retrieve this information from the gov-state query:
+ *
+ * \code{.sh}
+ * cardano-cli conway query gov-state | jq .nextRatifyState.nextEnactState.prevGovActionIds
+ * \endcode
+ *
+ * Example output:
+ * \code{.json}
+ * {
+ *   "Committee": {
+ *     "govActionIx": 0,
+ *     "txId": "6bff8515060c08e9cae4d4e203a4d8b2e876848aae8c4e896acda7202d3ac679"
+ *   },
+ *   "Constitution": null,
+ *   "HardFork": null,
+ *   "PParamUpdate": {
+ *     "govActionIx": 0,
+ *     "txId": "7e199d036f1e8d725ea8aba30c5f8d0d2ab9dbd45c7f54e7d85c92c022673f0f"
+ *   }
+ * }
+ * \endcode
+ *
+ * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the last enacted
+ *                                 action of the same type. This parameter can be NULL if no governance action of this type has been enacted.
  * \param[out] no_confidence_action On successful initialization, this will point to a newly created
  *             \ref cardano_no_confidence_action_t object. This object represents a "strong reference"
  *             to the no-confidence action, meaning that it is fully initialized and ready for use.
@@ -79,11 +102,7 @@ typedef struct cardano_no_confidence_action_t cardano_no_confidence_action_t;
  *   printf("Failed to create the no-confidence action: %s\n", cardano_error_to_string(result));
  * }
  *
- * // Optionally cleanup the governance action id
- * if (governance_action_id)
- * {
- *   cardano_governance_action_id_unref(&governance_action_id);
- * }
+ * cardano_governance_action_id_unref(&governance_action_id);
  * \endcode
  */
 CARDANO_NODISCARD
@@ -182,10 +201,10 @@ CARDANO_EXPORT cardano_error_t cardano_no_confidence_action_to_cbor(
  * \brief Sets the governance action ID in the no_confidence_action.
  *
  * This function updates the governance action ID of a \ref cardano_no_confidence_action_t object.
- * The governance action ID is a \ref cardano_governance_action_id_t object representing the unique identifier for the governance action associated with the hard fork.
+ * The governance action ID is a \ref cardano_governance_action_id_t object representing the unique identifier for the last enacted action of the same type.
  *
  * \param[in,out] no_confidence_action A pointer to an initialized \ref cardano_no_confidence_action_t object to which the governance action ID will be set.
- * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the new governance action ID. This parameter
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the last enacted action of the same type. This parameter
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was

@@ -46,25 +46,45 @@ typedef struct cardano_new_constitution_action_t cardano_new_constitution_action
  * \brief Creates and initializes a new instance of the New Constitution Action.
  *
  * This function allocates and initializes a new instance of a \ref cardano_new_constitution_action_t object,
- * which represents an action to change or amend the Constitution in the Cardano network.
+ * representing an action to propose a new Constitution or amend the existing one in the Cardano network.
  *
- * \param[in] constitution A pointer to a \ref cardano_constitution_t object.
- * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the unique identifier
- *                                 for this governance action. This parameter can be NULL if no specific governance action is associated.
- * \param[out] new_constitution_action On successful initialization, this will point to a newly created
- *             \ref cardano_new_constitution_action_t object. This object represents a "strong reference"
- *             to the new constitution action, meaning that it is fully initialized and ready for use.
- *             The caller is responsible for managing the lifecycle of this object,
- *             specifically, once the new constitution action is no longer needed, the caller must release it
- *             by calling \ref cardano_new_constitution_action_unref.
+ * The action requires a governance action ID to reference the most recent enacted action of the
+ * same type. You can retrieve this information from the gov-state query:
  *
- * \return \c cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the new constitution action was
- *         successfully created, or an appropriate error code indicating the failure reason.
+ * \code{.sh}
+ * cardano-cli conway query gov-state | jq .nextRatifyState.nextEnactState.prevGovActionIds
+ * \endcode
+ *
+ * Example output:
+ * \code{.json}
+ * {
+ *   "Committee": {
+ *     "govActionIx": 0,
+ *     "txId": "6bff8515060c08e9cae4d4e203a4d8b2e876848aae8c4e896acda7202d3ac679"
+ *   },
+ *   "Constitution": null,
+ *   "HardFork": null,
+ *   "PParamUpdate": {
+ *     "govActionIx": 0,
+ *     "txId": "7e199d036f1e8d725ea8aba30c5f8d0d2ab9dbd45c7f54e7d85c92c022673f0f"
+ *   }
+ * }
+ * \endcode
+ *
+ * \param[in] constitution A pointer to an initialized \ref cardano_constitution_t object defining the content of the new or amended Constitution.
+ * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the unique identifier of
+ *                                 the last enacted action of the same type. This parameter can be NULL if no governance action of this type is enacted.
+ * \param[out] new_constitution_action On successful creation, this will point to a newly created
+ *             \ref cardano_new_constitution_action_t object. This object is fully initialized, and the caller is responsible for
+ *             managing its lifecycle. To release the object when it is no longer needed, call \ref cardano_new_constitution_action_unref.
+ *
+ * \return \c cardano_error_t indicating the result of the operation. Returns \c CARDANO_SUCCESS if the new constitution action
+ *         was successfully created, or an appropriate error code on failure.
  *
  * Usage Example:
  * \code{.c}
  * cardano_constitution_t* constitution = cardano_constitution_new(...); // Assume constitution is already initialized
- * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(...); // Optionally initialized
+ * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(...);
  * cardano_new_constitution_action_t* new_constitution_action = NULL;
  * cardano_error_t result = cardano_new_constitution_action_new(constitution, governance_action_id, &new_constitution_action);
  *
@@ -79,13 +99,8 @@ typedef struct cardano_new_constitution_action_t cardano_new_constitution_action
  *   printf("Failed to create the new constitution action: %s\n", cardano_error_to_string(result));
  * }
  *
- * // Cleanup the constitution and optionally the governance action id
  * cardano_constitution_unref(&constitution);
- *
- * if (governance_action_id)
- * {
- *   cardano_governance_action_id_unref(&governance_action_id);
- * }
+ * cardano_governance_action_id_unref(&governance_action_id);
  * \endcode
  */
 CARDANO_NODISCARD
@@ -254,11 +269,13 @@ cardano_new_constitution_action_get_constitution(cardano_new_constitution_action
 /**
  * \brief Sets the governance action ID in the new_constitution_action.
  *
- * This function updates the governance action ID of a \ref cardano_new_constitution_action_t object.
- * The governance action ID is a \ref cardano_governance_action_id_t object representing the unique identifier for the governance action associated with the hard fork.
+ * This function updates the governance action ID of a \ref cardano_new_constitution_action_t object. This ID is
+ * required to reference the last enacted action of the same type to ensure continuity and compliance with Cardano's
+ * governance protocol.
  *
- * \param[in,out] new_constitution_action A pointer to an initialized \ref cardano_new_constitution_action_t object to which the governance action ID will be set.
- * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the new governance action ID. This parameter
+ * \param[in,out] new_constitution_action A pointer to an initialized \ref cardano_new_constitution_action_t object where
+ *                                        the governance action ID will be set.
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the last enacted action of the same type. This parameter
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
@@ -296,8 +313,7 @@ cardano_new_constitution_action_set_governance_action_id(cardano_new_constitutio
 /**
  * \brief Retrieves the governance action ID from a new_constitution_action.
  *
- * This function retrieves the governance action ID from a given \ref cardano_new_constitution_action_t object. The governance action ID
- * is represented as a \ref cardano_governance_action_id_t object.
+ * This function retrieves the governance action ID from a given \ref cardano_new_constitution_action_t object.
  *
  * \param[in] new_constitution_action A pointer to an initialized \ref cardano_new_constitution_action_t object from which the governance action ID is retrieved.
  *

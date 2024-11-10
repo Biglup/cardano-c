@@ -49,15 +49,36 @@ typedef struct cardano_hard_fork_initiation_action_t cardano_hard_fork_initiatio
  * which represents an action to initiate a hard fork in the Cardano network. The action is defined by specifying
  * a protocol version and an optional governance action identifier.
  *
+ * The action requires a governance action ID to reference the most recent enacted action of the
+ * same type. You can retrieve this information from the gov-state query:
+ *
+ * \code{.sh}
+ * cardano-cli conway query gov-state | jq .nextRatifyState.nextEnactState.prevGovActionIds
+ * \endcode
+ *
+ * Example output:
+ * \code{.json}
+ * {
+ *   "Committee": {
+ *     "govActionIx": 0,
+ *     "txId": "6bff8515060c08e9cae4d4e203a4d8b2e876848aae8c4e896acda7202d3ac679"
+ *   },
+ *   "Constitution": null,
+ *   "HardFork": null,
+ *   "PParamUpdate": {
+ *     "govActionIx": 0,
+ *     "txId": "7e199d036f1e8d725ea8aba30c5f8d0d2ab9dbd45c7f54e7d85c92c022673f0f"
+ *   }
+ * }
+ * \endcode
+ *
  * \param[in] version A pointer to a \ref cardano_protocol_version_t object representing the protocol version for the hard fork.
  * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the unique identifier
- *                                 for this governance action. This parameter can be NULL if no specific governance action is associated.
+ *                                 for the last enacted governance action of the same type. This parameter can be NULL if no governance action of this type is enacted.
  * \param[out] hard_fork_initiation_action On successful initialization, this will point to a newly created
  *             \ref cardano_hard_fork_initiation_action_t object. This object represents a "strong reference"
  *             to the hard fork initiation action, meaning that it is fully initialized and ready for use.
- *             The caller is responsible for managing the lifecycle of this object,
- *             specifically, once the hard fork initiation action is no longer needed, the caller must release it
- *             by calling \ref cardano_hard_fork_initiation_action_unref.
+ *             The caller is responsible for managing the lifecycle of this object.
  *
  * \return \c cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the hard fork initiation action was
  *         successfully created, or an appropriate error code indicating the failure reason.
@@ -65,7 +86,7 @@ typedef struct cardano_hard_fork_initiation_action_t cardano_hard_fork_initiatio
  * Usage Example:
  * \code{.c}
  * cardano_protocol_version_t* version = cardano_protocol_version_new(...); // Assume version is already initialized
- * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(...); // Optionally initialized
+ * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(...);
  * cardano_hard_fork_initiation_action_t* hard_fork_initiation_action = NULL;
  * cardano_error_t result = cardano_hard_fork_initiation_action_new(version, governance_action_id, &hard_fork_initiation_action);
  *
@@ -80,13 +101,8 @@ typedef struct cardano_hard_fork_initiation_action_t cardano_hard_fork_initiatio
  *   printf("Failed to create the hard fork initiation action: %s\n", cardano_error_to_string(result));
  * }
  *
- * // Cleanup the version and optionally the governance action id
  * cardano_protocol_version_unref(&version);
- *
- * if (governance_action_id)
- * {
- *   cardano_governance_action_id_unref(&governance_action_id);
- * }
+ * cardano_governance_action_id_unref(&governance_action_id);
  * \endcode
  */
 CARDANO_NODISCARD
@@ -253,13 +269,14 @@ CARDANO_EXPORT cardano_protocol_version_t*
 cardano_hard_fork_initiation_action_get_protocol_version(cardano_hard_fork_initiation_action_t* hard_fork_initiation_action);
 
 /**
- * \brief Sets the governance action ID in the hard_fork_initiation_action.
+ * \brief Sets the governance action ID in the hard fork initiation action.
  *
- * This function updates the governance action ID of a \ref cardano_hard_fork_initiation_action_t object.
- * The governance action ID is a \ref cardano_governance_action_id_t object representing the unique identifier for the governance action associated with the hard fork.
+ * This function updates the governance action ID of a \ref cardano_hard_fork_initiation_action_t object. The governance action ID
+ * represents the unique identifier for the most recently enacted governance action associated with a hard fork.
  *
- * \param[in,out] hard_fork_initiation_action A pointer to an initialized \ref cardano_hard_fork_initiation_action_t object to which the governance action ID will be set.
- * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the new governance action ID. This parameter
+ * \param[in,out] hard_fork_initiation_action A pointer to an initialized \ref cardano_hard_fork_initiation_action_t object to which
+ *                                            the governance action ID will be set.
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the last enacted action of the same type. This parameter
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
@@ -289,18 +306,22 @@ cardano_hard_fork_initiation_action_get_protocol_version(cardano_hard_fork_initi
  *   cardano_governance_action_id_unref(&governance_action_id);
  * }
  * \endcode
+ *
+ * \note This function maintains governance continuity by referencing the latest governance action ID of the same type,
+ *       allowing only one active action at a time for each governance type.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_hard_fork_initiation_action_set_governance_action_id(cardano_hard_fork_initiation_action_t* hard_fork_initiation_action, cardano_governance_action_id_t* governance_action_id);
 
 /**
- * \brief Retrieves the governance action ID from a hard_fork_initiation_action.
+ * \brief Retrieves the governance action ID from a hard fork initiation action.
  *
- * This function retrieves the governance action ID from a given \ref cardano_hard_fork_initiation_action_t object. The governance action ID
- * is represented as a \ref cardano_governance_action_id_t object.
+ * This function retrieves the governance action ID from a given \ref cardano_hard_fork_initiation_action_t object. The governance
+ * action ID references the most recent action of the same type.
  *
- * \param[in] hard_fork_initiation_action A pointer to an initialized \ref cardano_hard_fork_initiation_action_t object from which the governance action ID is retrieved.
+ * \param[in] hard_fork_initiation_action A pointer to an initialized \ref cardano_hard_fork_initiation_action_t object from
+ *                                        which the governance action ID is retrieved.
  *
  * \return A pointer to the retrieved \ref cardano_governance_action_id_t object representing the governance action ID.
  *         This will be a new reference, and the caller is responsible for releasing it with \ref cardano_governance_action_id_unref

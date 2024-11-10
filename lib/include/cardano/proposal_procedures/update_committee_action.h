@@ -51,15 +51,38 @@ typedef struct cardano_update_committee_action_t cardano_update_committee_action
  * which represents an action to update the constitutional committee within the Cardano network. This action includes
  * specifying members to be added and removed, as well as updating the quorum threshold.
  *
+ * The action requires a governance action ID to reference the most recent enacted action of the
+ * same type. You can retrieve this information from the gov-state query:
+ *
+ * \code{.sh}
+ * cardano-cli conway query gov-state | jq .nextRatifyState.nextEnactState.prevGovActionIds
+ * \endcode
+ *
+ * Example output:
+ * \code{.json}
+ * {
+ *   "Committee": {
+ *     "govActionIx": 0,
+ *     "txId": "6bff8515060c08e9cae4d4e203a4d8b2e876848aae8c4e896acda7202d3ac679"
+ *   },
+ *   "Constitution": null,
+ *   "HardFork": null,
+ *   "PParamUpdate": {
+ *     "govActionIx": 0,
+ *     "txId": "7e199d036f1e8d725ea8aba30c5f8d0d2ab9dbd45c7f54e7d85c92c022673f0f"
+ *   }
+ * }
+ * \endcode
+ *
  * \param[in] members_to_be_removed A pointer to a \ref cardano_credential_set_t object representing the committee members to be removed.
  * \param[in] members_to_be_added A pointer to a \ref cardano_committee_members_map_t object representing the committee members to be added.
  * \param[in] new_quorum A pointer to a \ref cardano_unit_interval_t object representing the new quorum threshold for the committee.
- * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the unique identifier
- *                                 for this governance action. This parameter can be NULL if no specific governance action is associated.
+ * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the last enacted action
+ *                                 of the same type. It can be NULL if no governance action of this type has been enacted.
  * \param[out] update_committee_action On successful initialization, this will point to a newly created
  *             \ref cardano_update_committee_action_t object. This object represents a "strong reference"
  *             to the update committee action, meaning that it is fully initialized and ready for use.
- *             The caller is responsible for managing the lifecycle of this object,
+ *             The caller is responsible for managing the lifecycle of this object;
  *             specifically, once the update committee action is no longer needed, the caller must release it
  *             by calling \ref cardano_update_committee_action_unref.
  *
@@ -90,10 +113,7 @@ typedef struct cardano_update_committee_action_t cardano_update_committee_action
  * cardano_credential_set_unref(&members_to_be_removed);
  * cardano_committee_members_map_unref(&members_to_be_added);
  * cardano_unit_interval_unref(&new_quorum);
- * if (governance_action_id)
- * {
- *   cardano_governance_action_id_unref(&governance_action_id);
- * }
+ * cardano_governance_action_id_unref(&governance_action_id);
  * \endcode
  */
 CARDANO_NODISCARD
@@ -416,10 +436,10 @@ cardano_update_committee_action_get_quorum(cardano_update_committee_action_t* up
  * \brief Sets the governance action ID in the update_committee_action.
  *
  * This function updates the governance action ID of a \ref cardano_update_committee_action_t object.
- * The governance action ID is a \ref cardano_governance_action_id_t object representing the unique identifier for the governance action associated with the hard fork.
+ * The governance action ID is a \ref cardano_governance_action_id_t object representing the last enacted action of the same type.
  *
  * \param[in,out] update_committee_action A pointer to an initialized \ref cardano_update_committee_action_t object to which the governance action ID will be set.
- * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the new governance action ID. This parameter
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the last enacted action of the same type. This parameter
  *            can be NULL if the governance action ID is to be unset.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the governance action ID was
