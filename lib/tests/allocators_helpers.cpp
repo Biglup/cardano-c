@@ -31,6 +31,8 @@ static int malloc_run_count  = 0;
 static int realloc_run_count = 0;
 static int free_run_count    = 0;
 
+static int malloc_limit = 0;
+
 /* DEFINITIONS ***************************************************************/
 
 void
@@ -39,6 +41,30 @@ reset_allocators_run_count()
   malloc_run_count  = 0;
   realloc_run_count = 0;
   free_run_count    = 0;
+}
+
+void
+set_malloc_limit(const int limit)
+{
+  malloc_limit = limit;
+}
+
+void
+reset_limited_malloc()
+{
+  malloc_limit = 0;
+}
+
+void*
+fail_malloc_at_limit(const size_t size)
+{
+  if (malloc_run_count < malloc_limit)
+  {
+    malloc_run_count++;
+    return malloc(size);
+  }
+
+  return NULL;
 }
 
 void*

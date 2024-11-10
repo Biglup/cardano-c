@@ -53,22 +53,6 @@ static cardano_address_t*
 create_address(const char* address, size_t address_length);
 
 /**
- * \brief Creates a Cardano reward address object from a string representation.
- *
- * This function creates a \ref cardano_reward_address_t object from the provided address string. The address string can represent
- * a valid Bech32-encoded Cardano reward address. The function validates the address format and initializes the corresponding
- * reward address object.
- *
- * \param[in] address_str A pointer to the reward address string. This parameter must not be NULL.
- * \param[in] address_str_length The length of the reward address string in bytes.
- *
- * \return A pointer to the newly created \ref cardano_reward_address_t object if the address is valid. Returns NULL if the
- * address creation fails due to an invalid address format or any internal error.
- */
-static cardano_reward_address_t*
-create_reward_address(const char* address_str, size_t address_str_length);
-
-/**
  * \brief Displays a summary of the total balance, including UTXO and reward balances.
  *
  * This function aggregates the ADA from all UTXOs in the provided \ref cardano_utxo_list_t and combines it with the reward balance.
@@ -97,8 +81,8 @@ int
 main(void)
 {
   // Preprod addresses.
-  static const char* address       = "addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk";
-  static const char* stake_address = "stake_test1urk0s687df3s2g0tdtnj7qpefa36gnjdv68upkpdfxkgkqq8kq6ly";
+  static const char* address       = "addr_test1qrwyxh7zvw8kdp9ar70klytasryj4ejz5j3n5sfw29j8nejzg53k4wq9vaswlnhthl6har9tygqc9037xepeu5s2v32qn6lwrx";
+  static const char* stake_address = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
 
   const char* api_key = getenv("BLOCKFROST_API_KEY");
 
@@ -204,21 +188,6 @@ create_address(const char* address, const size_t address_length)
   }
 
   return payment_address;
-}
-
-static cardano_reward_address_t*
-create_reward_address(const char* address_str, const size_t address_str_length)
-{
-  cardano_reward_address_t* reward_address = NULL;
-  cardano_error_t           result         = cardano_reward_address_from_bech32(address_str, address_str_length, &reward_address);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    console_error("Failed to create reward address: %s", cardano_error_to_string(result));
-    return NULL;
-  }
-
-  return reward_address;
 }
 
 static cardano_error_t

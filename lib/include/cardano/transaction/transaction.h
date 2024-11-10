@@ -615,6 +615,40 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_transaction_get_id(cardano_transa
 CARDANO_EXPORT void cardano_transaction_clear_cbor_cache(cardano_transaction_t* transaction);
 
 /**
+ * \brief Applies verification key (vkey) witnesses to a transaction.
+ *
+ * This function attaches a set of vkey witnesses to the given transaction.
+ *
+ * \param[in,out] transaction A pointer to the \ref cardano_transaction_t structure representing the transaction to which
+ *                            the vkey witnesses will be applied.
+ * \param[in] new_vkeys A pointer to the \ref cardano_vkey_witness_set_t structure containing the set of vkey witnesses to
+ *                  be applied.
+ *
+ * \return \ref CARDANO_SUCCESS if the vkey witnesses were successfully applied to the transaction, or an appropriate
+ *         error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_t* tx = ...;                  // Initialized transaction
+ * cardano_vkey_witness_set_t* vkey_witnesses = ...; // Initialized set of vkey witnesses
+ *
+ * cardano_error_t result = cardano_transaction_apply_vkey_witnesses(tx, vkey_witnesses);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The vkey witnesses were successfully applied to the transaction
+ * }
+ * else
+ * {
+ *   // Handle the error
+ * }
+ * \endcode
+ */
+CARDANO_EXPORT cardano_error_t cardano_transaction_apply_vkey_witnesses(
+  cardano_transaction_t*      transaction,
+  cardano_vkey_witness_set_t* new_vkeys);
+
+/**
  * \brief Decrements the reference count of a cardano_transaction_t object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_transaction_t object

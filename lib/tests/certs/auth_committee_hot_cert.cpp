@@ -511,6 +511,7 @@ TEST(cardano_auth_committee_hot_cert_get_cold_cred, canGetColdCredential)
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
   cardano_credential_unref(&cold);
+  cardano_credential_unref(&cold_out);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfObjectIsNull)
@@ -523,6 +524,7 @@ TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_credential_unref(&cold_out);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_cold_cred, returnsErrorIfCredentialIsNull)
@@ -606,6 +608,7 @@ TEST(cardano_auth_committee_hot_cert_get_hot_cred, canGetHotCredential)
   // Cleanup
   cardano_auth_committee_hot_cert_unref(&auth_committee_hot_cert);
   cardano_credential_unref(&hot);
+  cardano_credential_unref(&hot_out);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfObjectIsNull)
@@ -618,6 +621,7 @@ TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_credential_unref(&hot_out);
 }
 
 TEST(cardano_auth_committee_hot_cert_get_hot_cred, returnsErrorIfCredentialIsNull)

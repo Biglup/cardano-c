@@ -88,7 +88,7 @@ cardano_value_deallocate(void* object)
 
 cardano_error_t
 cardano_value_new(
-  int64_t                coin,
+  const int64_t          coin,
   cardano_multi_asset_t* assets,
   cardano_value_t**      value)
 {
@@ -137,6 +137,17 @@ cardano_value_new_zero(void)
   cardano_value_t* value = NULL;
 
   cardano_error_t result = cardano_value_new(0, NULL, &value);
+  CARDANO_UNUSED(result);
+
+  return value;
+}
+
+cardano_value_t*
+cardano_value_new_from_coin(const int64_t lovelace)
+{
+  cardano_value_t* value = NULL;
+
+  cardano_error_t result = cardano_value_new(lovelace, NULL, &value);
   CARDANO_UNUSED(result);
 
   return value;
@@ -495,6 +506,159 @@ cardano_value_subtract_multi_asset(cardano_value_t* value, cardano_multi_asset_t
   value->multi_asset = subtraction_result;
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_value_add_asset(
+  cardano_value_t*        value,
+  cardano_blake2b_hash_t* policy_id,
+  cardano_asset_name_t*   asset_name,
+  int64_t                 quantity)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (policy_id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (asset_name == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  assert(value->multi_asset != NULL);
+
+  int64_t         current_quantity = 0;
+  cardano_error_t result           = cardano_multi_asset_get(value->multi_asset, policy_id, asset_name, &current_quantity);
+
+  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_ELEMENT_NOT_FOUND))
+  {
+    return result; // LCOV_EXCL_LINE
+  }
+
+  return cardano_multi_asset_set(value->multi_asset, policy_id, asset_name, current_quantity + quantity);
+}
+
+cardano_error_t
+cardano_value_add_asset_ex(
+  cardano_value_t* value,
+  const char*      policy_id_hex,
+  const size_t     policy_id_hex_len,
+  const char*      asset_name_hex,
+  const size_t     asset_name_hex_len,
+  const int64_t    quantity)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (policy_id_hex == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (asset_name_hex == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  assert(value->multi_asset != NULL);
+
+  cardano_blake2b_hash_t* policy_id  = NULL;
+  cardano_asset_name_t*   asset_name = NULL;
+
+  cardano_error_t policy_id_result = cardano_blake2b_hash_from_hex(policy_id_hex, policy_id_hex_len, &policy_id);
+
+  if (policy_id_result != CARDANO_SUCCESS)
+  {
+    return policy_id_result; // LCOV_EXCL_LINE
+  }
+
+  cardano_error_t asset_name_result = cardano_asset_name_from_hex(asset_name_hex, asset_name_hex_len, &asset_name);
+
+  if (asset_name_result != CARDANO_SUCCESS)
+  {
+    // LCOV_EXCL_START
+    cardano_blake2b_hash_unref(&policy_id);
+    return asset_name_result;
+    // LCOV_EXCL_STOP
+  }
+
+  cardano_error_t add_asset_result = cardano_value_add_asset(value, policy_id, asset_name, quantity);
+
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_asset_name_unref(&asset_name);
+
+  return add_asset_result;
+}
+
+cardano_error_t
+cardano_value_add_asset_with_id(
+  cardano_value_t*    value,
+  cardano_asset_id_t* asset_id,
+  int64_t             quantity)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (asset_id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  assert(value->multi_asset != NULL);
+
+  cardano_asset_name_t*   asset_name = cardano_asset_id_get_asset_name(asset_id);
+  cardano_blake2b_hash_t* policy_id  = cardano_asset_id_get_policy_id(asset_id);
+
+  cardano_error_t result = cardano_value_add_asset(value, policy_id, asset_name, quantity);
+
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+
+  return result;
+}
+
+cardano_error_t
+cardano_value_add_asset_with_id_ex(
+  cardano_value_t* value,
+  const char*      asset_id_hex,
+  size_t           asset_id_hex_len,
+  int64_t          quantity)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (asset_id_hex == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  assert(value->multi_asset != NULL);
+
+  cardano_asset_id_t* asset_id = NULL;
+
+  cardano_error_t asset_id_result = cardano_asset_id_from_hex(asset_id_hex, asset_id_hex_len, &asset_id);
+
+  if (asset_id_result != CARDANO_SUCCESS)
+  {
+    return asset_id_result; // LCOV_EXCL_LINE
+  }
+
+  cardano_error_t add_asset_result = cardano_value_add_asset_with_id(value, asset_id, quantity);
+
+  cardano_asset_id_unref(&asset_id);
+
+  return add_asset_result;
 }
 
 cardano_error_t

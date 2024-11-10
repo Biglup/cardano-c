@@ -117,6 +117,27 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_provider_get_name(const cardano_provider_t* provider);
 
 /**
+ * \brief Retrieves the network magic associated with a provider.
+ *
+ * This function returns the network magic value for the specified Cardano provider (`cardano_provider_t`).
+ *
+ * \param[in] provider A constant pointer to the \ref cardano_provider_t instance from which to retrieve the network magic.
+ *
+ * \returns The network magic value (\ref cardano_network_magic_t) associated with the provider.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_provider_t* provider = ...;  // Initialized provider
+ * cardano_network_magic_t network_magic = cardano_provider_get_network_magic(provider);
+ *
+ * printf("Network magic: %u\n", network_magic);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_network_magic_t
+cardano_provider_get_network_magic(const cardano_provider_t* provider);
+
+/**
  * \brief Retrieves the current protocol parameters from the Cardano blockchain.
  *
  * This function obtains the protocol parameters using the specified provider instance.

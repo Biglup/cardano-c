@@ -126,6 +126,8 @@ cardano_provider_impl_new()
     return CARDANO_SUCCESS;
   };
 
+  impl.network_magic = CARDANO_NETWORK_MAGIC_PREPROD;
+
   return impl;
 }
 
@@ -350,6 +352,33 @@ TEST(cardano_provider_get_name, returnsTheNameOfTheProvider)
 
   // Assert
   EXPECT_STREQ(name, "Empty Provider");
+
+  // Cleanup
+  cardano_provider_unref(&provider);
+}
+
+TEST(cardano_provider_get_network_magic, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  cardano_network_magic_t magic = cardano_provider_get_network_magic(nullptr);
+
+  // Assert
+  EXPECT_EQ(magic, CARDANO_NETWORK_MAGIC_PREPROD);
+}
+
+TEST(cardano_provider_get_network_magic, returnsTheNetworkMagic)
+{
+  // Arrange
+  cardano_provider_t* provider = nullptr;
+  cardano_error_t     error    = cardano_provider_new(cardano_provider_impl_new(), &provider);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_network_magic_t magic = cardano_provider_get_network_magic(provider);
+
+  // Assert
+  EXPECT_EQ(magic, CARDANO_NETWORK_MAGIC_PREPROD);
 
   // Cleanup
   cardano_provider_unref(&provider);

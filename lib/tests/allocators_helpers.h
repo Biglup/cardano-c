@@ -38,6 +38,31 @@ void
 reset_allocators_run_count();
 
 /**
+ * \brief Sets a limit on the number of times the mock memory allocator can be called before failing.
+ * \param limit The limit on the number of times the mock memory allocator can be called.
+ */
+void
+set_malloc_limit(int limit);
+
+/**
+ * \brief Resets the limit on the number of times the mock memory allocator can be called before failing.
+ */
+void
+reset_limited_malloc();
+
+/**
+ * \brief A mock version of malloc that simulates an allocation failure when a limit is reached.
+ *
+ * This function can be used to test the behavior of code when malloc fails after a certain number
+ * of calls.
+ *
+ * \param size The size of the memory allocation request.
+ * \return NULL to simulate allocation failure when the limit is reached.
+ */
+void*
+fail_malloc_at_limit(size_t size);
+
+/**
  * \brief A mock version of malloc that simulates an allocation failure on the first call.
  *
  * This function can be used to test the behavior of code when malloc fails immediately,

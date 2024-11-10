@@ -1,6 +1,9 @@
+---
 exclude_paths:
   - "tests/*"
   - "examples/*"
+  - "examples/src/*"
+  - "examples/src/utils/*"
   - "fuzz/*"
   - "scripts/*"
   - "doc/*"

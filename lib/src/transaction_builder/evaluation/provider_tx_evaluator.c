@@ -86,5 +86,12 @@ cardano_tx_evaluator_from_provider(
 
   impl.evaluate = evaluate;
 
-  return cardano_tx_evaluator_new(impl, tx_evaluator);
+  cardano_error_t result = cardano_tx_evaluator_new(impl, tx_evaluator);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_provider_unref(&provider);
+  }
+
+  return result;
 }

@@ -1105,6 +1105,7 @@ create_blockfrost_provider(
   impl.await_transaction_confirmation = await_transaction_confirmation;
   impl.post_transaction_to_chain      = post_transaction_to_chain;
   impl.evaluate_transaction           = evaluate_transaction;
+  impl.network_magic                  = network;
 
   impl.context = (cardano_object_t*)context;
 

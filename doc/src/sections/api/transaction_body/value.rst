@@ -65,6 +65,22 @@ Value
 
 ------------
 
+.. doxygenfunction:: cardano_value_add_asset
+
+------------
+
+.. doxygenfunction:: cardano_value_add_asset_ex
+
+------------
+
+.. doxygenfunction:: cardano_value_add_asset_with_id
+
+------------
+
+.. doxygenfunction:: cardano_value_add_asset_with_id_ex
+
+------------
+
 .. doxygenfunction:: cardano_value_get_intersection
 
 ------------

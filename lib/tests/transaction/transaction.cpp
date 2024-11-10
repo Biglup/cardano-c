@@ -46,6 +46,7 @@ static const char* WITNESS_SET_CBOR           = "a100838258204a352f53eb4311d552a
 static const char* CBOR_TX_ID                 = "c7f20e9550b5631f07622a583a5103f19bcfa28eee89f39fff0eb24c2ad74619";
 static const char* CBOR3_TX_ID                = "2d7f290c815e061fb7c27e91d2a898bd7b454a71c9b7a26660e2257ac31ebe32";
 static const char* CBOR_NULLIFY_ENTROPY_TX_ID = "fc863a441b55acceebb7d25c81ff7259e4fc9b92fbdf6d594118fb8f1110a78c";
+static const char* VKEY_WITNESS_CBOR          = "d90102848258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -120,6 +121,25 @@ new_default_witness_set(const char* cbor)
 
   return witness_set;
 };
+
+/**
+ * Creates a new default instance of the vkey_witness_set.
+ *
+ * @return A new instance of the vkey_witness_set.
+ */
+static cardano_vkey_witness_set_t*
+new_default_vkey_witness_set(const char* cbor)
+{
+  cardano_vkey_witness_set_t* vkey_witness_set = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_error_t             result           = cardano_vkey_witness_set_from_cbor(reader, &vkey_witness_set);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return vkey_witness_set;
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -1007,4 +1027,54 @@ TEST(cardano_transaction_from_cbor, fuzzerCase6DoesntCrash)
 
   cardano_cbor_reader_unref(&reader);
   cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_apply_vkey_witnesses, canUpdateWitnessSet)
+{
+  // Arrange
+  cardano_transaction_t*      transaction      = new_default_transaction(CBOR);
+  cardano_witness_set_t*      witness_set      = new_default_witness_set(WITNESS_SET_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_CBOR);
+
+  EXPECT_EQ(cardano_transaction_set_witness_set(transaction, witness_set), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_transaction_apply_vkey_witnesses(transaction, vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_witness_set_unref(&witness_set);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_transaction_apply_vkey_witnesses, canUpdateWitnessSetEvenIfVkeyIsNull)
+{
+  // Arrange
+  cardano_transaction_t*      transaction      = new_default_transaction(CBOR);
+  cardano_witness_set_t*      witness_set      = NULL;
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_CBOR);
+
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_set_witness_set(transaction, witness_set), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_transaction_apply_vkey_witnesses(transaction, vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_witness_set_unref(&witness_set);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_transaction_apply_vkey_witnesses, returnsErrorIfNull)
+{
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses((cardano_transaction_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(nullptr, (cardano_vkey_witness_set_t*)""), CARDANO_ERROR_POINTER_IS_NULL);
 }

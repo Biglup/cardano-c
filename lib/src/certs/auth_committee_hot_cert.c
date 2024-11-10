@@ -272,6 +272,7 @@ cardano_auth_committee_hot_cert_get_cold_cred(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  cardano_credential_ref(auth_committee_hot->committee_cold_cred);
   *credential = auth_committee_hot->committee_cold_cred;
 
   return CARDANO_SUCCESS;
@@ -314,6 +315,7 @@ cardano_auth_committee_hot_cert_get_hot_cred(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  cardano_credential_ref(auth_committee_hot->committee_hot_cred);
   *credential = auth_committee_hot->committee_hot_cred;
 
   return CARDANO_SUCCESS;
