@@ -276,7 +276,7 @@ _cardano_add_input_signers(
 
     if (pub_key_hash == NULL)
     {
-      return CARDANO_ERROR_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
+      continue;
     }
 
     if (!_cardano_blake2b_hash_set_has(unique_signers, pub_key_hash))
@@ -1068,11 +1068,13 @@ _cardano_get_unique_signers(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_transaction_body_t*      body   = cardano_transaction_get_body(tx);
-  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_body_t*      body              = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* inputs            = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_t* collateral_inputs = cardano_transaction_body_get_collateral(body);
 
   cardano_transaction_body_unref(&body);
   cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_input_set_unref(&collateral_inputs);
 
   if (inputs == NULL)
   {
@@ -1109,6 +1111,20 @@ _cardano_get_unique_signers(
 
     return result;
     // LCOV_EXCL_STOP
+  }
+
+  if (collateral_inputs != NULL)
+  {
+    result = _cardano_add_input_signers(*unique_signers, collateral_inputs, resolved_inputs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_blake2b_hash_set_unref(unique_signers);
+
+      return result;
+      // LCOV_EXCL_STOP
+    }
   }
 
   cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);

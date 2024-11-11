@@ -1248,6 +1248,16 @@ cardano_blockfrost_parse_tx_eval_response(
     return CARDANO_ERROR_INVALID_JSON;
   }
 
+  if (json_object_object_get_ex(result_obj, "EvaluationFailure", &evaluation_result_obj))
+  {
+    cardano_utils_set_error_message(provider, "Failed evaluate scripts");
+    json_object_put(parsed_json);
+    json_tokener_free(tok);
+    cardano_redeemer_list_unref(redeemers);
+
+    return CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
+  }
+
   if (!json_object_object_get_ex(result_obj, "EvaluationResult", &evaluation_result_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");

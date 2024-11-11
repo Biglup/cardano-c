@@ -676,6 +676,30 @@ TEST(cardano_error_to_string, canConvertMaximumInputCountExceeded)
   ASSERT_STREQ(message, "Maximum input count exceeded");
 }
 
+TEST(cardano_error_to_string, canConvertIllegalState)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_ILLEGAL_STATE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Illegal state");
+}
+
+TEST(cardano_error_to_string, canConvertScriptEvaluationFailure)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Script evaluation failure");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

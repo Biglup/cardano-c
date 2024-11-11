@@ -21,10 +21,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "internals/collateral.h"
+#include "internals/unique_signers.h"
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/fee.h>
-#include <src/transaction_builder/balancing/internals/unique_signers.h>
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -209,13 +210,15 @@ coalesce_all_outputs(cardano_transaction_output_list_t* outputs, cardano_value_t
  *
  * \param[in,out] body       The transaction body to which the inputs will be added.
  * \param[in]     selection  The list of selected UTXOs to be set as transaction inputs.
+ * \param[in]     input_to_redeemer_map A map of input to redeemer values.
  *
  * \return \ref CARDANO_SUCCESS if the inputs were successfully set, or an appropriate error code indicating failure.
  */
 static cardano_error_t
 set_transaction_inputs(
-  cardano_transaction_body_t* body,
-  cardano_utxo_list_t*        selection)
+  cardano_transaction_body_t*      body,
+  cardano_utxo_list_t*             selection,
+  cardano_input_to_redeemer_map_t* input_to_redeemer_map)
 {
   cardano_transaction_input_set_t* inputs = NULL;
   cardano_error_t                  result = cardano_transaction_input_set_new(&inputs);
@@ -254,6 +257,20 @@ set_transaction_inputs(
 
       return result;
       // LCOV_EXCL_STOP
+    }
+
+    if (input_to_redeemer_map != NULL)
+    {
+      result = cardano_input_to_redeemer_map_update_redeemer_index(input_to_redeemer_map, input, i);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_transaction_input_set_unref(&inputs);
+
+        return result;
+        // LCOV_EXCL_STOP
+      }
     }
   }
 
@@ -322,7 +339,7 @@ add_change_output(
 
   if (change_coin < min_utxo_value)
   {
-    *change_padding = min_utxo_value - change_coin;
+    *change_padding += min_utxo_value - change_coin;
 
     cardano_transaction_output_unref(&change_output);
 
@@ -457,15 +474,18 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
 
 cardano_error_t
 cardano_balance_transaction(
-  cardano_transaction_t*         unbalanced_tx,
-  const size_t                   foreign_signature_count,
-  cardano_protocol_parameters_t* protocol_params,
-  cardano_utxo_list_t*           reference_inputs,
-  cardano_utxo_list_t*           pre_selected_utxo,
-  cardano_utxo_list_t*           available_utxo,
-  cardano_coin_selector_t*       coin_selector,
-  cardano_address_t*             change_address,
-  cardano_tx_evaluator_t*        evaluator)
+  cardano_transaction_t*           unbalanced_tx,
+  const size_t                     foreign_signature_count,
+  cardano_protocol_parameters_t*   protocol_params,
+  cardano_utxo_list_t*             reference_inputs,
+  cardano_utxo_list_t*             pre_selected_utxo,
+  cardano_input_to_redeemer_map_t* input_to_redeemer_map,
+  cardano_utxo_list_t*             available_utxo,
+  cardano_coin_selector_t*         coin_selector,
+  cardano_address_t*               change_address,
+  cardano_utxo_list_t*             available_collateral_utxo,
+  cardano_address_t*               collateral_change_address,
+  cardano_tx_evaluator_t*          evaluator)
 {
   cardano_error_t result      = CARDANO_SUCCESS;
   bool            is_balanced = false;
@@ -503,6 +523,22 @@ cardano_balance_transaction(
     {
       // LCOV_EXCL_START
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      return result;
+      // LCOV_EXCL_STOP
+    }
+
+    result = _cardano_set_collateral_output(
+      unbalanced_tx,
+      protocol_params,
+      available_collateral_utxo,
+      collateral_change_address);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_value_unref(&total_output_value);
+
       return result;
       // LCOV_EXCL_STOP
     }
@@ -560,7 +596,7 @@ cardano_balance_transaction(
       // LCOV_EXCL_STOP
     }
 
-    result = set_transaction_inputs(body, selection);
+    result = set_transaction_inputs(body, selection, input_to_redeemer_map);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -671,6 +707,36 @@ cardano_balance_transaction(
           // LCOV_EXCL_STOP
         }
 
+        result = cardano_transaction_body_set_collateral(body, NULL);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        result = cardano_transaction_body_set_collateral_return(body, NULL);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        result = cardano_transaction_body_set_total_collateral(body, NULL);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
         continue;
       }
 
@@ -711,18 +777,54 @@ cardano_balance_transaction(
         // LCOV_EXCL_STOP
       }
 
-      result = cardano_witness_set_set_redeemers(witnesses, redeemers);
-      cardano_redeemer_list_unref(&redeemers);
+      cardano_redeemer_list_t* tx_redeemers = cardano_witness_set_get_redeemers(witnesses);
+      cardano_redeemer_list_unref(&tx_redeemers);
 
-      if (result != CARDANO_SUCCESS)
+      const size_t redeemers_count = cardano_redeemer_list_get_length(redeemers);
+
+      for (size_t i = 0U; i < redeemers_count; ++i)
       {
-        // LCOV_EXCL_START
-        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-        cardano_utxo_list_unref(&selection);
-        cardano_utxo_list_unref(&remaining_utxo);
-        return result;
-        // LCOV_EXCL_STOP
+        cardano_redeemer_t* redeemer = NULL;
+        result                       = cardano_redeemer_list_get(redeemers, i, &redeemer);
+        cardano_redeemer_unref(&redeemer);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          cardano_utxo_list_unref(&selection);
+          cardano_utxo_list_unref(&remaining_utxo);
+          cardano_redeemer_list_unref(&redeemers);
+
+          return result;
+          // LCOV_EXCL_STOP
+        }
+
+        const cardano_redeemer_tag_t tag   = cardano_redeemer_get_tag(redeemer);
+        const uint64_t               index = cardano_redeemer_get_index(redeemer);
+
+        cardano_ex_units_t* ex_units = cardano_redeemer_get_ex_units(redeemer);
+        cardano_ex_units_unref(&ex_units);
+
+        const uint64_t mem   = cardano_ex_units_get_memory(ex_units);
+        const uint64_t steps = cardano_ex_units_get_cpu_steps(ex_units);
+
+        result = cardano_redeemer_list_set_ex_units(tx_redeemers, tag, index, mem, steps);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          // LCOV_EXCL_START
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          cardano_utxo_list_unref(&selection);
+          cardano_utxo_list_unref(&remaining_utxo);
+          cardano_redeemer_list_unref(&redeemers);
+
+          return result;
+          // LCOV_EXCL_STOP
+        }
       }
+
+      cardano_redeemer_list_unref(&redeemers);
     }
 
     uint64_t             computed_fee    = 0;
@@ -735,6 +837,14 @@ cardano_balance_transaction(
       resolved_inputs = cardano_utxo_list_concat(pre_selected_utxo, selection);
     }
 
+    if (available_collateral_utxo != NULL)
+    {
+      cardano_utxo_list_t* resolved_with_collateral = cardano_utxo_list_concat(available_collateral_utxo, resolved_inputs);
+
+      cardano_utxo_list_unref(&resolved_inputs);
+      resolved_inputs = resolved_with_collateral;
+    }
+
     cardano_blake2b_hash_set_t* unique_signers = NULL;
 
     result = _cardano_get_unique_signers(unbalanced_tx, resolved_inputs, &unique_signers);
@@ -744,6 +854,9 @@ cardano_balance_transaction(
       // LCOV_EXCL_START
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
       cardano_utxo_list_unref(&resolved_inputs);
+      cardano_utxo_list_unref(&selection);
+      cardano_utxo_list_unref(&remaining_utxo);
+
       return result;
       // LCOV_EXCL_STOP
     }
@@ -764,6 +877,7 @@ cardano_balance_transaction(
       // LCOV_EXCL_START
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
       cardano_utxo_list_unref(&resolved_inputs);
+
       return result;
       // LCOV_EXCL_STOP
     }
@@ -809,6 +923,36 @@ cardano_balance_transaction(
 
       result = cardano_transaction_body_set_inputs(body, empty_inputs);
       cardano_transaction_input_set_unref(&empty_inputs);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        return result;
+        // LCOV_EXCL_STOP
+      }
+
+      result = cardano_transaction_body_set_collateral(body, NULL);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        return result;
+        // LCOV_EXCL_STOP
+      }
+
+      result = cardano_transaction_body_set_collateral_return(body, NULL);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        // LCOV_EXCL_START
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        return result;
+        // LCOV_EXCL_STOP
+      }
+
+      result = cardano_transaction_body_set_total_collateral(body, NULL);
 
       if (result != CARDANO_SUCCESS)
       {

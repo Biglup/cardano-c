@@ -102,7 +102,7 @@ cardano_utils_get_elapsed_time_since(uint64_t start);
 /**
  * \brief Suspends the execution of the current thread for a specified number of milliseconds.
  *
- * @param milliseconds Number of milliseconds to sleep.
+ * \param milliseconds Number of milliseconds to sleep.
  */
 void
 cardano_utils_sleep(uint64_t milliseconds);
@@ -290,6 +290,141 @@ void submit_transaction(cardano_provider_t* provider, uint64_t timeout_ms, carda
  * \note This function will exit the program if the hash is NULL or invalid.
  */
 void print_hash(const char* message, cardano_blake2b_hash_t* hash);
+
+/**
+ * \brief Resolves a UTXO input from a transaction ID and index.
+ *
+ * This function retrieves a specific UTXO (Unspent Transaction Output) from a transaction by its ID and output index,
+ * using the given \ref cardano_provider_t instance to query the blockchain. The resolved UTXO can then be used as an input
+ * in transaction construction.
+ *
+ * \param[in] provider A pointer to an initialized \ref cardano_provider_t instance that provides access to the blockchain data.
+ * \param[in] tx_id A pointer to the transaction ID as a byte array. This parameter must not be NULL.
+ * \param[in] tx_id_size The size of the transaction ID byte array.
+ * \param[in] index The index of the desired UTXO in the transaction’s output list.
+ *
+ * \return A pointer to the resolved \ref cardano_utxo_t object representing the specified transaction output.
+ *         Returns NULL if the UTXO cannot be resolved or an error occurs.
+ */
+cardano_utxo_t*
+cardano_resolve_input(cardano_provider_t* provider, const char* tx_id, size_t tx_id_size, uint32_t index);
+
+/**
+ * \brief Creates a Plutus V2 script object from a hexadecimal string representation.
+ *
+ * This function creates a \ref cardano_script_t object representing a Plutus V2 script from the provided hexadecimal string.
+ * The hexadecimal string should encode a valid Plutus V2 script in CBOR format, which is then parsed and loaded into a
+ * Cardano script object.
+ *
+ * \param[in] script_hex A pointer to a NULL-terminated string containing the hexadecimal representation of the Plutus V2 script.
+ *                       This parameter must not be NULL.
+ *
+ * \return A pointer to the created \ref cardano_script_t object if the script is successfully parsed. Returns NULL if the
+ *         script creation fails due to an invalid format or internal error.
+ */
+cardano_script_t*
+create_plutus_v2_script_from_hex(const char* script_hex);
+
+/**
+ * \brief Generates a Cardano script address from a given script.
+ *
+ * This function creates a \ref cardano_address_t object representing the address associated with a provided
+ * \ref cardano_script_t. The generated address is based on the provided script and is suitable for transactions
+ * that reference this script, such as Plutus-based smart contract transactions.
+ *
+ * \param[in] script A pointer to a \ref cardano_script_t object representing the script for which the address is generated.
+ *                   This parameter must not be NULL.
+ *
+ * \return A pointer to the created \ref cardano_address_t object if the address is successfully generated.
+ *         Returns NULL if the address creation fails due to an invalid or unsupported script format.
+ */
+cardano_address_t* get_script_address(cardano_script_t* script);
+
+/**
+ * \brief Creates a Cardano datum from an zero initialized integer value.
+ *
+ * \return A pointer to the created \ref cardano_datum_t object if the datum is successfully created.
+ *         Returns NULL if memory allocation fails or an internal error occurs.
+ */
+cardano_datum_t* create_void_datum();
+
+/**
+ * \brief Retrieves the Cardano burn address.
+ *
+ * This function returns the predefined burn address, `addr_test1wza7ec20249sqg87yu2aqkqp735qa02q6yd93u28gzul93gvc4wuw`.
+ *
+ * Tokens sent to this address cannot be spent or recovered, effectively removing them from circulation.
+ *
+ * The burn address is configured to always fail script validation, as demonstrated in the `locked_script.json` file:
+ *
+ * \code{.json}
+ * {
+ *   "type": "all",
+ *   "scripts":
+ *   [
+ *     {
+ *       "type": "before",
+ *       "slot": 0
+ *     }
+ *   ]
+ * }
+ * \endcode
+ *
+ * This script validates only when the current slot is before 0, ensuring the funds are permanently locked.
+ *
+ * \return A pointer to the \ref cardano_address_t object representing the burn address.
+ *
+ * \note The caller is responsible for releasing the \ref cardano_address_t object when it is no longer needed by using \ref cardano_address_unref.
+ */
+cardano_address_t* get_brun_address();
+
+/**
+ * \brief Creates a transaction output with a reference script.
+ *
+ * This function initializes a new \ref cardano_transaction_output_t object for the specified `address` with the given `amount` in lovelace. Additionally, it associates a reference `script`, which can be used to validate this output without requiring the script to be fully included in every transaction.
+ *
+ * \param[in] address A pointer to a \ref cardano_address_t object representing the recipient address for the transaction output. This parameter must not be NULL.
+ * \param[in] amount The amount of lovelace to be assigned to the transaction output.
+ * \param[in] script A pointer to a \ref cardano_script_t object representing the reference script for the output. This parameter can be NULL if no reference script is required.
+ *
+ * \return A pointer to the newly created \ref cardano_transaction_output_t object if the output is successfully created; otherwise, NULL if memory allocation fails or if the parameters are invalid.
+ *
+ * \note The caller is responsible for managing the lifecycle of the created \ref cardano_transaction_output_t, releasing it when it is no longer needed by calling \ref cardano_transaction_output_unref.
+ */
+cardano_transaction_output_t*
+create_output_with_ref_script(cardano_address_t* address, uint32_t amount, cardano_script_t* script);
+
+/**
+ * \brief Creates a void plutus data.
+ *
+ * This function initializes a \ref cardano_plutus_data_t object with zero initialized 32-bit integer value.
+ *
+ * \return A pointer to the created \ref cardano_plutus_data_t object if the datum is successfully created.
+ *         Returns NULL if memory allocation fails or an internal error occurs.
+ */
+cardano_plutus_data_t* create_void_plutus_data();
+
+/**
+ * \brief Creates a Cardano transaction input from a UTXO.
+ *
+ * \param tx_id The transaction ID of the UTXO.
+ * \param index The index of the UTXO in the transaction's output list.
+ * \param output The output of the UTXO.
+ *
+ * \return A pointer to the created \ref cardano_transaction_input_t object if the input is successfully created.
+ */
+cardano_utxo_t*
+create_utxo(cardano_blake2b_hash_t* tx_id, uint32_t index, cardano_transaction_output_t* output);
+
+/**
+ * \brief Gets a utxo from the given transaction at the given index.
+ *
+ * \param transaction The transaction from which to get the utxo.
+ * \param index The index of the utxo in the transaction's output list.
+ * \return A pointer to the \ref cardano_utxo_t object representing the utxo at the specified index.
+ */
+cardano_utxo_t*
+get_utxo_at_index(cardano_transaction_t* transaction, uint32_t index);
 
 #ifdef __cplusplus
 }

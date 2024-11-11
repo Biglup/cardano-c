@@ -649,6 +649,37 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_apply_vkey_witnesses(
   cardano_vkey_witness_set_t* new_vkeys);
 
 /**
+ * \brief Checks if a transaction contains script data.
+ *
+ * This function examines a given \ref cardano_transaction_t object to determine whether it includes
+ * script data, such as redeemers or datums. Script data is required for transactions
+ * involving Plutus scripts on the Cardano blockchain.
+ *
+ * \param[in] transaction A pointer to an initialized \ref cardano_transaction_t object to be checked for script data.
+ *
+ * \return \c true if the transaction contains script data; otherwise, \c false.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_t* transaction = ...; // Assume transaction is already initialized
+ *
+ * bool has_script_data = cardano_transaction_has_script_data(transaction);
+ *
+ * if (has_script_data)
+ * {
+ *   printf("The transaction contains script data.\n");
+ * }
+ * else
+ * {
+ *   printf("The transaction does not contain script data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool
+cardano_transaction_has_script_data(cardano_transaction_t* transaction);
+
+/**
  * \brief Decrements the reference count of a cardano_transaction_t object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_transaction_t object

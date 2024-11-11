@@ -366,8 +366,6 @@ _cardano_to_bech32_addr(
 
   cardano_error_t result = cardano_encoding_bech32_encode(hrp, hrp_size, data, data_size, address, address_size);
   CARDANO_UNUSED(result);
-
-  assert(result == CARDANO_SUCCESS);
 }
 
 void

@@ -123,42 +123,42 @@ get_map_size(const cardano_witness_set_t* witness)
 
   size_t map_size = 0U;
 
-  if (witness->vkey_witnesses != NULL)
+  if (cardano_vkey_witness_set_get_length(witness->vkey_witnesses) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->native_scripts != NULL)
+  if (cardano_native_script_set_get_length(witness->native_scripts) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->bootstrap_witnesses != NULL)
+  if (cardano_bootstrap_witness_set_get_length(witness->bootstrap_witnesses) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->plutus_v1_scripts != NULL)
+  if (cardano_plutus_v1_script_set_get_length(witness->plutus_v1_scripts) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->plutus_data != NULL)
+  if (cardano_plutus_data_set_get_length(witness->plutus_data) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->redeemer != NULL)
+  if (cardano_redeemer_list_get_length(witness->redeemer) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->plutus_v2_scripts != NULL)
+  if (cardano_plutus_v2_script_set_get_length(witness->plutus_v2_scripts) > 0U)
   {
     map_size += 1U;
   }
 
-  if (witness->plutus_v3_scripts != NULL)
+  if (cardano_plutus_v3_script_set_get_length(witness->plutus_v3_scripts) > 0U)
   {
     map_size += 1U;
   }
@@ -501,7 +501,7 @@ write_vkey_witness_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_vkey_witness_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -543,7 +543,7 @@ write_native_script_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_native_script_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -585,7 +585,7 @@ write_bootstrap_witness_set_if_present(cardano_cbor_writer_t* writer, const uint
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_bootstrap_witness_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -627,7 +627,7 @@ write_plutus_v1_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_plutus_v1_script_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -669,7 +669,7 @@ write_plutus_data_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_plutus_data_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -711,7 +711,7 @@ write_redeemer_list_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_redeemer_list_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -753,7 +753,7 @@ write_plutus_v2_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_plutus_v2_script_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
@@ -795,7 +795,7 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 {
   assert(writer != NULL);
 
-  if (value != NULL)
+  if ((value != NULL) && (cardano_plutus_v3_script_set_get_length(value) > 0U))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
 
