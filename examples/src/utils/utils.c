@@ -44,6 +44,7 @@
 /* CONSTANTS *****************************************************************/
 
 static const uint64_t API_KEY_MAX_LENGTH = 39U;
+static const char*    BURN_ADDRESS       = "addr_test1wza7ec20249sqg87yu2aqkqp735qa02q6yd93u28gzul93gvc4wuw"; // See https://www.cardano-tools.io/burn-address
 
 /* DEFINITIONS ***************************************************************/
 
@@ -448,4 +449,319 @@ create_secure_key_handler(const char* serialized_data, const size_t length, card
   }
 
   return key_handler;
+}
+
+cardano_utxo_t*
+cardano_resolve_input(
+  cardano_provider_t* provider,
+  const char*         tx_id,
+  const size_t        tx_id_size,
+  const uint32_t      index)
+{
+  if ((tx_id == NULL) || (tx_id_size == 0U))
+  {
+    console_error("Failed to resolve input %s:%d", tx_id, index);
+    exit(EXIT_FAILURE);
+  }
+
+  cardano_utxo_t*                  utxo   = NULL;
+  cardano_utxo_list_t*             utxos  = NULL;
+  cardano_transaction_input_t*     input  = NULL;
+  cardano_blake2b_hash_t*          hash   = NULL;
+  cardano_transaction_input_set_t* inputs = NULL;
+
+  cardano_error_t result = cardano_blake2b_hash_from_hex(tx_id, tx_id_size, &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create hash from hex");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_transaction_input_new(hash, index, &input);
+  cardano_blake2b_hash_unref(&hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create transaction input");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_transaction_input_set_new(&inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_input_unref(&input);
+
+    console_error("Failed to create input set");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_transaction_input_set_add(inputs, input);
+  cardano_transaction_input_unref(&input);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_input_set_unref(&inputs);
+
+    console_error("Failed to add input to set");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_provider_resolve_unspent_outputs(provider, inputs, &utxos);
+  cardano_transaction_input_set_unref(&inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&utxos);
+
+    console_error("Failed to resolve unspent outputs");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  const size_t utxo_count = cardano_utxo_list_get_length(utxos);
+
+  if (utxo_count == 0U)
+  {
+    cardano_utxo_list_unref(&utxos);
+
+    console_error("No unspent outputs found for input %s:%d", tx_id, index);
+    exit(EXIT_FAILURE);
+  }
+
+  result = cardano_utxo_list_get(utxos, 0U, &utxo);
+  cardano_utxo_list_unref(&utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get unspent output");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return utxo;
+}
+
+cardano_script_t*
+create_plutus_v2_script_from_hex(const char* script_hex)
+{
+  cardano_script_t*           script           = NULL;
+  cardano_plutus_v2_script_t* plutus_v2_script = NULL;
+
+  cardano_error_t result = cardano_plutus_v2_script_new_bytes_from_hex(script_hex, strlen(script_hex), &plutus_v2_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script from hex");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_script_new_plutus_v2(plutus_v2_script, &script);
+  cardano_plutus_v2_script_unref(&plutus_v2_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return script;
+}
+
+cardano_address_t*
+get_script_address(cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* hash = cardano_script_get_hash(script);
+  cardano_credential_t*   cred = NULL;
+
+  cardano_error_t result = cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred);
+  cardano_blake2b_hash_unref(&hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create credential");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_enterprise_address_t* enterprise_address = NULL;
+  result                                           = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, cred, &enterprise_address);
+  cardano_credential_unref(&cred);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create enterprise address");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_address_t* address = cardano_enterprise_address_to_address(enterprise_address);
+  cardano_enterprise_address_unref(&enterprise_address);
+
+  return address;
+}
+
+cardano_datum_t*
+create_void_datum()
+{
+  cardano_datum_t*       datum       = NULL;
+  cardano_plutus_data_t* plutus_data = create_void_plutus_data();
+
+  cardano_error_t result = cardano_datum_new_inline_data(plutus_data, &datum);
+  cardano_plutus_data_unref(&plutus_data);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create datum");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return datum;
+}
+
+cardano_address_t*
+get_brun_address()
+{
+  cardano_address_t* brun_address = NULL;
+  cardano_error_t    result       = cardano_address_from_string(BURN_ADDRESS, strlen(BURN_ADDRESS), &brun_address);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create burn address");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return brun_address;
+}
+
+cardano_transaction_output_t*
+create_output_with_ref_script(cardano_address_t* address, const uint32_t amount, cardano_script_t* script)
+{
+  cardano_transaction_output_t* output = NULL;
+  cardano_error_t               result = cardano_transaction_output_new(address, amount, &output);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create transaction output");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_transaction_output_set_script_ref(output, script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to set script to transaction output");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return output;
+}
+
+cardano_plutus_data_t*
+create_void_plutus_data()
+{
+  static const char* VOID_DATA = "d87980";
+
+  cardano_plutus_data_t* plutus_data = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(VOID_DATA, strlen(VOID_DATA));
+
+  cardano_error_t result = cardano_plutus_data_from_cbor(reader, &plutus_data);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create plutus data");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_cbor_reader_unref(&reader);
+
+  return plutus_data;
+}
+
+cardano_utxo_t*
+create_utxo(cardano_blake2b_hash_t* tx_id, const uint32_t index, cardano_transaction_output_t* output)
+{
+  cardano_transaction_input_t* input = NULL;
+
+  cardano_error_t result = cardano_transaction_input_new(tx_id, index, &input);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create transaction input");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_utxo_t* utxo = NULL;
+
+  result = cardano_utxo_new(input, output, &utxo);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create utxo");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_transaction_input_unref(&input);
+
+  return utxo;
+}
+
+cardano_utxo_t*
+get_utxo_at_index(cardano_transaction_t* transaction, const uint32_t index)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_output_list_unref(&outputs);
+
+  cardano_transaction_output_t* output = NULL;
+  cardano_error_t               result = cardano_transaction_output_list_get(outputs, index, &output);
+  cardano_transaction_output_unref(&output);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get output at index %d", index);
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_blake2b_hash_t* tx_id = cardano_transaction_get_id(transaction);
+  cardano_utxo_t*         utxo  = create_utxo(tx_id, index, output);
+
+  cardano_blake2b_hash_unref(&tx_id);
+
+  return utxo;
 }

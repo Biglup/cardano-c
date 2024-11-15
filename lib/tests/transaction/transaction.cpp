@@ -1078,3 +1078,38 @@ TEST(cardano_transaction_apply_vkey_witnesses, returnsErrorIfNull)
   EXPECT_EQ(cardano_transaction_apply_vkey_witnesses((cardano_transaction_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(nullptr, (cardano_vkey_witness_set_t*)""), CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_transaction_has_script_data, returnsFalseifNull)
+{
+  EXPECT_EQ(cardano_transaction_has_script_data(nullptr), false);
+}
+
+TEST(cardano_transaction_has_script_data, returnsTrueIfHasScriptData)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+
+  // Act
+  bool has_script_data = cardano_transaction_has_script_data(transaction);
+
+  // Assert
+  EXPECT_TRUE(has_script_data);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_has_script_data, returnsFalseIfNoScriptData)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR_NULLIFY_ENTROPY);
+
+  // Act
+  bool has_script_data = cardano_transaction_has_script_data(transaction);
+
+  // Assert
+  EXPECT_FALSE(has_script_data);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}

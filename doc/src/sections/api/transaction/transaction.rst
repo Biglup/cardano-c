@@ -61,6 +61,10 @@ Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_has_script_data
+
+------------
+
 .. doxygenfunction:: cardano_transaction_unref
 
 ------------

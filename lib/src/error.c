@@ -182,6 +182,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_INVALID_PASSPHRASE:
       message = "Invalid passphrase";
       break;
+    case CARDANO_ERROR_ILLEGAL_STATE:
+      message = "Illegal state";
+      break;
     case CARDANO_ERROR_BALANCE_INSUFFICIENT:
       message = "Insufficient balance";
       break;
@@ -193,6 +196,9 @@ cardano_error_to_string(const cardano_error_t error)
       break;
     case CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED:
       message = "Maximum input count exceeded";
+      break;
+    case CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE:
+      message = "Script evaluation failure";
       break;
     default:
       message = "Unknown error code";

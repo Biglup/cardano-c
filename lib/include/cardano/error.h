@@ -142,6 +142,11 @@ typedef enum
    */
   CARDANO_ERROR_INVALID_PASSPHRASE = 20,
 
+  /**
+   * \brief The state of the object is illegal.
+   */
+  CARDANO_ERROR_ILLEGAL_STATE = 21,
+
   /* Serialization errors */
 
   /**
@@ -335,7 +340,14 @@ typedef enum
    * but doing so will increase the size of the resulting selection beyond an acceptable limit,
    * specified by the maximum input count parameter.
    */
-  CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED = 1103
+  CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED = 1103,
+
+  // TX Evaluation Failures
+
+  /**
+   * \brief The transaction script evaluation failed.
+   */
+  CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE = 1200,
 } cardano_error_t;
 
 /**

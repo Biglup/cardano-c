@@ -735,7 +735,17 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
       // LCOV_EXCL_STOP
     }
 
-    return cardano_value_subtract_multi_asset(*result, rhs->multi_asset);
+    new_val_result = cardano_value_subtract_multi_asset(*result, rhs->multi_asset);
+
+    if (new_val_result != CARDANO_SUCCESS)
+    {
+      // LCOV_EXCL_START
+      cardano_value_unref(result);
+      return new_val_result;
+      // LCOV_EXCL_STOP
+    }
+
+    return new_val_result;
   }
 
   if ((rhs->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(rhs->multi_asset) == 0U))

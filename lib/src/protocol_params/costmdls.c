@@ -366,8 +366,8 @@ cardano_costmdls_get(
 
 bool
 cardano_costmdls_has(
-  const cardano_costmdls_t*         costmdls,
-  cardano_plutus_language_version_t language)
+  const cardano_costmdls_t*               costmdls,
+  const cardano_plutus_language_version_t language)
 {
   if (costmdls == NULL)
   {

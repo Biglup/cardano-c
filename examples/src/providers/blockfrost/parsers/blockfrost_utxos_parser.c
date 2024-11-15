@@ -494,6 +494,51 @@ cardano_blockfrost_parse_unspent_outputs(
       goto cleanup;
     }
 
+    result = cardano_transaction_output_set_script_ref(output, reference_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      goto cleanup;
+    }
+
+    if (plutus_data_hash != NULL)
+    {
+      cardano_datum_t* datum = NULL;
+      result                 = cardano_datum_new_data_hash(plutus_data_hash, &datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+
+      result = cardano_transaction_output_set_datum(output, datum);
+      cardano_datum_unref(&datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+    }
+
+    if (plutus_data != NULL)
+    {
+      cardano_datum_t* datum = NULL;
+      result                 = cardano_datum_new_inline_data(plutus_data, &datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+
+      result = cardano_transaction_output_set_datum(output, datum);
+      cardano_datum_unref(&datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+    }
+
     result = cardano_utxo_new(input, output, &utxo);
 
     if (result != CARDANO_SUCCESS)
@@ -694,6 +739,51 @@ cardano_blockfrost_parse_tx_unspent_outputs(
     if (result != CARDANO_SUCCESS)
     {
       goto cleanup;
+    }
+
+    result = cardano_transaction_output_set_script_ref(output, reference_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      goto cleanup;
+    }
+
+    if (plutus_data_hash != NULL)
+    {
+      cardano_datum_t* datum = NULL;
+      result                 = cardano_datum_new_data_hash(plutus_data_hash, &datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+
+      result = cardano_transaction_output_set_datum(output, datum);
+      cardano_datum_unref(&datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+    }
+
+    if (plutus_data != NULL)
+    {
+      cardano_datum_t* datum = NULL;
+      result                 = cardano_datum_new_inline_data(plutus_data, &datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
+
+      result = cardano_transaction_output_set_datum(output, datum);
+      cardano_datum_unref(&datum);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        goto cleanup;
+      }
     }
 
     result = cardano_utxo_new(input, output, &utxo);

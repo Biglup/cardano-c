@@ -537,6 +537,29 @@ cardano_transaction_apply_vkey_witnesses(
   return cardano_vkey_witness_set_apply(inner_vkeys, new_vkeys);
 }
 
+bool
+cardano_transaction_has_script_data(cardano_transaction_t* transaction)
+{
+  if (transaction == NULL)
+  {
+    return false;
+  }
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(transaction);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_plutus_data_set_unref(&datums);
+
+  const size_t redeemers_size = cardano_redeemer_list_get_length(redeemers);
+  const size_t datums_size    = cardano_plutus_data_set_get_length(datums);
+
+  return (redeemers_size > 0U) || (datums_size > 0U);
+}
+
 void
 cardano_transaction_unref(cardano_transaction_t** transaction)
 {
