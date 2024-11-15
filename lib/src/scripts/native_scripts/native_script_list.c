@@ -151,10 +151,8 @@ cardano_native_script_list_from_cbor(cardano_cbor_reader_t* reader, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_native_script_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -179,10 +177,8 @@ cardano_native_script_list_from_cbor(cardano_cbor_reader_t* reader, cardano_nati
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_native_script_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -190,10 +186,8 @@ cardano_native_script_list_from_cbor(cardano_cbor_reader_t* reader, cardano_nati
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_native_script_list_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *native_script_list = list;
@@ -226,7 +220,7 @@ cardano_native_script_list_from_json(
 
   if (root == NULL)
   {
-    return CARDANO_ERROR_INVALID_JSON; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_JSON;
   }
 
   cardano_native_script_list_t* list   = NULL;
@@ -260,11 +254,9 @@ cardano_native_script_list_from_json(
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_native_script_list_unref(&list);
       json_object_put(root);
       return CARDANO_ERROR_INVALID_JSON;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_native_script_t* script = NULL;
@@ -287,11 +279,9 @@ cardano_native_script_list_from_json(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_native_script_list_unref(&list);
       json_object_put(root);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -325,7 +315,7 @@ cardano_native_script_list_to_cbor(const cardano_native_script_list_t* native_sc
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     };
   }
   else
@@ -335,7 +325,7 @@ cardano_native_script_list_to_cbor(const cardano_native_script_list_t* native_sc
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -345,10 +335,8 @@ cardano_native_script_list_to_cbor(const cardano_native_script_list_t* native_sc
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in native script list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_native_script_to_cbor((cardano_native_script_t*)((void*)element), writer);
@@ -357,7 +345,7 @@ cardano_native_script_list_to_cbor(const cardano_native_script_list_t* native_sc
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

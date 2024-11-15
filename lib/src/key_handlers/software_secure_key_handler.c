@@ -147,14 +147,14 @@ serialize(
 {
   if ((secure_key_handler_impl == NULL) || (serialized_data == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   software_secure_key_handler_context_t* context = (software_secure_key_handler_context_t*)((void*)secure_key_handler_impl->context);
 
   if ((context == NULL) || (context->encrypted_data == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   const size_t encrypted_data_size = cardano_buffer_get_size(context->encrypted_data);
@@ -170,7 +170,7 @@ serialize(
 
   if (*serialized_data == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_buffer_t* buffer = *serialized_data;
@@ -180,55 +180,45 @@ serialize(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_write(buffer, &SW_SECURE_KEY_BINARY_FORMAT_VERSION, 1);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_write(buffer, (const byte_t*)&secure_key_handler_impl->type, 1);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_write_uint32_be(buffer, (uint32_t)encrypted_data_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_write(buffer, cardano_buffer_get_data(context->encrypted_data), encrypted_data_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   const uint32_t crc32_checksum = cardano_checksum_crc32(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
@@ -237,11 +227,9 @@ serialize(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(serialized_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -277,7 +265,7 @@ bip32_get_extended_account_public_key(
 {
   if ((secure_key_handler_impl == NULL) || (bip32_public_key == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   software_secure_key_handler_context_t* context = (software_secure_key_handler_context_t*)((void*)secure_key_handler_impl->context);
@@ -306,7 +294,7 @@ bip32_get_extended_account_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   cardano_bip32_private_key_t* root_private_key    = NULL;
@@ -319,7 +307,7 @@ bip32_get_extended_account_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   const uint32_t path[3] = {
@@ -334,7 +322,7 @@ bip32_get_extended_account_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   cardano_bip32_public_key_t* account_public_key = NULL;
@@ -345,7 +333,7 @@ bip32_get_extended_account_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   *bip32_public_key = account_public_key;
@@ -388,14 +376,14 @@ bip32_sign_transaction(
 {
   if ((secure_key_handler_impl == NULL) || (tx == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   software_secure_key_handler_context_t* context = (software_secure_key_handler_context_t*)((void*)secure_key_handler_impl->context);
 
   if (context == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* decrypted_data = NULL;
@@ -422,12 +410,10 @@ bip32_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_memzero(decrypted_data);
     cardano_buffer_unref(&decrypted_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_bip32_private_key_t* root_private_key = NULL;
@@ -439,30 +425,26 @@ bip32_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
 
   if (hash == NULL)
   {
-    // LCOV_EXCL_START
     cardano_bip32_private_key_unref(&root_private_key);
 
     return CARDANO_ERROR_POINTER_IS_NULL;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_vkey_witness_set_new(vkey_witness_set);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_blake2b_hash_unref(&hash);
     cardano_bip32_private_key_unref(&root_private_key);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   for (size_t i = 0U; i < num_paths; ++i)
@@ -482,13 +464,11 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_bip32_private_key_to_ed25519_key(bip32_private_key, &ed25519_private_key);
@@ -497,13 +477,11 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_ed25519_signature_t*  signature  = NULL;
@@ -514,13 +492,11 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_ed25519_private_key_get_public_key(ed25519_private_key, &public_key);
@@ -529,13 +505,11 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_vkey_witness_new(public_key, signature, &witness);
@@ -545,27 +519,23 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_unref(&witness);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_vkey_witness_set_add(*vkey_witness_set, witness);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_vkey_witness_unref(&witness);
@@ -605,14 +575,14 @@ ed25519_get_public_key(
 {
   if ((secure_key_handler_impl == NULL) || (public_key == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   software_secure_key_handler_context_t* context = (software_secure_key_handler_context_t*)((void*)secure_key_handler_impl->context);
 
   if (context == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* decrypted_data = NULL;
@@ -638,12 +608,10 @@ ed25519_get_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_memzero(decrypted_data);
     cardano_buffer_unref(&decrypted_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_ed25519_private_key_t* ed25519_private_key = NULL;
@@ -662,11 +630,9 @@ ed25519_get_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_ed25519_private_key_unref(&ed25519_private_key);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_ed25519_private_key_get_public_key(ed25519_private_key, public_key);
@@ -707,14 +673,14 @@ ed25519_sign_transaction(
 {
   if ((secure_key_handler_impl == NULL) || (tx == NULL) || (vkey_witness_set == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   software_secure_key_handler_context_t* context = (software_secure_key_handler_context_t*)((void*)secure_key_handler_impl->context);
 
   if (context == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_buffer_t* decrypted_data = NULL;
@@ -741,12 +707,10 @@ ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_memzero(decrypted_data);
     cardano_buffer_unref(&decrypted_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_ed25519_private_key_t* private_key = NULL;
@@ -768,34 +732,28 @@ ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_ed25519_private_key_unref(&private_key);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
 
   if (hash == NULL)
   {
-    // LCOV_EXCL_START
     cardano_ed25519_private_key_unref(&private_key);
 
     return CARDANO_ERROR_POINTER_IS_NULL;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_vkey_witness_set_new(vkey_witness_set);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_blake2b_hash_unref(&hash);
     cardano_ed25519_private_key_unref(&private_key);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_ed25519_private_key_sign(private_key, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash), &signature);
@@ -803,12 +761,11 @@ ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
+    cardano_ed25519_signature_unref(&signature);
     cardano_vkey_witness_set_unref(vkey_witness_set);
     cardano_ed25519_private_key_unref(&private_key);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_ed25519_private_key_get_public_key(private_key, &public_key);
@@ -817,11 +774,10 @@ ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
+    cardano_ed25519_signature_unref(&signature);
     cardano_vkey_witness_set_unref(vkey_witness_set);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_vkey_witness_new(public_key, signature, &witness);
@@ -831,23 +787,19 @@ ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_vkey_witness_set_unref(vkey_witness_set);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_vkey_witness_set_add(*vkey_witness_set, witness);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_vkey_witness_unref(&witness);
     cardano_vkey_witness_set_unref(vkey_witness_set);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_vkey_witness_unref(&witness);
@@ -1027,11 +979,9 @@ cardano_software_secure_key_handler_deserialize(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   uint32_t                          magic          = 0U;
@@ -1102,35 +1052,29 @@ cardano_software_secure_key_handler_deserialize(
 
   if (encrypted_data == NULL)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&data);
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_set_size(encrypted_data, encrypted_data_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_read(data, cardano_buffer_get_data(encrypted_data), encrypted_data_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_buffer_read_uint32_be(data, &checksum);
@@ -1159,12 +1103,10 @@ cardano_software_secure_key_handler_deserialize(
 
   if (context == NULL)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&encrypted_data);
     cardano_buffer_unref(&data);
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   switch (type)
@@ -1216,5 +1158,12 @@ cardano_software_secure_key_handler_deserialize(
 
   cardano_buffer_unref(&data);
 
-  return cardano_secure_key_handler_new(impl, secure_key_handler);
+  result = cardano_secure_key_handler_new(impl, secure_key_handler);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_deallocate(context);
+  }
+
+  return result;
 }

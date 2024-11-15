@@ -134,10 +134,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
   if (copy_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *plutus_list = NULL;
     return copy_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_plutus_list_t* list   = NULL;
@@ -145,10 +143,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&cbor_cache);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   list->cbor_cache = cbor_cache;
@@ -171,10 +167,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_plutus_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -188,10 +182,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_plutus_list_unref(&list);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     const size_t old_size = cardano_array_get_size(list->array);
@@ -201,10 +193,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_plutus_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -212,10 +202,8 @@ cardano_plutus_list_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_list
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_plutus_list_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *plutus_list = list;
@@ -253,7 +241,7 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     };
   }
   else
@@ -262,7 +250,7 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -272,10 +260,8 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in plutus list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_plutus_data_to_cbor((cardano_plutus_data_t*)((void*)element), writer);
@@ -284,7 +270,7 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

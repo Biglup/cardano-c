@@ -295,7 +295,7 @@ cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cb
 
   if (get_remainder_bytes_result != CARDANO_SUCCESS)
   {
-    return get_remainder_bytes_result; // LCOV_EXCL_LINE
+    return get_remainder_bytes_result;
   }
 
   int64_t array_size = 0U;
@@ -304,10 +304,8 @@ cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cb
 
   if (read_start_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&buffer);
     return read_start_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   if (array_size < 0)
@@ -319,10 +317,8 @@ cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cb
 
     if (read_start_array_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_reader_unref(&inner_reader);
       return read_start_array_result;
-      /* LCOV_EXCL_STOP */
     }
 
     array_size                                     = 0U;
@@ -334,10 +330,8 @@ cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cb
 
       if (peek_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_cbor_reader_unref(&inner_reader);
         return peek_result;
-        /* LCOV_EXCL_STOP */
       }
 
       if (inner_reader_state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -351,10 +345,8 @@ cardano_cbor_validate_array_of_n_elements(const char* validator_name, cardano_cb
 
       if (skip_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_cbor_reader_unref(&inner_reader);
         return skip_result;
-        /* LCOV_EXCL_STOP */
       }
     }
 
@@ -408,7 +400,7 @@ cardano_cbor_validate_uint_in_range(const char* validator_name, const char* type
 
   if (read_uint_result != CARDANO_SUCCESS)
   {
-    return read_uint_result; /* LCOV_EXCL_LINE */
+    return read_uint_result;
   }
 
   if ((*type < min) || (*type > max))
@@ -513,7 +505,7 @@ cardano_cbor_validate_text_string_of_max_size(
 
   if (read_text_string_result != CARDANO_SUCCESS)
   {
-    return read_text_string_result; /* LCOV_EXCL_LINE */
+    return read_text_string_result;
   }
 
   const size_t text_string_size = cardano_buffer_get_size(text_string_buffer);
@@ -537,10 +529,8 @@ cardano_cbor_validate_text_string_of_max_size(
 
   if (copy_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&text_string_buffer);
     return copy_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_buffer_unref(&text_string_buffer);
@@ -577,7 +567,7 @@ cardano_cbor_validate_end_array(const char* validator_name, cardano_cbor_reader_
 
   if (read_end_array_result != CARDANO_SUCCESS)
   {
-    return read_end_array_result; /* LCOV_EXCL_LINE */
+    return read_end_array_result;
   }
 
   return CARDANO_SUCCESS;
@@ -612,7 +602,7 @@ cardano_cbor_validate_end_map(const char* validator_name, cardano_cbor_reader_t*
 
   if (read_end_map_result != CARDANO_SUCCESS)
   {
-    return read_end_map_result; /* LCOV_EXCL_LINE */
+    return read_end_map_result;
   }
 
   return CARDANO_SUCCESS;
@@ -649,7 +639,7 @@ cardano_cbor_validate_tag(const char* validator_name, cardano_cbor_reader_t* rea
 
   if (read_tag_result != CARDANO_SUCCESS)
   {
-    return read_tag_result; /* LCOV_EXCL_LINE */
+    return read_tag_result;
   }
 
   if (actual_tag != tag)
@@ -703,7 +693,7 @@ cardano_cbor_validate_enum_value(
 
   if (read_tag_result != CARDANO_SUCCESS)
   {
-    return read_tag_result; /* LCOV_EXCL_LINE */
+    return read_tag_result;
   }
 
   if (*actual_value != expected_value)

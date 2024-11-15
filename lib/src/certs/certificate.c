@@ -1138,12 +1138,11 @@ cardano_certificate_from_cbor(cardano_cbor_reader_t* reader, cardano_certificate
       cardano_vote_registration_delegation_cert_unref(&vote_registration_delegation_cert);
       return result;
     }
-    // LCOV_EXCL_START
+
     default:
     {
       return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
     }
-      // LCOV_EXCL_STOP
   }
 }
 
@@ -1261,12 +1260,11 @@ cardano_certificate_to_cbor(
       result = cardano_vote_registration_delegation_cert_to_cbor(certificate->vote_registration_delegation_cert, writer);
       break;
     }
-    // LCOV_EXCL_START
+
     default:
     {
       result = CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
     }
-      // LCOV_EXCL_STOP
   }
 
   return result;

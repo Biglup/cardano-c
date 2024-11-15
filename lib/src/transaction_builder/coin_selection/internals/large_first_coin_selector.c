@@ -62,7 +62,7 @@ select(
 {
   if ((coin_selector == NULL) || (available_utxo == NULL) || (target == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   CARDANO_UNUSED(coin_selector);
@@ -93,13 +93,11 @@ select(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_utxo_list_unref(remaining_utxo);
       cardano_utxo_list_unref(selection);
       cardano_value_unref(&accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     const size_t pre_selected_count = cardano_utxo_list_get_length(pre_selected_utxo);
@@ -113,26 +111,22 @@ select(
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_utxo_list_unref(remaining_utxo);
         cardano_utxo_list_unref(selection);
         cardano_value_unref(&accumulated_value);
 
         return result;
-        // LCOV_EXCL_STOP
       }
 
       result = cardano_utxo_list_add(*selection, utxo);
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_utxo_list_unref(remaining_utxo);
         cardano_utxo_list_unref(selection);
         cardano_value_unref(&accumulated_value);
 
         return result;
-        // LCOV_EXCL_STOP
       }
 
       result = cardano_utxo_list_remove(*remaining_utxo, utxo);
@@ -140,13 +134,11 @@ select(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_utxo_list_unref(remaining_utxo);
       cardano_utxo_list_unref(selection);
       cardano_value_unref(&accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -163,42 +155,36 @@ select(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&assets);
       cardano_utxo_list_unref(selection);
       cardano_utxo_list_unref(remaining_utxo);
       cardano_value_unref(&accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_asset_id_map_get(assets, asset_id, &asset_amount);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&assets);
       cardano_utxo_list_unref(selection);
       cardano_utxo_list_unref(remaining_utxo);
       cardano_value_unref(&accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = _cardano_large_fist_select_utxos(asset_id, asset_amount, *remaining_utxo, *selection, &accumulated_value);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&assets);
       cardano_utxo_list_unref(selection);
       cardano_utxo_list_unref(remaining_utxo);
       cardano_value_unref(&accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 

@@ -142,10 +142,8 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_proposal_procedure_set_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -166,10 +164,8 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_proposal_procedure_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -194,10 +190,8 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_proposal_procedure_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -205,10 +199,8 @@ cardano_proposal_procedure_set_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_proposal_procedure_set_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *proposal_procedure_set = list;
@@ -237,7 +229,7 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t array_size = cardano_array_get_size(proposal_procedure_set->array);
@@ -245,7 +237,7 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(proposal_procedure_set->array); ++i)
@@ -254,10 +246,8 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in proposal_procedure_set is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_proposal_procedure_to_cbor((cardano_proposal_procedure_t*)((void*)element), writer);
@@ -266,7 +256,7 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

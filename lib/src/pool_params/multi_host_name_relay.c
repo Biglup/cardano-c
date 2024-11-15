@@ -168,12 +168,10 @@ cardano_multi_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_m
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&dns);
     *multi_host_name_relay = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t result = cardano_multi_host_name_relay_new(dns_data, dns_size, multi_host_name_relay);
@@ -202,14 +200,14 @@ cardano_multi_host_name_relay_to_cbor(const cardano_multi_host_name_relay_t* mul
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, CARDANO_RELAY_TYPE_MULTI_HOST_NAME);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return cardano_cbor_writer_write_textstring(writer, multi_host_name_relay->dns, cardano_safe_strlen(multi_host_name_relay->dns, 64));

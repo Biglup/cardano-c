@@ -158,11 +158,9 @@ cardano_protocol_version_from_cbor(cardano_cbor_reader_t* reader, cardano_protoc
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *protocol_version = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return cardano_protocol_version_new(major, minor, protocol_version);
@@ -187,14 +185,14 @@ cardano_protocol_version_to_cbor(const cardano_protocol_version_t* protocol_vers
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, protocol_version->major);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return cardano_cbor_writer_write_uint(writer, protocol_version->minor);

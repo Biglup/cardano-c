@@ -548,7 +548,7 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
   if (reward_address_result != CARDANO_SUCCESS)
   {
-    return reward_address_result; // LCOV_EXCL_LINE
+    return reward_address_result;
   }
 
   cardano_buffer_t* encoded_action = NULL;
@@ -557,10 +557,8 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
   if (read_action_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_reward_address_unref(&reward_address);
     return read_action_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_error_t read_anchor_result = cardano_anchor_from_cbor(reader, &anchor);
@@ -582,14 +580,12 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
   if (peek_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_reward_address_unref(&reward_address);
     cardano_anchor_unref(&anchor);
     cardano_cbor_reader_unref(&action_reader);
     cardano_cbor_reader_unref(&action_reader_cloned);
 
     return peek_result;
-    // LCOV_EXCL_STOP
   }
 
   uint64_t type = 0;
@@ -599,13 +595,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
   if (read_type_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_reward_address_unref(&reward_address);
     cardano_anchor_unref(&anchor);
     cardano_cbor_reader_unref(&action_reader);
 
     return read_type_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_error_t final_result = CARDANO_SUCCESS;
@@ -620,13 +614,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_parameter_change_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_parameter_change_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_parameter_change_action(deposit, reward_address, anchor, parameter_change_action, proposal_procedure);
@@ -647,13 +639,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_hard_fork_initiation_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_hard_fork_initiation_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_hard_fork_initiation_action(deposit, reward_address, anchor, hard_fork_initiation_action, proposal_procedure);
@@ -674,13 +664,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_treasury_withdrawals_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_treasury_withdrawals_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_treasury_withdrawals_action(deposit, reward_address, anchor, treasury_withdrawals_action, proposal_procedure);
@@ -701,13 +689,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_no_confidence_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_no_confidence_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_no_confidence_action(deposit, reward_address, anchor, no_confidence_action, proposal_procedure);
@@ -728,13 +714,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_update_committee_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_update_committee_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_update_committee_action(deposit, reward_address, anchor, update_committee_action, proposal_procedure);
@@ -755,13 +739,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_new_constitution_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_new_constitution_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_constitution_action(deposit, reward_address, anchor, new_constitution_action, proposal_procedure);
@@ -782,13 +764,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       if (read_info_action_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_reward_address_unref(&reward_address);
         cardano_anchor_unref(&anchor);
         cardano_cbor_reader_unref(&action_reader);
 
         return read_info_action_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_error_t new_instance_result = cardano_proposal_procedure_new_info_action(deposit, reward_address, anchor, info_action, proposal_procedure);
@@ -801,7 +781,7 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
       final_result = new_instance_result;
       break;
     }
-      // LCOV_EXCL_START
+
     default:
     {
       cardano_reward_address_unref(&reward_address);
@@ -810,12 +790,11 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
       return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
     }
-      // LCOV_EXCL_STOP
   }
 
   if (final_result != CARDANO_SUCCESS)
   {
-    return final_result; // LCOV_EXCL_LINE
+    return final_result;
   }
 
   return cardano_cbor_reader_read_end_array(reader);
@@ -840,21 +819,21 @@ cardano_proposal_procedure_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, proposal_procedure->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {
-    return write_deposit_result; // LCOV_EXCL_LINE
+    return write_deposit_result;
   }
 
   cardano_error_t write_reward_address_result = cardano_cbor_writer_write_bytestring(writer, cardano_reward_address_get_bytes(proposal_procedure->reward_address), cardano_reward_address_get_bytes_size(proposal_procedure->reward_address));
 
   if (write_reward_address_result != CARDANO_SUCCESS)
   {
-    return write_reward_address_result; // LCOV_EXCL_LINE
+    return write_reward_address_result;
   }
 
   switch (proposal_procedure->action_type)
@@ -865,7 +844,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -876,7 +855,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -887,7 +866,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -898,7 +877,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -909,7 +888,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -920,7 +899,7 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
@@ -931,24 +910,23 @@ cardano_proposal_procedure_to_cbor(
 
       if (write_action_result != CARDANO_SUCCESS)
       {
-        return write_action_result; // LCOV_EXCL_LINE
+        return write_action_result;
       }
 
       break;
     }
-    // LCOV_EXCL_START
+
     default:
     {
       return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
     }
-      // LCOV_EXCL_STOP
   }
 
   cardano_error_t write_anchor_result = cardano_anchor_to_cbor(proposal_procedure->anchor, writer);
 
   if (write_anchor_result != CARDANO_SUCCESS)
   {
-    return write_anchor_result; // LCOV_EXCL_LINE
+    return write_anchor_result;
   }
 
   return CARDANO_SUCCESS;

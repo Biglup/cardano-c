@@ -61,14 +61,14 @@ _cardano_byron_address_initialize(cardano_cbor_writer_t* writer, const cardano_a
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_bytestring(writer, address->byron_content->root, sizeof(address->byron_content->root));
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   int64_t map_size = _cardano_byron_address_calculate_map_size(address->byron_content->attributes);
@@ -105,10 +105,8 @@ _cardano_byron_address_encode_magic(cardano_cbor_writer_t* writer, const cardano
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&magic_writer);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   size_t  magic_size;
@@ -144,11 +142,9 @@ _cardano_byron_address_encode_derivation_path(cardano_cbor_writer_t* writer, con
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&attributes_writer);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   size_t  attributes_size;
@@ -183,7 +179,7 @@ _cardano_byron_address_encode_attributes(cardano_cbor_writer_t* writer, const ca
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -193,7 +189,7 @@ _cardano_byron_address_encode_attributes(cardano_cbor_writer_t* writer, const ca
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -231,21 +227,21 @@ _cardano_byron_address_write_final_structure(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_tag(writer, CARDANO_ENCODED_CBOR_DATA_ITEM);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_bytestring(writer, encoded_data, encoded_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return cardano_cbor_writer_write_uint(writer, crc);
@@ -264,7 +260,7 @@ _cardano_byron_address_finalize_encoding(cardano_cbor_writer_t* writer, byte_t**
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   uint32_t crc = cardano_checksum_crc32(encoded_data, encoded_size);
@@ -273,10 +269,8 @@ _cardano_byron_address_finalize_encoding(cardano_cbor_writer_t* writer, byte_t**
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     _cardano_free(encoded_data);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = _cardano_byron_address_write_final_structure(writer, encoded_data, encoded_size, crc);
@@ -310,20 +304,16 @@ _cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, cons
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = _cardano_byron_address_encode_attributes(writer, address);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   byte_t* result_data = NULL;
@@ -331,10 +321,8 @@ _cardano_pack_byron_address(const cardano_address_t* address, byte_t* data, cons
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_safe_memcpy(data, data_size, result_data, *size);
@@ -438,11 +426,9 @@ _cardano_byron_address_unpack_inner_cbor_content(
 
   if (!*inner_reader)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&address_data_encoded);
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   cardano_buffer_unref(&address_data_encoded);
@@ -470,10 +456,8 @@ _cardano_byron_address_process_derivation_path(
 
   if (!path_reader)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&encoded_derivation_path);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   cardano_buffer_t* derivation_path = NULL;
@@ -520,10 +504,8 @@ _cardano_byron_address_process_magic(cardano_cbor_reader_t* inner_reader, cardan
 
   if (!magic_reader)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&encoded_magic);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   int64_t magic;
@@ -615,10 +597,8 @@ _cardano_byron_address_extract_address_components(cardano_cbor_reader_t* inner_r
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&root);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   int64_t byron_address_type;
@@ -635,12 +615,10 @@ _cardano_byron_address_extract_address_components(cardano_cbor_reader_t* inner_r
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&root);
     cardano_blake2b_hash_unref(&hash);
 
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   result = cardano_byron_address_from_credentials(hash, attributes, byron_address_type, address);
@@ -681,22 +659,18 @@ _cardano_unpack_byron_address(const byte_t* data, const size_t size, cardano_byr
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_reader_unref(&reader);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = _cardano_byron_address_extract_address_components(inner_reader, cardano_byron);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_reader_unref(&reader);
     cardano_cbor_reader_unref(&inner_reader);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_cbor_reader_unref(&reader);

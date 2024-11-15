@@ -202,10 +202,9 @@ get_field_ptr(cardano_witness_set_t* witness, size_t key)
       return (void*)&witness->plutus_v2_scripts;
     case 7:
       return (void*)&witness->plutus_v3_scripts;
-    // LCOV_EXCL_START
+
     default:
       return NULL;
-      // LCOV_EXCL_STOP
   }
 }
 
@@ -234,7 +233,7 @@ handle_vk_witness_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_vkey_witness_set_from_cbor(reader, field);
@@ -265,7 +264,7 @@ handle_native_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_native_script_set_from_cbor(reader, field);
@@ -296,7 +295,7 @@ handle_bootstrap_witness_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_bootstrap_witness_set_from_cbor(reader, field);
@@ -327,7 +326,7 @@ handle_plutus_v1_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_plutus_v1_script_set_from_cbor(reader, field);
@@ -358,7 +357,7 @@ handle_plutus_data(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_plutus_data_set_from_cbor(reader, field);
@@ -389,7 +388,7 @@ handle_redeemer_list(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_redeemer_list_from_cbor(reader, field);
@@ -420,7 +419,7 @@ handle_plutus_v2_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_plutus_v2_script_set_from_cbor(reader, field);
@@ -451,7 +450,7 @@ handle_plutus_v3_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_plutus_v3_script_set_from_cbor(reader, field);
@@ -471,12 +470,12 @@ handle_plutus_v3_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
  *         - Always returns \ref CARDANO_ERROR_INVALID_CBOR_MAP_KEY.
  */
 static cardano_error_t
-handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr) // LCOV_EXCL_LINE
+handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   CARDANO_UNUSED(reader);
   CARDANO_UNUSED(field_ptr);
 
-  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
 }
 
 /**
@@ -507,14 +506,14 @@ write_vkey_witness_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_vkey_witness_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -549,14 +548,14 @@ write_native_script_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_native_script_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -591,14 +590,14 @@ write_bootstrap_witness_set_if_present(cardano_cbor_writer_t* writer, const uint
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_bootstrap_witness_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -633,14 +632,14 @@ write_plutus_v1_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_plutus_v1_script_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -675,14 +674,14 @@ write_plutus_data_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_plutus_data_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -717,14 +716,14 @@ write_redeemer_list_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_redeemer_list_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -759,14 +758,14 @@ write_plutus_v2_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_plutus_v2_script_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -801,14 +800,14 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_plutus_v3_script_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -929,22 +928,18 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
 
     if (field_ptr == NULL)
     {
-      // LCOV_EXCL_START
       cardano_witness_set_unref(&witness);
 
       return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
-      // LCOV_EXCL_STOP
     }
 
     result = param_handlers[key](reader, field_ptr);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_witness_set_unref(&witness);
 
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -972,63 +967,63 @@ cardano_witness_set_to_cbor(const cardano_witness_set_t* witness_set, cardano_cb
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_vkey_witness_set_if_present(writer, 0U, witness_set->vkey_witnesses);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_native_script_if_present(writer, 1U, witness_set->native_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_bootstrap_witness_set_if_present(writer, 2U, witness_set->bootstrap_witnesses);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_plutus_v1_script_set_if_present(writer, 3U, witness_set->plutus_v1_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_plutus_data_if_present(writer, 4U, witness_set->plutus_data);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_redeemer_list_if_present(writer, 5U, witness_set->redeemer);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_plutus_v2_script_set_if_present(writer, 6U, witness_set->plutus_v2_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_plutus_v3_script_set_if_present(writer, 7U, witness_set->plutus_v3_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return CARDANO_SUCCESS;

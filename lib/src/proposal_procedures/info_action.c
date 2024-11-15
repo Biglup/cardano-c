@@ -140,7 +140,7 @@ cardano_info_action_from_cbor(cardano_cbor_reader_t* reader, cardano_info_action
 
   if (end_array_result != CARDANO_SUCCESS)
   {
-    return end_array_result; // LCOV_EXCL_LINE
+    return end_array_result;
   }
 
   return cardano_info_action_new(info_action);
@@ -165,14 +165,14 @@ cardano_info_action_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_enum_result = cardano_cbor_writer_write_uint(writer, CARDANO_GOVERNANCE_ACTION_TYPE_INFO);
 
   if (write_enum_result != CARDANO_SUCCESS)
   {
-    return write_enum_result; // LCOV_EXCL_LINE
+    return write_enum_result;
   }
 
   return CARDANO_SUCCESS;

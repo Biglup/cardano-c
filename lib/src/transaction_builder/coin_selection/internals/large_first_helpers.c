@@ -107,13 +107,11 @@ _cardano_large_fist_value_gte(
 
     if (op_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_list_unref(&asset_ids);
       cardano_asset_id_map_unref(&lhs_asset_id_map);
       cardano_asset_id_map_unref(&rhs_asset_id_map);
 
       return op_result;
-      // LCOV_EXCL_STOP
     }
 
     const size_t assets_count = cardano_asset_id_list_get_length(asset_ids);
@@ -128,13 +126,11 @@ _cardano_large_fist_value_gte(
 
       if (op_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_list_unref(&asset_ids);
         cardano_asset_id_map_unref(&lhs_asset_id_map);
         cardano_asset_id_map_unref(&rhs_asset_id_map);
 
         return op_result;
-        // LCOV_EXCL_STOP
       }
 
       int64_t lhs_multi_asset_amount = 0;
@@ -155,26 +151,22 @@ _cardano_large_fist_value_gte(
 
       if (op_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_list_unref(&asset_ids);
         cardano_asset_id_map_unref(&lhs_asset_id_map);
         cardano_asset_id_map_unref(&rhs_asset_id_map);
 
         return op_result;
-        // LCOV_EXCL_STOP
       }
 
       op_result = cardano_asset_id_map_get(rhs_asset_id_map, id, &rhs_multi_asset_amount);
 
       if (op_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_list_unref(&asset_ids);
         cardano_asset_id_map_unref(&lhs_asset_id_map);
         cardano_asset_id_map_unref(&rhs_asset_id_map);
 
         return op_result;
-        // LCOV_EXCL_STOP
       }
 
       if (lhs_multi_asset_amount < rhs_multi_asset_amount)
@@ -271,11 +263,9 @@ _cardano_large_fist_check_preselected(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_value_unref(accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_transaction_output_t* output     = cardano_utxo_get_output(utxo);
@@ -286,11 +276,9 @@ _cardano_large_fist_check_preselected(
 
     if (utxo_value == NULL)
     {
-      // LCOV_EXCL_START
       cardano_value_unref(accumulated_value);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_value_t* new_accumulated_value = NULL;
@@ -348,7 +336,7 @@ _cardano_large_fist_select_utxos(
 
   if (assets == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   int64_t accumulated_amount = 0;
@@ -356,11 +344,9 @@ _cardano_large_fist_select_utxos(
 
   if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_ELEMENT_NOT_FOUND))
   {
-    // LCOV_EXCL_START
     cardano_asset_id_map_unref(&assets);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   if (accumulated_amount >= required_amount)
@@ -381,11 +367,9 @@ _cardano_large_fist_select_utxos(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&assets);
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_transaction_output_t* output     = cardano_utxo_get_output(utxo);
@@ -399,14 +383,12 @@ _cardano_large_fist_select_utxos(
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&assets);
         cardano_value_unref(&utxo_value);
         cardano_transaction_output_unref(&output);
         cardano_utxo_unref(&utxo);
 
         return result;
-        // LCOV_EXCL_STOP
       }
 
       accumulated_amount += utxo_asset_amount;
@@ -416,14 +398,12 @@ _cardano_large_fist_select_utxos(
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&assets);
         cardano_value_unref(&utxo_value);
         cardano_transaction_output_unref(&output);
         cardano_utxo_unref(&utxo);
 
         return result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_value_unref(accumulated_value);

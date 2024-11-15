@@ -125,7 +125,7 @@ ip_from_string(const char* ip_string, byte_t* ip_data, const size_t ip_data_size
 
       if (write_result != CARDANO_SUCCESS)
       {
-        return write_result; // LCOV_EXCL_LINE
+        return write_result;
       }
     }
   }

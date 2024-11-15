@@ -183,7 +183,7 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (peek_state != CARDANO_SUCCESS)
   {
-    return peek_state; /* LCOV_EXCL_LINE */
+    return peek_state;
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -192,7 +192,7 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (read_null_result != CARDANO_SUCCESS)
     {
-      return read_null_result; /* LCOV_EXCL_LINE */
+      return read_null_result;
     }
   }
   else
@@ -201,7 +201,7 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (read_port_result != CARDANO_SUCCESS)
     {
-      return read_port_result; /* LCOV_EXCL_LINE */
+      return read_port_result;
     }
 
     has_port = true;
@@ -214,7 +214,7 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (read_string_result != CARDANO_SUCCESS)
   {
-    return read_string_result; /* LCOV_EXCL_LINE */
+    return read_string_result;
   }
 
   const size_t dns_size = cardano_buffer_get_size(dns);
@@ -224,12 +224,10 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&dns);
     *single_host_name_relay = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t result = cardano_single_host_name_relay_new(has_port ? &port : NULL, dns_data, dns_size, single_host_name_relay);
@@ -258,14 +256,14 @@ cardano_single_host_name_relay_to_cbor(const cardano_single_host_name_relay_t* s
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_NAME);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   if (single_host_name_relay->port == NULL)
@@ -274,7 +272,7 @@ cardano_single_host_name_relay_to_cbor(const cardano_single_host_name_relay_t* s
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; /* LCOV_EXCL_LINE */
+      return write_null_result;
     }
   }
   else
@@ -283,7 +281,7 @@ cardano_single_host_name_relay_to_cbor(const cardano_single_host_name_relay_t* s
 
     if (write_port_result != CARDANO_SUCCESS)
     {
-      return write_port_result; /* LCOV_EXCL_LINE */
+      return write_port_result;
     }
   }
 

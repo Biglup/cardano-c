@@ -76,10 +76,8 @@ cardano_base_address_from_credentials(
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     _cardano_free(address);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   address->network_id = _cardano_malloc(sizeof(cardano_network_id_t));

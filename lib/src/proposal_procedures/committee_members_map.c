@@ -207,10 +207,8 @@ cardano_committee_members_map_from_cbor(cardano_cbor_reader_t* reader, cardano_c
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_committee_members_map_unref(&map);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -242,12 +240,10 @@ cardano_committee_members_map_from_cbor(cardano_cbor_reader_t* reader, cardano_c
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_credential_unref(&key);
       cardano_committee_members_map_unref(&map);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      // LCOV_EXCL_STOP
     }
 
     kvp->base.ref_count     = 0;
@@ -271,10 +267,8 @@ cardano_committee_members_map_from_cbor(cardano_cbor_reader_t* reader, cardano_c
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_committee_members_map_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *committee_members_map = map;
@@ -302,7 +296,7 @@ cardano_committee_members_map_to_cbor(const cardano_committee_members_map_t* com
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(committee_members_map->array); ++i)
@@ -311,10 +305,8 @@ cardano_committee_members_map_to_cbor(const cardano_committee_members_map_t* com
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in committee members is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_committee_members_map_kvp_t* kvp_data = (cardano_committee_members_map_kvp_t*)((void*)kvp);
@@ -323,20 +315,16 @@ cardano_committee_members_map_to_cbor(const cardano_committee_members_map_t* com
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);
@@ -461,7 +449,7 @@ cardano_committee_members_map_get_keys(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(committee_members_map->array); ++i)
@@ -473,11 +461,9 @@ cardano_committee_members_map_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_credential_set_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);

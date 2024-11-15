@@ -564,7 +564,7 @@ cardano_address_equals(const cardano_address_t* lhs, const cardano_address_t* rh
 
   if (lhs->address_data_size != rhs->address_data_size)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   return memcmp(lhs->address_data, rhs->address_data, lhs->address_data_size) == 0;

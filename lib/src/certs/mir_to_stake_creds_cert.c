@@ -248,10 +248,8 @@ cardano_mir_to_stake_creds_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_mir_to_stake_creds_cert_unref(&map);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -307,10 +305,8 @@ cardano_mir_to_stake_creds_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_mir_to_stake_creds_cert_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *mir_to_stake_creds_cert = map;
@@ -335,14 +331,14 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, mir_to_stake_creds_cert->pot);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t map_size = cardano_array_get_size(mir_to_stake_creds_cert->array);
@@ -350,7 +346,7 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(mir_to_stake_creds_cert->array); ++i)
@@ -359,10 +355,8 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in MIR to stake credentials certificate is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_mir_to_stake_creds_cert_kvp_t* kvp_data = (cardano_mir_to_stake_creds_cert_kvp_t*)((void*)kvp);
@@ -371,20 +365,16 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);

@@ -98,7 +98,7 @@ compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs, void*
 
   if (lhs_size != rhs_size)
   {
-    return (lhs_size < rhs_size) ? -1 : 1; // LCOV_EXCL_LINE
+    return (lhs_size < rhs_size) ? -1 : 1;
   }
 
   const uint8_t* lhs_bytes = cardano_reward_address_get_bytes(lhs_address);

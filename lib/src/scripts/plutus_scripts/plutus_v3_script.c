@@ -133,10 +133,8 @@ cardano_plutus_v3_script_new_bytes(
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_plutus_v3_script_unref(&data);
     return error;
-    // LCOV_EXCL_STOP
   }
 
   *plutus_v3_script = data;
@@ -186,10 +184,8 @@ cardano_plutus_v3_script_new_bytes_from_hex(
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_plutus_v3_script_unref(&data);
     return error;
-    // LCOV_EXCL_STOP
   }
 
   *plutus_v3_script = data;
@@ -297,20 +293,16 @@ cardano_plutus_v3_script_get_hash(const cardano_plutus_v3_script_t* plutus_v3_sc
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&hash_input);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   error = cardano_buffer_write(hash_input, cardano_buffer_get_data(plutus_v3_script->compiled_code), cardano_buffer_get_size(plutus_v3_script->compiled_code));
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&hash_input);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   error = cardano_blake2b_compute_hash(
@@ -323,7 +315,7 @@ cardano_plutus_v3_script_get_hash(const cardano_plutus_v3_script_t* plutus_v3_sc
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return hash;

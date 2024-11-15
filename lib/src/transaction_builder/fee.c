@@ -75,11 +75,9 @@ cardano_get_serialized_coin_size(const uint64_t lovelace, size_t* size_in_bytes)
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
@@ -112,11 +110,9 @@ cardano_get_serialized_output_size(cardano_transaction_output_t* output, size_t*
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
@@ -149,11 +145,9 @@ cardano_get_serialized_script_size(cardano_script_t* script, size_t* size_in_byt
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
@@ -186,11 +180,9 @@ cardano_get_serialized_transaction_size(cardano_transaction_t* transaction, size
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
@@ -229,10 +221,8 @@ cardano_get_total_ex_units_in_redeemers(cardano_redeemer_list_t* redeemers, card
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_ex_units_unref(&total_ex_units);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_ex_units_t* ex_units = cardano_redeemer_get_ex_units(redeemer);
@@ -240,12 +230,10 @@ cardano_get_total_ex_units_in_redeemers(cardano_redeemer_list_t* redeemers, card
 
     if (ex_units == NULL)
     {
-      // LCOV_EXCL_START
       cardano_ex_units_unref(&total_ex_units);
       result = CARDANO_ERROR_GENERIC;
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     const uint64_t cpu_steps = cardano_ex_units_get_cpu_steps(ex_units);
@@ -255,20 +243,16 @@ cardano_get_total_ex_units_in_redeemers(cardano_redeemer_list_t* redeemers, card
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_ex_units_unref(&total_ex_units);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_ex_units_set_memory(total_ex_units, cardano_ex_units_get_memory(total_ex_units) + memory);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_ex_units_unref(&total_ex_units);
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -311,11 +295,9 @@ cardano_compute_script_ref_fee(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       *script_ref_fee = 0U;
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
@@ -323,11 +305,9 @@ cardano_compute_script_ref_fee(
 
     if (output == NULL)
     {
-      // LCOV_EXCL_START
       *script_ref_fee = 0U;
 
       return CARDANO_ERROR_POINTER_IS_NULL;
-      // LCOV_EXCL_STOP
     }
 
     cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
@@ -344,16 +324,14 @@ cardano_compute_script_ref_fee(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       *script_ref_fee = 0U;
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (language == CARDANO_SCRIPT_LANGUAGE_NATIVE)
     {
-      continue; // LCOV_EXCL_LINE
+      continue;
     }
 
     size_t script_size = 0U;
@@ -362,11 +340,9 @@ cardano_compute_script_ref_fee(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       *script_ref_fee = 0U;
 
       return result;
-      // LCOV_EXCL_STOP
     }
 
     total_ref_scripts_size += script_size;
@@ -441,7 +417,7 @@ cardano_compute_min_script_fee(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   const uint64_t cpu_steps = cardano_ex_units_get_cpu_steps(total_ex_units);
@@ -456,17 +432,15 @@ cardano_compute_min_script_fee(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_ex_unit_prices_get_memory_prices(prices, &memory_prices);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_unit_interval_unref(&cpu_steps_prices);
     return result;
-    // LCOV_EXCL_STOP
   }
 
   const double cpu_price = cardano_unit_interval_to_double(cpu_steps_prices);
@@ -483,11 +457,9 @@ cardano_compute_min_script_fee(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *min_fee = 0U;
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   *min_fee += ref_script_size;
@@ -518,7 +490,7 @@ cardano_compute_min_fee_without_scripts(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   *min_fee = (uint64_t)ceil((double)min_fee_constant + ((double)min_fee_coefficient * (double)size_in_bytes));
@@ -551,7 +523,7 @@ cardano_compute_min_ada_required(
 
   if (value == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   size_t          old_coin_size = 0U;
@@ -560,14 +532,14 @@ cardano_compute_min_ada_required(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_get_serialized_output_size(output, &output_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t last_size = old_coin_size;
@@ -584,7 +556,7 @@ cardano_compute_min_ada_required(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     is_done   = (new_coin_size == last_size);
@@ -635,12 +607,12 @@ cardano_compute_transaction_fee(
 
   if (prices == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   if (coins_per_ref_script_byte == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   uint64_t        min_script_fee = 0U;
@@ -648,7 +620,7 @@ cardano_compute_transaction_fee(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   uint64_t no_script_fee = 0U;
@@ -657,7 +629,7 @@ cardano_compute_transaction_fee(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   *fee = min_script_fee + no_script_fee;

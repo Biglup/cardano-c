@@ -217,11 +217,9 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
 
     if (expect_array_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_buffer_unref(&cbor_cache);
       *constr_plutus_data = NULL;
       return expect_array_result;
-      // LCOV_EXCL_STOP
     }
 
     uint64_t              alternative      = 0U;
@@ -254,13 +252,11 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
 
     if (expect_end_array_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_buffer_unref(&cbor_cache);
       *constr_plutus_data = NULL;
       cardano_plutus_list_unref(&data);
 
       return expect_end_array_result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_error_t result = cardano_constr_plutus_data_new(alternative, data, constr_plutus_data);
@@ -268,11 +264,9 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_buffer_unref(&cbor_cache);
       *constr_plutus_data = NULL;
       return result;
-      // LCOV_EXCL_STOP
     }
 
     (*constr_plutus_data)->cbor_cache = cbor_cache;
@@ -297,11 +291,9 @@ cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_cons
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&cbor_cache);
     *constr_plutus_data = NULL;
     return result;
-    // LCOV_EXCL_STOP
   }
 
   (*constr_plutus_data)->cbor_cache = cbor_cache;
@@ -333,7 +325,7 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
 
   if (write_tag_result != CARDANO_SUCCESS)
   {
-    return write_tag_result; /* LCOV_EXCL_LINE */
+    return write_tag_result;
   }
 
   if (tag != GENERAL_FORM_TAG)
@@ -345,14 +337,14 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   const cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, constr_plutus_data->alternative);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return cardano_plutus_list_to_cbor(constr_plutus_data->data, writer);

@@ -726,40 +726,28 @@ TEST(cardano_large_first_coin_selector_select, returnsErrorIfMemoryAllocationFai
 
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, realloc, free);
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+  for (int i = 0; i < 57; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
 
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, realloc, free);
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
-
-  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
-
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_two_malloc, realloc, free);
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
-
-  ASSERT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
-
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_three_malloc, realloc, free);
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
 
   // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_set_allocators(malloc, realloc, free);
+
   cardano_value_unref(&target);
   cardano_coin_selector_unref(&large_first_coin_selector);
   cardano_utxo_list_unref(&available_utxo);
   cardano_utxo_list_unref(&pre_selected_utxo);
   cardano_utxo_list_unref(&selection);
   cardano_utxo_list_unref(&remaining_utxo);
-
-  cardano_set_allocators(malloc, realloc, free);
 }
 
 /* INTERNALS *****************************************************************/

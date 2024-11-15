@@ -266,12 +266,10 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&byte_string);
     *governance_action_id = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t new_governance_action_id_result = cardano_governance_action_id_from_hash_bytes(
@@ -284,10 +282,8 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
 
   if (new_governance_action_id_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *governance_action_id = NULL;
     return new_governance_action_id_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -312,21 +308,21 @@ cardano_governance_action_id_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, governance_action_id->hash_bytes, sizeof(governance_action_id->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
-    return write_bytes_result; /* LCOV_EXCL_LINE */
+    return write_bytes_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, governance_action_id->index);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return CARDANO_SUCCESS;

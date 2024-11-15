@@ -174,10 +174,8 @@ cardano_committee_from_cbor(cardano_cbor_reader_t* reader, cardano_committee_t**
 
   if (new_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_committee_members_map_unref(&committee_members_map);
     return new_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_committee_members_map_unref(&(*committee)->committee_members_map);
@@ -205,21 +203,21 @@ cardano_committee_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_map_result = cardano_committee_members_map_to_cbor(committee->committee_members_map, writer);
 
   if (write_map_result != CARDANO_SUCCESS)
   {
-    return write_map_result; // LCOV_EXCL_LINE
+    return write_map_result;
   }
 
   cardano_error_t write_quorum_result = cardano_unit_interval_to_cbor(committee->quorum_threshold, writer);
 
   if (write_quorum_result != CARDANO_SUCCESS)
   {
-    return write_quorum_result; // LCOV_EXCL_LINE
+    return write_quorum_result;
   }
 
   return CARDANO_SUCCESS;

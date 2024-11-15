@@ -234,7 +234,7 @@ cardano_ed25519_public_verify(
 
   if (sodium_init() == -1)
   {
-    return false; /* LCOV_EXCL_LINE */
+    return false;
   }
 
   int verify_result = crypto_sign_verify_detached(

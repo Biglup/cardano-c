@@ -183,7 +183,7 @@ cardano_auth_committee_hot_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -208,28 +208,28 @@ cardano_auth_committee_hot_cert_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_credential_to_cbor(auth_committee_hot_cert->committee_cold_cred, writer);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_credential_to_cbor(auth_committee_hot_cert->committee_hot_cred, writer);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return CARDANO_SUCCESS;

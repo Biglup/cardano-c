@@ -245,7 +245,6 @@ cardano_pool_voting_thresholds_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_unit_interval_unref(&motion_no_confidence);
     cardano_unit_interval_unref(&committee_normal);
     cardano_unit_interval_unref(&committee_no_confidence);
@@ -254,7 +253,6 @@ cardano_pool_voting_thresholds_from_cbor(cardano_cbor_reader_t* reader, cardano_
     *pool_voting_thresholds = NULL;
 
     return expect_end_array_result;
-    // LCOV_EXCL_STOP
   }
 
   const cardano_error_t result = cardano_pool_voting_thresholds_new(
@@ -293,35 +291,35 @@ cardano_pool_voting_thresholds_to_cbor(const cardano_pool_voting_thresholds_t* p
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t motion_no_confidence_result = cardano_unit_interval_to_cbor(pool_voting_thresholds->motion_no_confidence, writer);
 
   if (motion_no_confidence_result != CARDANO_SUCCESS)
   {
-    return motion_no_confidence_result; /* LCOV_EXCL_LINE */
+    return motion_no_confidence_result;
   }
 
   cardano_error_t committee_normal_result = cardano_unit_interval_to_cbor(pool_voting_thresholds->committee_normal, writer);
 
   if (committee_normal_result != CARDANO_SUCCESS)
   {
-    return committee_normal_result; /* LCOV_EXCL_LINE */
+    return committee_normal_result;
   }
 
   cardano_error_t committee_no_confidence_result = cardano_unit_interval_to_cbor(pool_voting_thresholds->committee_no_confidence, writer);
 
   if (committee_no_confidence_result != CARDANO_SUCCESS)
   {
-    return committee_no_confidence_result; /* LCOV_EXCL_LINE */
+    return committee_no_confidence_result;
   }
 
   cardano_error_t hard_fork_initiation_result = cardano_unit_interval_to_cbor(pool_voting_thresholds->hard_fork_initiation, writer);
 
   if (hard_fork_initiation_result != CARDANO_SUCCESS)
   {
-    return hard_fork_initiation_result; /* LCOV_EXCL_LINE */
+    return hard_fork_initiation_result;
   }
 
   return cardano_unit_interval_to_cbor(pool_voting_thresholds->security_relevant_param, writer);

@@ -163,7 +163,7 @@ cardano_pool_registration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -188,21 +188,21 @@ cardano_pool_registration_cert_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_POOL_REGISTRATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
-    return write_type_result; // LCOV_EXCL_LINE
+    return write_type_result;
   }
 
   cardano_error_t write_params_result = cardano_pool_params_to_cbor(pool_registration_cert->params, writer);
 
   if (write_params_result != CARDANO_SUCCESS)
   {
-    return write_params_result; // LCOV_EXCL_LINE
+    return write_params_result;
   }
 
   return CARDANO_SUCCESS;

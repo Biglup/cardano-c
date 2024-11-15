@@ -136,12 +136,10 @@ cardano_blake2b_compute_hash(
 
   if (init_result == -1)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_deallocate(obj);
     *hash = NULL;
 
     return CARDANO_ERROR_GENERIC;
-    /* LCOV_EXCL_STOP */
   }
 
   int hashing_result = crypto_generichash(
@@ -154,12 +152,10 @@ cardano_blake2b_compute_hash(
 
   if (hashing_result == -1)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_deallocate(obj);
     *hash = NULL;
 
     return CARDANO_ERROR_GENERIC;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t set_size_result = cardano_buffer_set_size(obj->buffer, hash_length);
@@ -292,7 +288,7 @@ cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_ha
 
   if (read_byte_string_result != CARDANO_SUCCESS)
   {
-    return read_byte_string_result; /* LCOV_EXCL_LINE */
+    return read_byte_string_result;
   }
 
   const cardano_error_t create_hash_result = cardano_blake2b_hash_from_bytes(
@@ -327,7 +323,7 @@ cardano_blake2b_hash_to_cbor(
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
-    return write_bytes_result; /* LCOV_EXCL_LINE */
+    return write_bytes_result;
   }
 
   return CARDANO_SUCCESS;

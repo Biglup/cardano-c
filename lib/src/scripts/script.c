@@ -289,7 +289,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       result = cardano_script_new_native(native_script, script);
@@ -304,7 +304,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       result = cardano_script_new_plutus_v1(plutus_v1_script, script);
@@ -319,7 +319,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       result = cardano_script_new_plutus_v2(plutus_v2_script, script);
@@ -334,7 +334,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       result = cardano_script_new_plutus_v3(plutus_v3_script, script);
@@ -342,11 +342,10 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       break;
     }
-    // LCOV_EXCL_START
+
     default:
       result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
       break;
-      // LCOV_EXCL_STOP
   }
 
   return result;
@@ -371,14 +370,14 @@ cardano_script_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, script->language);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   switch (script->language)
@@ -395,11 +394,10 @@ cardano_script_to_cbor(
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       result = cardano_plutus_v3_script_to_cbor(script->plutus_v3_script, writer);
       break;
-    // LCOV_EXCL_START
+
     default:
       result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
       break;
-      // LCOV_EXCL_STOP
   }
 
   return result;
@@ -557,10 +555,9 @@ cardano_script_get_hash(const cardano_script_t* script)
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       hash = cardano_plutus_v3_script_get_hash(script->plutus_v3_script);
       break;
-    // LCOV_EXCL_START
+
     default:
       break;
-      // LCOV_EXCL_STOP
   }
 
   return hash;
@@ -604,10 +601,9 @@ cardano_script_equals(const cardano_script_t* lhs, const cardano_script_t* rhs)
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       result = cardano_plutus_v3_script_equals(lhs->plutus_v3_script, rhs->plutus_v3_script);
       break;
-    // LCOV_EXCL_START
+
     default:
       return false;
-      // LCOV_EXCL_STOP
   }
 
   return result;

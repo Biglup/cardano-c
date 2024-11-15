@@ -192,13 +192,11 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 
   if (state_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_transaction_body_unref(&body);
     cardano_witness_set_unref(&witness_set);
     *transaction = NULL;
 
     return state_result;
-    // LCOV_EXCL_STOP
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -207,13 +205,11 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 
     if (read_null_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_transaction_body_unref(&body);
       cardano_witness_set_unref(&witness_set);
       *transaction = NULL;
 
       return read_null_result;
-      // LCOV_EXCL_STOP
     }
   }
   else
@@ -234,7 +230,6 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *transaction = NULL;
 
     cardano_transaction_body_unref(&body);
@@ -242,7 +237,6 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     cardano_auxiliary_data_unref(&auxiliary_data);
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t create_instance_result = cardano_transaction_new(body, witness_set, auxiliary_data, transaction);
@@ -253,20 +247,16 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
 
   if (create_instance_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_transaction_unref(transaction);
     return create_instance_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t set_is_valid_result = cardano_transaction_set_is_valid(*transaction, is_valid);
 
   if (set_is_valid_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_transaction_unref(transaction);
     return set_is_valid_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -291,28 +281,28 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t body_result = cardano_transaction_body_to_cbor(transaction->body, writer);
 
   if (body_result != CARDANO_SUCCESS)
   {
-    return body_result; /* LCOV_EXCL_LINE */
+    return body_result;
   }
 
   cardano_error_t witness_set_result = cardano_witness_set_to_cbor(transaction->witness_set, writer);
 
   if (witness_set_result != CARDANO_SUCCESS)
   {
-    return witness_set_result; /* LCOV_EXCL_LINE */
+    return witness_set_result;
   }
 
   cardano_error_t write_bool_result = cardano_cbor_writer_write_bool(writer, transaction->is_valid);
 
   if (write_bool_result != CARDANO_SUCCESS)
   {
-    return write_bool_result; /* LCOV_EXCL_LINE */
+    return write_bool_result;
   }
 
   if (transaction->auxiliary_data == NULL)
@@ -321,7 +311,7 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; /* LCOV_EXCL_LINE */
+      return write_null_result;
     }
   }
   else
@@ -330,7 +320,7 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
 
     if (auxiliary_data_result != CARDANO_SUCCESS)
     {
-      return auxiliary_data_result; /* LCOV_EXCL_LINE */
+      return auxiliary_data_result;
     }
   }
 
@@ -506,7 +496,7 @@ cardano_transaction_apply_vkey_witnesses(
 
   if (witness_set == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   cardano_error_t             result;
@@ -518,7 +508,7 @@ cardano_transaction_apply_vkey_witnesses(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_witness_set_set_vkeys(witness_set, inner_vkeys);
@@ -526,7 +516,7 @@ cardano_transaction_apply_vkey_witnesses(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
   else

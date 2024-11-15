@@ -163,10 +163,8 @@ cardano_script_any_from_cbor(cardano_cbor_reader_t* reader, cardano_script_any_t
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_native_script_list_unref(&native_scripts);
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t create_any_new_result = cardano_script_any_new(native_scripts, script_any);
@@ -194,14 +192,14 @@ cardano_script_any_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, script_any->type);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_native_script_list_to_cbor(script_any->scripts, writer);
@@ -241,10 +239,8 @@ cardano_script_any_from_json(const char* json, size_t json_size, cardano_script_
 
   if (type_string == NULL)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
     return CARDANO_ERROR_INVALID_JSON;
-    // LCOV_EXCL_STOP
   }
 
   cardano_native_script_list_t* native_scripts = NULL;

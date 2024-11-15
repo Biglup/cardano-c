@@ -255,11 +255,9 @@ cardano_unit_interval_from_cbor(cardano_cbor_reader_t* reader, cardano_unit_inte
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *unit_interval = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return cardano_unit_interval_new(numerator, denominator, unit_interval);
@@ -282,7 +280,7 @@ cardano_unit_interval_to_cbor(const cardano_unit_interval_t* unit_interval, card
 
   if (write_tag_result != CARDANO_SUCCESS)
   {
-    return write_tag_result; /* LCOV_EXCL_LINE */
+    return write_tag_result;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -291,14 +289,14 @@ cardano_unit_interval_to_cbor(const cardano_unit_interval_t* unit_interval, card
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, unit_interval->numerator);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return cardano_cbor_writer_write_uint(writer, unit_interval->denominator);

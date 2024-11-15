@@ -307,11 +307,10 @@ cardano_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_relay_t** relay)
 
       break;
     }
-    /* LCOV_EXCL_START */
+
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
-      /* LCOV_EXCL_STOP */
   }
 
   return result;
@@ -351,11 +350,10 @@ cardano_relay_to_cbor(
       result = cardano_multi_host_name_relay_to_cbor(relay->multi_host_name_relay, writer);
       break;
     }
-    /* LCOV_EXCL_START */
+
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
-      /* LCOV_EXCL_STOP */
   }
 
   return result;

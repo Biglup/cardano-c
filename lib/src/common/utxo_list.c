@@ -224,7 +224,7 @@ cardano_utxo_list_filter(const cardano_utxo_list_t* utxo_list, cardano_utxo_list
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   cardano_array_unref(&result->array);
@@ -256,7 +256,7 @@ cardano_utxo_list_concat(const cardano_utxo_list_t* lhs, const cardano_utxo_list
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   cardano_array_unref(&result->array);
@@ -265,10 +265,8 @@ cardano_utxo_list_concat(const cardano_utxo_list_t* lhs, const cardano_utxo_list
 
   if (result->array == NULL)
   {
-    // LCOV_EXCL_START
     cardano_utxo_list_unref(&result);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   return result;
@@ -288,7 +286,7 @@ cardano_utxo_list_slice(const cardano_utxo_list_t* utxo_list, size_t start, size
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   cardano_array_unref(&result->array);
@@ -297,10 +295,8 @@ cardano_utxo_list_slice(const cardano_utxo_list_t* utxo_list, size_t start, size
 
   if (result->array == NULL)
   {
-    // LCOV_EXCL_START
     cardano_utxo_list_unref(&result);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   return result;
@@ -323,7 +319,7 @@ cardano_utxo_list_erase(
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   cardano_array_unref(&result->array);
@@ -332,10 +328,8 @@ cardano_utxo_list_erase(
 
   if (result->array == NULL)
   {
-    // LCOV_EXCL_START
     cardano_utxo_list_unref(&result);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   return result;
@@ -357,7 +351,7 @@ cardano_utxo_list_remove(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     if (cardano_utxo_equals(element, utxo) == true)
@@ -373,11 +367,9 @@ cardano_utxo_list_remove(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element
 
     if (erased == NULL)
     {
-      // LCOV_EXCL_START
       cardano_utxo_list_unref(&erased);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      // LCOV_EXCL_STOP
     }
 
     cardano_utxo_list_unref(&erased);

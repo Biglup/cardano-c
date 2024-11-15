@@ -285,11 +285,9 @@ cardano_voting_procedure_map_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_governance_action_id_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);
@@ -333,11 +331,9 @@ cardano_voting_procedure_map_get_values(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_voting_procedure_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);

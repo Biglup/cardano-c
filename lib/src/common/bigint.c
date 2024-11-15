@@ -164,7 +164,7 @@ cardano_bigint_get_string_size(cardano_bigint_t* bigint, const int32_t base)
 
   if (temp == NULL)
   {
-    return 0; // LCOV_EXCL_LINE
+    return 0;
   }
 
   const size_t num_digits = mpz_sizeinbase(bigint->mpz, base);
@@ -266,7 +266,7 @@ cardano_bigint_to_string(
 
   if (temp == NULL)
   {
-    return CARDANO_ERROR_CONVERSION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_CONVERSION_FAILED;
   }
 
   size_t temp_len = cardano_safe_strlen(temp, size);
@@ -342,7 +342,7 @@ cardano_bigint_to_bytes(
 
   if (count != size)
   {
-    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
   return CARDANO_SUCCESS;

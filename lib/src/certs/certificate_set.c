@@ -141,10 +141,8 @@ cardano_certificate_set_from_cbor(cardano_cbor_reader_t* reader, cardano_certifi
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_certificate_set_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -165,10 +163,8 @@ cardano_certificate_set_from_cbor(cardano_cbor_reader_t* reader, cardano_certifi
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_certificate_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -193,10 +189,8 @@ cardano_certificate_set_from_cbor(cardano_cbor_reader_t* reader, cardano_certifi
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_certificate_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -204,10 +198,8 @@ cardano_certificate_set_from_cbor(cardano_cbor_reader_t* reader, cardano_certifi
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_certificate_set_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *certificate_set = list;
@@ -236,7 +228,7 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t array_size = cardano_array_get_size(certificate_set->array);
@@ -244,7 +236,7 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(certificate_set->array); ++i)
@@ -253,10 +245,8 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in certificate_set list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_certificate_to_cbor((cardano_certificate_t*)((void*)element), writer);
@@ -265,7 +255,7 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

@@ -194,11 +194,9 @@ cardano_register_drep_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_regi
 
   if (read_state != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_credential_unref(&credential);
 
     return read_state;
-    // LCOV_EXCL_STOP
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -225,7 +223,7 @@ cardano_register_drep_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_regi
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -250,28 +248,28 @@ cardano_register_drep_cert_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_DREP_REGISTRATION);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
-    return write_type_result; // LCOV_EXCL_LINE
+    return write_type_result;
   }
 
   cardano_error_t write_credential_result = cardano_credential_to_cbor(register_drep_cert->credential, writer);
 
   if (write_credential_result != CARDANO_SUCCESS)
   {
-    return write_credential_result; // LCOV_EXCL_LINE
+    return write_credential_result;
   }
 
   cardano_error_t write_deposit_result = cardano_cbor_writer_write_uint(writer, register_drep_cert->deposit);
 
   if (write_deposit_result != CARDANO_SUCCESS)
   {
-    return write_deposit_result; // LCOV_EXCL_LINE
+    return write_deposit_result;
   }
 
   if (register_drep_cert->anchor != NULL)
@@ -280,7 +278,7 @@ cardano_register_drep_cert_to_cbor(
 
     if (write_anchor_result != CARDANO_SUCCESS)
     {
-      return write_anchor_result; // LCOV_EXCL_LINE
+      return write_anchor_result;
     }
   }
   else
@@ -289,7 +287,7 @@ cardano_register_drep_cert_to_cbor(
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; // LCOV_EXCL_LINE
+      return write_null_result;
     }
   }
 

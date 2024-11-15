@@ -157,7 +157,7 @@ cardano_no_confidence_action_from_cbor(cardano_cbor_reader_t* reader, cardano_no
 
   if (read_map_result != CARDANO_SUCCESS)
   {
-    return read_map_result; // LCOV_EXCL_LINE
+    return read_map_result;
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -166,7 +166,7 @@ cardano_no_confidence_action_from_cbor(cardano_cbor_reader_t* reader, cardano_no
 
     if (read_null != CARDANO_SUCCESS)
     {
-      return read_null; // LCOV_EXCL_LINE
+      return read_null;
     }
   }
   else
@@ -185,7 +185,7 @@ cardano_no_confidence_action_from_cbor(cardano_cbor_reader_t* reader, cardano_no
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -210,14 +210,14 @@ cardano_no_confidence_action_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_enum_result = cardano_cbor_writer_write_uint(writer, CARDANO_GOVERNANCE_ACTION_TYPE_NO_CONFIDENCE);
 
   if (write_enum_result != CARDANO_SUCCESS)
   {
-    return write_enum_result; // LCOV_EXCL_LINE
+    return write_enum_result;
   }
 
   if (no_confidence_action->governance_action_id == NULL)
@@ -226,7 +226,7 @@ cardano_no_confidence_action_to_cbor(
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; // LCOV_EXCL_LINE
+      return write_null_result;
     }
   }
   else
@@ -235,7 +235,7 @@ cardano_no_confidence_action_to_cbor(
 
     if (governance_action_id_result != CARDANO_SUCCESS)
     {
-      return governance_action_id_result; // LCOV_EXCL_LINE
+      return governance_action_id_result;
     }
   }
 

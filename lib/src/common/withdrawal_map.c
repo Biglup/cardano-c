@@ -122,12 +122,12 @@ reward_address_equals(const cardano_reward_address_t* lhs, const cardano_reward_
 {
   if (lhs == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   if (rhs == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   const size_t lhs_size = cardano_reward_address_get_bytes_size(lhs);
@@ -135,7 +135,7 @@ reward_address_equals(const cardano_reward_address_t* lhs, const cardano_reward_
 
   if (lhs_size != rhs_size)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   const uint8_t* lhs_bytes = cardano_reward_address_get_bytes(lhs);
@@ -170,7 +170,7 @@ compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs, void*
 
   if (lhs_size != rhs_size)
   {
-    return (lhs_size < rhs_size) ? -1 : 1; // LCOV_EXCL_LINE
+    return (lhs_size < rhs_size) ? -1 : 1;
   }
 
   const uint8_t* lhs_bytes = cardano_reward_address_get_bytes(lhs_kvp->key);
@@ -252,10 +252,8 @@ cardano_withdrawal_map_from_cbor(cardano_cbor_reader_t* reader, cardano_withdraw
 
     if (result != CARDANO_SUCCESS)
     {
-      /** LCOV_EXCL_START */
       cardano_withdrawal_map_unref(&map);
       return result;
-      /** LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -299,12 +297,10 @@ cardano_withdrawal_map_from_cbor(cardano_cbor_reader_t* reader, cardano_withdraw
 
     if (kvp == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_reward_address_unref(&key);
       cardano_withdrawal_map_unref(&map);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      /* LCOV_EXCL_STOP */
     }
 
     kvp->base.ref_count     = 0;
@@ -328,10 +324,8 @@ cardano_withdrawal_map_from_cbor(cardano_cbor_reader_t* reader, cardano_withdraw
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_withdrawal_map_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *withdrawal_map = map;
@@ -359,7 +353,7 @@ cardano_withdrawal_map_to_cbor(const cardano_withdrawal_map_t* withdrawal_map, c
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(withdrawal_map->array); ++i)
@@ -368,10 +362,8 @@ cardano_withdrawal_map_to_cbor(const cardano_withdrawal_map_t* withdrawal_map, c
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in withdrawal map is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_withdrawal_map_kvp_t* kvp_data = (cardano_withdrawal_map_kvp_t*)((void*)kvp);
@@ -380,20 +372,16 @@ cardano_withdrawal_map_to_cbor(const cardano_withdrawal_map_t* withdrawal_map, c
 
     if (write_reward_address_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);
@@ -518,7 +506,7 @@ cardano_withdrawal_map_get_keys(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(withdrawal_map->array); ++i)
@@ -530,11 +518,9 @@ cardano_withdrawal_map_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_reward_address_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);

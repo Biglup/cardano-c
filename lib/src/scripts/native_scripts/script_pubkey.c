@@ -165,10 +165,8 @@ cardano_script_pubkey_from_cbor(cardano_cbor_reader_t* reader, cardano_script_pu
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_unref(&key_hash);
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t create_pubkey_new_result = cardano_script_pubkey_new(key_hash, script_pubkey);
@@ -196,14 +194,14 @@ cardano_script_pubkey_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, script_pubkey->type);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_blake2b_hash_to_cbor(script_pubkey->key_hash, writer);
@@ -251,11 +249,9 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 
   if (type_string == NULL)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
-    // LCOV_EXCL_STOP
   }
 
   struct json_object* hash_object = NULL;
@@ -272,22 +268,18 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 
   if (hash_string == NULL)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
-    // LCOV_EXCL_STOP
   }
 
   cardano_blake2b_hash_t* hash = NULL;
 
   if (strcmp(type_string, "sig") != 0)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
 
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_blake2b_hash_from_hex(hash_string, hash_len, &hash);

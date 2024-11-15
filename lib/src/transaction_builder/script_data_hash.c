@@ -88,30 +88,24 @@ cardano_compute_script_data_hash(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_plutus_data_set_to_cbor(datums, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_cbor_writer_write_start_map(writer, 0);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return result;
-      // LCOV_EXCL_STOP
     }
   }
   else
@@ -128,10 +122,8 @@ cardano_compute_script_data_hash(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (plutus_data_size > 0U)
@@ -140,10 +132,8 @@ cardano_compute_script_data_hash(
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_cbor_writer_unref(&writer);
         return result;
-        // LCOV_EXCL_STOP
       }
     }
 
@@ -162,10 +152,8 @@ cardano_compute_script_data_hash(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 

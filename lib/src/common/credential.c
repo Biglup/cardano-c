@@ -264,12 +264,10 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&byte_string);
     *credential = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t new_credential_result = cardano_credential_from_hash_bytes(
@@ -282,10 +280,8 @@ cardano_credential_from_cbor(cardano_cbor_reader_t* reader, cardano_credential_t
 
   if (new_credential_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *credential = NULL;
     return new_credential_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -310,21 +306,21 @@ cardano_credential_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, credential->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, credential->hash_bytes, sizeof(credential->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
-    return write_bytes_result; /* LCOV_EXCL_LINE */
+    return write_bytes_result;
   }
 
   return CARDANO_SUCCESS;

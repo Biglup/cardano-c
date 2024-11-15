@@ -119,7 +119,7 @@ unix_time_to_enclosing_slot(const uint64_t unix_time, const cardano_slot_config_
 {
   if (config.slot_length == 0U)
   {
-    return UINT64_MAX; // LCOV_EXCL_LINE
+    return UINT64_MAX;
   }
 
   const uint64_t time_passed  = unix_time - config.zero_time;
@@ -146,10 +146,10 @@ cardano_compute_slot_from_unix_time(const cardano_network_magic_t magic, const u
     case CARDANO_NETWORK_MAGIC_PREPROD:
       config = PREPROD_SLOT_CONFIG;
       break;
-    // LCOV_EXCL_START
     default:
+    {
       config = TESTNET_SLOT_CONFIG;
-      // LCOV_EXCL_STOP
+    }
   }
 
   return unix_time_to_enclosing_slot(unix_time * 1000U, config);
@@ -171,10 +171,10 @@ cardano_compute_unix_time_from_slot(const cardano_network_magic_t magic, const u
     case CARDANO_NETWORK_MAGIC_PREPROD:
       config = PREPROD_SLOT_CONFIG;
       break;
-    // LCOV_EXCL_START
     default:
+    {
       config = TESTNET_SLOT_CONFIG;
-      // LCOV_EXCL_STOP
+    }
   }
 
   return slot_to_begin_unix_time(slot, config) / 1000U;
@@ -196,15 +196,15 @@ cardano_compute_epoch_from_unix_time(const cardano_network_magic_t magic, uint64
     case CARDANO_NETWORK_MAGIC_PREPROD:
       config = PREPROD_SLOT_CONFIG;
       break;
-    // LCOV_EXCL_START
     default:
+    {
       config = TESTNET_SLOT_CONFIG;
-      // LCOV_EXCL_STOP
+    }
   }
 
   if (config.epoch_length == 0U)
   {
-    return UINT64_MAX; // LCOV_EXCL_LINE
+    return UINT64_MAX;
   }
 
   const uint64_t time_passed = (unix_time * 1000U) - config.zero_time;

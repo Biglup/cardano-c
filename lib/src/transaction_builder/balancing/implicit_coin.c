@@ -53,7 +53,7 @@ compute_withdrawals(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     implicit_coin->withdrawals += amount;
@@ -88,7 +88,7 @@ compute_shelley_deposits(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     cardano_cert_type_t type;
@@ -97,7 +97,7 @@ compute_shelley_deposits(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     switch (type)
@@ -155,7 +155,7 @@ compute_conway_deposits(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     cardano_cert_type_t type;
@@ -164,7 +164,7 @@ compute_conway_deposits(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     switch (type)
@@ -177,7 +177,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->deposits += cardano_registration_cert_get_deposit(registration);
@@ -192,7 +192,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->deposits += cardano_stake_registration_delegation_cert_get_deposit(stake_registration);
@@ -207,7 +207,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->deposits += cardano_vote_registration_delegation_cert_get_deposit(vote_registration);
@@ -222,7 +222,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->deposits += cardano_stake_vote_registration_delegation_cert_get_deposit(stake_vote_registration);
@@ -237,7 +237,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->reclaim_deposits += cardano_unregistration_cert_get_deposit(unregistration);
@@ -252,7 +252,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->deposits += cardano_register_drep_cert_get_deposit(register_drep);
@@ -267,7 +267,7 @@ compute_conway_deposits(
 
         if (result != CARDANO_SUCCESS)
         {
-          return result; // LCOV_EXCL_LINE
+          return result;
         }
 
         implicit_coin->reclaim_deposits += cardano_unregister_drep_cert_get_deposit(unregister_drep);
@@ -292,7 +292,7 @@ compute_conway_deposits(
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     implicit_coin->deposits += cardano_proposal_procedure_get_deposit(proposal_procedure);
@@ -334,14 +334,14 @@ cardano_compute_implicit_coin(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = compute_shelley_deposits(body, pool_deposit, stake_deposit, implicit_coin);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = compute_conway_deposits(body, implicit_coin);

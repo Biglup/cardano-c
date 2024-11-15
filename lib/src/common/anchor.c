@@ -290,12 +290,10 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&byte_string);
     *anchor = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t new_anchor_result = cardano_anchor_from_hash_bytes(
@@ -309,10 +307,8 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
 
   if (new_anchor_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *anchor = NULL;
     return new_anchor_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -337,21 +333,21 @@ cardano_anchor_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_url_result = cardano_cbor_writer_write_textstring(writer, anchor->url, cardano_safe_strlen(anchor->url, sizeof(anchor->url)));
 
   if (write_url_result != CARDANO_SUCCESS)
   {
-    return write_url_result; /* LCOV_EXCL_LINE */
+    return write_url_result;
   }
 
   cardano_error_t write_bytes_result = cardano_cbor_writer_write_bytestring(writer, anchor->hash_bytes, sizeof(anchor->hash_bytes));
 
   if (write_bytes_result != CARDANO_SUCCESS)
   {
-    return write_bytes_result; /* LCOV_EXCL_LINE */
+    return write_bytes_result;
   }
 
   return CARDANO_SUCCESS;

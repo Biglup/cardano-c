@@ -126,7 +126,7 @@ cardano_get_one_interval(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return unit_interval;
@@ -146,7 +146,7 @@ cardano_get_protocol_version(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return protocol_version;
@@ -166,7 +166,7 @@ cardano_get_costmdls(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return costmdls;
@@ -192,7 +192,7 @@ cardano_get_ex_unit_prices(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return ex_unit_prices;
@@ -212,7 +212,7 @@ cardano_get_ex_unit(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return ex_units;
@@ -250,7 +250,7 @@ cardano_get_pool_voting_thresholds(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return thresholds;
@@ -303,7 +303,7 @@ cardano_get_drep_voting_thresholds(void)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return thresholds;
@@ -323,7 +323,7 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
 
   if (*protocol_parameters == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   (*protocol_parameters)->base.deallocator   = cardano_protocol_parameters_deallocate;
@@ -366,11 +366,9 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
 
   if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL))
   {
-    // LCOV_EXCL_START
     cardano_protocol_parameters_unref(protocol_parameters);
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
