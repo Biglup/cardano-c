@@ -175,7 +175,7 @@ cardano_pool_retirement_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_po
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -200,28 +200,28 @@ cardano_pool_retirement_cert_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_type_result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_POOL_RETIREMENT);
 
   if (write_type_result != CARDANO_SUCCESS)
   {
-    return write_type_result; // LCOV_EXCL_LINE
+    return write_type_result;
   }
 
   cardano_error_t write_hash_result = cardano_blake2b_hash_to_cbor(pool_retirement_cert->pool_key_hash, writer);
 
   if (write_hash_result != CARDANO_SUCCESS)
   {
-    return write_hash_result; // LCOV_EXCL_LINE
+    return write_hash_result;
   }
 
   cardano_error_t write_epoch_result = cardano_cbor_writer_write_uint(writer, pool_retirement_cert->epoch);
 
   if (write_epoch_result != CARDANO_SUCCESS)
   {
-    return write_epoch_result; // LCOV_EXCL_LINE
+    return write_epoch_result;
   }
 
   return CARDANO_SUCCESS;

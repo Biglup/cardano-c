@@ -175,10 +175,8 @@ cardano_value_from_asset_map(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *value = NULL;
     return result;
-    // LCOV_EXCL_STOP
   }
 
   const size_t asset_count = cardano_asset_id_map_get_length(asset_map);
@@ -192,12 +190,10 @@ cardano_value_from_asset_map(
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_multi_asset_unref(&multi_asset);
 
       *value = NULL;
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (cardano_asset_id_is_lovelace(asset_id))
@@ -215,7 +211,6 @@ cardano_value_from_asset_map(
 
       if ((asset_name == NULL) || (policy_id == NULL))
       {
-        // LCOV_EXCL_START
         cardano_multi_asset_unref(&multi_asset);
         cardano_asset_name_unref(&asset_name);
         cardano_blake2b_hash_unref(&policy_id);
@@ -223,7 +218,6 @@ cardano_value_from_asset_map(
         *value = NULL;
 
         return CARDANO_ERROR_POINTER_IS_NULL;
-        // LCOV_EXCL_STOP
       }
 
       result = cardano_multi_asset_set(multi_asset, policy_id, asset_name, amount);
@@ -233,12 +227,10 @@ cardano_value_from_asset_map(
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_multi_asset_unref(&multi_asset);
 
         *value = NULL;
         return result;
-        // LCOV_EXCL_STOP
       }
     }
   }
@@ -272,10 +264,8 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
 
   if (peek_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *value = NULL;
     return peek_result;
-    // LCOV_EXCL_STOP
   }
 
   if (state == CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER)
@@ -284,10 +274,8 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
 
     if (read_coin_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       *value = NULL;
       return read_coin_result;
-      // LCOV_EXCL_STOP
     }
 
     return cardano_value_new((int64_t)coin, NULL, value);
@@ -324,11 +312,9 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
 
     if (expect_end_array_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_multi_asset_unref(&multi_asset);
       *value = NULL;
       return expect_end_array_result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_error_t new_val_result = cardano_value_new((int64_t)coin, multi_asset, value);
@@ -363,14 +349,14 @@ cardano_value_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; // LCOV_EXCL_LINE
+    return write_start_array_result;
   }
 
   cardano_error_t write_coin_result = cardano_cbor_writer_write_uint(writer, value->coin);
 
   if (write_coin_result != CARDANO_SUCCESS)
   {
-    return write_coin_result; // LCOV_EXCL_LINE
+    return write_coin_result;
   }
 
   return cardano_multi_asset_to_cbor(value->multi_asset, writer);
@@ -472,7 +458,7 @@ cardano_value_add_multi_asset(cardano_value_t* value, cardano_multi_asset_t* mul
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   cardano_multi_asset_unref(&value->multi_asset);
@@ -499,7 +485,7 @@ cardano_value_subtract_multi_asset(cardano_value_t* value, cardano_multi_asset_t
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   cardano_multi_asset_unref(&value->multi_asset);
@@ -537,7 +523,7 @@ cardano_value_add_asset(
 
   if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_ELEMENT_NOT_FOUND))
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return cardano_multi_asset_set(value->multi_asset, policy_id, asset_name, current_quantity + quantity);
@@ -576,17 +562,15 @@ cardano_value_add_asset_ex(
 
   if (policy_id_result != CARDANO_SUCCESS)
   {
-    return policy_id_result; // LCOV_EXCL_LINE
+    return policy_id_result;
   }
 
   cardano_error_t asset_name_result = cardano_asset_name_from_hex(asset_name_hex, asset_name_hex_len, &asset_name);
 
   if (asset_name_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_blake2b_hash_unref(&policy_id);
     return asset_name_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_error_t add_asset_result = cardano_value_add_asset(value, policy_id, asset_name, quantity);
@@ -651,7 +635,7 @@ cardano_value_add_asset_with_id_ex(
 
   if (asset_id_result != CARDANO_SUCCESS)
   {
-    return asset_id_result; // LCOV_EXCL_LINE
+    return asset_id_result;
   }
 
   cardano_error_t add_asset_result = cardano_value_add_asset_with_id(value, asset_id, quantity);
@@ -696,7 +680,7 @@ cardano_value_add(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value_t** 
 
   if (multi_asset_result != CARDANO_SUCCESS)
   {
-    return multi_asset_result; // LCOV_EXCL_LINE
+    return multi_asset_result;
   }
 
   cardano_error_t new_value_result = cardano_value_new(coin, multi_asset, result);
@@ -729,20 +713,16 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 
     if (new_val_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       (*result) = NULL;
       return new_val_result;
-      // LCOV_EXCL_STOP
     }
 
     new_val_result = cardano_value_subtract_multi_asset(*result, rhs->multi_asset);
 
     if (new_val_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_value_unref(result);
       return new_val_result;
-      // LCOV_EXCL_STOP
     }
 
     return new_val_result;
@@ -760,7 +740,7 @@ cardano_value_subtract(cardano_value_t* lhs, cardano_value_t* rhs, cardano_value
 
   if (multi_asset_result != CARDANO_SUCCESS)
   {
-    return multi_asset_result; // LCOV_EXCL_LINE
+    return multi_asset_result;
   }
 
   cardano_error_t new_value_result = cardano_value_new(coin, multi_asset, result);
@@ -783,7 +763,7 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
   if (get_intersection_result != CARDANO_SUCCESS)
   {
-    return get_intersection_result; // LCOV_EXCL_LINE
+    return get_intersection_result;
   }
 
   if ((lhs->coin > 0) && (rhs->coin > 0))
@@ -794,10 +774,8 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
     if (add_lovelace_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_list_unref(&intersection);
       return add_lovelace_result;
-      // LCOV_EXCL_STOP
     }
 
     add_lovelace_result = cardano_asset_id_list_add(intersection, lovelace_asset_id);
@@ -806,10 +784,8 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
     if (add_lovelace_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_list_unref(&intersection);
       return add_lovelace_result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -818,7 +794,7 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
   if (get_keys_result != CARDANO_SUCCESS)
   {
-    return get_keys_result; // LCOV_EXCL_LINE
+    return get_keys_result;
   }
 
   for (size_t i = 0U; i < cardano_policy_id_list_get_length(lhs_policies); ++i)
@@ -829,11 +805,9 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
     if (get_policy_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_policy_id_list_unref(&lhs_policies);
 
       return get_policy_result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_asset_name_map_t* lhs_asset_map = NULL;
@@ -843,24 +817,20 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
     if (get_asset_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&policy_id);
       cardano_policy_id_list_unref(&lhs_policies);
 
       return get_asset_result;
-      // LCOV_EXCL_STOP
     }
 
     get_asset_result = cardano_multi_asset_get_assets(rhs->multi_asset, policy_id, &rhs_asset_map);
 
     if ((get_asset_result != CARDANO_SUCCESS) || (rhs_asset_map == NULL))
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&policy_id);
       cardano_asset_name_map_unref(&lhs_asset_map);
 
       continue;
-      // LCOV_EXCL_STOP
     }
 
     cardano_asset_name_list_t* lhs_asset_names       = NULL;
@@ -868,14 +838,12 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
     if (get_asset_list_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&policy_id);
       cardano_asset_name_map_unref(&lhs_asset_map);
       cardano_asset_name_map_unref(&rhs_asset_map);
       cardano_policy_id_list_unref(&lhs_policies);
 
       return get_asset_list_result;
-      // LCOV_EXCL_STOP
     }
 
     for (size_t j = 0U; j < cardano_asset_name_list_get_length(lhs_asset_names); ++j)
@@ -886,7 +854,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
       if (get_asset_name_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_blake2b_hash_unref(&policy_id);
         cardano_asset_name_list_unref(&lhs_asset_names);
         cardano_asset_name_map_unref(&lhs_asset_map);
@@ -894,7 +861,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
         cardano_policy_id_list_unref(&lhs_policies);
 
         return get_asset_name_result;
-        // LCOV_EXCL_STOP
       }
 
       int64_t lhs_value = 0;
@@ -904,7 +870,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
       if (get_asset_value_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_name_unref(&asset_name);
         cardano_blake2b_hash_unref(&policy_id);
         cardano_asset_name_list_unref(&lhs_asset_names);
@@ -913,7 +878,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
         cardano_policy_id_list_unref(&lhs_policies);
 
         return get_asset_value_result;
-        // LCOV_EXCL_STOP
       }
 
       if (cardano_multi_asset_get(rhs->multi_asset, policy_id, asset_name, &rhs_value) == CARDANO_SUCCESS)
@@ -924,7 +888,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
         if (asset_id_result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_unref(&asset_name);
           cardano_blake2b_hash_unref(&policy_id);
           cardano_asset_name_list_unref(&lhs_asset_names);
@@ -933,7 +896,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
           cardano_policy_id_list_unref(&lhs_policies);
 
           return asset_id_result;
-          // LCOV_EXCL_STOP
         }
 
         asset_id_result = cardano_asset_id_list_add(intersection, asset_id);
@@ -942,7 +904,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
 
         if (asset_id_result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_unref(&asset_name);
           cardano_blake2b_hash_unref(&policy_id);
           cardano_asset_name_list_unref(&lhs_asset_names);
@@ -951,7 +912,6 @@ cardano_value_get_intersection(cardano_value_t* lhs, cardano_value_t* rhs, carda
           cardano_policy_id_list_unref(&lhs_policies);
 
           return asset_id_result;
-          // LCOV_EXCL_STOP
         }
       }
 
@@ -990,7 +950,7 @@ cardano_value_get_intersection_count(cardano_value_t* lhs, cardano_value_t* rhs,
 
   if (get_intersection_result != CARDANO_SUCCESS)
   {
-    return get_intersection_result; // LCOV_EXCL_LINE
+    return get_intersection_result;
   }
 
   *result = cardano_asset_id_list_get_length(intersection);
@@ -1013,7 +973,7 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   if (value->coin > 0)
@@ -1023,10 +983,8 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&asset_map);
       return NULL;
-      // LCOV_EXCL_STOP
     }
 
     result = cardano_asset_id_map_insert(asset_map, lovelace_asset_id, (int64_t)value->coin);
@@ -1034,10 +992,8 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&asset_map);
       return NULL;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -1048,10 +1004,8 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&asset_map);
       return NULL;
-      // LCOV_EXCL_STOP
     }
 
     for (size_t i = 0U; i < cardano_policy_id_list_get_length(policies); ++i)
@@ -1061,12 +1015,10 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_policy_id_list_unref(&policies);
         cardano_asset_id_map_unref(&asset_map);
 
         return NULL;
-        // LCOV_EXCL_STOP
       }
 
       cardano_asset_name_map_t* asset_names = NULL;
@@ -1074,13 +1026,11 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_blake2b_hash_unref(&policy_id);
         cardano_policy_id_list_unref(&policies);
         cardano_asset_id_map_unref(&asset_map);
 
         return NULL;
-        // LCOV_EXCL_STOP
       }
 
       cardano_asset_name_list_t* asset_name_list = NULL;
@@ -1088,14 +1038,12 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_blake2b_hash_unref(&policy_id);
         cardano_asset_name_map_unref(&asset_names);
         cardano_policy_id_list_unref(&policies);
         cardano_asset_id_map_unref(&asset_map);
 
         return NULL;
-        // LCOV_EXCL_STOP
       }
 
       for (size_t j = 0; j < cardano_asset_name_list_get_length(asset_name_list); ++j)
@@ -1105,7 +1053,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
         if (result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_list_unref(&asset_name_list);
           cardano_asset_name_map_unref(&asset_names);
           cardano_blake2b_hash_unref(&policy_id);
@@ -1113,7 +1060,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
           cardano_asset_id_map_unref(&asset_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         int64_t amount = 0;
@@ -1121,7 +1067,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
         if (result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_unref(&asset_name);
           cardano_asset_name_list_unref(&asset_name_list);
           cardano_asset_name_map_unref(&asset_names);
@@ -1130,7 +1075,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
           cardano_asset_id_map_unref(&asset_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         cardano_asset_id_t* asset_id = NULL;
@@ -1138,7 +1082,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
         if (result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_unref(&asset_name);
           cardano_asset_name_list_unref(&asset_name_list);
           cardano_asset_name_map_unref(&asset_names);
@@ -1147,7 +1090,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
           cardano_asset_id_map_unref(&asset_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         result = cardano_asset_id_map_insert(asset_map, asset_id, amount);
@@ -1155,7 +1097,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
 
         if (result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_asset_name_unref(&asset_name);
           cardano_asset_name_list_unref(&asset_name_list);
           cardano_asset_name_map_unref(&asset_names);
@@ -1164,7 +1105,6 @@ cardano_value_as_assets_map(cardano_value_t* value)
           cardano_asset_id_map_unref(&asset_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         cardano_asset_name_unref(&asset_name);
@@ -1203,7 +1143,7 @@ cardano_value_get_asset_count(const cardano_value_t* value)
 
     if (result != CARDANO_SUCCESS)
     {
-      return 0U; // LCOV_EXCL_LINE
+      return 0U;
     }
 
     for (size_t i = 0U; i < cardano_policy_id_list_get_length(policies); ++i)
@@ -1213,11 +1153,9 @@ cardano_value_get_asset_count(const cardano_value_t* value)
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_policy_id_list_unref(&policies);
 
         return 0U;
-        // LCOV_EXCL_STOP
       }
 
       cardano_asset_name_map_t* asset_names = NULL;
@@ -1225,12 +1163,10 @@ cardano_value_get_asset_count(const cardano_value_t* value)
 
       if (result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_blake2b_hash_unref(&policy_id);
         cardano_policy_id_list_unref(&policies);
 
         return 0U;
-        // LCOV_EXCL_STOP
       }
 
       asset_count += cardano_asset_name_map_get_length(asset_names);

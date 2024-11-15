@@ -155,11 +155,9 @@ cardano_ex_units_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_units_t** e
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *ex_units = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return cardano_ex_units_new(memory, cpu_steps, ex_units);
@@ -182,14 +180,14 @@ cardano_ex_units_to_cbor(const cardano_ex_units_t* ex_units, cardano_cbor_writer
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, ex_units->memory);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return cardano_cbor_writer_write_uint(writer, ex_units->cpu);

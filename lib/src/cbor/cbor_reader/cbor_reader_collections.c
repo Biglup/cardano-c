@@ -238,12 +238,10 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
 
     if (slice == NULL)
     {
-      // LCOV_EXCL_START
       cardano_buffer_unref(&data);
       cardano_buffer_unref(&concat);
 
       return CARDANO_ERROR_DECODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_error_t peek_definite_length_result = peek_definite_length(slice, initial_byte, &chunk_length, &bytes_read);
@@ -252,12 +250,10 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
 
     if (peek_definite_length_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_buffer_unref(&data);
       cardano_buffer_unref(&concat);
 
       return peek_definite_length_result;
-      // LCOV_EXCL_STOP
     }
 
     size_t payload_size = bytes_read + (size_t)chunk_length;

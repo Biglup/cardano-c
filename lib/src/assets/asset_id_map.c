@@ -121,12 +121,12 @@ asset_id_equals(const cardano_asset_id_t* lhs, const cardano_asset_id_t* rhs)
 {
   if (lhs == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   if (rhs == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   if (cardano_asset_id_is_lovelace(lhs) && cardano_asset_id_is_lovelace(rhs))
@@ -144,7 +144,7 @@ asset_id_equals(const cardano_asset_id_t* lhs, const cardano_asset_id_t* rhs)
 
   if (lhs_size != rhs_size)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   const uint8_t* lhs_bytes = cardano_asset_id_get_bytes(lhs);
@@ -179,7 +179,7 @@ compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs, void*
 
   if (lhs_size != rhs_size)
   {
-    return (lhs_size < rhs_size) ? -1 : 1; // LCOV_EXCL_LINE
+    return (lhs_size < rhs_size) ? -1 : 1;
   }
 
   const uint8_t* lhs_bytes = cardano_asset_id_get_bytes(lhs_kvp->key);
@@ -203,7 +203,7 @@ different_than_zero(const cardano_object_t* element, const void* context)
 
   if (kvp == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   return kvp->value != 0;
@@ -371,7 +371,7 @@ cardano_asset_id_map_get_keys(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(asset_id_map->array); ++i)
@@ -383,11 +383,9 @@ cardano_asset_id_map_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_asset_id_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);
@@ -540,10 +538,8 @@ cardano_asset_id_map_add(
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&map);
       return insert_result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -565,10 +561,8 @@ cardano_asset_id_map_add(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&map);
         return insert_result;
-        // LCOV_EXCL_STOP
       }
     }
     else
@@ -577,10 +571,8 @@ cardano_asset_id_map_add(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&map);
         return insert_result;
-        // LCOV_EXCL_STOP
       }
     }
   }
@@ -635,10 +627,8 @@ cardano_asset_id_map_subtract(
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_asset_id_map_unref(&map);
       return insert_result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -660,10 +650,8 @@ cardano_asset_id_map_subtract(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&map);
         return insert_result;
-        // LCOV_EXCL_STOP
       }
     }
     else
@@ -672,10 +660,8 @@ cardano_asset_id_map_subtract(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_asset_id_map_unref(&map);
         return insert_result;
-        // LCOV_EXCL_STOP
       }
     }
   }
@@ -730,7 +716,7 @@ cardano_asset_id_map_equals(const cardano_asset_id_map_t* lhs, const cardano_ass
 
     if (rhs_kvp == NULL)
     {
-      return false; // LCOV_EXCL_LINE
+      return false;
     }
 
     if (!asset_id_equals(lhs_kvp->key, rhs_kvp->key))

@@ -61,14 +61,14 @@ _cardano_crypto_derive_hardened(
 
   if (crypto_auth_hmacsha512(z_mac, data, sizeof(data), chain_code) == -1)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   data[0] = 0x01;
 
   if (crypto_auth_hmacsha512(cc_mac, data, sizeof(data), chain_code) == -1)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   return CARDANO_SUCCESS;
@@ -87,7 +87,7 @@ _cardano_crypto_derive_soft(
 
   if (crypto_scalarmult_ed25519_base_noclamp(vk, scalar) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   cardano_safe_memcpy(&data[1], sizeof(data) - 1U, vk, 32);
@@ -101,14 +101,14 @@ _cardano_crypto_derive_soft(
 
   if (crypto_auth_hmacsha512(z_mac, data, sizeof(data), chain_code) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   data[0] = 0x03;
 
   if (crypto_auth_hmacsha512(cc_mac, data, sizeof(data), chain_code) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   return CARDANO_SUCCESS;
@@ -124,7 +124,7 @@ _cardano_crypto_point_of_trunc28_mul8(const byte_t* sk, byte_t* out)
 
   if (crypto_scalarmult_ed25519_base_noclamp(out, scalar) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   return CARDANO_SUCCESS;
@@ -148,7 +148,7 @@ _cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* o
 
     if (error != CARDANO_SUCCESS)
     {
-      return error; // LCOV_EXCL_LINE
+      return error;
     }
   }
   else
@@ -157,7 +157,7 @@ _cardano_crypto_derive_private(const byte_t* key, const int32_t index, byte_t* o
 
     if (error != CARDANO_SUCCESS)
     {
-      return error; // LCOV_EXCL_LINE
+      return error;
     }
   }
 
@@ -207,14 +207,14 @@ _cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* ou
 
   if (crypto_auth_hmacsha512(z, data, sizeof(data), cc) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   data[0] = 0x03;
 
   if (crypto_auth_hmacsha512(c, data, sizeof(data), cc) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   byte_t* chain_code = &c[32];
@@ -225,12 +225,12 @@ _cardano_crypto_derive_public(const byte_t* key, const int32_t index, byte_t* ou
 
   if (error != CARDANO_SUCCESS)
   {
-    return error; // LCOV_EXCL_LINE
+    return error;
   }
 
   if (crypto_core_ed25519_add(out, p, pk) != 0)
   {
-    return CARDANO_ERROR_GENERIC; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_GENERIC;
   }
 
   cardano_safe_memcpy(&out[32], out_size - 32U, chain_code, 32);

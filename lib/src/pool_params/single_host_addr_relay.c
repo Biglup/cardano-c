@@ -194,14 +194,12 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
   {
-    /* LCOV_EXCL_START */
     const cardano_error_t read_null_result = cardano_cbor_reader_read_null(reader);
 
     if (read_null_result != CARDANO_SUCCESS)
     {
       return read_null_result;
     }
-    /* LCOV_EXCL_STOP */
   }
   else
   {
@@ -220,19 +218,17 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (peek_state != CARDANO_SUCCESS)
   {
-    return peek_state; // LCOV_EXCL_LINE
+    return peek_state;
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
   {
-    /* LCOV_EXCL_START */
     const cardano_error_t read_null_result = cardano_cbor_reader_read_null(reader);
 
     if (read_null_result != CARDANO_SUCCESS)
     {
       return read_null_result;
     }
-    /* LCOV_EXCL_STOP */
   }
   else
   {
@@ -248,19 +244,17 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (peek_state != CARDANO_SUCCESS)
   {
-    return peek_state; // LCOV_EXCL_LINE
+    return peek_state;
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
   {
-    /* LCOV_EXCL_START */
     const cardano_error_t read_null_result = cardano_cbor_reader_read_null(reader);
 
     if (read_null_result != CARDANO_SUCCESS)
     {
       return read_null_result;
     }
-    /* LCOV_EXCL_STOP */
   }
   else
   {
@@ -277,14 +271,12 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *single_host_addr_relay = NULL;
 
     cardano_ipv4_unref(&ipv4);
     cardano_ipv6_unref(&ipv6);
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t new_result = cardano_single_host_addr_relay_new(
@@ -318,14 +310,14 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   if (single_host_addr_relay->port == NULL)
@@ -334,7 +326,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; /* LCOV_EXCL_LINE */
+      return write_null_result;
     }
   }
   else
@@ -343,7 +335,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_port_result != CARDANO_SUCCESS)
     {
-      return write_port_result; /* LCOV_EXCL_LINE */
+      return write_port_result;
     }
   }
 
@@ -353,7 +345,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; /* LCOV_EXCL_LINE */
+      return write_null_result;
     }
   }
   else
@@ -362,7 +354,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_ipv4_result != CARDANO_SUCCESS)
     {
-      return write_ipv4_result; /* LCOV_EXCL_LINE */
+      return write_ipv4_result;
     }
   }
 
@@ -372,7 +364,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; /* LCOV_EXCL_LINE */
+      return write_null_result;
     }
   }
   else
@@ -381,7 +373,7 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
 
     if (write_ipv6_result != CARDANO_SUCCESS)
     {
-      return write_ipv6_result; /* LCOV_EXCL_LINE */
+      return write_ipv6_result;
     }
   }
 

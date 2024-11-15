@@ -169,11 +169,9 @@ cardano_ex_unit_prices_from_cbor(cardano_cbor_reader_t* reader, cardano_ex_unit_
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *ex_unit_prices = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t result = cardano_ex_unit_prices_new(mem_prices, cpu_prices, ex_unit_prices);
@@ -203,14 +201,14 @@ cardano_ex_unit_prices_to_cbor(const cardano_ex_unit_prices_t* ex_unit_prices, c
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_mem_prices_result = cardano_unit_interval_to_cbor(ex_unit_prices->mem_prices, writer);
 
   if (write_mem_prices_result != CARDANO_SUCCESS)
   {
-    return write_mem_prices_result; /* LCOV_EXCL_LINE */
+    return write_mem_prices_result;
   }
 
   return cardano_unit_interval_to_cbor(ex_unit_prices->cpu_prices, writer);

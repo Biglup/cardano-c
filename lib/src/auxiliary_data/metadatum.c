@@ -145,7 +145,7 @@ handle_json_array(json_object* json_obj, cardano_metadatum_t** metadatum)
 
   if (error != CARDANO_SUCCESS)
   {
-    return error; // LCOV_EXCL_LINE
+    return error;
   }
 
   const size_t array_len = json_object_array_length(json_obj);
@@ -161,12 +161,10 @@ handle_json_array(json_object* json_obj, cardano_metadatum_t** metadatum)
 
     if (error != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_metadatum_unref(&elem_metadatum);
       cardano_metadatum_list_unref(&list);
 
       return error;
-      // LCOV_EXCL_STOP
     }
 
     error = cardano_metadatum_list_add(list, elem_metadatum);
@@ -174,12 +172,10 @@ handle_json_array(json_object* json_obj, cardano_metadatum_t** metadatum)
 
     if (error != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_metadatum_unref(&elem_metadatum);
       cardano_metadatum_list_unref(&list);
 
       return error;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -209,7 +205,7 @@ handle_json_object(json_object* json_obj, cardano_metadatum_t** metadatum)
 
   if (error != CARDANO_SUCCESS)
   {
-    return error; // LCOV_EXCL_LINE
+    return error;
   }
 
   json_object_object_foreach(json_obj, key, val)
@@ -231,11 +227,9 @@ handle_json_object(json_object* json_obj, cardano_metadatum_t** metadatum)
 
     if (error != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_metadatum_unref(&value);
       cardano_metadatum_map_unref(&map);
       return error;
-      // LCOV_EXCL_STOP
     }
 
     error = cardano_metadatum_map_insert(map, meta_key, value);
@@ -245,10 +239,8 @@ handle_json_object(json_object* json_obj, cardano_metadatum_t** metadatum)
 
     if (error != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_metadatum_map_unref(&map);
       return error;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -290,7 +282,7 @@ convert_json_to_metadatum(json_object* json_obj, cardano_metadatum_t** metadatum
 
     if (error != CARDANO_SUCCESS)
     {
-      return error; // LCOV_EXCL_LINE
+      return error;
     }
   }
   else if (json_object_is_type(json_obj, json_type_int) != 0)
@@ -304,7 +296,7 @@ convert_json_to_metadatum(json_object* json_obj, cardano_metadatum_t** metadatum
       return cardano_metadatum_new_integer_from_uint(unsigned_value, metadatum);
     }
 
-    return cardano_metadatum_new_integer_from_int(value, metadatum); // LCOV_EXCL_LINE
+    return cardano_metadatum_new_integer_from_int(value, metadatum);
   }
   else
   {
@@ -343,10 +335,8 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (error != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           json_object_put(json_array);
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         cardano_metadatum_unref(&meta_elem);
@@ -356,10 +346,8 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (elem == NULL)
         {
-          // LCOV_EXCL_START
           json_object_put(json_array);
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         json_object_array_add(json_array, elem);
@@ -376,24 +364,20 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
       if (error != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_metadatum_list_unref(&keys);
         json_object_put(json_map);
         return NULL;
-        // LCOV_EXCL_STOP
       }
 
       error = cardano_metadatum_map_get_values(metadatum->map, &values);
 
       if (error != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_metadatum_list_unref(&keys);
         cardano_metadatum_list_unref(&values);
         json_object_put(json_map);
 
         return NULL;
-        // LCOV_EXCL_STOP
       }
 
       for (size_t i = 0U; i < cardano_metadatum_map_get_length(metadatum->map); i++)
@@ -406,13 +390,11 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (error != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_metadatum_list_unref(&keys);
           cardano_metadatum_list_unref(&values);
           json_object_put(json_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         error = cardano_metadatum_list_get(values, i, &value);
@@ -420,13 +402,11 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (error != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_metadatum_list_unref(&keys);
           cardano_metadatum_list_unref(&values);
           json_object_put(json_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         cardano_metadatum_kind_t key_kind;
@@ -435,13 +415,11 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (error != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_metadatum_list_unref(&keys);
           cardano_metadatum_list_unref(&values);
           json_object_put(json_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         if (key_kind != CARDANO_METADATUM_KIND_TEXT)
@@ -467,14 +445,12 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
 
         if (value == NULL)
         {
-          // LCOV_EXCL_START
           cardano_metadatum_list_unref(&keys);
           cardano_metadatum_list_unref(&values);
           _cardano_free(key_str);
           json_object_put(json_map);
 
           return NULL;
-          // LCOV_EXCL_STOP
         }
 
         json_object_object_add(json_map, key_str, json_value);
@@ -491,13 +467,12 @@ convert_metadatum_to_json_object(cardano_metadatum_t* metadatum)
       cardano_metadatum_set_last_error(metadatum, "Metadatum of type 'bytes' cannot be converted to JSON.");
       return NULL;
     }
-    // LCOV_EXCL_START
+
     default:
     {
       cardano_metadatum_set_last_error(metadatum, "Invalid metadatum kind.");
       return NULL;
     }
-      // LCOV_EXCL_STOP
   }
 }
 
@@ -836,10 +811,8 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_metadatum_deallocate(data);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   switch (state)
@@ -852,10 +825,8 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
 
       if (result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_metadatum_deallocate(data);
         return result;
-        /* LCOV_EXCL_STOP */
       }
 
       switch (tag)
@@ -875,7 +846,7 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
 
           break;
         }
-        // LCOV_EXCL_START
+
         default:
         {
           cardano_metadatum_deallocate(data);
@@ -883,7 +854,6 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
           cardano_cbor_reader_set_last_error(reader, "Invalid CBOR data item type for metadatum.");
           return CARDANO_ERROR_DECODING;
         }
-          // LCOV_EXCL_STOP
       }
       break;
     }
@@ -1137,7 +1107,7 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       break;
@@ -1148,7 +1118,7 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       break;
@@ -1172,7 +1142,7 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       break;
@@ -1185,14 +1155,14 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 
       if (size > max_byte_string_chunk_size)
       {
-        return CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE; // LCOV_EXCL_LINE
+        return CARDANO_ERROR_INVALID_METADATUM_BOUNDED_BYTES_SIZE;
       }
 
       result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(metadatum->bytes), size);
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; /* LCOV_EXCL_LINE */
+        return result;
       }
 
       break;
@@ -1205,25 +1175,24 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 
       if (size > max_text_string_chunk_size)
       {
-        return CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE; // LCOV_EXCL_LINE
+        return CARDANO_ERROR_INVALID_METADATUM_TEXT_STRING_SIZE;
       }
 
       result = cardano_cbor_writer_write_textstring(writer, (const char*)((const void*)cardano_buffer_get_data(metadatum->text)), size);
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; /* LCOV_EXCL_LINE */
+        return result;
       }
 
       break;
     }
-    /* LCOV_EXCL_START */
+
     default:
     {
       cardano_cbor_writer_set_last_error(writer, "Invalid metadatum kind");
       return CARDANO_ERROR_ENCODING;
     }
-      /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -1448,12 +1417,11 @@ cardano_metadatum_equals(const cardano_metadatum_t* lhs, const cardano_metadatum
     {
       return cardano_buffer_equals(lhs->text, rhs->text);
     }
-    /* LCOV_EXCL_START */
+
     default:
     {
       return false;
     }
-      /* LCOV_EXCL_STOP */
   }
 }
 

@@ -302,12 +302,10 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 
     if (expect_end_array_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_buffer_unref(&byte_string);
       *datum = NULL;
 
       return expect_end_array_result;
-      /* LCOV_EXCL_STOP */
     }
 
     const cardano_error_t new_datum_result = cardano_datum_new_data_hash_bytes(
@@ -371,12 +369,10 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_plutus_data_unref(&inline_data);
     *datum = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t new_datum_result = cardano_datum_new_inline_data(inline_data, datum);
@@ -385,10 +381,8 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 
   if (new_datum_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *datum = NULL;
     return new_datum_result;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -413,14 +407,14 @@ cardano_datum_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, datum->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   switch (datum->type)
@@ -431,7 +425,7 @@ cardano_datum_to_cbor(
 
       if (write_bytes_result != CARDANO_SUCCESS)
       {
-        return write_bytes_result; /* LCOV_EXCL_LINE */
+        return write_bytes_result;
       }
 
       break;
@@ -442,7 +436,7 @@ cardano_datum_to_cbor(
 
       if (write_tag_result != CARDANO_SUCCESS)
       {
-        return write_tag_result; /* LCOV_EXCL_LINE */
+        return write_tag_result;
       }
 
       cardano_cbor_writer_t* plutus_data_writer       = cardano_cbor_writer_new();
@@ -450,10 +444,8 @@ cardano_datum_to_cbor(
 
       if (write_plutus_data_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_cbor_writer_unref(&plutus_data_writer);
         return write_plutus_data_result;
-        // LCOV_EXCL_STOP
       }
 
       cardano_buffer_t* byte_string = NULL;
@@ -464,7 +456,7 @@ cardano_datum_to_cbor(
 
       if (encode_result != CARDANO_SUCCESS)
       {
-        return encode_result; /* LCOV_EXCL_LINE */
+        return encode_result;
       }
 
       cardano_error_t write_byte_string_result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(byte_string), cardano_buffer_get_size(byte_string));
@@ -473,18 +465,17 @@ cardano_datum_to_cbor(
 
       if (write_byte_string_result != CARDANO_SUCCESS)
       {
-        return write_byte_string_result; /* LCOV_EXCL_LINE */
+        return write_byte_string_result;
       }
 
       break;
     }
-      /* LCOV_EXCL_START */
+
     default:
     {
       cardano_cbor_writer_set_last_error(writer, "Invalid datum type");
       return CARDANO_ERROR_INVALID_DATUM_TYPE;
     }
-      /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;

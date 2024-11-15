@@ -147,10 +147,8 @@ cardano_transaction_output_list_from_cbor(cardano_cbor_reader_t* reader, cardano
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_transaction_output_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -175,10 +173,8 @@ cardano_transaction_output_list_from_cbor(cardano_cbor_reader_t* reader, cardano
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_transaction_output_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -186,10 +182,8 @@ cardano_transaction_output_list_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_transaction_output_list_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *transaction_output_list = list;
@@ -219,7 +213,7 @@ cardano_transaction_output_list_to_cbor(const cardano_transaction_output_list_t*
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(transaction_output_list->array); ++i)
@@ -228,10 +222,8 @@ cardano_transaction_output_list_to_cbor(const cardano_transaction_output_list_t*
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in transaction_output_list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_transaction_output_to_cbor((cardano_transaction_output_t*)((void*)element), writer);
@@ -240,7 +232,7 @@ cardano_transaction_output_list_to_cbor(const cardano_transaction_output_list_t*
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

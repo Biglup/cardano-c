@@ -205,11 +205,9 @@ cardano_bip32_private_key_from_bip39_entropy(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *key = NULL;
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   clamp_scalar(&pbkdf2_key[0]);
@@ -431,10 +429,8 @@ cardano_bip32_private_key_get_public_key(
 
   if (crypto_scalarmult_ed25519_base_noclamp(&public_key[0], extended_scalar) != 0)
   {
-    // LCOV_EXCL_START
     *ed25519_public_key = NULL;
     return CARDANO_ERROR_GENERIC;
-    // LCOV_EXCL_STOP
   }
 
   byte_t bip32_public_key[64] = { 0 };

@@ -318,10 +318,9 @@ get_field_ptr(cardano_transaction_body_t* body, size_t key)
       return (void*)&body->treasury_value;
     case 22:
       return (void*)&body->donation;
-    // LCOV_EXCL_START
+
     default:
       return NULL;
-      // LCOV_EXCL_STOP
   }
 }
 
@@ -350,14 +349,14 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   *field = _cardano_malloc(sizeof(uint64_t));
 
   if (*field == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return cardano_cbor_reader_read_uint(reader, *field);
@@ -388,7 +387,7 @@ handle_transaction_input_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_transaction_input_set_from_cbor(reader, field);
@@ -419,7 +418,7 @@ handle_transaction_output_list(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_transaction_output_list_from_cbor(reader, field);
@@ -450,7 +449,7 @@ handle_certificate_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_certificate_set_from_cbor(reader, field);
@@ -481,7 +480,7 @@ handle_withdrawal_map(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_withdrawal_map_from_cbor(reader, field);
@@ -512,7 +511,7 @@ handle_update(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_update_from_cbor(reader, field);
@@ -543,7 +542,7 @@ handle_blake2b_hash(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_blake2b_hash_from_cbor(reader, field);
@@ -574,7 +573,7 @@ handle_multi_asset(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_multi_asset_from_cbor(reader, field);
@@ -605,7 +604,7 @@ handle_blake2b_hash_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_blake2b_hash_set_from_cbor(reader, field);
@@ -636,14 +635,14 @@ handle_network_id(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   *field = _cardano_malloc(sizeof(uint64_t));
 
   if (*field == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   return cardano_cbor_reader_read_uint(reader, (uint64_t*)((void*)*field));
@@ -674,7 +673,7 @@ handle_transaction_output(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_transaction_output_from_cbor(reader, field);
@@ -705,7 +704,7 @@ handle_voting_procedures(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_voting_procedures_from_cbor(reader, field);
@@ -736,7 +735,7 @@ handle_proposal_procedure_set(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (*field != NULL)
   {
-    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
   return cardano_proposal_procedure_set_from_cbor(reader, field);
@@ -756,12 +755,12 @@ handle_proposal_procedure_set(cardano_cbor_reader_t* reader, void* field_ptr)
  *         - Always returns \ref CARDANO_ERROR_INVALID_CBOR_MAP_KEY.
  */
 static cardano_error_t
-handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr) // LCOV_EXCL_LINE
+handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   CARDANO_UNUSED(reader);
   CARDANO_UNUSED(field_ptr);
 
-  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
 }
 
 /**
@@ -792,14 +791,14 @@ write_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const u
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_cbor_writer_write_uint(writer, *value);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -834,14 +833,14 @@ write_transaction_input_set_if_present(cardano_cbor_writer_t* writer, const uint
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_transaction_input_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -876,14 +875,14 @@ write_transaction_output_list_if_present(cardano_cbor_writer_t* writer, const ui
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_transaction_output_list_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -918,14 +917,14 @@ write_certificate_set_if_present(cardano_cbor_writer_t* writer, const uint64_t k
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_certificate_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -960,14 +959,14 @@ write_withdrawal_map_if_present(cardano_cbor_writer_t* writer, const uint64_t ke
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_withdrawal_map_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1002,14 +1001,14 @@ write_update_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_update_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1044,14 +1043,14 @@ write_blake2b_hash_if_present(cardano_cbor_writer_t* writer, const uint64_t key,
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_blake2b_hash_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1086,14 +1085,14 @@ write_multi_asset_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_multi_asset_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1128,14 +1127,14 @@ write_blake2b_hash_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_blake2b_hash_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1170,14 +1169,14 @@ write_network_id_if_present(cardano_cbor_writer_t* writer, const uint64_t key, c
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_cbor_writer_write_uint(writer, *value);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1212,14 +1211,14 @@ write_transaction_output_if_present(cardano_cbor_writer_t* writer, const uint64_
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_transaction_output_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1254,14 +1253,14 @@ write_voting_procedures_if_present(cardano_cbor_writer_t* writer, const uint64_t
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_voting_procedures_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1296,14 +1295,14 @@ write_proposal_procedure_set_if_present(cardano_cbor_writer_t* writer, const uin
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_proposal_procedure_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1516,22 +1515,18 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
 
     if (field_ptr == NULL)
     {
-      // LCOV_EXCL_START
       cardano_transaction_body_unref(&body);
 
       return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
-      // LCOV_EXCL_STOP
     }
 
     result = param_handlers[key](reader, field_ptr);
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_transaction_body_unref(&body);
 
       return result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -1564,154 +1559,154 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_transaction_input_set_if_present(writer, 0U, transaction_body->inputs);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_transaction_output_list_if_present(writer, 1U, transaction_body->outputs);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 2U, transaction_body->fee);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 3U, transaction_body->invalid_after);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_certificate_set_if_present(writer, 4U, transaction_body->certificates);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_withdrawal_map_if_present(writer, 5U, transaction_body->withdrawals);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_update_if_present(writer, 6U, transaction_body->update);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_blake2b_hash_if_present(writer, 7U, transaction_body->aux_data_hash);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 8U, transaction_body->invalid_before);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_multi_asset_if_present(writer, 9U, transaction_body->mint);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_blake2b_hash_if_present(writer, 11U, transaction_body->script_data_hash);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_transaction_input_set_if_present(writer, 13U, transaction_body->collateral);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_blake2b_hash_set_if_present(writer, 14U, transaction_body->required_signers);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_network_id_if_present(writer, 15U, transaction_body->network_id);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_transaction_output_if_present(writer, 16U, transaction_body->collateral_return);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 17U, transaction_body->total_collateral);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_transaction_input_set_if_present(writer, 18U, transaction_body->reference_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_voting_procedures_if_present(writer, 19U, transaction_body->voting_procedures);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_proposal_procedure_set_if_present(writer, 20U, transaction_body->proposal_procedures);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 21U, transaction_body->treasury_value);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 22U, transaction_body->donation);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return CARDANO_SUCCESS;
@@ -1793,7 +1788,7 @@ cardano_transaction_body_get_fee(cardano_transaction_body_t* transaction_body)
 
   if (transaction_body->fee == NULL)
   {
-    return 0U; // LCOV_EXCL_LINE
+    return 0U;
   }
 
   return *transaction_body->fee;
@@ -1809,14 +1804,12 @@ cardano_transaction_body_set_fee(cardano_transaction_body_t* transaction_body, c
 
   if (transaction_body->fee == NULL)
   {
-    // LCOV_EXCL_START
     transaction_body->fee = (uint64_t*)_cardano_malloc(sizeof(uint64_t));
 
     if (transaction_body->fee == NULL)
     {
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
-    // LCOV_EXCL_STOP
   }
 
   *transaction_body->fee = fee;
@@ -1857,7 +1850,7 @@ cardano_transaction_body_set_invalid_after(cardano_transaction_body_t* transacti
 
     if (transaction_body->invalid_after == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2043,7 +2036,7 @@ cardano_transaction_body_set_invalid_before(cardano_transaction_body_t* transact
 
     if (transaction_body->invalid_before == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2231,7 +2224,7 @@ cardano_transaction_body_set_network_id(cardano_transaction_body_t* transaction_
 
     if (transaction_body->network_id == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2308,7 +2301,7 @@ cardano_transaction_body_set_total_collateral(cardano_transaction_body_t* transa
 
     if (transaction_body->total_collateral == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2464,7 +2457,7 @@ cardano_transaction_body_set_treasury_value(cardano_transaction_body_t* transact
 
     if (transaction_body->treasury_value == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2506,7 +2499,7 @@ cardano_transaction_body_set_donation(cardano_transaction_body_t* transaction_bo
 
     if (transaction_body->donation == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -2527,17 +2520,15 @@ cardano_transaction_body_get_hash(cardano_transaction_body_t* transaction_body)
 
   if (writer == NULL)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   cardano_error_t result = cardano_transaction_body_to_cbor(transaction_body, writer);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   const size_t cbor_size = cardano_cbor_writer_get_encode_size(writer);
@@ -2545,22 +2536,18 @@ cardano_transaction_body_get_hash(cardano_transaction_body_t* transaction_body)
 
   if (cbor_data == NULL)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_cbor_writer_encode(writer, cbor_data, cbor_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     _cardano_free(cbor_data);
     cardano_cbor_writer_unref(&writer);
 
     return NULL;
-    // LCOV_EXCL_STOP
   }
 
   cardano_cbor_writer_unref(&writer);
@@ -2573,7 +2560,7 @@ cardano_transaction_body_get_hash(cardano_transaction_body_t* transaction_body)
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   return hash;

@@ -102,12 +102,12 @@ to_hex_string(const byte_t* data, const size_t data_size, char* hex_buffer, cons
 
   if (init_result == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   if (sodium_bin2hex(hex_buffer, hex_buffer_size, data, data_size) < 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   return CARDANO_SUCCESS;
@@ -169,11 +169,9 @@ cardano_asset_id_new(cardano_blake2b_hash_t* policy_id, cardano_asset_name_t* as
 
   if (to_hex_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_asset_id_unref(&new_asset_id);
 
     return to_hex_result;
-    // LCOV_EXCL_STOP
   }
 
   new_asset_id->hex_size = cardano_safe_strlen(new_asset_id->hex, 121);
@@ -301,12 +299,12 @@ cardano_asset_id_from_hex(
 
   if (init_result == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   if (sodium_hex2bin(data, 60, hex_string, size, NULL, NULL, NULL) < 0)
   {
-    return CARDANO_ERROR_INVALID_ARGUMENT; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
   return cardano_asset_id_from_bytes(data, size / 2U, asset_id);

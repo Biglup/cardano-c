@@ -192,7 +192,7 @@ cardano_metadatum_label_list_add(cardano_metadatum_label_list_t* metadatum_label
 
   if (metadatum_label == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   metadatum_label->base.ref_count     = 0;

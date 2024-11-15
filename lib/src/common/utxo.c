@@ -171,21 +171,17 @@ cardano_utxo_from_cbor(cardano_cbor_reader_t* reader, cardano_utxo_t** utxo)
 
   if (utxo_new_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *utxo = NULL;
     return utxo_new_result;
-    // LCOV_EXCL_STOP
   }
 
   const cardano_error_t expect_end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_utxo_unref(utxo);
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -210,14 +206,14 @@ cardano_utxo_to_cbor(const cardano_utxo_t* utxo, cardano_cbor_writer_t* writer)
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t input_to_cbor_result = cardano_transaction_input_to_cbor(utxo->input, writer);
 
   if (input_to_cbor_result != CARDANO_SUCCESS)
   {
-    return input_to_cbor_result; /* LCOV_EXCL_LINE */
+    return input_to_cbor_result;
   }
 
   return cardano_transaction_output_to_cbor(utxo->output, writer);

@@ -264,11 +264,9 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_bigint_unref(&copy);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   const size_t size = cardano_bigint_get_bytes_size(copy);
@@ -287,11 +285,9 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     _cardano_free(data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   result = cardano_cbor_writer_write_bytestring(writer, data, size);

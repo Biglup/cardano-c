@@ -172,10 +172,8 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_transaction_input_set_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -196,10 +194,8 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_transaction_input_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -224,10 +220,8 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_transaction_input_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -235,10 +229,8 @@ cardano_transaction_input_set_from_cbor(cardano_cbor_reader_t* reader, cardano_t
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_transaction_input_set_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_array_sort(list->array, compare_by_input, NULL);
@@ -269,7 +261,7 @@ cardano_transaction_input_set_to_cbor(const cardano_transaction_input_set_t* tra
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t array_size = cardano_array_get_size(transaction_input_set->array);
@@ -277,7 +269,7 @@ cardano_transaction_input_set_to_cbor(const cardano_transaction_input_set_t* tra
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(transaction_input_set->array); ++i)
@@ -286,10 +278,8 @@ cardano_transaction_input_set_to_cbor(const cardano_transaction_input_set_t* tra
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in transaction_input_set list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_transaction_input_to_cbor((cardano_transaction_input_t*)((void*)element), writer);
@@ -298,7 +288,7 @@ cardano_transaction_input_set_to_cbor(const cardano_transaction_input_set_t* tra
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

@@ -145,10 +145,8 @@ cardano_plutus_v1_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_plutus_v1_script_set_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -169,10 +167,8 @@ cardano_plutus_v1_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_plutus_v1_script_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -197,10 +193,8 @@ cardano_plutus_v1_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_plutus_v1_script_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -208,10 +202,8 @@ cardano_plutus_v1_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_plutus_v1_script_set_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *plutus_v1_script_set = list;
@@ -242,7 +234,7 @@ cardano_plutus_v1_script_set_to_cbor(const cardano_plutus_v1_script_set_t* plutu
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -251,7 +243,7 @@ cardano_plutus_v1_script_set_to_cbor(const cardano_plutus_v1_script_set_t* plutu
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(plutus_v1_script_set->array); ++i)
@@ -260,10 +252,8 @@ cardano_plutus_v1_script_set_to_cbor(const cardano_plutus_v1_script_set_t* plutu
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in plutus_v1_script_set list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_plutus_v1_script_to_cbor((cardano_plutus_v1_script_t*)((void*)element), writer);
@@ -272,7 +262,7 @@ cardano_plutus_v1_script_set_to_cbor(const cardano_plutus_v1_script_set_t* plutu
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

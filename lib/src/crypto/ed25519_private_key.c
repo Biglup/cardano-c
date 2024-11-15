@@ -273,7 +273,7 @@ compute_normal_public_key(
 
   if (crypto_sign_seed_keypair(public_key_bytes, secret_key_bytes, cardano_buffer_get_data(private_key->key_material)) == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   sodium_memzero(secret_key_bytes, 64U);
@@ -319,7 +319,7 @@ compute_extended_public_key(
 
   if (crypto_scalarmult_ed25519_base_noclamp(&scalar_data[0], extended_scalar) == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   cardano_ed25519_public_key_t* ed25519_public_key = NULL;
@@ -423,7 +423,7 @@ compute_signature_with_extended_key(
 
   if (crypto_scalarmult_ed25519_base_noclamp(public_key, extended_scalar) != 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   size_t  digest_input_size = IV_SIZE + message_length;
@@ -439,7 +439,7 @@ compute_signature_with_extended_key(
 
   if (crypto_hash_sha512(hash_output, digest_input, digest_input_size) != 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   sodium_memzero(digest_input, digest_input_size);
@@ -449,7 +449,7 @@ compute_signature_with_extended_key(
 
   if (crypto_scalarmult_ed25519_base_noclamp(r, nonce) != 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   digest_input_size  = sizeof(r) + sizeof(public_key) + message_length;
@@ -470,7 +470,7 @@ compute_signature_with_extended_key(
 
   if (crypto_hash_sha512(hram, hram_input, digest_input_size) != 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   sodium_memzero(hram_input, digest_input_size);
@@ -541,7 +541,7 @@ compute_signature_with_normal_key(
 
   if (crypto_sign_detached(signature_bytes, NULL, message, message_length, sk) == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   cardano_ed25519_signature_t* ed25519_signature = NULL;
@@ -697,7 +697,7 @@ cardano_ed25519_private_key_sign(
 
   if (sodium_init() == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   return compute_signature(private_key, message, message_length, signature);
@@ -720,7 +720,7 @@ cardano_ed25519_private_key_get_public_key(
 
   if (sodium_init() == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   return compute_public_key(private_key, public_key);

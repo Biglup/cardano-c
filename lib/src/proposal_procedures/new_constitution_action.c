@@ -169,10 +169,8 @@ cardano_new_constitution_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   if (read_map_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_constitution_unref(&constitution);
     return read_map_result;
-    // LCOV_EXCL_STOP
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -181,10 +179,8 @@ cardano_new_constitution_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 
     if (read_null != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_constitution_unref(&constitution);
       return read_null;
-      // LCOV_EXCL_STOP
     }
   }
   else
@@ -212,7 +208,7 @@ cardano_new_constitution_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -237,14 +233,14 @@ cardano_new_constitution_action_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_enum_result = cardano_cbor_writer_write_uint(writer, CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION);
 
   if (write_enum_result != CARDANO_SUCCESS)
   {
-    return write_enum_result; // LCOV_EXCL_LINE
+    return write_enum_result;
   }
 
   if (new_constitution_action->governance_action_id == NULL)
@@ -253,7 +249,7 @@ cardano_new_constitution_action_to_cbor(
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; // LCOV_EXCL_LINE
+      return write_null_result;
     }
   }
   else
@@ -262,7 +258,7 @@ cardano_new_constitution_action_to_cbor(
 
     if (governance_action_id_result != CARDANO_SUCCESS)
     {
-      return governance_action_id_result; // LCOV_EXCL_LINE
+      return governance_action_id_result;
     }
   }
 
@@ -270,7 +266,7 @@ cardano_new_constitution_action_to_cbor(
 
   if (constitution_result != CARDANO_SUCCESS)
   {
-    return constitution_result; // LCOV_EXCL_LINE
+    return constitution_result;
   }
 
   return CARDANO_SUCCESS;

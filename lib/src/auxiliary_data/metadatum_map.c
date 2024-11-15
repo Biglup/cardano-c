@@ -252,10 +252,8 @@ cardano_metadatum_map_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_metadatum_map_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *metadatum_map = map;
@@ -284,7 +282,7 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     };
   }
   else
@@ -294,7 +292,7 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -304,10 +302,8 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in metadatum map is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_metadatum_map_kvp_t* kvp_data = (cardano_metadatum_map_kvp_t*)((void*)kvp);
@@ -316,20 +312,16 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_metadatum_to_cbor(kvp_data->value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);
@@ -341,7 +333,7 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -481,11 +473,9 @@ cardano_metadatum_map_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);
@@ -529,11 +519,9 @@ cardano_metadatum_map_get_values(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);

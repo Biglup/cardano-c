@@ -158,9 +158,7 @@ cardano_voting_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_voting
 
   if (read_state != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     return read_state;
-    // LCOV_EXCL_STOP
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -184,7 +182,7 @@ cardano_voting_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_voting
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -209,14 +207,14 @@ cardano_voting_procedure_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voting_procedure->vote);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; // LCOV_EXCL_LINE
+    return write_uint_result;
   }
 
   if (voting_procedure->anchor != NULL)
@@ -225,7 +223,7 @@ cardano_voting_procedure_to_cbor(
 
     if (write_anchor_result != CARDANO_SUCCESS)
     {
-      return write_anchor_result; // LCOV_EXCL_LINE
+      return write_anchor_result;
     }
   }
   else
@@ -234,7 +232,7 @@ cardano_voting_procedure_to_cbor(
 
     if (write_null_result != CARDANO_SUCCESS)
     {
-      return write_null_result; // LCOV_EXCL_LINE
+      return write_null_result;
     }
   }
 

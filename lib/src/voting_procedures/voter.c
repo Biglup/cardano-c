@@ -179,12 +179,11 @@ cardano_voter_from_cbor(cardano_cbor_reader_t* reader, cardano_voter_t** voter)
     case CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH:
       credential_type = CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH;
       break;
-    // LCOV_EXCL_START
+
     default:
       cardano_buffer_unref(&credential_buffer);
       *voter = NULL;
       return CARDANO_ERROR_INVALID_ARGUMENT;
-      // LCOV_EXCL_STOP
   }
 
   const cardano_error_t credential_result = cardano_credential_from_hash_bytes(
@@ -197,21 +196,17 @@ cardano_voter_from_cbor(cardano_cbor_reader_t* reader, cardano_voter_t** voter)
 
   if (credential_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *voter = NULL;
     return credential_result;
-    // LCOV_EXCL_STOP
   }
 
   const cardano_error_t expect_end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_credential_unref(&credential);
     *voter = NULL;
     return expect_end_array_result;
-    // LCOV_EXCL_STOP
   }
 
   const cardano_error_t new_voter_result = cardano_voter_new((cardano_voter_type_t)type, credential, voter);
@@ -219,10 +214,8 @@ cardano_voter_from_cbor(cardano_cbor_reader_t* reader, cardano_voter_t** voter)
 
   if (new_voter_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *voter = NULL;
     return new_voter_result;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -247,14 +240,14 @@ cardano_voter_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, voter->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   cardano_credential_t* credential = voter->credential;
@@ -266,7 +259,7 @@ cardano_voter_to_cbor(
 
   if (credential_result != CARDANO_SUCCESS)
   {
-    return credential_result; /* LCOV_EXCL_LINE */
+    return credential_result;
   }
 
   return CARDANO_SUCCESS;

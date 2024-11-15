@@ -162,7 +162,7 @@ different_than_empty(const cardano_object_t* element, const void* context)
 
   if (kvp == NULL)
   {
-    return false; // LCOV_EXCL_LINE
+    return false;
   }
 
   return cardano_asset_name_map_get_length(kvp->value) > 0U;
@@ -230,7 +230,7 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   cardano_cbor_reader_state_t state;
@@ -239,10 +239,8 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
 
   if (read_state != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_multi_asset_unref(&data);
     return read_state;
-    // LCOV_EXCL_STOP
   }
 
   while (state != CARDANO_CBOR_READER_STATE_END_MAP)
@@ -251,10 +249,8 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
 
     if (read_state != CARDANO_SUCCESS)
     {
-      /** LCOV_EXCL_START */
       cardano_multi_asset_unref(&data);
       return read_state;
-      /** LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -291,13 +287,11 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&script_hash);
       cardano_asset_name_map_unref(&asset_name_map);
       cardano_multi_asset_unref(&data);
 
       return insert_result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_blake2b_hash_unref(&script_hash);
@@ -332,7 +326,7 @@ cardano_multi_asset_to_cbor(
 
   if (write_map_result != CARDANO_SUCCESS)
   {
-    return write_map_result; // LCOV_EXCL_LINE
+    return write_map_result;
   }
 
   for (size_t i = 0U; i < size; ++i)
@@ -342,21 +336,21 @@ cardano_multi_asset_to_cbor(
 
     if (kvp == NULL)
     {
-      return CARDANO_ERROR_ELEMENT_NOT_FOUND; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
     }
 
     cardano_error_t write_voter_result = cardano_blake2b_hash_to_cbor(kvp->key, writer);
 
     if (write_voter_result != CARDANO_SUCCESS)
     {
-      return write_voter_result; // LCOV_EXCL_LINE
+      return write_voter_result;
     }
 
     cardano_error_t write_asset_name_map_result = cardano_asset_name_map_to_cbor(kvp->value, writer);
 
     if (write_asset_name_map_result != CARDANO_SUCCESS)
     {
-      return write_asset_name_map_result; // LCOV_EXCL_LINE
+      return write_asset_name_map_result;
     }
   }
 
@@ -439,10 +433,8 @@ cardano_multi_asset_insert_assets(
 
   if (new_size != (old_size + 1U))
   {
-    /* LCOV_EXCL_START */
     cardano_multi_asset_kvp_deallocate(kvp);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_array_sort(multi_asset->array, compare_by_hash, NULL);
@@ -567,7 +559,7 @@ cardano_multi_asset_get_with_id(
 
   if ((policy_id == NULL) || (name == NULL))
   {
-    return CARDANO_ERROR_POINTER_IS_NULL; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   return cardano_multi_asset_get(multi_asset, policy_id, name, value);
@@ -601,7 +593,7 @@ cardano_multi_asset_set(
 
   if ((get_assets_result != CARDANO_SUCCESS) && (get_assets_result != CARDANO_ERROR_ELEMENT_NOT_FOUND))
   {
-    return get_assets_result; // LCOV_EXCL_LINE
+    return get_assets_result;
   }
 
   if (get_assets_result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
@@ -612,14 +604,14 @@ cardano_multi_asset_set(
 
     if (new_result != CARDANO_SUCCESS)
     {
-      return new_result; // LCOV_EXCL_LINE
+      return new_result;
     }
 
     cardano_error_t insert_result = cardano_multi_asset_insert_assets(multi_asset, policy_id, new_assets);
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      return insert_result; // LCOV_EXCL_LINE
+      return insert_result;
     }
 
     assets = new_assets;
@@ -653,7 +645,7 @@ cardano_multi_asset_get_keys(
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   size_t size = cardano_array_get_size(multi_asset->array);
@@ -665,20 +657,16 @@ cardano_multi_asset_get_keys(
 
     if (kvp == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_policy_id_list_unref(&list);
       return CARDANO_ERROR_ELEMENT_NOT_FOUND;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_error_t insert_result = cardano_policy_id_list_add(list, kvp->key);
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_policy_id_list_unref(&list);
       return insert_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -727,10 +715,8 @@ cardano_multi_asset_add(
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_multi_asset_unref(&map);
       return insert_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -751,13 +737,11 @@ cardano_multi_asset_add(
 
       if (add_assets_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_asset_name_map_unref(&value);
         cardano_asset_name_map_unref(&add_result);
         cardano_multi_asset_unref(&map);
 
         return add_assets_result;
-        /* LCOV_EXCL_STOP */
       }
 
       cardano_error_t insert_result = cardano_multi_asset_insert_assets(map, kvp->key, add_result);
@@ -767,11 +751,9 @@ cardano_multi_asset_add(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_multi_asset_unref(&map);
 
         return insert_result;
-        /* LCOV_EXCL_STOP */
       }
     }
     else
@@ -780,11 +762,9 @@ cardano_multi_asset_add(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_multi_asset_unref(&map);
 
         return insert_result;
-        /* LCOV_EXCL_STOP */
       }
     }
   }
@@ -839,11 +819,9 @@ cardano_multi_asset_subtract(
 
     if (insert_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_multi_asset_unref(&map);
 
       return insert_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -864,13 +842,11 @@ cardano_multi_asset_subtract(
 
       if (subtract_assets_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_asset_name_map_unref(&value);
         cardano_asset_name_map_unref(&subtract_result);
         cardano_multi_asset_unref(&map);
 
         return subtract_assets_result;
-        /* LCOV_EXCL_STOP */
       }
 
       cardano_error_t insert_result = cardano_multi_asset_insert_assets(map, kvp->key, subtract_result);
@@ -880,11 +856,9 @@ cardano_multi_asset_subtract(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_multi_asset_unref(&map);
 
         return insert_result;
-        /* LCOV_EXCL_STOP */
       }
     }
     else
@@ -896,25 +870,21 @@ cardano_multi_asset_subtract(
 
       if (create_empty_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_asset_name_map_unref(&empty_map);
         cardano_multi_asset_unref(&map);
 
         return create_empty_result;
-        /* LCOV_EXCL_STOP */
       }
 
       cardano_error_t subtract_assets_result = cardano_asset_name_map_subtract(empty_map, kvp->value, &subtract_result);
 
       if (subtract_assets_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_asset_name_map_unref(&empty_map);
         cardano_asset_name_map_unref(&subtract_result);
         cardano_multi_asset_unref(&map);
 
         return subtract_assets_result;
-        /* LCOV_EXCL_STOP */
       }
 
       cardano_error_t insert_result = cardano_multi_asset_insert_assets(map, kvp->key, subtract_result);
@@ -924,11 +894,9 @@ cardano_multi_asset_subtract(
 
       if (insert_result != CARDANO_SUCCESS)
       {
-        /* LCOV_EXCL_START */
         cardano_multi_asset_unref(&map);
 
         return insert_result;
-        /* LCOV_EXCL_STOP */
       }
     }
   }
@@ -964,7 +932,7 @@ cardano_multi_asset_get_positive(
 
   if (create_result != CARDANO_SUCCESS)
   {
-    return create_result; // LCOV_EXCL_LINE
+    return create_result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(multi_asset->array); ++i)
@@ -980,11 +948,9 @@ cardano_multi_asset_get_positive(
 
     if (get_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_multi_asset_unref(&map);
 
       return get_result;
-      // LCOV_EXCL_STOP
     }
 
     const size_t asset_names_count = cardano_asset_name_map_get_length(value);
@@ -999,11 +965,9 @@ cardano_multi_asset_get_positive(
 
       if (get_asset_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_multi_asset_unref(&map);
 
         return get_asset_result;
-        // LCOV_EXCL_STOP
       }
 
       if (asset_value > 0)
@@ -1012,11 +976,9 @@ cardano_multi_asset_get_positive(
 
         if (insert_result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_multi_asset_unref(&map);
 
           return insert_result;
-          // LCOV_EXCL_STOP
         }
       }
     }
@@ -1048,7 +1010,7 @@ cardano_multi_asset_get_negative(
 
   if (create_result != CARDANO_SUCCESS)
   {
-    return create_result; // LCOV_EXCL_LINE
+    return create_result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(multi_asset->array); ++i)
@@ -1064,11 +1026,9 @@ cardano_multi_asset_get_negative(
 
     if (get_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_multi_asset_unref(&map);
 
       return get_result;
-      // LCOV_EXCL_STOP
     }
 
     const size_t asset_names_count = cardano_asset_name_map_get_length(value);
@@ -1083,11 +1043,9 @@ cardano_multi_asset_get_negative(
 
       if (get_asset_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_multi_asset_unref(&map);
 
         return get_asset_result;
-        // LCOV_EXCL_STOP
       }
 
       if (asset_value < 0)
@@ -1096,11 +1054,9 @@ cardano_multi_asset_get_negative(
 
         if (insert_result != CARDANO_SUCCESS)
         {
-          // LCOV_EXCL_START
           cardano_multi_asset_unref(&map);
 
           return insert_result;
-          // LCOV_EXCL_STOP
         }
       }
     }
@@ -1142,7 +1098,7 @@ cardano_multi_asset_equals(const cardano_multi_asset_t* lhs, const cardano_multi
 
     if (lhs_kvp == NULL)
     {
-      return false; // LCOV_EXCL_LINE
+      return false;
     }
 
     cardano_object_t*          rhs_object = cardano_array_get(rhs->array, i);
@@ -1151,7 +1107,7 @@ cardano_multi_asset_equals(const cardano_multi_asset_t* lhs, const cardano_multi
 
     if (rhs_kvp == NULL)
     {
-      return false; // LCOV_EXCL_LINE
+      return false;
     }
 
     if (!cardano_blake2b_hash_equals(lhs_kvp->key, rhs_kvp->key))

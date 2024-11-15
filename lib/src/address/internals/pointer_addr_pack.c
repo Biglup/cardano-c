@@ -55,9 +55,7 @@ _cardano_pointer_address_variable_length_encode(uint32_t value, byte_t* buffer, 
   {
     if (output_size >= buffer_size)
     {
-      /* LCOV_EXCL_START */
       return 0;
-      /* LCOV_EXCL_STOP */
     }
 
     remaining               >>= 7U;
@@ -109,7 +107,7 @@ _cardano_unpack_pointer_address(const byte_t* data, const size_t size, cardano_p
 
   if (size < (size_t)(((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + 1U)))
   {
-    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
   }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);
@@ -158,11 +156,9 @@ _cardano_unpack_pointer_address(const byte_t* data, const size_t size, cardano_p
 
   if (tx_index < 0)
   {
-    /* LCOV_EXCL_START */
     cardano_credential_unref(&payment_credential);
 
     return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
-    /* LCOV_EXCL_STOP */
   }
 
   stake_pointer.tx_index = (size_t)tx_index;
@@ -174,11 +170,9 @@ _cardano_unpack_pointer_address(const byte_t* data, const size_t size, cardano_p
 
   if (cert_index < 0)
   {
-    /* LCOV_EXCL_START */
     cardano_credential_unref(&payment_credential);
 
     return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
-    /* LCOV_EXCL_STOP */
   }
 
   stake_pointer.cert_index = (size_t)cert_index;

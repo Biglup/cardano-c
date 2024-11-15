@@ -157,7 +157,7 @@ cardano_script_invalid_before_from_cbor(cardano_cbor_reader_t* reader, cardano_s
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    return expect_end_array_result; /* LCOV_EXCL_LINE */
+    return expect_end_array_result;
   }
 
   return cardano_script_invalid_before_new(slot, script_invalid_before);
@@ -182,14 +182,14 @@ cardano_script_invalid_before_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, script_invalid_before->type);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, script_invalid_before->slot);
@@ -244,11 +244,9 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
 
   if (type_string == NULL)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
-    // LCOV_EXCL_STOP
   }
 
   size_t slot = json_object_get_uint64(slot_object);
@@ -262,11 +260,9 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
 
   if (strcmp(type_string, "before") != 0)
   {
-    // LCOV_EXCL_START
     json_object_put(json_object);
 
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
-    // LCOV_EXCL_STOP
   }
 
   json_object_put(json_object);

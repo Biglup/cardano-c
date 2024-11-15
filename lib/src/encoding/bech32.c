@@ -628,7 +628,7 @@ encode_squashed(
 
   if (format_result < 0)
   {
-    return CARDANO_ERROR_ENCODING; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_ENCODING;
   }
 
   return CARDANO_SUCCESS;
@@ -771,7 +771,7 @@ cardano_encoding_bech32_encode(
   {
     if (squashed_data != NULL)
     {
-      _cardano_free(squashed_data); /* LCOV_EXCL_LINE */
+      _cardano_free(squashed_data);
     }
 
     return result;

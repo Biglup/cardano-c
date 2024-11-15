@@ -459,11 +459,10 @@ cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_sc
 
       break;
     }
-    /* LCOV_EXCL_START */
+
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
-      /* LCOV_EXCL_STOP */
   }
 
   return result;
@@ -506,11 +505,10 @@ cardano_native_script_to_cbor(
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
       result = cardano_script_invalid_before_to_cbor(native_script->invalid_before, writer);
       break;
-    /* LCOV_EXCL_START */
+
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
       break;
-      /* LCOV_EXCL_STOP */
   }
 
   return result;
@@ -533,7 +531,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
   if (json_object == NULL)
   {
-    return CARDANO_ERROR_INVALID_JSON; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_JSON;
   }
 
   cardano_error_t          result = CARDANO_SUCCESS;
@@ -553,12 +551,10 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
   if (type_string == NULL)
   {
-    /* LCOV_EXCL_START */
     json_object_put(json_object);
     cardano_native_script_unref(&data);
 
     return CARDANO_ERROR_INVALID_JSON;
-    /* LCOV_EXCL_STOP */
   }
 
   if (strcmp(type_string, "all") == 0)
@@ -662,10 +658,8 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_native_script_unref(&data);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *native_script = data;
@@ -876,10 +870,8 @@ cardano_native_script_get_hash(
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_cbor_writer_unref(&writer);
     return NULL;
-    /* LCOV_EXCL_STOP */
   }
 
   result = cardano_cbor_writer_encode_in_buffer(writer, &cbor);
@@ -888,7 +880,7 @@ cardano_native_script_get_hash(
 
   if (result != CARDANO_SUCCESS)
   {
-    return NULL; /* LCOV_EXCL_LINE */
+    return NULL;
   }
 
   cardano_blake2b_hash_t* hash = NULL;
@@ -899,22 +891,18 @@ cardano_native_script_get_hash(
 
   if (hash_input == NULL)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&cbor);
     return NULL;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t error = cardano_buffer_write(hash_input, &native_prefix, 1);
 
   if (error != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&cbor);
     cardano_buffer_unref(&hash_input);
 
     return NULL;
-    /* LCOV_EXCL_STOP */
   }
 
   error = cardano_buffer_write(hash_input, cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor));
@@ -923,11 +911,9 @@ cardano_native_script_get_hash(
 
   if (error != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&hash_input);
 
     return NULL;
-    /* LCOV_EXCL_STOP */
   }
 
   error = cardano_blake2b_compute_hash(
@@ -940,7 +926,7 @@ cardano_native_script_get_hash(
 
   if (error != CARDANO_SUCCESS)
   {
-    return NULL; /* LCOV_EXCL_LINE */
+    return NULL;
   }
 
   return hash;
@@ -992,10 +978,9 @@ cardano_native_script_equals(
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
       result = cardano_script_invalid_before_equals(lhs->invalid_before, rhs->invalid_before);
       break;
-    /* LCOV_EXCL_START */
+
     default:
       return false;
-      /* LCOV_EXCL_STOP */
   }
 
   return result;

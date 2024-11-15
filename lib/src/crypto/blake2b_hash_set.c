@@ -169,10 +169,8 @@ cardano_blake2b_hash_set_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_blake2b_hash_set_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -193,10 +191,8 @@ cardano_blake2b_hash_set_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_blake2b_hash_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -221,10 +217,8 @@ cardano_blake2b_hash_set_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_blake2b_hash_set_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -232,10 +226,8 @@ cardano_blake2b_hash_set_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_set_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_array_sort(list->array, compare_by_hash, NULL);
@@ -266,7 +258,7 @@ cardano_blake2b_hash_set_to_cbor(const cardano_blake2b_hash_set_t* blake2b_hash_
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t array_size = cardano_array_get_size(blake2b_hash_set->array);
@@ -274,7 +266,7 @@ cardano_blake2b_hash_set_to_cbor(const cardano_blake2b_hash_set_t* blake2b_hash_
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(blake2b_hash_set->array); ++i)
@@ -283,10 +275,8 @@ cardano_blake2b_hash_set_to_cbor(const cardano_blake2b_hash_set_t* blake2b_hash_
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in blake2b_hash_set is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_blake2b_hash_to_cbor((cardano_blake2b_hash_t*)((void*)element), writer);
@@ -295,7 +285,7 @@ cardano_blake2b_hash_set_to_cbor(const cardano_blake2b_hash_set_t* blake2b_hash_
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

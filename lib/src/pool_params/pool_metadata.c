@@ -169,10 +169,8 @@ cardano_pool_metadata_from_hash_hex(
 
   if (hash_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *pool_metadata = NULL;
     return hash_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_error_t new_metadata_result = cardano_pool_metadata_new(url, url_size, blake2b_hash, pool_metadata);
@@ -237,10 +235,8 @@ cardano_pool_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_meta
 
   if (new_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *pool_metadata = NULL;
     return new_result;
-    // LCOV_EXCL_STOP
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -265,7 +261,7 @@ cardano_pool_metadata_to_cbor(const cardano_pool_metadata_t* pool_metadata, card
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_string_result = cardano_cbor_writer_write_textstring(
@@ -275,7 +271,7 @@ cardano_pool_metadata_to_cbor(const cardano_pool_metadata_t* pool_metadata, card
 
   if (write_string_result != CARDANO_SUCCESS)
   {
-    return write_string_result; /* LCOV_EXCL_LINE */
+    return write_string_result;
   }
 
   return cardano_blake2b_hash_to_cbor(pool_metadata->hash, writer);

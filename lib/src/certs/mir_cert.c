@@ -216,7 +216,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
 
   if (clone_reader != CARDANO_SUCCESS)
   {
-    return clone_reader; // LCOV_EXCL_LINE
+    return clone_reader;
   }
 
   expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, embedded_reader, EMBEDDED_GROUP_SIZE);
@@ -263,7 +263,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
 
     if (to_pot_result != CARDANO_SUCCESS)
     {
-      return to_pot_result; // LCOV_EXCL_LINE
+      return to_pot_result;
     }
 
     cardano_error_t create_mir_cert_result = cardano_mir_cert_new_to_other_pot(mir_to_pot_cert, mir_cert);
@@ -312,14 +312,14 @@ cardano_mir_cert_to_cbor(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = cardano_cbor_writer_write_uint(writer, CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   switch (mir_cert->type)
@@ -334,10 +334,9 @@ cardano_mir_cert_to_cbor(
       result = cardano_mir_to_stake_creds_cert_to_cbor(mir_cert->mir_to_stake_creds_cert, writer);
       break;
     }
-    // LCOV_EXCL_START
+
     default:
       return CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
-      // LCOV_EXCL_STOP
   }
 
   return result;

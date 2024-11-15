@@ -134,7 +134,7 @@ cardano_tx_evaluator_evaluate(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_tx_evaluator_set_last_error(tx_evaluator, tx_evaluator->impl.error_message); // LCOV_EXCL_LINE
+    cardano_tx_evaluator_set_last_error(tx_evaluator, tx_evaluator->impl.error_message);
   }
 
   return result;

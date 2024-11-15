@@ -424,10 +424,9 @@ get_field_ptr(cardano_protocol_param_update_t* update, size_t key)
       return (void*)&update->drep_inactivity_period;
     case 33:
       return (void*)&update->ref_script_cost_per_byte;
-    // LCOV_EXCL_START
+
     default:
       return NULL;
-      // LCOV_EXCL_STOP
   }
 }
 
@@ -534,7 +533,7 @@ handle_entropy(cardano_cbor_reader_t* reader, void* field_ptr)
 
   if (read_extra_entropy_array != CARDANO_SUCCESS)
   {
-    return read_extra_entropy_array; // LCOV_EXCL_LINE
+    return read_extra_entropy_array;
   }
 
   size_t entropy_key = 0U;
@@ -768,12 +767,12 @@ handle_drep_voting_thresholds(cardano_cbor_reader_t* reader, void* field_ptr)
  *         - Always returns \ref CARDANO_ERROR_INVALID_CBOR_MAP_KEY.
  */
 static cardano_error_t
-handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr) // LCOV_EXCL_LINE
+handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   CARDANO_UNUSED(reader);
   CARDANO_UNUSED(field_ptr);
 
-  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY; // LCOV_EXCL_LINE
+  return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
 }
 
 /**
@@ -804,14 +803,14 @@ write_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const u
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_cbor_writer_write_uint(writer, *value);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -846,14 +845,14 @@ write_unit_interval_if_present(cardano_cbor_writer_t* writer, const uint64_t key
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_unit_interval_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -888,7 +887,7 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     if (cardano_buffer_get_size(value) == 0U)
@@ -897,14 +896,14 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       result = cardano_cbor_writer_write_uint(writer, 0U);
 
       if (result != CARDANO_SUCCESS)
       {
-        return result; // LCOV_EXCL_LINE
+        return result;
       }
 
       return CARDANO_SUCCESS;
@@ -914,21 +913,21 @@ write_entropy_if_present(cardano_cbor_writer_t* writer, const uint64_t key, cons
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_cbor_writer_write_uint(writer, 1U);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(value), cardano_buffer_get_size(value));
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -963,14 +962,14 @@ write_protocol_version_if_present(cardano_cbor_writer_t* writer, const uint64_t 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_protocol_version_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1005,14 +1004,14 @@ write_cost_models_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_costmdls_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1047,14 +1046,14 @@ write_ex_unit_prices_if_present(cardano_cbor_writer_t* writer, const uint64_t ke
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_ex_unit_prices_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1089,14 +1088,14 @@ write_ex_units_if_present(cardano_cbor_writer_t* writer, const uint64_t key, con
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_ex_units_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1131,14 +1130,14 @@ write_pool_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_pool_voting_thresholds_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1173,14 +1172,14 @@ write_drep_voting_thresholds_if_present(cardano_cbor_writer_t* writer, const uin
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
 
     result = cardano_drep_voting_thresholds_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -1335,11 +1334,9 @@ cardano_protocol_param_update_from_cbor(cardano_cbor_reader_t* reader, cardano_p
 
     if (field_ptr == NULL)
     {
-      // LCOV_EXCL_START
       cardano_protocol_param_update_unref(&update);
 
       return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
-      // LCOV_EXCL_STOP
     }
 
     result = param_handlers[key](reader, field_ptr);
@@ -1376,238 +1373,238 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 0U, protocol_param_update->min_fee_a);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 1U, protocol_param_update->min_fee_b);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 2U, protocol_param_update->max_block_body_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 3U, protocol_param_update->max_tx_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 4U, protocol_param_update->max_block_header_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 5U, protocol_param_update->key_deposit);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 6U, protocol_param_update->pool_deposit);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 7U, protocol_param_update->max_epoch);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 8U, protocol_param_update->n_opt);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_unit_interval_if_present(writer, 9U, protocol_param_update->pool_pledge_influence);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_unit_interval_if_present(writer, 10U, protocol_param_update->expansion_rate);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_unit_interval_if_present(writer, 11U, protocol_param_update->treasury_growth_rate);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_unit_interval_if_present(writer, 12U, protocol_param_update->d);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_entropy_if_present(writer, 13U, protocol_param_update->extra_entropy);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_protocol_version_if_present(writer, 14U, protocol_param_update->protocol_version);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 16U, protocol_param_update->min_pool_cost);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 17U, protocol_param_update->ada_per_utxo_byte);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_cost_models_if_present(writer, 18U, protocol_param_update->cost_models);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_ex_unit_prices_if_present(writer, 19U, protocol_param_update->execution_costs);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_ex_units_if_present(writer, 20U, protocol_param_update->max_tx_ex_units);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_ex_units_if_present(writer, 21U, protocol_param_update->max_block_ex_units);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 22U, protocol_param_update->max_value_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 23U, protocol_param_update->collateral_percentage);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 24U, protocol_param_update->max_collateral_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_pool_voting_thresholds_if_present(writer, 25U, protocol_param_update->pool_voting_thresholds);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_drep_voting_thresholds_if_present(writer, 26U, protocol_param_update->drep_voting_thresholds);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 27U, protocol_param_update->min_committee_size);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 28U, protocol_param_update->committee_term_limit);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 29U, protocol_param_update->governance_action_validity_period);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 30U, protocol_param_update->governance_action_deposit);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 31U, protocol_param_update->drep_deposit);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_uint_if_present(writer, 32U, protocol_param_update->drep_inactivity_period);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   result = write_unit_interval_if_present(writer, 33U, protocol_param_update->ref_script_cost_per_byte);
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   return CARDANO_SUCCESS;

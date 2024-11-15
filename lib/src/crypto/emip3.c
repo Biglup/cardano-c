@@ -60,18 +60,16 @@ cardano_crypto_emip3_encrypt(
 
   if (*encrypted_data == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   result = cardano_buffer_set_size(*encrypted_data, required_length);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(encrypted_data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   byte_t* output     = cardano_buffer_get_data(*encrypted_data);
@@ -89,12 +87,10 @@ cardano_crypto_emip3_encrypt(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(encrypted_data);
     sodium_memzero(key, KEY_LENGTH);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   randombytes_buf(nonce, NONCE_LENGTH);
@@ -103,12 +99,10 @@ cardano_crypto_emip3_encrypt(
 
   if (crypto_aead_chacha20poly1305_ietf_encrypt_detached(ciphertext, tag_output, NULL, data, data_length, NULL, 0, NULL, nonce, key) != 0)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(encrypted_data);
     sodium_memzero(key, KEY_LENGTH);
 
     return CARDANO_ERROR_GENERIC;
-    // LCOV_EXCL_STOP
   }
 
   cardano_safe_memcpy(tag, TAG_LENGTH, tag_output, TAG_LENGTH);
@@ -137,18 +131,16 @@ cardano_crypto_emip3_decrypt(
 
   if (*data == NULL)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = cardano_buffer_set_size(*data, ciphertext_len);
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   const byte_t* salt       = encrypted_data;
@@ -163,21 +155,17 @@ cardano_crypto_emip3_decrypt(
 
   if (result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(data);
 
     return result;
-    // LCOV_EXCL_STOP
   }
 
   if (crypto_aead_chacha20poly1305_ietf_decrypt_detached(cardano_buffer_get_data(*data), NULL, ciphertext, ciphertext_len, tag, NULL, 0, nonce, key) != 0)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(data);
     sodium_memzero(key, KEY_LENGTH);
 
     return CARDANO_ERROR_GENERIC;
-    // LCOV_EXCL_STOP
   }
 
   sodium_memzero(key, KEY_LENGTH);

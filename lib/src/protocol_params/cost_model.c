@@ -99,12 +99,10 @@ cardano_cost_model_new(
   // Lets add a practical limit here (10 times current cost models size)
   if (costs_size > 2048U)
   {
-    // LCOV_EXCL_START
     _cardano_free(*cost_model);
     *cost_model = NULL;
 
     return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
-    // LCOV_EXCL_STOP
   }
 
   (*cost_model)->costs = _cardano_malloc(costs_size * sizeof(int64_t));
@@ -112,12 +110,10 @@ cardano_cost_model_new(
 
   if ((*cost_model)->costs == NULL)
   {
-    // LCOV_EXCL_START
     _cardano_free(*cost_model);
     *cost_model = NULL;
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    // LCOV_EXCL_STOP
   }
 
   (*cost_model)->language_version   = language;
@@ -176,10 +172,8 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
 
   if ((cost_model_size < 0) || (cost_model_size > 2048))
   {
-    // LCOV_EXCL_START
     *cost_model = NULL;
     return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
-    // LCOV_EXCL_STOP
   }
 
   int64_t* costs = _cardano_malloc((size_t)cost_model_size * sizeof(int64_t));
@@ -200,12 +194,10 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *cost_model = NULL;
     _cardano_free(costs);
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t new_model_result = cardano_cost_model_new(language_version, costs, cost_model_size, cost_model);
@@ -231,7 +223,7 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -240,7 +232,7 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   for (size_t i = 0U; i < cost_model->size; ++i)
@@ -249,7 +241,7 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
 
     if (write_int_result != CARDANO_SUCCESS)
     {
-      return write_int_result; /* LCOV_EXCL_LINE */
+      return write_int_result;
     }
   }
 

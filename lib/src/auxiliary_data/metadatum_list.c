@@ -146,10 +146,8 @@ cardano_metadatum_list_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatu
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -174,10 +172,8 @@ cardano_metadatum_list_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatu
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_list_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -185,10 +181,8 @@ cardano_metadatum_list_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatu
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_metadatum_list_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *metadatum_list = list;
@@ -221,7 +215,7 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     };
   }
   else
@@ -230,7 +224,7 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 
@@ -240,10 +234,8 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in metadatum list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_metadatum_to_cbor((cardano_metadatum_t*)((void*)element), writer);
@@ -252,7 +244,7 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

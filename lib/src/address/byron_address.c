@@ -98,10 +98,8 @@ cardano_byron_address_from_credentials(
 
   if (encoding_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     _cardano_address_deallocate(&address);
     return encoding_result;
-    /* LCOV_EXCL_STOP */
   }
 
   *byron_address = _cardano_from_address_to_byron(address);

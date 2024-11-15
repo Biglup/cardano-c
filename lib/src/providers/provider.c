@@ -143,7 +143,7 @@ cardano_provider_get_parameters(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -169,7 +169,7 @@ cardano_provider_get_unspent_outputs(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -195,7 +195,7 @@ cardano_provider_get_rewards_available(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -222,7 +222,7 @@ cardano_provider_get_unspent_outputs_with_asset(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -248,7 +248,7 @@ cardano_provider_get_unspent_output_by_nft(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -274,7 +274,7 @@ cardano_provider_resolve_unspent_outputs(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -300,7 +300,7 @@ cardano_provider_resolve_datum(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -327,7 +327,7 @@ cardano_provider_confirm_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -353,7 +353,7 @@ cardano_provider_submit_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;
@@ -380,7 +380,7 @@ cardano_provider_evaluate_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_provider_set_last_error(provider, provider->impl.error_message); // LCOV_EXCL_LINE
+    cardano_provider_set_last_error(provider, provider->impl.error_message);
   }
 
   return result;

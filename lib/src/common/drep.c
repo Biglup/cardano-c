@@ -204,11 +204,9 @@ cardano_drep_from_cbor(cardano_cbor_reader_t* reader, cardano_drep_t** drep)
 
     if (expect_end_array_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_credential_unref(&credential);
       *drep = NULL;
       return expect_end_array_result;
-      // LCOV_EXCL_STOP
     }
 
     const cardano_error_t new_drep_result = cardano_drep_new((cardano_drep_type_t)type, credential, drep);
@@ -227,10 +225,8 @@ cardano_drep_from_cbor(cardano_cbor_reader_t* reader, cardano_drep_t** drep)
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *drep = NULL;
     return expect_end_array_result;
-    // LCOV_EXCL_STOP
   }
 
   return cardano_drep_new((cardano_drep_type_t)type, NULL, drep);
@@ -257,14 +253,14 @@ cardano_drep_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, drep->type);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   if (array_size == DREP_ARRAY_SIZE)
@@ -278,7 +274,7 @@ cardano_drep_to_cbor(
 
     if (credential_result != CARDANO_SUCCESS)
     {
-      return credential_result; /* LCOV_EXCL_LINE */
+      return credential_result;
     }
   }
 

@@ -76,7 +76,7 @@ grow_array_if_needed(cardano_array_t* array)
 
     if (new_items == NULL)
     {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED; // LCOV_EXCL_LINE
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     array->items    = new_items;
@@ -356,7 +356,7 @@ cardano_array_erase(
 
   if (deleted_array == NULL)
   {
-    return NULL; // LCOV_EXCL_LINE
+    return NULL;
   }
 
   for (size_t i = 0; i < adjusted_delete_count; ++i)
@@ -461,10 +461,8 @@ cardano_array_push(cardano_array_t* array, cardano_object_t* item)
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_array_set_last_error(array, cardano_error_to_string(error));
     return array->size;
-    // LCOV_EXCL_STOP
   }
 
   cardano_object_ref(item);

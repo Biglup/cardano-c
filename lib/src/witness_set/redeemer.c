@@ -228,14 +228,12 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_buffer_unref(&cbor_cache);
     cardano_plutus_data_unref(&data);
     cardano_ex_units_unref(&ex_units);
     *redeemer = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_error_t new_redeemer_result = cardano_redeemer_new((cardano_redeemer_tag_t)tag, index, data, ex_units, redeemer);
@@ -245,13 +243,11 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
 
   if (new_redeemer_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_buffer_unref(&cbor_cache);
 
     *redeemer = NULL;
 
     return new_redeemer_result;
-    // LCOV_EXCL_STOP
   }
 
   (*redeemer)->cbor_cache = cbor_cache;
@@ -283,7 +279,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_tag_result = cardano_cbor_writer_write_uint(
@@ -292,7 +288,7 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
 
   if (write_tag_result != CARDANO_SUCCESS)
   {
-    return write_tag_result; /* LCOV_EXCL_LINE */
+    return write_tag_result;
   }
 
   cardano_error_t write_index_result = cardano_cbor_writer_write_uint(
@@ -301,21 +297,21 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
 
   if (write_index_result != CARDANO_SUCCESS)
   {
-    return write_index_result; /* LCOV_EXCL_LINE */
+    return write_index_result;
   }
 
   cardano_error_t write_data_result = cardano_plutus_data_to_cbor(redeemer->data, writer);
 
   if (write_data_result != CARDANO_SUCCESS)
   {
-    return write_data_result; /* LCOV_EXCL_LINE */
+    return write_data_result;
   }
 
   cardano_error_t write_ex_units_result = cardano_ex_units_to_cbor(redeemer->execution_units, writer);
 
   if (write_ex_units_result != CARDANO_SUCCESS)
   {
-    return write_ex_units_result; /* LCOV_EXCL_LINE */
+    return write_ex_units_result;
   }
 
   return CARDANO_SUCCESS;

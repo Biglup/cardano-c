@@ -1217,41 +1217,6 @@ TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfKeyHandlerIs
   cardano_buffer_unref(&buffer);
 }
 
-TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfMemoryAllocationFails)
-{
-  // Arrange
-  cardano_secure_key_handler_t* key_handler = nullptr;
-
-  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, sizeof strlen(SERIALIZED_BIP32_KEY_HANDLER));
-
-  // Act
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, realloc, free);
-
-  cardano_error_t error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &key_handler);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
-
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, realloc, free);
-
-  error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &key_handler);
-
-  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
-
-  reset_allocators_run_count();
-  cardano_set_allocators(fail_after_two_malloc, realloc, free);
-
-  error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &key_handler);
-
-  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
-
-  // Cleanup
-  cardano_buffer_unref(&buffer);
-  cardano_set_allocators(malloc, realloc, free);
-}
-
 TEST(cardano_software_secure_key_handler_deserialize, doesntCrashIfInvalidSerializedData)
 {
   // Arrange
@@ -1363,4 +1328,143 @@ TEST(cardano_software_secure_key_handler_deserialize, returnErrorIfInvalidKeyHan
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, strlen(SERIALIZED_BIP32_KEY_HANDLER));
+
+  // Act
+  for (int i = 0; i < 6; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &key_handler);
+
+    // Assert
+    EXPECT_TRUE((error == CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ) || (error == CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_buffer_unref(&buffer);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, returnsErrorOnMemoryAllocationFail)
+{
+  // Arrange
+  cardano_transaction_t* transaction = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, strlen(TX_CBOR));
+
+  cardano_error_t error = cardano_transaction_from_cbor(reader, &transaction);
+
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_software_secure_key_handler_ed25519_new(
+    private_key,
+    (const byte_t*)&PASSWORD[0],
+    strlen(PASSWORD),
+    &get_passphrase,
+    &key_handler);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
+
+  for (int i = 0; i < 24; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    error = cardano_secure_key_handler_ed25519_sign_transaction(key_handler, transaction, &vkey_witness_set);
+
+    EXPECT_NE(error, CARDANO_SUCCESS);
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_transaction_unref(&transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+  cardano_ed25519_private_key_unref(&private_key);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnMemoryAllocationFail)
+{
+  // Arrange
+  cardano_transaction_t* transaction = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, strlen(TX_CBOR));
+
+  cardano_error_t error = cardano_transaction_from_cbor(reader, &transaction);
+
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+
+  error = cardano_software_secure_key_handler_new(
+    entropy_bytes,
+    sizeof entropy_bytes,
+    (const byte_t*)&PASSWORD[0],
+    strlen(PASSWORD),
+    &get_passphrase,
+    &key_handler);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
+  cardano_derivation_path_t   path[]           = {
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 2U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 3U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 4U, 0U }
+  };
+
+  for (int i = 0; i < 135; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    error = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, &path[0], 4, &vkey_witness_set);
+
+    EXPECT_NE(error, CARDANO_SUCCESS);
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_transaction_unref(&transaction);
+  cardano_secure_key_handler_unref(&key_handler);
 }

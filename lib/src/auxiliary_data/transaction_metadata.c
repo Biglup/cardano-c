@@ -130,7 +130,7 @@ compare_by_value(const cardano_object_t* lhs, const cardano_object_t* rhs, void*
   const cardano_transaction_metadata_kvp_t* lhs_kvp = (const cardano_transaction_metadata_kvp_t*)((const void*)lhs);
   const cardano_transaction_metadata_kvp_t* rhs_kvp = (const cardano_transaction_metadata_kvp_t*)((const void*)rhs);
 
-  return (lhs_kvp->key < rhs_kvp->key) ? -1 : 1; // LCOV_EXCL_LINE
+  return (lhs_kvp->key < rhs_kvp->key) ? -1 : 1;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -206,10 +206,8 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
 
     if (result != CARDANO_SUCCESS)
     {
-      /** LCOV_EXCL_START */
       cardano_transaction_metadata_unref(&map);
       return result;
-      /** LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -240,12 +238,10 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
 
     if (kvp == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_unref(&value);
       cardano_transaction_metadata_unref(&map);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      /* LCOV_EXCL_STOP */
     }
 
     kvp->base.ref_count     = 0;
@@ -269,10 +265,8 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_transaction_metadata_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *transaction_metadata = map;
@@ -300,7 +294,7 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(transaction_metadata->array); ++i)
@@ -309,10 +303,8 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in transaction metadata map is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_transaction_metadata_kvp_t* kvp_data = (cardano_transaction_metadata_kvp_t*)((void*)kvp);
@@ -321,20 +313,16 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_metadatum_to_cbor(kvp_data->value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);
@@ -455,7 +443,7 @@ cardano_transaction_metadata_get_keys(
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(transaction_metadata->array); ++i)
@@ -467,11 +455,9 @@ cardano_transaction_metadata_get_keys(
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_metadatum_label_list_unref(&list);
       cardano_object_unref(&object);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&object);

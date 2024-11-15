@@ -133,7 +133,7 @@ cardano_coin_selector_select(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_coin_selector_set_last_error(coin_selector, coin_selector->impl.error_message); // LCOV_EXCL_LINE
+    cardano_coin_selector_set_last_error(coin_selector, coin_selector->impl.error_message);
   }
 
   return result;

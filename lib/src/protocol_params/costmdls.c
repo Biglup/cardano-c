@@ -184,13 +184,11 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
 
     if (get_language_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cost_model_unref(&model);
       cardano_costmdls_unref(&costmdls_data);
       *costmdls = NULL;
 
       return get_language_result;
-      // LCOV_EXCL_STOP
     }
 
     switch (language)
@@ -207,12 +205,11 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
         cardano_cost_model_unref(&costmdls_data->plutus_v3_costs);
         costmdls_data->plutus_v3_costs = model;
         break;
-      // LCOV_EXCL_START
+
       default:
         cardano_costmdls_unref(&costmdls_data);
         *costmdls = NULL;
         return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
-        // LCOV_EXCL_STOP
     }
   }
 
@@ -240,7 +237,7 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 
   if (write_map_result != CARDANO_SUCCESS)
   {
-    return write_map_result; // LCOV_EXCL_LINE
+    return write_map_result;
   }
 
   if (costmdls->plutus_v1_costs != NULL)
@@ -249,7 +246,7 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 
     if (write_v1_result != CARDANO_SUCCESS)
     {
-      return write_v1_result; // LCOV_EXCL_LINE
+      return write_v1_result;
     }
   }
 
@@ -259,7 +256,7 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 
     if (write_v2_result != CARDANO_SUCCESS)
     {
-      return write_v2_result; // LCOV_EXCL_LINE
+      return write_v2_result;
     }
   }
 
@@ -269,7 +266,7 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 
     if (write_v3_result != CARDANO_SUCCESS)
     {
-      return write_v3_result; // LCOV_EXCL_LINE
+      return write_v3_result;
     }
   }
 
@@ -297,7 +294,7 @@ cardano_costmdls_insert(
 
   if (get_language_result != CARDANO_SUCCESS)
   {
-    return get_language_result; // LCOV_EXCL_LINE
+    return get_language_result;
   }
 
   switch (language)
@@ -318,10 +315,9 @@ cardano_costmdls_insert(
       costmdls->plutus_v3_costs = cost_model;
       cardano_cost_model_ref(costmdls->plutus_v3_costs);
       break;
-    /* LCOV_EXCL_START */
+
     default:
       return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
-      /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -405,11 +401,9 @@ cardano_costmdls_get_language_views_encoding(
 
   if (write_map_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_cbor_writer_unref(&writer);
 
     return write_map_result;
-    // LCOV_EXCL_STOP
   }
 
   if (costmdls->plutus_v2_costs != NULL)
@@ -418,10 +412,8 @@ cardano_costmdls_get_language_views_encoding(
 
     if (write_plutus_v2 != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return write_plutus_v2;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -431,10 +423,8 @@ cardano_costmdls_get_language_views_encoding(
 
     if (write_plutus_v3 != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
       return write_plutus_v3;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -444,23 +434,19 @@ cardano_costmdls_get_language_views_encoding(
 
     if (inner_writer == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&writer);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      // LCOV_EXCL_STOP
     }
 
     const cardano_error_t write_v1_result = cardano_cbor_writer_write_start_array(inner_writer, -1);
 
     if (write_v1_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&inner_writer);
       cardano_cbor_writer_unref(&writer);
 
       return write_v1_result;
-      // LCOV_EXCL_STOP
     }
 
     for (size_t i = 0U; i < 166U; ++i)
@@ -471,24 +457,20 @@ cardano_costmdls_get_language_views_encoding(
 
       if (get_cost_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_cbor_writer_unref(&inner_writer);
         cardano_cbor_writer_unref(&writer);
 
         return get_cost_result;
-        // LCOV_EXCL_STOP
       }
 
       const cardano_error_t write_result = cardano_cbor_writer_write_signed_int(inner_writer, cost);
 
       if (write_result != CARDANO_SUCCESS)
       {
-        // LCOV_EXCL_START
         cardano_cbor_writer_unref(&inner_writer);
         cardano_cbor_writer_unref(&writer);
 
         return write_result;
-        // LCOV_EXCL_STOP
       }
     }
 
@@ -496,12 +478,10 @@ cardano_costmdls_get_language_views_encoding(
 
     if (write_v1_end_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&inner_writer);
       cardano_cbor_writer_unref(&writer);
 
       return write_v1_end_result;
-      // LCOV_EXCL_STOP
     }
 
     cardano_buffer_t*     buffer             = NULL;
@@ -509,12 +489,10 @@ cardano_costmdls_get_language_views_encoding(
 
     if (get_encoded_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&inner_writer);
       cardano_cbor_writer_unref(&writer);
 
       return get_encoded_result;
-      // LCOV_EXCL_STOP
     }
 
     byte_t plutus_v1_id = 0U;
@@ -524,13 +502,11 @@ cardano_costmdls_get_language_views_encoding(
 
     if (write_inner_data_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_buffer_unref(&buffer);
       cardano_cbor_writer_unref(&inner_writer);
       cardano_cbor_writer_unref(&writer);
 
       return write_inner_data_result;
-      // LCOV_EXCL_STOP
     }
 
     write_inner_data_result = cardano_cbor_writer_write_bytestring(writer, cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
@@ -538,12 +514,10 @@ cardano_costmdls_get_language_views_encoding(
 
     if (write_inner_data_result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_unref(&inner_writer);
       cardano_cbor_writer_unref(&writer);
 
       return write_inner_data_result;
-      // LCOV_EXCL_STOP
     }
   }
 
@@ -555,7 +529,7 @@ cardano_costmdls_get_language_views_encoding(
 
   if (get_encoded_result != CARDANO_SUCCESS)
   {
-    return get_encoded_result; // LCOV_EXCL_LINE
+    return get_encoded_result;
   }
 
   *language_views = buffer;

@@ -168,10 +168,8 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
 
     if (read_tag_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_pool_owners_unref(&list);
       return read_tag_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -192,10 +190,8 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_pool_owners_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
@@ -220,10 +216,8 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
 
     if ((old_size + 1U) != new_size)
     {
-      /* LCOV_EXCL_START */
       cardano_pool_owners_unref(&list);
       return result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -231,10 +225,8 @@ cardano_pool_owners_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_owners
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_pool_owners_unref(&list);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   cardano_array_sort(list->array, compare_by_hash, NULL);
@@ -265,7 +257,7 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   size_t array_size = cardano_array_get_size(pool_owners->array);
@@ -273,7 +265,7 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(pool_owners->array); ++i)
@@ -282,10 +274,8 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
 
     if (element == NULL)
     {
-      /* LCOV_EXCL_START */
       cardano_cbor_writer_set_last_error(writer, "Element in pool_owners list is NULL");
       return CARDANO_ERROR_ENCODING;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_blake2b_hash_to_cbor((cardano_blake2b_hash_t*)((void*)element), writer);
@@ -294,7 +284,7 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
 
     if (result != CARDANO_SUCCESS)
     {
-      return result; // LCOV_EXCL_LINE
+      return result;
     }
   }
 

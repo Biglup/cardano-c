@@ -155,11 +155,9 @@ cardano_update_from_cbor(cardano_cbor_reader_t* reader, cardano_update_t** updat
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_proposed_param_updates_unref(&proposed_param_updates);
     *update = NULL;
     return error;
-    // LCOV_EXCL_STOP
   }
 
   error = cardano_update_new(epoch, proposed_param_updates, update);
@@ -168,10 +166,8 @@ cardano_update_from_cbor(cardano_cbor_reader_t* reader, cardano_update_t** updat
 
   if (error != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *update = NULL;
     return error;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -194,14 +190,14 @@ cardano_update_to_cbor(const cardano_update_t* update, cardano_cbor_writer_t* wr
 
   if (error != CARDANO_SUCCESS)
   {
-    return error; // LCOV_EXCL_LINE
+    return error;
   }
 
   error = cardano_proposed_param_updates_to_cbor(update->proposed_param_updates, writer);
 
   if (error != CARDANO_SUCCESS)
   {
-    return error; // LCOV_EXCL_LINE
+    return error;
   }
 
   error = cardano_cbor_writer_write_uint(writer, update->epoch);

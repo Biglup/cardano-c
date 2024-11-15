@@ -218,10 +218,8 @@ cardano_proposed_param_updates_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (result != CARDANO_SUCCESS)
     {
-      // LCOV_EXCL_START
       cardano_proposed_param_updates_unref(&map);
       return result;
-      // LCOV_EXCL_STOP
     }
 
     if (state == CARDANO_CBOR_READER_STATE_END_MAP)
@@ -253,13 +251,11 @@ cardano_proposed_param_updates_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_blake2b_hash_unref(&key);
       cardano_protocol_param_update_unref(&value);
       cardano_proposed_param_updates_unref(&map);
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      // LCOV_EXCL_STOP
     }
 
     kvp->base.ref_count     = 0;
@@ -280,10 +276,8 @@ cardano_proposed_param_updates_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_proposed_param_updates_unref(&map);
     return result;
-    /* LCOV_EXCL_STOP */
   }
 
   *proposed_params_updates = map;
@@ -309,7 +303,7 @@ cardano_proposed_param_updates_to_cbor(const cardano_proposed_param_updates_t* p
 
   if (result != CARDANO_SUCCESS)
   {
-    return result; // LCOV_EXCL_LINE
+    return result;
   }
 
   for (size_t i = 0; i < cardano_array_get_size(proposed_params_updates->array); ++i)
@@ -318,10 +312,8 @@ cardano_proposed_param_updates_to_cbor(const cardano_proposed_param_updates_t* p
 
     if (kvp == NULL)
     {
-      // LCOV_EXCL_START
       cardano_cbor_writer_set_last_error(writer, "Element in proposed params updates is NULL");
       return CARDANO_ERROR_ENCODING;
-      // LCOV_EXCL_STOP
     }
 
     cardano_proposed_param_updates_kvp_t* kvp_data = (cardano_proposed_param_updates_kvp_t*)((void*)kvp);
@@ -330,20 +322,16 @@ cardano_proposed_param_updates_to_cbor(const cardano_proposed_param_updates_t* p
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     result = cardano_protocol_param_update_to_cbor(kvp_data->value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_object_unref(&kvp);
       return result;
-      /* LCOV_EXCL_STOP */
     }
 
     cardano_object_unref(&kvp);

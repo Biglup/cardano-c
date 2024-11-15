@@ -325,16 +325,16 @@ cardano_buffer_from_hex(const char* hex_string, const size_t size)
 
   if (init_result == -1)
   {
-    cardano_buffer_unref(&buffer); /* LCOV_EXCL_LINE */
-    return NULL;                   /* LCOV_EXCL_LINE */
+    cardano_buffer_unref(&buffer);
+    return NULL;
   }
 
   int decode_result = sodium_hex2bin(buffer->data, size, hex_string, size, NULL, NULL, &end);
 
   if (decode_result != 0)
   {
-    cardano_buffer_unref(&buffer); /* LCOV_EXCL_LINE */
-    return NULL;                   /* LCOV_EXCL_LINE */
+    cardano_buffer_unref(&buffer);
+    return NULL;
   }
 
   return buffer;
@@ -378,14 +378,14 @@ cardano_buffer_to_hex(const cardano_buffer_t* buffer, char* dest, const size_t d
 
   if (init_result == -1)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   assert(buffer->data != NULL);
 
   if (sodium_bin2hex(dest, dest_size, buffer->data, buffer->size) < 0)
   {
-    return CARDANO_ERROR_GENERIC; /* LCOV_EXCL_LINE */
+    return CARDANO_ERROR_GENERIC;
   }
 
   return CARDANO_SUCCESS;
@@ -567,7 +567,7 @@ cardano_buffer_memzero(cardano_buffer_t* buffer)
 
   if (buffer->data == NULL)
   {
-    return; // LCOV_EXCL_LINE
+    return;
   }
 
   sodium_memzero(buffer->data, buffer->size);

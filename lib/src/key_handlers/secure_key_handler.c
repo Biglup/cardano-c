@@ -138,7 +138,7 @@ cardano_secure_key_handler_bip32_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
   }
 
   return result;
@@ -164,7 +164,7 @@ cardano_secure_key_handler_bip32_get_extended_account_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
   }
 
   return result;
@@ -190,7 +190,7 @@ cardano_secure_key_handler_ed25519_sign_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
   }
 
   return result;
@@ -215,7 +215,7 @@ cardano_secure_key_handler_ed25519_get_public_key(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
   }
 
   return result;
@@ -241,7 +241,7 @@ cardano_secure_key_handler_serialize(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message); // LCOV_EXCL_LINE
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
   }
 
   return result;

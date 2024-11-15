@@ -161,7 +161,7 @@ cardano_vkey_witness_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_witne
 
   if (new_vkey_result != CARDANO_SUCCESS)
   {
-    return new_vkey_result; // LCOV_EXCL_LINE
+    return new_vkey_result;
   }
 
   cardano_buffer_t* signature_bytes = NULL;
@@ -183,11 +183,9 @@ cardano_vkey_witness_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_witne
 
   if (new_signature_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     cardano_ed25519_public_key_unref(&vkey);
 
     return new_signature_result;
-    // LCOV_EXCL_STOP
   }
 
   cardano_error_t new_result = cardano_vkey_witness_new(vkey, signature, vkey_witness);
@@ -197,7 +195,7 @@ cardano_vkey_witness_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_witne
 
   if (new_result != CARDANO_SUCCESS)
   {
-    return new_result; // LCOV_EXCL_LINE
+    return new_result;
   }
 
   return cardano_cbor_validate_end_array(validator_name, reader);
@@ -222,7 +220,7 @@ cardano_vkey_witness_to_cbor(
 
   if (write_array_result != CARDANO_SUCCESS)
   {
-    return write_array_result; // LCOV_EXCL_LINE
+    return write_array_result;
   }
 
   cardano_error_t write_vkey_result = cardano_cbor_writer_write_bytestring(
@@ -232,7 +230,7 @@ cardano_vkey_witness_to_cbor(
 
   if (write_vkey_result != CARDANO_SUCCESS)
   {
-    return write_vkey_result; // LCOV_EXCL_LINE
+    return write_vkey_result;
   }
 
   cardano_error_t write_signature_result = cardano_cbor_writer_write_bytestring(
@@ -242,7 +240,7 @@ cardano_vkey_witness_to_cbor(
 
   if (write_signature_result != CARDANO_SUCCESS)
   {
-    return write_signature_result; // LCOV_EXCL_LINE
+    return write_signature_result;
   }
 
   return CARDANO_SUCCESS;

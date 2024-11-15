@@ -44,7 +44,7 @@ _cardano_unpack_enterprise_address(const byte_t* data, size_t size, cardano_ente
 
   if (size < (size_t)((size_t)ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224))
   {
-    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT; // LCOV_EXCL_LINE
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
   }
 
   cardano_address_type_t type       = (cardano_address_type_t)(data[0] >> 4);

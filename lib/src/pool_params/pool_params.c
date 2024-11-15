@@ -266,12 +266,10 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 
   if (reward_account_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
     cardano_unit_interval_unref(&margin);
     return reward_account_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t read_owners_result = cardano_pool_owners_from_cbor(reader, &owners);
@@ -305,7 +303,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 
   if (peek_state_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
     cardano_unit_interval_unref(&margin);
@@ -314,7 +311,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     cardano_relays_unref(&relays);
 
     return peek_state_result;
-    /* LCOV_EXCL_STOP */
   }
 
   if (state != CARDANO_CBOR_READER_STATE_NULL)
@@ -341,7 +337,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 
     if (read_null_result != CARDANO_SUCCESS)
     {
-      /* LCOV_EXCL_START */
       cardano_blake2b_hash_unref(&operator_key_hash);
       cardano_blake2b_hash_unref(&vrf_vk_hash);
       cardano_unit_interval_unref(&margin);
@@ -350,7 +345,6 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
       cardano_relays_unref(&relays);
 
       return read_null_result;
-      /* LCOV_EXCL_STOP */
     }
   }
 
@@ -394,35 +388,35 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
 
   if (write_operator_key_hash_result != CARDANO_SUCCESS)
   {
-    return write_operator_key_hash_result; /* LCOV_EXCL_LINE */
+    return write_operator_key_hash_result;
   }
 
   cardano_error_t write_vrf_vk_hash_result = cardano_blake2b_hash_to_cbor(pool_params->vrf_vk_hash, writer);
 
   if (write_vrf_vk_hash_result != CARDANO_SUCCESS)
   {
-    return write_vrf_vk_hash_result; /* LCOV_EXCL_LINE */
+    return write_vrf_vk_hash_result;
   }
 
   cardano_error_t write_pledge_result = cardano_cbor_writer_write_uint(writer, pool_params->pledge);
 
   if (write_pledge_result != CARDANO_SUCCESS)
   {
-    return write_pledge_result; /* LCOV_EXCL_LINE */
+    return write_pledge_result;
   }
 
   cardano_error_t write_cost_result = cardano_cbor_writer_write_uint(writer, pool_params->cost);
 
   if (write_cost_result != CARDANO_SUCCESS)
   {
-    return write_cost_result; /* LCOV_EXCL_LINE */
+    return write_cost_result;
   }
 
   cardano_error_t write_margin_result = cardano_unit_interval_to_cbor(pool_params->margin, writer);
 
   if (write_margin_result != CARDANO_SUCCESS)
   {
-    return write_margin_result; /* LCOV_EXCL_LINE */
+    return write_margin_result;
   }
 
   cardano_error_t write_reward_account_result = cardano_cbor_writer_write_bytestring(
@@ -432,21 +426,21 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
 
   if (write_reward_account_result != CARDANO_SUCCESS)
   {
-    return write_reward_account_result; /* LCOV_EXCL_LINE */
+    return write_reward_account_result;
   }
 
   cardano_error_t write_owners_result = cardano_pool_owners_to_cbor(pool_params->owners, writer);
 
   if (write_owners_result != CARDANO_SUCCESS)
   {
-    return write_owners_result; /* LCOV_EXCL_LINE */
+    return write_owners_result;
   }
 
   cardano_error_t write_relays_result = cardano_relays_to_cbor(pool_params->relays, writer);
 
   if (write_relays_result != CARDANO_SUCCESS)
   {
-    return write_relays_result; /* LCOV_EXCL_LINE */
+    return write_relays_result;
   }
 
   if (pool_params->metadata != NULL)

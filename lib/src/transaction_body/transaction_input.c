@@ -145,11 +145,9 @@ cardano_transaction_input_from_hex(
 
   if (id_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *transaction_input = NULL;
 
     return id_result;
-    // LCOV_EXCL_STOP
   }
 
   const cardano_error_t new_transaction_input_result = cardano_transaction_input_new(id, index, transaction_input);
@@ -158,11 +156,9 @@ cardano_transaction_input_from_hex(
 
   if (new_transaction_input_result != CARDANO_SUCCESS)
   {
-    // LCOV_EXCL_START
     *transaction_input = NULL;
 
     return new_transaction_input_result;
-    // LCOV_EXCL_STOP
   }
 
   return CARDANO_SUCCESS;
@@ -219,12 +215,10 @@ cardano_transaction_input_from_cbor(cardano_cbor_reader_t* reader, cardano_trans
 
   if (expect_end_array_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     cardano_blake2b_hash_unref(&id);
     *transaction_input = NULL;
 
     return expect_end_array_result;
-    /* LCOV_EXCL_STOP */
   }
 
   const cardano_error_t new_transaction_input_result = cardano_transaction_input_new(
@@ -236,10 +230,8 @@ cardano_transaction_input_from_cbor(cardano_cbor_reader_t* reader, cardano_trans
 
   if (new_transaction_input_result != CARDANO_SUCCESS)
   {
-    /* LCOV_EXCL_START */
     *transaction_input = NULL;
     return new_transaction_input_result;
-    /* LCOV_EXCL_STOP */
   }
 
   return CARDANO_SUCCESS;
@@ -264,21 +256,21 @@ cardano_transaction_input_to_cbor(
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
-    return write_start_array_result; /* LCOV_EXCL_LINE */
+    return write_start_array_result;
   }
 
   cardano_error_t write_id_result = cardano_blake2b_hash_to_cbor(transaction_input->id, writer);
 
   if (write_id_result != CARDANO_SUCCESS)
   {
-    return write_id_result; /* LCOV_EXCL_LINE */
+    return write_id_result;
   }
 
   cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, transaction_input->index);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
-    return write_uint_result; /* LCOV_EXCL_LINE */
+    return write_uint_result;
   }
 
   return CARDANO_SUCCESS;
