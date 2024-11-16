@@ -326,6 +326,29 @@ cardano_script_t*
 create_plutus_v2_script_from_hex(const char* script_hex);
 
 /**
+ * \brief Creates a Native script object from a JSON string representation.
+ *
+ * This function creates a \ref cardano_script_t object representing a Native script from the provided JSON string.
+ *
+ * \param[in] json A pointer to a NULL-terminated string containing the JSON representation of the Native script.
+ *                 his parameter must not be NULL.
+ *
+ * \return A pointer to the created \ref cardano_script_t object if the script is successfully parsed. Returns NULL if the
+ *         script creation fails due to an invalid format or internal error.
+ */
+cardano_script_t*
+create_native_script_from_json(const char* json);
+
+/**
+ * \brief Creates a Cardano asset name from a string.
+ * \param name The asset name as a string.
+ *
+ * \return A pointer to the created \ref cardano_asset_name_t object if the asset name is successfully created.
+ */
+cardano_asset_name_t*
+create_asset_name_from_string(const char* name);
+
+/**
  * \brief Generates a Cardano script address from a given script.
  *
  * This function creates a \ref cardano_address_t object representing the address associated with a provided

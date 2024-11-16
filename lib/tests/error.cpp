@@ -688,6 +688,18 @@ TEST(cardano_error_to_string, canConvertIllegalState)
   ASSERT_STREQ(message, "Illegal state");
 }
 
+TEST(cardano_error_to_string, canConvertDuplicatedKey)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_DUPLICATED_KEY;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Duplicated key");
+}
+
 TEST(cardano_error_to_string, canConvertScriptEvaluationFailure)
 {
   // Arrange

@@ -611,6 +611,8 @@ cardano_multi_asset_set(
 
     if (insert_result != CARDANO_SUCCESS)
     {
+      cardano_asset_name_map_unref(&new_assets);
+
       return insert_result;
     }
 

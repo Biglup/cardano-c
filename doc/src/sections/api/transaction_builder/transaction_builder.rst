@@ -133,10 +133,6 @@ Transaction Builder
 
 ------------
 
-.. doxygenfunction:: cardano_tx_builder_add_mint
-
-------------
-
 .. doxygenfunction:: cardano_tx_builder_pad_signer_count
 
 ------------

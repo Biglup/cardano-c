@@ -81,7 +81,7 @@ get_passphrase(byte_t* buffer, const size_t buffer_len)
   // Clear local password from memory
   cardano_memzero(password, sizeof(password));
 
-  return 8;
+  return password_len;
 }
 
 /**

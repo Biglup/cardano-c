@@ -85,6 +85,10 @@ Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_witness_set_add_script
+
+------------
+
 .. doxygenfunction:: cardano_witness_set_unref
 
 ------------

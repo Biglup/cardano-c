@@ -28,6 +28,7 @@
 #include "../cbor/cbor_validation.h"
 
 #include <assert.h>
+#include <cardano/scripts/script.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -1366,6 +1367,201 @@ cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* witness_set)
 
   result = cardano_plutus_v3_script_set_set_use_tag(witness_set->plutus_v3_scripts, true);
   CARDANO_UNUSED(result);
+}
+
+cardano_error_t
+cardano_witness_set_add_script(cardano_witness_set_t* witness_set, cardano_script_t* script)
+{
+  if (witness_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  cardano_script_language_t language;
+
+  result = cardano_script_get_language(script, &language);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  switch (language)
+  {
+    case CARDANO_SCRIPT_LANGUAGE_NATIVE:
+    {
+      cardano_native_script_set_t* scripts = cardano_witness_set_get_native_scripts(witness_set);
+
+      if (scripts == NULL)
+      {
+        result = cardano_native_script_set_new(&scripts);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        result = cardano_witness_set_set_native_scripts(witness_set, scripts);
+
+        assert(result == CARDANO_SUCCESS);
+        CARDANO_UNUSED(result);
+      }
+
+      cardano_native_script_set_unref(&scripts);
+
+      cardano_native_script_t* native_script = NULL;
+
+      result = cardano_script_to_native(script, &native_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_native_script_set_add(scripts, native_script);
+      cardano_native_script_unref(&native_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
+    {
+      cardano_plutus_v1_script_set_t* scripts = cardano_witness_set_get_plutus_v1_scripts(witness_set);
+
+      if (scripts == NULL)
+      {
+        result = cardano_plutus_v1_script_set_new(&scripts);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        result = cardano_witness_set_set_plutus_v1_scripts(witness_set, scripts);
+
+        assert(result == CARDANO_SUCCESS);
+        CARDANO_UNUSED(result);
+      }
+
+      cardano_plutus_v1_script_set_unref(&scripts);
+
+      cardano_plutus_v1_script_t* plutus_v1_script = NULL;
+
+      result = cardano_script_to_plutus_v1(script, &plutus_v1_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_plutus_v1_script_set_add(scripts, plutus_v1_script);
+      cardano_plutus_v1_script_unref(&plutus_v1_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
+    {
+      cardano_plutus_v2_script_set_t* scripts = cardano_witness_set_get_plutus_v2_scripts(witness_set);
+
+      if (scripts == NULL)
+      {
+        result = cardano_plutus_v2_script_set_new(&scripts);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        result = cardano_witness_set_set_plutus_v2_scripts(witness_set, scripts);
+
+        assert(result == CARDANO_SUCCESS);
+        CARDANO_UNUSED(result);
+      }
+
+      cardano_plutus_v2_script_set_unref(&scripts);
+
+      cardano_plutus_v2_script_t* plutus_v2_script = NULL;
+
+      result = cardano_script_to_plutus_v2(script, &plutus_v2_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_plutus_v2_script_set_add(scripts, plutus_v2_script);
+      cardano_plutus_v2_script_unref(&plutus_v2_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+    {
+      cardano_plutus_v3_script_set_t* scripts = cardano_witness_set_get_plutus_v3_scripts(witness_set);
+
+      if (scripts == NULL)
+      {
+        result = cardano_plutus_v3_script_set_new(&scripts);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        result = cardano_witness_set_set_plutus_v3_scripts(witness_set, scripts);
+
+        assert(result == CARDANO_SUCCESS);
+        CARDANO_UNUSED(result);
+      }
+
+      cardano_plutus_v3_script_set_unref(&scripts);
+
+      cardano_plutus_v3_script_t* plutus_v3_script = NULL;
+
+      result = cardano_script_to_plutus_v3(script, &plutus_v3_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_plutus_v3_script_set_add(scripts, plutus_v3_script);
+      cardano_plutus_v3_script_unref(&plutus_v3_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      break;
+    }
+    default:
+    {
+      return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+    }
+  }
+
+  return CARDANO_SUCCESS;
 }
 
 void

@@ -147,6 +147,11 @@ typedef enum
    */
   CARDANO_ERROR_ILLEGAL_STATE = 21,
 
+  /**
+   * \brief The element is already present.
+   */
+  CARDANO_ERROR_DUPLICATED_KEY = 22,
+
   /* Serialization errors */
 
   /**

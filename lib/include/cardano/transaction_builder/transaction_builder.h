@@ -916,33 +916,6 @@ CARDANO_EXPORT void cardano_tx_builder_mint_token_with_id_ex(
   cardano_plutus_data_t* redeemer);
 
 /**
- * \brief Adds multiple tokens to be minted or burned in the transaction.
- *
- * This function allows specifying a set of tokens to mint or burn by adding them to the transaction builder.
- * The assets and amounts are defined in a \ref cardano_multi_asset_t structure, which supports multiple assets within the same minting operation.
- * An optional redeemer for a Plutus script can be included if needed.
- *
- * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
- * \param[in] tokens A pointer to a \ref cardano_multi_asset_t structure representing the assets and amounts to mint (positive values) or burn (negative values).
- * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t structure, representing a redeemer if a Plutus script is involved. Set to `NULL` if not required.
- *
- * Usage Example:
- * \code{.c}
- * cardano_tx_builder_t* tx_builder = ...;      // Initialized transaction builder
- * cardano_multi_asset_t* tokens = ...;         // Multi-asset structure containing mint/burn operations
- * cardano_plutus_data_t* redeemer = ...;       // Optional redeemer for Plutus script
- *
- * cardano_tx_builder_add_mint(tx_builder, tokens, redeemer);
- * \endcode
- *
- * \note Errors related to minting are deferred and will only be reported when `cardano_tx_builder_build` is called.
- */
-CARDANO_EXPORT void cardano_tx_builder_add_mint(
-  cardano_tx_builder_t*  builder,
-  cardano_multi_asset_t* tokens,
-  cardano_plutus_data_t* redeemer);
-
-/**
  * \brief Pads the transaction signer count for fee calculation purposes.
  *
  * This function pads the expected signature count in the transaction builder. It allows the

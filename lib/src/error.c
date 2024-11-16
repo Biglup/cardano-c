@@ -185,6 +185,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_ILLEGAL_STATE:
       message = "Illegal state";
       break;
+    case CARDANO_ERROR_DUPLICATED_KEY:
+      message = "Duplicated key";
+      break;
     case CARDANO_ERROR_BALANCE_INSUFFICIENT:
       message = "Insufficient balance";
       break;

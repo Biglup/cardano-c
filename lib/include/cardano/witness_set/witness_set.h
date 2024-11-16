@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/scripts/script.h>
 #include <cardano/typedefs.h>
 #include <cardano/witness_set/bootstrap_witness_set.h>
 #include <cardano/witness_set/native_script_set.h>
@@ -840,6 +841,43 @@ CARDANO_EXPORT cardano_error_t cardano_witness_set_set_redeemers(
  * \endcode
  */
 CARDANO_EXPORT void cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* witness_set);
+
+/**
+ * \brief Adds a script to the witness set of a transaction.
+ *
+ * This function incorporates a given script into the appropriate witness set within a transaction.
+ *
+ * \param[in,out] witness_set A pointer to the \ref cardano_witness_set_t to which the script will be added.
+ * \param[in]     script      A pointer to the \ref cardano_script_t to be added to the witness set.
+ *
+ * \return \ref CARDANO_SUCCESS if the script was successfully added, or an appropriate error code
+ *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if `witness_set`
+ *         or `script` is NULL, or \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE if the script's language
+ *         is unsupported.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_witness_set_t* witness_set = ...;
+ * cardano_script_t* script = ...;
+ *
+ * cardano_error_t result = cardano_witness_add_script(witness_set, script);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Script added to witness set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to add script to witness set: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * cardano_witness_set_unref(&witness_set);
+ * cardano_script_unref(&script);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_witness_set_add_script(cardano_witness_set_t* witness_set, cardano_script_t* script);
 
 /**
  * \brief Decrements the reference count of a cardano_witness_set_t object.

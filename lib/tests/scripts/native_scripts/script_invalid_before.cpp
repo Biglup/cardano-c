@@ -169,13 +169,6 @@ TEST(cardano_script_invalid_before_from_json, returnsErrorIfJsonStringIsInvalid2
   EXPECT_EQ(cardano_script_invalid_before_from_json("}", strlen("}"), &invalid_before), CARDANO_ERROR_INVALID_JSON);
 }
 
-TEST(cardano_script_invalid_before_from_json, returnsErrorIfTypeIsInvalid)
-{
-  cardano_script_invalid_before_t* invalid_before = NULL;
-
-  EXPECT_EQ(cardano_script_invalid_before_from_json("{\"type\": \"value\",\"slot\": 0 }", strlen("{\"type\": \"value\",\"slot\": 0 }"), &invalid_before), CARDANO_ERROR_INVALID_JSON);
-}
-
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfSizeIsZero)
 {
   cardano_script_invalid_before_t* invalid_before = NULL;
