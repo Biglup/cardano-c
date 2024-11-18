@@ -251,13 +251,6 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
 
   size_t slot = json_object_get_uint64(slot_object);
 
-  if (slot == 0U)
-  {
-    json_object_put(json_object);
-
-    return CARDANO_ERROR_INVALID_JSON;
-  }
-
   if (strcmp(type_string, "before") != 0)
   {
     json_object_put(json_object);

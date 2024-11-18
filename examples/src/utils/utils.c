@@ -583,6 +583,53 @@ create_plutus_v2_script_from_hex(const char* script_hex)
   return script;
 }
 
+cardano_script_t*
+create_native_script_from_json(const char* json)
+{
+  cardano_script_t*        script        = NULL;
+  cardano_native_script_t* native_script = NULL;
+
+  cardano_error_t result = cardano_native_script_from_json(json, strlen(json), &native_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script from JSON");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_script_new_native(native_script, &script);
+  cardano_native_script_unref(&native_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return script;
+}
+
+cardano_asset_name_t*
+create_asset_name_from_string(const char* name)
+{
+  cardano_asset_name_t* asset_name = NULL;
+  cardano_error_t       result     = cardano_asset_name_from_string(name, strlen(name), &asset_name);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create asset name");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return asset_name;
+}
+
 cardano_address_t*
 get_script_address(cardano_script_t* script)
 {

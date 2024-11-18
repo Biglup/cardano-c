@@ -892,23 +892,49 @@ post_transaction_to_chain(
 
   if (cbor_data == NULL)
   {
+    free(base_path);
     cardano_cbor_writer_unref(&writer);
 
-    free(base_path);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   result = cardano_cbor_writer_encode(writer, cbor_data, cbor_size);
 
+  if (result != CARDANO_SUCCESS)
+  {
+    free(cbor_data);
+    free(base_path);
+    cardano_cbor_writer_unref(&writer);
+
+    return result;
+  }
+
+  const size_t tx_encoded_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        tx_encoded      = malloc(tx_encoded_size);
+
+  if (tx_encoded == NULL)
+  {
+    free(cbor_data);
+    free(base_path);
+    cardano_cbor_writer_unref(&writer);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  result = cardano_cbor_writer_encode_hex(writer, tx_encoded, tx_encoded_size);
   cardano_cbor_writer_unref(&writer);
 
   if (result != CARDANO_SUCCESS)
   {
+    free(tx_encoded);
     free(cbor_data);
     free(base_path);
 
     return result;
   }
+
+  console_debug("Sending transaction: %s", tx_encoded);
+  free(tx_encoded);
 
   result = cardano_blockfrost_http_post(
     provider_impl,
