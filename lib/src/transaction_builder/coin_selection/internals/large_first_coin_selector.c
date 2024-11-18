@@ -32,6 +32,7 @@
 #include "../../../string_safe.h"
 #include "./large_first_helpers.h"
 
+#include <assert.h>
 #include <string.h>
 
 /* STATIC FUNCTIONS ************************************************************/
@@ -60,10 +61,9 @@ select(
   cardano_utxo_list_t**         selection,
   cardano_utxo_list_t**         remaining_utxo)
 {
-  if ((coin_selector == NULL) || (available_utxo == NULL) || (target == NULL))
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
+  assert(coin_selector != NULL);
+  assert(available_utxo != NULL);
+  assert(target != NULL);
 
   CARDANO_UNUSED(coin_selector);
 
@@ -144,6 +144,50 @@ select(
 
   cardano_asset_id_map_t* assets      = cardano_value_as_assets_map(target);
   size_t                  asset_count = cardano_asset_id_map_get_length(assets);
+
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(target);
+  cardano_multi_asset_unref(&multi_asset);
+
+  const int64_t coin_target         = cardano_value_get_coin(target);
+  const size_t  target_assets_count = cardano_multi_asset_get_policy_count(multi_asset);
+
+  if ((coin_target <= 0) && (target_assets_count == 0U))
+  {
+    const size_t current_selection_size = cardano_utxo_list_get_length(*selection);
+
+    if (current_selection_size == 0U)
+    {
+      cardano_asset_id_t* lovelace = NULL;
+      result                       = cardano_asset_id_new_lovelace(&lovelace);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_asset_id_map_unref(&assets);
+        cardano_utxo_list_unref(selection);
+        cardano_utxo_list_unref(remaining_utxo);
+        cardano_value_unref(&accumulated_value);
+
+        return result;
+      }
+
+      cardano_value_t* tmp_accum_value = cardano_value_new_zero();
+
+      result = _cardano_large_fist_select_utxos(lovelace, 1, *remaining_utxo, *selection, &tmp_accum_value);
+
+      cardano_value_unref(&tmp_accum_value);
+      cardano_asset_id_unref(&lovelace);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_asset_id_map_unref(&assets);
+        cardano_utxo_list_unref(selection);
+        cardano_utxo_list_unref(remaining_utxo);
+        cardano_value_unref(&accumulated_value);
+
+        return result;
+      }
+    }
+  }
 
   for (size_t i = 0U; i < asset_count; ++i)
   {

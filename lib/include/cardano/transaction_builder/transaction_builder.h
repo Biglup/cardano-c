@@ -1022,6 +1022,7 @@ CARDANO_EXPORT void cardano_tx_builder_add_datum(
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
  *                    from which rewards should be withdrawn.
+ * \param[in] amount  The amount of rewards to withdraw from the account. It must be the full available reward balance.
  * \param[in] redeemer An optional pointer to \ref cardano_plutus_data_t that serves as the redeemer for
  *                     script-locked withdrawals, if applicable.
  *
@@ -1031,15 +1032,15 @@ CARDANO_EXPORT void cardano_tx_builder_add_datum(
  * cardano_reward_address_t* reward_address = ...;    // Initialized reward address
  * cardano_plutus_data_t* redeemer = ...;            // Optional redeemer data
  *
- * cardano_tx_builder_withdraw_rewards(tx_builder, reward_address, redeemer);
+ * cardano_tx_builder_withdraw_rewards(tx_builder, reward_address, 2532145, redeemer);
  * \endcode
  *
- * \note The transaction builder will use the configured \ref cardano_provider_t instance to retrieve the available rewards for the
- *       specified reward account. Errors related to reward withdrawal will be deferred until `cardano_tx_builder_build` is called.
+ * \note Errors related to reward withdrawal will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards(
   cardano_tx_builder_t*     builder,
   cardano_reward_address_t* address,
+  int64_t                   amount,
   cardano_plutus_data_t*    redeemer);
 
 /**
@@ -1052,6 +1053,7 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards(
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.
  * \param[in] address_size The size of the reward address string in bytes.
+ * \param[in] amount  The amount of rewards to withdraw from the account. It must be the full available reward balance.
  * \param[in] redeemer An optional pointer to \ref cardano_plutus_data_t that acts as the redeemer for
  *                     script-locked withdrawals, if applicable.
  *
@@ -1062,17 +1064,17 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards(
  * size_t address_size = strlen(reward_addr);       // Length of the reward address string
  * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer data
  *
- * cardano_tx_builder_withdraw_rewards_ex(tx_builder, reward_addr, address_size, redeemer);
+ * cardano_tx_builder_withdraw_rewards_ex(tx_builder, reward_addr, address_size, 966584122, redeemer);
  * \endcode
  *
- * \note The transaction builder will use the configured \ref cardano_provider_t instance to retrieve the available rewards for
- *       the specified reward address. Errors related to reward withdrawal will be deferred until `cardano_tx_builder_build` is called.
+ * \note Errors related to reward withdrawal will be deferred until `cardano_tx_builder_build` is called.
  *       Ensure the reward address and redeemer remain valid until the transaction is built.
  */
 CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_ex(
   cardano_tx_builder_t*  builder,
   const char*            reward_address,
   size_t                 address_size,
+  int64_t                amount,
   cardano_plutus_data_t* redeemer);
 
 /**
@@ -1110,7 +1112,7 @@ CARDANO_EXPORT void cardano_tx_builder_register_reward_address(
  * The transaction builder leverages the \ref cardano_provider_t to validate this process.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction construction.
- * \param[in] reward_address A pointer to a hexadecimal string representing the reward address.
+ * \param[in] reward_address A pointer to a bech32 string representing the reward address.
  * \param[in] address_size The size of the `reward_address` string.
  * \param[in] redeemer An optional pointer to \ref cardano_plutus_data_t, used if the registration requires
  *                     redeemer data for script-locked transactions.
@@ -1118,11 +1120,11 @@ CARDANO_EXPORT void cardano_tx_builder_register_reward_address(
  * Usage Example:
  * \code{.c}
  * cardano_tx_builder_t* tx_builder = ...;       // Initialized transaction builder
- * const char* reward_address_hex = "abcdef..."; // Reward address in hexadecimal format
- * size_t address_size = strlen(reward_address_hex);
+ * const char* reward_address = "stake1uxxx...";
+ * size_t address_size = strlen(reward_address);
  * cardano_plutus_data_t* redeemer = ...;        // Optional redeemer data for script-locked registration
  *
- * cardano_tx_builder_register_reward_address_ex(tx_builder, reward_address_hex, address_size, redeemer);
+ * cardano_tx_builder_register_reward_address_ex(tx_builder, reward_address, address_size, redeemer);
  * \endcode
  *
  * \note Errors related to the reward address registration will be reported only when `cardano_tx_builder_build` is called.
@@ -1227,18 +1229,18 @@ CARDANO_EXPORT void cardano_tx_builder_delegate_stake(
  * the transaction managed by the builder instance.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
- * \param[in] reward_address A hex-encoded string representing the staking reward address for delegation.
+ * \param[in] reward_address A bech32 string representing the staking reward address for delegation.
  * \param[in] address_size The size of the `reward_address` string.
- * \param[in] pool_id A hex-encoded string representing the pool ID to which stake is delegated.
+ * \param[in] pool_id A bech32 string representing the pool ID to which stake is delegated.
  * \param[in] pool_id_size The size of the `pool_id` string.
  * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t for providing redeemer data if required for script-locked accounts.
  *
  * Usage Example:
  * \code{.c}
  * cardano_tx_builder_t* tx_builder = ...;  // Initialized transaction builder
- * const char* reward_address = "stake1u9...";  // Hex-encoded reward address for staking
+ * const char* reward_address = "stake1u9...";
  * size_t reward_address_size = strlen(reward_address);
- * const char* pool_id = "pool1xy...";  // Hex-encoded pool ID for delegation
+ * const char* pool_id = "pool1xy...";
  * size_t pool_id_size = strlen(pool_id);
  * cardano_plutus_data_t* redeemer = ...;  // Optional redeemer for script-locked delegation
  *

@@ -1127,11 +1127,11 @@ redeemer_tag_string_to_enum(const char* tag_str, cardano_redeemer_tag_t* tag_enu
   {
     *tag_enum = CARDANO_REDEEMER_TAG_MINT;
   }
-  else if (strcmp(tag_str, "publish") == 0)
+  else if (strcmp(tag_str, "certificate") == 0)
   {
     *tag_enum = CARDANO_REDEEMER_TAG_CERTIFYING;
   }
-  else if (strcmp(tag_str, "withdraw") == 0)
+  else if (strcmp(tag_str, "withdrawal") == 0)
   {
     *tag_enum = CARDANO_REDEEMER_TAG_REWARD;
   }

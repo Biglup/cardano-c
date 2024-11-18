@@ -249,6 +249,33 @@ cardano_protocol_parameters_t* get_protocol_parameters(cardano_provider_t* provi
 void sign_transaction(cardano_secure_key_handler_t* key_handler, cardano_derivation_path_t signer_derivation_path, cardano_transaction_t* transaction);
 
 /**
+ * \brief Signs a transaction with a specified number of signing keys.
+ *
+ * This function applies a digital signature to the given transaction using the private keys associated with the provided
+ * derivation paths. The signing process is performed securely through the \ref cardano_secure_key_handler_t, which
+ * manages key access and security.
+ *
+ * \param[in] key_handler A pointer to an initialized \ref cardano_secure_key_handler_t instance that provides access
+ *                        to the private signing key. This parameter must not be NULL.
+ * \param[in] signer_derivation_path The derivation paths for the signer within the key handler, identifying which keys to
+ *                                   use for signing. This is required to locate the exact private key.
+ * \param[in] signer_derivation_path_count The number of signer derivation paths provided in the array.
+ * \param[in,out] transaction A pointer to the \ref cardano_transaction_t object representing the transaction to be signed.
+ *                            This parameter must not be NULL.
+ *
+ * \return None.
+ *
+ * \note This function will exit the program if an error occurs during the secure key handler creation process.
+ * \note The caller is responsible for ensuring that the transaction object is properly initialized and memory-managed.
+ */
+void
+sign_transaction_with_keys(
+  cardano_secure_key_handler_t*    key_handler,
+  const cardano_derivation_path_t* signer_derivation_path,
+  size_t                           signer_derivation_path_count,
+  cardano_transaction_t*           transaction);
+
+/**
  * \brief Submits a transaction to the Cardano network.
  *
  * This function sends a fully constructed and signed \ref cardano_transaction_t to the Cardano network through
@@ -352,8 +379,7 @@ create_asset_name_from_string(const char* name);
  * \brief Generates a Cardano script address from a given script.
  *
  * This function creates a \ref cardano_address_t object representing the address associated with a provided
- * \ref cardano_script_t. The generated address is based on the provided script and is suitable for transactions
- * that reference this script, such as Plutus-based smart contract transactions.
+ * \ref cardano_script_t.
  *
  * \param[in] script A pointer to a \ref cardano_script_t object representing the script for which the address is generated.
  *                   This parameter must not be NULL.
@@ -362,6 +388,20 @@ create_asset_name_from_string(const char* name);
  *         Returns NULL if the address creation fails due to an invalid or unsupported script format.
  */
 cardano_address_t* get_script_address(cardano_script_t* script);
+
+/**
+ * \brief Generates a Cardano script stake address from a given script.
+ *
+ * This function creates a \ref cardano_address_t object representing the address associated with a provided
+ * \ref cardano_script_t.
+ *
+ * \param[in] script A pointer to a \ref cardano_script_t object representing the script for which the address is generated.
+ *                   This parameter must not be NULL.
+ *
+ * \return A pointer to the created \ref cardano_address_t object if the address is successfully generated.
+ *         Returns NULL if the address creation fails due to an invalid or unsupported script format.
+ */
+cardano_reward_address_t* get_script_stake_address(cardano_script_t* script);
 
 /**
  * \brief Creates a Cardano datum from an zero initialized integer value.
