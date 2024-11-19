@@ -232,6 +232,42 @@ sign_transaction(
   cardano_vkey_witness_set_unref(&vkey);
 }
 
+void
+sign_transaction_with_keys(
+  cardano_secure_key_handler_t*    key_handler,
+  const cardano_derivation_path_t* signer_derivation_path,
+  const size_t                     signer_derivation_path_count,
+  cardano_transaction_t*           transaction)
+{
+  cardano_vkey_witness_set_t* vkey = NULL;
+
+  console_info("Requesting signature...");
+
+  cardano_error_t result = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, signer_derivation_path, signer_derivation_path_count, &vkey);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to sign transaction");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+    console_error("%s", cardano_secure_key_handler_get_last_error(key_handler));
+
+    exit(result);
+  }
+
+  result = cardano_transaction_apply_vkey_witnesses(transaction, vkey);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to apply vkey witnesses to transaction");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+    console_error("%s", cardano_transaction_get_last_error(transaction));
+
+    exit(result);
+  }
+
+  cardano_vkey_witness_set_unref(&vkey);
+}
+
 cardano_protocol_parameters_t*
 get_protocol_parameters(cardano_provider_t* provider)
 {
@@ -663,6 +699,38 @@ get_script_address(cardano_script_t* script)
   cardano_enterprise_address_unref(&enterprise_address);
 
   return address;
+}
+
+cardano_reward_address_t*
+get_script_stake_address(cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* hash = cardano_script_get_hash(script);
+  cardano_credential_t*   cred = NULL;
+
+  cardano_error_t result = cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred);
+  cardano_blake2b_hash_unref(&hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create credential");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_reward_address_t* reward_address = NULL;
+  result                                   = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, cred, &reward_address);
+  cardano_credential_unref(&cred);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create enterprise address");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return reward_address;
 }
 
 cardano_datum_t*

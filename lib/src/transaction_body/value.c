@@ -976,7 +976,7 @@ cardano_value_as_assets_map(cardano_value_t* value)
     return NULL;
   }
 
-  if (value->coin > 0)
+  if (value->coin != 0)
   {
     cardano_asset_id_t* lovelace_asset_id = NULL;
     result                                = cardano_asset_id_new_lovelace(&lovelace_asset_id);

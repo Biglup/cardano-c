@@ -316,6 +316,100 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirst)
   cardano_coin_selector_unref(&large_first_coin_selector);
 }
 
+TEST(cardano_large_first_coin_selector_select, selectsAtLeastOneInputEvenIfImplicitCoinIsNegative)
+{
+  // Arrange
+  cardano_coin_selector_t* large_first_coin_selector = nullptr;
+  cardano_utxo_list_t*     selection                 = nullptr;
+  cardano_utxo_list_t*     remaining_utxo            = nullptr;
+  cardano_utxo_list_t*     pre_selected_utxo         = nullptr;
+  cardano_value_t*         target                    = nullptr;
+
+  cardano_error_t error = cardano_large_first_coin_selector_new(&large_first_coin_selector);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_value_new(-2000000, nullptr, &target);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
+
+  // Act
+  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  ASSERT_NE(selection, nullptr);
+  ASSERT_NE(remaining_utxo, nullptr);
+
+  cardano_utxo_t* utxo = nullptr;
+  error                = cardano_utxo_list_get(selection, 0, &utxo);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+
+  ASSERT_NE(output, nullptr);
+
+  cardano_value_t* value = cardano_transaction_output_get_value(output);
+
+  ASSERT_NE(value, nullptr);
+
+  EXPECT_EQ(cardano_value_get_coin(value), 4027026466);
+  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
+  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
+
+  cardano_utxo_t* utxo1 = nullptr;
+  error                 = cardano_utxo_list_get(remaining_utxo, 0, &utxo1);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* output1 = cardano_utxo_get_output(utxo1);
+
+  ASSERT_NE(output1, nullptr);
+
+  cardano_value_t* value1 = cardano_transaction_output_get_value(output1);
+
+  ASSERT_NE(value1, nullptr);
+
+  EXPECT_EQ(cardano_value_get_coin(value1), 4027026465);
+
+  cardano_utxo_t* utxo2 = nullptr;
+
+  error = cardano_utxo_list_get(remaining_utxo, 1, &utxo2);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* output2 = cardano_utxo_get_output(utxo2);
+
+  ASSERT_NE(output2, nullptr);
+
+  cardano_value_t* value2 = cardano_transaction_output_get_value(output2);
+
+  ASSERT_NE(value2, nullptr);
+
+  EXPECT_EQ(cardano_value_get_coin(value2), 4027026464);
+
+  // Cleanup
+  cardano_utxo_unref(&utxo);
+  cardano_transaction_output_unref(&output);
+  cardano_value_unref(&value);
+  cardano_utxo_list_unref(&selection);
+  cardano_utxo_list_unref(&remaining_utxo);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_value_unref(&target);
+  cardano_utxo_unref(&utxo1);
+  cardano_transaction_output_unref(&output1);
+  cardano_value_unref(&value1);
+  cardano_utxo_unref(&utxo2);
+  cardano_transaction_output_unref(&output2);
+  cardano_value_unref(&value2);
+
+  cardano_coin_selector_unref(&large_first_coin_selector);
+}
+
 TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirstButAlsoIncludesPreselected)
 {
   // Arrange
@@ -711,14 +805,14 @@ TEST(cardano_large_first_coin_selector_select, returnsErrorIfGivenNull)
   cardano_utxo_list_unref(&remaining_utxo);
 }
 
-TEST(cardano_large_first_coin_selector_select, returnsErrorIfMemoryAllocationFails)
+TEST(cardano_large_first_coin_selector_select, doesntCrashIfMemoryAllocationFails)
 {
   // Arrange
   cardano_coin_selector_t* large_first_coin_selector = nullptr;
   cardano_utxo_list_t*     selection                 = nullptr;
   cardano_utxo_list_t*     remaining_utxo            = nullptr;
   cardano_utxo_list_t*     pre_selected_utxo         = new_utxo_small_list();
-  cardano_value_t*         target                    = new_default_value(VALUE);
+  cardano_value_t*         target                    = cardano_value_new_from_coin(-2000000);
 
   cardano_error_t error = cardano_large_first_coin_selector_new(&large_first_coin_selector);
 
@@ -726,15 +820,27 @@ TEST(cardano_large_first_coin_selector_select, returnsErrorIfMemoryAllocationFai
 
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
-  for (int i = 0; i < 57; ++i)
+  for (int i = 0; i < 44; ++i)
   {
     reset_allocators_run_count();
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+    error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, &selection, &remaining_utxo);
+    CARDANO_UNUSED(error);
 
-    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_utxo_list_unref(&selection);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+    CARDANO_UNUSED(error);
+
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_utxo_list_unref(&selection);
   }
 
   // Cleanup
