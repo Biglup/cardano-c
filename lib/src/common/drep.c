@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/common/drep.h>
+#include <cardano/common/governance_key_type.h>
 #include <cardano/object.h>
 
 #include "../allocators.h"
@@ -29,11 +30,16 @@
 #include "../string_safe.h"
 
 #include <assert.h>
+#include <cardano/encoding/bech32.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t DREP_ARRAY_SIZE = 2;
+static const int64_t DREP_ARRAY_SIZE          = 2;
+static const size_t  DREP_CIP129_PAYLOAD_SIZE = 29U;
+static const size_t  DREP_HEADER_SIZE         = 1U;
+static const size_t  CREDENTIAL_HASH_SIZE     = 28U;
+static const size_t  KEY_TYPE_OFFSET          = 2U;
 
 /* STRUCTURES ****************************************************************/
 
@@ -124,6 +130,143 @@ cardano_drep_new(const cardano_drep_type_t type, cardano_credential_t* credentia
   }
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_drep_from_string(
+  const char*      bech32_string,
+  const size_t     string_length,
+  cardano_drep_t** drep)
+{
+  if (bech32_string == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (string_length == 0U)
+  {
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  if (drep == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  size_t       hrp_size    = 0;
+  const size_t data_length = cardano_encoding_bech32_get_decoded_length(bech32_string, string_length, &hrp_size);
+  char*        hrp         = (char*)_cardano_malloc(hrp_size);
+
+  if ((hrp_size == 0U) || (hrp == NULL))
+  {
+    _cardano_free(hrp);
+
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  byte_t* decoded_data = (byte_t*)_cardano_malloc(data_length);
+
+  if ((data_length == 0U) || (decoded_data == NULL))
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  cardano_error_t result = cardano_encoding_bech32_decode(bech32_string, string_length, hrp, hrp_size, decoded_data, data_length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return result;
+  }
+
+  if ((strncmp(hrp, "drep", 4) != 0) && (strncmp(hrp, "drep_script", 11)) != 0)
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  if ((data_length != CREDENTIAL_HASH_SIZE) && (data_length != DREP_CIP129_PAYLOAD_SIZE)) // CIP-0105 or CIP-0129
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  if (data_length == CREDENTIAL_HASH_SIZE)
+  {
+    // CIP-0105
+    cardano_credential_t*           credential = NULL;
+    const cardano_credential_type_t type       = (hrp_size == 5U) ? CARDANO_CREDENTIAL_TYPE_KEY_HASH : CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH;
+
+    result = cardano_credential_from_hash_bytes(decoded_data, data_length, type, &credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      _cardano_free(hrp);
+      _cardano_free(decoded_data);
+
+      return result;
+    }
+
+    result = cardano_drep_new((cardano_drep_type_t)type, credential, drep);
+    cardano_credential_unref(&credential);
+  }
+  else
+  {
+    // CIP-0129
+    assert(data_length == DREP_CIP129_PAYLOAD_SIZE);
+    byte_t header = decoded_data[0];
+
+    // Values in header are offset by 2. The values 0 and 1 are reserved
+    // to prevent accidental conflicts with Cardano Address Network tags, ensuring
+    // that governance identifiers remain distinct and are not inadvertently processed as addresses.
+    byte_t                        raw_type            = (byte_t)(header & 0x0FU);
+    cardano_credential_type_t     type                = (cardano_credential_type_t)(byte_t)(raw_type - (byte_t)KEY_TYPE_OFFSET);
+    cardano_governance_key_type_t governance_key_type = (cardano_governance_key_type_t)(byte_t)((header >> 4U) & 0x0FU);
+
+    if (raw_type < KEY_TYPE_OFFSET)
+    {
+      _cardano_free(hrp);
+      _cardano_free(decoded_data);
+
+      return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+    }
+
+    if (governance_key_type != CARDANO_GOVERNANCE_KEY_TYPE_DREP)
+    {
+      _cardano_free(hrp);
+      _cardano_free(decoded_data);
+
+      return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+    }
+
+    cardano_credential_t* credential = NULL;
+    result                           = cardano_credential_from_hash_bytes(&decoded_data[DREP_HEADER_SIZE], data_length - DREP_HEADER_SIZE, type, &credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      _cardano_free(hrp);
+      _cardano_free(decoded_data);
+
+      return result;
+    }
+
+    result = cardano_drep_new((cardano_drep_type_t)type, credential, drep);
+    cardano_credential_unref(&credential);
+  }
+
+  _cardano_free(hrp);
+  _cardano_free(decoded_data);
+
+  return result;
 }
 
 cardano_error_t
@@ -281,6 +424,73 @@ cardano_drep_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+size_t
+cardano_drep_get_string_size(const cardano_drep_t* drep)
+{
+  if (drep == NULL)
+  {
+    return 0U;
+  }
+
+  if ((drep->type != CARDANO_DREP_TYPE_KEY_HASH) && (drep->type != CARDANO_DREP_TYPE_SCRIPT_HASH))
+  {
+    return 0U;
+  }
+
+  const byte_t gov_key_type = (byte_t)CARDANO_GOVERNANCE_KEY_TYPE_DREP;
+  const byte_t type         = (byte_t)drep->type + (byte_t)KEY_TYPE_OFFSET;
+  const byte_t header       = (gov_key_type << 4) | type;
+  byte_t       payload[29]  = { 0 };
+
+  payload[0] = header;
+
+  cardano_credential_t* credential = drep->credential;
+
+  cardano_safe_memcpy(&payload[DREP_HEADER_SIZE], CREDENTIAL_HASH_SIZE, cardano_credential_get_hash_bytes(credential), CREDENTIAL_HASH_SIZE);
+
+  return cardano_encoding_bech32_get_encoded_length("drep", 4, payload, DREP_CIP129_PAYLOAD_SIZE);
+}
+
+cardano_error_t
+cardano_drep_to_string(
+  const cardano_drep_t* drep,
+  char*                 data,
+  size_t                size)
+{
+  if (drep == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (size < cardano_drep_get_string_size(drep))
+  {
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
+  }
+
+  if ((drep->type != CARDANO_DREP_TYPE_KEY_HASH) && (drep->type != CARDANO_DREP_TYPE_SCRIPT_HASH))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  const byte_t gov_key_type = (byte_t)CARDANO_GOVERNANCE_KEY_TYPE_DREP;
+  const byte_t type         = (byte_t)drep->type + (byte_t)KEY_TYPE_OFFSET;
+  const byte_t header       = (gov_key_type << 4) | type;
+  byte_t       payload[29]  = { 0 };
+
+  payload[0] = header;
+
+  cardano_credential_t* credential = drep->credential;
+
+  cardano_safe_memcpy(&payload[DREP_HEADER_SIZE], CREDENTIAL_HASH_SIZE, cardano_credential_get_hash_bytes(credential), CREDENTIAL_HASH_SIZE);
+
+  return cardano_encoding_bech32_encode("drep", 4, payload, DREP_CIP129_PAYLOAD_SIZE, data, size);
+}
+
 cardano_error_t
 cardano_drep_get_credential(cardano_drep_t* drep, cardano_credential_t** credential)
 {
@@ -299,6 +509,7 @@ cardano_drep_get_credential(cardano_drep_t* drep, cardano_credential_t** credent
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
+  cardano_credential_ref(drep->credential);
   *credential = drep->credential;
 
   return CARDANO_SUCCESS;

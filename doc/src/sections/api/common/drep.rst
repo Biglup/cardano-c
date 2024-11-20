@@ -9,11 +9,23 @@ DRep
 
 ------------
 
+.. doxygenfunction:: cardano_drep_from_string
+
+------------
+
 .. doxygenfunction:: cardano_drep_from_cbor
 
 ------------
 
 .. doxygenfunction:: cardano_drep_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_drep_get_string_size
+
+------------
+
+.. doxygenfunction:: cardano_drep_to_string
 
 ------------
 
