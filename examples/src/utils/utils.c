@@ -462,6 +462,90 @@ create_address_from_derivation_paths(
   return address;
 }
 
+cardano_drep_t*
+create_drep_from_derivation_path(
+  cardano_secure_key_handler_t*           key_handler,
+  const cardano_account_derivation_path_t account_path)
+{
+  console_info("Requesting account root public key...");
+
+  cardano_bip32_public_key_t* root_public_key = NULL;
+
+  cardano_error_t result = cardano_secure_key_handler_bip32_get_extended_account_public_key(key_handler, account_path, &root_public_key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get account root public key");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  const uint32_t drep_derivation_path[] = {
+    CARDANO_CIP_1852_ROLE_DREP,
+    0
+  };
+
+  cardano_bip32_public_key_t*   drep_public_key = NULL;
+  cardano_ed25519_public_key_t* drep_key        = NULL;
+
+  result = cardano_bip32_public_key_derive(root_public_key, drep_derivation_path, 2U, &drep_public_key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to derive DRep public key");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_bip32_public_key_to_ed25519_key(drep_public_key, &drep_key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to convert DRep public key");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_credential_t* drep_cred = create_credential(drep_key);
+  cardano_drep_t*       drep      = NULL;
+
+  result = cardano_drep_new(CARDANO_DREP_TYPE_KEY_HASH, drep_cred, &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create DRep address");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_bip32_public_key_unref(&root_public_key);
+  cardano_bip32_public_key_unref(&drep_public_key);
+  cardano_ed25519_public_key_unref(&drep_key);
+  cardano_credential_unref(&drep_cred);
+
+  char drep_string[256] = { 0 };
+
+  result = cardano_drep_to_string(drep, drep_string, 256);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to convert DRep to string");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  console_set_foreground_color(CONSOLE_COLOR_GREEN);
+  console_write("Computed address: %s\n\n", drep_string);
+  console_reset_color();
+
+  return drep;
+}
+
 cardano_secure_key_handler_t*
 create_secure_key_handler(const char* serialized_data, const size_t length, cardano_get_passphrase_func_t get_passphrase)
 {
@@ -620,6 +704,36 @@ create_plutus_v2_script_from_hex(const char* script_hex)
 }
 
 cardano_script_t*
+create_plutus_v3_script_from_hex(const char* script_hex)
+{
+  cardano_script_t*           script           = NULL;
+  cardano_plutus_v3_script_t* plutus_v3_script = NULL;
+
+  cardano_error_t result = cardano_plutus_v3_script_new_bytes_from_hex(script_hex, strlen(script_hex), &plutus_v3_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script from hex");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_script_new_plutus_v3(plutus_v3_script, &script);
+  cardano_plutus_v3_script_unref(&plutus_v3_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return script;
+}
+
+cardano_script_t*
 create_native_script_from_json(const char* json)
 {
   cardano_script_t*        script        = NULL;
@@ -731,6 +845,38 @@ get_script_stake_address(cardano_script_t* script)
   }
 
   return reward_address;
+}
+
+cardano_drep_t*
+get_script_drep(cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* hash = cardano_script_get_hash(script);
+  cardano_credential_t*   cred = NULL;
+
+  cardano_error_t result = cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred);
+  cardano_blake2b_hash_unref(&hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create script credential");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_drep_t* drep = NULL;
+  result               = cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, cred, &drep);
+  cardano_credential_unref(&cred);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create DRep");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return drep;
 }
 
 cardano_datum_t*
