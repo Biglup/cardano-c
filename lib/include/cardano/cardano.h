@@ -98,6 +98,7 @@
 #include <cardano/common/drep_type.h>
 #include <cardano/common/ex_units.h>
 #include <cardano/common/governance_action_id.h>
+#include <cardano/common/governance_key_type.h>
 #include <cardano/common/network_id.h>
 #include <cardano/common/protocol_version.h>
 #include <cardano/common/reward_address_list.h>

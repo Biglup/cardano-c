@@ -32,11 +32,20 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* DREP_KEY_HASH_CBOR      = "8200581c00000000000000000000000000000000000000000000000000000000";
-static const char* DREP_SCRIPT_HASH_CBOR   = "8201581c00000000000000000000000000000000000000000000000000000000";
-static const char* DREP_ABSTAIN_CBOR       = "8102";
-static const char* DREP_NO_CONFIDENCE_CBOR = "8103";
-static const char* DREP_CRED_HASH          = "00000000000000000000000000000000000000000000000000000000";
+static const char* DREP_KEY_HASH_CBOR        = "8200581c00000000000000000000000000000000000000000000000000000000";
+static const char* DREP_SCRIPT_HASH_CBOR     = "8201581c00000000000000000000000000000000000000000000000000000000";
+static const char* DREP_ABSTAIN_CBOR         = "8102";
+static const char* DREP_NO_CONFIDENCE_CBOR   = "8103";
+static const char* DREP_CRED_HASH            = "00000000000000000000000000000000000000000000000000000000";
+static const char* DREP_CIP105_KEY_HASH      = "drep19we4mh7zaxqmyasqgpr7h7hcuq5m6dwpx99j4mrcd3e4ufxuc8n";
+static const char* DREP_CIP105_SCRIPT_HASH   = "drep_script1rxdd99vu338y659qfg8nmpemdyhlsmaudgv4m4zdz7m5vz8uzt6";
+static const char* DREP_CIP129_KEY_HASH      = "drep1yg4mxhwlct5crvnkqpqy06l6lrszn0f4cyc5k2hv0pk8xhsvluu37";
+static const char* DREP_CIP129_SCRIPT_HASH   = "drep1yvve4554njxyun2s5p9q70v88d5jl7r0h34pjhw5f5tmw3sjtrutp";
+static const char* DREP_SCRIPT_HASH          = "199ad2959c8c4e4d50a04a0f3d873b692ff86fbc6a195dd44d17b746";
+static const char* DREP_KEY_HASH             = "2bb35ddfc2e981b276004047ebfaf8e029bd35c1314b2aec786c735e";
+static const char* DREP_INVALID_HASH_SIZE    = "drep1478q9x7ntsf3fv4wc7rvwdgw2uk75x";
+static const char* DREP_INVALID_KEY_TYPE     = "drep1yqqzh0wlct5crvnkqpqy06l6lrszn0f4cyc5k2hv0pk8xhsx9kyk8";
+static const char* DREP_INVALID_GOV_KEY_TYPE = "drep1qgqzh0wlct5crvnkqpqy06l6lrszn0f4cyc5k2hv0pk8xhs5cw03f";
 
 /* UNIT TESTS ****************************************************************/
 
@@ -410,6 +419,7 @@ TEST(cardano_drep_get_credential, canGetCredential)
   EXPECT_THAT(retrieved_credential, testing::Not((cardano_credential_t*)nullptr));
 
   // Cleanup
+  cardano_credential_unref(&retrieved_credential);
   cardano_credential_unref(&credential);
   cardano_drep_unref(&drep);
 }
@@ -467,6 +477,7 @@ TEST(cardano_drep_set_credential, canSetCredential)
   EXPECT_THAT(retrieved_credential, testing::Not((cardano_credential_t*)nullptr));
 
   // Cleanup
+  cardano_credential_unref(&retrieved_credential);
   cardano_credential_unref(&credential);
   cardano_drep_unref(&drep);
 }
@@ -861,6 +872,7 @@ TEST(cardano_drep_get_credential, returnsErrorIfDrepIsNotKeyHash)
   EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
 
   // Cleanup
+  cardano_credential_unref(&credential);
   cardano_drep_unref(&drep);
 }
 
@@ -904,4 +916,278 @@ TEST(cardano_drep_set_type, returnErrorIfDrepIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_drep_from_string, canCreateDrepWithKeyHashCip105)
+{
+  // Arrange
+  cardano_drep_t*         drep      = nullptr;
+  cardano_blake2b_hash_t* cred_hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(DREP_KEY_HASH, strlen(DREP_KEY_HASH), &cred_hash), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP105_KEY_HASH, strlen(DREP_CIP105_KEY_HASH), &drep), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(drep, testing::Not((cardano_drep_t*)nullptr));
+
+  cardano_drep_type_t type = CARDANO_DREP_TYPE_KEY_HASH;
+  EXPECT_EQ(cardano_drep_get_type(drep, &type), CARDANO_SUCCESS);
+
+  EXPECT_EQ(type, CARDANO_DREP_TYPE_KEY_HASH);
+
+  cardano_credential_t* credential = nullptr;
+  EXPECT_EQ(cardano_drep_get_credential(drep, &credential), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* cred_hash2 = cardano_credential_get_hash(credential);
+
+  EXPECT_EQ(cardano_blake2b_hash_compare(cred_hash, cred_hash2), 0);
+
+  // Cleanup
+  cardano_drep_unref(&drep);
+  cardano_blake2b_hash_unref(&cred_hash);
+  cardano_blake2b_hash_unref(&cred_hash2);
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_drep_from_string, canCreateDrepWithScriptHashCip105)
+{
+  // Arrange
+  cardano_drep_t*         drep      = nullptr;
+  cardano_blake2b_hash_t* cred_hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(DREP_SCRIPT_HASH, strlen(DREP_SCRIPT_HASH), &cred_hash), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP105_SCRIPT_HASH, strlen(DREP_CIP105_SCRIPT_HASH), &drep), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(drep, testing::Not((cardano_drep_t*)nullptr));
+
+  cardano_drep_type_t type = CARDANO_DREP_TYPE_KEY_HASH;
+  EXPECT_EQ(cardano_drep_get_type(drep, &type), CARDANO_SUCCESS);
+
+  EXPECT_EQ(type, CARDANO_DREP_TYPE_SCRIPT_HASH);
+
+  cardano_credential_t* credential = nullptr;
+  EXPECT_EQ(cardano_drep_get_credential(drep, &credential), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* cred_hash2 = cardano_credential_get_hash(credential);
+
+  EXPECT_EQ(cardano_blake2b_hash_compare(cred_hash, cred_hash2), 0);
+
+  // Cleanup
+  cardano_drep_unref(&drep);
+  cardano_blake2b_hash_unref(&cred_hash);
+  cardano_blake2b_hash_unref(&cred_hash2);
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_drep_from_string, canCreateDrepWithKeyHashCip129)
+{
+  // Arrange
+  cardano_drep_t*         drep      = nullptr;
+  cardano_blake2b_hash_t* cred_hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(DREP_KEY_HASH, strlen(DREP_KEY_HASH), &cred_hash), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_KEY_HASH, strlen(DREP_CIP129_KEY_HASH), &drep), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(drep, testing::Not((cardano_drep_t*)nullptr));
+
+  cardano_drep_type_t type = CARDANO_DREP_TYPE_KEY_HASH;
+  EXPECT_EQ(cardano_drep_get_type(drep, &type), CARDANO_SUCCESS);
+
+  EXPECT_EQ(type, CARDANO_DREP_TYPE_KEY_HASH);
+
+  cardano_credential_t* credential = nullptr;
+  EXPECT_EQ(cardano_drep_get_credential(drep, &credential), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* cred_hash2 = cardano_credential_get_hash(credential);
+
+  EXPECT_EQ(cardano_blake2b_hash_compare(cred_hash, cred_hash2), 0);
+
+  // Cleanup
+  cardano_drep_unref(&drep);
+  cardano_blake2b_hash_unref(&cred_hash);
+  cardano_blake2b_hash_unref(&cred_hash2);
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_drep_from_string, canCreateDrepWithScriptHashCip129)
+{
+  // Arrange
+  cardano_drep_t*         drep      = nullptr;
+  cardano_blake2b_hash_t* cred_hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(DREP_SCRIPT_HASH, strlen(DREP_SCRIPT_HASH), &cred_hash), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_SCRIPT_HASH, strlen(DREP_CIP129_SCRIPT_HASH), &drep), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(drep, testing::Not((cardano_drep_t*)nullptr));
+
+  cardano_drep_type_t type = CARDANO_DREP_TYPE_KEY_HASH;
+  EXPECT_EQ(cardano_drep_get_type(drep, &type), CARDANO_SUCCESS);
+
+  EXPECT_EQ(type, CARDANO_DREP_TYPE_SCRIPT_HASH);
+
+  cardano_credential_t* credential = nullptr;
+  EXPECT_EQ(cardano_drep_get_credential(drep, &credential), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* cred_hash2 = cardano_credential_get_hash(credential);
+
+  EXPECT_EQ(cardano_blake2b_hash_compare(cred_hash, cred_hash2), 0);
+
+  // Cleanup
+  cardano_drep_unref(&drep);
+  cardano_blake2b_hash_unref(&cred_hash);
+  cardano_blake2b_hash_unref(&cred_hash2);
+  cardano_credential_unref(&credential);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_drep_from_string(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_from_string("", 0, nullptr), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(cardano_drep_from_string("1", 1, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfInvalidBech32String)
+{
+  cardano_drep_t* drep = nullptr;
+  EXPECT_EQ(cardano_drep_from_string("1", 1, &drep), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfInvalidPrefix)
+{
+  cardano_drep_t* drep    = nullptr;
+  const char*     address = "addr1z8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs9yc0hh";
+
+  EXPECT_EQ(cardano_drep_from_string(address, strlen(address), &drep), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfInvalidHashSize)
+{
+  cardano_drep_t* drep = nullptr;
+  EXPECT_EQ(cardano_drep_from_string(DREP_INVALID_HASH_SIZE, strlen(DREP_INVALID_HASH_SIZE), &drep), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfInvalidKeyType)
+{
+  cardano_drep_t* drep = nullptr;
+  EXPECT_EQ(cardano_drep_from_string(DREP_INVALID_KEY_TYPE, strlen(DREP_INVALID_KEY_TYPE), &drep), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfInvalidGovKeyType)
+{
+  cardano_drep_t* drep = nullptr;
+  EXPECT_EQ(cardano_drep_from_string(DREP_INVALID_GOV_KEY_TYPE, strlen(DREP_INVALID_GOV_KEY_TYPE), &drep), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfMemoryAllocationFailsCip105)
+{
+  for (int i = 0; i < 15; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_drep_t* drep = nullptr;
+    EXPECT_NE(cardano_drep_from_string(DREP_CIP105_SCRIPT_HASH, strlen(DREP_CIP105_SCRIPT_HASH), &drep), CARDANO_SUCCESS);
+
+    cardano_drep_unref(&drep);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+}
+
+TEST(cardano_drep_from_string, returnsErrorIfMemoryAllocationFailsCip129)
+{
+  for (int i = 0; i < 15; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_drep_t* drep = nullptr;
+    EXPECT_NE(cardano_drep_from_string(DREP_CIP129_KEY_HASH, strlen(DREP_CIP129_KEY_HASH), &drep), CARDANO_SUCCESS);
+
+    cardano_drep_unref(&drep);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+}
+
+TEST(cardano_drep_get_string_size, returnsZeroIfDrepIsNull)
+{
+  EXPECT_EQ(cardano_drep_get_string_size(nullptr), 0);
+}
+
+TEST(cardano_drep_get_string_size, returnsZeroIfNotKeyHashOrScriptHash)
+{
+  cardano_drep_t* drep = nullptr;
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_get_string_size(drep), 0);
+  cardano_drep_unref(&drep);
+}
+
+TEST(cardano_drep_get_string_size, getsCorrectStringSize)
+{
+  cardano_drep_t* drep = nullptr;
+
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_KEY_HASH, strlen(DREP_CIP129_KEY_HASH), &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_get_string_size(drep), strlen(DREP_CIP129_KEY_HASH) + 1);
+  cardano_drep_unref(&drep);
+
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_SCRIPT_HASH, strlen(DREP_CIP129_SCRIPT_HASH), &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_get_string_size(drep), strlen(DREP_CIP129_SCRIPT_HASH) + 1);
+  cardano_drep_unref(&drep);
+}
+
+TEST(cardano_drep_to_string, returnsErrorIfDrepIsNull)
+{
+  cardano_drep_t* drep        = nullptr;
+  char            message[99] = { 0 };
+
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_KEY_HASH, strlen(DREP_CIP129_KEY_HASH), &drep), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_drep_to_string(nullptr, nullptr, 0), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_to_string(drep, nullptr, 0), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_drep_to_string(drep, &message[0], 0), CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+
+  EXPECT_EQ(cardano_drep_set_type(drep, CARDANO_DREP_TYPE_ABSTAIN), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_drep_to_string(drep, &message[0], 99), CARDANO_ERROR_INVALID_ARGUMENT);
+
+  cardano_drep_unref(&drep);
+}
+
+TEST(cardano_drep_to_string, canConvertToString)
+{
+  cardano_drep_t* drep        = nullptr;
+  char            message[99] = { 0 };
+
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_KEY_HASH, strlen(DREP_CIP129_KEY_HASH), &drep), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_drep_to_string(drep, &message[0], 99), CARDANO_SUCCESS);
+  EXPECT_STREQ(message, DREP_CIP129_KEY_HASH);
+
+  cardano_drep_unref(&drep);
+
+  EXPECT_EQ(cardano_drep_from_string(DREP_CIP129_SCRIPT_HASH, strlen(DREP_CIP129_SCRIPT_HASH), &drep), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_drep_to_string(drep, &message[0], 99), CARDANO_SUCCESS);
+  EXPECT_STREQ(message, DREP_CIP129_SCRIPT_HASH);
+
+  cardano_drep_unref(&drep);
 }

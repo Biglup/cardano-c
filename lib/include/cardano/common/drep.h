@@ -102,6 +102,70 @@ cardano_drep_new(
   cardano_drep_t**      drep);
 
 /**
+ * \brief Converts a Bech32-encoded string representation of a DRep (Delegated Representative)
+ *        into a `cardano_drep_t` object.
+ *
+ * The input string can follow one of two formats:
+ *
+ * 1. CIP-105 Format (DEPRECATED):
+ *    - This format represents the key hash directly as a Bech32-encoded string.
+ *
+ * 2. CIP-129 Format:
+ *    - This format introduces a header byte to encode additional metadata about the governance key type and credential type.
+ *    - The binary structure is as follows:
+ *
+ *      Header Byte Structure:
+ *      - The header byte consists of two parts:
+ *        - Bits [7;4]: Key type (t t t t)
+ *          - Defines the type of governance key being used.
+ *          - Possible key types:
+ *            - 0000 (CC Hot): Constitutional Committee Hot Key
+ *            - 0001 (CC Cold): Constitutional Committee Cold Key
+ *            - 0010 (DRep): Delegated Representative Key
+ *        - Bits [3;0]: Credential type (c c c c)
+ *          - Refers to the type of credential associated with the governance key.
+ *          - Reserved values ensure no conflicts with Cardano address network tags:
+ *            - 0010 (Key Hash): Key hash credential
+ *            - 0011 (Script Hash): Script hash credential
+ *
+ * \param[in]  bech32_string   Pointer to the Bech32-encoded string.
+ * \param[in]  string_length   Length of the input string.
+ * \param[out] drep            Pointer to the output cardano_drep_t object.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the drep was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * \note The caller is responsible for freeing the memory associated with the returned
+ *       cardano_drep_t object using `cardano_drep_unref`.
+ *
+ * \code{.c}
+ * const char* drep_bech32 = "drep1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+ * size_t drep_length = strlen(drep_bech32);
+ * cardano_drep_t* drep = NULL;
+ *
+ * cardano_error_t result = cardano_drep_from_string(drep_bech32, drep_length, &drep);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("DRep object successfully created.\n");
+ *   // Use the drep object...
+ *   cardano_drep_unref(drep);
+ * }
+ * else
+ * {
+ *   printf("Failed to parse DRep string: %d\n", result);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_drep_from_string(
+  const char*      bech32_string,
+  size_t           string_length,
+  cardano_drep_t** drep);
+
+/**
  * \brief Creates a drep from a CBOR reader.
  *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_drep_t object.
@@ -186,6 +250,87 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_drep_to_cbor(
   const cardano_drep_t*  drep,
   cardano_cbor_writer_t* writer);
+
+/**
+ * \brief Retrieves the size needed for the string representation (CIP-129) of a Cardano DRep.
+ *
+ * This function calculates the size of the buffer required to hold the string representation
+ * of a \ref cardano_drep_t object, including the null terminator. This size is necessary
+ * to ensure that the buffer allocated for converting the DRep to a string is sufficient.
+ *
+ * \param[in] drep A constant pointer to the \ref cardano_drep_t object for which the string
+ *                 size is being calculated. The object must not be NULL.
+ *
+ * \return The size in bytes needed to store the string representation of the DRep, including
+ *         the null terminator. If the input \p DRep is NULL, the behavior is undefined.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_drep_t* drep = cardano_drep_new(...);
+ * size_t required_size = cardano_drep_get_string_size(drep);
+ *
+ * char* drep_str = (char*)malloc(required_size);
+ *
+ * if (drep_str)
+ * {
+ *   cardano_error_t result = cardano_drep_to_string(drep, drep_str, required_size);
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     printf("DRep: %s\n", drep_str);
+ *   }
+ *   free(drep_str);
+ * }
+ *
+ * // Clean up the drep object once done
+ * cardano_drep_unref(&drep);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t cardano_drep_get_string_size(const cardano_drep_t* drep);
+
+/**
+ * \brief Converts a Cardano DRep into its string representation (CIP-129).
+ *
+ * This function serializes the given \ref cardano_drep_t object into a string format.
+ * The string is written to a user-provided buffer, and the size of this buffer must be
+ * adequate to hold the entire string, including the null terminator. The required size
+ * can be determined by calling \ref cardano_drep_get_string_size.
+ *
+ * \param[in] drep A constant pointer to the \ref cardano_drep_t object that is to be converted to a string.
+ *                 The object must not be NULL.
+ * \param[out] data A pointer to the buffer where the string representation of the drep will be written.
+ * \param[in] size The size of the buffer pointed to by \p data. This size should be at least as large as the value
+ *                 returned by \ref cardano_drep_get_string_size to ensure successful serialization.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the conversion is successful. If the buffer is too small, returns
+ *         \ref CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE. If the \p drep or \p data is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_drep_t* drep = cardano_drep_new(...);
+ * size_t required_size = cardano_drep_get_string_size(drep);
+ * char* drep_str = (char*)malloc(required_size);
+ *
+ * if (drep_str)
+ * {
+ *   cardano_error_t result = cardano_drep_to_string(drep, drep_str, required_size);
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     printf("Address: %s\n", drep_str);
+ *   }
+ *
+ *   free(drep_str);
+ * }
+ *
+ * // Clean up the drep object once done
+ * cardano_drep_unref(&drep);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_drep_to_string(
+  const cardano_drep_t* drep,
+  char*                 data,
+  size_t                size);
 
 /**
  * \brief Retrieves the credential associated with a drep.
