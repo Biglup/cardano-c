@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "cardano/common/drep.h"
 #include "cardano/key_handlers/secure_key_handler.h"
 #include "cardano/key_handlers/software_secure_key_handler.h"
 #include "console.h"
@@ -150,6 +151,23 @@ cardano_address_t* create_address_from_derivation_paths(
  * \note This function will exit the program if an error occurs during the reward address creation process.
  */
 cardano_reward_address_t* create_reward_address(const char* address_str, size_t address_str_length);
+
+/**
+ * \brief Creates a Cardano DRep object from a string representation.
+ *
+ * This function creates a \ref cardano_drep_t object from the provided DRep ID string. The string
+ * must be a valid Bech32-encoded Cardano DRep ID (either CIP-105 or CIP-129). The function validates the format of the ID and, if valid,
+ * initializes the corresponding cardano_drep_t object.
+ *
+ * \param[in] key_handler A pointer to the initialized \ref cardano_secure_key_handler_t.
+ * \param[in] account_path The derivation path for the account level.
+ *
+ * \return A pointer to the newly created \ref cardano_drep_t object if the ID is valid. Returns NULL if the
+ * address creation fails due to an invalid format or any internal error.
+ *
+ * \note This function will exit the program if an error occurs during the DRep creation process.
+ */
+cardano_drep_t* create_drep_from_derivation_path(cardano_secure_key_handler_t* key_handler, cardano_account_derivation_path_t account_path);
 
 // Key handler functions
 
@@ -353,6 +371,22 @@ cardano_script_t*
 create_plutus_v2_script_from_hex(const char* script_hex);
 
 /**
+ * \brief Creates a Plutus V3 script object from a hexadecimal string representation.
+ *
+ * This function creates a \ref cardano_script_t object representing a Plutus V3 script from the provided hexadecimal string.
+ * The hexadecimal string should encode a valid Plutus V3 script in CBOR format, which is then parsed and loaded into a
+ * Cardano script object.
+ *
+ * \param[in] script_hex A pointer to a NULL-terminated string containing the hexadecimal representation of the Plutus V3 script.
+ *                       This parameter must not be NULL.
+ *
+ * \return A pointer to the created \ref cardano_script_t object if the script is successfully parsed. Returns NULL if the
+ *         script creation fails due to an invalid format or internal error.
+ */
+cardano_script_t*
+create_plutus_v3_script_from_hex(const char* script_hex);
+
+/**
  * \brief Creates a Native script object from a JSON string representation.
  *
  * This function creates a \ref cardano_script_t object representing a Native script from the provided JSON string.
@@ -402,6 +436,15 @@ cardano_address_t* get_script_address(cardano_script_t* script);
  *         Returns NULL if the address creation fails due to an invalid or unsupported script format.
  */
 cardano_reward_address_t* get_script_stake_address(cardano_script_t* script);
+
+/**
+ * \brief Derives the DRep ID from a given script.
+ *
+ * \param script The script from which to derive the DRep ID.
+ *
+ * \return A pointer to the \ref cardano_drep_t object representing the script DRep ID.
+ */
+cardano_drep_t* get_script_drep(cardano_script_t* script);
 
 /**
  * \brief Creates a Cardano datum from an zero initialized integer value.

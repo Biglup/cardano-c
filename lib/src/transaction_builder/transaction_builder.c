@@ -6,7 +6,7 @@
  *
  * Copyright 2024 Biglup Labs
  *
- * Licensed under the Apache License, Version 2.0 (the "License") {}
+ * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,11 +36,17 @@
 #include "./internals/blake2b_hash_to_redeemer_map.h"
 
 #include <assert.h>
+#include <cardano/certs/register_drep_cert.h>
 #include <cardano/certs/registration_cert.h>
 #include <cardano/certs/stake_delegation_cert.h>
+#include <cardano/certs/unregister_drep_cert.h>
 #include <cardano/certs/unregistration_cert.h>
+#include <cardano/certs/update_drep_cert.h>
 #include <cardano/certs/vote_delegation_cert.h>
 #include <cardano/encoding/bech32.h>
+#include <cardano/proposal_procedures/constitution.h>
+#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
+#include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -80,6 +86,7 @@ typedef struct cardano_tx_builder_t
     cardano_input_to_redeemer_map_t*        input_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* withdrawals_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* mints_to_redeemer_map;
+    cardano_blake2b_hash_to_redeemer_map_t* votes_to_redeemer_map;
 } cardano_tx_builder_t;
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -118,6 +125,7 @@ cardano_tx_builder_deallocate(void* object)
   cardano_input_to_redeemer_map_unref(&builder->input_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&builder->withdrawals_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&builder->mints_to_redeemer_map);
+  cardano_blake2b_hash_to_redeemer_map_unref(&builder->votes_to_redeemer_map);
 
   _cardano_free(builder);
 }
@@ -191,24 +199,6 @@ transaction_new(void)
   cardano_witness_set_unref(&witnesses);
 
   return transaction;
-}
-
-/**
- * \brief Checks if a given address type represents a script address.
- *
- * This function determines whether a \ref cardano_address_type_t corresponds to a script address.
- *
- * \param[in] type The \ref cardano_address_type_t value representing the address type to check.
- *
- * \return \c true if the specified address type is a script address; \c false otherwise.
- */
-static bool
-is_script_address(const cardano_address_type_t type)
-{
-  return (type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_KEY) ||
-    (type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_SCRIPT) ||
-    (type == CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT) ||
-    (type == CARDANO_ADDRESS_TYPE_POINTER_SCRIPT);
 }
 
 /**
@@ -531,8 +521,29 @@ add_redeemer(
 
         break;
       }
-      case CARDANO_REDEEMER_TAG_CERTIFYING:
       case CARDANO_REDEEMER_TAG_VOTING:
+      {
+        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, hash, rdmer);
+
+        if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
+        {
+          cardano_tx_builder_set_last_error(builder, "Failed to insert plutus data to redeemer map.");
+          builder->last_error = result;
+
+          cardano_redeemer_unref(&rdmer);
+
+          return result;
+        }
+
+        if (result == CARDANO_ERROR_DUPLICATED_KEY)
+        {
+          duplicate = true;
+          result    = CARDANO_SUCCESS;
+        }
+
+        break;
+      }
+      case CARDANO_REDEEMER_TAG_CERTIFYING:
       case CARDANO_REDEEMER_TAG_PROPOSING:
       case CARDANO_REDEEMER_TAG_SPEND:
       default:
@@ -593,6 +604,7 @@ cardano_tx_builder_new(
   builder->input_to_redeemer_map       = NULL;
   builder->withdrawals_to_redeemer_map = NULL;
   builder->mints_to_redeemer_map       = NULL;
+  builder->votes_to_redeemer_map       = NULL;
 
   cardano_protocol_parameters_ref(params);
   builder->params = params;
@@ -668,6 +680,14 @@ cardano_tx_builder_new(
   }
 
   result = cardano_blake2b_hash_to_redeemer_map_new(&builder->mints_to_redeemer_map);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_unref(&builder);
+    return NULL;
+  }
+
+  result = cardano_blake2b_hash_to_redeemer_map_new(&builder->votes_to_redeemer_map);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1580,14 +1600,6 @@ cardano_tx_builder_add_input(
   {
     cardano_tx_builder_set_last_error(builder, "Failed to get address type");
     builder->last_error = result;
-    return;
-  }
-
-  if (is_script_address(address_type) && (redeemer == NULL))
-  {
-    cardano_tx_builder_set_last_error(builder, "Redeemer is required for script address inputs");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-
     return;
   }
 
@@ -2736,14 +2748,50 @@ cardano_tx_builder_delegate_voting_power_ex(
   size_t                 drep_id_size,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(reward_address);
-  CARDANO_UNUSED(address_size);
-  CARDANO_UNUSED(drep_id);
-  CARDANO_UNUSED(drep_id_size);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if ((reward_address == NULL) || (address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((drep_id == NULL) || (drep_id_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "DREP ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_reward_address_t* addr   = NULL;
+  cardano_error_t           result = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_drep_t* drep = NULL;
+  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to parse DREP ID.");
+    cardano_reward_address_unref(&addr);
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_delegate_voting_power(builder, addr, drep, redeemer);
+
+  cardano_reward_address_unref(&addr);
+  cardano_drep_unref(&drep);
 }
 
 void
@@ -2753,29 +2801,109 @@ cardano_tx_builder_register_drep(
   cardano_anchor_t*      anchor,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep);
-  CARDANO_UNUSED(anchor);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if (drep == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_certificate_t*        cert          = NULL;
+  cardano_register_drep_cert_t* register_drep = NULL;
+  cardano_credential_t*         credential    = NULL;
+
+  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
+  cardano_credential_unref(&credential);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
+    builder->last_error = result;
+    return;
+  }
+
+  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->params);
+  result                 = cardano_register_drep_cert_new(credential, deposit, anchor, &register_drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create DRep registration certificate.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  result = cardano_certificate_new_register_drep(register_drep, &cert);
+  cardano_register_drep_cert_unref(&register_drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_add_certificate(builder, cert, redeemer);
+  cardano_certificate_unref(&cert);
 }
 
 void
 cardano_tx_builder_register_drep_ex(
   cardano_tx_builder_t*  builder,
   const char*            drep_id,
-  size_t                 drep_id_size,
-  cardano_anchor_t*      anchor,
+  const size_t           drep_id_size,
+  const char*            metadata_url,
+  const size_t           metadata_url_size,
+  const char*            metadata_hash_hex,
+  const size_t           metadata_hash_hex_size,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep_id);
-  CARDANO_UNUSED(drep_id_size);
-  CARDANO_UNUSED(anchor);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if ((drep_id == NULL) || (drep_id_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  if ((metadata_url != NULL) && (metadata_url_size > 0U) && (metadata_hash_hex != NULL) && (metadata_hash_hex_size > 0U))
+  {
+    cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+      builder->last_error = result;
+      return;
+    }
+  }
+
+  cardano_drep_t* drep   = NULL;
+  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_register_drep(builder, drep, anchor, redeemer);
+
+  cardano_drep_unref(&drep);
+  cardano_anchor_unref(&anchor);
 }
 
 void
@@ -2785,29 +2913,107 @@ cardano_tx_builder_update_drep(
   cardano_anchor_t*      anchor,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep);
-  CARDANO_UNUSED(anchor);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if (drep == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_certificate_t*      cert        = NULL;
+  cardano_update_drep_cert_t* update_drep = NULL;
+  cardano_credential_t*       credential  = NULL;
+
+  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
+  cardano_credential_unref(&credential);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
+    builder->last_error = result;
+    return;
+  }
+
+  result = cardano_update_drep_cert_new(credential, anchor, &update_drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create DRep update certificate.");
+    builder->last_error = result;
+    return;
+  }
+
+  result = cardano_certificate_new_update_drep(update_drep, &cert);
+  cardano_update_drep_cert_unref(&update_drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_add_certificate(builder, cert, redeemer);
+  cardano_certificate_unref(&cert);
 }
 
 void
 cardano_tx_builder_update_drep_ex(
   cardano_tx_builder_t*  builder,
   const char*            drep_id,
-  size_t                 drep_id_size,
-  cardano_anchor_t*      anchor,
+  const size_t           drep_id_size,
+  const char*            metadata_url,
+  const size_t           metadata_url_size,
+  const char*            metadata_hash_hex,
+  const size_t           metadata_hash_hex_size,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep_id);
-  CARDANO_UNUSED(drep_id_size);
-  CARDANO_UNUSED(anchor);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if ((drep_id == NULL) || (drep_id_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  if ((metadata_url != NULL) && (metadata_url_size > 0U) && (metadata_hash_hex != NULL) && (metadata_hash_hex_size > 0U))
+  {
+    cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+      builder->last_error = result;
+      return;
+    }
+  }
+
+  cardano_drep_t* drep   = NULL;
+  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_update_drep(builder, drep, anchor, redeemer);
+
+  cardano_drep_unref(&drep);
+  cardano_anchor_unref(&anchor);
 }
 
 void
@@ -2816,11 +3022,54 @@ cardano_tx_builder_deregister_drep(
   cardano_drep_t*        drep,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if (drep == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_certificate_t*          cert           = NULL;
+  cardano_unregister_drep_cert_t* deregistration = NULL;
+  cardano_credential_t*           credential     = NULL;
+
+  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
+  cardano_credential_unref(&credential);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
+    builder->last_error = result;
+    return;
+  }
+
+  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->params);
+  result                 = cardano_unregister_drep_cert_new(credential, deposit, &deregistration);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create DRep deregistration certificate.");
+    builder->last_error = result;
+    return;
+  }
+
+  result = cardano_certificate_new_unregister_drep(deregistration, &cert);
+  cardano_unregister_drep_cert_unref(&deregistration);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_add_certificate(builder, cert, redeemer);
+  cardano_certificate_unref(&cert);
 }
 
 void
@@ -2830,12 +3079,30 @@ cardano_tx_builder_deregister_drep_ex(
   size_t                 drep_id_size,
   cardano_plutus_data_t* redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(drep_id);
-  CARDANO_UNUSED(drep_id_size);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if ((drep_id == NULL) || (drep_id_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_drep_t* drep   = NULL;
+  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_deregister_drep(builder, drep, redeemer);
+  cardano_drep_unref(&drep);
 }
 
 void
@@ -2846,13 +3113,89 @@ cardano_tx_builder_vote(
   cardano_voting_procedure_t*     vote,
   cardano_plutus_data_t*          redeemer)
 {
-  CARDANO_UNUSED(builder);
-  CARDANO_UNUSED(voter);
-  CARDANO_UNUSED(action_id);
-  CARDANO_UNUSED(vote);
-  CARDANO_UNUSED(redeemer);
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
 
-  builder->last_error = CARDANO_ERROR_NOT_IMPLEMENTED;
+  if (voter == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Voter is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if (action_id == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Action ID is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if (vote == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Vote is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_voting_procedures_t* votes = cardano_transaction_body_get_voting_procedures(body);
+
+  if (votes == NULL)
+  {
+    cardano_error_t result = cardano_voting_procedures_new(&votes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to create voting procedures.");
+      builder->last_error = result;
+      return;
+    }
+
+    result = cardano_transaction_body_set_voting_procedures(body, votes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to set voting procedures.");
+      cardano_voting_procedures_unref(&votes);
+      builder->last_error = result;
+      return;
+    }
+  }
+
+  cardano_voting_procedures_unref(&votes);
+
+  cardano_error_t result = cardano_voting_procedures_insert(votes, voter, action_id, vote);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to insert vote.");
+    builder->last_error = result;
+    return;
+  }
+
+  if (redeemer != NULL)
+  {
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+    cardano_witness_set_unref(&witnesses);
+
+    cardano_credential_t* credential = cardano_voter_get_credential(voter);
+    cardano_credential_unref(&credential);
+
+    cardano_blake2b_hash_t* hash = cardano_credential_get_hash(credential);
+
+    result = add_redeemer(witnesses, hash, redeemer, CARDANO_REDEEMER_TAG_VOTING, builder);
+    cardano_blake2b_hash_unref(&hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
+      builder->last_error = result;
+    }
+  }
 }
 
 void

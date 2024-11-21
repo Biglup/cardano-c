@@ -1357,7 +1357,10 @@ CARDANO_EXPORT void cardano_tx_builder_register_drep(
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
  * \param[in] drep_id A pointer to a character array containing the DRep ID as a hex-encoded string.
  * \param[in] drep_id_size The size of the `drep_id` string.
- * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance providing governance anchor details.
+ * \param[in] metadata_url The URL pointing to the DRep metadata file.
+ * \param[in] metadata_url_size The size of the `metadata_url` string.
+ * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
+ * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
  * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data, which may be required for
  *                     script-locked DReps.
  *
@@ -1378,7 +1381,10 @@ CARDANO_EXPORT void cardano_tx_builder_register_drep_ex(
   cardano_tx_builder_t*  builder,
   const char*            drep_id,
   size_t                 drep_id_size,
-  cardano_anchor_t*      anchor,
+  const char*            metadata_url,
+  size_t                 metadata_url_size,
+  const char*            metadata_hash_hex,
+  size_t                 metadata_hash_hex_size,
   cardano_plutus_data_t* redeemer);
 
 /**
@@ -1418,16 +1424,19 @@ CARDANO_EXPORT void cardano_tx_builder_update_drep(
  * a governance anchor and redeemer data for validation purposes associated with script-locked DReps.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
- * \param[in] drep_id A pointer to a character array representing the hexadecimal DRep ID.
- * \param[in] drep_id_size The size of the DRep ID string.
- * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance, providing governance anchor details associated with the DRep.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID as a hex-encoded string.
+ * \param[in] drep_id_size The size of the `drep_id` string.
+ * \param[in] metadata_url The URL pointing to the DRep metadata file.
+ * \param[in] metadata_url_size The size of the `metadata_url` string.
+ * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
+ * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
  * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data, which may be required for
  *                     script-locked DReps.
  *
  * Usage Example:
  * \code{.c}
  * cardano_tx_builder_t* tx_builder = ...;    // Initialized transaction builder
- * const char* drep_id = "abcdef123456";      // DRep ID in hexadecimal
+ * const char* drep_id = "abc123...";         // Hex-encoded DRep ID
  * size_t drep_id_size = strlen(drep_id);
  * cardano_anchor_t* anchor = ...;            // Optional anchor
  * cardano_plutus_data_t* redeemer = ...;     // Optional redeemer data
@@ -1441,7 +1450,10 @@ CARDANO_EXPORT void cardano_tx_builder_update_drep_ex(
   cardano_tx_builder_t*  builder,
   const char*            drep_id,
   size_t                 drep_id_size,
-  cardano_anchor_t*      anchor,
+  const char*            metadata_url,
+  size_t                 metadata_url_size,
+  const char*            metadata_hash_hex,
+  size_t                 metadata_hash_hex_size,
   cardano_plutus_data_t* redeemer);
 
 /**

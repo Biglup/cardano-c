@@ -63,8 +63,7 @@ typedef struct cardano_certificate_t cardano_certificate_t;
  * \param[in] drep_credential A pointer to an initialized \ref cardano_credential_t object representing
  *                            the credential of the decentralized representative.
  * \param[in] deposit The deposit amount required for registration.
- * \param[in] anchor An instance of \ref cardano_anchor_t representing the anchor point for this registration,
- *                   typically used for timestamping and referencing specific states or positions in the ledger.
+ * \param[in] anchor An instance of \ref cardano_anchor_t representing the anchor of the metadata linked to this DRep. This is optional.
  * \param[out] register_drep_cert On successful execution, this will point to a newly created \ref cardano_register_drep_cert_t object.
  *                                The caller is responsible for releasing this resource using \ref cardano_register_drep_cert_unref when it
  *                                is no longer needed.
