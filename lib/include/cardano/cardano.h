@@ -54,6 +54,7 @@
 #include <cardano/auxiliary_data/plutus_v2_script_list.h>
 #include <cardano/auxiliary_data/plutus_v3_script_list.h>
 #include <cardano/auxiliary_data/transaction_metadata.h>
+#include <cardano/bip39.h>
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_major_type.h>
 #include <cardano/cbor/cbor_reader.h>
