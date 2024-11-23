@@ -48,11 +48,13 @@ typedef struct cardano_parameter_change_action_t cardano_parameter_change_action
  * \brief Creates and initializes a new instance of the Parameter Change Action.
  *
  * This function allocates and initializes a new instance of a \ref cardano_parameter_change_action_t object,
- * which represents an action to update one or more updatable protocol parameters within the Cardano network. These updates
- * exclude major protocol version changes, which are managed through different actions.
+ * which represents an action to update one or more updatable protocol parameters within the Cardano network.
+ * These updates exclude major protocol version changes, which are managed through different actions.
  *
+ * **Governance Action ID:**
  * The action requires a governance action ID to reference the most recent enacted action of the
- * same type. You can retrieve this information from the gov-state query:
+ * same type. This is necessary to prevent unintended conflicts between governance actions of the same type.
+ * You can retrieve this information from the governance state query:
  *
  * \code{.sh}
  * cardano-cli conway query gov-state | jq .nextRatifyState.nextEnactState.prevGovActionIds
@@ -74,11 +76,27 @@ typedef struct cardano_parameter_change_action_t cardano_parameter_change_action
  * }
  * \endcode
  *
+ * **Guardrails Script Hash:**
+ * The `policy_hash` parameter represents the hash of the guardrails script (also known as the governance action policy script).
+ * The guardrails script is a Plutus script that acts as a safeguard by imposing additional constraints on certain types
+ * of governance actions, such as protocol parameter updates and treasury withdrawals. When proposing a protocol parameter update, you must
+ * provide the guardrails script hash to reference it. This ensures that the proposal is validated against the guardrails script during the transaction processing.
+ *
+ * You can obtain the guardrails script hash using the `cardano-cli`:
+ * \code{.sh}
+ * cardano-cli hash script --script-file guardrails-script.plutus
+ * \endcode
+ *
+ * Example output:
+ * \code{.sh}
+ * fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64
+ * \endcode
+ *
  * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object representing the protocol parameter updates.
+ *                                  This object should include the parameters you wish to update.
  * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object representing the last enacted governance
- *                                 action of the same type. This parameter can be NULL if no governance action of this type has been enacted.
- * \param[in] policy_hash An optional pointer to a \ref cardano_blake2b_hash_t object representing the policy hash associated with these
- *                        parameter updates. This parameter can be NULL if no policy hash is to be associated.
+ *                                 action of the same type (Protocol Parameter Update). This parameter can be `NULL` if no governance action of this type has been enacted.
+ * \param[in] policy_hash An optional pointer to a \ref cardano_blake2b_hash_t object representing the hash of the guardrails script.
  * \param[out] parameter_change_action On successful initialization, this will point to a newly created
  *             \ref cardano_parameter_change_action_t object. This object represents a "strong reference"
  *             to the parameter change action, meaning that it is fully initialized and ready for use.
@@ -86,28 +104,31 @@ typedef struct cardano_parameter_change_action_t cardano_parameter_change_action
  *             specifically, once the parameter change action is no longer needed, the caller must release it
  *             by calling \ref cardano_parameter_change_action_unref.
  *
+ * **Return Value:**
  * \return \c cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the parameter change action was
  *         successfully created, or an appropriate error code indicating the failure reason.
  *
- * Usage Example:
+ * **Usage Example:**
  * \code{.c}
- * cardano_protocol_param_update_t* protocol_param_update = cardano_protocol_param_update_new(...); // Assume initialized
- * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(...);
- * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_new(...);
+ * // Initialize the protocol parameter updates
+ * cardano_protocol_param_update_t* protocol_param_update = cardano_protocol_param_update_new();
+ * // Set the parameters you wish to update, for example:
+ * cardano_protocol_param_update_set_key_deposit(protocol_param_update, 1000000);
+ *
+ * // Retrieve the last enacted governance action ID (if any)
+ * cardano_governance_action_id_t* governance_action_id = cardano_governance_action_id_new(0, "7e199d036f1e8d725ea8aba30c5f8d0d2ab9dbd45c7f54e7d85c92c022673f0f");
+ *
+ * // Obtain the guardrails script hash (if required)
+ * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_from_hex("fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64");
+ *
  * cardano_parameter_change_action_t* parameter_change_action = NULL;
- * cardano_error_t result = cardano_parameter_change_action_new(protocol_param_update, governance_action_id, policy_hash, &parameter_change_action);
+ * cardano_error_t result = cardano_parameter_change_action_new(
+ *   protocol_param_update,
+ *   governance_action_id,
+ *   policy_hash,
+ *   &parameter_change_action);
  *
- * if (result == CARDANO_SUCCESS)
- * {
- *   // Use the parameter change action
- *   // Free resources when done
- *   cardano_parameter_change_action_unref(&parameter_change_action);
- * }
- * else
- * {
- *   printf("Failed to create the parameter change action: %s\n", cardano_error_to_string(result));
- * }
- *
+ * // Clean up
  * cardano_protocol_param_update_unref(&protocol_param_update);
  * cardano_governance_action_id_unref(&governance_action_id);
  * cardano_blake2b_hash_unref(&policy_hash);
@@ -275,41 +296,47 @@ CARDANO_EXPORT cardano_protocol_param_update_t*
 cardano_parameter_change_action_get_protocol_param_update(cardano_parameter_change_action_t* parameter_change_action);
 
 /**
- * \brief Sets the policy hash in the parameter_change_action.
+ * \brief Sets the guardrails script hash in the parameter change action.
  *
- * This function updates the policy hash of a \ref cardano_parameter_change_action_t object.
- * The policy hash is a \ref cardano_blake2b_hash_t object that can optionally be set to modify the identification of the policy.
- * This parameter can be NULL if the policy hash is to be unset, effectively removing any previously set policy hash.
+ * This function updates the guardrails script hash (also known as the policy hash) of a
+ * \ref cardano_parameter_change_action_t object. The guardrails script is an optional Plutus script that
+ * imposes additional constraints on certain types of governance actions, such as protocol parameter updates
+ * and treasury withdrawals. By setting the guardrails script hash, you reference this script in your
+ * parameter change action, ensuring that the proposal adheres to the constraints defined by the script.
  *
- * \param[in,out] parameter_change_action A pointer to an initialized \ref cardano_parameter_change_action_t object to which the policy hash will be set.
- * \param[in] policy_hash A pointer to an initialized \ref cardano_blake2b_hash_t object representing the new policy hash. This parameter can be NULL if the policy hash is to be unset.
+ * \param[in,out] parameter_change_action A pointer to an initialized \ref cardano_parameter_change_action_t object
+ *                                        to which the guardrails script hash will be set.
+ * \param[in] policy_hash A pointer to an initialized \ref cardano_blake2b_hash_t object representing the new
+ *                        guardrails script hash. This parameter can be `NULL` if you wish to unset any previously
+ *                        set guardrails script hash.
  *
- * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the policy hash was
- *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any of the
- *         input pointers are NULL.
+ * **Return Value:**
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the guardrails
+ *         script hash was successfully set, or an appropriate error code indicating the failure reason, such as
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if the `parameter_change_action` pointer is `NULL`.
  *
- * Usage Example:
+ * **Usage Example:**
  * \code{.c}
- * cardano_parameter_change_action_t* parameter_change_action = ...; // Assume parameter_change_action is already initialized
- * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_new(...); // Optionally initialized
+ * // Assume parameter_change_action is already initialized
+ * cardano_parameter_change_action_t* parameter_change_action = ...;
  *
+ * // Obtain the guardrails script hash
+ * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_from_hex("fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64");
+ *
+ * // Set the guardrails script hash in the parameter change action
  * cardano_error_t result = cardano_parameter_change_action_set_policy_hash(parameter_change_action, policy_hash);
  * if (result == CARDANO_SUCCESS)
  * {
- *   // The policy hash is now set for the parameter_change_action
+ *   // The guardrails script hash is now set for the parameter_change_action
  * }
  * else
  * {
- *   printf("Failed to set the policy hash.\n");
+ *   printf("Failed to set the guardrails script hash: %s\n", cardano_error_to_string(result));
  * }
  *
- * // Clean up the parameter_change_action and optionally the policy hash after use
+ * // Clean up after use
  * cardano_parameter_change_action_unref(&parameter_change_action);
- *
- * if (policy_hash)
- * {
- *   cardano_blake2b_hash_unref(&policy_hash);
- * }
+ * cardano_blake2b_hash_unref(&policy_hash);
  * \endcode
  */
 CARDANO_NODISCARD
@@ -317,33 +344,39 @@ CARDANO_EXPORT cardano_error_t
 cardano_parameter_change_action_set_policy_hash(cardano_parameter_change_action_t* parameter_change_action, cardano_blake2b_hash_t* policy_hash);
 
 /**
- * \brief Retrieves the policy hash from a parameter_change_action.
+ * \brief Retrieves the guardrails script hash from a parameter change action.
  *
- * This function retrieves the policy hash from a given \ref cardano_parameter_change_action_t object. The policy hash
- * is represented as a \ref cardano_blake2b_hash_t object.
+ * This function retrieves the guardrails script hash (also known as the policy hash) from a given
+ * \ref cardano_parameter_change_action_t object. The guardrails script is an optional Plutus script that
+ * imposes additional constraints on certain types of governance actions, such as protocol parameter updates
+ * and treasury withdrawals. By obtaining the guardrails script hash, you can verify whether the parameter
+ * change action references a guardrails script, which may be required for the transaction to be valid.
  *
- * \param[in] parameter_change_action A pointer to an initialized \ref cardano_parameter_change_action_t object from which the policy hash is retrieved.
+ * \param[in] parameter_change_action A pointer to an initialized \ref cardano_parameter_change_action_t object from which the guardrails script hash is retrieved.
  *
- * \return A pointer to the retrieved \ref cardano_blake2b_hash_t object representing the policy hash.
+ * **Return Value:**
+ * \return A pointer to the retrieved \ref cardano_blake2b_hash_t object representing the guardrails script hash.
  *         This will be a new reference, and the caller is responsible for releasing it with \ref cardano_blake2b_hash_unref
- *         when it is no longer needed. If the parameter_change_action does not have a policy hash set, NULL is returned.
+ *         when it is no longer needed. If the `parameter_change_action` does not have a guardrails script hash set, `NULL` is returned.
  *
- * Usage Example:
+ * **Usage Example:**
  * \code{.c}
  * cardano_parameter_change_action_t* parameter_change_action = ...; // Assume initialized
- * cardano_blake2b_hash_t* policy_hash = cardano_parameter_change_action_get_policy_hash(parameter_change_action);
+ * cardano_blake2b_hash_t* guardrails_hash = cardano_parameter_change_action_get_policy_hash(parameter_change_action);
  *
- * if (policy_hash != NULL)
+ * if (guardrails_hash != NULL)
  * {
- *   printf("Policy Hash: %s\n", cardano_blake2b_hash_to_string(policy_hash));
- *   // Use the policy hash
+ *   char* hash_str = cardano_blake2b_hash_to_string(guardrails_hash);
+ *   printf("Guardrails Script Hash: %s\n", hash_str);
+ *   // Use the guardrails script hash as needed
  *
- *   // Once done, ensure to clean up and release the policy hash
- *   cardano_blake2b_hash_unref(&policy_hash);
+ *   // Clean up
+ *   cardano_blake2b_hash_unref(&guardrails_hash);
+ *   free(hash_str);
  * }
  * else
  * {
- *   printf("No policy hash set for this parameter change action.\n");
+ *   printf("No guardrails script hash set for this parameter change action.\n");
  * }
  * \endcode
  */
