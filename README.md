@@ -6,6 +6,14 @@
 
 # Cardano-C
 
+**cardano-c** is a C library aiming to be a robust, commercial-grade, full-featured toolkit for building transaction and interacting with the Cardano blockchain. Its compliant with the MISRA 2012 standard,
+and was designed with a binding-friendly architecture to enable easy integrations across various programming languages.
+
+Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https://cardano-c.readthedocs.io/) or jump to [code examples!](examples/)
+
+---
+<br>
+
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/unit-test.yml/badge.svg)
 ![Post-Integration](https://github.com/Biglup/cardano-c/actions/workflows/static-code-analysis.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Biglup/cardano-c/graph/badge.svg?token=A5U3U5KGG7)](https://codecov.io/gh/Biglup/cardano-c)
@@ -13,22 +21,54 @@
 [![Documentation Status](https://readthedocs.org/projects/cardano-c/badge/?version=latest)](https://cardano-c.readthedocs.io/en/latest/?badge=latest)
 [![Static Badge](https://img.shields.io/badge/Funded_By-Project_Catalyst-133ff0?logo=cardano&logoColor=ffffff)](https://projectcatalyst.io/)
 
-`Cardano C` is a C library aiming to be a robust, commercial-grade, full-featured Toolkit for building transaction and interacting with the Cardano blockchain. Compliant with MISRA standards, 
-it ensures consistent reliability and safety. With its binding-friendly architecture, `Cardano C` aims for broad compatibility, enabling easy integrations across various programming languages. 
-
-Get the latest documentation at [cardano-c.readthedocs.io](https://cardano-c.readthedocs.io/)
-
-> \[!IMPORTANT\]
-> This library is in the early stages of development.
-> The documentation is a work in progress and may not be complete. We will
-> actively work on improving the documentation as we progress.
-
 ## Features
 
-- **Address Parsing & Generation:** Mnemonic creation/restoration and address derivation functionalities.
-- **Ed25519 Cryptography:** Support for the Ed25519 signature scheme is based on [libsodium](https://github.com/jedisct1/libsodium) a powerful library for encryption, decryption, signatures, password hashing and more..
-- **Transaction Serialization & Deserialization:** Convert transactions to and from CBOR format for transmission to the blockchain.
-- **Powerful Transaction Builder:** A versatile tool with comprehensive protocol support that allows you to easily create Cardano transactions.
+- Address Parsing & Generation
+- Ed25519 Cryptography
+- Transaction Serialization & Deserialization
+- Powerful Transaction Builder
+- Robust C99 implementation
+- Layered architecture offers both control and convenience
+- Flexible memory management
+- No shared global state - threading friendly
+- Proper handling of UTF-8
+- Extensive documentation and test suite
+- It has no runtime dependencies (The library depends on [libsodium](https://github.com/jedisct1/libsodium), [libjsonc](https://github.com/json-c/json-c) and [libgmp](https://gmplib.org/), but they are all statically linked)
+
+## Basic Example
+
+This is a basic cardano-c example, it sends `LOVELACE_TO_SEND` coins to `RECEIVING_ADDRESS`. Check full example at [send lovelace](examples/src/send_lovelace_example.c).
+
+```c
+// 2 hours from now in UNIX time (seconds)
+const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
+
+// 1.- Build transaction
+cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, provider);
+
+cardano_tx_builder_set_utxos(tx_builder, utxo_list);
+cardano_tx_builder_set_change_address(tx_builder, payment_address);
+cardano_tx_builder_set_invalid_after_ex(tx_builder, invalid_after);
+cardano_tx_builder_send_lovelace_ex(tx_builder, RECEIVING_ADDRESS, cardano_utils_safe_strlen(RECEIVING_ADDRESS, 128), LOVELACE_TO_SEND);
+
+cardano_transaction_t* transaction = NULL;
+cardano_error_t        result      = cardano_tx_builder_build(tx_builder, &transaction);
+
+if (result != CARDANO_SUCCESS)
+{
+ console_error("Failed to build transaction");
+ console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+ console_error("%s", cardano_tx_builder_get_last_error(tx_builder));
+
+ return result;
+}
+
+// 2.- Sign transaction
+sign_transaction(key_handler, SIGNER_DERIVATION_PATH, transaction);
+
+// 3.- Submit transaction & confirm
+submit_transaction(provider, CONFIRM_TX_TIMEOUT_MS, transaction);
+```
 
 ## Memory Management
 
@@ -43,7 +83,7 @@ This implies that the caller becomes the sole owner of the newly created referen
 When the reference count drops to zero—typically when the `*_unref` function is invoked by the last entity
 holding a reference—the object gets deallocated.
 
-It's crucial to note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
+Note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
 
 ## Set up the Git hooks custom directory
 
@@ -121,7 +161,11 @@ The generated documentation will be available at `build/release/doc/html/index.h
 
 ## Contributing
 
-We welcome contributions from the community. Please read our CONTRIBUTING.md for guidelines.
+<a href="https://github.com/Biglup/cardano-c/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Biglup/cardano-c&max=500&columns=20&anon=1" />
+</a>
+
+We welcome contributions from the community. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License 
 
