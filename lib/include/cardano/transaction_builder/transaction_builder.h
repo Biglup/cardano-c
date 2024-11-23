@@ -38,15 +38,20 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Type definition for the Cardano Transaction Builder.
+ * \brief High-Level Transaction Builder for Cardano Blockchain.
  *
- * The `cardano_tx_builder_t` type represents an instance of a transaction builder for creating
- * and managing Cardano transactions. It provides methods for adding inputs and outputs, setting
- * fees, and ensuring that the transaction is balanced according to protocol parameters.
+ * The `cardano_tx_builder_t` type serves as a comprehensive interface for constructing
+ * Cardano transactions programmatically encapsulating the complexities of transaction assembly,
+ * balancing, and validation.
  *
- * A transaction builder simplifies the creation of complex transactions by allowing the incremental
- * addition of transaction elements, handling necessary computations such as fee calculations and
- * change outputs, and enforcing protocol compliance.
+ * **Key Features:**
+ * - **Modular Design**: Incrementally add inputs, outputs, certificates, metadata, and scripts,
+ *   enabling flexible transaction construction.
+ * - **Automatic Fee Calculation and Balancing**: Automatically calculates fees and ensures the
+ *   transaction is balanced according to Cardano's protocol parameters.
+ * - **Support for Advanced Constructs**: Facilitates multi-asset transactions, Plutus smart
+ *   contracts, token minting/burning, and governance actions.
+ * - **Extensibility**: Allows for custom coin selection strategies.
  */
 typedef struct cardano_tx_builder_t cardano_tx_builder_t;
 
@@ -1289,11 +1294,13 @@ CARDANO_EXPORT void cardano_tx_builder_delegate_voting_power(
  * \brief Delegates voting power to a DRep using raw data.
  *
  * This function enables the delegation of voting power from a specified reward address to a DRep using string-based identifiers.
+ * The DRep ID can be provided in either CIP-105 or CIP-129 format.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
  * \param[in] reward_address A string representing the staking reward address for the account delegating voting power.
  * \param[in] address_size The length of the `reward_address` string.
  * \param[in] drep_id A string representing the ID of the decentralized representative (DRep) receiving the voting power.
+ *                     The DRep ID can be in CIP-105 or CIP-129 format.
  * \param[in] drep_id_size The length of the `drep_id` string.
  * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t for providing redeemer data, useful for script-locked accounts.
  *
@@ -1302,14 +1309,19 @@ CARDANO_EXPORT void cardano_tx_builder_delegate_voting_power(
  * cardano_tx_builder_t* tx_builder = ...;  // Initialized transaction builder
  * const char* reward_address = "stake1u9...";  // Reward address delegating voting power
  * size_t address_size = strlen(reward_address);
- * const char* drep_id = "drep123...";  // DRep ID receiving delegated voting power
+ * const char* drep_id = "drep1q...";  // DRep ID in CIP-129 format
  * size_t drep_id_size = strlen(drep_id);
  * cardano_plutus_data_t* redeemer = ...;  // Optional redeemer data
+ *
+ * // Alternatively, using CIP-105 format
+ * // const char* drep_id = "drep...";  // DRep ID in CIP-105 format
+ * // size_t drep_id_size = strlen(drep_id);
  *
  * cardano_tx_builder_delegate_voting_power_ex(tx_builder, reward_address, address_size, drep_id, drep_id_size, redeemer);
  * \endcode
  *
- * \note Errors related to this delegation will be deferred until `cardano_tx_builder_build` is called.
+ * \note The DRep ID must conform to either CIP-105 or CIP-129 format.
+ *       Errors related to this delegation will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_delegate_voting_power_ex(
   cardano_tx_builder_t*  builder,
@@ -1349,13 +1361,13 @@ CARDANO_EXPORT void cardano_tx_builder_register_drep(
   cardano_plutus_data_t* redeemer);
 
 /**
- * \brief Registers a decentralized representative DRep by ID in the transaction.
+ * \brief Registers a DRep by ID in the transaction.
  *
- * This function registers a DRep in the transaction using a specified DRep ID, allowing the inclusion of an optional
- * governance anchor and redeemer data for script DReps.
+ * This function registers a DRep in the transaction using a specified DRep ID. The DRep ID must be provided in either
+ * CIP-105 or CIP-129 bech32 format. An optional redeemer data can be included for script-locked DReps.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
- * \param[in] drep_id A pointer to a character array containing the DRep ID as a hex-encoded string.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
  * \param[in] drep_id_size The size of the `drep_id` string.
  * \param[in] metadata_url The URL pointing to the DRep metadata file.
  * \param[in] metadata_url_size The size of the `metadata_url` string.
@@ -1366,16 +1378,30 @@ CARDANO_EXPORT void cardano_tx_builder_register_drep(
  *
  * Usage Example:
  * \code{.c}
+ * // Using CIP-105 format (bech32-encoded DRep ID with specific prefix)
  * cardano_tx_builder_t* tx_builder = ...;    // Initialized transaction builder
- * const char* drep_id = "abc123...";         // Hex-encoded DRep ID
+ * const char* drep_id = "drep1q...";
  * size_t drep_id_size = strlen(drep_id);
- * cardano_anchor_t* anchor = ...;            // Optional anchor
+ * const char* metadata_url = "https://example.com/drep_metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
  * cardano_plutus_data_t* redeemer = ...;     // Optional redeemer data
  *
- * cardano_tx_builder_register_drep_ex(tx_builder, drep_id, drep_id_size, anchor, redeemer);
+ * cardano_tx_builder_register_drep_ex(
+ *   tx_builder,
+ *   drep_id,
+ *   drep_id_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash_hex,
+ *   metadata_hash_hex_size,
+ *   redeemer);
  * \endcode
  *
- * \note Errors related to this registration will be deferred until `cardano_tx_builder_build` is called.
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Ensure that the correct format is used according to the DRep's identification scheme.
+ *       Errors related to this registration will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_register_drep_ex(
   cardano_tx_builder_t*  builder,
@@ -1420,31 +1446,45 @@ CARDANO_EXPORT void cardano_tx_builder_update_drep(
 /**
  * \brief Updates an existing DRep in the transaction by ID.
  *
- * This function updates a DRep in the transaction using a specified DRep ID in hexadecimal format, optionally providing
- * a governance anchor and redeemer data for validation purposes associated with script-locked DReps.
+ * This function updates a DRep in the transaction using a specified DRep ID. The DRep ID must be provided in bech32 format,
+ * conforming to either CIP-105 or CIP-129 standards. Optionally, you can provide a redeemer for script-locked DReps.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
- * \param[in] drep_id A pointer to a character array containing the DRep ID as a hex-encoded string.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
  * \param[in] drep_id_size The size of the `drep_id` string.
  * \param[in] metadata_url The URL pointing to the DRep metadata file.
  * \param[in] metadata_url_size The size of the `metadata_url` string.
  * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
  * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
- * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data, which may be required for
- *                     script-locked DReps.
+ * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data, which may be required
+ *                     for script-locked DReps.
  *
  * Usage Example:
  * \code{.c}
+ * // Using CIP-105 format (bech32-encoded DRep ID with specific prefix)
  * cardano_tx_builder_t* tx_builder = ...;    // Initialized transaction builder
- * const char* drep_id = "abc123...";         // Hex-encoded DRep ID
+ * const char* drep_id = "drep1q...";
  * size_t drep_id_size = strlen(drep_id);
- * cardano_anchor_t* anchor = ...;            // Optional anchor
+ * const char* metadata_url = "https://example.com/drep_metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
  * cardano_plutus_data_t* redeemer = ...;     // Optional redeemer data
  *
- * cardano_tx_builder_update_drep_ex(tx_builder, drep_id, drep_id_size, anchor, redeemer);
+ * cardano_tx_builder_update_drep_ex(
+ *   tx_builder,
+ *   drep_id,
+ *   drep_id_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash_hex,
+ *   metadata_hash_hex_size,
+ *   redeemer);
  * \endcode
  *
- * \note Errors associated with updating the DRep will be deferred until `cardano_tx_builder_build` is called.
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Ensure that the correct format is used according to the DRep's identification scheme.
+ *       Errors associated with updating the DRep will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_update_drep_ex(
   cardano_tx_builder_t*  builder,
@@ -1486,25 +1526,29 @@ CARDANO_EXPORT void cardano_tx_builder_deregister_drep(
 /**
  * \brief Deregisters an existing DRep.
  *
- * This function deregisters a DRep, identified by its ID.
+ * This function deregisters a DRep identified by its ID in bech32 format. The DRep ID must conform to either
+ * CIP-105 or CIP-129 standards.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance managing the transaction.
- * \param[in] drep_id A pointer to a character array containing the ID of the DRep to deregister.
- * \param[in] drep_id_size The size of the DRep ID string.
- * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data, which may be required for
- *                     script-locked DReps.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
+ * \param[in] drep_id_size The size of the `drep_id` string.
+ * \param[in] redeemer An optional pointer to a \ref cardano_plutus_data_t instance for providing redeemer data,
+ *                     which may be required for script-locked DReps.
  *
  * Usage Example:
  * \code{.c}
+ * // Using CIP-105 format (bech32-encoded DRep ID)
  * cardano_tx_builder_t* tx_builder = ...;   // Initialized transaction builder
- * const char* drep_id = "drep_id_example";  // DRep ID to deregister
+ * const char* drep_id = "drep1q...";        // DRep ID in CIP-105 format
  * size_t drep_id_size = strlen(drep_id);
  * cardano_plutus_data_t* redeemer = ...;    // Optional redeemer data
  *
  * cardano_tx_builder_deregister_drep_ex(tx_builder, drep_id, drep_id_size, redeemer);
  * \endcode
  *
- * \note Errors related to deregistering the DRep will be deferred until `cardano_tx_builder_build` is called.
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Ensure that the correct format is used according to the DRep's identification scheme.
+ *       Errors related to deregistering the DRep will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_deregister_drep_ex(
   cardano_tx_builder_t*  builder,

@@ -48,9 +48,25 @@ typedef struct cardano_treasury_withdrawals_action_t cardano_treasury_withdrawal
  * This function allocates and initializes a new instance of a \ref cardano_treasury_withdrawals_action_t object,
  * which represents an action to withdraw funds from the Cardano treasury.
  *
+ * **Guardrails Script Hash:**
+ * The `policy_hash` parameter represents the hash of the guardrails script (also known as the governance action policy script).
+ * The guardrails script is Plutus script that acts as a safeguard by imposing additional constraints on certain types
+ * of governance actions, such as protocol parameter updates and treasury withdrawals. When proposing a treasury withdrawal,
+ * you must provide its hash to reference it. This ensures that the proposal is validated against the guardrails script during the transaction processing.
+ *
+ * You can obtain the guardrails script hash using the `cardano-cli`:
+ * \code{.sh}
+ * cardano-cli hash script --script-file guardrails-script.plutus
+ * \endcode
+ *
+ * Example output:
+ * \code{.sh}
+ * fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64
+ * \endcode
+ *
  * \param[in] withdrawals A pointer to a \ref cardano_withdrawal_map_t object representing the set of withdrawals.
- * \param[in] policy_hash An optional pointer to a \ref cardano_blake2b_hash_t object representing the policy hash associated with these
- *                        withdrawals. This parameter can be NULL if no policy hash is to be associated.
+ *                        Each withdrawal consists of a reward address and the amount to withdraw.
+ * \param[in] policy_hash An optional pointer to a \ref cardano_blake2b_hash_t object representing the hash of the guardrails script.
  * \param[out] treasury_withdrawals_action On successful initialization, this will point to a newly created
  *             \ref cardano_treasury_withdrawals_action_t object. This object represents a "strong reference"
  *             to the treasury withdrawals action, meaning that it is fully initialized and ready for use.
@@ -61,16 +77,26 @@ typedef struct cardano_treasury_withdrawals_action_t cardano_treasury_withdrawal
  * \return \c cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the treasury withdrawals action was
  *         successfully created, or an appropriate error code indicating the failure reason.
  *
- * Usage Example:
+ * **Usage Example:**
  * \code{.c}
- * cardano_withdrawal_map_t* withdrawals = cardano_withdrawal_map_new(...); // Assume initialized
- * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_new(...); // Optionally initialized
+ * // Initialize the withdrawals map
+ * cardano_withdrawal_map_t* withdrawals = cardano_withdrawal_map_new();
+ * // Add a withdrawal to the map
+ * cardano_reward_address_t* reward_address = cardano_reward_address_from_bech32("stake1u9...");
+ * cardano_withdrawal_map_add(withdrawals, reward_address, 50000000000); // Withdraw 500 ADA
+ *
+ * // Obtain the guardrails script hash (if required)
+ * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_from_hex("fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64");
+ *
  * cardano_treasury_withdrawals_action_t* treasury_withdrawals_action = NULL;
  * cardano_error_t result = cardano_treasury_withdrawals_action_new(withdrawals, policy_hash, &treasury_withdrawals_action);
  *
  * if (result == CARDANO_SUCCESS)
  * {
  *   // Use the treasury withdrawals action
+ *   // For example, add it to the transaction builder
+ *   cardano_tx_builder_add_treasury_withdrawals_action(tx_builder, treasury_withdrawals_action);
+ *
  *   // Free resources when done
  *   cardano_treasury_withdrawals_action_unref(&treasury_withdrawals_action);
  * }
@@ -79,13 +105,10 @@ typedef struct cardano_treasury_withdrawals_action_t cardano_treasury_withdrawal
  *   printf("Failed to create the treasury withdrawals action: %s\n", cardano_error_to_string(result));
  * }
  *
- * // Cleanup withdrawals, and optionally the policy hash
+ * // Cleanup
  * cardano_withdrawal_map_unref(&withdrawals);
- *
- * if (policy_hash)
- * {
- *   cardano_blake2b_hash_unref(&policy_hash);
- * }
+ * cardano_reward_address_unref(&reward_address);
+ * cardano_blake2b_hash_unref(&policy_hash);
  * \endcode
  */
 CARDANO_NODISCARD
