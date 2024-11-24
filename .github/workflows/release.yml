@@ -66,9 +66,19 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
 
-      - name: Set Release Name
+      # Set Release Name on Unix systems
+      - name: Set Release Name (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
           echo "RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
+
+      # Set Release Name on Windows systems
+      - name: Set Release Name (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}"
 
       # Install dependencies for Unix
       - name: Install dependencies (Unix)
@@ -111,14 +121,24 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir build
+          mkdir -p build
           cd build
           case "${{ matrix.arch }}" in
             arm64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+                -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+                -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+                -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+                -DCMAKE_BUILD_TYPE=Release \
+                ..
               ;;
             x86_64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+                -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+                -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+                -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+                -DCMAKE_BUILD_TYPE=Release \
+                ..
               ;;
           esac
           cmake --build . --config Release
@@ -131,7 +151,11 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 -DVERSION=%VERSION% ..
+          cmake -G "Visual Studio 17 2022" -A x64 ^
+            -DVERSION_MAJOR=%VERSION_MAJOR% ^
+            -DVERSION_MINOR=%VERSION_MINOR% ^
+            -DVERSION_PATCH=%VERSION_PATCH% ^
+            ..
           cmake --build . --config Release
           cd ..
 
@@ -140,9 +164,14 @@ jobs:
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
-          mkdir build
+          mkdir -p build
           cd build
-          cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+          cmake -G "MinGW Makefiles" \
+            -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+            -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+            -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            ..
           cmake --build . --config Release
           cd ..
 
@@ -151,9 +180,10 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p release/${{ env.RELEASE_NAME }}
-          cp -r lib/include release/${{ env.RELEASE_NAME }}/
-          cp build/*.a build/*.so build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
+          RELEASE_DIR=release/${{ env.RELEASE_NAME }}
+          mkdir -p $RELEASE_DIR
+          cp -r lib/include $RELEASE_DIR/
+          cp build/release/lib/* $RELEASE_DIR/ 2>/dev/null || true
           tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
 
       # Package binaries (Windows MSVC)
@@ -161,21 +191,22 @@ jobs:
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         shell: cmd
         run: |
-          set RELEASE_NAME=%RELEASE_NAME%
-          mkdir release\%RELEASE_NAME%
-          xcopy /E /I lib\include release\%RELEASE_NAME%\include
-          xcopy /Y build\Release\*.lib build\Release\*.dll release\%RELEASE_NAME%\
-          powershell Compress-Archive -Path release\%RELEASE_NAME%\* -DestinationPath release-%RELEASE_NAME%.zip
+          set RELEASE_DIR=release\%RELEASE_NAME%
+          mkdir %RELEASE_DIR%
+          xcopy /E /I lib\include %RELEASE_DIR%\include
+          xcopy /Y build\release\lib\* %RELEASE_DIR%\
+          powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath release-%RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
       - name: Package binaries (Windows MinGW)
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
-          mkdir -p release/${{ env.RELEASE_NAME }}
-          cp -r lib/include release/${{ env.RELEASE_NAME }}/
-          cp build/*.a build/*.dll release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
-          7z a "release-${{ env.RELEASE_NAME }}.zip" release/${{ env.RELEASE_NAME }}
+          RELEASE_DIR=release/${{ env.RELEASE_NAME }}
+          mkdir -p $RELEASE_DIR
+          cp -r lib/include $RELEASE_DIR/
+          cp build/release/lib/* $RELEASE_DIR/ 2>/dev/null || true
+          7z a "release-${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
 
       # Upload artifacts to GitHub Release (Unix)
       - name: Upload artifacts to GitHub Release (Unix)
