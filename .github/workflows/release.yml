@@ -5,12 +5,10 @@ on:
     types: [created]
 
 permissions:
-  contents: read
+  contents: write  # Grant write permission to contents for the GITHUB_TOKEN
 
 jobs:
   build-and-release:
-    permissions:
-      contents: write
     runs-on: ${{ matrix.os }}
 
     strategy:
