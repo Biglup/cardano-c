@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
@@ -56,10 +56,14 @@ jobs:
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $GITHUB_ENV
+            eval "$(/opt/homebrew/bin/brew shellenv)"
             brew install cmake
           elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             if [[ "${{ matrix.compiler }}" == "mingw" ]]; then
+              powershell -Command "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
               choco install mingw
+              echo "C:\tools\mingw64\bin" >> $GITHUB_PATH
             fi
           fi
 
@@ -75,7 +79,7 @@ jobs:
               if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "msvc" ]]; then
                 cmake -G "Visual Studio 16 2019" -A x64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} ..
               elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "mingw" ]]; then
-                cmake -G "MinGW Makefiles" -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} ..
+                cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} ..
               else
                 cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
               fi
