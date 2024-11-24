@@ -39,7 +39,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Read version on Unix-based systems
       - name: Read version (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -50,7 +49,6 @@ jobs:
           echo "VERSION_PATCH=$VERSION_PATCH" >> $GITHUB_ENV
           echo "VERSION=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH" >> $GITHUB_ENV
 
-      # Read version on Windows systems
       - name: Read version (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -66,7 +64,8 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
 
-      - name: Install dependencies
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
@@ -77,15 +76,24 @@ jobs:
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             # No need to install cmake, it's already installed
             cmake --version
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            if [[ "${{ matrix.compiler }}" == "mingw" ]]; then
-              powershell -Command "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-              choco install mingw
-              echo "C:\tools\mingw64\bin" >> $GITHUB_PATH
-            fi
           fi
 
-      - name: Build
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ("${{ matrix.compiler }}" -eq 'mingw') {
+            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+            choco install -y mingw
+            # Add mingw to PATH
+            "C:\tools\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
           mkdir build
           cd build
@@ -94,28 +102,42 @@ jobs:
               cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
             x86_64)
-              if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "msvc" ]]; then
-                cmake -G "Visual Studio 16 2019" -A x64 -DVERSION=${{ env.VERSION }} ..
-              elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "mingw" ]]; then
-                cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
-              else
-                cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
-              fi
+              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
           esac
           cmake --build . --config Release
 
-      - name: Package binaries
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          if [[ "${{ matrix.compiler }}" == "msvc" ]]; then
+            cmake -G "Visual Studio 16 2019" -A x64 -DVERSION=${{ env.VERSION }} ..
+            cmake --build . --config Release
+          elif [[ "${{ matrix.compiler }}" == "mingw" ]]; then
+            cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+            cmake --build . --config Release
+          fi
+
+      - name: Package binaries (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
           mkdir -p release/${{ env.RELEASE_NAME }}
           cp -r include release/${{ env.RELEASE_NAME }}/
-          cp build/*.a build/*.so build/*.dll build/*.lib build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
-          
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            7z a "release-${{ env.RELEASE_NAME }}.zip" release/${{ env.RELEASE_NAME }}
-          else
-            tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
-          fi
+          cp build/*.a build/*.so build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
+          tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
+
+      - name: Package binaries (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          mkdir -p release\${{ env.RELEASE_NAME }}
+          Copy-Item -Recurse include release\${{ env.RELEASE_NAME }}\include
+          Copy-Item build\*.dll, build\*.lib release\${{ env.RELEASE_NAME }} -ErrorAction SilentlyContinue
+          Compress-Archive -Path release\${{ env.RELEASE_NAME }}\* -DestinationPath "release-${{ env.RELEASE_NAME }}.zip"
 
       - name: Upload artifacts to GitHub Release
         uses: actions/upload-release-asset@v1
