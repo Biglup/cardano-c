@@ -95,9 +95,9 @@ jobs:
           }
 
       # Setup Visual Studio Developer Command Prompt for MSVC
-      - name: Setup Visual Studio Developer Command Prompt
+      - name: Setup MSVC environment
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
-        uses: microsoft/setup-vsdevcmd@v1
+        uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
