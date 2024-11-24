@@ -30,11 +30,15 @@ command_exists () {
 if command_exists lcov; then
     echo "lcov found, proceeding with code coverage generation."
 
-    # Your existing script to generate code coverage report
     rm -rf ./build/debug/coverage/
     mkdir -p ./build/debug/coverage/
     lcov --directory ./build/debug/lib/ --capture --output-file ./build/debug/coverage/code_coverage.info -rc lcov_branch_coverage=1
-    genhtml ./build/debug/coverage/code_coverage.info --branch-coverage --output-directory ./build/debug/coverage/code_coverage_report/
+
+    lcov --remove ./build/debug/coverage/code_coverage.info \
+         "*/external/*" \
+         --output-file ./build/debug/coverage/code_coverage_filtered.info
+
+    genhtml ./build/debug/coverage/code_coverage_filtered.info --branch-coverage --output-directory ./build/debug/coverage/code_coverage_report/
     if command_exists open; then
         open ./build/debug/coverage/code_coverage_report/index.html
     elif command_exists xdg-open; then
