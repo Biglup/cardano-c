@@ -77,6 +77,7 @@ jobs:
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            # CMake is already installed on macOS runners
             cmake --version
           fi
 
@@ -90,11 +91,11 @@ jobs:
             [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
             iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
             choco install -y mingw
-            # Add mingw to PATH
+            # Add MinGW to PATH
             "C:\tools\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
 
-      # Setup Visual Studio Developer Command Prompt for MSVC
+      # Setup MSVC environment
       - name: Setup MSVC environment
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
@@ -110,13 +111,14 @@ jobs:
           cd build
           case "${{ matrix.arch }}" in
             arm64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
             x86_64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
           esac
           cmake --build . --config Release
+          cd ..  # Return to repository root
 
       # Build on Windows MSVC
       - name: Build (Windows MSVC)
@@ -125,8 +127,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 -DVERSION=%VERSION% ..
+          cmake -G "Visual Studio 17 2022" -A x64 -DVERSION_MAJOR=%VERSION_MAJOR% -DVERSION_MINOR=%VERSION_MINOR% -DVERSION_PATCH=%VERSION_PATCH% ..
           cmake --build . --config Release
+          cd ..
 
       # Build on Windows MinGW
       - name: Build (Windows MinGW)
@@ -135,8 +138,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+          cmake -G "MinGW Makefiles" -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
           cmake --build . --config Release
+          cd ..
 
       # Package binaries (Unix)
       - name: Package binaries (Unix)
@@ -145,8 +149,8 @@ jobs:
         run: |
           RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
           mkdir -p release/$RELEASE_NAME
-          cp -r include release/$RELEASE_NAME/
-          cp build/*.a build/*.so build/*.dylib release/$RELEASE_NAME/ 2>/dev/null || true
+          cp -r lib/include release/$RELEASE_NAME/
+          cp build/release/lib/*.a build/release/lib/*.so build/release/lib/*.dylib release/$RELEASE_NAME/ 2>/dev/null || true
           tar -czf "release-$RELEASE_NAME.tar.gz" -C release/$RELEASE_NAME .
 
       # Package binaries (Windows MSVC)
@@ -156,8 +160,8 @@ jobs:
         run: |
           set RELEASE_NAME=library-%matrix.os%-%matrix.arch%-%matrix.compiler%
           mkdir release\%RELEASE_NAME%
-          xcopy /E /I include release\%RELEASE_NAME%\include
-          xcopy /Y build\Release\*.lib build\Release\*.dll release\%RELEASE_NAME%\
+          xcopy /E /I lib\include release\%RELEASE_NAME%\include
+          xcopy /Y build\release\lib\*.lib build\release\lib\*.dll release\%RELEASE_NAME%\
           powershell Compress-Archive -Path release\%RELEASE_NAME%\* -DestinationPath release-%RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
@@ -167,8 +171,8 @@ jobs:
         run: |
           RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
           mkdir -p release/$RELEASE_NAME
-          cp -r include release/$RELEASE_NAME/
-          cp build/*.a build/*.dll release/$RELEASE_NAME/ 2>/dev/null || true
+          cp -r lib/include release/$RELEASE_NAME/
+          cp build/release/lib/*.a build/release/lib/*.dll release/$RELEASE_NAME/ 2>/dev/null || true
           7z a "release-$RELEASE_NAME.zip" release/$RELEASE_NAME
 
       - name: Upload artifacts to GitHub Release
