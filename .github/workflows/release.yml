@@ -4,8 +4,13 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   build-and-release:
+    permissions:
+      contents: write
     runs-on: ${{ matrix.os }}
 
     strategy:
