@@ -19,9 +19,9 @@ SET_TARGET_PROPERTIES(libsodium PROPERTIES POSITION_INDEPENDENT_CODE ON)
 SET_TARGET_PROPERTIES(libsodium PROPERTIES C_CLANG_TIDY "")
 SET_TARGET_PROPERTIES(libsodium PROPERTIES CXX_CLANG_TIDY "")
 if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
-  target_compile_options(libsodium PRIVATE -w)
+  TARGET_COMPILE_OPTIONS(libsodium PRIVATE -w)
 elseif (CMAKE_C_COMPILER_ID MATCHES "MSVC")
-  target_compile_options(libsodium PRIVATE /W0)
+  TARGET_COMPILE_OPTIONS(libsodium PRIVATE /W0)
 endif()
 
 # Add GMP mini
@@ -142,17 +142,17 @@ ENDIF ()
 
 IF (CMAKE_BUILD_TYPE STREQUAL "Fuzz")
   # Set compiler to Clang explicitly
-  set(CMAKE_C_COMPILER "clang")
-  set(CMAKE_CXX_COMPILER "clang++")
+  SET(CMAKE_C_COMPILER "clang")
+  SET(CMAKE_CXX_COMPILER "clang++")
 
   # Define additional flags for fuzzing
-  set(CLANG_COMPILE_FLAGS "-g -O1 -fsanitize=fuzzer,address -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage")
-  set(CLANG_LINK_FLAGS "-fsanitize=fuzzer,address -fprofile-instr-generate --coverage")
+  SET(CLANG_COMPILE_FLAGS "-g -O1 -fsanitize=fuzzer,address -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage")
+  SET(CLANG_LINK_FLAGS "-fsanitize=fuzzer,address -fprofile-instr-generate --coverage")
 
   # Append the fuzzing flags to the existing flags
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_COMPILE_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_COMPILE_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_COMPILE_FLAGS}")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
 ENDIF ()
 
 # Pre-compiled header support

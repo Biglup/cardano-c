@@ -4,7 +4,7 @@ PROJECT (cardano-c C)
 SET(PROJECT_NAME "cardano-c")
 
 # Option that the user can optionally select
-OPTION (TESTING_ENABLED "Enables unit test build." ON)
+OPTION (TESTING_ENABLED "Enables unit test build." OFF)
 OPTION (DOXYGEN_ENABLED "Build documentation" OFF)
 OPTION (EXAMPLES_ENABLED "Build examples" OFF)
 
