@@ -2,7 +2,7 @@ name: Generate Release
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 permissions:
   contents: write  # Grant write permission to contents for the GITHUB_TOKEN
@@ -215,6 +215,8 @@ jobs:
       - name: Upload artifacts to GitHub Release (Unix)
         if: runner.os != 'Windows'
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: release-${{ env.RELEASE_NAME }}.tar.gz
@@ -225,6 +227,8 @@ jobs:
       - name: Upload artifacts to GitHub Release (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: release-${{ env.RELEASE_NAME }}.zip
