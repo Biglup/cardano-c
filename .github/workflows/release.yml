@@ -39,6 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Read version on Unix-based systems
       - name: Read version (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -49,6 +50,7 @@ jobs:
           echo "VERSION_PATCH=$VERSION_PATCH" >> $GITHUB_ENV
           echo "VERSION=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH" >> $GITHUB_ENV
 
+      # Read version on Windows systems
       - name: Read version (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -64,6 +66,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
 
+      # Install dependencies for Unix
       - name: Install dependencies (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -78,6 +81,7 @@ jobs:
             cmake --version
           fi
 
+      # Install dependencies for Windows
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -91,6 +95,12 @@ jobs:
             "C:\tools\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
 
+      # Setup MSBuild environment for MSVC
+      - name: Setup MSBuild
+        if: runner.os == 'Windows' && matrix.compiler == 'msvc'
+        uses: microsoft/setup-msbuild@v1
+
+      # Build on Unix systems
       - name: Build (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -107,48 +117,68 @@ jobs:
           esac
           cmake --build . --config Release
 
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
+      # Build on Windows systems
+      - name: Build (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.compiler == 'msvc'
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 16 2019" -A x64 -DVERSION=%VERSION% ..
+          cmake --build . --config Release
+
+      - name: Build (Windows MinGW)
+        if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
           mkdir build
           cd build
-          if [[ "${{ matrix.compiler }}" == "msvc" ]]; then
-            cmake -G "Visual Studio 16 2019" -A x64 -DVERSION=${{ env.VERSION }} ..
-            cmake --build . --config Release
-          elif [[ "${{ matrix.compiler }}" == "mingw" ]]; then
-            cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
-            cmake --build . --config Release
-          fi
+          cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . --config Release
 
+      # Package binaries (Unix)
       - name: Package binaries (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p release/${{ env.RELEASE_NAME }}
-          cp -r include release/${{ env.RELEASE_NAME }}/
-          cp build/*.a build/*.so build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
-          tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
+          RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
+          mkdir -p release/$RELEASE_NAME
+          cp -r include release/$RELEASE_NAME/
+          cp build/*.a build/*.so build/*.dylib release/$RELEASE_NAME/ 2>/dev/null || true
+          tar -czf "release-$RELEASE_NAME.tar.gz" -C release/$RELEASE_NAME .
 
-      - name: Package binaries (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+      # Package binaries (Windows MSVC)
+      - name: Package binaries (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.compiler == 'msvc'
+        shell: cmd
         run: |
-          mkdir -p release\${{ env.RELEASE_NAME }}
-          Copy-Item -Recurse include release\${{ env.RELEASE_NAME }}\include
-          Copy-Item build\*.dll, build\*.lib release\${{ env.RELEASE_NAME }} -ErrorAction SilentlyContinue
-          Compress-Archive -Path release\${{ env.RELEASE_NAME }}\* -DestinationPath "release-${{ env.RELEASE_NAME }}.zip"
+          set RELEASE_NAME=library-%matrix.os%-%matrix.arch%-%matrix.compiler%
+          mkdir release\%RELEASE_NAME%
+          xcopy /E /I include release\%RELEASE_NAME%\include
+          xcopy /Y build\Release\*.lib build\Release\*.dll release\%RELEASE_NAME%\
+          powershell Compress-Archive -Path release\%RELEASE_NAME%\* -DestinationPath release-%RELEASE_NAME%.zip
+
+      # Package binaries (Windows MinGW)
+      - name: Package binaries (Windows MinGW)
+        if: runner.os == 'Windows' && matrix.compiler == 'mingw'
+        shell: bash
+        run: |
+          RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
+          mkdir -p release/$RELEASE_NAME
+          cp -r include release/$RELEASE_NAME/
+          cp build/*.a build/*.dll release/$RELEASE_NAME/ 2>/dev/null || true
+          7z a "release-$RELEASE_NAME.zip" release/$RELEASE_NAME
 
       - name: Upload artifacts to GitHub Release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: |
-            release-${{ env.RELEASE_NAME }}.zip
-            release-${{ env.RELEASE_NAME }}.tar.gz
+            release-*.zip
+            release-*.tar.gz
           asset_name: |
-            release-${{ env.RELEASE_NAME }}.zip
-            release-${{ env.RELEASE_NAME }}.tar.gz
+            release-*.zip
+            release-*.tar.gz
           asset_content_type: |
             application/zip
             application/gzip
