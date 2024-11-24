@@ -66,6 +66,10 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
 
+      - name: Set Release Name
+        run: |
+          echo "RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
+
       # Install dependencies for Unix
       - name: Install dependencies (Unix)
         if: runner.os != 'Windows'
@@ -111,10 +115,10 @@ jobs:
           cd build
           case "${{ matrix.arch }}" in
             arm64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
             x86_64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
           esac
           cmake --build . --config Release
@@ -127,7 +131,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 -DVERSION_MAJOR=%VERSION_MAJOR% -DVERSION_MINOR=%VERSION_MINOR% -DVERSION_PATCH=%VERSION_PATCH% ..
+          cmake -G "Visual Studio 17 2022" -A x64 -DVERSION=%VERSION% ..
           cmake --build . --config Release
           cd ..
 
@@ -138,7 +142,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "MinGW Makefiles" -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
+          cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
           cmake --build . --config Release
           cd ..
 
@@ -147,21 +151,20 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
-          mkdir -p release/$RELEASE_NAME
-          cp -r lib/include release/$RELEASE_NAME/
-          cp build/release/lib/*.a build/release/lib/*.so build/release/lib/*.dylib release/$RELEASE_NAME/ 2>/dev/null || true
-          tar -czf "release-$RELEASE_NAME.tar.gz" -C release/$RELEASE_NAME .
+          mkdir -p release/${{ env.RELEASE_NAME }}
+          cp -r lib/include release/${{ env.RELEASE_NAME }}/
+          cp build/*.a build/*.so build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
+          tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
 
       # Package binaries (Windows MSVC)
       - name: Package binaries (Windows MSVC)
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         shell: cmd
         run: |
-          set RELEASE_NAME=library-%matrix.os%-%matrix.arch%-%matrix.compiler%
+          set RELEASE_NAME=%RELEASE_NAME%
           mkdir release\%RELEASE_NAME%
           xcopy /E /I lib\include release\%RELEASE_NAME%\include
-          xcopy /Y build\release\lib\*.lib build\release\lib\*.dll release\%RELEASE_NAME%\
+          xcopy /Y build\Release\*.lib build\Release\*.dll release\%RELEASE_NAME%\
           powershell Compress-Archive -Path release\%RELEASE_NAME%\* -DestinationPath release-%RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
@@ -169,22 +172,27 @@ jobs:
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
-          RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
-          mkdir -p release/$RELEASE_NAME
-          cp -r lib/include release/$RELEASE_NAME/
-          cp build/release/lib/*.a build/release/lib/*.dll release/$RELEASE_NAME/ 2>/dev/null || true
-          7z a "release-$RELEASE_NAME.zip" release/$RELEASE_NAME
+          mkdir -p release/${{ env.RELEASE_NAME }}
+          cp -r lib/include release/${{ env.RELEASE_NAME }}/
+          cp build/*.a build/*.dll release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
+          7z a "release-${{ env.RELEASE_NAME }}.zip" release/${{ env.RELEASE_NAME }}
 
-      - name: Upload artifacts to GitHub Release
+      # Upload artifacts to GitHub Release (Unix)
+      - name: Upload artifacts to GitHub Release (Unix)
+        if: runner.os != 'Windows'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: |
-            release-*.zip
-            release-*.tar.gz
-          asset_name: |
-            release-*.zip
-            release-*.tar.gz
-          asset_content_type: |
-            application/zip
-            application/gzip
+          asset_path: release-${{ env.RELEASE_NAME }}.tar.gz
+          asset_name: release-${{ env.RELEASE_NAME }}.tar.gz
+          asset_content_type: application/gzip
+
+      # Upload artifacts to GitHub Release (Windows)
+      - name: Upload artifacts to GitHub Release (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: release-${{ env.RELEASE_NAME }}.zip
+          asset_name: release-${{ env.RELEASE_NAME }}.zip
+          asset_content_type: application/zip
