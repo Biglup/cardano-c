@@ -124,8 +124,6 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p build
-          cd build
           case "${{ matrix.arch }}" in
             arm64)
               cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
@@ -133,7 +131,7 @@ jobs:
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
                 -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
                 -DCMAKE_BUILD_TYPE=Release \
-                ..
+                .
               ;;
             x86_64)
               cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
@@ -141,42 +139,35 @@ jobs:
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
                 -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
                 -DCMAKE_BUILD_TYPE=Release \
-                ..
+                .
               ;;
           esac
           cmake --build . --config Release
-          cd ..  # Return to repository root
 
       # Build on Windows MSVC
       - name: Build (Windows MSVC)
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         shell: cmd
         run: |
-          mkdir build
-          cd build
           cmake -G "Visual Studio 17 2022" -A x64 ^
             -DVERSION_MAJOR=%VERSION_MAJOR% ^
             -DVERSION_MINOR=%VERSION_MINOR% ^
             -DVERSION_PATCH=%VERSION_PATCH% ^
-            ..
+            .
           cmake --build . --config Release
-          cd ..
 
       # Build on Windows MinGW
       - name: Build (Windows MinGW)
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
-          mkdir -p build
-          cd build
           cmake -G "MinGW Makefiles" \
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
             -DCMAKE_BUILD_TYPE=Release \
-            ..
+            .
           cmake --build . --config Release
-          cd ..
 
       # Package binaries (Unix)
       - name: Package binaries (Unix)
