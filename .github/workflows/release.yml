@@ -10,9 +10,28 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [x86_64, i386, arm64, armv7, armv6]
-        compiler: [gcc, msvc, mingw]
+        include:
+          # Ubuntu
+          - os: ubuntu-latest
+            arch: x86_64
+            compiler: gcc
+          - os: ubuntu-latest
+            arch: arm64
+            compiler: gcc
+          # macOS
+          - os: macos-latest
+            arch: x86_64
+            compiler: gcc
+          - os: macos-latest
+            arch: arm64
+            compiler: gcc
+          # Windows
+          - os: windows-latest
+            arch: x86_64
+            compiler: msvc
+          - os: windows-latest
+            arch: x86_64
+            compiler: mingw
 
     name: Build on ${{ matrix.os }} for ${{ matrix.arch }} using ${{ matrix.compiler }}
 
@@ -35,9 +54,6 @@ jobs:
             sudo apt-get update
             case "${{ matrix.arch }}" in
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
-              armv7) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
-              armv6) sudo apt-get install -y gcc-arm-linux-gnueabi ;;
-              i386) sudo apt-get install -y gcc-multilib ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             brew install cmake
@@ -54,15 +70,6 @@ jobs:
           case "${{ matrix.arch }}" in
             arm64)
               cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
-              ;;
-            armv7)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=armv7 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
-              ;;
-            armv6)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=arm -DCMAKE_C_COMPILER=arm-linux-gnueabi-gcc -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
-              ;;
-            i386)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=i386 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
             x86_64)
               if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "msvc" ]]; then
@@ -95,13 +102,9 @@ jobs:
           asset_path: |
             release-*.zip
             release-*.tar.gz
-            source-*.zip
-            source-*.tar.gz
           asset_name: |
             release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.zip
             release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.tar.gz
-            source-${{ env.VERSION }}.zip
-            source-${{ env.VERSION }}.tar.gz
           asset_content_type: |
             application/zip
             application/gzip
