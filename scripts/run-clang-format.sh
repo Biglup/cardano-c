@@ -41,7 +41,7 @@ THIS_DIR="$(dirname "$THIS_PATH")"
 
 # Find all files in THIS_DIR which end in .c or .h as specified
 # in the regular expression just below
-FILE_LIST="$(find ./lib -name "*.h" -o -name "*.c" -o -name "*.cpp" | sed 's| |\\ |g')"
+FILE_LIST="$(find ./lib -path ./lib/external -prune -o \( -name "*.h" -o -name "*.c" -o -name "*.cpp" \) -print | sed 's| |\\ |g')"
 
 # Format each file.
 # - NB: do NOT put quotes around `$FILE_LIST` below or else the `clang-format` command will

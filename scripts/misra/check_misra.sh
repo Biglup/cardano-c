@@ -39,6 +39,7 @@ mkdir -p "$out_folder"
 cppcheck_parameters=( --inline-suppr
                       --language=c
                       -I "$source_folder/include"
+                      --suppress=*:*external\*
                       --addon="$script_folder/misra.json"
                       --suppressions-list="$script_folder/suppressions"
                       --cppcheck-build-dir="$out_folder"

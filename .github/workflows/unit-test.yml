@@ -12,39 +12,6 @@ jobs:
           sudo apt install libgtest-dev
           sudo apt install clang-tidy
 
-      - name: Setup Sodium
-        run: |
-          cd $(mktemp -d)
-          wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.19.tar.gz -O sodium.tar.gz
-          tar -xzf sodium.tar.gz
-          cp -rp ./libsodium-stable/* .
-          ./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --enable-shared --with-pic
-          make && make check
-          sudo make install
-          cd -
-
-      - name: Setup JSON-C
-        run: |
-          cd $(mktemp -d)
-          wget https://github.com/json-c/json-c/archive/refs/tags/json-c-0.17-20230812.tar.gz -O json-c.tar.gz
-          tar -xzf json-c.tar.gz
-          cd ./json-c-json-c-0.17-20230812
-          cmake .
-          make
-          sudo make install
-          cd -
-
-      - name: Setup GMP
-        run: |
-          cd $(mktemp -d)
-          wget https://storage.googleapis.com/biglup/gmp-6.2.1.tar.xz -O gmp.tar.xz
-          tar Jxf gmp.tar.xz
-          cd ./gmp-6.2.1
-          ./configure CFLAGS="-fPIC" CXXFLAGS="-fPIC" --enable-static=yes --enable-shared=no --with-pic
-          make -j$(nproc)
-          sudo make install
-          cd -
-
       - name: Setup Gtest
         run: |
           cd $(mktemp -d)
@@ -69,7 +36,10 @@ jobs:
           ctest -T Coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        with:
+          exclude: lib/external
+          codecov_yml_path: 'codecov.yml'
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   build_and_unit_tests_big_endian:
@@ -90,39 +60,6 @@ jobs:
           sudo apt install libgtest-dev
           sudo apt install clang-tidy
           sudo apt install m4
-
-      - name: Setup Sodium
-        run: |
-          cd $(mktemp -d)
-          wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.19.tar.gz -O sodium.tar.gz
-          tar -xzf sodium.tar.gz
-          cp -rp ./libsodium-stable/* .
-          ./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --enable-shared --with-pic
-          make && make check
-          sudo make install
-          cd -
-
-      - name: Setup JSON-C
-        run: |
-          cd $(mktemp -d)
-          wget https://github.com/json-c/json-c/archive/refs/tags/json-c-0.17-20230812.tar.gz -O json-c.tar.gz
-          tar -xzf json-c.tar.gz
-          cd ./json-c-json-c-0.17-20230812
-          cmake .
-          make
-          sudo make install
-          cd -
-
-      - name: Setup GMP
-        run: |
-          cd $(mktemp -d)
-          wget https://storage.googleapis.com/biglup/gmp-6.2.1.tar.xz -O gmp.tar.xz
-          tar Jxf gmp.tar.xz
-          cd ./gmp-6.2.1
-          ./configure CFLAGS="-fPIC" CXXFLAGS="-fPIC" --enable-static=yes --enable-shared=no --with-pic
-          make -j$(nproc)
-          sudo make install
-          cd -
 
       - name: Setup Gtest
         run: |

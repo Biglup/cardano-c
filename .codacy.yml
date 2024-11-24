@@ -10,3 +10,4 @@ exclude_paths:
   - "project_catalyst/*"
   - "cmake/*"
   - "assets/*"
+  - "lib/external/*"

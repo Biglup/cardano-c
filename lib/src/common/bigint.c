@@ -28,10 +28,9 @@
 #include "../allocators.h"
 #include "../string_safe.h"
 
+#include "../external/gmp/mini-gmp.h"
+
 #include <assert.h>
-#include <gmp.h>
-#include <math.h>
-#include <string.h>
 
 /* STRUCTURES ****************************************************************/
 
@@ -140,6 +139,7 @@ cardano_bigint_from_string(const char* string, const size_t size, const int32_t 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
+  // cppcheck-suppress misra-c2012-11.8; Reason: False positive.
   int ret = mpz_init_set_str((*bigint)->mpz, string, base);
 
   if (ret != 0)
@@ -311,7 +311,7 @@ cardano_bigint_to_unsigned_int(const cardano_bigint_t* bigint)
 size_t
 cardano_bigint_get_bytes_size(const cardano_bigint_t* bigint)
 {
-  return (mpz_sizeinbase(bigint->mpz, 2) + 7) / 8;
+  return (mpz_sizeinbase(bigint->mpz, 2) + 7U) / 8U;
 }
 
 cardano_error_t
@@ -639,7 +639,8 @@ cardano_bigint_bit_count(const cardano_bigint_t* bigint)
 
   while (mpz_cmp_ui(tmp, 0) != 0)
   {
-    if (mpz_odd_p(tmp) != 0)
+    // cppcheck-suppress misra-c2012-10.4; Reason: False positive.
+    if (((int32_t)mpz_odd_p(tmp)) != 0)
     {
       ++count;
     }
@@ -730,7 +731,7 @@ cardano_bigint_shift_right(
     return;
   }
 
-  mpz_div_2exp(result->mpz, n->mpz, bits);
+  mpz_fdiv_q_2exp(result->mpz, n->mpz, bits);
 }
 
 bool

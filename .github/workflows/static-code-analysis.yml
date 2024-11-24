@@ -21,9 +21,6 @@ jobs:
           sudo apt install python3-pip
           sudo apt install build-essential
           sudo apt install cmake
-          sudo apt install libsodium-dev
-          sudo apt install libjson-c-dev
-          sudo apt install libgmp-dev
           sudo apt install m4
           sudo apt install doxygen
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
@@ -38,7 +35,7 @@ jobs:
           echo "Style check complete"
 
       - name: Check General Rules
-        run: cppcheck --enable=all -I "./lib/include"  --error-exitcode=1 --suppress=missingIncludeSystem ./lib
+        run: cppcheck --enable=all -I "./lib/include" -ilib/external --error-exitcode=1 --suppress=missingIncludeSystem ./lib
 
       - name: Check MISRA 2012 Rules
         env:
