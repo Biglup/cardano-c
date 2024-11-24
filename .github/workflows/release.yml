@@ -39,8 +39,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Read version
-        id: version
+      # Read version on Unix-based systems
+      - name: Read version (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
           source VERSION
           echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
@@ -48,7 +50,24 @@ jobs:
           echo "VERSION_PATCH=$VERSION_PATCH" >> $GITHUB_ENV
           echo "VERSION=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH" >> $GITHUB_ENV
 
+      # Read version on Windows systems
+      - name: Read version (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $versionContent = Get-Content VERSION
+          foreach ($line in $versionContent) {
+            if ($line -match 'VERSION_MAJOR=(.*)') { $env:VERSION_MAJOR = $Matches[1] }
+            if ($line -match 'VERSION_MINOR=(.*)') { $env:VERSION_MINOR = $Matches[1] }
+            if ($line -match 'VERSION_PATCH=(.*)') { $env:VERSION_PATCH = $Matches[1] }
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION_MAJOR=$($env:VERSION_MAJOR)"
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION_MINOR=$($env:VERSION_MINOR)"
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
+
       - name: Install dependencies
+        shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt-get update
@@ -56,9 +75,8 @@ jobs:
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $GITHUB_ENV
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-            brew install cmake
+            # No need to install cmake, it's already installed
+            cmake --version
           elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             if [[ "${{ matrix.compiler }}" == "mingw" ]]; then
               powershell -Command "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
@@ -73,15 +91,15 @@ jobs:
           cd build
           case "${{ matrix.arch }}" in
             arm64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
+              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               ;;
             x86_64)
               if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "msvc" ]]; then
-                cmake -G "Visual Studio 16 2019" -A x64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} ..
+                cmake -G "Visual Studio 16 2019" -A x64 -DVERSION=${{ env.VERSION }} ..
               elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.compiler }}" == "mingw" ]]; then
-                cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} ..
+                cmake -G "MinGW Makefiles" -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               else
-                cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} -DVERSION_MINOR=${{ env.VERSION_MINOR }} -DVERSION_PATCH=${{ env.VERSION_PATCH }} -DCMAKE_BUILD_TYPE=Release ..
+                cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DVERSION=${{ env.VERSION }} -DCMAKE_BUILD_TYPE=Release ..
               fi
               ;;
           esac
@@ -89,14 +107,14 @@ jobs:
 
       - name: Package binaries
         run: |
-          mkdir -p release/${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
-          cp -r include release/${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}/
-          cp build/*.a build/*.so build/*.dll build/*.lib build/*.dylib release/${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}/ 2>/dev/null || true
+          mkdir -p release/${{ env.RELEASE_NAME }}
+          cp -r include release/${{ env.RELEASE_NAME }}/
+          cp build/*.a build/*.so build/*.dll build/*.lib build/*.dylib release/${{ env.RELEASE_NAME }}/ 2>/dev/null || true
           
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            zip -r "release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.zip" release/${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}
+            7z a "release-${{ env.RELEASE_NAME }}.zip" release/${{ env.RELEASE_NAME }}
           else
-            tar -czf "release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.tar.gz" -C release/${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }} .
+            tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
           fi
 
       - name: Upload artifacts to GitHub Release
@@ -104,11 +122,11 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: |
-            release-*.zip
-            release-*.tar.gz
+            release-${{ env.RELEASE_NAME }}.zip
+            release-${{ env.RELEASE_NAME }}.tar.gz
           asset_name: |
-            release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.zip
-            release-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}.tar.gz
+            release-${{ env.RELEASE_NAME }}.zip
+            release-${{ env.RELEASE_NAME }}.tar.gz
           asset_content_type: |
             application/zip
             application/gzip
