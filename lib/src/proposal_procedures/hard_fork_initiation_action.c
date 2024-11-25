@@ -137,7 +137,7 @@ cardano_hard_fork_initiation_action_from_cbor(cardano_cbor_reader_t* reader, car
 
   static const char* validator_name = "hard_fork_initiation_action";
 
-  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, EMBEDDED_GROUP_SIZE);
+  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

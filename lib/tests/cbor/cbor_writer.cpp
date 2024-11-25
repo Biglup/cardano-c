@@ -23,6 +23,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#pragma warning(disable : 4566)
+
 #include <cardano/cbor/cbor_writer.h>
 
 #include "../allocators_helpers.h"

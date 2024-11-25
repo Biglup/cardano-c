@@ -88,7 +88,7 @@ get_passphrase(byte_t* buffer, const size_t buffer_len)
 
   (void)memcpy(buffer, PASSWORD, strlen(PASSWORD));
 
-  return strlen(PASSWORD);
+  return (int32_t)strlen(PASSWORD);
 }
 
 /**
@@ -113,7 +113,11 @@ from_hex_to_buffer(const char* hex, byte_t* buffer, const size_t buffer_length)
 {
   for (size_t i = 0; i < buffer_length; ++i)
   {
+#ifdef _MSC_VER
+    sscanf_s(&hex[2 * i], "%2hhx", &buffer[i]);
+#else
     sscanf(&hex[2 * i], "%2hhx", &buffer[i]);
+#endif
   }
 }
 
@@ -124,12 +128,12 @@ TEST(cardano_software_secure_key_handler_new, canCreateABip32SecureKeyHandler)
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -145,7 +149,7 @@ TEST(cardano_software_secure_key_handler_new, canCreateABip32SecureKeyHandler)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_bip32_public_key_get_hex_size(extended_account_0_pub_key);
-  char         hex[hex_size];
+  char         hex[1024];
 
   error = cardano_bip32_public_key_to_hex(extended_account_0_pub_key, hex, hex_size);
 
@@ -173,12 +177,12 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, canSignTransact
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -215,14 +219,14 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, canSignTransact
     EXPECT_NE(key, nullptr);
 
     const size_t sig_hex_size = cardano_ed25519_signature_get_hex_size(signature);
-    char         sig_hex[sig_hex_size];
+    char         sig_hex[1024];
 
     error = cardano_ed25519_signature_to_hex(signature, sig_hex, sig_hex_size);
 
     EXPECT_EQ(error, CARDANO_SUCCESS);
 
     const size_t key_hex_size = cardano_ed25519_public_key_get_hex_size(key);
-    char         key_hex[key_hex_size];
+    char         key_hex[1024];
 
     error = cardano_ed25519_public_key_to_hex(key, key_hex, key_hex_size);
 
@@ -257,12 +261,12 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, failsWithInvali
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_invalid_passphrase,
@@ -294,12 +298,12 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeBip32SecureKeyHa
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -328,7 +332,7 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeBip32SecureKeyHa
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_bip32_public_key_get_hex_size(extended_account_0_pub_key);
-  char         hex[hex_size];
+  char         hex[1024];
 
   error = cardano_bip32_public_key_to_hex(extended_account_0_pub_key, hex, hex_size);
 
@@ -348,12 +352,12 @@ TEST(cardano_secure_key_handler_bip32_get_extended_account_public_key, returnsEr
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_invalid_passphrase,
@@ -378,12 +382,12 @@ TEST(cardano_software_secure_key_handler_new, canCreateAEd25519ExtendedSecureKey
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -404,7 +408,7 @@ TEST(cardano_software_secure_key_handler_new, canCreateAEd25519ExtendedSecureKey
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_ed25519_public_key_get_hex_size(public_key);
-  char         hex[hex_size];
+  char         hex[1024];
 
   error = cardano_ed25519_public_key_to_hex(public_key, hex, hex_size);
 
@@ -432,12 +436,12 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, canSignTransa
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -471,14 +475,14 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, canSignTransa
   EXPECT_NE(key, nullptr);
 
   const size_t sig_hex_size = cardano_ed25519_signature_get_hex_size(signature);
-  char         sig_hex[sig_hex_size];
+  char         sig_hex[1024];
 
   error = cardano_ed25519_signature_to_hex(signature, sig_hex, sig_hex_size);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t key_hex_size = cardano_ed25519_public_key_get_hex_size(key);
-  char         key_hex[key_hex_size];
+  char         key_hex[1024];
 
   error = cardano_ed25519_public_key_to_hex(key, key_hex, key_hex_size);
 
@@ -512,12 +516,12 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, failsWhenPass
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -549,12 +553,12 @@ TEST(cardano_software_secure_key_handler_new, canCreateAEd25519NormalSecureKeyHa
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -575,7 +579,7 @@ TEST(cardano_software_secure_key_handler_new, canCreateAEd25519NormalSecureKeyHa
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_ed25519_public_key_get_hex_size(public_key);
-  char         hex[hex_size];
+  char         hex[1024];
 
   error = cardano_ed25519_public_key_to_hex(public_key, hex, hex_size);
 
@@ -594,12 +598,12 @@ TEST(cardano_secure_software_key_handler_ed25519_get_public_key, returnsErrorIfI
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -639,12 +643,12 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, canSignTransa
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_NOR_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, sizeof key_bytes, &private_key);
+  error = cardano_ed25519_private_key_from_normal_bytes(key_bytes, strlen(ED25519_NOR_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -678,14 +682,14 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, canSignTransa
   EXPECT_NE(key, nullptr);
 
   const size_t sig_hex_size = cardano_ed25519_signature_get_hex_size(signature);
-  char         sig_hex[sig_hex_size];
+  char         sig_hex[1024];
 
   error = cardano_ed25519_signature_to_hex(signature, sig_hex, sig_hex_size);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t key_hex_size = cardano_ed25519_public_key_get_hex_size(key);
-  char         key_hex[key_hex_size];
+  char         key_hex[1024];
 
   error = cardano_ed25519_public_key_to_hex(key, key_hex, key_hex_size);
 
@@ -710,12 +714,12 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeEd25519SecureKey
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -749,7 +753,7 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeEd25519SecureKey
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   const size_t hex_size = cardano_ed25519_public_key_get_hex_size(public_key);
-  char         hex[hex_size];
+  char         hex[1024];
 
   error = cardano_ed25519_public_key_to_hex(public_key, hex, hex_size);
 
@@ -806,12 +810,12 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfPasswordIsNull)
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     nullptr,
     0,
     &get_passphrase,
@@ -826,12 +830,12 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfPasswordIsNoNtullBut
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     0,
     &get_passphrase,
@@ -846,12 +850,12 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfGetPassphraseIsNull)
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     nullptr,
@@ -864,12 +868,12 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfGetPassphraseIsNull)
 TEST(cardano_software_secure_key_handler_new, returnsErrorIfKeyHandlerIsNull)
 {
   // Arrange
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -884,8 +888,8 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfMemoryAllocationFail
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   // Act
   reset_allocators_run_count();
@@ -893,7 +897,7 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfMemoryAllocationFail
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -907,7 +911,7 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfMemoryAllocationFail
 
   error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -942,12 +946,12 @@ TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfPasswordIsNu
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -970,12 +974,12 @@ TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfPasswordIsNo
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -998,12 +1002,12 @@ TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfGetPassphras
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -1024,12 +1028,12 @@ TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfGetPassphras
 TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfKeyHandlerIsNull)
 {
   // Arrange
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -1052,12 +1056,12 @@ TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfMemoryAlloca
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  cardano_error_t error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -1110,12 +1114,12 @@ TEST(cardano_software_secure_key_handler_serialize, returnsErrorIfBufferIsNull)
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -1138,12 +1142,12 @@ TEST(cardano_software_secure_key_handler_serialize, returnsErrorIfMemoryAllocati
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   cardano_error_t error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,
@@ -1192,7 +1196,7 @@ TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfGetPassphras
   // Arrange
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, sizeof strlen(SERIALIZED_BIP32_KEY_HANDLER));
+  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, strlen(SERIALIZED_BIP32_KEY_HANDLER));
 
   cardano_error_t error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), nullptr, &key_handler);
 
@@ -1206,7 +1210,7 @@ TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfGetPassphras
 TEST(cardano_software_secure_key_handler_deserialize, returnsErrorIfKeyHandlerIsNull)
 {
   // Arrange
-  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, sizeof strlen(SERIALIZED_BIP32_KEY_HANDLER));
+  cardano_buffer_t* buffer = cardano_buffer_from_hex(SERIALIZED_BIP32_KEY_HANDLER, strlen(SERIALIZED_BIP32_KEY_HANDLER));
 
   cardano_error_t error = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, nullptr);
 
@@ -1371,12 +1375,12 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, returnsErrorO
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t key_bytes[strlen(ED25519_PRIVATE_KEY_HEX) / 2];
-  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, sizeof key_bytes);
+  byte_t key_bytes[1024];
+  from_hex_to_buffer(ED25519_PRIVATE_KEY_HEX, key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2);
 
   cardano_ed25519_private_key_t* private_key = nullptr;
 
-  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, sizeof key_bytes, &private_key);
+  error = cardano_ed25519_private_key_from_extended_bytes(key_bytes, strlen(ED25519_PRIVATE_KEY_HEX) / 2, &private_key);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -1427,12 +1431,12 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnM
 
   cardano_secure_key_handler_t* key_handler = nullptr;
 
-  byte_t entropy_bytes[strlen(ENTROPY_BYTES) / 2];
-  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, sizeof entropy_bytes);
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
 
   error = cardano_software_secure_key_handler_new(
     entropy_bytes,
-    sizeof entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
     (const byte_t*)&PASSWORD[0],
     strlen(PASSWORD),
     &get_passphrase,

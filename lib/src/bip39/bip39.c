@@ -121,9 +121,11 @@ cardano_bip39_mnemonic_words_to_entropy(
     return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  size_t total_bits = word_count * BITS_PER_WORD;
-  byte_t bitstream[(total_bits + 7U) / 8U];
-  CARDANO_UNUSED(memset(bitstream, 0U, sizeof(bitstream)));
+  size_t total_bits    = word_count * BITS_PER_WORD;
+  size_t bitstram_size = (total_bits + 7U) / 8U;
+  byte_t bitstream[34] = { 0 };
+
+  CARDANO_UNUSED(memset(bitstream, 0U, bitstram_size));
 
   for (size_t i = 0U; i < word_count; i++)
   {

@@ -29,6 +29,7 @@
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 
 #include <gmock/gmock.h>
+#include <string_safe.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -57,7 +58,7 @@ cardano_provider_impl_new()
     context->base.last_error[0] = '\0';
 
     CARDANO_UNUSED(memset(context->key, 0, sizeof(context->key)));
-    CARDANO_UNUSED(memccpy((void*)&context->key[0], "This is a test key", strlen("This is a test key"), sizeof(context->key)));
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&context->key[0], sizeof(context->key), "This is a test key", sizeof(context->key)));
 
     impl.context = (cardano_object_t*)context;
   }

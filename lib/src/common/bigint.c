@@ -192,7 +192,7 @@ cardano_bigint_from_int(int64_t value, cardano_bigint_t** bigint)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  mpz_init_set_si((*bigint)->mpz, value);
+  mpz_init_set_si((*bigint)->mpz, (signed long)value);
 
   return CARDANO_SUCCESS;
 }
@@ -212,7 +212,7 @@ cardano_bigint_from_unsigned_int(uint64_t value, cardano_bigint_t** bigint)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  mpz_set_ui((*bigint)->mpz, value);
+  mpz_set_ui((*bigint)->mpz, (unsigned long)value);
 
   return CARDANO_SUCCESS;
 }
@@ -799,7 +799,7 @@ cardano_bigint_pow(const cardano_bigint_t* base, const uint64_t exponent, cardan
     return;
   }
 
-  mpz_pow_ui(result->mpz, base->mpz, exponent);
+  mpz_pow_ui(result->mpz, base->mpz, (unsigned long)exponent);
 }
 
 void

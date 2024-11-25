@@ -83,7 +83,7 @@ cardano_crypto_emip3_encrypt(
   byte_t key[32U] = { 0 };
 
   result = cardano_crypto_pbkdf2_hmac_sha512(
-    passphrase, passphrase_length, salt, SALT_LENGTH, PBKDF2_ITERATIONS, key, KEY_LENGTH);
+    passphrase, passphrase_length, salt, SALT_LENGTH, (uint32_t)PBKDF2_ITERATIONS, key, KEY_LENGTH);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -151,7 +151,7 @@ cardano_crypto_emip3_decrypt(
   byte_t key[32U] = { 0 };
 
   result = cardano_crypto_pbkdf2_hmac_sha512(
-    passphrase, passphrase_length, salt, SALT_LENGTH, PBKDF2_ITERATIONS, key, KEY_LENGTH);
+    passphrase, passphrase_length, salt, SALT_LENGTH, (uint32_t)PBKDF2_ITERATIONS, key, KEY_LENGTH);
 
   if (result != CARDANO_SUCCESS)
   {

@@ -25,6 +25,7 @@
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
+#include "../src/string_safe.h"
 
 #include <cardano/providers/provider.h>
 
@@ -57,7 +58,7 @@ cardano_provider_impl_new()
     context->base.last_error[0] = '\0';
 
     CARDANO_UNUSED(memset(context->key, 0, sizeof(context->key)));
-    CARDANO_UNUSED(memccpy((void*)&context->key[0], "This is a test key", strlen("This is a test key"), sizeof(context->key)));
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&context->key[0], sizeof(context->key), "This is a test key", strlen("This is a test key")));
 
     impl.context = (cardano_object_t*)context;
   }
@@ -147,13 +148,13 @@ cardano_empty_provider_impl_new()
     context->base.last_error[0] = '\0';
 
     CARDANO_UNUSED(memset(context->key, 0, sizeof(context->key)));
-    CARDANO_UNUSED(memccpy((void*)&context->key[0], "This is a test key", strlen("This is a test key"), sizeof(context->key)));
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&context->key[0], sizeof(context->key), "This is a test key", sizeof(context->key)));
 
     impl.context = (cardano_object_t*)context;
   }
 
   CARDANO_UNUSED(memset(impl.name, 0, sizeof(impl.name)));
-  CARDANO_UNUSED(memccpy((void*)&impl.name[0], "Empty Provider", strlen("Empty Provider"), sizeof(impl.name)));
+  CARDANO_UNUSED(cardano_safe_memcpy((void*)&impl.name[0], sizeof(context->key), "Empty Provider", sizeof(impl.name)));
 
   impl.post_transaction_to_chain      = NULL;
   impl.await_transaction_confirmation = NULL;

@@ -206,7 +206,7 @@ _cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data, co
   size_t  bytes_written = 0;
   byte_t  buffer[10]    = { 0 };
 
-  bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->slot, buffer, 10);
+  bytes_written = _cardano_pointer_address_variable_length_encode((uint32_t)address->stake_pointer->slot, buffer, 10);
 
   cardano_safe_memcpy(
     &data[total_bytes],
@@ -216,7 +216,7 @@ _cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data, co
 
   total_bytes += (int64_t)bytes_written;
 
-  bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->tx_index, buffer, 10);
+  bytes_written = _cardano_pointer_address_variable_length_encode((uint32_t)address->stake_pointer->tx_index, buffer, 10);
 
   cardano_safe_memcpy(
     &data[total_bytes],
@@ -226,7 +226,7 @@ _cardano_pack_pointer_address(const cardano_address_t* address, byte_t* data, co
 
   total_bytes += (int64_t)bytes_written;
 
-  bytes_written = _cardano_pointer_address_variable_length_encode(address->stake_pointer->cert_index, buffer, 10);
+  bytes_written = _cardano_pointer_address_variable_length_encode((uint32_t)address->stake_pointer->cert_index, buffer, 10);
 
   cardano_safe_memcpy(
     &data[total_bytes],

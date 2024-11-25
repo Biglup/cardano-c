@@ -161,7 +161,7 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
 
   static const char* validator_name = "redeemer";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, REDEEMER_EMBEDDED_GROUP_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)REDEEMER_EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

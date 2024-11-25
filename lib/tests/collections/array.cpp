@@ -27,6 +27,7 @@
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
+#include "../src/string_safe.h"
 
 #include <gmock/gmock.h>
 
@@ -81,7 +82,8 @@ ref_counted_string_new(const char* string)
   ref_counted_string->base.deallocator   = cardano_ref_counted_string_deallocate;
   ref_counted_string->string             = (char*)_cardano_malloc(strlen(string) + 1);
 
-  strcpy(ref_counted_string->string, string);
+  CARDANO_UNUSED(memset(ref_counted_string->string, 0, strlen(string) + 1));
+  cardano_safe_memcpy(ref_counted_string->string, strlen(string) + 1, string, strlen(string));
 
   return ref_counted_string;
 }

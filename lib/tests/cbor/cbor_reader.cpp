@@ -23,6 +23,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#pragma warning(disable : 4566)
+
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 
@@ -171,12 +173,12 @@ get_json_val(cardano_cbor_reader_t* reader)
 
       if (length > 0)
       {
-        for (size_t i = 0; i < length; ++i)
+        for (size_t i = 0; i < (size_t)length; ++i)
         {
           std::string key = get_json_val(reader);
           std::string val = get_json_val(reader);
           json            += "\"" + key + "\":" + val;
-          if (i < length - 1)
+          if (i < (size_t)length - 1)
           {
             json += ",";
           }
@@ -577,7 +579,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAwwayWithSevelraUnsignedNumber
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(length, 25);
 
-  for (size_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < (size_t)length; ++i)
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -622,7 +624,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAFixedSizeArrayWithUnsigned64b
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(length, 3);
 
-  for (size_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < (size_t)length; ++i)
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);

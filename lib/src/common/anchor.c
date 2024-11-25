@@ -252,7 +252,7 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
 
   static const char* validator_name = "anchor";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, ANCHOR_EMBEDDED_GROUP_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)ANCHOR_EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {
@@ -265,7 +265,7 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
     validator_name,
     reader,
     url,
-    ANCHOR_MAX_URL_LENGTH);
+    (uint32_t)ANCHOR_MAX_URL_LENGTH);
 
   if (read_uint_result != CARDANO_SUCCESS)
   {

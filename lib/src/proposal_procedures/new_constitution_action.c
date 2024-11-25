@@ -137,7 +137,7 @@ cardano_new_constitution_action_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   static const char* validator_name = "new_constitution_action";
 
-  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, EMBEDDED_GROUP_SIZE);
+  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

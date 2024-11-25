@@ -180,7 +180,7 @@ cardano_transaction_input_from_cbor(cardano_cbor_reader_t* reader, cardano_trans
 
   static const char* validator_name = "transaction_input";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, TRANSACTION_INPUT_ARRAY_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)TRANSACTION_INPUT_ARRAY_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

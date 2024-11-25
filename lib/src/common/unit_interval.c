@@ -213,7 +213,7 @@ cardano_unit_interval_from_cbor(cardano_cbor_reader_t* reader, cardano_unit_inte
     return expect_tag_result;
   }
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, UNIT_INTERVAL_EMBEDDED_GROUP_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)UNIT_INTERVAL_EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

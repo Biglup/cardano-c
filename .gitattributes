@@ -2,3 +2,5 @@ lib/tests/*/** linguist-vendored
 lib/tests/*/*.cpp linguist-vendored
 lib/tests/* linguist-vendored
 lib/tests/*.cpp linguist-vendored
+
+* text=auto

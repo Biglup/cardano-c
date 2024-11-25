@@ -187,7 +187,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
 
   static const char* validator_name = "mir_cert";
 
-  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, EMBEDDED_GROUP_SIZE);
+  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {
@@ -219,7 +219,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
     return clone_reader;
   }
 
-  expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, embedded_reader, EMBEDDED_GROUP_SIZE);
+  expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, embedded_reader, (uint32_t)EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

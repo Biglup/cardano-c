@@ -311,9 +311,9 @@ bip32_get_extended_account_public_key(
   }
 
   const uint32_t path[3] = {
-    cardano_bip32_harden(derivation_path.purpose),
-    cardano_bip32_harden(derivation_path.coin_type),
-    cardano_bip32_harden(derivation_path.account)
+    cardano_bip32_harden((uint32_t)derivation_path.purpose),
+    cardano_bip32_harden((uint32_t)derivation_path.coin_type),
+    cardano_bip32_harden((uint32_t)derivation_path.account)
   };
 
   result = cardano_bip32_private_key_derive(root_private_key, path, sizeof(path) / sizeof(uint32_t), &account_private_key);
@@ -453,11 +453,11 @@ bip32_sign_transaction(
     cardano_bip32_private_key_t*   bip32_private_key   = NULL;
 
     const uint32_t path[5] = {
-      cardano_bip32_harden(derivation_paths[i].purpose),
-      cardano_bip32_harden(derivation_paths[i].coin_type),
-      cardano_bip32_harden(derivation_paths[i].account),
-      derivation_paths[i].role,
-      derivation_paths[i].index
+      cardano_bip32_harden((uint32_t)derivation_paths[i].purpose),
+      cardano_bip32_harden((uint32_t)derivation_paths[i].coin_type),
+      cardano_bip32_harden((uint32_t)derivation_paths[i].account),
+      (uint32_t)derivation_paths[i].role,
+      (uint32_t)derivation_paths[i].index
     };
 
     result = cardano_bip32_private_key_derive(root_private_key, &path[0], 5, &bip32_private_key);

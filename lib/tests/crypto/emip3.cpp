@@ -55,7 +55,11 @@ from_hex_to_buffer(const char* hex, byte_t* buffer, const size_t bufferLength)
 {
   for (size_t i = 0; i < bufferLength; ++i)
   {
+#ifdef _MSC_VER
+    sscanf_s(&hex[2 * i], "%2hhx", &buffer[i]);
+#else
     sscanf(&hex[2 * i], "%2hhx", &buffer[i]);
+#endif
   }
 }
 
@@ -67,29 +71,29 @@ TEST(cardano_crypto_emip3_encrypt, correctlyComputesCipherForTestVectors)
   {
     const emip3_vectors_t* vector = &emip3_test_vectors[i];
 
-    byte_t plain_data[strlen(vector->hex_data) / 2];
-    from_hex_to_buffer(vector->hex_data, plain_data, sizeof plain_data);
+    byte_t plain_data[2048] = { 0 };
+    from_hex_to_buffer(vector->hex_data, plain_data, vector->hex_data_Length / 2);
 
-    byte_t data[strlen(vector->encrypted) / 2];
-    from_hex_to_buffer(vector->encrypted, data, sizeof data);
+    byte_t data[2048] = { 0 };
+    from_hex_to_buffer(vector->encrypted, data, strlen(vector->encrypted) / 2);
 
     cardano_buffer_t* encrypted_data = NULL;
-    ASSERT_EQ(cardano_crypto_emip3_encrypt(plain_data, sizeof plain_data, vector->password, vector->password_length, &encrypted_data), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_crypto_emip3_encrypt(plain_data, vector->hex_data_Length / 2, vector->password, vector->password_length, &encrypted_data), CARDANO_SUCCESS);
 
     cardano_buffer_t* decrypted_data = NULL;
     cardano_error_t   result         = cardano_crypto_emip3_decrypt(cardano_buffer_get_data(encrypted_data), cardano_buffer_get_size(encrypted_data), vector->password, vector->password_length, &decrypted_data);
 
     ASSERT_EQ(CARDANO_SUCCESS, result);
 
-    const size_t encrypted_data_length = cardano_buffer_get_hex_size(encrypted_data);
-    char         encrypted_data_hex[encrypted_data_length];
+    const size_t encrypted_data_length    = cardano_buffer_get_hex_size(encrypted_data);
+    char         encrypted_data_hex[2048] = { 0 };
 
     result = cardano_buffer_to_hex(encrypted_data, encrypted_data_hex, encrypted_data_length);
 
     ASSERT_EQ(CARDANO_SUCCESS, result);
 
-    const size_t decrypted_data_length = cardano_buffer_get_hex_size(decrypted_data);
-    char         decrypted_data_hex[decrypted_data_length];
+    const size_t decrypted_data_length    = cardano_buffer_get_hex_size(decrypted_data);
+    char         decrypted_data_hex[2048] = { 0 };
 
     result = cardano_buffer_to_hex(decrypted_data, decrypted_data_hex, decrypted_data_length);
 
@@ -108,18 +112,18 @@ TEST(cardano_crypto_emip3_decrypt, correctlyDecryptsCipherForTestVectors)
   {
     const emip3_vectors_t* vector = &emip3_test_vectors[i];
 
-    byte_t data[strlen(vector->encrypted) / 2];
-    from_hex_to_buffer(vector->encrypted, data, sizeof data);
+    byte_t data[2048] = { 0 };
+    from_hex_to_buffer(vector->encrypted, data, strlen(vector->encrypted) / 2);
 
     cardano_buffer_t* decrypted_data = NULL;
-    cardano_error_t   result         = cardano_crypto_emip3_decrypt(data, sizeof data, vector->password, vector->password_length, &decrypted_data);
+    cardano_error_t   result         = cardano_crypto_emip3_decrypt(data, strlen(vector->encrypted) / 2, vector->password, vector->password_length, &decrypted_data);
 
     ASSERT_EQ(CARDANO_SUCCESS, result);
 
-    const size_t decrypted_data_length = cardano_buffer_get_hex_size(decrypted_data);
-    char         decrypted_data_hex[decrypted_data_length];
+    char decrypted_data_hex[2048] = { 0 };
 
-    result = cardano_buffer_to_hex(decrypted_data, decrypted_data_hex, decrypted_data_length);
+    const size_t decrypted_data_length = cardano_buffer_get_hex_size(decrypted_data);
+    result                             = cardano_buffer_to_hex(decrypted_data, decrypted_data_hex, decrypted_data_length);
 
     cardano_buffer_unref(&decrypted_data);
 
