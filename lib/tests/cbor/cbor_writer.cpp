@@ -797,14 +797,19 @@ TEST(cardano_cbor_writer_write_textstring, canWriteFixedLenghtStrings)
   // Arrange
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
+  // On Windows UTF-8 literals cause issues, so we use hex values instead.
+  const std::string vector1 = std::string("\xC3\xBC");     // \u00FC
+  const std::string vector2 = std::string("\xE6\xB0\xB4"); // \u6C34
+  const std::string vector3 = std::string("\xCE\xBB");     // \u03BB
+
   // Assert
   test_text_string(writer, "", "60");
   test_text_string(writer, "a", "6161");
   test_text_string(writer, "IETF", "6449455446");
   test_text_string(writer, "\"\\", "62225c");
-  test_text_string(writer, "\u00FC", "62c3bc");
-  test_text_string(writer, "\u6C34", "63e6b0b4");
-  test_text_string(writer, "\u03BB", "62cebb");
+  test_text_string(writer, vector1.c_str(), "62c3bc");
+  test_text_string(writer, vector2.c_str(), "63e6b0b4");
+  test_text_string(writer, vector3.c_str(), "62cebb");
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
