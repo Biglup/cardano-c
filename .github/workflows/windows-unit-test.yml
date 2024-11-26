@@ -1,0 +1,80 @@
+name: Windows Build and Unit Tests
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_test_windows_msvc_64bit:
+    runs-on: windows-latest
+    name: Build and Test (64-bit)
+    steps:
+      - name: Setup MSVC environment (64-bit)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Gtest
+        shell: bash
+        run: |
+          mkdir -p gtest-build
+          cd gtest-build
+          curl -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+          tar -xf googletest-release-1.11.0.zip
+          cd googletest-release-1.11.0
+          cmake -G "Visual Studio 17 2022" -A x64 \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
+            -Dgtest_force_shared_crt=ON \
+            -DCMAKE_INSTALL_PREFIX="C:/googletest"
+          cmake --build . --config Debug
+          cmake --install . --config Debug
+          cd ../..
+
+      - name: Build Project (64-bit)
+        shell: cmd
+        run: |
+          cmake -G "Visual Studio 17 2022" -A x64 -DTESTING_ENABLED=ON .
+          cmake --build . --config Debug
+
+      - name: Run Unit Tests (64-bit)
+        run: |
+          ctest -C Debug --output-on-failure
+
+  build_and_test_windows_msvc_32bit:
+    runs-on: windows-latest
+    name: Build and Test (32-bit)
+    steps:
+      - name: Setup MSVC environment (32-bit)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Gtest
+        shell: bash
+        run: |
+          mkdir -p gtest-build
+          cd gtest-build
+          curl -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+          tar -xf googletest-release-1.11.0.zip
+          cd googletest-release-1.11.0
+          cmake -G "Visual Studio 17 2022" -A Win32 \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
+            -Dgtest_force_shared_crt=ON \
+            -DCMAKE_INSTALL_PREFIX="C:/googletest"
+          cmake --build . --config Debug
+          cmake --install . --config Debug
+          cd ../..
+
+      - name: Build Project (32-bit)
+        shell: cmd
+        run: |
+          cmake -G "Visual Studio 17 2022" -A Win32 -DTESTING_ENABLED=ON .
+          cmake --build . --config Debug
+
+      - name: Run Unit Tests (32-bit)
+        run: |
+          ctest -C Debug --output-on-failure

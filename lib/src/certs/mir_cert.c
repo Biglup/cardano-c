@@ -228,7 +228,7 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
     return expect_array_result;
   }
 
-  size_t          pot      = 0U;
+  uint64_t        pot      = 0U;
   cardano_error_t read_pot = cardano_cbor_validate_uint_in_range(
     validator_name,
     "pot",

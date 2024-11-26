@@ -536,7 +536,7 @@ handle_entropy(cardano_cbor_reader_t* reader, void* field_ptr)
     return read_extra_entropy_array;
   }
 
-  size_t entropy_key = 0U;
+  uint64_t entropy_key = 0U;
 
   cardano_error_t read_extra_entropy = cardano_cbor_reader_read_uint(reader, &entropy_key);
 

@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-  contents: write  # Grant write permission to contents for the GITHUB_TOKEN
+  contents: write
 
 jobs:
   build-and-release:
@@ -74,14 +74,22 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          echo "RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+            OS_NAME="linux"
+          elif [[ "${{ matrix.os }}" == *"macos"* ]]; then
+            OS_NAME="macos"
+          else
+            OS_NAME="${{ matrix.os }}"
+          fi
+          echo "RELEASE_NAME=libcardano-c-${{ env.VERSION }}-${OS_NAME}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
 
       # Set Release Name on Windows systems
       - name: Set Release Name (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_NAME=library-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.compiler }}"
+          $osName = if ($env:RUNNER_OS -eq "Windows") { "windows" } else { $env:RUNNER_OS }
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_NAME=libcardano-c-${{ env.VERSION }}-${osName}-${{ matrix.arch }}-${{ matrix.compiler }}"
 
       # Install dependencies for Unix
       - name: Install dependencies (Unix)
@@ -178,7 +186,7 @@ jobs:
           mkdir -p $RELEASE_DIR
           cp -r lib/include $RELEASE_DIR/
           cp build/release/lib/* $RELEASE_DIR/ 2>/dev/null || true
-          tar -czf "release-${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
+          tar -czf "${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
 
       # Package binaries (Windows MSVC)
       - name: Package binaries (Windows MSVC)
@@ -187,9 +195,17 @@ jobs:
         run: |
           set RELEASE_DIR=release\%RELEASE_NAME%
           mkdir %RELEASE_DIR%
+          
           xcopy /E /I lib\include %RELEASE_DIR%\include
-          xcopy /Y build\release\lib\* %RELEASE_DIR%\
-          powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath release-%RELEASE_NAME%.zip
+
+          for %%f in (dll lib) do (
+              xcopy /Y build\release\lib\Release\*.%%f %RELEASE_DIR%\
+          )
+
+          xcopy /Y README %RELEASE_DIR%\
+          xcopy /Y LICENSE %RELEASE_DIR%\
+          
+          powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath %RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
       - name: Package binaries (Windows MinGW)
@@ -199,8 +215,10 @@ jobs:
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR
           cp -r lib/include $RELEASE_DIR/
-          cp build/release/lib/* $RELEASE_DIR/ 2>/dev/null || true
-          7z a "release-${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
+          cp README %RELEASE_DIR%/
+          cp LICENSE %RELEASE_DIR%/
+          cp build/release/lib/Release* $RELEASE_DIR/ 2>/dev/null || true
+          7z a "${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
 
       # Upload artifacts to GitHub Release (Unix)
       - name: Upload artifacts to GitHub Release (Unix)

@@ -196,7 +196,7 @@ cardano_bigint_from_int(int64_t value, cardano_bigint_t** bigint)
   mpz_init((*bigint)->mpz);
 
   int      order     = cardano_is_little_endian() ? -1 : 1;
-  uint64_t abs_value = (value < 0) ? -(uint64_t)value : (uint64_t)value;
+  uint64_t abs_value = (value < 0) ? (uint64_t)(-value) : (uint64_t)value;
 
   mpz_import((*bigint)->mpz, 1, order, sizeof(abs_value), 0, 0, &abs_value);
 
