@@ -310,7 +310,7 @@ TEST(cardano_fee_get_serialized_coin_size, returnsErrorIfMemoryAllocationFails)
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_coin_size(0, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -327,7 +327,7 @@ TEST(cardano_fee_get_serialized_output_size, returnsErrorIfOutParamIsNull)
 
 TEST(cardano_fee_get_serialized_output_size, returnsErrorIfOutputIsNull)
 {
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_output_size(NULL, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
@@ -340,7 +340,7 @@ TEST(cardano_fee_get_serialized_output_size, returnsErrorIfMemoryAllocationFails
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_output_size(output, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -358,7 +358,7 @@ TEST(cardano_fee_gget_serialized_script_size, returnsErrorIfOutParamIsNull)
 
 TEST(cardano_fee_gget_serialized_script_size, returnsErrorIfScriptIsNull)
 {
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_script_size(NULL, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
@@ -369,7 +369,7 @@ TEST(cardano_fee_get_serialized_script_size, returnsErrorIfMemoryAllocationFails
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
-  uint64_t size = 0U;
+  size_t size = 0U;
 
   cardano_error_t result = cardano_get_serialized_script_size((cardano_script_t*)"", &size);
 
@@ -387,7 +387,7 @@ TEST(cardano_fee_get_serialized_transaction_size, returnsErrorIfOutParamIsNull)
 
 TEST(cardano_fee_get_serialized_transaction_size, returnsErrorIfTransactionIsNull)
 {
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_transaction_size(NULL, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
@@ -400,7 +400,7 @@ TEST(cardano_fee_get_serialized_transaction_size, returnsErrorIfMemoryAllocation
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
-  uint64_t        size   = 0U;
+  size_t          size   = 0U;
   cardano_error_t result = cardano_get_serialized_transaction_size(tx, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
