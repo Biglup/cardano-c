@@ -103,7 +103,7 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfMemoryAllocationFail
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
@@ -132,7 +132,7 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfMemoryAllocationEven
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_two_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_two_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
@@ -161,7 +161,7 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfEventualMemoryAlloca
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
@@ -230,7 +230,7 @@ TEST(cardano_pointer_address_from_address, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_address_from_bytes(Cip19TestVectors::pointerKeyBytes, sizeof(Cip19TestVectors::pointerKeyBytes), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_address(address, &pointer_address);
@@ -281,7 +281,7 @@ TEST(cardano_pointer_address_to_address, returnErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_pointer_address_from_bech32(Cip19TestVectors::pointerKey.c_str(), Cip19TestVectors::pointerKey.size(), &pointer_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_address_t* address = cardano_pointer_address_to_address(pointer_address);
@@ -479,7 +479,7 @@ TEST(cardano_pointer_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   cardano_pointer_address_t* pointer_address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_bech32(Cip19TestVectors::pointerKey.c_str(), Cip19TestVectors::pointerKey.size(), &pointer_address);

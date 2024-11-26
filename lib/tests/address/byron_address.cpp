@@ -101,7 +101,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfMemoryAllocationFails)
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
@@ -129,7 +129,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
@@ -157,7 +157,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_two_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_two_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
@@ -226,7 +226,7 @@ TEST(cardano_byron_address_from_address, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_address_from_bytes(Cip19TestVectors::byronMainnetYoroiBytes, sizeof(Cip19TestVectors::byronMainnetYoroiBytes), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_from_address(address, &byron_address);
@@ -382,7 +382,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfMemoryAllocationFails)
   cardano_byron_address_t* byron_address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address);
@@ -773,7 +773,7 @@ TEST(cardano_byron_address_to_address, returnErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   address = cardano_byron_address_to_address(byron_address);
@@ -892,7 +892,7 @@ TEST(cardano_byron_address_get_root, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_byron_address_get_root(byron_address, &root);

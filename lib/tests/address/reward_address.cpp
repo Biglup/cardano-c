@@ -103,7 +103,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfMemoryAllocationFails
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &reward_address);
@@ -115,7 +115,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfMemoryAllocationFails
   // Clean up
   cardano_credential_unref(&payment);
   cardano_reward_address_unref(&reward_address);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_reward_address_from_credentials, returnErrorIfEventualMemoryAllocationFails)
@@ -133,7 +133,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfEventualMemoryAllocat
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &reward_address);
@@ -145,7 +145,7 @@ TEST(cardano_reward_address_from_credentials, returnErrorIfEventualMemoryAllocat
   // Clean up
   cardano_credential_unref(&payment);
   cardano_reward_address_unref(&reward_address);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_reward_address_from_address, returnsErrorWhenAddressIsNull)
@@ -203,7 +203,7 @@ TEST(cardano_reward_address_from_address, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_address_from_bytes(Cip19TestVectors::rewardKeyBytes, sizeof(Cip19TestVectors::rewardKeyBytes), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_reward_address_from_address(address, &reward_address);
@@ -214,7 +214,7 @@ TEST(cardano_reward_address_from_address, returnsErrorIfMemoryAllocationFails)
 
   // Cleanup
   cardano_address_unref(&address);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_reward_address_from_address, canConvertARewardAddressFromAValidAddress)
@@ -255,7 +255,7 @@ TEST(cardano_reward_address_to_address, returnErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &reward_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_address_t* address = cardano_reward_address_to_address(reward_address);
@@ -265,7 +265,7 @@ TEST(cardano_reward_address_to_address, returnErrorIfMemoryAllocationFails)
 
   // Cleanup
   cardano_reward_address_unref(&reward_address);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_reward_address_get_credential, returnsErrorWhenrewardAddressIsNull)
@@ -419,7 +419,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   cardano_reward_address_t* reward_address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &reward_address);
@@ -427,7 +427,7 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(reward_address, nullptr);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(cardano_reward_address_from_bech32, returnsErrorIfSizeIsZero)

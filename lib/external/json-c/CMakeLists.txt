@@ -64,7 +64,7 @@ include(CPack)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-option(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
+option(BUILD_SHARED_LIBS  "Default to building shared libraries" OFF)
 option(BUILD_STATIC_LIBS  "Default to building static libraries" ON)
 
 if (BUILD_SHARED_LIBS)
@@ -292,9 +292,9 @@ if (WIN32)
 endif()
 
 # Once we've done basic symbol/header searches let's add them in.
-configure_file(${PROJECT_SOURCE_DIR}/cmake/config.h.in        ${PROJECT_BINARY_DIR}/config.h)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/config.h.in        ${PROJECT_SOURCE_DIR}/config.h)
 message(STATUS "Wrote ${PROJECT_BINARY_DIR}/config.h")
-configure_file(${PROJECT_SOURCE_DIR}/cmake/json_config.h.in   ${PROJECT_BINARY_DIR}/json_config.h)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/json_config.h.in   ${PROJECT_SOURCE_DIR}/json_config.h)
 message(STATUS "Wrote ${PROJECT_BINARY_DIR}/json_config.h")
 
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
@@ -448,91 +448,10 @@ else()
     set(JSON_H_JSON_PATCH "")
 endif()
 
-configure_file(json.h.cmakein ${PROJECT_BINARY_DIR}/json.h @ONLY)
+configure_file(json.h.cmakein ${PROJECT_SOURCE_DIR}/json.h @ONLY)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
-
-# "uninstall" custom target for make generators in unix like operating systems
-# and if that target is not present
-if (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-    if(NOT TARGET uninstall)
-        add_custom_target(uninstall
-                COMMAND cat ${PROJECT_BINARY_DIR}/install_manifest.txt | xargs rm
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                )
-    endif()
-endif()
-
-# XXX for a normal full distribution we'll need to figure out
-# XXX how to build both shared and static libraries.
-# Probably leverage that to build a local VALGRIND=1 library for testing too.
-add_library(${PROJECT_NAME}
-    ${JSON_C_SOURCES}
-    ${JSON_C_HEADERS}
-)
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    VERSION 5.3.0
-    SOVERSION 5)
-list(APPEND CMAKE_TARGETS ${PROJECT_NAME})
-# If json-c is used as subroject it set to target correct interface -I flags and allow
-# to build external target without extra include_directories(...)
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_REQUIRED_LIBRARIES})
-
-# Allow to build static and shared libraries at the same time
-if (BUILD_STATIC_LIBS AND BUILD_SHARED_LIBS)
-    set(STATIC_LIB ${PROJECT_NAME}-static)
-    add_library(${STATIC_LIB} STATIC
-        ${JSON_C_SOURCES}
-        ${JSON_C_HEADERS}
-    )
-    target_include_directories(${PROJECT_NAME}-static
-        PUBLIC
-            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-    )
-
-	target_link_libraries(${PROJECT_NAME}-static PUBLIC ${CMAKE_REQUIRED_LIBRARIES})
-
-    # rename the static library
-    if (NOT MSVC)
-    set_target_properties(${STATIC_LIB} PROPERTIES
-        OUTPUT_NAME ${PROJECT_NAME}
-    )
-    endif()
-    list(APPEND CMAKE_TARGETS ${STATIC_LIB})
-endif ()
-
-# Always create new install dirs with 0755 permissions, regardless of umask
-set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
-	OWNER_READ
-	OWNER_WRITE
-	OWNER_EXECUTE
-	GROUP_READ
-	GROUP_EXECUTE
-	WORLD_READ
-	WORLD_EXECUTE
-   )
-
-install(TARGETS ${CMAKE_TARGETS}
-    EXPORT ${PROJECT_NAME}-targets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} ${CMAKE_INSTALL_INCLUDEDIR}/json-c
-)
-
-install(EXPORT ${PROJECT_NAME}-targets
-    FILE ${PROJECT_NAME}-targets.cmake
-    NAMESPACE ${PROJECT_NAME}::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
 
 configure_package_config_file(
     "cmake/Config.cmake.in"

@@ -109,34 +109,34 @@ verify_memory_allocation_fail(const std::string& addr)
   cardano_blake2b_hash_t* hash    = nullptr;
 
   reset_allocators_run_count();
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 
   EXPECT_EQ(cardano_address_from_string(addr.c_str(), addr.length(), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
   hash = _cardano_get_payment_pub_key_hash(address);
 
   EXPECT_EQ(hash, nullptr);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
   hash = _cardano_get_payment_pub_key_hash(address);
 
   EXPECT_EQ(hash, nullptr);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_after_two_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_two_malloc, realloc, free);
   hash = _cardano_get_payment_pub_key_hash(address);
 
   EXPECT_EQ(hash, nullptr);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_after_three_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_three_malloc, realloc, free);
   hash = _cardano_get_payment_pub_key_hash(address);
 
   EXPECT_EQ(hash, nullptr);
@@ -229,7 +229,7 @@ validate_cert_memory_alloc_error(const char* cbor, cardano_cert_type_t type)
   EXPECT_EQ(cardano_blake2b_hash_set_new(&unique_signers), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   cardano_error_t result = _process_certificate_with_credential(unique_signers, certificate, type);
 
@@ -237,7 +237,7 @@ validate_cert_memory_alloc_error(const char* cbor, cardano_cert_type_t type)
 
   cardano_certificate_unref(&certificate);
   cardano_blake2b_hash_set_unref(&unique_signers);
-  cardano_set_allocators(malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 
   return result;
 }
@@ -373,23 +373,23 @@ TEST(_cardano_add_withdrawals, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_blake2b_hash_set_new(&unique_signers), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 
   EXPECT_EQ(_cardano_add_withdrawals(unique_signers, withdrawals), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
   EXPECT_EQ(_cardano_add_withdrawals(unique_signers, withdrawals), CARDANO_ERROR_POINTER_IS_NULL);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
   EXPECT_EQ(_cardano_add_withdrawals(unique_signers, withdrawals), CARDANO_ERROR_POINTER_IS_NULL);
 
   reset_allocators_run_count();
 
-  cardano_set_allocators(fail_after_two_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_two_malloc, realloc, free);
   EXPECT_EQ(_cardano_add_withdrawals(unique_signers, withdrawals), CARDANO_ERROR_POINTER_IS_NULL);
 
   reset_allocators_run_count();
