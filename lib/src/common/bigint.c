@@ -30,6 +30,7 @@
 
 #include "../external/gmp/mini-gmp.h"
 
+#include "../endian.h"
 #include <assert.h>
 
 /* STRUCTURES ****************************************************************/
@@ -192,7 +193,17 @@ cardano_bigint_from_int(int64_t value, cardano_bigint_t** bigint)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  mpz_init_set_si((*bigint)->mpz, (signed long)value);
+  mpz_init((*bigint)->mpz);
+
+  int      order     = cardano_is_little_endian() ? -1 : 1;
+  uint64_t abs_value = (value < 0) ? -(uint64_t)value : (uint64_t)value;
+
+  mpz_import((*bigint)->mpz, 1, order, sizeof(abs_value), 0, 0, &abs_value);
+
+  if (value < 0)
+  {
+    mpz_neg((*bigint)->mpz, (*bigint)->mpz);
+  }
 
   return CARDANO_SUCCESS;
 }
@@ -212,7 +223,11 @@ cardano_bigint_from_unsigned_int(uint64_t value, cardano_bigint_t** bigint)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  mpz_set_ui((*bigint)->mpz, (unsigned long)value);
+  mpz_init((*bigint)->mpz);
+
+  int order = cardano_is_little_endian() ? -1 : 1;
+
+  mpz_import((*bigint)->mpz, 1, order, sizeof(value), 0, 0, &value);
 
   return CARDANO_SUCCESS;
 }
@@ -294,7 +309,12 @@ cardano_bigint_to_int(const cardano_bigint_t* bigint)
     return 0;
   }
 
-  return mpz_get_si(bigint->mpz);
+  const int order      = cardano_is_little_endian() ? -1 : 1;
+  uint64_t  abs_result = 0;
+
+  mpz_export(&abs_result, NULL, order, sizeof(abs_result), 0, 0, bigint->mpz);
+
+  return (mpz_sgn(bigint->mpz) < 0) ? -(int64_t)abs_result : (int64_t)abs_result;
 }
 
 uint64_t
@@ -305,7 +325,12 @@ cardano_bigint_to_unsigned_int(const cardano_bigint_t* bigint)
     return 0;
   }
 
-  return mpz_get_ui(bigint->mpz);
+  const int order  = cardano_is_little_endian() ? -1 : 1;
+  uint64_t  result = 0;
+
+  mpz_export(&result, NULL, order, sizeof(result), 0, 0, bigint->mpz);
+
+  return result;
 }
 
 size_t
