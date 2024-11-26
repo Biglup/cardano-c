@@ -436,7 +436,7 @@ TEST(cardano_ed25519_signature_to_hex, returnsSignatureHex)
   cardano_error_t              error     = cardano_ed25519_signature_from_hex(SIGNATURE_HEX, SIGNATURE_SIZE * 2, &signature);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  char buffer[SIGNATURE_SIZE * 2] = { 0 };
+  char buffer[(SIGNATURE_SIZE * 2) + 1] = { 0 };
 
   // Act
   error = cardano_ed25519_signature_to_hex(signature, &buffer[0], (SIGNATURE_SIZE * 2) + 1);

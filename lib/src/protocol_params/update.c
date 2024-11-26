@@ -122,7 +122,7 @@ cardano_update_from_cbor(cardano_cbor_reader_t* reader, cardano_update_t** updat
 
   static const char* validator_name = "update";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, EMBEDDED_GROUP_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

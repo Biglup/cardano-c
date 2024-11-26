@@ -199,7 +199,7 @@ cardano_bip32_private_key_from_bip39_entropy(
     password_length,
     entropy,
     entropy_length,
-    pbkdf2_iterations,
+    (uint32_t)pbkdf2_iterations,
     &pbkdf2_key[0],
     pbkdf2_key_size);
 

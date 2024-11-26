@@ -260,7 +260,7 @@ cardano_datum_from_cbor(cardano_cbor_reader_t* reader, cardano_datum_t** datum)
 
   static const char* validator_name = "Datum";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, DATUM_ARRAY_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)DATUM_ARRAY_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

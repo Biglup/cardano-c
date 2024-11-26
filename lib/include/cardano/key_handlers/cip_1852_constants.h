@@ -22,11 +22,6 @@
 #ifndef BIGLUP_LABS_INCLUDE_CARDANO_CIP_1852_CONSTANTS_H
 #define BIGLUP_LABS_INCLUDE_CARDANO_CIP_1852_CONSTANTS_H
 
-/* INCLUDES ******************************************************************/
-
-#include <cardano/export.h>
-#include <cardano/typedefs.h>
-
 /* DECLARATIONS **************************************************************/
 
 #ifdef __cplusplus
@@ -38,52 +33,52 @@ extern "C" {
 /**
  * \brief The coin_type value for Cardano is 1815 (Ada Lovelace year of birth).
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_COIN_TYPE;
+#define CARDANO_CIP_1852_COIN_TYPE (1815U)
 
 /* PURPOSE *******************************************************************/
 
 /**
  * \brief To associate standard wallet key derivation purpose.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_PURPOSE_STANDARD;
+#define CARDANO_CIP_1852_PURPOSE_STANDARD (1852U)
 
 /**
  * \brief To associate multi-signature keys to a wallet, CIP-1854 reserves
  * purpose=1854' to distinguish multisig wallets from standard wallets.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_PURPOSE_MULTI_SIG;
+#define CARDANO_CIP_1852_PURPOSE_MULTI_SIG (1854U)
 
 /* ROLES *********************************************************************/
 
 /**
  * \brief External chain role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_EXTERNAL;
+#define CARDANO_CIP_1852_ROLE_EXTERNAL (0U)
 
 /**
  * \brief Internal chain role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_INTERNAL;
+#define CARDANO_CIP_1852_ROLE_INTERNAL (1U)
 
 /**
  * \brief Staking Key role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_STAKING;
+#define CARDANO_CIP_1852_ROLE_STAKING (2U)
 
 /**
  * \brief DRep Key (CIP-0105) role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_DREP;
+#define CARDANO_CIP_1852_ROLE_DREP (3U)
 
 /**
  * \brief Constitutional Committee Cold Key (CIP-0105) role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_CC_COLD;
+#define CARDANO_CIP_1852_ROLE_CC_COLD (4U)
 
 /**
  * \brief Constitutional Committee Hot Key (CIP-0105) role.
  */
-CARDANO_EXPORT const uint64_t CARDANO_CIP_1852_ROLE_CC_HOT;
+#define CARDANO_CIP_1852_ROLE_CC_HOT (5U)
 
 #ifdef __cplusplus
 }

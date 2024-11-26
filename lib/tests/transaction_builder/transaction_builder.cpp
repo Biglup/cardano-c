@@ -30,6 +30,7 @@
 #include <allocators.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <gmock/gmock.h>
+#include <string_safe.h>
 #include <tests/allocators_helpers.h>
 
 /* TX BUILDER INTERNALS ******************************************************/
@@ -251,7 +252,7 @@ cardano_provider_impl_new()
     context->base.last_error[0] = '\0';
 
     CARDANO_UNUSED(memset(context->key, 0, sizeof(context->key)));
-    CARDANO_UNUSED(memccpy((void*)&context->key[0], "This is a test key", strlen("This is a test key"), sizeof(context->key)));
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&context->key[0], sizeof(context->key), "This is a test key", sizeof(context->key)));
 
     impl.context = (cardano_object_t*)context;
   }
@@ -334,7 +335,7 @@ cardano_empty_coin_selector_impl_new()
   cardano_coin_selector_impl_t impl = { 0 };
 
   CARDANO_UNUSED(memset(impl.name, 0, sizeof(impl.name)));
-  CARDANO_UNUSED(memccpy((void*)&impl.name[0], "Empty Coin Selector", strlen("Empty Coin Selector"), sizeof(impl.name)));
+  CARDANO_UNUSED(cardano_safe_memcpy((void*)&impl.name[0], sizeof(impl.name), "Empty Coin Selector", sizeof(impl.name)));
 
   impl.select = NULL;
 
@@ -350,7 +351,7 @@ cardano_empty_tx_evaluator_impl_new()
   cardano_tx_evaluator_impl_t impl = { 0 };
 
   CARDANO_UNUSED(memset(impl.name, 0, sizeof(impl.name)));
-  CARDANO_UNUSED(memccpy((void*)&impl.name[0], "Empty Tx Evaluator", strlen("Empty Tx Evaluator"), sizeof(impl.name)));
+  CARDANO_UNUSED(cardano_safe_memcpy((void*)&impl.name[0], sizeof(impl.name), "Empty Tx Evaluator", sizeof(impl.name)));
 
   impl.evaluate = NULL;
 

@@ -437,7 +437,7 @@ TEST(cardano_bigint_to_int, canConvertToAnInt)
 
   ASSERT_EQ(result, CARDANO_SUCCESS);
 
-  int value = cardano_bigint_to_int(bigint);
+  int64_t value = cardano_bigint_to_int(bigint);
 
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_EQ(value, 123456789);
@@ -447,7 +447,7 @@ TEST(cardano_bigint_to_int, canConvertToAnInt)
 
 TEST(cardano_bigint_to_int, returnZeroIfPointerIsNull)
 {
-  int value = cardano_bigint_to_int(NULL);
+  int64_t value = cardano_bigint_to_int(NULL);
 
   ASSERT_EQ(value, 0);
 }
@@ -460,7 +460,7 @@ TEST(cardano_bigint_to_unsigned_int, canConvertToAnUnsignedInt)
 
   ASSERT_EQ(result, CARDANO_SUCCESS);
 
-  unsigned int value = cardano_bigint_to_unsigned_int(bigint);
+  uint64_t value = cardano_bigint_to_unsigned_int(bigint);
 
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_EQ(value, 123456789);
@@ -470,7 +470,7 @@ TEST(cardano_bigint_to_unsigned_int, canConvertToAnUnsignedInt)
 
 TEST(cardano_bigint_to_unsigned_int, returnZeroIfPointerIsNull)
 {
-  unsigned int value = cardano_bigint_to_unsigned_int(NULL);
+  uint64_t value = cardano_bigint_to_unsigned_int(NULL);
 
   ASSERT_EQ(value, 0);
 }

@@ -741,7 +741,7 @@ TEST(cardano_redeemer_get_index, canGetIndex)
   cardano_redeemer_t* redeemer = new_default_redeemer();
 
   // Act
-  uint32_t index = cardano_redeemer_get_index(redeemer);
+  uint64_t index = cardano_redeemer_get_index(redeemer);
 
   // Assert
   EXPECT_EQ(index, 0);
@@ -753,7 +753,7 @@ TEST(cardano_redeemer_get_index, canGetIndex)
 TEST(cardano_redeemer_get_index, returnsErrorIfObjectIsNull)
 {
   // Act
-  uint32_t index = cardano_redeemer_get_index(nullptr);
+  uint64_t index = cardano_redeemer_get_index(nullptr);
 
   // Assert
   EXPECT_EQ(index, 0);

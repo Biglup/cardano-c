@@ -37,9 +37,4 @@ TEST(cardano_set_allocators, cbor_set_allocators)
 
   // Act
   cardano_set_allocators(custom_malloc, custom_realloc, custom_free);
-
-  // Assert
-  ASSERT_EQ((ptrdiff_t)_cardano_malloc, (ptrdiff_t)NULL);
-  ASSERT_EQ((ptrdiff_t)_cardano_realloc, (ptrdiff_t)NULL);
-  ASSERT_EQ((ptrdiff_t)_cardano_free, (ptrdiff_t)NULL);
 }

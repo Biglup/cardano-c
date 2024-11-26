@@ -284,7 +284,7 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value)
   {
     static const char* validator_name = "value";
 
-    const cardano_error_t read_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, VALUE_ARRAY_REQUIRED_SIZE);
+    const cardano_error_t read_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)VALUE_ARRAY_REQUIRED_SIZE);
 
     if (read_array_result != CARDANO_SUCCESS)
     {

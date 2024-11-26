@@ -1209,7 +1209,7 @@ TEST(cardano_buffer_write_float_le, serializesToLittleEndian)
 {
   // Arrange
   byte_t            expected[4] = { 0x47, 0x55, 0x93, 0x3f };
-  float             value       = 1.15104;
+  float             value       = 1.15104f;
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
 
   // Act
@@ -1425,7 +1425,7 @@ TEST(cardano_buffer_write_float_be, serializesToLittleEndian)
 {
   // Arrange
   byte_t            expected[4] = { 0x3f, 0x93, 0x55, 0x47 };
-  float             value       = 1.15104;
+  float             value       = 1.15104f;
   cardano_buffer_t* buffer      = cardano_buffer_new(sizeof(value));
 
   // Act

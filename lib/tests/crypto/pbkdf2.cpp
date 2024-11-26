@@ -66,7 +66,7 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVectors)
   {
     const pbkdf2_hmac_sha512_vectors_t* vector = &pbkdf2_hmac_sha512_test_vectors[i];
 
-    byte_t derived_key_buffer[vector->dkLen] = { 0 };
+    byte_t derived_key_buffer[1024] = { 0 };
 
     cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(
       vector->password,
@@ -79,11 +79,15 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, correctlyComputesHashesForTestVectors)
 
     EXPECT_EQ(result, CARDANO_SUCCESS);
 
-    char derived_key_hex[2 * vector->dkLen + 1];
+    char derived_key_hex[1024];
 
     for (size_t j = 0; j < vector->dkLen; ++j)
     {
+#ifdef _MSC_VER
+      sprintf_s(&derived_key_hex[2 * j], sizeof(derived_key_hex) - 2 * j, "%02x", (unsigned int)derived_key_buffer[j]);
+#else
       sprintf(&derived_key_hex[2 * j], "%02x", derived_key_buffer[j]);
+#endif
     }
 
     derived_key_hex[2 * vector->dkLen] = '\0';

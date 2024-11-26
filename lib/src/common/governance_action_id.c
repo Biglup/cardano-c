@@ -224,7 +224,7 @@ cardano_governance_action_id_from_cbor(cardano_cbor_reader_t* reader, cardano_go
 
   static const char* validator_name = "governance_action_id";
 
-  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, GOVERNANCE_ACTION_ID_ARRAY_SIZE);
+  const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)GOVERNANCE_ACTION_ID_ARRAY_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
   {

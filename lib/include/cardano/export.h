@@ -30,7 +30,7 @@ extern "C" {
 
 #ifndef CARDANO_EXPORT
 #if defined(_MSC_VER) && defined(CARDANO_C_DLL)
-#define CARDANO_EXPORT extern __declspec(dllexport)
+#define CARDANO_EXPORT __declspec(dllexport) extern
 #else
 #define CARDANO_EXPORT extern
 #endif

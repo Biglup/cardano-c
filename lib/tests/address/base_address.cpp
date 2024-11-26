@@ -138,7 +138,7 @@ TEST(cardano_base_address_from_credentials, returnErrorIfMemoryAllocationFails)
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_base_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, stake, &base_address);
@@ -177,7 +177,7 @@ TEST(cardano_base_address_from_credentials, returnErrorIfEventualMemoryAllocatio
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_base_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, stake, &base_address);
@@ -247,7 +247,7 @@ TEST(cardano_base_address_from_address, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_address_from_bytes(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_base_address_from_address(address, &base_address);
@@ -298,7 +298,7 @@ TEST(cardano_base_address_to_address, returnErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_base_address_from_bech32(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &base_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_address_t* address = cardano_base_address_to_address(base_address);
@@ -638,7 +638,7 @@ TEST(cardano_base_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   cardano_base_address_t* base_address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_base_address_from_bech32(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &base_address);

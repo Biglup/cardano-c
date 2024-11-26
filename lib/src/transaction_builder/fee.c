@@ -451,7 +451,7 @@ cardano_compute_min_script_fee(
 
   *min_fee = (uint64_t)ceil(((double)cpu_steps * cpu_price) + ((double)memory * mem_price));
 
-  size_t ref_script_size = 0U;
+  uint64_t ref_script_size = 0U;
 
   result = cardano_compute_script_ref_fee(resolved_reference_inputs, coins_per_ref_script_byte, &ref_script_size);
 

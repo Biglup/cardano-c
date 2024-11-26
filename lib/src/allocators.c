@@ -27,14 +27,32 @@
 
 /* DEFINITIONS ***************************************************************/
 
-_cardano_malloc_t  _cardano_malloc  = malloc;
-_cardano_realloc_t _cardano_realloc = realloc;
-_cardano_free_t    _cardano_free    = free;
+static _cardano_malloc_t  s_cardano_malloc  = malloc;
+static _cardano_realloc_t s_cardano_realloc = realloc;
+static _cardano_free_t    s_cardano_free    = free;
+
+void*
+_cardano_malloc(size_t size)
+{
+  return s_cardano_malloc(size);
+}
+
+void*
+_cardano_realloc(void* ptr, size_t size)
+{
+  return s_cardano_realloc(ptr, size);
+}
+
+void
+_cardano_free(void* ptr)
+{
+  s_cardano_free(ptr);
+}
 
 void
 cardano_set_allocators(_cardano_malloc_t custom_malloc, _cardano_realloc_t custom_realloc, _cardano_free_t custom_free)
 {
-  _cardano_malloc  = custom_malloc;
-  _cardano_realloc = custom_realloc;
-  _cardano_free    = custom_free;
+  s_cardano_malloc  = custom_malloc;
+  s_cardano_realloc = custom_realloc;
+  s_cardano_free    = custom_free;
 }

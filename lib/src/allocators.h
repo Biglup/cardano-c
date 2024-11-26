@@ -67,28 +67,25 @@ typedef void* (*_cardano_realloc_t)(void* ptr, size_t size);
 typedef void (*_cardano_free_t)(void* ptr);
 
 /**
- * \brief Pointer to a function used for custom memory allocation.
+ * \brief Function used for custom memory allocation.
  *
- * Points to a user-defined function that allocates memory, following the _cardano_malloc_t signature.
- * Assign a custom function to this pointer to override the standard memory allocation behavior.
+ * User-defined function that allocates memory, following the _cardano_malloc_t signature.
  */
-extern _cardano_malloc_t _cardano_malloc;
+CARDANO_EXPORT void* _cardano_malloc(size_t size);
 
 /**
  * \brief Pointer to a function used for custom memory reallocation.
  *
- * Points to a user-defined function for reallocating memory, conforming to the _cardano_realloc_t signature.
- * Assigning a custom function to this variable allows for overriding the standard memory reallocation mechanism.
+ * User-defined function for reallocating memory, conforming to the _cardano_realloc_t signature.
  */
-extern _cardano_realloc_t _cardano_realloc;
+CARDANO_EXPORT void* _cardano_realloc(void* ptr, size_t size);
 
 /**
  * \brief Pointer to a function used for custom memory deallocation.
  *
- * Points to a user-defined function that frees allocated memory, according to the _cardano_free_t signature.
- * To customize memory deallocation behavior, assign a custom function to this variable.
+ * User-defined function that frees allocated memory, according to the _cardano_free_t signature.
  */
-extern _cardano_free_t _cardano_free;
+CARDANO_EXPORT void _cardano_free(void* ptr);
 
 /**
  * \brief Sets the memory management routines to use.

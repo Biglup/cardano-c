@@ -295,7 +295,7 @@ TEST(cardano_committee_new, canCreateNewInstance)
   cardano_committee_t*     committee        = NULL;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t result = cardano_committee_new(quorum_threshold, &committee);
 
@@ -327,7 +327,7 @@ TEST(cardano_committee_new, returnsErrorIfCommitteeIsNull)
 
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t result = cardano_committee_new(quorum_threshold, nullptr);
 
@@ -347,7 +347,7 @@ TEST(cardano_committee_new, returnsErrorIfMemoryAllocationFails)
   cardano_committee_t*     committee        = NULL;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
@@ -372,7 +372,7 @@ TEST(cardano_committee_new, returnsErrorIfMemoryAllocationFails2)
   cardano_committee_t*     committee        = NULL;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_one_malloc, realloc, free);
@@ -486,7 +486,7 @@ TEST(cardano_committee_set_quorum_threshold, canSetQuorumThreshold)
   cardano_committee_t*     committee        = new_default_committee();
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   // Act
   cardano_error_t result = cardano_committee_set_quorum_threshold(committee, quorum_threshold);
@@ -553,7 +553,7 @@ TEST(cardano_committee_get_key_at, returnsErrorIfIndexIsOutOfBounds)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -578,7 +578,7 @@ TEST(cardano_committee_get_key_at, canReturnTheRightKey)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -639,7 +639,7 @@ TEST(cardano_committee_get_value_at, returnsErrorIfIndexIsOutOfBounds)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -664,7 +664,7 @@ TEST(cardano_committee_get_value_at, returnsTheElement)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -735,7 +735,7 @@ TEST(cardano_committee_get_key_value_at, returnsErrorIfIndexIsOutOfBounds)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -761,7 +761,7 @@ TEST(cardano_committee_get_key_value_at, returnsTheElement)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -806,7 +806,7 @@ TEST(cardano_committee_get_keys, returnsNullIfKeysIsNull)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -826,7 +826,7 @@ TEST(cardano_committee_get_keys, returnsEmptyArrayIfNoElements)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -853,7 +853,7 @@ TEST(cardano_committee_get_keys, returnsTheKeys)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -967,7 +967,7 @@ TEST(cardano_committee_get_member_epoch, returnsTheEpoch)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 
@@ -997,7 +997,7 @@ TEST(cardano_committee_get_member_epoch, returnsZeroIfCredentialIsNotInList)
   cardano_committee_t*     committee        = nullptr;
   cardano_unit_interval_t* quorum_threshold = NULL;
 
-  EXPECT_EQ(cardano_unit_interval_new(2.0, 5.0, &quorum_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(2U, 5U, &quorum_threshold), CARDANO_SUCCESS);
 
   cardano_error_t error = cardano_committee_new(quorum_threshold, &committee);
 

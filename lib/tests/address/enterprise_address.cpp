@@ -103,7 +103,7 @@ TEST(cardano_enterprise_address_from_credentials, returnErrorIfMemoryAllocationF
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &enterprise_address);
@@ -132,7 +132,7 @@ TEST(cardano_enterprise_address_from_credentials, returnErrorIfEventualMemoryAll
     CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_one_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, &enterprise_address);
@@ -201,7 +201,7 @@ TEST(cardano_enterprise_address_from_address, returnsErrorIfMemoryAllocationFail
   EXPECT_EQ(cardano_address_from_bytes(Cip19TestVectors::enterpriseKeyBytes, sizeof(Cip19TestVectors::enterpriseKeyBytes), &address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_enterprise_address_from_address(address, &enterprise_address);
@@ -252,7 +252,7 @@ TEST(cardano_enterprise_address_to_address, returnErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_enterprise_address_from_bech32(Cip19TestVectors::enterpriseKey.c_str(), Cip19TestVectors::enterpriseKey.size(), &enterprise_address), CARDANO_SUCCESS);
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_address_t* address = cardano_enterprise_address_to_address(enterprise_address);
@@ -415,7 +415,7 @@ TEST(cardano_enterprise_address_from_bech32, returnsErrorIfMemoryAllocationFails
   cardano_enterprise_address_t* enterprise_address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_enterprise_address_from_bech32(Cip19TestVectors::enterpriseKey.c_str(), Cip19TestVectors::enterpriseKey.size(), &enterprise_address);

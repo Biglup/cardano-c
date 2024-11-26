@@ -151,7 +151,7 @@ cardano_script_n_of_k_from_cbor(cardano_cbor_reader_t* reader, cardano_script_n_
     return read_uint_result;
   }
 
-  size_t          required             = 0;
+  uint64_t        required             = 0;
   cardano_error_t read_required_result = cardano_cbor_reader_read_uint(reader, &required);
 
   if (read_required_result != CARDANO_SUCCESS)
@@ -175,7 +175,7 @@ cardano_script_n_of_k_from_cbor(cardano_cbor_reader_t* reader, cardano_script_n_
     return expect_end_array_result;
   }
 
-  const cardano_error_t create_n_of_k_new_result = cardano_script_n_of_k_new(native_scripts, required, script_n_of_k);
+  const cardano_error_t create_n_of_k_new_result = cardano_script_n_of_k_new(native_scripts, (size_t)required, script_n_of_k);
   cardano_native_script_list_unref(&native_scripts);
 
   return create_n_of_k_new_result;

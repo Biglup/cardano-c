@@ -331,7 +331,7 @@ cardano_reward_address_refcount(const cardano_reward_address_t* address)
 void
 cardano_reward_address_set_last_error(cardano_reward_address_t* address, const char* message)
 {
-  return cardano_address_set_last_error(_cardano_from_reward_to_address(address), message);
+  cardano_address_set_last_error(_cardano_from_reward_to_address(address), message);
 }
 
 const char*

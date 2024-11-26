@@ -69,9 +69,9 @@ set_invalid_type_error_message(
     "There was an error decoding '%s', expected '%s' (%lu) but got '%s' (%lu).",
     validator_name,
     expected_friendly_name,
-    expected_value,
+    (unsigned long)expected_value,
     actual_friendly_name,
-    actual_value);
+    (unsigned long)actual_value);
 
   assert(written > 0);
   CARDANO_UNUSED(written);
@@ -116,10 +116,10 @@ set_invalid_size_error_message(
     "There was an error decoding '%s', expected a '%s' (%ld) of %zu element(s) but got a '%s' (%ld) of %zu element(s).",
     validator_name,
     type_friendly_name,
-    type_value,
+    (long)type_value,
     expected_length,
     type_friendly_name,
-    type_value,
+    (long)type_value,
     actual_length);
 
   assert(written > 0);
@@ -165,9 +165,9 @@ set_invalid_range_error_message(
     "There was an error decoding '%s', '%s' must have a value between %lu and %lu, but got %lu.",
     validator_name,
     type_friendly_name,
-    expected_min_value,
-    expected_max_value,
-    actual_value);
+    (unsigned long)expected_min_value,
+    (unsigned long)expected_max_value,
+    (unsigned long)actual_value);
 
   assert(written > 0);
   CARDANO_UNUSED(written);
@@ -207,9 +207,9 @@ set_invalid_tag_error_message(
     "There was an error decoding the '%s', unexpected tag value, expected '%s' (%lu), but got '%s' (%lu).",
     validator_name,
     cardano_cbor_tag_to_string(expected_tag),
-    expected_tag,
+    (unsigned long)expected_tag,
     cardano_cbor_tag_to_string(actual_tag),
-    actual_tag);
+    (unsigned long)actual_tag);
 
   assert(written > 0);
   CARDANO_UNUSED(written);
@@ -253,9 +253,9 @@ set_invalid_enum_error_message(
     validator_name,
     field_name,
     enum_to_string_callback(expected_value),
-    expected_value,
+    (unsigned long)expected_value,
     enum_to_string_callback(actual_value),
-    actual_value);
+    (unsigned long)actual_value);
 
   assert(written > 0);
   CARDANO_UNUSED(written);

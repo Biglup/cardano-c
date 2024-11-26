@@ -455,7 +455,7 @@ TEST(cardano_write_float_le, serializesToLittleEndian)
   byte_t buffer[4]   = { 0 };
   byte_t expected[4] = { 0x47, 0x55, 0x93, 0x3f };
   size_t size        = sizeof(buffer);
-  float  value       = 1.15104;
+  float  value       = 1.15104f;
 
   // Act
   cardano_error_t result = cardano_write_float_le(value, buffer, size, 0);
@@ -471,7 +471,7 @@ TEST(cardano_write_float_le, serializesToLittleEndianWithPositiveOffset)
   byte_t buffer[7]   = {};
   byte_t expected[7] = { 0, 0, 0, 0x47, 0x55, 0x93, 0x3f };
   size_t size        = sizeof(buffer);
-  float  value       = 1.15104;
+  float  value       = 1.15104f;
 
   // Act
   cardano_error_t result = cardano_write_float_le(value, buffer, size, 3);
@@ -907,7 +907,7 @@ TEST(cardano_write_float_be, serializesToBigEndian)
   byte_t buffer[4]   = { 0 };
   byte_t expected[4] = { 0x3f, 0x93, 0x55, 0x47 };
   size_t size        = sizeof(buffer);
-  float  value       = 1.15104;
+  float  value       = 1.15104f;
 
   // Act
   cardano_error_t result = cardano_write_float_be(value, buffer, size, 0);
@@ -923,7 +923,7 @@ TEST(cardano_write_float_be, serializesToBigEndianWithPositiveOffset)
   byte_t buffer[7]   = {};
   byte_t expected[7] = { 0, 0, 0, 0x3f, 0x93, 0x55, 0x47 };
   size_t size        = sizeof(buffer);
-  float  value       = 1.15104;
+  float  value       = 1.15104f;
 
   // Act
   cardano_error_t result = cardano_write_float_be(value, buffer, size, 3);

@@ -29,6 +29,7 @@
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
 
 #include <gmock/gmock.h>
+#include <string_safe.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -85,7 +86,7 @@ cardano_empty_tx_evaluator_impl_new()
   }
 
   CARDANO_UNUSED(memset(impl.name, 0, sizeof(impl.name)));
-  CARDANO_UNUSED(memccpy((void*)&impl.name[0], "Empty Coin Selector", strlen("Empty Coin Selector"), sizeof(impl.name)));
+  CARDANO_UNUSED(cardano_safe_memcpy((void*)&impl.name[0], sizeof(impl.name), "Empty Coin Selector", sizeof(impl.name)));
 
   impl.evaluate = NULL;
 

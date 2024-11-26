@@ -63,11 +63,11 @@ TEST(_cardano_unpack_base_address, returnsErrorIfMemoryAllocationFails)
   cardano_base_address_t* address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_after_four_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_after_four_malloc, realloc, free);
 
   // Act
   EXPECT_EQ(_cardano_unpack_base_address(Cip19TestVectors::basePaymentKeyStakeKeyBytes, sizeof(Cip19TestVectors::basePaymentKeyStakeKeyBytes), &address), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(_cardano_byron_address_extract_cbor_data, returnsErrorIfMemoryAllocationFails)
@@ -80,14 +80,14 @@ TEST(_cardano_byron_address_extract_cbor_data, returnsErrorIfMemoryAllocationFai
   // Arrange
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   EXPECT_EQ(_cardano_byron_address_extract_cbor_data(writer, &data, &data_size), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Clean up
   cardano_cbor_writer_unref(&writer);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(_cardano_byron_address_finalize_writer, returnsErrorIfMemoryAllocationFails)
@@ -100,14 +100,14 @@ TEST(_cardano_byron_address_finalize_writer, returnsErrorIfMemoryAllocationFails
   // Arrange
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   EXPECT_EQ(_cardano_byron_address_finalize_writer(writer, &data, &data_size), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Clean up
   cardano_cbor_writer_unref(&writer);
-  cardano_set_allocators(_cardano_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(malloc, realloc, free);
 }
 
 TEST(_cardano_byron_address_verify_cbor_structure, returnsErrorIfNotStartingWithArray)

@@ -37,7 +37,7 @@ extern "C" {
  * \brief Gets whether the scalar types are little-endian. That is, the least significant byte
  * is stored in the smallest address. For example, 0x1234 is stored 0x34 0x12.
  *
- * \return \c true if the system is little endian; otherwise; \c fa;se.
+ * \return \c true if the system is little endian; otherwise; \c false.
  */
 bool cardano_is_little_endian(void);
 
@@ -45,7 +45,7 @@ bool cardano_is_little_endian(void);
  * \brief Gets whether that scalar types are big-endian, that is, the most significant byte is stored
  * in the smallest address. For example, 0x1234 is stored 0x12 0x34.
  *
- * \return \c true if the system is big endian; otherwise; \c fa;se.
+ * \return \c true if the system is big endian; otherwise; \c false.
  */
 bool cardano_is_big_endian(void);
 

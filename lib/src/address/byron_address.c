@@ -370,7 +370,7 @@ cardano_byron_address_refcount(const cardano_byron_address_t* address)
 void
 cardano_byron_address_set_last_error(cardano_byron_address_t* address, const char* message)
 {
-  return cardano_address_set_last_error(_cardano_from_byron_to_address(address), message);
+  cardano_address_set_last_error(_cardano_from_byron_to_address(address), message);
 }
 
 const char*

@@ -23,6 +23,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#pragma warning(disable : 4566)
+
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 
@@ -171,12 +173,12 @@ get_json_val(cardano_cbor_reader_t* reader)
 
       if (length > 0)
       {
-        for (size_t i = 0; i < length; ++i)
+        for (size_t i = 0; i < (size_t)length; ++i)
         {
           std::string key = get_json_val(reader);
           std::string val = get_json_val(reader);
           json            += "\"" + key + "\":" + val;
-          if (i < length - 1)
+          if (i < (size_t)length - 1)
           {
             json += ",";
           }
@@ -577,7 +579,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAwwayWithSevelraUnsignedNumber
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(length, 25);
 
-  for (size_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < (size_t)length; ++i)
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -622,7 +624,7 @@ TEST(cardano_cbor_reader_read_start_array, canReadAFixedSizeArrayWithUnsigned64b
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(length, 3);
 
-  for (size_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < (size_t)length; ++i)
   {
     result = cardano_cbor_reader_peek_state(reader, &state);
     EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1951,13 +1953,18 @@ TEST(cardano_cbor_reader_read_tag, canReadNestedTaggedValues)
 
 TEST(cardano_cbor_reader_read_textstring, canReadFixedLengthTextStrings)
 {
+  // On Windows UTF-8 literals cause issues, so we use hex values instead.
+  const std::string vector1 = std::string("\xC3\xBC");     // \u00FC
+  const std::string vector2 = std::string("\xE6\xB0\xB4"); // \u6C34
+  const std::string vector3 = std::string("\xCE\xBB");     // \u03BB
+
   verify_text("60", "", CARDANO_CBOR_READER_STATE_TEXTSTRING);
   verify_text("6161", "a", CARDANO_CBOR_READER_STATE_TEXTSTRING);
   verify_text("6449455446", "IETF", CARDANO_CBOR_READER_STATE_TEXTSTRING);
   verify_text("62225c", "\"\\", CARDANO_CBOR_READER_STATE_TEXTSTRING);
-  verify_text("62c3bc", "\u00FC", CARDANO_CBOR_READER_STATE_TEXTSTRING);
-  verify_text("63e6b0b4", "\u6C34", CARDANO_CBOR_READER_STATE_TEXTSTRING);
-  verify_text("62cebb", "\u03BB", CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("62c3bc", vector1.c_str(), CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("63e6b0b4", vector2.c_str(), CARDANO_CBOR_READER_STATE_TEXTSTRING);
+  verify_text("62cebb", vector3.c_str(), CARDANO_CBOR_READER_STATE_TEXTSTRING);
 }
 
 TEST(cardano_cbor_reader_read_textstring, canReadIndefiniteLengthTextStrings)

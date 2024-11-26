@@ -874,7 +874,7 @@ TEST(cardano_address_from_string, returnsErrorWhenMemoryAllocationFails)
   cardano_address_t* address = NULL;
 
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   cardano_error_t result = cardano_address_from_string("2222222222222222", strlen("2222222222222222"), &address);
@@ -1097,7 +1097,7 @@ TEST(cardano_address_is_valid_byron, returnFalseIfMemoryAllocationFails)
 {
   // Arrange
   reset_allocators_run_count();
-  cardano_set_allocators(fail_right_away_malloc, _cardano_realloc, _cardano_free);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
   bool result = cardano_address_is_valid_byron("2222222222222222", strlen("2222222222222222"));
