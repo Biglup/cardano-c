@@ -97,7 +97,16 @@ verify_decode(const std::string& bech32, const std::string& expected_hrp, const 
   ASSERT_THAT(data_size, expected_data.size());
   ASSERT_THAT(hrp_size, testing::Eq(expected_hrp.size() + 1));
   ASSERT_THAT(result, testing::Eq(CARDANO_SUCCESS));
-  ASSERT_THAT(memcmp(data, &expected_data[0], data_size), testing::Eq(0));
+
+  if (expected_data.size() > 0)
+  {
+    ASSERT_THAT(memcmp(data, &expected_data[0], data_size), testing::Eq(0));
+  }
+  else
+  {
+    ASSERT_THAT(data_size, testing::Eq(0));
+  }
+
   ASSERT_THAT(strcmp(hrp, expected_hrp.c_str()), testing::Eq(0));
 
   // Cleanup
