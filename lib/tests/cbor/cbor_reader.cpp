@@ -2275,7 +2275,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfBufferIsNull)
 {
   cardano_buffer_t* buffer     = nullptr;
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0, &value, &bytes_read);
@@ -2287,7 +2287,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIs8BitsAnd
   const char*       cbor_hex   = "18";
   cardano_buffer_t* buffer     = cardano_buffer_from_hex(cbor_hex, strlen(cbor_hex));
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0xf8, &value, &bytes_read);
@@ -2302,7 +2302,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIs16BitsAn
   const char*       cbor_hex   = "18";
   cardano_buffer_t* buffer     = cardano_buffer_from_hex(cbor_hex, strlen(cbor_hex));
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0xf9, &value, &bytes_read);
@@ -2317,7 +2317,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIs32BitsAn
   const char*       cbor_hex   = "18";
   cardano_buffer_t* buffer     = cardano_buffer_from_hex(cbor_hex, strlen(cbor_hex));
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0xfa, &value, &bytes_read);
@@ -2332,7 +2332,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIs64BitsAn
   const char*       cbor_hex   = "18";
   cardano_buffer_t* buffer     = cardano_buffer_from_hex(cbor_hex, strlen(cbor_hex));
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0xfb, &value, &bytes_read);
@@ -2347,7 +2347,7 @@ TEST(_cbor_reader_decode_unsigned_integer, returnErrorIfAdditionalInfoIsUnknown)
   const char*       cbor_hex   = "18";
   cardano_buffer_t* buffer     = cardano_buffer_from_hex(cbor_hex, strlen(cbor_hex));
   uint64_t          value      = 0;
-  uint64_t          bytes_read = 0;
+  size_t            bytes_read = 0;
 
   // Act
   cardano_error_t result = _cbor_reader_decode_unsigned_integer(buffer, 0xff, &value, &bytes_read);

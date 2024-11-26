@@ -183,9 +183,13 @@ jobs:
         shell: bash
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
-          mkdir -p $RELEASE_DIR
+          mkdir -p $RELEASE_DIR/lib
+          cp README %RELEASE_DIR%/
+          cp LICENSE %RELEASE_DIR%/
           cp -r lib/include $RELEASE_DIR/
-          cp build/release/lib/* $RELEASE_DIR/ 2>/dev/null || true
+          cp build/release/lib/*.so $RELEASE_DIR/lib 2>/dev/null || true
+          cp build/release/lib/*.a $RELEASE_DIR/lib 2>/dev/null || true
+          cp build/release/lib/*.pc $RELEASE_DIR/lib 2>/dev/null || true
           tar -czf "${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
 
       # Package binaries (Windows MSVC)
@@ -195,16 +199,21 @@ jobs:
         run: |
           set RELEASE_DIR=release\%RELEASE_NAME%
           mkdir %RELEASE_DIR%
+          mkdir %RELEASE_DIR%\lib
           
+          # Copy include files
           xcopy /E /I lib\include %RELEASE_DIR%\include
-
+          
+          # Copy .dll and .lib files into /lib
           for %%f in (dll lib) do (
-              xcopy /Y build\release\lib\Release\*.%%f %RELEASE_DIR%\
+              xcopy /Y build\release\lib\Release\*.%%f %RELEASE_DIR%\lib\
           )
-
+          
+          # Copy README and LICENSE files
           xcopy /Y README %RELEASE_DIR%\
           xcopy /Y LICENSE %RELEASE_DIR%\
           
+          # Compress the release directory
           powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath %RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
@@ -213,11 +222,12 @@ jobs:
         shell: bash
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
-          mkdir -p $RELEASE_DIR
+          mkdir -p $RELEASE_DIR/lib
           cp -r lib/include $RELEASE_DIR/
           cp README %RELEASE_DIR%/
           cp LICENSE %RELEASE_DIR%/
-          cp build/release/lib/Release* $RELEASE_DIR/ 2>/dev/null || true
+          cp build/release/lib/release/*.dll $RELEASE_DIR/lib 2>/dev/null || true
+          cp build/release/lib/release/*.dll.a $RELEASE_DIR/lib 2>/dev/null || true
           7z a "${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
 
       # Upload artifacts to GitHub Release (Unix)
@@ -228,8 +238,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: release-${{ env.RELEASE_NAME }}.tar.gz
-          asset_name: release-${{ env.RELEASE_NAME }}.tar.gz
+          asset_path: ${{ env.RELEASE_NAME }}.tar.gz
+          asset_name: ${{ env.RELEASE_NAME }}.tar.gz
           asset_content_type: application/gzip
 
       # Upload artifacts to GitHub Release (Windows)
@@ -240,6 +250,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: release-${{ env.RELEASE_NAME }}.zip
-          asset_name: release-${{ env.RELEASE_NAME }}.zip
+          asset_path: ${{ env.RELEASE_NAME }}.zip
+          asset_name: ${{ env.RELEASE_NAME }}.zip
           asset_content_type: application/zip

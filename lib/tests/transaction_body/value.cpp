@@ -1598,7 +1598,7 @@ TEST(cardano_value_get_intersection_count, canGetIntersectionCount)
   // Arrange
   cardano_value_t* value1 = new_default_value(CBOR);
   cardano_value_t* value2 = new_default_value(CBOR_VALUE_WITH_TWICE_THE_ASSETS);
-  size_t           result = 0;
+  uint64_t         result = 0;
 
   // Act
   cardano_error_t error = cardano_value_get_intersection_count(value1, value2, &result);
@@ -1618,7 +1618,7 @@ TEST(cardano_value_get_intersection_count, canGetIntersectionCount2)
   // Arrange
   cardano_value_t* value1 = new_default_value(CBOR);
   cardano_value_t* value2 = new_default_value(CBOR2);
-  size_t           result = 0;
+  uint64_t         result = 0;
 
   // Act
   cardano_error_t error = cardano_value_get_intersection_count(value1, value2, &result);
@@ -1638,7 +1638,7 @@ TEST(cardano_value_get_intersection_count, canGetIntersectionCountOfOnlyAda)
   // Arrange
   cardano_value_t* value1 = new_default_value(CBOR);
   cardano_value_t* value2 = new_default_value("01");
-  size_t           result = 0;
+  uint64_t         result = 0;
 
   // Act
   cardano_error_t error = cardano_value_get_intersection_count(value1, value2, &result);
@@ -1657,7 +1657,7 @@ TEST(cardano_value_get_intersection_count, returnsErrorIfLshIsNull)
 {
   // Arrange
   cardano_value_t* value2 = new_default_value(CBOR);
-  size_t           result = 0;
+  uint64_t         result = 0;
 
   // Act
   cardano_error_t error = cardano_value_get_intersection_count(nullptr, value2, &result);
@@ -1673,7 +1673,7 @@ TEST(cardano_value_get_intersection_count, returnsErrorIfRhsIsNull)
 {
   // Arrange
   cardano_value_t* value1 = new_default_value(CBOR);
-  size_t           result = 0;
+  uint64_t         result = 0;
 
   // Act
   cardano_error_t error = cardano_value_get_intersection_count(value1, nullptr, &result);

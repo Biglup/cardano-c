@@ -21,7 +21,7 @@ jobs:
           mkdir -p gtest-build
           cd gtest-build
           curl -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-          tar -xf googletest-release-1.11.0.zip
+          unzip googletest-release-1.11.0.zip
           cd googletest-release-1.11.0
           cmake -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
@@ -59,7 +59,7 @@ jobs:
           mkdir -p gtest-build
           cd gtest-build
           curl -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-          tar -xf googletest-release-1.11.0.zip
+          unzip googletest-release-1.11.0.zip
           cd googletest-release-1.11.0
           cmake -G "Visual Studio 17 2022" -A Win32 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
