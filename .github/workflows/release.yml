@@ -164,7 +164,7 @@ jobs:
             .
           cmake --build . --config Release
 
-      # Build on Windows MinGW
+      # Build on Windows MinGW (Without Clang-Tidy for MinGW builds for now, we have some misc-include-cleaner only on this platform)
       - name: Build (Windows MinGW)
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
@@ -173,6 +173,8 @@ jobs:
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+            -DCMAKE_C_CLANG_TIDY= \
+            -DCMAKE_CXX_CLANG_TIDY= \
             -DCMAKE_BUILD_TYPE=Release \
             .
           cmake --build . --config Release
@@ -188,6 +190,7 @@ jobs:
           cp COPYING $RELEASE_DIR/LICENSE
           cp -r lib/include $RELEASE_DIR/
           cp build/release/lib/*.so $RELEASE_DIR/lib 2>/dev/null || true
+          cp build/release/lib/*.dylib $RELEASE_DIR/lib 2>/dev/null || true
           cp build/release/lib/*.a $RELEASE_DIR/lib 2>/dev/null || true
           cp build/release/lib/*.pc $RELEASE_DIR/lib 2>/dev/null || true
           tar -czf "${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
