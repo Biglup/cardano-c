@@ -103,7 +103,7 @@ ADD_DEFINITIONS(-D JSONC_STATIC)
 
 # Compiler options
 IF (CMAKE_COMPILER_IS_GNUC)
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H -Wno-error=misc-include-cleaner")
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H")
 ENDIF ()
 
 # Build shared library

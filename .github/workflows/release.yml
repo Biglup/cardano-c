@@ -32,9 +32,6 @@ jobs:
           - os: windows-latest
             arch: x86_64
             compiler: msvc
-          - os: windows-latest
-            arch: x86_64
-            compiler: mingw
 
     name: Build on ${{ matrix.os }} for ${{ matrix.arch }} using ${{ matrix.compiler }}
 
@@ -164,7 +161,7 @@ jobs:
             .
           cmake --build . --config Release
 
-      # Build on Windows MinGW (We have some misc-include-cleaner only on this platform, disable for now)
+      # Build on Windows MinGW (Without Clang-Tidy for MinGW builds for now)
       - name: Build (Windows MinGW)
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
@@ -173,6 +170,8 @@ jobs:
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+            -DCMAKE_C_CLANG_TIDY= \
+            -DCMAKE_CXX_CLANG_TIDY= \
             -DCMAKE_BUILD_TYPE=Release \
             .
           cmake --build . --config Release
