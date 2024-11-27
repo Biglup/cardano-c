@@ -1,5 +1,12 @@
 name: Build and Unit Tests
-on: [push]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - '*'
 jobs:
   build_and_unit_tests_little_endian:
     runs-on: ubuntu-latest

@@ -2,10 +2,12 @@ name: Static Code Analysis
 
 on:
   pull_request:
-    types: [assigned, opened, reopened, synchronize]
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    tags-ignore:
+      - '*'
 jobs:
   static_code_analysis:
     runs-on: ubuntu-latest
