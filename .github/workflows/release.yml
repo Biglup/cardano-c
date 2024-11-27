@@ -175,7 +175,7 @@ jobs:
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
             -DCMAKE_BUILD_TYPE=Release \
             .
-          CFLAGS="-Wno-error" CXXFLAGS="-Wno-error" cmake --build . --config Release
+          cmake --build . --config Release
 
       # Package binaries (Unix)
       - name: Package binaries (Unix)
