@@ -185,7 +185,7 @@ jobs:
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR/lib
           cp README.md $RELEASE_DIR/
-          cp LICENSE $RELEASE_DIR/
+          cp COPYING $RELEASE_DIR/LICENSE
           cp -r lib/include $RELEASE_DIR/
           cp build/release/lib/*.so $RELEASE_DIR/lib 2>/dev/null || true
           cp build/release/lib/*.a $RELEASE_DIR/lib 2>/dev/null || true
@@ -208,7 +208,7 @@ jobs:
           )
           
           xcopy /Y README.md %RELEASE_DIR%\
-          xcopy /Y LICENSE %RELEASE_DIR%\
+          xcopy /Y COPYING %RELEASE_DIR%\LICENSE
           
           powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath %RELEASE_NAME%.zip
 
@@ -221,7 +221,7 @@ jobs:
           mkdir -p $RELEASE_DIR/lib
           cp -r lib/include $RELEASE_DIR/
           cp README.md $RELEASE_DIR/
-          cp LICENSE $RELEASE_DIR/
+          cp COPYING $RELEASE_DIR/LICENSE
           cp build/release/lib/release/*.dll $RELEASE_DIR/lib 2>/dev/null || true
           cp build/release/lib/release/*.dll.a $RELEASE_DIR/lib 2>/dev/null || true
           7z a "${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
