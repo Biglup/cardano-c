@@ -184,7 +184,7 @@ jobs:
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR/lib
-          cp README $RELEASE_DIR/
+          cp README.md $RELEASE_DIR/
           cp LICENSE $RELEASE_DIR/
           cp -r lib/include $RELEASE_DIR/
           cp build/release/lib/*.so $RELEASE_DIR/lib 2>/dev/null || true
@@ -201,19 +201,15 @@ jobs:
           mkdir %RELEASE_DIR%
           mkdir %RELEASE_DIR%\lib
           
-          # Copy include files
           xcopy /E /I lib\include %RELEASE_DIR%\include
           
-          # Copy .dll and .lib files into /lib
           for %%f in (dll lib) do (
               xcopy /Y build\release\lib\Release\*.%%f %RELEASE_DIR%\lib\
           )
           
-          # Copy README and LICENSE files
-          xcopy /Y README %RELEASE_DIR%\
+          xcopy /Y README.md %RELEASE_DIR%\
           xcopy /Y LICENSE %RELEASE_DIR%\
           
-          # Compress the release directory
           powershell Compress-Archive -Path %RELEASE_DIR%\* -DestinationPath %RELEASE_NAME%.zip
 
       # Package binaries (Windows MinGW)
@@ -224,7 +220,7 @@ jobs:
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR/lib
           cp -r lib/include $RELEASE_DIR/
-          cp README $RELEASE_DIR/
+          cp README.md $RELEASE_DIR/
           cp LICENSE $RELEASE_DIR/
           cp build/release/lib/release/*.dll $RELEASE_DIR/lib 2>/dev/null || true
           cp build/release/lib/release/*.dll.a $RELEASE_DIR/lib 2>/dev/null || true
