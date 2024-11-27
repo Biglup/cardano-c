@@ -164,7 +164,7 @@ jobs:
             .
           cmake --build . --config Release
 
-      # Build on Windows MinGW (Without Clang-Tidy for MinGW builds for now, we have some misc-include-cleaner only on this platform)
+      # Build on Windows MinGW (We have some misc-include-cleaner only on this platform, disable for now)
       - name: Build (Windows MinGW)
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
@@ -173,11 +173,9 @@ jobs:
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
-            -DCMAKE_C_CLANG_TIDY= \
-            -DCMAKE_CXX_CLANG_TIDY= \
             -DCMAKE_BUILD_TYPE=Release \
             .
-          cmake --build . --config Release
+          CFLAGS="-Wno-error" CXXFLAGS="-Wno-error" cmake --build . --config Release
 
       # Package binaries (Unix)
       - name: Package binaries (Unix)
