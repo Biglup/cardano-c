@@ -34,7 +34,7 @@ jobs:
       - name: Build Project (64-bit)
         shell: cmd
         run: |
-          cmake -G "Visual Studio 17 2022" -A x64 -DTESTING_ENABLED=ON .
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:\googletest\lib\cmake\GTest" -DTESTING_ENABLED=ON .
           cmake --build . --config Debug
 
       - name: Run Unit Tests (64-bit)
@@ -72,7 +72,7 @@ jobs:
       - name: Build Project (32-bit)
         shell: cmd
         run: |
-          cmake -G "Visual Studio 17 2022" -A Win32 -DTESTING_ENABLED=ON .
+          cmake -G "Visual Studio 17 2022" -A Win32 -DCMAKE_PREFIX_PATH="C:\googletest\lib\cmake\GTest" -DTESTING_ENABLED=ON .
           cmake --build . --config Debug
 
       - name: Run Unit Tests (32-bit)
