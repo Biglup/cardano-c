@@ -176,6 +176,7 @@ jobs:
           -I${{ github.workspace }}/lib \
           -I${{ github.workspace }}/lib/external \
           -I${{ github.workspace }}/lib/external/libsodium \
+          -I${{ github.workspace }}/lib/external/libsodium/include \
           -I${{ github.workspace }}/lib/external/gmp \
           -I${{ github.workspace }}/lib/external/json-c" \
           -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
