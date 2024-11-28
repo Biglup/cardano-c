@@ -70,7 +70,7 @@ jobs:
         run: |
           $MingwVersion = "i686-14.2.0-release-win32-dwarf-msvcrt-rt_v12-rev0"
           $MingwUrl = "https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev0/$MingwVersion.7z"
-          $MingwDir = "$env:RUNNER_TEMP/$MingwVersion"
+          $MingwDir = "$env:RUNNER_TEMP"
 
           # Download and extract MinGW
           Invoke-WebRequest -Uri $MingwUrl -OutFile "$env:RUNNER_TEMP\$MingwVersion.7z"
@@ -80,6 +80,9 @@ jobs:
           echo "Verifying extracted MinGW binaries..."
           ls $env:RUNNER_TEMP
           ls $MingwDir
+          ls $MingwDir/$MingwVersion
+          ls $MingwDir/$MingwVersion/mingw32
+          ls $MingwDir/$MingwVersion/mingw32/bin
           ls $MingwDir/mingw32
           ls $MingwDir/mingw32/bin
 
