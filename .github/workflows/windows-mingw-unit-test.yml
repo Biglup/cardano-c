@@ -22,7 +22,7 @@ jobs:
           7z x "$env:RUNNER_TEMP\$MingwVersion.7z" -o$MingwDir
 
           # Add MinGW to PATH
-          "$MingwDir\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "$MingwDir\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Setup GTest
         shell: bash
@@ -77,7 +77,7 @@ jobs:
           7z x "$env:RUNNER_TEMP\$MingwVersion.7z" -o$MingwDir
 
           # Add MinGW to PATH
-          "$MingwDir\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "$MingwDir\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Setup GTest
         shell: bash
@@ -88,8 +88,8 @@ jobs:
           unzip googletest-release-1.11.0.zip
           cd googletest-release-1.11.0
           cmake -G "MinGW Makefiles" \
-            -DCMAKE_C_COMPILER=$RUNNER_TEMP/mingw-w64/bin/i686-w64-mingw32-gcc.exe \
-            -DCMAKE_CXX_COMPILER=$RUNNER_TEMP/mingw-w64/bin/i686-w64-mingw32-g++.exe \
+            -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
@@ -100,8 +100,8 @@ jobs:
         shell: bash
         run: |
           cmake -G "MinGW Makefiles" \
-            -DCMAKE_C_COMPILER=$RUNNER_TEMP/mingw-w64/bin/i686-w64-mingw32-gcc.exe \
-            -DCMAKE_CXX_COMPILER=$RUNNER_TEMP/mingw-w64/bin/i686-w64-mingw32-g++.exe \
+            -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_PREFIX_PATH="C:/googletest/lib/cmake/GTest" \
             -DTESTING_ENABLED=ON \
