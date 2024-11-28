@@ -24,8 +24,8 @@
 #include <cardano/assets/asset_name.h>
 #include <cardano/object.h>
 
-#include "src/allocators.h"
-#include "src/string_safe.h"
+#include "../allocators.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <sodium/core.h>

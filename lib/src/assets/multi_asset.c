@@ -26,8 +26,8 @@
 #include <cardano/error.h>
 #include <cardano/object.h>
 
-#include "src/allocators.h"
-#include "src/collections/array.h"
+#include "../allocators.h"
+#include "../collections/array.h"
 
 #include <assert.h>
 #include <string.h>

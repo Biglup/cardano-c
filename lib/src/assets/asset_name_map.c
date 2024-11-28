@@ -26,9 +26,9 @@
 #include <cardano/assets/asset_name_map.h>
 #include <cardano/object.h>
 
-#include "src/allocators.h"
-#include "src/cbor/cbor_validation.h"
-#include "src/collections/array.h"
+#include "../allocators.h"
+#include "../cbor/cbor_validation.h"
+#include "../collections/array.h"
 
 #include <assert.h>
 #include <string.h>
