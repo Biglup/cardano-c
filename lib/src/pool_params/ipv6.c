@@ -25,10 +25,10 @@
 #include <cardano/pool_params/ipv6.h>
 
 #include "../allocators.h"
+#include "../endian.h"
 #include "../string_safe.h"
 
 #include <assert.h>
-#include <src/endian.h>
 #include <stdio.h>
 #include <string.h>
 

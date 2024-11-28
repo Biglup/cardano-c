@@ -27,8 +27,9 @@
 #include "addr_common.h"
 #include "byron_addr_pack.h"
 
+#include "../../string_safe.h"
+
 #include <assert.h>
-#include <src/string_safe.h>
 #include <string.h>
 
 /* IMPLEMENTATION ************************************************************/

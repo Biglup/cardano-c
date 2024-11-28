@@ -29,12 +29,10 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "../string_safe.h"
 
 #include <assert.h>
-#include <src/string_safe.h>
 #include <string.h>
-
-#include "../config.h"
 
 /* STRUCTURES ****************************************************************/
 

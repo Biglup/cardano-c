@@ -29,7 +29,7 @@
 #include <cardano/export.h>
 #include <cardano/voting_procedures/governance_action_id_list.h>
 #include <cardano/voting_procedures/voting_procedure.h>
-#include <src/voting_procedures/voting_procedure_list.h>
+#include <cardano/voting_procedures/voting_procedure_list.h>
 
 /* DECLARATIONS **************************************************************/
 

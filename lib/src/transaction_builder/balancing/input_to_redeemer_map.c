@@ -23,12 +23,12 @@
 
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 
+#include "../../allocators.h"
 #include "../../collections/array.h"
 #include <assert.h>
 #include <cardano/object.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/witness_set/redeemer.h>
-#include <src/allocators.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/

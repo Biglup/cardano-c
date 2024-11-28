@@ -28,8 +28,9 @@
 #include <cardano/buffer.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/error.h>
-#include <src/cbor/cbor_additional_info.h>
-#include <src/cbor/cbor_initial_byte.h>
+
+#include "../cbor_additional_info.h"
+#include "../cbor_initial_byte.h"
 
 #include <math.h>
 #include <stdio.h>

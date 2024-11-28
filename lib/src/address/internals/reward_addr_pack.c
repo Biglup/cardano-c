@@ -26,8 +26,9 @@
 #include "addr_common.h"
 #include "reward_addr_pack.h"
 
+#include "../../string_safe.h"
+
 #include <assert.h>
-#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/

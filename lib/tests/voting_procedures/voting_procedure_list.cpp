@@ -23,8 +23,8 @@
 
 #include <cardano/error.h>
 
-#include "../src/voting_procedures/voting_procedure_list.h"
 #include <cardano/voting_procedures/voting_procedure.h>
+#include <cardano/voting_procedures/voting_procedure_list.h>
 
 #include "tests/allocators_helpers.h"
 

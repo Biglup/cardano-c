@@ -26,8 +26,9 @@
 #include "addr_common.h"
 #include "enterprise_addr_pack.h"
 
+#include "../../string_safe.h"
+
 #include <assert.h>
-#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/

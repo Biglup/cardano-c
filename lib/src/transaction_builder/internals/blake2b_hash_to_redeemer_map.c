@@ -25,12 +25,12 @@
 
 #include <cardano/crypto/blake2b_hash_set.h>
 
+#include "../../allocators.h"
 #include "../../collections/array.h"
 #include <assert.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/object.h>
 #include <cardano/witness_set/redeemer.h>
-#include <src/allocators.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/

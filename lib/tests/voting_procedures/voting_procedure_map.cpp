@@ -24,15 +24,15 @@
 #include <cardano/error.h>
 
 #include <cardano/common/governance_action_id.h>
+#include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/voting_procedures/governance_action_id_list.h>
 #include <cardano/voting_procedures/voting_procedure.h>
+#include <cardano/voting_procedures/voting_procedure_list.h>
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
-#include "../src/voting_procedures/voting_procedure_list.h"
 #include "../src/voting_procedures/voting_procedure_map.h"
 
-#include <cardano/plutus_data/constr_plutus_data.h>
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/

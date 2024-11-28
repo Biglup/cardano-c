@@ -23,9 +23,10 @@
 
 #include <cardano/object.h>
 
+#include <cardano/voting_procedures/voting_procedure_list.h>
+
 #include "../allocators.h"
 #include "../collections/array.h"
-#include "voting_procedure_list.h"
 
 #include <assert.h>
 #include <string.h>
