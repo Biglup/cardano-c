@@ -227,14 +227,16 @@ jobs:
         if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: bash
         run: |
-          RELEASE_DIR=release/${{ env.RELEASE_NAME }}
+          RELEASE_DIR=${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR/lib
           cp -r lib/include $RELEASE_DIR/
           cp README.md $RELEASE_DIR/
           cp COPYING $RELEASE_DIR/LICENSE
-          cp build/release/lib/release/*.dll $RELEASE_DIR/lib 2>/dev/null || true
-          cp build/release/lib/release/*.dll.a $RELEASE_DIR/lib 2>/dev/null || true
-          7z a "${{ env.RELEASE_NAME }}.zip" $RELEASE_DIR
+          cp build/release/lib/*.dll $RELEASE_DIR/lib 2>/dev/null || true
+          cp build/release/lib/*.dll.a $RELEASE_DIR/lib 2>/dev/null || true
+          cd $RELEASE_DIR
+          7z a "../${{ env.RELEASE_NAME }}.zip" *
+          cd ..
 
       # Upload artifacts to GitHub Release (Unix)
       - name: Upload artifacts to GitHub Release (Unix)

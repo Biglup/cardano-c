@@ -3,7 +3,7 @@
 #   and many OpenWRT packages require, much newer CMake packages.
 #  We're stopping before 3.10 because that version starts requiring
 #   c++11, which isn't available on e.g HPUX.
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 
 # The project() command manages VERSION variables.
 cmake_policy(SET CMP0048 NEW)
