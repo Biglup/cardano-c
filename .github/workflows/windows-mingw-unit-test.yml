@@ -40,8 +40,8 @@ jobs:
           echo "Verifying extracted files..."
           ls "$ExtractDir"
 
-          # Dynamically locate the MinGW directory
-          MingwDir=$(find "$ExtractDir" -type d -name "mingw32" | head -n 1)
+          # Dynamically locate the MinGW directory (mingw32 or mingw64)
+          MingwDir=$(find "$ExtractDir" -type d \( -name "mingw32" -o -name "mingw64" \) | head -n 1)
 
           if [ -z "$MingwDir" ]; then
               echo "Error: Could not locate the MinGW directory!"
