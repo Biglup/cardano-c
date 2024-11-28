@@ -90,8 +90,8 @@ option(ENABLE_RDRAND                  "Enable RDRAND Hardware RNG Hash Seed."   
 option(ENABLE_THREADING               "Enable partial threading support."                     OFF)
 option(OVERRIDE_GET_RANDOM_SEED       "Override json_c_get_random_seed() with custom code."   OFF)
 option(DISABLE_EXTRA_LIBS             "Avoid linking against extra libraries, such as libbsd." OFF)
-option(DISABLE_JSON_POINTER           "Disable JSON pointer (RFC6901) and JSON patch support." OFF)
-option(DISABLE_JSON_PATCH             "Disable JSON patch (RFC6902) support."                 OFF)
+option(DISABLE_JSON_POINTER           "Disable JSON pointer (RFC6901) and JSON patch support." ON)
+option(DISABLE_JSON_PATCH             "Disable JSON patch (RFC6902) support."                 ON)
 option(NEWLOCALE_NEEDS_FREELOCALE     "Work around newlocale bugs in old FreeBSD by calling freelocale"  OFF)
 option(BUILD_APPS                     "Default to building apps" ON)
 
