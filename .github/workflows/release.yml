@@ -172,6 +172,7 @@ jobs:
         run: |
           cmake -G "MinGW Makefiles" \
           -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+          -CMAKE_C_CLANG_TIDY="" \
           -DCMAKE_C_FLAGS="-I${{ github.workspace }}/lib/include \
           -I${{ github.workspace }}/lib \
           -I${{ github.workspace }}/lib/external \
