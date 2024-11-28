@@ -15,7 +15,7 @@ jobs:
         run: |
           $MingwVersion = "x86_64-14.2.0-release-win32-seh-ucrt-rt_v12-rev0"
           $MingwUrl = "https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev0/$MingwVersion.7z"
-          $MingwDir = "$env:RUNNER_TEMP\mingw-w64"
+          $MingwDir = "$env:RUNNER_TEMP"
 
           # Download and extract MinGW-w64
           Invoke-WebRequest -Uri $MingwUrl -OutFile "$env:RUNNER_TEMP\$MingwVersion.7z"
@@ -70,7 +70,7 @@ jobs:
         run: |
           $MingwVersion = "i686-14.2.0-release-win32-dwarf-msvcrt-rt_v12-rev0"
           $MingwUrl = "https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev0/$MingwVersion.7z"
-          $MingwDir = "$env:RUNNER_TEMP\mingw-w64"
+          $MingwDir = "$env:RUNNER_TEMP"
 
           # Download and extract MinGW-w64
           Invoke-WebRequest -Uri $MingwUrl -OutFile "$env:RUNNER_TEMP\$MingwVersion.7z"
