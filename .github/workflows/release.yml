@@ -171,13 +171,18 @@ jobs:
         shell: bash
         run: |
           cmake -G "MinGW Makefiles" \
-            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-            -DCMAKE_C_FLAGS="-I${{ github.workspace }}/lib/include" \
-            -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
-            -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
-            -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
-            -DCMAKE_BUILD_TYPE=Release \
-            .
+          -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+          -DCMAKE_C_FLAGS="-I${{ github.workspace }}/lib/include \
+          -I${{ github.workspace }}/lib \
+          -I${{ github.workspace }}/lib/external \
+          -I${{ github.workspace }}/lib/external/libsodium \
+          -I${{ github.workspace }}/lib/external/gmp \
+          -I${{ github.workspace }}/lib/external/json-c" \
+          -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+          -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+          -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+          -DCMAKE_BUILD_TYPE=Release \
+          .
           cmake --build . --config Release
 
       # Package binaries (Unix)
