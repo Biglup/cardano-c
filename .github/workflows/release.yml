@@ -172,6 +172,7 @@ jobs:
         run: |
           cmake -G "MinGW Makefiles" \
             -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_C_FLAGS="-I${{ github.workspace }}/lib/include" \
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
