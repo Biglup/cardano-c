@@ -32,6 +32,9 @@ jobs:
           - os: windows-latest
             arch: x86_64
             compiler: msvc
+          - os: windows-latest
+            arch: x86_64
+            compiler: mingw
 
     name: Build on ${{ matrix.os }} for ${{ matrix.arch }} using ${{ matrix.compiler }}
 
@@ -103,19 +106,20 @@ jobs:
             cmake --version
           fi
 
-      # Install dependencies for Windows
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
+      # Install dependencies for Windows (MinGW from niXman)
+      - name: Install dependencies (Windows MinGW from niXman)
+        if: runner.os == 'Windows' && matrix.compiler == 'mingw'
         shell: pwsh
         run: |
-          if ("${{ matrix.compiler }}" -eq 'mingw') {
-            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-            choco install -y mingw
-            # Add MinGW to PATH
-            "C:\tools\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          }
+          $MingwVersion = "x86_64-14.2.0-release-win32-seh-ucrt-rt_v12-rev0"
+          $MingwUrl = "https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev0/$MingwVersion.7z"
+          $MingwDir = "$env:RUNNER_TEMP\mingw-w64"
+          
+          Invoke-WebRequest -Uri $MingwUrl -OutFile "$env:RUNNER_TEMP\$MingwVersion.7z"
+          
+          7z x "$env:RUNNER_TEMP\$MingwVersion.7z" -o$MingwDir
+          
+          "$MingwDir\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # Setup MSVC environment
       - name: Setup MSVC environment
@@ -167,11 +171,10 @@ jobs:
         shell: bash
         run: |
           cmake -G "MinGW Makefiles" \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
-            -DCMAKE_C_CLANG_TIDY= \
-            -DCMAKE_CXX_CLANG_TIDY= \
             -DCMAKE_BUILD_TYPE=Release \
             .
           cmake --build . --config Release
