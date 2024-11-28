@@ -70,14 +70,18 @@ jobs:
         run: |
           $MingwVersion = "i686-14.2.0-release-win32-dwarf-msvcrt-rt_v12-rev0"
           $MingwUrl = "https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev0/$MingwVersion.7z"
-          $MingwDir = "$env:RUNNER_TEMP"
+          $MingwDir = "$env:RUNNER_TEMP/mingw32"
 
-          # Download and extract MinGW-w64
+          # Download and extract MinGW
           Invoke-WebRequest -Uri $MingwUrl -OutFile "$env:RUNNER_TEMP\$MingwVersion.7z"
           7z x "$env:RUNNER_TEMP\$MingwVersion.7z" -o$MingwDir
 
-          # Add MinGW to PATH
-          "$MingwDir\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          # Verify extraction
+          echo "Verifying extracted MinGW binaries..."
+          ls $MingwDir/bin
+          
+          # Add to PATH
+          "$MingwDir/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Setup GTest
         shell: bash
@@ -100,13 +104,13 @@ jobs:
         shell: bash
         run: |
           cmake -G "MinGW Makefiles" \
-            -DCMAKE_C_COMPILER=$RUNNER_TEMP/mingw32/bin/i686-w64-mingw32-gcc.exe \
-            -DCMAKE_CXX_COMPILER=$RUNNER_TEMP/mingw32/bin/i686-w64-mingw32-g++.exe \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_PREFIX_PATH="C:/googletest/lib/cmake/GTest" \
-            -DTESTING_ENABLED=ON \
-            .
-          cmake --build . --config Debug
+             -DCMAKE_C_COMPILER=$RUNNER_TEMP/mingw32/bin/i686-w64-mingw32-gcc.exe \
+             -DCMAKE_CXX_COMPILER=$RUNNER_TEMP/mingw32/bin/i686-w64-mingw32-g++.exe \
+             -DCMAKE_BUILD_TYPE=Debug \
+             -DCMAKE_PREFIX_PATH="C:/googletest/lib/cmake/GTest" \
+             -DTESTING_ENABLED=ON \
+             .
+           cmake --build . --config Debug
 
       - name: Run Unit Tests (32-bit MinGW)
         shell: bash
