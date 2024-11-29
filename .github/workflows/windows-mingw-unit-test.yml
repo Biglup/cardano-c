@@ -86,10 +86,3 @@ jobs:
         shell: bash
         run: |
           ctest -C Debug --output-on-failure
-
-      - name: Verify Compiler Installation
-        shell: bash
-        run: |
-          echo "PATH: $PATH"
-          which ${MingwDir}/bin/${{ matrix.arch.arch }}-w64-mingw32-gcc
-          ${MingwDir}/bin/${{ matrix.arch.arch }}-w64-mingw32-gcc --version
