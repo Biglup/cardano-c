@@ -179,7 +179,13 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
       if (peek_result != CARDANO_SUCCESS)
       {
+        cardano_address_unref(&address);
+        cardano_value_unref(&value);
+        cardano_datum_unref(&datum);
+        cardano_script_unref(&script_ref);
+
         *transaction_output = NULL;
+
         return peek_result;
       }
 
@@ -194,6 +200,11 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
       if (read_key_result != CARDANO_SUCCESS)
       {
+        cardano_address_unref(&address);
+        cardano_value_unref(&value);
+        cardano_datum_unref(&datum);
+        cardano_script_unref(&script_ref);
+
         *transaction_output = NULL;
         return read_key_result;
       }
@@ -202,13 +213,20 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
       {
         case 0U:
         {
+          cardano_address_unref(&address);
           cardano_buffer_t* address_bytes = NULL;
 
           const cardano_error_t read_address_result = cardano_cbor_reader_read_bytestring(reader, &address_bytes);
 
           if (read_address_result != CARDANO_SUCCESS)
           {
+            cardano_address_unref(&address);
+            cardano_value_unref(&value);
+            cardano_datum_unref(&datum);
+            cardano_script_unref(&script_ref);
+
             *transaction_output = NULL;
+
             return read_address_result;
           }
 
@@ -232,6 +250,7 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
         }
         case 1U:
         {
+          cardano_value_unref(&value);
           const cardano_error_t read_value_result = cardano_value_from_cbor(reader, &value);
 
           if (read_value_result != CARDANO_SUCCESS)
@@ -250,6 +269,7 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
         }
         case 2U:
         {
+          cardano_datum_unref(&datum);
           const cardano_error_t read_datum_result = cardano_datum_from_cbor(reader, &datum);
 
           if (read_datum_result != CARDANO_SUCCESS)
@@ -268,6 +288,7 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
         }
         case 3U:
         {
+          cardano_script_unref(&script_ref);
           cardano_cbor_tag_t tag;
 
           const cardano_error_t read_tag_result = cardano_cbor_reader_read_tag(reader, &tag);
@@ -374,7 +395,9 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
     if ((new_output_result != CARDANO_SUCCESS) || (set_value_result != CARDANO_SUCCESS) || (set_datum_result != CARDANO_SUCCESS) || (set_script_result != CARDANO_SUCCESS))
     {
+      cardano_transaction_output_unref(transaction_output);
       *transaction_output = NULL;
+
       return new_output_result;
     }
   }
@@ -386,7 +409,13 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
     if (read_array_result != CARDANO_SUCCESS)
     {
+      cardano_address_unref(&address);
+      cardano_value_unref(&value);
+      cardano_datum_unref(&datum);
+      cardano_script_unref(&script_ref);
+
       *transaction_output = NULL;
+
       return read_array_result;
     }
 
@@ -396,7 +425,13 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
     if (read_address_result != CARDANO_SUCCESS)
     {
+      cardano_address_unref(&address);
+      cardano_value_unref(&value);
+      cardano_datum_unref(&datum);
+      cardano_script_unref(&script_ref);
+
       *transaction_output = NULL;
+
       return read_address_result;
     }
 
@@ -406,7 +441,13 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
 
     if (address_from_bytes_result != CARDANO_SUCCESS)
     {
+      cardano_address_unref(&address);
+      cardano_value_unref(&value);
+      cardano_datum_unref(&datum);
+      cardano_script_unref(&script_ref);
+
       *transaction_output = NULL;
+
       return address_from_bytes_result;
     }
 
@@ -415,7 +456,12 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
     if (read_value_result != CARDANO_SUCCESS)
     {
       cardano_address_unref(&address);
+      cardano_value_unref(&value);
+      cardano_datum_unref(&datum);
+      cardano_script_unref(&script_ref);
+
       *transaction_output = NULL;
+
       return read_value_result;
     }
 
@@ -428,6 +474,9 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
       {
         cardano_address_unref(&address);
         cardano_value_unref(&value);
+        cardano_datum_unref(&datum);
+        cardano_script_unref(&script_ref);
+
         *transaction_output = NULL;
 
         return read_datum_result;
@@ -440,6 +489,9 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
       {
         cardano_address_unref(&address);
         cardano_value_unref(&value);
+        cardano_datum_unref(&datum);
+        cardano_script_unref(&script_ref);
+
         *transaction_output = NULL;
 
         return datum_from_hash_result;
@@ -453,6 +505,8 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
       cardano_address_unref(&address);
       cardano_value_unref(&value);
       cardano_datum_unref(&datum);
+      cardano_script_unref(&script_ref);
+
       *transaction_output = NULL;
 
       return expect_end_array_result;
@@ -465,10 +519,13 @@ cardano_transaction_output_from_cbor(cardano_cbor_reader_t* reader, cardano_tran
     cardano_address_unref(&address);
     cardano_value_unref(&value);
     cardano_datum_unref(&datum);
+    cardano_script_unref(&script_ref);
 
     if ((new_output_result != CARDANO_SUCCESS) || (set_value_result != CARDANO_SUCCESS) || (set_datum_result != CARDANO_SUCCESS))
     {
+      cardano_transaction_output_unref(transaction_output);
       *transaction_output = NULL;
+
       return new_output_result;
     }
   }

@@ -155,8 +155,8 @@ IF (CMAKE_BUILD_TYPE STREQUAL "Fuzz")
   SET(CMAKE_CXX_COMPILER "clang++")
 
   # Define additional flags for fuzzing
-  SET(CLANG_COMPILE_FLAGS "-g -O1 -fsanitize=fuzzer,address -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage")
-  SET(CLANG_LINK_FLAGS "-fsanitize=fuzzer,address -fprofile-instr-generate --coverage")
+  SET(CLANG_COMPILE_FLAGS "-g -O1 -fsanitize=fuzzer,address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage")
+  SET(CLANG_LINK_FLAGS "-fsanitize=fuzzer,address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fprofile-instr-generate --coverage")
 
   # Append the fuzzing flags to the existing flags
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_COMPILE_FLAGS}")

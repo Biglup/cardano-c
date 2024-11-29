@@ -38,6 +38,6 @@ FOREACH(FUZZ_SOURCE ${FUZZ_SOURCES})
     SET (CMAKE_CXX_COMPILER "clang++")
 
     # Compiler and linker options for fuzzing and coverage
-    TARGET_COMPILE_OPTIONS(${FUZZ_TARGET_NAME} PRIVATE -fsanitize=fuzzer,address -g -O1 -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage)
-    TARGET_LINK_LIBRARIES(${FUZZ_TARGET_NAME} PRIVATE  cardano-c gcov -fsanitize=fuzzer,address -fprofile-instr-generate)
+    TARGET_COMPILE_OPTIONS(${FUZZ_TARGET_NAME} PRIVATE -fsanitize=fuzzer,address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g -O1 -fprofile-instr-generate -fcoverage-mapping -fprofile-arcs -ftest-coverage)
+    TARGET_LINK_LIBRARIES(${FUZZ_TARGET_NAME} PRIVATE  cardano-c gcov -fsanitize=fuzzer,address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fprofile-instr-generate)
 ENDFOREACH()

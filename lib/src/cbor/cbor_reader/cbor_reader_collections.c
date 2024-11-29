@@ -217,7 +217,10 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
 
   cardano_buffer_t* concat = cardano_buffer_new(INITIAL_CONCAT_BUFFER_CAPACITY);
 
-  if ((concat == NULL) || (cardano_buffer_get_size(data) == 0U))
+  size_t       i    = HEADER_BYTE_SIZE;
+  const size_t size = cardano_buffer_get_size(data);
+
+  if ((concat == NULL) || (size <= HEADER_BYTE_SIZE))
   {
     cardano_buffer_unref(&data);
     cardano_buffer_unref(&concat);
@@ -225,9 +228,7 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
     return CARDANO_ERROR_DECODING;
   }
 
-  size_t       i            = HEADER_BYTE_SIZE;
-  byte_t       initial_byte = cardano_buffer_get_data(data)[i];
-  const size_t size         = cardano_buffer_get_size(data);
+  byte_t initial_byte = cardano_buffer_get_data(data)[i];
 
   while (initial_byte != CBOR_INITIAL_BYTE_INDEFINITE_LENGTH_BREAK)
   {
@@ -236,7 +237,7 @@ _cbor_reader_read_indefinite_length_concatenated(cardano_cbor_reader_t* reader, 
 
     cardano_buffer_t* slice = cardano_buffer_slice(data, i, cardano_buffer_get_size(data));
 
-    if (slice == NULL)
+    if ((slice == NULL) || (cardano_buffer_get_size(slice) == 0U))
     {
       cardano_buffer_unref(&data);
       cardano_buffer_unref(&concat);

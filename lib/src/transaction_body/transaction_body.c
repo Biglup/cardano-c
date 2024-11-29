@@ -1532,7 +1532,15 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
 
   *transaction_body = body;
 
-  return cardano_cbor_validate_end_map("transaction_body", reader);
+  cardano_error_t validation_result = cardano_cbor_validate_end_map("transaction_body", reader);
+
+  if (validation_result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_body_unref(transaction_body);
+    return validation_result;
+  }
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t
