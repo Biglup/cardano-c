@@ -58,6 +58,8 @@ typedef struct cardano_tx_builder_t
 
 /* CONSTANTS *****************************************************************/
 
+static const char* ANCHOR_CBOR                 = "827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000";
+static const char* PROTOCOL_PARAM_UPDATE       = "b8210018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d8201582000000000000000000000000000000000000000000000000000000000000000000e820103101903e8111988b812a20098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba1719035418181864181985d81e820000d81e820101d81e820202d81e820303d81e820101181a8ad81e820000d81e820101d81e820202d81e820303d81e820404d81e820505d81e820606d81e820707d81e820808d81e820909181b1864181c18c8181d19012c181e1903e8181f1907d018201913881821d81e82185902";
 static const char* UTXO_WITH_SCRIPT_ADDRESS    = "82825820bb217abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e001a300583911537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182014e4d01000033222220051200120011";
 static const char* UTXO_WITH_REF_SCRIPT_PV1    = "82825820bb247abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e001a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182014e4d01000033222220051200120011";
 static const char* UTXO_WITH_REF_SCRIPT_PV2    = "82825820bb257abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e002a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182024e4d02000033222220051200120011";
@@ -83,6 +85,12 @@ static const char* ANCHOR_HASH                 = "26ce09df4e6f64fe5cf248968ab78f
 static const char* ANCHOR_URL                  = "https://storage.googleapis.com/biglup/Angel_Castillo.jsonld";
 static const char* GOVERNANCE_ACTION_ID_CBOR   = "825820000000000000000000000000000000000000000000000000000000000000000003";
 static const char* CBOR_YES_WITH_ANCHOR        = "8201827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000";
+static const char* GOVERNANCE_ACTION_HEX       = "0000000000000000000000000000000000000000000000000000000000000000";
+static const char* INVALID_GOV_ACTION_HEX      = "Y000000000000000000000000000000000000000000000000000000000000000";
+static const char* WITHDRAWAL_MAP_CBOR         = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005";
+static const char* CREDENTIAL_SET_CBOR         = "d90102848200581c000000000000000000000000000000000000000000000000000000008200581c100000000000000000000000000000000000000000000000000000008200581c200000000000000000000000000000000000000000000000000000008200581c30000000000000000000000000000000000000000000000000000000";
+static const char* COMITTEE_MEMBERS_MAP_CBOR   = "a48200581c00000000000000000000000000000000000000000000000000000000008200581c10000000000000000000000000000000000000000000000000000000018200581c20000000000000000000000000000000000000000000000000000000028200581c3000000000000000000000000000000000000000000000000000000003";
+static const char* CONSTITUTION_CBOR           = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -5983,4 +5991,2219 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
   cardano_cbor_reader_unref(&voting_procedure_reader);
   cardano_voter_unref(&voter);
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_parameter_change, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_parameter_change(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_parameter_change, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params         = init_protocol_parameters();
+  cardano_provider_t*              provider       = nullptr;
+  cardano_reward_address_t*        reward_address = nullptr;
+  cardano_governance_action_id_t*  action_id      = nullptr;
+  cardano_anchor_t*                anchor         = nullptr;
+  cardano_protocol_param_update_t* pparam_update  = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(PROTOCOL_PARAM_UPDATE, strlen(PROTOCOL_PARAM_UPDATE));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &pparam_update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change(tx_builder, nullptr, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, pparam_update, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, pparam_update, action_id, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_param_update_unref(&pparam_update);
+}
+
+TEST(cardano_tx_builder_propose_parameter_change, canProposeParameterChange)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params         = init_protocol_parameters();
+  cardano_provider_t*              provider       = nullptr;
+  cardano_reward_address_t*        reward_address = nullptr;
+  cardano_governance_action_id_t*  action_id      = nullptr;
+  cardano_anchor_t*                anchor         = nullptr;
+  cardano_protocol_param_update_t* pparam_update  = nullptr;
+  cardano_blake2b_hash_t*          hash           = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &hash), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(PROTOCOL_PARAM_UPDATE, strlen(PROTOCOL_PARAM_UPDATE));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &pparam_update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, pparam_update, action_id, hash);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&actions);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_param_update_unref(&pparam_update);
+  cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_tx_builder_propose_parameter_change, returnsErrorIfMemoryAllocaitonFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params         = init_protocol_parameters();
+  cardano_provider_t*              provider       = nullptr;
+  cardano_reward_address_t*        reward_address = nullptr;
+  cardano_governance_action_id_t*  action_id      = nullptr;
+  cardano_anchor_t*                anchor         = nullptr;
+  cardano_protocol_param_update_t* pparam_update  = nullptr;
+  cardano_blake2b_hash_t*          hash           = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &hash), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(PROTOCOL_PARAM_UPDATE, strlen(PROTOCOL_PARAM_UPDATE));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &pparam_update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 61; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, pparam_update, action_id, hash);
+
+    // Assert
+    EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_param_update_unref(&pparam_update);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t*   params        = init_protocol_parameters();
+  cardano_provider_t*              provider      = nullptr;
+  cardano_protocol_param_update_t* pparam_update = nullptr;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_parameter_change_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr, 0,
+    pparam_update);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr, 0,
+    pparam_update);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr, 0,
+    pparam_update);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr, 0,
+    pparam_update);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    0,
+    nullptr, 0,
+    pparam_update);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    nullptr, 0,
+    pparam_update);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
+    0,
+    HASH_HEX, strlen(HASH_HEX), // Script hash
+    nullptr);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
+    0,
+    "xxx", 3, // Script hash
+    nullptr);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    "xxxxx", 5,
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
+    0,
+    HASH_HEX, strlen(HASH_HEX), // Script hash
+    nullptr);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_parameter_change_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    "yyyyy", 5,
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
+    0,
+    HASH_HEX, strlen(HASH_HEX), // Script hash
+    nullptr);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+}
+
+TEST(cardano_tx_builder_propose_hardfork, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_hardfork(nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_hardfork, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params           = init_protocol_parameters();
+  cardano_provider_t*             provider         = nullptr;
+  cardano_reward_address_t*       reward_address   = nullptr;
+  cardano_governance_action_id_t* action_id        = nullptr;
+  cardano_anchor_t*               anchor           = nullptr;
+  cardano_protocol_version_t*     protocol_version = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_protocol_version_new(1, 2, &protocol_version), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork(tx_builder, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork(tx_builder, reward_address, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork(tx_builder, reward_address, anchor, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_version_unref(&protocol_version);
+}
+
+TEST(cardano_tx_builder_propose_hardfork, canProposeHardfork)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params           = init_protocol_parameters();
+  cardano_provider_t*             provider         = nullptr;
+  cardano_reward_address_t*       reward_address   = nullptr;
+  cardano_governance_action_id_t* action_id        = nullptr;
+  cardano_anchor_t*               anchor           = nullptr;
+  cardano_protocol_version_t*     protocol_version = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_protocol_version_new(1, 2, &protocol_version), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_hardfork(tx_builder, reward_address, anchor, protocol_version, action_id);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&actions);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_version_unref(&protocol_version);
+}
+
+TEST(cardano_tx_builder_propose_hardfork, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params           = init_protocol_parameters();
+  cardano_provider_t*             provider         = nullptr;
+  cardano_reward_address_t*       reward_address   = nullptr;
+  cardano_governance_action_id_t* action_id        = nullptr;
+  cardano_anchor_t*               anchor           = nullptr;
+  cardano_protocol_version_t*     protocol_version = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_protocol_version_new(1, 2, &protocol_version), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 2; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_hardfork(tx_builder, reward_address, anchor, protocol_version, action_id);
+
+    // Assert
+    EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_version_unref(&protocol_version);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_hardfork_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    0, 0);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    0, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    0, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    0, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    0,
+    0, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_hardfork_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    0, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+}
+
+TEST(cardano_tx_builder_propose_hardfork_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 39; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_hardfork_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, 0, 0);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_treasury_withdrawals(nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params              = init_protocol_parameters();
+  cardano_provider_t*             provider            = nullptr;
+  cardano_reward_address_t*       reward_address      = nullptr;
+  cardano_governance_action_id_t* action_id           = nullptr;
+  cardano_anchor_t*               anchor              = nullptr;
+  cardano_withdrawal_map_t*       treasury_withdrawal = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(WITHDRAWAL_MAP_CBOR, strlen(WITHDRAWAL_MAP_CBOR));
+  EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals(tx_builder, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, anchor, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, anchor, treasury_withdrawal, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_withdrawal_map_unref(&treasury_withdrawal);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals, canProposeTreasuryWithdrawals)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params              = init_protocol_parameters();
+  cardano_provider_t*            provider            = nullptr;
+  cardano_reward_address_t*      reward_address      = nullptr;
+  cardano_anchor_t*              anchor              = nullptr;
+  cardano_withdrawal_map_t*      treasury_withdrawal = nullptr;
+  cardano_blake2b_hash_t*        policy_id           = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(WITHDRAWAL_MAP_CBOR, strlen(WITHDRAWAL_MAP_CBOR));
+  EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, anchor, treasury_withdrawal, policy_id);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&actions);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_withdrawal_map_unref(&treasury_withdrawal);
+  cardano_blake2b_hash_unref(&policy_id);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params              = init_protocol_parameters();
+  cardano_provider_t*            provider            = nullptr;
+  cardano_reward_address_t*      reward_address      = nullptr;
+  cardano_anchor_t*              anchor              = nullptr;
+  cardano_withdrawal_map_t*      treasury_withdrawal = nullptr;
+  cardano_blake2b_hash_t*        policy_id           = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(WITHDRAWAL_MAP_CBOR, strlen(WITHDRAWAL_MAP_CBOR));
+  EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 9; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, anchor, treasury_withdrawal, policy_id);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_withdrawal_map_unref(&treasury_withdrawal);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params              = init_protocol_parameters();
+  cardano_provider_t*            provider            = nullptr;
+  cardano_withdrawal_map_t*      treasury_withdrawal = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(WITHDRAWAL_MAP_CBOR, strlen(WITHDRAWAL_MAP_CBOR));
+  EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    treasury_withdrawal);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    treasury_withdrawal);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    treasury_withdrawal);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    treasury_withdrawal);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    treasury_withdrawal);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_treasury_withdrawals_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    treasury_withdrawal);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_withdrawal_map_unref(&treasury_withdrawal);
+}
+
+TEST(cardano_tx_builder_propose_treasury_withdrawals_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params              = init_protocol_parameters();
+  cardano_provider_t*            provider            = nullptr;
+  cardano_withdrawal_map_t*      treasury_withdrawal = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(WITHDRAWAL_MAP_CBOR, strlen(WITHDRAWAL_MAP_CBOR));
+  EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 93; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_treasury_withdrawals_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), HASH_HEX, strlen(HASH_HEX), treasury_withdrawal);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_withdrawal_map_unref(&treasury_withdrawal);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_no_confidence(nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence(tx_builder, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence(tx_builder, reward_address, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence, canProposeNoConfidence)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_no_confidence(tx_builder, reward_address, anchor, action_id);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&actions);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 5; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_no_confidence(tx_builder, reward_address, anchor, action_id);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_no_confidence_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_no_confidence_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence_ex, canAddNoConfidencePorposal)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&actions);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+}
+
+TEST(cardano_tx_builder_propose_no_confidence_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 38; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_update_committee, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_update_committee(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_update_committee, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_reward_address_t*        reward_address        = nullptr;
+  cardano_governance_action_id_t*  action_id             = nullptr;
+  cardano_anchor_t*                anchor                = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+  cardano_unit_interval_t*         new_quorum            = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, nullptr, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, members_to_be_removed, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, members_to_be_removed, members_to_be_added, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+}
+
+TEST(cardano_tx_builder_propose_update_committee, canProposeUpdateCommittee)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_reward_address_t*        reward_address        = nullptr;
+  cardano_governance_action_id_t*  action_id             = nullptr;
+  cardano_anchor_t*                anchor                = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+  cardano_unit_interval_t*         new_quorum            = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(0, 0, &new_quorum), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, members_to_be_removed, members_to_be_added, new_quorum);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+  cardano_unit_interval_unref(&new_quorum);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_update_committee, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_reward_address_t*        reward_address        = nullptr;
+  cardano_governance_action_id_t*  action_id             = nullptr;
+  cardano_anchor_t*                anchor                = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+  cardano_unit_interval_t*         new_quorum            = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(0, 0, &new_quorum), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 5; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, members_to_be_removed, members_to_be_added, new_quorum);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+  cardano_unit_interval_unref(&new_quorum);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_update_committee_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    nullptr,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    members_to_be_removed,
+    nullptr,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_update_committee_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    members_to_be_removed,
+    members_to_be_added,
+    0.0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+}
+
+TEST(cardano_tx_builder_propose_update_committee_ex, canProposeUpdateCommittee)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_reward_address_t*        reward_address        = nullptr;
+  cardano_governance_action_id_t*  action_id             = nullptr;
+  cardano_anchor_t*                anchor                = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+  cardano_unit_interval_t*         new_quorum            = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(0, 0, &new_quorum), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, members_to_be_removed, members_to_be_added, 0.0);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+  cardano_unit_interval_unref(&new_quorum);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_update_committee_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*   params                = init_protocol_parameters();
+  cardano_provider_t*              provider              = nullptr;
+  cardano_reward_address_t*        reward_address        = nullptr;
+  cardano_governance_action_id_t*  action_id             = nullptr;
+  cardano_anchor_t*                anchor                = nullptr;
+  cardano_credential_set_t*        members_to_be_removed = nullptr;
+  cardano_committee_members_map_t* members_to_be_added   = nullptr;
+  cardano_unit_interval_t*         new_quorum            = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(0, 0, &new_quorum), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(COMITTEE_MEMBERS_MAP_CBOR, strlen(COMITTEE_MEMBERS_MAP_CBOR));
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 38; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, members_to_be_removed, members_to_be_added, 0.0);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+  cardano_unit_interval_unref(&new_quorum);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_new_constitution(nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+  cardano_constitution_t*         constitution   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution(tx_builder, nullptr, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, nullptr, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, anchor, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, anchor, action_id, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_constitution_unref(&constitution);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution, canProposeNewConstitution)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+  cardano_constitution_t*         constitution   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, anchor, action_id, constitution);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_constitution_unref(&constitution);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+  cardano_constitution_t*         constitution   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, anchor, action_id, constitution);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_constitution_unref(&constitution);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params       = init_protocol_parameters();
+  cardano_provider_t*            provider     = nullptr;
+  cardano_constitution_t*        constitution = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_new_constitution_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    constitution);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    constitution);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    constitution);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0,
+    nullptr, 0,
+    0,
+    constitution);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    nullptr, 0,
+    0,
+    constitution);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_new_constitution_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    ANCHOR_HASH, strlen(ANCHOR_HASH),
+    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
+    0,
+    constitution);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_constitution_unref(&constitution);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution_ex, canProposeNewConstitution)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+  cardano_constitution_t*         constitution   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, constitution);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_constitution_unref(&constitution);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_new_constitution_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_protocol_parameters();
+  cardano_provider_t*             provider       = nullptr;
+  cardano_reward_address_t*       reward_address = nullptr;
+  cardano_governance_action_id_t* action_id      = nullptr;
+  cardano_anchor_t*               anchor         = nullptr;
+  cardano_constitution_t*         constitution   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 38; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, constitution);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_constitution_unref(&constitution);
+}
+
+TEST(cardano_tx_builder_propose_info, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_propose_info(nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_propose_info, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = nullptr;
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_info(tx_builder, nullptr, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_info(tx_builder, reward_address, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_propose_info, canProposeInfo)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = nullptr;
+  cardano_reward_address_t*      reward_address = nullptr;
+  cardano_anchor_t*              anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_info(tx_builder, reward_address, anchor);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_info, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = nullptr;
+  cardano_reward_address_t*      reward_address = nullptr;
+  cardano_anchor_t*              anchor         = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 5; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_info(tx_builder, reward_address, anchor);
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+}
+
+TEST(cardano_tx_builder_propose_info_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+  cardano_anchor_t*              anchor   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  // clang-format off
+  cardano_tx_builder_propose_info_ex(
+    nullptr,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_info_ex(
+    tx_builder,
+    nullptr, 0,
+    nullptr, 0,
+    nullptr, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_info_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    nullptr, 0,
+    nullptr, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_propose_info_ex(
+    tx_builder,
+    REWARD_ADDRESS, strlen(REWARD_ADDRESS),
+    ANCHOR_URL, strlen(ANCHOR_URL),
+    nullptr, 0);
+  cardano_tx_builder_unref(&tx_builder);
+
+  // clang-format on
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_anchor_unref(&anchor);
+}
+
+TEST(cardano_tx_builder_propose_info_ex, canProposeInfo)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+  cardano_anchor_t*              anchor   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_propose_info_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
+
+  // Assert
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(actions), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_anchor_unref(&anchor);
+  cardano_proposal_procedure_set_unref(&actions);
+}
+
+TEST(cardano_tx_builder_propose_info_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = nullptr;
+  cardano_anchor_t*              anchor   = nullptr;
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 10; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_propose_info_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+
+    // Assert
+    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_anchor_unref(&anchor);
 }

@@ -1091,3 +1091,49 @@ TEST(cardano_withdrawal_map_get_key_value_at, returnsTheElement)
   cardano_reward_address_unref(&reward_address);
   cardano_reward_address_unref(&reward_address_out);
 }
+
+TEST(cardano_withdrawal_map_insert_ex, returnsErrorIfObjectIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_withdrawal_map_insert_ex(nullptr, "xxxxx", 5, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_withdrawal_map_insert_ex, canAddInsertElement)
+{
+  // Arrange
+  cardano_withdrawal_map_t* withdrawal_map = nullptr;
+  cardano_error_t           error          = cardano_withdrawal_map_new(&withdrawal_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_withdrawal_map_insert_ex(withdrawal_map, rewardScript, strlen(rewardScript), 100);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_get_length(withdrawal_map), 1);
+
+  // Cleanup
+  cardano_withdrawal_map_unref(&withdrawal_map);
+}
+
+TEST(cardano_withdrawal_map_insert_ex, returnsErrorIfTheAddresIsInvalid)
+{
+  // Arrange
+  cardano_withdrawal_map_t* withdrawal_map = nullptr;
+  cardano_error_t           error          = cardano_withdrawal_map_new(&withdrawal_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_withdrawal_map_insert_ex(withdrawal_map, "xxxxx", 5, 0);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+
+  // Cleanup
+  cardano_withdrawal_map_unref(&withdrawal_map);
+}

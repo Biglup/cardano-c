@@ -29,6 +29,10 @@ Withdrawal Map
 
 ------------
 
+.. doxygenfunction:: cardano_withdrawal_map_insert_ex
+
+------------
+
 .. doxygenfunction:: cardano_withdrawal_map_get_keys
 
 ------------

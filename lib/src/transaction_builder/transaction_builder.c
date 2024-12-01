@@ -46,7 +46,12 @@
 #include <cardano/encoding/bech32.h>
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/proposal_procedures/hard_fork_initiation_action.h>
+#include <cardano/proposal_procedures/info_action.h>
+#include <cardano/proposal_procedures/new_constitution_action.h>
+#include <cardano/proposal_procedures/no_confidence_action.h>
+#include <cardano/proposal_procedures/parameter_change_action.h>
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -561,6 +566,151 @@ add_redeemer(
     }
 
     cardano_redeemer_unref(&rdmer);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Gets the proposal procedures set from the transaction body. If there are no proposal
+ * procedures set, it creates a new list.
+ *
+ * \param builder The transaction builder.
+ * \param body The transaction body.
+ *
+ * \return The proposal procedures set.
+ */
+static cardano_proposal_procedure_set_t*
+get_proposal_procedure_set(cardano_tx_builder_t* builder, cardano_transaction_body_t* body)
+{
+  cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+
+  if (proposals == NULL)
+  {
+    cardano_error_t result = cardano_proposal_procedure_set_new(&proposals);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure set.");
+      builder->last_error = result;
+
+      return NULL;
+    }
+
+    result = cardano_transaction_body_set_proposal_procedure(body, proposals);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to set proposal procedure set.");
+      cardano_proposal_procedure_set_unref(&proposals);
+      builder->last_error = result;
+
+      return NULL;
+    }
+  }
+
+  cardano_proposal_procedure_set_unref(&proposals);
+
+  return proposals;
+}
+
+/**
+ * \brief Creates an empty plutus data object.
+ *
+ * \return The empty plutus data object.
+ */
+static cardano_plutus_data_t*
+create_empty_plutus_data(void)
+{
+  static const char* VOID_DATA = "d87980";
+
+  cardano_plutus_data_t* plutus_data = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(VOID_DATA, cardano_safe_strlen(VOID_DATA, 6));
+
+  cardano_error_t result = cardano_plutus_data_from_cbor(reader, &plutus_data);
+  cardano_cbor_reader_unref(&reader);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return NULL;
+  }
+
+  return plutus_data;
+}
+
+/**
+ * \brief Adds an empty proposing redeemer to the witness set.
+ *
+ * \param builder The transaction builder.
+ * \param witness_set The witness set.
+ * \param proposal_index The index of the proposal that requires the redeemer.
+ *
+ * \return The result of the operation.
+ */
+static cardano_error_t
+add_proposing_redeemer(
+  cardano_tx_builder_t*  builder,
+  cardano_witness_set_t* witness_set,
+  const size_t           proposal_index)
+{
+  cardano_redeemer_list_t* redeemers         = cardano_witness_set_get_redeemers(witness_set);
+  cardano_plutus_data_t*   empty_plutus_data = create_empty_plutus_data();
+  cardano_redeemer_t*      rdmer             = NULL;
+  cardano_ex_units_t*      ex_units          = NULL;
+
+  cardano_error_t result = cardano_ex_units_new(0, 0, &ex_units);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_plutus_data_unref(&empty_plutus_data);
+    return result;
+  }
+
+  result = cardano_redeemer_new(CARDANO_REDEEMER_TAG_PROPOSING, proposal_index, empty_plutus_data, ex_units, &rdmer);
+
+  cardano_plutus_data_unref(&empty_plutus_data);
+  cardano_ex_units_unref(&ex_units);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (redeemers == NULL)
+  {
+    result = cardano_redeemer_list_new(&redeemers);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_redeemer_unref(&rdmer);
+      cardano_tx_builder_set_last_error(builder, "Failed to create redeemer list.");
+      builder->last_error = result;
+
+      return result;
+    }
+
+    result = cardano_witness_set_set_redeemers(witness_set, redeemers);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_redeemer_unref(&rdmer);
+      cardano_tx_builder_set_last_error(builder, "Failed to set redeemer list.");
+      cardano_redeemer_list_unref(&redeemers);
+      builder->last_error = result;
+
+      return result;
+    }
+  }
+
+  cardano_redeemer_list_unref(&redeemers);
+
+  result = cardano_redeemer_list_add(redeemers, rdmer);
+  cardano_redeemer_unref(&rdmer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
+    builder->last_error = result;
   }
 
   return result;
@@ -2877,20 +3027,17 @@ cardano_tx_builder_register_drep_ex(
 
   cardano_anchor_t* anchor = NULL;
 
-  if ((metadata_url != NULL) && (metadata_url_size > 0U) && (metadata_hash_hex != NULL) && (metadata_hash_hex_size > 0U))
-  {
-    cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
 
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
-      builder->last_error = result;
-      return;
-    }
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
   }
 
-  cardano_drep_t* drep   = NULL;
-  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+  cardano_drep_t* drep = NULL;
+  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -2987,20 +3134,17 @@ cardano_tx_builder_update_drep_ex(
 
   cardano_anchor_t* anchor = NULL;
 
-  if ((metadata_url != NULL) && (metadata_url_size > 0U) && (metadata_hash_hex != NULL) && (metadata_hash_hex_size > 0U))
-  {
-    cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
 
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
-      builder->last_error = result;
-      return;
-    }
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
   }
 
-  cardano_drep_t* drep   = NULL;
-  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+  cardano_drep_t* drep = NULL;
+  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -3398,6 +3542,1068 @@ cardano_tx_builder_add_script(
     cardano_tx_builder_set_last_error(builder, "Failed to add script to witness set.");
     builder->last_error = result;
   }
+}
+
+void
+cardano_tx_builder_propose_parameter_change(
+  cardano_tx_builder_t*            builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_blake2b_hash_t*          policy_hash)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if (policy_hash == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Policy hash is NULL. You must provide the constitution script hash.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_parameter_change_action_t* action = NULL;
+  cardano_error_t                    result = cardano_parameter_change_action_new(protocol_param_update, governance_action_id, policy_hash, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create parameter change action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_parameter_change_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_parameter_change_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+
+  cardano_proposal_procedure_unref(&proposal);
+
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_unref(&witnesses);
+  const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
+
+  result = add_proposing_redeemer(builder, witnesses, proposal_index);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposing redeemer.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_parameter_change_ex(
+  cardano_tx_builder_t*            builder,
+  const char*                      reward_address,
+  const size_t                     reward_address_size,
+  const char*                      metadata_url,
+  const size_t                     metadata_url_size,
+  const char*                      metadata_hash_hex,
+  const size_t                     metadata_hash_hex_size,
+  const char*                      gov_action_id_hex,
+  const size_t                     gov_action_id_hex_size,
+  const uint64_t                   gov_action_id_index,
+  const char*                      policy_hash_hash_hex,
+  const size_t                     policy_hash_hash_hex_size,
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((policy_hash_hash_hex == NULL) || (policy_hash_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Policy hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+  result                         = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_governance_action_id_t* gov_action_id = NULL;
+
+  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse governance action ID.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_blake2b_hash_t* policy_hash = NULL;
+
+  result = cardano_blake2b_hash_from_hex(policy_hash_hash_hex, policy_hash_hash_hex_size, &policy_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse policy hash.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_propose_parameter_change(builder, addr, anchor, protocol_param_update, gov_action_id, policy_hash);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_blake2b_hash_unref(&policy_hash);
+}
+
+void
+cardano_tx_builder_propose_hardfork(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_protocol_version_t*     version,
+  cardano_governance_action_id_t* governance_action_id)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_hard_fork_initiation_action_t* action = NULL;
+  cardano_error_t                        result = cardano_hard_fork_initiation_action_new(version, governance_action_id, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create hard fork action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_hard_fork_initiation_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_hard_fork_initiation_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_hardfork_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  const size_t          reward_address_size,
+  const char*           metadata_url,
+  const size_t          metadata_url_size,
+  const char*           metadata_hash_hex,
+  const size_t          metadata_hash_hex_size,
+  const char*           gov_action_id_hex,
+  const size_t          gov_action_id_hex_size,
+  const uint64_t        gov_action_id_index,
+  const uint64_t        minor_protocol_version,
+  const uint64_t        major_protocol_version)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+  result                         = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_governance_action_id_t* gov_action_id = NULL;
+
+  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse governance action ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_protocol_version_t* version = NULL;
+  result                              = cardano_protocol_version_new(minor_protocol_version, major_protocol_version, &version);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_tx_builder_set_last_error(builder, "Failed to create protocol version.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_propose_hardfork(builder, addr, anchor, version, gov_action_id);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_protocol_version_unref(&version);
+}
+
+void
+cardano_tx_builder_propose_treasury_withdrawals(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor,
+  cardano_withdrawal_map_t* withdrawals,
+  cardano_blake2b_hash_t*   policy_hash)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if (policy_hash == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Policy hash is NULL. You must provide the constitution script hash.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_treasury_withdrawals_action_t* action = NULL;
+  cardano_error_t                        result = cardano_treasury_withdrawals_action_new(withdrawals, policy_hash, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create treasury withdrawal action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_treasury_withdrawals_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_treasury_withdrawals_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_unref(&witnesses);
+  const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
+
+  result = add_proposing_redeemer(builder, witnesses, proposal_index);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposing redeemer.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_treasury_withdrawals_ex(
+  cardano_tx_builder_t*     builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size,
+  const char*               policy_hash_hash_hex,
+  const size_t              policy_hash_hash_hex_size,
+  cardano_withdrawal_map_t* withdrawals)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((policy_hash_hash_hex == NULL) || (policy_hash_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Policy hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+  result                         = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_blake2b_hash_t* policy_hash = NULL;
+  result                              = cardano_blake2b_hash_from_hex(policy_hash_hash_hex, policy_hash_hash_hex_size, &policy_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse policy hash.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_propose_treasury_withdrawals(builder, addr, anchor, withdrawals, policy_hash);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_blake2b_hash_unref(&policy_hash);
+}
+
+void
+cardano_tx_builder_propose_no_confidence(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_no_confidence_action_t* action = NULL;
+  cardano_error_t                 result = cardano_no_confidence_action_new(governance_action_id, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create no confidence action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_no_confidence_action(deposit, reward_address, anchor, action, &proposal);
+  cardano_no_confidence_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_no_confidence_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  const size_t          reward_address_size,
+  const char*           metadata_url,
+  const size_t          metadata_url_size,
+  const char*           metadata_hash_hex,
+  const size_t          metadata_hash_hex_size,
+  const char*           gov_action_id_hex,
+  const size_t          gov_action_id_hex_size,
+  const uint64_t        gov_action_id_index)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+  result                         = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_governance_action_id_t* gov_action_id = NULL;
+
+  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse governance action ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_propose_no_confidence(builder, addr, anchor, gov_action_id);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_governance_action_id_unref(&gov_action_id);
+}
+
+void
+cardano_tx_builder_propose_update_committee(
+  cardano_tx_builder_t*            builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  cardano_unit_interval_t*         new_quorum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_update_committee_action_t* action = NULL;
+  cardano_error_t                    result = cardano_update_committee_action_new(members_to_be_removed, members_to_be_added, new_quorum, governance_action_id, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create update committee action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+
+  const uint64_t deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_update_committee_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_update_committee_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_update_committee_ex(
+  cardano_tx_builder_t*            builder,
+  const char*                      reward_address,
+  const size_t                     reward_address_size,
+  const char*                      metadata_url,
+  const size_t                     metadata_url_size,
+  const char*                      metadata_hash_hex,
+  const size_t                     metadata_hash_hex_size,
+  const char*                      gov_action_id_hex,
+  const size_t                     gov_action_id_hex_size,
+  const uint64_t                   gov_action_id_index,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  const double                     new_quorum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+  result                         = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_governance_action_id_t* gov_action_id = NULL;
+
+  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse governance action ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_unit_interval_t* quorum = NULL;
+  result                          = cardano_unit_interval_from_double(new_quorum, &quorum);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_tx_builder_set_last_error(builder, "Failed to create unit interval.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_propose_update_committee(builder, addr, anchor, gov_action_id, members_to_be_removed, members_to_be_added, quorum);
+
+  cardano_unit_interval_unref(&quorum);
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_governance_action_id_unref(&gov_action_id);
+}
+
+void
+cardano_tx_builder_propose_new_constitution(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id,
+  cardano_constitution_t*         constitution)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_new_constitution_action_t* action = NULL;
+
+  cardano_error_t result = cardano_new_constitution_action_new(constitution, governance_action_id, &action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create new constitution action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_constitution_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_new_constitution_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_new_constitution_ex(
+  cardano_tx_builder_t*   builder,
+  const char*             reward_address,
+  const size_t            reward_address_size,
+  const char*             metadata_url,
+  const size_t            metadata_url_size,
+  const char*             metadata_hash_hex,
+  const size_t            metadata_hash_hex_size,
+  const char*             gov_action_id_hex,
+  const size_t            gov_action_id_hex_size,
+  const uint64_t          gov_action_id_index,
+  cardano_constitution_t* constitution)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+
+  result = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_governance_action_id_t* gov_action_id = NULL;
+
+  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_reward_address_unref(&addr);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse governance action ID.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_propose_new_constitution(builder, addr, anchor, gov_action_id, constitution);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
+  cardano_governance_action_id_unref(&gov_action_id);
+}
+
+void
+cardano_tx_builder_propose_info(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_info_action_t* action = NULL;
+  cardano_error_t        result = cardano_info_action_new(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create info action.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_proposal_procedure_t* proposal;
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+
+  result = cardano_proposal_procedure_new_info_action(deposit, reward_address, anchor, action, &proposal);
+
+  cardano_info_action_unref(&action);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create proposal procedure.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
+
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+
+  cardano_proposal_procedure_unref(&proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to add proposal procedure.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_propose_info_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  const size_t          reward_address_size,
+  const char*           metadata_url,
+  const size_t          metadata_url_size,
+  const char*           metadata_hash_hex,
+  const size_t          metadata_hash_hex_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((reward_address == NULL) || (reward_address_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_url == NULL) || (metadata_url_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata URL is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  if ((metadata_hash_hex == NULL) || (metadata_hash_hex_size == 0U))
+  {
+    cardano_tx_builder_set_last_error(builder, "Metadata hash is NULL or empty.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    return;
+  }
+
+  cardano_anchor_t* anchor = NULL;
+
+  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_reward_address_t* addr = NULL;
+
+  result = cardano_reward_address_from_bech32(reward_address, reward_address_size, &addr);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_anchor_unref(&anchor);
+    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
+    builder->last_error = result;
+    return;
+  }
+
+  cardano_tx_builder_propose_info(builder, addr, anchor);
+
+  cardano_anchor_unref(&anchor);
+  cardano_reward_address_unref(&addr);
 }
 
 cardano_error_t

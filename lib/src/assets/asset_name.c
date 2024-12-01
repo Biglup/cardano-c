@@ -117,6 +117,11 @@ cardano_asset_name_from_bytes(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if (size > 32U)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
   if (asset_name == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;

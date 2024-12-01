@@ -26,6 +26,7 @@
 
 #include <cardano/common/drep.h>
 #include <cardano/error.h>
+#include <cardano/proposal_procedures/constitution.h>
 #include <cardano/providers/provider.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
@@ -1646,6 +1647,673 @@ CARDANO_EXPORT void cardano_tx_builder_add_certificate(
 CARDANO_EXPORT void cardano_tx_builder_add_script(
   cardano_tx_builder_t* builder,
   cardano_script_t*     script);
+
+/**
+ * \brief Proposes a parameter change within a Cardano transaction.
+ *
+ * This function adds a parameter change proposal to the transaction being built. The proposal specifies
+ * updates to protocol parameters, a governance action ID, and other metadata associated with the proposal.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
+ * \param[in] reward_address A pointer to a \ref cardano_reward_address_t where the deposit will be refunded.
+ * \param[in] anchor A pointer to a \ref cardano_anchor_t object representing the anchor for the proposal. This parameter must not be NULL.
+ * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object containing the protocol parameter updates.
+ *                                  This parameter must not be NULL.
+ * \param[in] governance_action_id A pointer to a \ref cardano_governance_action_id_t object referencing the most recent enacted action of the same type.
+ *                                 This parameter can be NULL if no proposals of this type have been enacted on the network.
+ * \param[in] policy_hash A pointer to a \ref cardano_blake2b_hash_t object representing the guardrails script hash (also known as the governance action policy script).
+ *                        This parameter is required for certain types of proposals to ensure compliance with governance guardrails.
+ *
+ * \note The `governance_action_id` is used to reference the most recent enacted governance action of the same type. If no such
+ *       action has been enacted on the network, this parameter can be NULL. The `policy_hash` represents the hash of the guardrails script,
+ *       which imposes additional constraints on governance actions such as protocol parameter updates.
+ *
+ * \note Any errors encountered during the addition of the parameter change proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = cardano_tx_builder_new(...); // Assume builder is initialized
+ * cardano_reward_address_t* reward_address = ...; // Assume initialized
+ * cardano_anchor_t* anchor = cardano_anchor_new(...); // Assume initialized
+ * cardano_protocol_param_update_t* param_update = cardano_protocol_param_update_new(...); // Assume initialized
+ * cardano_governance_action_id_t* action_id = cardano_governance_action_id_new(...); // Optionally initialized
+ * cardano_blake2b_hash_t* policy_hash = cardano_blake2b_hash_new(...); // Assume initialized
+ *
+ * cardano_tx_builder_propose_parameter_change(builder, reward_address, anchor, param_update, action_id, policy_hash);
+ *
+ * // Cleanup when done
+ * cardano_reward_address_unref(&reward_address);
+ * cardano_anchor_unref(&anchor);
+ * cardano_protocol_param_update_unref(&param_update);
+ * if (action_id)
+ * {
+ *   cardano_governance_action_id_unref(&action_id);
+ * }
+ * cardano_blake2b_hash_unref(&policy_hash);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
+  cardano_tx_builder_t*            builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_blake2b_hash_t*          policy_hash);
+
+/**
+ * \brief Proposes a parameter change within a Cardano transaction (extended version).
+ *
+ * This function allows the inclusion of a parameter change proposal into the transaction being built, using string representations for key parameters
+ * such as reward addresses, metadata, governance action IDs, and policy hashes.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
+ * \param[in] reward_address A string representation of the reward address where the deposit will be refunded.
+ * \param[in] reward_address_size The size (in bytes) of the `reward_address` string.
+ * \param[in] metadata_url A string containing the URL pointing to additional metadata for the proposal. This can be NULL if not applicable.
+ * \param[in] metadata_url_size The size (in bytes) of the `metadata_url` string.
+ * \param[in] metadata_hash_hex A hexadecimal string representing the hash of the metadata contents.
+ * \param[in] metadata_hash_hex_size The size (in bytes) of the `metadata_hash_hex` string.
+ * \param[in] gov_action_id_hex A hexadecimal string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_hex_size The size (in bytes) of the `gov_action_id_hex` string.
+ * \param[in] gov_action_id_index The index of the governance action ID being referenced.
+ * \param[in] policy_hash_hash_hex A hexadecimal string representing the guardrails script hash (also known as the governance action policy script).
+ * \param[in] policy_hash_hash_hex_size The size (in bytes) of the `policy_hash_hash_hex` string.
+ * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object containing the protocol parameter updates.
+ *                                  This parameter must not be NULL.
+ *
+ * \note The `gov_action_id_hex` references the most recent enacted governance action of the same type. If no such action has been enacted,
+ *       this parameter can be NULL. The `policy_hash_hash_hex` represents the hash of the guardrails script, which imposes additional constraints
+ *       on certain governance actions such as protocol parameter updates.
+ *
+ * \note Errors encountered during the addition of the parameter change proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = cardano_tx_builder_new(...); // Assume builder is initialized
+ * const char* reward_address = "stake1u9hwrj..."; // Reward address in Bech32
+ * const char* metadata_url = "https://example.com/metadata.json"; // Metadata URL
+ * const char* metadata_hash = "d2a4f89b..."; // Metadata hash in hexadecimal
+ * const char* gov_action_id = "a4b1c0d..."; // Governance action ID in hexadecimal
+ * uint64_t gov_action_id_index = 1;
+ * const char* policy_hash = "f4a6b3e..."; // Policy hash in hexadecimal
+ * cardano_protocol_param_update_t* param_update = cardano_protocol_param_update_new(...); // Assume initialized
+ *
+ * cardano_tx_builder_propose_parameter_change_ex(builder,
+ *                                                reward_address, strlen(reward_address),
+ *                                                metadata_url, strlen(metadata_url),
+ *                                                metadata_hash, strlen(metadata_hash),
+ *                                                gov_action_id, strlen(gov_action_id),
+ *                                                gov_action_id_index,
+ *                                                policy_hash, strlen(policy_hash),
+ *                                                param_update);
+ *
+ * // Cleanup when done
+ * cardano_protocol_param_update_unref(&param_update);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change_ex(
+  cardano_tx_builder_t*            builder,
+  const char*                      reward_address,
+  size_t                           reward_address_size,
+  const char*                      metadata_url,
+  size_t                           metadata_url_size,
+  const char*                      metadata_hash_hex,
+  size_t                           metadata_hash_hex_size,
+  const char*                      gov_action_id_hex,
+  size_t                           gov_action_id_hex_size,
+  uint64_t                         gov_action_id_index,
+  const char*                      policy_hash_hash_hex,
+  size_t                           policy_hash_hash_hex_size,
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Proposes a hard fork within a Cardano transaction.
+ *
+ * This function adds a proposal to initiate a hard fork in the Cardano network to the transaction being built. The hard fork proposal
+ * specifies the target protocol version and other required parameters. An optional governance action ID can be provided to reference
+ * the most recent enacted hard fork action of the same type.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
+ * \param[in] reward_address A pointer to a \ref cardano_reward_address_t object where the deposit will be refunded if the proposal is accepted.
+ * \param[in] anchor A pointer to a \ref cardano_anchor_t object containing additional metadata related to the proposal.
+ * \param[in] version A pointer to a \ref cardano_protocol_version_t object specifying the target protocol version for the hard fork.
+ * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object referencing the most recent
+ *                                 enacted governance action of the same type. This can be NULL if no such action has been enacted.
+ *
+ * \note The `governance_action_id` parameter is required to reference the last enacted hard fork action. If no hard fork proposals
+ *       have been enacted yet, this parameter can be NULL.
+ *
+ * \note Errors encountered during the addition of the hard fork proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = cardano_tx_builder_new(...); // Assume builder is initialized
+ * cardano_reward_address_t* reward_address = cardano_reward_address_new(...); // Assume initialized
+ * cardano_anchor_t* anchor = cardano_anchor_new(...); // Assume initialized
+ * cardano_protocol_version_t* version = cardano_protocol_version_new(8, 0); // Example protocol version
+ * cardano_governance_action_id_t* gov_action_id = cardano_governance_action_id_new(...); // Optional, assume initialized
+ *
+ * cardano_tx_builder_propose_hardfork(builder, reward_address, anchor, version, gov_action_id);
+ *
+ * // Cleanup resources when done
+ * cardano_reward_address_unref(&reward_address);
+ * cardano_anchor_unref(&anchor);
+ * cardano_protocol_version_unref(&version);
+ * cardano_governance_action_id_unref(&gov_action_id);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_hardfork(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_protocol_version_t*     version,
+  cardano_governance_action_id_t* governance_action_id);
+
+/**
+ * \brief Proposes a hard fork within a Cardano transaction (extended version).
+ *
+ * This function adds a proposal to initiate a hard fork in the Cardano network to the transaction being built. The hard fork proposal
+ * specifies the target protocol version, metadata details, and other required parameters. The proposal includes a governance action ID
+ * to reference the most recent enacted action of the same type.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
+ * \param[in] reward_address A pointer to the reward address string where the deposit will be refunded if the proposal is accepted.
+ *                           This must be a valid Bech32-encoded reward address.
+ * \param[in] reward_address_size The size of the reward address string in bytes.
+ * \param[in] metadata_url A pointer to the URL string containing metadata about the hard fork proposal.
+ * \param[in] metadata_url_size The size of the metadata URL string in bytes.
+ * \param[in] metadata_hash_hex A pointer to the hexadecimal string representing the hash of the metadata file.
+ * \param[in] metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in] gov_action_id_hex A pointer to the hexadecimal string of the governance action ID referencing the last enacted action of the same type.
+ * \param[in] gov_action_id_hex_size The size of the governance action ID string in bytes.
+ * \param[in] gov_action_id_index The governance action index associated with the action ID.
+ * \param[in] minor_protocol_version The minor protocol version for the proposed hard fork.
+ * \param[in] major_protocol_version The major protocol version for the proposed hard fork.
+ *
+ * \note The `gov_action_id_hex` and `gov_action_id_index` parameters reference the most recent enacted governance action of the same type.
+ *       If no such action exists, `gov_action_id_hex` can be NULL, and `gov_action_id_index` set to 0.
+ *
+ * \note Errors encountered during the addition of the hard fork proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = cardano_tx_builder_new(...); // Assume builder is initialized
+ * const char* reward_address = "stake1u..."; // Example reward address
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash = "abcdef1234567890..."; // Example metadata hash
+ * size_t metadata_hash_size = strlen(metadata_hash);
+ * const char* gov_action_id = "deadbeef1234567890..."; // Example governance action ID
+ * size_t gov_action_id_size = strlen(gov_action_id);
+ * uint64_t gov_action_id_index = 0; // Example index
+ * uint64_t minor_version = 1; // Example minor protocol version
+ * uint64_t major_version = 8; // Example major protocol version
+ *
+ * cardano_tx_builder_propose_hardfork_ex(
+ *   builder,
+ *   reward_address,
+ *   reward_address_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash,
+ *   metadata_hash_size,
+ *   gov_action_id,
+ *   gov_action_id_size,
+ *   gov_action_id_index,
+ *   minor_version,
+ *   major_version
+ * );
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_hardfork_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  size_t                reward_address_size,
+  const char*           metadata_url,
+  size_t                metadata_url_size,
+  const char*           metadata_hash_hex,
+  size_t                metadata_hash_hex_size,
+  const char*           gov_action_id_hex,
+  size_t                gov_action_id_hex_size,
+  uint64_t              gov_action_id_index,
+  uint64_t              minor_protocol_version,
+  uint64_t              major_protocol_version);
+
+/**
+ * \brief Proposes treasury withdrawals as a governance action within the Cardano network.
+ *
+ * This function prepares a proposal to withdraw funds from the treasury.
+ *
+ * \param[in,out] builder       A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
+ * \param[in]     anchor        A pointer to an initialized \ref cardano_anchor_t object containing metadata about the proposal.
+ * \param[in]     withdrawals   A pointer to a \ref cardano_withdrawal_map_t object defining the requested treasury withdrawals.
+ * \param[in]     policy_hash   A pointer to a \ref cardano_blake2b_hash_t object representing the guardrails script hash.
+ *
+ * \note The `policy_hash` parameter represents the hash of the guardrails script, a Plutus script that imposes constraints
+ *       on treasury withdrawals and other governance actions. If no policy constraints apply, this parameter can be NULL.
+ *
+ * \note Any errors encountered during the addition of the treasury withdrawals proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;  // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...; // Reward address for deposit refund
+ * cardano_anchor_t* anchor = cardano_anchor_new("metadata_url", metadata_hash);  // Metadata for the proposal
+ * cardano_withdrawal_map_t* withdrawals = ...; // Treasury withdrawals
+ * cardano_blake2b_hash_t* policy_hash = ...;   // Guardrails script hash
+ *
+ * cardano_tx_builder_propose_treasury_withdrawals(builder, reward_address, anchor, withdrawals, policy_hash);
+ * \endcode
+ *
+ * \note Ensure the `withdrawals` object is populated with valid treasury withdrawal requests before calling this function.
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_treasury_withdrawals(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor,
+  cardano_withdrawal_map_t* withdrawals,
+  cardano_blake2b_hash_t*   policy_hash);
+
+/**
+ * \brief Proposes treasury withdrawals as a governance action within the Cardano network, using string-based parameters.
+ *
+ * This function prepares a proposal for withdrawing funds from the treasury.
+ *
+ * \param[in,out] builder                 A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address          A pointer to the reward address string for receiving the deposit refund. Must be a valid Bech32 address.
+ * \param[in]     reward_address_size     The size of the reward address string.
+ * \param[in]     metadata_url            A pointer to the metadata URL string providing additional proposal context.
+ * \param[in]     metadata_url_size       The size of the metadata URL string.
+ * \param[in]     metadata_hash_hex       A pointer to the hexadecimal string representation of the metadata hash.
+ * \param[in]     metadata_hash_hex_size  The size of the metadata hash string.
+ * \param[in]     policy_hash_hash_hex    A pointer to the hexadecimal string representation of the guardrails script hash.
+ * \param[in]     policy_hash_hash_hex_size The size of the guardrails script hash string.
+ * \param[in]     withdrawals             A pointer to a \ref cardano_withdrawal_map_t object defining the requested treasury withdrawals.
+ *
+ * \note The `policy_hash_hash_hex` parameter represents the guardrails script hash. This Plutus script imposes additional constraints
+ *       on treasury withdrawals and other governance actions. If no policy constraints apply, this parameter can be NULL.
+ *
+ * \note Any errors encountered during the addition of the treasury withdrawals proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;  // Initialized transaction builder
+ * const char* reward_address = "stake1u9v8lkxklxyz123";  // Example reward address
+ * const char* metadata_url = "https://example.com/metadata";  // Metadata URL
+ * const char* metadata_hash = "abc123";  // Metadata hash in hex
+ * const char* policy_hash = "def456";    // Guardrails script hash in hex
+ * cardano_withdrawal_map_t* withdrawals = ...; // Treasury withdrawals
+ *
+ * cardano_tx_builder_propose_treasury_withdrawals_ex(
+ *   builder, reward_address, strlen(reward_address),
+ *   metadata_url, strlen(metadata_url), metadata_hash, strlen(metadata_hash),
+ *   policy_hash, strlen(policy_hash), withdrawals);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_treasury_withdrawals_ex(
+  cardano_tx_builder_t*     builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size,
+  const char*               policy_hash_hash_hex,
+  size_t                    policy_hash_hash_hex_size,
+  cardano_withdrawal_map_t* withdrawals);
+
+/**
+ * \brief Proposes a no-confidence governance action within the Cardano network.
+ *
+ * This function prepares a proposal for a no-confidence action against the current constitutional committee.
+ * If enacted, it signals the community's lack of confidence in the committee, potentially leading to its reconstitution.
+ *
+ * \param[in,out] builder                 A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address          A pointer to a \ref cardano_reward_address_t object. This address will receive the deposit refund after the governance action completes.
+ * \param[in]     anchor                  A pointer to a \ref cardano_anchor_t object providing additional context or metadata for the governance action.
+ * \param[in]     governance_action_id    An optional pointer to a \ref cardano_governance_action_id_t object. This represents the unique identifier
+ *                                         for the most recently enacted no-confidence action of the same type. This parameter can be NULL if no previous actions of this type exist.
+ *
+ * \note The `governance_action_id` parameter ensures that the proposal references the latest enacted governance action of the same type, as required by the Cardano protocol.
+ *
+ * \note Any errors encountered during the addition of the no-confidence proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;     // Example reward address
+ * cardano_anchor_t* anchor = ...;                     // Example anchor object
+ * cardano_governance_action_id_t* action_id = ...;    // Example governance action ID (optional)
+ *
+ * cardano_tx_builder_propose_no_confidence(builder, reward_address, anchor, action_id);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id);
+
+/**
+ * \brief Proposes a no-confidence governance action using extended parameters.
+ *
+ * This function prepares a proposal for a no-confidence action against the current constitutional committee within the Cardano network.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address         A pointer to a string containing the Bech32-encoded reward address. This address will receive the deposit refund
+ *                                        after the governance action completes.
+ * \param[in]     reward_address_size    The size of the reward address string in bytes.
+ * \param[in]     metadata_url           A pointer to a string containing the metadata URL for additional context regarding the proposal.
+ * \param[in]     metadata_url_size      The size of the metadata URL string in bytes.
+ * \param[in]     metadata_hash_hex      A pointer to a string containing the hexadecimal representation of the metadata hash.
+ * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in]     gov_action_id_hex      A pointer to a string containing the hexadecimal representation of the governance action ID.
+ *                                        This represents the most recently enacted no-confidence action of the same type.
+ * \param[in]     gov_action_id_hex_size The size of the governance action ID string in bytes.
+ * \param[in]     gov_action_id_index    The index of the referenced governance action.
+ *
+ * \note The `gov_action_id_hex` and `gov_action_id_index` ensure that the proposal references the latest enacted governance action of the same type,
+ *       as required by the Cardano protocol. These can be omitted (set to NULL or 0) if no prior actions of this type exist.
+ *
+ * \note Any errors encountered during the addition of the no-confidence proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                // Initialized transaction builder
+ * const char* reward_address = "stake1u9...";         // Example reward address
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com";   // Example metadata URL
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "a1b2c3...";        // Example metadata hash (hex-encoded)
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * const char* gov_action_id_hex = "deadbeef...";      // Example governance action ID (hex-encoded)
+ * size_t gov_action_id_hex_size = strlen(gov_action_id_hex);
+ * uint64_t gov_action_id_index = 0;                   // Example governance action index
+ *
+ * cardano_tx_builder_propose_no_confidence_ex(builder, reward_address, reward_address_size,
+ *                                             metadata_url, metadata_url_size, metadata_hash_hex,
+ *                                             metadata_hash_hex_size, gov_action_id_hex,
+ *                                             gov_action_id_hex_size, gov_action_id_index);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  size_t                reward_address_size,
+  const char*           metadata_url,
+  size_t                metadata_url_size,
+  const char*           metadata_hash_hex,
+  size_t                metadata_hash_hex_size,
+  const char*           gov_action_id_hex,
+  size_t                gov_action_id_hex_size,
+  uint64_t              gov_action_id_index);
+
+/**
+ * \brief Proposes an update to the Cardano constitutional committee.
+ *
+ * This function prepares a governance action to update the Cardano constitutional committee. The proposal specifies:
+ * - Committee members to be added.
+ * - Committee members to be removed.
+ * - The new quorum threshold for the committee.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address         A pointer to a \ref cardano_reward_address_t object representing the reward address that will receive the deposit refund.
+ * \param[in]     anchor                 A pointer to a \ref cardano_anchor_t object representing the anchor for this governance action.
+ * \param[in]     governance_action_id   An optional pointer to a \ref cardano_governance_action_id_t object representing the most recently enacted governance action
+ *                                        of the same type. Can be NULL if no such prior action exists.
+ * \param[in]     members_to_be_removed  A pointer to a \ref cardano_credential_set_t object specifying the committee members to be removed.
+ * \param[in]     members_to_be_added    A pointer to a \ref cardano_committee_members_map_t object specifying the committee members to be added.
+ * \param[in]     new_quorum             A pointer to a \ref cardano_unit_interval_t object specifying the new quorum threshold for the committee.
+ *
+ * \note If a prior governance action of the same type exists, the `governance_action_id` parameter must reference it.
+ *
+ * \note Any errors encountered during the addition of the update to the Cardano constitutional committee proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;     // Reward address to receive refund
+ * cardano_anchor_t* anchor = ...;                     // Governance action anchor
+ * cardano_governance_action_id_t* gov_action_id = ...;// Most recently enacted action ID
+ * cardano_credential_set_t* members_to_remove = ...;  // Members to be removed
+ * cardano_committee_members_map_t* members_to_add = ...; // Members to be added
+ * cardano_unit_interval_t* new_quorum = ...;          // New quorum threshold
+ *
+ * cardano_tx_builder_propose_update_committee(builder, reward_address, anchor,
+ *                                             gov_action_id, members_to_remove,
+ *                                             members_to_add, new_quorum);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_update_committee(
+  cardano_tx_builder_t*            builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  cardano_unit_interval_t*         new_quorum);
+
+/**
+ * \brief Proposes an update to the Cardano constitutional committee with extended parameters.
+ *
+ * This function creates a governance action to update the Cardano constitutional committee.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address         A pointer to a string containing the reward address (in Bech32 format) that will receive the deposit refund.
+ * \param[in]     reward_address_size    The size of the `reward_address` string.
+ * \param[in]     metadata_url           A pointer to a string containing the URL for the governance action metadata.
+ * \param[in]     metadata_url_size      The size of the `metadata_url` string.
+ * \param[in]     metadata_hash_hex      A pointer to a string containing the hex-encoded hash of the metadata file.
+ * \param[in]     metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ * \param[in]     gov_action_id_hex      A pointer to a string containing the hex-encoded governance action ID of the most recently enacted action of the same type.
+ * \param[in]     gov_action_id_hex_size The size of the `gov_action_id_hex` string. This parameter can be NULL if no prior action exists.
+ * \param[in]     gov_action_id_index    The governance action index associated with the ID. Can be `0` if no prior action exists.
+ * \param[in]     members_to_be_removed  A pointer to a \ref cardano_credential_set_t object specifying the committee members to be removed.
+ * \param[in]     members_to_be_added    A pointer to a \ref cardano_committee_members_map_t object specifying the committee members to be added.
+ * \param[in]     new_quorum             The new quorum threshold for the committee.
+ *
+ * \note Any errors encountered during the addition of the update to the Cardano constitutional committee proposal will be deferred until
+ *       \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                // Initialized transaction builder
+ * const char* reward_address = "addr1...";            // Bech32 reward address
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/proposal.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abc123...";        // Hex-encoded hash of metadata file
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * const char* gov_action_id_hex = "deadbeef...";      // Optional governance action ID
+ * size_t gov_action_id_hex_size = strlen(gov_action_id_hex);
+ * uint64_t gov_action_id_index = 0;                  // Governance action index
+ * cardano_credential_set_t* members_to_remove = ...;  // Members to be removed
+ * cardano_committee_members_map_t* members_to_add = ...; // Members to be added
+ *
+ * cardano_tx_builder_propose_update_committee_ex(builder,
+ *                                                reward_address, reward_address_size,
+ *                                                metadata_url, metadata_url_size,
+ *                                                metadata_hash_hex, metadata_hash_hex_size,
+ *                                                gov_action_id_hex, gov_action_id_hex_size,
+ *                                                gov_action_id_index,
+ *                                                members_to_remove,
+ *                                                members_to_add,
+ *                                                0.3);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_update_committee_ex(
+  cardano_tx_builder_t*            builder,
+  const char*                      reward_address,
+  size_t                           reward_address_size,
+  const char*                      metadata_url,
+  size_t                           metadata_url_size,
+  const char*                      metadata_hash_hex,
+  size_t                           metadata_hash_hex_size,
+  const char*                      gov_action_id_hex,
+  size_t                           gov_action_id_hex_size,
+  uint64_t                         gov_action_id_index,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  double                           new_quorum);
+
+/**
+ * \brief Proposes a new constitution for the Cardano network.
+ *
+ * This function creates a governance action to propose a new constitution.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address         A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
+ * \param[in]     anchor                 A pointer to a \ref cardano_anchor_t object containing the anchor metadata for the proposal.
+ * \param[in]     governance_action_id   An optional pointer to a \ref cardano_governance_action_id_t object representing the governance action ID of the most
+ *                                        recently enacted action of the same type. This parameter can be NULL if no prior action exists.
+ * \param[in]     constitution           A pointer to a \ref cardano_constitution_t object containing the new constitution's details.
+ *
+ * \note The `governance_action_id` parameter ensures compliance with the protocol's requirement of referencing the most recently enacted action of the same type.
+ *       If no such prior action exists, this parameter can be omitted (set to NULL).
+ *
+ * \note Any errors encountered during the addition of the new constitution proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                  // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;       // Reward address to refund deposit
+ * cardano_anchor_t* anchor = ...;                       // Anchor metadata
+ * cardano_governance_action_id_t* gov_action_id = ...;  // Optional governance action ID
+ * cardano_constitution_t* constitution = ...;           // Constitution details
+ *
+ * cardano_tx_builder_propose_new_constitution(builder, reward_address, anchor, gov_action_id, constitution);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution(
+  cardano_tx_builder_t*           builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id,
+  cardano_constitution_t*         constitution);
+
+/**
+ * \brief Proposes a new constitution for the Cardano network.
+ *
+ * This function allows creating a governance action to propose a new constitution while providing additional metadata
+ * (e.g., URL and hash).
+ *
+ * \param[in,out] builder              A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address       A pointer to the reward address as a string. The address will receive the deposit refund.
+ * \param[in]     reward_address_size  The size of the reward address string in bytes.
+ * \param[in]     metadata_url         A pointer to a string containing the URL for additional proposal metadata.
+ * \param[in]     metadata_url_size    The size of the metadata URL string in bytes.
+ * \param[in]     metadata_hash_hex    A pointer to a hexadecimal string representing the hash of the metadata file.
+ * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in]     gov_action_id_hex    A pointer to a hexadecimal string representing the governance action ID of the most recently enacted action of the same type.
+ * \param[in]     gov_action_id_hex_size The size of the governance action ID string in bytes.
+ * \param[in]     gov_action_id_index  The index of the governance action ID. This is used to uniquely identify the governance action.
+ * \param[in]     constitution         A pointer to a \ref cardano_constitution_t object containing the new constitution's details.
+ *
+ * \note Any errors encountered during the addition of the new constitution proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;                 // Initialized transaction builder
+ * const char* reward_address = "addr1...";             // Reward address string
+ * size_t reward_address_size = strlen(reward_address); // Size of the reward address string
+ * const char* metadata_url = "https://example.com";    // Metadata URL string
+ * size_t metadata_url_size = strlen(metadata_url);     // Size of the metadata URL string
+ * const char* metadata_hash_hex = "abc123...";         // Metadata hash in hexadecimal
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex); // Size of the metadata hash string
+ * const char* gov_action_id_hex = "1234abcd...";       // Governance action ID in hexadecimal
+ * size_t gov_action_id_hex_size = strlen(gov_action_id_hex); // Size of the governance action ID string
+ * uint64_t gov_action_id_index = 0;                    // Governance action ID index
+ * cardano_constitution_t* constitution = ...;          // Constitution details
+ *
+ * cardano_tx_builder_propose_new_constitution_ex(
+ *   builder, reward_address, reward_address_size,
+ *   metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size,
+ *   gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, constitution);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution_ex(
+  cardano_tx_builder_t*   builder,
+  const char*             reward_address,
+  size_t                  reward_address_size,
+  const char*             metadata_url,
+  size_t                  metadata_url_size,
+  const char*             metadata_hash_hex,
+  size_t                  metadata_hash_hex_size,
+  const char*             gov_action_id_hex,
+  size_t                  gov_action_id_hex_size,
+  uint64_t                gov_action_id_index,
+  cardano_constitution_t* constitution);
+
+/**
+ * \brief Proposes an informational governance action for the Cardano network.
+ *
+ * This function creates a governance action proposal to share information with the network.
+ *
+ * \param[in,out] builder        A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address A pointer to the reward address where the deposit refund will be sent if the proposal is enacted or discarded.
+ * \param[in]     anchor         A pointer to a \ref cardano_anchor_t object containing metadata such as URLs and hashes to link to external information.
+ *
+ * \note Any errors encountered during the addition of the informational proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;            // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...; // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                 // Anchor metadata for the proposal
+ *
+ * cardano_tx_builder_propose_info(builder, reward_address, anchor);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_info(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor);
+
+/**
+ * \brief Proposes an informational governance action for the Cardano network.
+ *
+ * This function creates a governance action proposal to share information with the network.
+ *
+ * \param[in,out] builder              A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
+ * \param[in]     reward_address       A pointer to the reward address in string format where the deposit refund will be sent if the proposal is enacted or discarded.
+ * \param[in]     reward_address_size  The size of the reward address string in bytes.
+ * \param[in]     metadata_url         A pointer to a string containing the URL for the proposal metadata. This parameter is optional and can be NULL if no URL is provided.
+ * \param[in]     metadata_url_size    The size of the metadata URL string in bytes. Set to 0 if no URL is provided.
+ * \param[in]     metadata_hash_hex    A pointer to a string containing the hexadecimal hash of the metadata. This parameter is optional and can be NULL if no hash is provided.
+ * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes. Set to 0 if no hash is provided.
+ *
+ * \note Any errors encountered during the addition of the informational proposal will be deferred until \ref cardano_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* builder = ...;   // Initialized transaction builder
+ * const char* reward_address = "addr1..."; // Reward address as a string
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/proposal-metadata";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ *
+ * cardano_tx_builder_propose_info_ex(
+ *     builder, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  size_t                reward_address_size,
+  const char*           metadata_url,
+  size_t                metadata_url_size,
+  const char*           metadata_hash_hex,
+  size_t                metadata_hash_hex_size);
 
 /**
  * \brief Builds the transaction from the current state of the transaction builder.
