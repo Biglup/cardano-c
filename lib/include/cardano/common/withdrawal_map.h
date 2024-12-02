@@ -274,6 +274,48 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_withdrawal_map_insert(cardano_withdrawal_map_t* withdrawal_map, cardano_reward_address_t* key, uint64_t value);
 
 /**
+ * \brief Inserts a withdrawal entry into the withdrawal map using a reward address.
+ *
+ * This function inserts a withdrawal entry into the specified \ref cardano_withdrawal_map_t object. The withdrawal is associated
+ * with a reward address and specifies the amount to be withdrawn in lovelace.
+ *
+ * \param[in, out] withdrawal_map A pointer to the \ref cardano_withdrawal_map_t object where the withdrawal entry will be inserted.
+ * \param[in] reward_address A pointer to a string representing the Bech32-encoded reward address. This parameter must not be NULL.
+ * \param[in] reward_address_size The length of the reward address string in bytes.
+ * \param[in] value The amount of ADA (in lovelace) to withdraw from the reward address.
+ *
+ * \return \ref CARDANO_SUCCESS if the withdrawal entry was successfully inserted into the map, or an appropriate error code
+ * indicating the type of failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_withdrawal_map_t* withdrawal_map = ...; // Assume initialized
+ * const char* reward_address = "stake1u..."; // Bech32-encoded reward address
+ * uint64_t withdrawal_value = 1000000; // 1 ADA in lovelace
+ *
+ * cardano_error_t result = cardano_withdrawal_map_insert_ex(withdrawal_map, reward_address, strlen(reward_address), withdrawal_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Withdrawal entry successfully added
+ * }
+ * else
+ * {
+ *   printf("Failed to insert withdrawal entry: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * // Cleanup when done
+ * cardano_withdrawal_map_unref(&withdrawal_map);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_withdrawal_map_insert_ex(
+  cardano_withdrawal_map_t* withdrawal_map,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  uint64_t                  value);
+
+/**
  * \brief Retrieves the keys from the withdrawal map.
  *
  * This function retrieves all the keys from the provided withdrawal map and returns them as a list.

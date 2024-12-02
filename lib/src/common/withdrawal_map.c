@@ -486,6 +486,34 @@ cardano_withdrawal_map_insert(
 }
 
 cardano_error_t
+cardano_withdrawal_map_insert_ex(
+  cardano_withdrawal_map_t* withdrawal_map,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  uint64_t                  value)
+{
+  if (withdrawal_map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_reward_address_t* key = NULL;
+
+  cardano_error_t result = cardano_reward_address_from_bech32(reward_address, reward_address_size, &key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_withdrawal_map_insert(withdrawal_map, key, value);
+
+  cardano_reward_address_unref(&key);
+
+  return result;
+}
+
+cardano_error_t
 cardano_withdrawal_map_get_keys(
   cardano_withdrawal_map_t*       withdrawal_map,
   cardano_reward_address_list_t** keys)

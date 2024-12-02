@@ -1026,3 +1026,78 @@ get_utxo_at_index(cardano_transaction_t* transaction, const uint32_t index)
 
   return utxo;
 }
+
+cardano_voter_t*
+create_drep_voter(const char* drep_id)
+{
+  cardano_drep_t* drep = NULL;
+
+  cardano_error_t result = cardano_drep_from_string(drep_id, strlen(drep_id), &drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to convert DRep ID to DRep");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_voter_t*      voter     = NULL;
+  cardano_credential_t* drep_cred = NULL;
+
+  result = cardano_drep_get_credential(drep, &drep_cred);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get DRep credential");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  cardano_drep_type_t drep_type = CARDANO_DREP_TYPE_KEY_HASH;
+
+  result = cardano_drep_get_type(drep, &drep_type);
+  cardano_drep_unref(&drep);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get DRep type");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  result = cardano_voter_new(
+    CARDANO_DREP_TYPE_KEY_HASH ? CARDANO_VOTER_TYPE_DREP_KEY_HASH : CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, drep_cred, &voter);
+
+  cardano_credential_unref(&drep_cred);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create DRep voter");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return voter;
+}
+
+cardano_governance_action_id_t*
+create_governance_id(const char* gov_id_hex, uint64_t index)
+{
+  cardano_governance_action_id_t* gov_id = NULL;
+
+  cardano_error_t result = cardano_governance_action_id_from_hash_hex(gov_id_hex, strlen(gov_id_hex), index, &gov_id);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create governance action ID");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
+  return gov_id;
+}

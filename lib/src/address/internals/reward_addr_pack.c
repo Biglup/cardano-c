@@ -55,8 +55,10 @@ _cardano_unpack_reward_address(const byte_t* data, size_t size, cardano_reward_a
 
   cardano_error_t credential_type_result = _cardano_get_payment_credential_type(type, &payment_type);
 
-  assert(credential_type_result == CARDANO_SUCCESS);
-  CARDANO_UNUSED(credential_type_result);
+  if (credential_type_result != CARDANO_SUCCESS)
+  {
+    return credential_type_result;
+  }
 
   cardano_credential_t* payment_credential = NULL;
 

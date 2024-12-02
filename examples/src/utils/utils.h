@@ -532,6 +532,31 @@ create_utxo(cardano_blake2b_hash_t* tx_id, uint32_t index, cardano_transaction_o
 cardano_utxo_t*
 get_utxo_at_index(cardano_transaction_t* transaction, uint32_t index);
 
+/**
+ * \brief Creates a Cardano DRep voter object from a DRep ID.
+ *
+ * This function creates a \ref cardano_voter_t object representing a DRep voter from the provided DRep ID.
+ *
+ * \param drep_id The DRep ID as a string.
+ *
+ * \return A pointer to the created \ref cardano_voter_t object if the DRep voter is successfully created.
+ */
+cardano_voter_t*
+create_drep_voter(const char* drep_id);
+
+/**
+ * \brief Creates a Cardano governance action ID object.
+ *
+ * This function creates a \ref cardano_governance_action_id_t object representing a governance action ID from the provided hexadecimal string and index.
+ *
+ * \param gov_id_hex The hexadecimal string representing the governance action ID.
+ * \param index The index of the governance action.
+ *
+ * \return A pointer to the created \ref cardano_governance_action_id_t object if the governance action ID is successfully created.
+ */
+cardano_governance_action_id_t*
+create_governance_id(const char* gov_id_hex, uint64_t index);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

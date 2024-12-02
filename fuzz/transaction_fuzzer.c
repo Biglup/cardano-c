@@ -16,7 +16,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     cardano_cbor_reader_unref(&reader);
     cardano_transaction_unref(&transaction);
 
-    return result;
+    return 0;
   }
 
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
@@ -31,19 +31,19 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     cardano_transaction_unref(&transaction);
     cardano_cbor_writer_unref(&writer);
 
-    return result;
+    return 0;
   }
 
   const size_t cbor_hex_size = cardano_cbor_writer_get_hex_size(writer);
   char*        cbor_hex      = (char*)malloc(cbor_hex_size);
 
   result = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_hex_size);
-  cardano_cbor_writer_unref(&writer);
+  CARDANO_UNUSED(result);
 
   free(cbor_hex);
   cardano_cbor_reader_unref(&reader);
   cardano_transaction_unref(&transaction);
   cardano_cbor_writer_unref(&writer);
 
-  return result;
+  return 0;
 }

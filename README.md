@@ -70,6 +70,20 @@ sign_transaction(key_handler, SIGNER_DERIVATION_PATH, transaction);
 submit_transaction(provider, CONFIRM_TX_TIMEOUT_MS, transaction);
 ```
 
+## Conway Era Support
+
+Cardano-C supports all features up to the Conway era, which is the current era of the Cardano blockchain. Conway era
+brought to Cardano decentralized governance. You can see some of the governance related examples in the [examples](examples/) directory:
+
+- [Register as DRep (PubKey)](examples/src/drep_pubkey_example.c)
+- [Register as DRep (Script)](examples/src/drep_script_example.c)
+- [Submit governance action proposal (Withdrawing from treasury)](examples/src/propose_treasury_withdrawal_example.c)
+- [Vote for proposal (PubKey DRep)](examples/src/vote_for_proposal_pubkey_example.c)
+- [Vote for proposal (Script DRep)](examples/src/vote_for_proposal_script_example.c)
+
+These are some of the examples illustrated in the [examples](examples/) directory. However, you should
+be able to build any valid transaction for the current era. See the [Documentation](https://cardano-c.readthedocs.io/) for more information.
+
 ## Memory Management
 
 The Cardano C library uses a simple reference-counting model. The main goal is that the library can be easily integrated

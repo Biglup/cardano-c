@@ -225,6 +225,62 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_propose_parameter_change
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_parameter_change_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_hardfork
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_hardfork_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_treasury_withdrawals
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_treasury_withdrawals_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_no_confidence
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_no_confidence_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_update_committee
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_update_committee_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_new_constitution
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_new_constitution_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_info
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_propose_info_ex
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_build
 
 ------------
