@@ -1714,15 +1714,14 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
  * \param[in] metadata_url_size The size (in bytes) of the `metadata_url` string.
  * \param[in] metadata_hash_hex A hexadecimal string representing the hash of the metadata contents.
  * \param[in] metadata_hash_hex_size The size (in bytes) of the `metadata_hash_hex` string.
- * \param[in] gov_action_id_hex A hexadecimal string representing the governance action ID that references the most recent enacted action of the same type.
- * \param[in] gov_action_id_hex_size The size (in bytes) of the `gov_action_id_hex` string.
- * \param[in] gov_action_id_index The index of the governance action ID being referenced.
+ * \param[in] gov_action_id A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size The size (in bytes) of the `gov_action_id` string.
  * \param[in] policy_hash_hash_hex A hexadecimal string representing the guardrails script hash (also known as the governance action policy script).
  * \param[in] policy_hash_hash_hex_size The size (in bytes) of the `policy_hash_hash_hex` string.
  * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object containing the protocol parameter updates.
  *                                  This parameter must not be NULL.
  *
- * \note The `gov_action_id_hex` references the most recent enacted governance action of the same type. If no such action has been enacted,
+ * \note The `gov_action_id` references the most recent enacted governance action of the same type. If no such action has been enacted,
  *       this parameter can be NULL. The `policy_hash_hash_hex` represents the hash of the guardrails script, which imposes additional constraints
  *       on certain governance actions such as protocol parameter updates.
  *
@@ -1734,8 +1733,7 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
  * const char* reward_address = "stake1u9hwrj..."; // Reward address in Bech32
  * const char* metadata_url = "https://example.com/metadata.json"; // Metadata URL
  * const char* metadata_hash = "d2a4f89b..."; // Metadata hash in hexadecimal
- * const char* gov_action_id = "a4b1c0d..."; // Governance action ID in hexadecimal
- * uint64_t gov_action_id_index = 1;
+ * const char* gov_action_id = "gov_action1..."; // Governance action ID in CIP-129 format
  * const char* policy_hash = "f4a6b3e..."; // Policy hash in hexadecimal
  * cardano_protocol_param_update_t* param_update = cardano_protocol_param_update_new(...); // Assume initialized
  *
@@ -1744,7 +1742,6 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
  *                                                metadata_url, strlen(metadata_url),
  *                                                metadata_hash, strlen(metadata_hash),
  *                                                gov_action_id, strlen(gov_action_id),
- *                                                gov_action_id_index,
  *                                                policy_hash, strlen(policy_hash),
  *                                                param_update);
  *
@@ -1760,9 +1757,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change_ex(
   size_t                           metadata_url_size,
   const char*                      metadata_hash_hex,
   size_t                           metadata_hash_hex_size,
-  const char*                      gov_action_id_hex,
-  size_t                           gov_action_id_hex_size,
-  uint64_t                         gov_action_id_index,
+  const char*                      gov_action_id,
+  size_t                           gov_action_id_size,
   const char*                      policy_hash_hash_hex,
   size_t                           policy_hash_hash_hex_size,
   cardano_protocol_param_update_t* protocol_param_update);
@@ -1825,14 +1821,12 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork(
  * \param[in] metadata_url_size The size of the metadata URL string in bytes.
  * \param[in] metadata_hash_hex A pointer to the hexadecimal string representing the hash of the metadata file.
  * \param[in] metadata_hash_hex_size The size of the metadata hash string in bytes.
- * \param[in] gov_action_id_hex A pointer to the hexadecimal string of the governance action ID referencing the last enacted action of the same type.
- * \param[in] gov_action_id_hex_size The size of the governance action ID string in bytes.
- * \param[in] gov_action_id_index The governance action index associated with the action ID.
+ * \param[in] gov_action_id A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size The size (in bytes) of the `gov_action_id` string.
  * \param[in] minor_protocol_version The minor protocol version for the proposed hard fork.
  * \param[in] major_protocol_version The major protocol version for the proposed hard fork.
  *
- * \note The `gov_action_id_hex` and `gov_action_id_index` parameters reference the most recent enacted governance action of the same type.
- *       If no such action exists, `gov_action_id_hex` can be NULL, and `gov_action_id_index` set to 0.
+ * \note The `gov_action_id` parameters reference the most recent enacted governance action of the same type.
  *
  * \note Errors encountered during the addition of the hard fork proposal will be deferred until \ref cardano_tx_builder_build is called.
  *
@@ -1845,9 +1839,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork(
  * size_t metadata_url_size = strlen(metadata_url);
  * const char* metadata_hash = "abcdef1234567890..."; // Example metadata hash
  * size_t metadata_hash_size = strlen(metadata_hash);
- * const char* gov_action_id = "deadbeef1234567890..."; // Example governance action ID
+ * const char* gov_action_id = "gov_action1..."; // Example governance action ID
  * size_t gov_action_id_size = strlen(gov_action_id);
- * uint64_t gov_action_id_index = 0; // Example index
  * uint64_t minor_version = 1; // Example minor protocol version
  * uint64_t major_version = 8; // Example major protocol version
  *
@@ -1861,7 +1854,6 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork(
  *   metadata_hash_size,
  *   gov_action_id,
  *   gov_action_id_size,
- *   gov_action_id_index,
  *   minor_version,
  *   major_version
  * );
@@ -1875,9 +1867,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork_ex(
   size_t                metadata_url_size,
   const char*           metadata_hash_hex,
   size_t                metadata_hash_hex_size,
-  const char*           gov_action_id_hex,
-  size_t                gov_action_id_hex_size,
-  uint64_t              gov_action_id_index,
+  const char*           gov_action_id,
+  size_t                gov_action_id_size,
   uint64_t              minor_protocol_version,
   uint64_t              major_protocol_version);
 
@@ -2008,17 +1999,15 @@ CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence(
  * \param[in,out] builder                A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
  * \param[in]     reward_address         A pointer to a string containing the Bech32-encoded reward address. This address will receive the deposit refund
  *                                        after the governance action completes.
- * \param[in]     reward_address_size    The size of the reward address string in bytes.
- * \param[in]     metadata_url           A pointer to a string containing the metadata URL for additional context regarding the proposal.
- * \param[in]     metadata_url_size      The size of the metadata URL string in bytes.
- * \param[in]     metadata_hash_hex      A pointer to a string containing the hexadecimal representation of the metadata hash.
- * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
- * \param[in]     gov_action_id_hex      A pointer to a string containing the hexadecimal representation of the governance action ID.
- *                                        This represents the most recently enacted no-confidence action of the same type.
- * \param[in]     gov_action_id_hex_size The size of the governance action ID string in bytes.
- * \param[in]     gov_action_id_index    The index of the referenced governance action.
+ * \param[in] reward_address_size    The size of the reward address string in bytes.
+ * \param[in] metadata_url           A pointer to a string containing the metadata URL for additional context regarding the proposal.
+ * \param[in] metadata_url_size      The size of the metadata URL string in bytes.
+ * \param[in] metadata_hash_hex      A pointer to a string containing the hexadecimal representation of the metadata hash.
+ * \param[in] metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in] gov_action_id A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size The size (in bytes) of the `gov_action_id` string.
  *
- * \note The `gov_action_id_hex` and `gov_action_id_index` ensure that the proposal references the latest enacted governance action of the same type,
+ * \note The `gov_action_id` ensure that the proposal references the latest enacted governance action of the same type,
  *       as required by the Cardano protocol. These can be omitted (set to NULL or 0) if no prior actions of this type exist.
  *
  * \note Any errors encountered during the addition of the no-confidence proposal will be deferred until
@@ -2033,14 +2022,13 @@ CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence(
  * size_t metadata_url_size = strlen(metadata_url);
  * const char* metadata_hash_hex = "a1b2c3...";        // Example metadata hash (hex-encoded)
  * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
- * const char* gov_action_id_hex = "deadbeef...";      // Example governance action ID (hex-encoded)
- * size_t gov_action_id_hex_size = strlen(gov_action_id_hex);
- * uint64_t gov_action_id_index = 0;                   // Example governance action index
+ * const char* gov_action_id = "gov_action1...";      // Example governance action ID (hex-encoded)
+ * size_t gov_action_id_size = strlen(gov_action_id);
  *
  * cardano_tx_builder_propose_no_confidence_ex(builder, reward_address, reward_address_size,
  *                                             metadata_url, metadata_url_size, metadata_hash_hex,
- *                                             metadata_hash_hex_size, gov_action_id_hex,
- *                                             gov_action_id_hex_size, gov_action_id_index);
+ *                                             metadata_hash_hex_size, gov_action_id,
+ *                                             gov_action_id_size);
  * \endcode
  */
 CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence_ex(
@@ -2051,9 +2039,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_no_confidence_ex(
   size_t                metadata_url_size,
   const char*           metadata_hash_hex,
   size_t                metadata_hash_hex_size,
-  const char*           gov_action_id_hex,
-  size_t                gov_action_id_hex_size,
-  uint64_t              gov_action_id_index);
+  const char*           gov_action_id,
+  size_t                gov_action_id_size);
 
 /**
  * \brief Proposes an update to the Cardano constitutional committee.
@@ -2113,9 +2100,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_update_committee(
  * \param[in]     metadata_url_size      The size of the `metadata_url` string.
  * \param[in]     metadata_hash_hex      A pointer to a string containing the hex-encoded hash of the metadata file.
  * \param[in]     metadata_hash_hex_size The size of the `metadata_hash_hex` string.
- * \param[in]     gov_action_id_hex      A pointer to a string containing the hex-encoded governance action ID of the most recently enacted action of the same type.
- * \param[in]     gov_action_id_hex_size The size of the `gov_action_id_hex` string. This parameter can be NULL if no prior action exists.
- * \param[in]     gov_action_id_index    The governance action index associated with the ID. Can be `0` if no prior action exists.
+ * \param[in]     gov_action_id          A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in]     gov_action_id_size     The size (in bytes) of the `gov_action_id` string.
  * \param[in]     members_to_be_removed  A pointer to a \ref cardano_credential_set_t object specifying the committee members to be removed.
  * \param[in]     members_to_be_added    A pointer to a \ref cardano_committee_members_map_t object specifying the committee members to be added.
  * \param[in]     new_quorum             The new quorum threshold for the committee.
@@ -2132,9 +2118,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_update_committee(
  * size_t metadata_url_size = strlen(metadata_url);
  * const char* metadata_hash_hex = "abc123...";        // Hex-encoded hash of metadata file
  * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
- * const char* gov_action_id_hex = "deadbeef...";      // Optional governance action ID
- * size_t gov_action_id_hex_size = strlen(gov_action_id_hex);
- * uint64_t gov_action_id_index = 0;                  // Governance action index
+ * const char* gov_action_id = "gov_action1...";      // Optional governance action ID
+ * size_t gov_action_id_size = strlen(gov_action_id);
  * cardano_credential_set_t* members_to_remove = ...;  // Members to be removed
  * cardano_committee_members_map_t* members_to_add = ...; // Members to be added
  *
@@ -2142,8 +2127,7 @@ CARDANO_EXPORT void cardano_tx_builder_propose_update_committee(
  *                                                reward_address, reward_address_size,
  *                                                metadata_url, metadata_url_size,
  *                                                metadata_hash_hex, metadata_hash_hex_size,
- *                                                gov_action_id_hex, gov_action_id_hex_size,
- *                                                gov_action_id_index,
+ *                                                gov_action1, gov_action1_size,
  *                                                members_to_remove,
  *                                                members_to_add,
  *                                                0.3);
@@ -2157,9 +2141,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_update_committee_ex(
   size_t                           metadata_url_size,
   const char*                      metadata_hash_hex,
   size_t                           metadata_hash_hex_size,
-  const char*                      gov_action_id_hex,
-  size_t                           gov_action_id_hex_size,
-  uint64_t                         gov_action_id_index,
+  const char*                      gov_action_id,
+  size_t                           gov_action_id_size,
   cardano_credential_set_t*        members_to_be_removed,
   cardano_committee_members_map_t* members_to_be_added,
   double                           new_quorum);
@@ -2212,9 +2195,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution(
  * \param[in]     metadata_url_size    The size of the metadata URL string in bytes.
  * \param[in]     metadata_hash_hex    A pointer to a hexadecimal string representing the hash of the metadata file.
  * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
- * \param[in]     gov_action_id_hex    A pointer to a hexadecimal string representing the governance action ID of the most recently enacted action of the same type.
- * \param[in]     gov_action_id_hex_size The size of the governance action ID string in bytes.
- * \param[in]     gov_action_id_index  The index of the governance action ID. This is used to uniquely identify the governance action.
+ * \param[in]     gov_action_id          A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in]     gov_action_id_size     The size (in bytes) of the `gov_action_id` string.
  * \param[in]     constitution         A pointer to a \ref cardano_constitution_t object containing the new constitution's details.
  *
  * \note Any errors encountered during the addition of the new constitution proposal will be deferred until \ref cardano_tx_builder_build is called.
@@ -2228,15 +2210,14 @@ CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution(
  * size_t metadata_url_size = strlen(metadata_url);     // Size of the metadata URL string
  * const char* metadata_hash_hex = "abc123...";         // Metadata hash in hexadecimal
  * size_t metadata_hash_hex_size = strlen(metadata_hash_hex); // Size of the metadata hash string
- * const char* gov_action_id_hex = "1234abcd...";       // Governance action ID in hexadecimal
- * size_t gov_action_id_hex_size = strlen(gov_action_id_hex); // Size of the governance action ID string
- * uint64_t gov_action_id_index = 0;                    // Governance action ID index
+ * const char* gov_action_id = "gov_action1...";       // Governance action ID in hexadecimal
+ * size_t gov_action_id_size = strlen(gov_action_id); // Size of the governance action ID string
  * cardano_constitution_t* constitution = ...;          // Constitution details
  *
  * cardano_tx_builder_propose_new_constitution_ex(
  *   builder, reward_address, reward_address_size,
  *   metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size,
- *   gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, constitution);
+ *   gov_action_id, gov_action_id_size, constitution);
  * \endcode
  */
 CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution_ex(
@@ -2247,9 +2228,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_new_constitution_ex(
   size_t                  metadata_url_size,
   const char*             metadata_hash_hex,
   size_t                  metadata_hash_hex_size,
-  const char*             gov_action_id_hex,
-  size_t                  gov_action_id_hex_size,
-  uint64_t                gov_action_id_index,
+  const char*             gov_action_id,
+  size_t                  gov_action_id_size,
   cardano_constitution_t* constitution);
 
 /**

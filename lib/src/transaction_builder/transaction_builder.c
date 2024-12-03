@@ -3626,9 +3626,8 @@ cardano_tx_builder_propose_parameter_change_ex(
   const size_t                     metadata_url_size,
   const char*                      metadata_hash_hex,
   const size_t                     metadata_hash_hex_size,
-  const char*                      gov_action_id_hex,
-  const size_t                     gov_action_id_hex_size,
-  const uint64_t                   gov_action_id_index,
+  const char*                      gov_action_id,
+  const size_t                     gov_action_id_size,
   const char*                      policy_hash_hash_hex,
   const size_t                     policy_hash_hash_hex_size,
   cardano_protocol_param_update_t* protocol_param_update)
@@ -3659,7 +3658,7 @@ cardano_tx_builder_propose_parameter_change_ex(
     return;
   }
 
-  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  if ((gov_action_id == NULL) || (gov_action_id_size == 0U))
   {
     cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
@@ -3697,9 +3696,9 @@ cardano_tx_builder_propose_parameter_change_ex(
     return;
   }
 
-  cardano_governance_action_id_t* gov_action_id = NULL;
+  cardano_governance_action_id_t* id = NULL;
 
-  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+  result = cardano_governance_action_id_from_bech32(gov_action_id, gov_action_id_size, &id);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -3719,18 +3718,18 @@ cardano_tx_builder_propose_parameter_change_ex(
   {
     cardano_anchor_unref(&anchor);
     cardano_reward_address_unref(&addr);
-    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_governance_action_id_unref(&id);
     cardano_tx_builder_set_last_error(builder, "Failed to parse policy hash.");
     builder->last_error = result;
 
     return;
   }
 
-  cardano_tx_builder_propose_parameter_change(builder, addr, anchor, protocol_param_update, gov_action_id, policy_hash);
+  cardano_tx_builder_propose_parameter_change(builder, addr, anchor, protocol_param_update, id, policy_hash);
 
   cardano_anchor_unref(&anchor);
   cardano_reward_address_unref(&addr);
-  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_governance_action_id_unref(&id);
   cardano_blake2b_hash_unref(&policy_hash);
 }
 
@@ -3795,9 +3794,8 @@ cardano_tx_builder_propose_hardfork_ex(
   const size_t          metadata_url_size,
   const char*           metadata_hash_hex,
   const size_t          metadata_hash_hex_size,
-  const char*           gov_action_id_hex,
-  const size_t          gov_action_id_hex_size,
-  const uint64_t        gov_action_id_index,
+  const char*           gov_action_id,
+  const size_t          gov_action_id_size,
   const uint64_t        minor_protocol_version,
   const uint64_t        major_protocol_version)
 {
@@ -3827,7 +3825,7 @@ cardano_tx_builder_propose_hardfork_ex(
     return;
   }
 
-  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  if ((gov_action_id == NULL) || (gov_action_id_size == 0U))
   {
     cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
@@ -3856,9 +3854,9 @@ cardano_tx_builder_propose_hardfork_ex(
     return;
   }
 
-  cardano_governance_action_id_t* gov_action_id = NULL;
+  cardano_governance_action_id_t* id = NULL;
 
-  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+  result = cardano_governance_action_id_from_bech32(gov_action_id, gov_action_id_size, &id);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -3876,17 +3874,17 @@ cardano_tx_builder_propose_hardfork_ex(
   {
     cardano_anchor_unref(&anchor);
     cardano_reward_address_unref(&addr);
-    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_governance_action_id_unref(&id);
     cardano_tx_builder_set_last_error(builder, "Failed to create protocol version.");
     builder->last_error = result;
     return;
   }
 
-  cardano_tx_builder_propose_hardfork(builder, addr, anchor, version, gov_action_id);
+  cardano_tx_builder_propose_hardfork(builder, addr, anchor, version, id);
 
   cardano_anchor_unref(&anchor);
   cardano_reward_address_unref(&addr);
-  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_governance_action_id_unref(&id);
   cardano_protocol_version_unref(&version);
 }
 
@@ -4107,9 +4105,8 @@ cardano_tx_builder_propose_no_confidence_ex(
   const size_t          metadata_url_size,
   const char*           metadata_hash_hex,
   const size_t          metadata_hash_hex_size,
-  const char*           gov_action_id_hex,
-  const size_t          gov_action_id_hex_size,
-  const uint64_t        gov_action_id_index)
+  const char*           gov_action_id,
+  const size_t          gov_action_id_size)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -4137,7 +4134,7 @@ cardano_tx_builder_propose_no_confidence_ex(
     return;
   }
 
-  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  if ((gov_action_id == NULL) || (gov_action_id_size == 0U))
   {
     cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
@@ -4166,9 +4163,9 @@ cardano_tx_builder_propose_no_confidence_ex(
     return;
   }
 
-  cardano_governance_action_id_t* gov_action_id = NULL;
+  cardano_governance_action_id_t* id = NULL;
 
-  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+  result = cardano_governance_action_id_from_bech32(gov_action_id, gov_action_id_size, &id);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -4179,11 +4176,11 @@ cardano_tx_builder_propose_no_confidence_ex(
     return;
   }
 
-  cardano_tx_builder_propose_no_confidence(builder, addr, anchor, gov_action_id);
+  cardano_tx_builder_propose_no_confidence(builder, addr, anchor, id);
 
   cardano_anchor_unref(&anchor);
   cardano_reward_address_unref(&addr);
-  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_governance_action_id_unref(&id);
 }
 
 void
@@ -4250,9 +4247,8 @@ cardano_tx_builder_propose_update_committee_ex(
   const size_t                     metadata_url_size,
   const char*                      metadata_hash_hex,
   const size_t                     metadata_hash_hex_size,
-  const char*                      gov_action_id_hex,
-  const size_t                     gov_action_id_hex_size,
-  const uint64_t                   gov_action_id_index,
+  const char*                      gov_action_id,
+  const size_t                     gov_action_id_size,
   cardano_credential_set_t*        members_to_be_removed,
   cardano_committee_members_map_t* members_to_be_added,
   const double                     new_quorum)
@@ -4283,7 +4279,7 @@ cardano_tx_builder_propose_update_committee_ex(
     return;
   }
 
-  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  if ((gov_action_id == NULL) || (gov_action_id_size == 0U))
   {
     cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
@@ -4312,9 +4308,9 @@ cardano_tx_builder_propose_update_committee_ex(
     return;
   }
 
-  cardano_governance_action_id_t* gov_action_id = NULL;
+  cardano_governance_action_id_t* id = NULL;
 
-  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+  result = cardano_governance_action_id_from_bech32(gov_action_id, gov_action_id_size, &id);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -4332,19 +4328,19 @@ cardano_tx_builder_propose_update_committee_ex(
   {
     cardano_anchor_unref(&anchor);
     cardano_reward_address_unref(&addr);
-    cardano_governance_action_id_unref(&gov_action_id);
+    cardano_governance_action_id_unref(&id);
     cardano_tx_builder_set_last_error(builder, "Failed to create unit interval.");
     builder->last_error = result;
 
     return;
   }
 
-  cardano_tx_builder_propose_update_committee(builder, addr, anchor, gov_action_id, members_to_be_removed, members_to_be_added, quorum);
+  cardano_tx_builder_propose_update_committee(builder, addr, anchor, id, members_to_be_removed, members_to_be_added, quorum);
 
   cardano_unit_interval_unref(&quorum);
   cardano_anchor_unref(&anchor);
   cardano_reward_address_unref(&addr);
-  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_governance_action_id_unref(&id);
 }
 
 void
@@ -4409,9 +4405,8 @@ cardano_tx_builder_propose_new_constitution_ex(
   const size_t            metadata_url_size,
   const char*             metadata_hash_hex,
   const size_t            metadata_hash_hex_size,
-  const char*             gov_action_id_hex,
-  const size_t            gov_action_id_hex_size,
-  const uint64_t          gov_action_id_index,
+  const char*             gov_action_id,
+  const size_t            gov_action_id_size,
   cardano_constitution_t* constitution)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
@@ -4440,7 +4435,7 @@ cardano_tx_builder_propose_new_constitution_ex(
     return;
   }
 
-  if ((gov_action_id_hex == NULL) || (gov_action_id_hex_size == 0U))
+  if ((gov_action_id == NULL) || (gov_action_id_size == 0U))
   {
     cardano_tx_builder_set_last_error(builder, "Governance action ID is NULL or empty.");
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
@@ -4470,9 +4465,9 @@ cardano_tx_builder_propose_new_constitution_ex(
     return;
   }
 
-  cardano_governance_action_id_t* gov_action_id = NULL;
+  cardano_governance_action_id_t* id = NULL;
 
-  result = cardano_governance_action_id_from_hash_hex(gov_action_id_hex, gov_action_id_hex_size, gov_action_id_index, &gov_action_id);
+  result = cardano_governance_action_id_from_bech32(gov_action_id, gov_action_id_size, &id);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -4483,11 +4478,11 @@ cardano_tx_builder_propose_new_constitution_ex(
     return;
   }
 
-  cardano_tx_builder_propose_new_constitution(builder, addr, anchor, gov_action_id, constitution);
+  cardano_tx_builder_propose_new_constitution(builder, addr, anchor, id, constitution);
 
   cardano_anchor_unref(&anchor);
   cardano_reward_address_unref(&addr);
-  cardano_governance_action_id_unref(&gov_action_id);
+  cardano_governance_action_id_unref(&id);
 }
 
 void
