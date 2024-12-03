@@ -27,6 +27,7 @@
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
+#include "../src/string_safe.h"
 
 #include <gmock/gmock.h>
 
@@ -36,6 +37,12 @@ static const char* KEY_HASH_HEX              = "00000000000000000000000000000000
 static const char* KEY_HASH_HEX_2            = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 static const char* INVALID_KEY_HASH_HEX      = "000000000000000000000000000000000000000000000000";
 static const char* GOVERNANCE_ACTION_ID_CBOR = "825820000000000000000000000000000000000000000000000000000000000000000003";
+static const char* CIP129_HEX_1              = "000000000000000000000000000000000000000000000000000000000000000011";
+static const char* CIP129_BECH32_1           = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
+static const char* CIP129_HEX_2              = "111111111111111111111111111111111111111111111111111111111111111100";
+static const char* CIP129_BECH32_2           = "gov_action1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsq6dmejn";
+static const char* INVALID_CIP129_BECH32     = "gov_action1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyp6q4j5";
+static const char* INVALID_CIP129_BECH32_2   = "gox_action1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsqqjxekw";
 
 /* UNIT TESTS ****************************************************************/
 
@@ -1205,4 +1212,150 @@ TEST(cardano_governance_action_id_equals, returnsTrueIfObjectsAreEqual)
   // Cleanup
   cardano_governance_action_id_unref(&governance_action_id);
   cardano_governance_action_id_unref(&governance_action_id2);
+}
+
+TEST(cardano_governance_action_id_from_bech32, canCreateGovernanceActionId)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_governance_action_id_from_bech32(
+    CIP129_BECH32_1,
+    cardano_safe_strlen(CIP129_BECH32_1, 128),
+    &governance_action_id);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(governance_action_id, testing::Not((cardano_governance_action_id_t*)nullptr));
+
+  cardano_blake2b_hash_t* hash2 = cardano_governance_action_id_get_hash(governance_action_id);
+  const char*             hex   = cardano_governance_action_id_get_hash_hex(governance_action_id);
+
+  EXPECT_STREQ(hex, KEY_HASH_HEX);
+
+  uint64_t index = 0;
+  error          = cardano_governance_action_id_get_index(governance_action_id, &index);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 17);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&governance_action_id);
+  cardano_blake2b_hash_unref(&hash2);
+}
+
+TEST(cardano_governance_action_id_from_bech32, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_governance_action_id_from_bech32(
+    CIP129_BECH32_1,
+    cardano_safe_strlen(CIP129_BECH32_1, 128),
+    &governance_action_id);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_governance_action_id_from_bech32, returnsErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(nullptr, 0, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_from_bech32("", 0, nullptr), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(" ", 1, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_governance_action_id_from_bech32, returnsErrorIfGivenInvalid)
+{
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(INVALID_CIP129_BECH32, cardano_safe_strlen(INVALID_CIP129_BECH32, 128), &governance_action_id), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(INVALID_CIP129_BECH32_2, cardano_safe_strlen(INVALID_CIP129_BECH32_2, 128), &governance_action_id), CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+}
+
+TEST(cardano_governance_action_id_get_bech32_size, returnsZeroIfGivenANullPtr)
+{
+  // Act
+  size_t size = cardano_governance_action_id_get_bech32_size(nullptr);
+
+  // Assert
+  EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_governance_action_id_get_bech32_size, returnsTheSize)
+{
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(CIP129_BECH32_1, cardano_safe_strlen(CIP129_BECH32_1, 128), &governance_action_id), CARDANO_SUCCESS);
+
+  size_t size = cardano_governance_action_id_get_bech32_size(governance_action_id);
+
+  EXPECT_EQ(size, cardano_safe_strlen(CIP129_BECH32_1, 128) + 1);
+
+  cardano_governance_action_id_unref(&governance_action_id);
+}
+
+TEST(cardano_governance_action_id_to_bech32, returnsErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(nullptr, nullptr, 0), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(nullptr, (char*)"", 0), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_to_bech32((cardano_governance_action_id_t*)"", nullptr, 0), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(nullptr, (char*)"", 1), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_governance_action_id_to_bech32, returnsErrorIfGivenBufferIstooSmall)
+{
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(CIP129_BECH32_1, cardano_safe_strlen(CIP129_BECH32_1, 128), &governance_action_id), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(governance_action_id, (char*)"", 0), CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(governance_action_id, (char*)"", 1), CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+
+  cardano_governance_action_id_unref(&governance_action_id);
+}
+
+TEST(cardano_governance_action_id_to_bech32, canConvertToBech32)
+{
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(CIP129_BECH32_1, cardano_safe_strlen(CIP129_BECH32_1, 128), &governance_action_id), CARDANO_SUCCESS);
+
+  char buffer[128] = { 0 };
+
+  EXPECT_EQ(cardano_governance_action_id_to_bech32(governance_action_id, buffer, 128), CARDANO_SUCCESS);
+  EXPECT_STREQ(buffer, CIP129_BECH32_1);
+
+  cardano_governance_action_id_unref(&governance_action_id);
+}
+
+TEST(cardano_governance_action_id_get_string, returnsNullIfGivenANullPtr)
+{
+  // Act
+  const char* str = cardano_governance_action_id_get_string(nullptr);
+
+  // Assert
+  EXPECT_EQ(str, (const char*)nullptr);
+}
+
+TEST(cardano_governance_action_id_get_string, returnsTheString)
+{
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(CIP129_BECH32_1, cardano_safe_strlen(CIP129_BECH32_1, 128), &governance_action_id), CARDANO_SUCCESS);
+
+  const char* str = cardano_governance_action_id_get_string(governance_action_id);
+
+  EXPECT_STREQ(str, CIP129_BECH32_1);
+
+  cardano_governance_action_id_unref(&governance_action_id);
 }

@@ -103,10 +103,10 @@ to_cip29_bech32(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  byte_t cip29_payload[32] = { 0U };
+  byte_t cip29_payload[33] = { 0 };
 
   cardano_safe_memcpy(cip29_payload, 32, bytes, bytes_size);
-  cip29_payload[31] = index;
+  cip29_payload[32] = index;
 
   cardano_error_t result = cardano_encoding_bech32_encode(GOVERNANCE_ACTION_ID_PREFIX, GOVERNANCE_ACTION_ID_PREFIX_SIZE, cip29_payload, 33, dest, dest_size);
 
@@ -168,12 +168,7 @@ cardano_governance_action_id_new(const cardano_blake2b_hash_t* hash, const uint6
   assert(copy_hex_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hex_result);
 
-  cardano_error_t cip29_result = to_cip29_bech32((*governance_action_id)->hash_bytes, sizeof((*governance_action_id)->hash_bytes), (byte_t)index, (*governance_action_id)->cip129_str, sizeof((*governance_action_id)->cip129_str));
-
-  assert(cip29_result == CARDANO_SUCCESS);
-  CARDANO_UNUSED(cip29_result);
-
-  return CARDANO_SUCCESS;
+  return to_cip29_bech32((*governance_action_id)->hash_bytes, sizeof((*governance_action_id)->hash_bytes), (byte_t)index, (*governance_action_id)->cip129_str, sizeof((*governance_action_id)->cip129_str));
 }
 
 cardano_error_t
@@ -201,7 +196,7 @@ cardano_governance_action_id_from_bech32(
   const size_t data_size = cardano_encoding_bech32_get_decoded_length(data, size, &hrp_size);
 
   // 32 bytes for the hash and 1 byte for the index
-  if (data_size != 33)
+  if (data_size != 33U)
   {
     return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
   }
@@ -218,6 +213,8 @@ cardano_governance_action_id_from_bech32(
 
     return decode_result;
   }
+
+  hrp_size -= 1U;
 
   if ((hrp_size != cardano_safe_strlen(GOVERNANCE_ACTION_ID_PREFIX, GOVERNANCE_ACTION_ID_PREFIX_SIZE)) || (strncmp(hrp, GOVERNANCE_ACTION_ID_PREFIX, hrp_size) != 0))
   {
@@ -456,7 +453,7 @@ cardano_governance_action_id_get_bech32_size(const cardano_governance_action_id_
 }
 
 cardano_error_t
-cardano_reward_address_to_bech32(
+cardano_governance_action_id_to_bech32(
   const cardano_governance_action_id_t* governance_action_id,
   char*                                 data,
   size_t                                size)

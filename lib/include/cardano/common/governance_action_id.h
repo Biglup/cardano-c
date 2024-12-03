@@ -336,7 +336,7 @@ cardano_governance_action_id_get_bech32_size(
  *
  * if (bech32_str != NULL)
  * {
- *   cardano_error_t result = cardano_reward_address_to_bech32(gov_action_id, bech32_str, required_size);
+ *   cardano_error_t result = cardano_governance_action_id_to_bech32(gov_action_id, bech32_str, required_size);
  *   if (result == CARDANO_SUCCESS)
  *   {
  *     printf("Governance Action Bech32: %s\n", bech32_str);
@@ -351,7 +351,7 @@ cardano_governance_action_id_get_bech32_size(
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
-cardano_reward_address_to_bech32(
+cardano_governance_action_id_to_bech32(
   const cardano_governance_action_id_t* governance_action_id,
   char*                                 data,
   size_t                                size);
