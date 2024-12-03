@@ -99,6 +99,56 @@ cardano_governance_action_id_from_bech32(
   cardano_governance_action_id_t** action_id);
 
 /**
+ * \brief Parses a Bech32-encoded governance action ID and initializes a corresponding governance action ID object.
+ *
+ * This function takes a Bech32-encoded string representation of a governance action ID, as specified in CIP-129,
+ * and creates a \ref cardano_governance_action_id_t object.
+ *
+ * For example:
+ * - Bech32-encoded input: `gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf`
+ * - Resulting governance action ID: Transaction ID (`0000000000000000000000000000000000000000000000000000000000000000`),
+ *   Index (`11`).
+ *
+ * \param[in] data A pointer to the Bech32-encoded string. This parameter must not be NULL.
+ * \param[in] size The size of the Bech32-encoded string in bytes.
+ * \param[out] action_id A pointer to a \ref cardano_governance_action_id_t pointer. On successful parsing, this pointer
+ *             will point to a newly created governance action ID object. The caller is responsible for managing the
+ *             lifecycle of this object and must release it using \ref cardano_governance_action_id_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the parsing was successful and the governance action ID object was created.
+ *         Returns an appropriate error code otherwise:
+ *         - \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointer is NULL.
+ *         - \ref CARDANO_ERROR_INVALID_ARGUMENT if the input string is not a valid Bech32-encoded governance action ID.
+ *
+ * Usage Example
+ * \code{.c}
+ * const char* bech32_string = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
+ * cardano_governance_action_id_t* action_id = NULL;
+ *
+ * cardano_error_t result = cardano_governance_action_id_from_bech32(bech32_string, strlen(bech32_string), &action_id);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Governance Action ID successfully parsed.\n");
+ *   // Use the action_id as needed
+ *
+ *   // Free the governance action ID object when done
+ *   cardano_governance_action_id_unref(&action_id);
+ * }
+ * else
+ * {
+ *   printf("Failed to parse governance action ID from Bech32: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_governance_action_id_from_bech32(
+  const char*                      data,
+  size_t                           size,
+  cardano_governance_action_id_t** action_id);
+
+/**
  * \brief Creates a governance action id from a hexadecimal transaction hash string.
  *
  * This function constructs a \ref cardano_governance_action_id_t object by interpreting the provided
@@ -322,10 +372,7 @@ cardano_governance_action_id_get_bech32_size(
  *                  size, as determined by \ref cardano_governance_action_id_get_bech32_size.
  * \param[in] size The size of the provided buffer in bytes, including space for the null-terminator.
  *
- * \return \ref CARDANO_SUCCESS if the conversion was successful and the Bech32 string is stored in `data`.
- *         Returns an appropriate error code if the operation fails, such as:
- *         - \ref CARDANO_ERROR_POINTER_IS_NULL if `governance_action_id` or `data` is NULL.
- *         - \ref CARDANO_ERROR_INSUFFICIENT_BUFFER if the provided buffer size is insufficient.
+ * \return \ref CARDANO_SUCCESS if the conversion was successful and the Bech32 string is stored in `data`. Returns an appropriate error code if the operation fails.
  *
  * Usage Example
  * \code{.c}

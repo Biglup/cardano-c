@@ -33,7 +33,7 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_reward_address_to_bech32
+.. doxygenfunction:: cardano_governance_action_id_to_bech32
 
 ------------
 

@@ -91,6 +91,7 @@ static const char* WITHDRAWAL_MAP_CBOR         = "a1581de013cf55d175ea848b87deb3
 static const char* CREDENTIAL_SET_CBOR         = "d90102848200581c000000000000000000000000000000000000000000000000000000008200581c100000000000000000000000000000000000000000000000000000008200581c200000000000000000000000000000000000000000000000000000008200581c30000000000000000000000000000000000000000000000000000000";
 static const char* COMITTEE_MEMBERS_MAP_CBOR   = "a48200581c00000000000000000000000000000000000000000000000000000000008200581c10000000000000000000000000000000000000000000000000000000018200581c20000000000000000000000000000000000000000000000000000000028200581c3000000000000000000000000000000000000000000000000000000003";
 static const char* CONSTITUTION_CBOR           = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
+static const char* CIP129_BECH32_1             = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -6189,7 +6190,6 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr, 0,
     pparam_update);
 
@@ -6200,7 +6200,6 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr, 0,
     pparam_update);
   cardano_tx_builder_unref(&tx_builder);
@@ -6212,7 +6211,6 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr, 0,
     pparam_update);
   cardano_tx_builder_unref(&tx_builder);
@@ -6224,7 +6222,6 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr, 0,
     pparam_update);
   cardano_tx_builder_unref(&tx_builder);
@@ -6236,7 +6233,6 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
     nullptr, 0,
-    0,
     nullptr, 0,
     pparam_update);
   cardano_tx_builder_unref(&tx_builder);
@@ -6247,8 +6243,7 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     nullptr, 0,
     pparam_update);
   cardano_tx_builder_unref(&tx_builder);
@@ -6259,8 +6254,7 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1), // Gov action ID
     HASH_HEX, strlen(HASH_HEX), // Script hash
     nullptr);
   cardano_tx_builder_unref(&tx_builder);
@@ -6271,8 +6265,7 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1), // Gov action ID
     "xxx", 3, // Script hash
     nullptr);
   cardano_tx_builder_unref(&tx_builder);
@@ -6283,8 +6276,7 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     "xxxxx", 5,
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1), // Gov action ID
     HASH_HEX, strlen(HASH_HEX), // Script hash
     nullptr);
   cardano_tx_builder_unref(&tx_builder);
@@ -6295,8 +6287,7 @@ TEST(cardano_tx_builder_propose_parameter_change_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     "yyyyy", 5,
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), // Gov action ID
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1), // Gov action ID
     HASH_HEX, strlen(HASH_HEX), // Script hash
     nullptr);
   cardano_tx_builder_unref(&tx_builder);
@@ -6478,7 +6469,6 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     0, 0);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
@@ -6488,7 +6478,6 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     0, 0);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -6499,7 +6488,6 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     0, 0);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -6510,7 +6498,6 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     nullptr, 0,
     nullptr, 0,
-    0,
     0, 0);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -6521,7 +6508,6 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
     nullptr, 0,
-    0,
     0, 0);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -6531,8 +6517,7 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     0, 0);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -6559,7 +6544,7 @@ TEST(cardano_tx_builder_propose_hardfork_ex, returnsErrorIfMemoryAllocationFails
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
     // Act
-    cardano_tx_builder_propose_hardfork_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, 0, 0);
+    cardano_tx_builder_propose_hardfork_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), 0, 0);
 
     // Assert
     EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
@@ -7019,8 +7004,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    nullptr, 0,
-    0);
+    nullptr, 0);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
   cardano_tx_builder_propose_no_confidence_ex(
@@ -7028,8 +7012,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    nullptr, 0,
-    0);
+    nullptr, 0);
   cardano_tx_builder_unref(&tx_builder);
 
   tx_builder = cardano_tx_builder_new(params, provider);
@@ -7038,8 +7021,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     nullptr, 0,
     nullptr, 0,
-    nullptr, 0,
-    0);
+    nullptr, 0);
   cardano_tx_builder_unref(&tx_builder);
 
   tx_builder = cardano_tx_builder_new(params, provider);
@@ -7048,8 +7030,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     nullptr, 0,
-    nullptr, 0,
-    0);
+    nullptr, 0);
   cardano_tx_builder_unref(&tx_builder);
 
   tx_builder = cardano_tx_builder_new(params, provider);
@@ -7058,8 +7039,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    nullptr, 0,
-    0);
+    nullptr, 0);
   cardano_tx_builder_unref(&tx_builder);
 
   // clang-format on
@@ -7091,7 +7071,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, canAddNoConfidencePorposal)
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
   // Act
-  cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0);
+  cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1));
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
   cardano_transaction_body_unref(&body);
@@ -7140,7 +7120,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, returnsErrorIfMemoryAllocation
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
     // Act
-    cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0);
+    cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1));
 
     // Assert
     EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
@@ -7390,7 +7370,6 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr,
     nullptr,
     0.0);
@@ -7402,7 +7381,6 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr,
     nullptr,
     0.0);
@@ -7415,7 +7393,6 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr,
     nullptr,
     0.0);
@@ -7428,7 +7405,6 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     nullptr, 0,
     nullptr, 0,
-    0,
     nullptr,
     nullptr,
     0.0);
@@ -7441,7 +7417,6 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
     nullptr, 0,
-    0,
     nullptr,
     nullptr,
     0.0);
@@ -7453,8 +7428,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     nullptr,
     nullptr,
     0.0);
@@ -7466,8 +7440,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     members_to_be_removed,
     nullptr,
     0.0);
@@ -7479,8 +7452,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     members_to_be_removed,
     members_to_be_added,
     0.0);
@@ -7530,7 +7502,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, canProposeUpdateCommittee)
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
   // Act
-  cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, members_to_be_removed, members_to_be_added, 0.0);
+  cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), members_to_be_removed, members_to_be_added, 0.0);
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
   cardano_transaction_body_unref(&body);
@@ -7595,7 +7567,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, returnsErrorIfMemoryAllocat
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
     // Act
-    cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, members_to_be_removed, members_to_be_added, 0.0);
+    cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), members_to_be_removed, members_to_be_added, 0.0);
 
     // Assert
     EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
@@ -7803,7 +7775,6 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     constitution);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
@@ -7813,7 +7784,6 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     constitution);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -7824,7 +7794,6 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     nullptr, 0,
     nullptr, 0,
     nullptr, 0,
-    0,
     constitution);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -7835,7 +7804,6 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     nullptr, 0,
     nullptr, 0,
-    0,
     constitution);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -7846,7 +7814,6 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
     nullptr, 0,
-    0,
     constitution);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -7856,8 +7823,7 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, doesntCrashIfGivenNull)
     REWARD_ADDRESS, strlen(REWARD_ADDRESS),
     ANCHOR_URL, strlen(ANCHOR_URL),
     ANCHOR_HASH, strlen(ANCHOR_HASH),
-    GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX),
-    0,
+    CIP129_BECH32_1, strlen(CIP129_BECH32_1),
     constitution);
   cardano_tx_builder_unref(&tx_builder);
 
@@ -7896,7 +7862,7 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, canProposeNewConstitution)
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
   // Act
-  cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, constitution);
+  cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), constitution);
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
   cardano_transaction_body_unref(&body);
@@ -7951,7 +7917,7 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, returnsErrorIfMemoryAllocat
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
     // Act
-    cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_HEX, strlen(GOVERNANCE_ACTION_HEX), 0, constitution);
+    cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), constitution);
 
     // Assert
     EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
