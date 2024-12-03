@@ -9,6 +9,10 @@ Governance Action Id
 
 ------------
 
+.. doxygenfunction:: cardano_governance_action_id_from_bech32
+
+------------
+
 .. doxygenfunction:: cardano_governance_action_id_from_hash_hex
 
 ------------
@@ -22,6 +26,18 @@ Governance Action Id
 ------------
 
 .. doxygenfunction:: cardano_governance_action_id_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_get_bech32_size
+
+------------
+
+.. doxygenfunction:: cardano_reward_address_to_bech32
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_get_string
 
 ------------
 
@@ -53,11 +69,11 @@ Governance Action Id
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_equals
+.. doxygenfunction:: cardano_governance_action_id_set_hash
 
 ------------
 
-.. doxygenfunction:: cardano_governance_action_id_set_hash
+.. doxygenfunction:: cardano_governance_action_id_equals
 
 ------------
 

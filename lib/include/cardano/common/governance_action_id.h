@@ -91,6 +91,13 @@ cardano_governance_action_id_new(
   uint64_t                         index,
   cardano_governance_action_id_t** governance_action_id);
 
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_governance_action_id_from_bech32(
+  const char*                      data,
+  size_t                           size,
+  cardano_governance_action_id_t** action_id);
+
 /**
  * \brief Creates a governance action id from a hexadecimal transaction hash string.
  *
@@ -270,6 +277,123 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_governance_action_id_to_cbor(
   const cardano_governance_action_id_t* governance_action_id,
   cardano_cbor_writer_t*                writer);
+
+/**
+ * \brief Computes the required buffer size for a CIP-29 compliant Bech32 representation of a governance action ID.
+ *
+ * This function calculates the minimum buffer size, including null termination, needed to store the Bech32 string representation
+ * of a governance action ID. The Bech32 representation combines a transaction ID (32 bytes) and an index (1 byte) into a single
+ * string with the prefix `gov_action`.
+ *
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the
+ *                                 governance action ID. This parameter must not be NULL.
+ *
+ * \return The required buffer size in bytes, including space for the null-terminator.
+ *
+ * Usage Example
+ * \code{.c}
+ * cardano_governance_action_id_t* gov_action_id = ...; // Assume initialized
+ * size_t required_size = cardano_governance_action_id_get_bech32_size(gov_action_id);
+ *
+ * char* bech32_str = (char*)malloc(required_size);
+ *
+ * if (bech32_str != NULL)
+ * {
+ *   // Use the buffer for encoding the governance action ID into Bech32 format
+ *   free(bech32_str);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT size_t
+cardano_governance_action_id_get_bech32_size(
+  const cardano_governance_action_id_t* governance_action_id);
+
+/**
+ * \brief Converts a governance action ID to its CIP-29 compliant Bech32 representation.
+ *
+ * This function encodes a governance action ID, which combines a transaction ID (32 bytes) and an index (1 byte), into its
+ * Bech32 string representation. The resulting Bech32 string uses the prefix `gov_action` as defined in CIP-29 and is stored
+ * in the provided buffer.
+ *
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the
+ *                                 governance action ID to be converted. This parameter must not be NULL.
+ * \param[out] data A pointer to the buffer where the resulting Bech32 string will be stored. The buffer must have sufficient
+ *                  size, as determined by \ref cardano_governance_action_id_get_bech32_size.
+ * \param[in] size The size of the provided buffer in bytes, including space for the null-terminator.
+ *
+ * \return \ref CARDANO_SUCCESS if the conversion was successful and the Bech32 string is stored in `data`.
+ *         Returns an appropriate error code if the operation fails, such as:
+ *         - \ref CARDANO_ERROR_POINTER_IS_NULL if `governance_action_id` or `data` is NULL.
+ *         - \ref CARDANO_ERROR_INSUFFICIENT_BUFFER if the provided buffer size is insufficient.
+ *
+ * Usage Example
+ * \code{.c}
+ * cardano_governance_action_id_t* gov_action_id = ...; // Assume initialized
+ * size_t required_size = cardano_governance_action_id_get_bech32_size(gov_action_id);
+ *
+ * char* bech32_str = (char*)malloc(required_size);
+ *
+ * if (bech32_str != NULL)
+ * {
+ *   cardano_error_t result = cardano_reward_address_to_bech32(gov_action_id, bech32_str, required_size);
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     printf("Governance Action Bech32: %s\n", bech32_str);
+ *   }
+ *   else
+ *   {
+ *     printf("Error converting governance action ID to Bech32: %s\n", cardano_error_to_string(result));
+ *   }
+ *   free(bech32_str);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_reward_address_to_bech32(
+  const cardano_governance_action_id_t* governance_action_id,
+  char*                                 data,
+  size_t                                size);
+
+/**
+ * \brief Retrieves the Bech32 string representation of a governance action ID.
+ *
+ * This function returns the Bech32-encoded string representation of a governance action ID as specified in CIP-0129.
+ * The governance action ID is derived from the transaction ID and index, and the Bech32 encoding includes the appropriate
+ * prefix (`"gov_action"`) followed by the encoded ID.
+ *
+ * For example:
+ * - Transaction ID: `0000000000000000000000000000000000000000000000000000000000000000`
+ * - Index: `11`
+ * - Bech32-encoded governance action ID: `gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf`
+ *
+ * \param[in] governance_action_id A pointer to an initialized \ref cardano_governance_action_id_t object representing the governance action ID.
+ *                                 This parameter must not be NULL.
+ *
+ * \return A constant pointer to a null-terminated string containing the Bech32-encoded governance action ID.
+ *         The returned string is managed internally by the library and must not be modified or freed by the caller.
+ *         Returns `NULL` if the input pointer is invalid.
+ *
+ * ### Usage Example
+ * \code{.c}
+ * const cardano_governance_action_id_t* gov_action_id = ...; // Assume initialized
+ * const char* bech32_string = cardano_governance_action_id_get_string(gov_action_id);
+ *
+ * if (bech32_string != NULL)
+ * {
+ *   printf("Governance Action ID (Bech32): %s\n", bech32_string);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve governance action ID in Bech32 format.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char*
+cardano_governance_action_id_get_string(
+  const cardano_governance_action_id_t* governance_action_id);
 
 /**
  * \brief Retrieves the transaction hash associated with a governance action id.

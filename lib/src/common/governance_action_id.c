@@ -30,11 +30,14 @@
 #include "../string_safe.h"
 
 #include <assert.h>
+#include <cardano/encoding/bech32.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t GOVERNANCE_ACTION_ID_ARRAY_SIZE = 2;
+static const int64_t GOVERNANCE_ACTION_ID_ARRAY_SIZE  = 2;
+static const char*   GOVERNANCE_ACTION_ID_PREFIX      = "gov_action";
+static const size_t  GOVERNANCE_ACTION_ID_PREFIX_SIZE = 10;
 
 /* STRUCTURES ****************************************************************/
 
@@ -47,6 +50,7 @@ typedef struct cardano_governance_action_id_t
     uint64_t         index;
     byte_t           hash_bytes[32];
     char             hash_hex[65];
+    char             cip129_str[1024];
 } cardano_governance_action_id_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -69,6 +73,49 @@ cardano_governance_action_id_deallocate(void* object)
 {
   assert(object != NULL);
   _cardano_free(object);
+}
+
+/**
+ * \brief Encodes a transaction ID and index into a CIP-29 compliant governance action id Bech32 format.
+ *
+ * The Cardano Conway era introduces governance actions (gov actions), which are uniquely identified by the transaction ID
+ * they were submitted in and an index within the transaction. This function combines the transaction ID (32 bytes) and the index
+ * (1 byte) into a single byte string, then encodes it into a CIP-29 compliant Bech32 string representation.
+ *
+ * \param[in]  bytes       A pointer to the 32-byte transaction ID. This parameter must not be NULL.
+ * \param[in]  bytes_size  The size of the `bytes` array in bytes. Must be 32 to represent a valid transaction ID.
+ * \param[in]  index       A single byte representing the governance action index within the transaction.
+ * \param[out] dest        A pointer to a buffer where the encoded Bech32 string will be stored.
+ * \param[in]  dest_size   The size of the buffer in bytes. Must be large enough to hold the Bech32 string including null-termination.
+ *
+ * \return \ref CARDANO_SUCCESS if the encoding was successful, or an appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+to_cip29_bech32(
+  const byte_t* bytes,
+  const size_t  bytes_size,
+  const byte_t  index,
+  char*         dest,
+  const size_t  dest_size)
+{
+  if (bytes == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  byte_t cip29_payload[32] = { 0U };
+
+  cardano_safe_memcpy(cip29_payload, 32, bytes, bytes_size);
+  cip29_payload[31] = index;
+
+  cardano_error_t result = cardano_encoding_bech32_encode(GOVERNANCE_ACTION_ID_PREFIX, GOVERNANCE_ACTION_ID_PREFIX_SIZE, cip29_payload, 33, dest, dest_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  return CARDANO_SUCCESS;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -99,6 +146,10 @@ cardano_governance_action_id_new(const cardano_blake2b_hash_t* hash, const uint6
   (*governance_action_id)->base.last_error[0] = '\0';
   (*governance_action_id)->index              = index;
 
+  CARDANO_UNUSED(memset((*governance_action_id)->hash_bytes, 0, sizeof((*governance_action_id)->hash_bytes)));
+  CARDANO_UNUSED(memset((*governance_action_id)->hash_hex, 0, sizeof((*governance_action_id)->hash_hex)));
+  CARDANO_UNUSED(memset((*governance_action_id)->cip129_str, 0, sizeof((*governance_action_id)->cip129_str)));
+
   const size_t hash_size = cardano_blake2b_hash_get_bytes_size(hash);
 
   if (hash_size != (size_t)CARDANO_BLAKE2B_HASH_SIZE_256)
@@ -117,7 +168,72 @@ cardano_governance_action_id_new(const cardano_blake2b_hash_t* hash, const uint6
   assert(copy_hex_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hex_result);
 
+  cardano_error_t cip29_result = to_cip29_bech32((*governance_action_id)->hash_bytes, sizeof((*governance_action_id)->hash_bytes), (byte_t)index, (*governance_action_id)->cip129_str, sizeof((*governance_action_id)->cip129_str));
+
+  assert(cip29_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(cip29_result);
+
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_governance_action_id_from_bech32(
+  const char*                      data,
+  const size_t                     size,
+  cardano_governance_action_id_t** action_id)
+{
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (size == 0U)
+  {
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  if (action_id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  size_t       hrp_size  = 0;
+  const size_t data_size = cardano_encoding_bech32_get_decoded_length(data, size, &hrp_size);
+
+  // 32 bytes for the hash and 1 byte for the index
+  if (data_size != 33)
+  {
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  char*   hrp          = _cardano_malloc(hrp_size);
+  byte_t* decoded_data = _cardano_malloc(data_size);
+
+  const cardano_error_t decode_result = cardano_encoding_bech32_decode(data, size, hrp, hrp_size, decoded_data, data_size);
+
+  if (decode_result != CARDANO_SUCCESS)
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return decode_result;
+  }
+
+  if ((hrp_size != cardano_safe_strlen(GOVERNANCE_ACTION_ID_PREFIX, GOVERNANCE_ACTION_ID_PREFIX_SIZE)) || (strncmp(hrp, GOVERNANCE_ACTION_ID_PREFIX, hrp_size) != 0))
+  {
+    _cardano_free(hrp);
+    _cardano_free(decoded_data);
+
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  byte_t          index  = decoded_data[data_size - 1U];
+  cardano_error_t result = cardano_governance_action_id_from_hash_bytes(decoded_data, data_size - 1U, index, action_id);
+
+  _cardano_free(hrp);
+  _cardano_free(decoded_data);
+
+  return result;
 }
 
 cardano_error_t
@@ -326,6 +442,57 @@ cardano_governance_action_id_to_cbor(
   }
 
   return CARDANO_SUCCESS;
+}
+
+size_t
+cardano_governance_action_id_get_bech32_size(const cardano_governance_action_id_t* governance_action_id)
+{
+  if (governance_action_id == NULL)
+  {
+    return 0U;
+  }
+
+  return cardano_safe_strlen(governance_action_id->cip129_str, sizeof(governance_action_id->cip129_str)) + 1U;
+}
+
+cardano_error_t
+cardano_reward_address_to_bech32(
+  const cardano_governance_action_id_t* governance_action_id,
+  char*                                 data,
+  size_t                                size)
+{
+  if (governance_action_id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const size_t cip29_size = cardano_governance_action_id_get_bech32_size(governance_action_id);
+
+  if (size < cip29_size)
+  {
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
+  }
+
+  cardano_safe_memcpy(data, size, governance_action_id->cip129_str, cip29_size - 1U);
+  data[cip29_size - 1U] = '\0';
+
+  return CARDANO_SUCCESS;
+}
+
+const char*
+cardano_governance_action_id_get_string(const cardano_governance_action_id_t* governance_action_id)
+{
+  if (governance_action_id == NULL)
+  {
+    return NULL;
+  }
+
+  return governance_action_id->cip129_str;
 }
 
 cardano_blake2b_hash_t*
