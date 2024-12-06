@@ -35,6 +35,7 @@ The following configuration options will also be defined as macros [#]_ in ``con
 Option                       Meaning                                                   Default                 Possible values
 --------------------------   -------------------------------------------------------   ----------------------  ---------------------------------------------------------------------------------------------------------------------
 ``COLLECTION_GROW_FACTOR``   Factor for buffer growth & shrinking                      ``1.5``                 Decimals > 1
+``MAX_JSON_DEPTH``           Maximum depth of JSON objects                             ``256``                 Integers > 0
 ==========================   =======================================================   ======================  =====================================================================================================================
 
 .. [#] ``ON`` & ``OFF`` will be translated to ``1`` and ``0`` using `cmakedefine <https://cmake.org/cmake/help/v3.2/command/configure_file.html?highlight=cmakedefine>`_.

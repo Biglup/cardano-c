@@ -79,6 +79,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/cryptography/index
     api/cbor/index
     api/encoding/index
+    api/json/index
     api/key_handlers/index
     api/plutus_data/index
     api/pool_params/index
