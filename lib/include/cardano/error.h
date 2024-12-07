@@ -152,6 +152,11 @@ typedef enum
    */
   CARDANO_ERROR_DUPLICATED_KEY = 22,
 
+  /**
+   * \brief The JSON type is unexpected.
+   */
+  CARDANO_ERROR_JSON_TYPE_MISMATCH = 23,
+
   /* Serialization errors */
 
   /**

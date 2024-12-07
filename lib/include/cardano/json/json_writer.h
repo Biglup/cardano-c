@@ -24,12 +24,14 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "json_object.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/json/json_context.h>
 #include <cardano/json/json_format.h>
+#include <cardano/json/json_object.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -720,6 +722,10 @@ CARDANO_EXPORT void cardano_json_writer_write_raw_value(
   cardano_json_writer_t* writer,
   const char*            data,
   size_t                 size);
+
+CARDANO_EXPORT void cardano_json_writer_write_object(
+  cardano_json_writer_t* writer,
+  cardano_json_object_t* object);
 
 /**
  * \brief Writes an unsigned integer value to the JSON output.

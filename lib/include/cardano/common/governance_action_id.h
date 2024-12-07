@@ -91,13 +91,6 @@ cardano_governance_action_id_new(
   uint64_t                         index,
   cardano_governance_action_id_t** governance_action_id);
 
-CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t
-cardano_governance_action_id_from_bech32(
-  const char*                      data,
-  size_t                           size,
-  cardano_governance_action_id_t** action_id);
-
 /**
  * \brief Parses a Bech32-encoded governance action ID and initializes a corresponding governance action ID object.
  *
