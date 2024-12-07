@@ -203,6 +203,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE:
       message = "Script evaluation failure";
       break;
+    case CARDANO_ERROR_JSON_TYPE_MISMATCH:
+      message = "JSON type mismatch";
+      break;
     default:
       message = "Unknown error code";
       break;

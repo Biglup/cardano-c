@@ -121,6 +121,11 @@
 #include <cardano/encoding/bech32.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_context.h>
+#include <cardano/json/json_format.h>
+#include <cardano/json/json_object.h>
+#include <cardano/json/json_object_type.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/key_handlers/account_derivation_path.h>
 #include <cardano/key_handlers/cip_1852_constants.h>
 #include <cardano/key_handlers/derivation_path.h>
