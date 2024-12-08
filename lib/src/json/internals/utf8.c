@@ -214,7 +214,7 @@ cardano_decode_unicode_sequence(const char* str, const size_t len, char* out)
     uint32_t high_bits   = masked_high << 10U;
     uint32_t codepoint   = 0x10000U + high_bits + masked_low;
 
-    return cardano_encode_utf8(codepoint, out);
+    return cardano_encode_utf8((int32_t)codepoint, out);
   }
   else
   {

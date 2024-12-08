@@ -328,7 +328,8 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     is_out_of_range = true;
   }
 
-  bool is_uint = ((end != start) && (strchr(start, '.') == NULL)) && !is_out_of_range;
+  bool is_negative = (start[0] == '-');
+  bool is_uint     = (end != start) && !is_out_of_range && !is_negative;
 
   if (is_uint)
   {
@@ -344,7 +345,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     is_out_of_range = true;
   }
 
-  bool is_int = ((end != start) && (strchr(start, '.') == NULL) && !is_out_of_range);
+  bool is_int = ((end != start) && !is_out_of_range);
 
   if (is_int)
   {
@@ -395,8 +396,6 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 static cardano_json_object_t*
 cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 {
-  cardano_skip_whitespace(ctx);
-
   if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)'{'))
   {
     set_last_error(ctx, "Invalid JSON object start");
@@ -405,6 +404,14 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   }
 
   ++ctx->offset;
+  cardano_skip_whitespace(ctx);
+
+  if (ctx->offset >= ctx->length)
+  {
+    set_last_error(ctx, "Invalid JSON object start");
+
+    return NULL;
+  }
 
   cardano_array_t* pairs = cardano_array_new(32);
   cardano_skip_whitespace(ctx);
@@ -462,8 +469,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     cardano_buffer_ref(key->string);
 
-    kvp->key    = key->string;
-    key->string = NULL;
+    kvp->key = key->string;
 
     cardano_json_object_unref(&key);
 
@@ -543,16 +549,10 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
       return NULL;
     }
 
-    cardano_error_t result = cardano_array_push(arr, ((cardano_object_t*)(void*)val));
+    size_t size = cardano_array_push(arr, ((cardano_object_t*)(void*)val));
     cardano_json_object_unref(&val);
 
-    if (result != CARDANO_SUCCESS)
-    {
-      set_last_error(ctx, cardano_error_to_string(result));
-      cardano_array_unref(&arr);
-
-      return NULL;
-    }
+    CARDANO_UNUSED(size);
 
     cardano_skip_whitespace(ctx);
 
