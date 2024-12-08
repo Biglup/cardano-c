@@ -23,6 +23,7 @@
 
 #include <cardano/typedefs.h>
 
+#include "../../config.h"
 #include "../../string_safe.h"
 #include "json_object_common.h"
 #include "json_parser.h"
@@ -291,6 +292,17 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
     return NULL;
   }
 
+  cardano_error_t result = cardano_buffer_write(buf, (const byte_t*)"\0", 1);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_buffer_unref(&buf);
+    cardano_json_object_unref(&obj);
+    set_last_error(ctx, cardano_error_to_string(result));
+
+    return NULL;
+  }
+
   obj->type   = CARDANO_JSON_OBJECT_TYPE_STRING;
   obj->string = buf;
 
@@ -404,6 +416,8 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   }
 
   ++ctx->offset;
+  ++ctx->depth;
+
   cardano_skip_whitespace(ctx);
 
   if (ctx->offset >= ctx->length)
@@ -453,6 +467,15 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     ++ctx->offset;
 
+    if (ctx->depth >= LIB_CARDANO_C_MAX_JSON_DEPTH)
+    {
+      set_last_error(ctx, "Maximum object depth exceeded");
+      cardano_json_object_unref(&key);
+      cardano_array_unref(&pairs);
+
+      return NULL;
+    }
+
     // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to parse nested objects.
     cardano_json_object_t* val = cardano_parse_value(ctx);
 
@@ -491,6 +514,8 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
     else if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)'}'))
     {
       ++ctx->offset;
+      --ctx->depth;
+
       break;
     }
     else
@@ -521,7 +546,15 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     return NULL;
   }
 
+  ++ctx->depth;
   ++ctx->offset;
+
+  if (ctx->depth >= LIB_CARDANO_C_MAX_JSON_DEPTH)
+  {
+    set_last_error(ctx, "Maximum object depth exceeded");
+
+    return NULL;
+  }
 
   cardano_array_t* arr = cardano_array_new(32);
   cardano_skip_whitespace(ctx);
@@ -566,6 +599,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     else if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)']'))
     {
       ++ctx->offset;
+      --ctx->depth;
 
       break;
     }

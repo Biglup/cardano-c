@@ -39,6 +39,11 @@
 cardano_json_object_t*
 cardano_json_object_parse(const char* json, const size_t size)
 {
+  if ((json == NULL) || (size == 0U))
+  {
+    return NULL;
+  }
+
   cardano_json_parse_context_t ctx;
 
   ctx.input  = json;
@@ -98,7 +103,7 @@ cardano_json_object_has_property(
     cardano_json_kvp_t* kvp = (cardano_json_kvp_t*)((void*)cardano_array_get(json_object->pairs, i));
     cardano_object_unref((cardano_object_t**)((void*)&kvp));
 
-    const size_t key_size = cardano_buffer_get_size(kvp->key);
+    const size_t key_size = cardano_buffer_get_size(kvp->key) - 1U;
 
     if (key_size != size)
     {
@@ -142,7 +147,7 @@ cardano_json_object_get_key_at(
 
   if (key_length != NULL)
   {
-    *key_length = cardano_buffer_get_size(kvp->key);
+    *key_length = cardano_buffer_get_size(kvp->key) - 1U;
   }
 
   return (const char*)((const void*)cardano_buffer_get_data(kvp->key));
@@ -193,7 +198,7 @@ cardano_json_object_get(
     cardano_json_kvp_t* kvp = (cardano_json_kvp_t*)((void*)cardano_array_get(json_object->pairs, i));
     cardano_object_unref((cardano_object_t**)((void*)&kvp));
 
-    const size_t key_size = cardano_buffer_get_size(kvp->key);
+    const size_t key_size = cardano_buffer_get_size(kvp->key) - 1U;
 
     if (key_size != size)
     {

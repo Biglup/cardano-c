@@ -241,7 +241,7 @@ CARDANO_EXPORT size_t cardano_json_object_get_property_count(
  *                  the number of properties in the JSON object, as determined by
  *                  \ref cardano_json_object_get_property_count.
  * \param[out] key_length A reference to a size_t variable where the length of the key will be stored.
- *                        This parameter must not be NULL.
+ *                        Does not include the null terminator.
  *
  * \return A pointer to the null-terminated key string if the index is valid, or \c NULL if the index is out of range,
  *         the \p json_object is not of type \ref CARDANO_JSON_OBJECT_TYPE_OBJECT, or any parameter is invalid.
