@@ -33,6 +33,16 @@
 
 /* STATIC FUNCTIONS **********************************************************/
 
+/**
+ * \brief Deallocates a JSON object and its associated resources.
+ *
+ * This function is responsible for properly releasing the memory and resources
+ * associated with a \ref cardano_json_object_t. It ensures that all nested objects,
+ * arrays, strings, and other dynamically allocated components are also cleaned up.
+ *
+ * \param[in] object A void pointer to the \ref cardano_json_object_t instance
+ *                   to be deallocated. This must not be \c NULL.
+ */
 static void
 cardano_json_object_deallocate(void* object)
 {
@@ -47,6 +57,16 @@ cardano_json_object_deallocate(void* object)
   _cardano_free(json_object);
 }
 
+/**
+ * \brief Deallocates a JSON key-value pair and its associated resources.
+ *
+ * This function is responsible for properly releasing the memory and resources
+ * associated with a \ref cardano_json_kvp_t. It ensures that both the key and
+ * the value components are appropriately cleaned up.
+ *
+ * \param[in] object A void pointer to the \ref cardano_json_kvp_t instance
+ *                   to be deallocated. This must not be \c NULL.
+ */
 static void
 cardano_json_kvp_deallocate(void* object)
 {

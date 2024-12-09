@@ -48,6 +48,19 @@ static const size_t  UNICODE_SURROGATE_PAIR_LEN = 12U;                 // cppche
 
 /* STATIC FUNCTIONS **********************************************************/
 
+/**
+ * \brief Sets the last error message in a JSON parsing context.
+ *
+ * This function records an error message in the `last_error` buffer of the specified
+ * \ref cardano_json_parse_context_t instance. The message is truncated if it exceeds the
+ * size of the buffer to ensure memory safety.
+ *
+ * \param[in,out] ctx     A pointer to the \ref cardano_json_parse_context_t instance where the error
+ *                        message will be stored. This parameter must not be \c NULL.
+ * \param[in]     message A null-terminated string containing the error message. This parameter
+ *                        must not be \c NULL. If the message exceeds the buffer size, it will
+ *                        be truncated to fit.
+ */
 static void
 set_last_error(cardano_json_parse_context_t* ctx, const char* message)
 {
