@@ -39,6 +39,8 @@ typedef struct cardano_json_object_t
     cardano_array_t*           pairs;
     cardano_array_t*           array;
     cardano_buffer_t*          string;
+    bool                       is_real;
+    bool                       is_negative;
     int64_t                    int_value;
     uint64_t                   uint_value;
     double                     double_value;

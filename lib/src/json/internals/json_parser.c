@@ -28,6 +28,7 @@
 #include "json_object_common.h"
 #include "json_parser.h"
 #include "utf8.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,15 +75,20 @@ cardano_skip_whitespace(cardano_json_parse_context_t* ctx)
 }
 
 bool
-cardano_match_char(cardano_json_parse_context_t* ctx, const char ch)
+cardano_has_char(const char to_match, const char* begin, const char* end)
 {
-  cardano_skip_whitespace(ctx);
+  assert(begin != NULL);
+  assert(end != NULL);
+  assert(begin <= end);
 
-  if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)ch))
+  while (begin < end)
   {
-    ++ctx->offset;
+    if (*begin == to_match)
+    {
+      return true;
+    }
 
-    return true;
+    ++begin;
   }
 
   return false;
@@ -161,14 +167,12 @@ cardano_handle_escape_sequence(cardano_json_parse_context_t* ctx, cardano_buffer
 {
   if (ctx->offset >= ctx->length)
   {
-    set_last_error(ctx, "Unexpected end of input");
-
+    set_last_error(ctx, "Unexpected end of input in escape sequence");
     return false;
   }
 
-  ++ctx->offset;
+  char e = ctx->input[ctx->offset];
 
-  char            e      = ctx->input[ctx->offset];
   cardano_error_t result = CARDANO_SUCCESS;
 
   switch (e)
@@ -198,23 +202,24 @@ cardano_handle_escape_sequence(cardano_json_parse_context_t* ctx, cardano_buffer
       result = cardano_buffer_write(buf, ESC_TAB, 1);
       break;
     case 'u':
+      ++ctx->offset;
       if (!cardano_handle_unicode_sequence(ctx, buf))
       {
         return false;
       }
-      break;
+      return true;
     default:
       set_last_error(ctx, "Invalid escape sequence");
-
       return false;
   }
 
   if (result != CARDANO_SUCCESS)
   {
     set_last_error(ctx, cardano_error_to_string(result));
-
     return false;
   }
+
+  ++ctx->offset;
 
   return true;
 }
@@ -272,14 +277,6 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
         return NULL;
       }
     }
-  }
-
-  if (ctx->offset >= ctx->length)
-  {
-    cardano_buffer_unref(&buf);
-    set_last_error(ctx, "Unexpected end of input");
-
-    return NULL;
   }
 
   cardano_json_object_t* obj = cardano_json_object_new();
@@ -340,8 +337,8 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     is_out_of_range = true;
   }
 
-  bool is_negative = (start[0] == '-');
-  bool is_uint     = (end != start) && !is_out_of_range && !is_negative;
+  obj->is_negative = (start[0] == '-');
+  bool is_uint     = (end != start) && !is_out_of_range && !obj->is_negative;
 
   if (is_uint)
   {
@@ -380,6 +377,8 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     obj->double_value = double_value;
   }
 
+  obj->is_real = cardano_has_char('.', start, end) || cardano_has_char('e', start, end) || cardano_has_char('E', start, end);
+
   if (!is_uint && !is_int && !is_double)
   {
     cardano_json_object_unref(&obj);
@@ -405,7 +404,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
   return obj;
 }
 
-static cardano_json_object_t*
+cardano_json_object_t*
 cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 {
   if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)'{'))
@@ -443,6 +442,14 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
   while (true)
   {
+    if ((char)ctx->input[ctx->offset] == (char)'}')
+    {
+      ++ctx->offset;
+      --ctx->depth;
+
+      break;
+    }
+
     cardano_json_object_t* key = cardano_parse_string_value(ctx);
 
     if (!key || (key->type != CARDANO_JSON_OBJECT_TYPE_STRING))
@@ -571,6 +578,14 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
   while (true)
   {
+    if (((char)ctx->input[ctx->offset] == (char)']'))
+    {
+      ++ctx->offset;
+      --ctx->depth;
+
+      break;
+    }
+
     // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to parse nested objects.
     cardano_json_object_t* val = cardano_parse_value(ctx);
 
@@ -606,6 +621,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     else
     {
       set_last_error(ctx, "Expected ',' or ']'");
+      cardano_array_unref(&arr);
 
       return NULL;
     }

@@ -42,7 +42,8 @@ typedef struct
 
 void cardano_skip_whitespace(cardano_json_parse_context_t* ctx);
 
-bool cardano_match_char(cardano_json_parse_context_t* ctx, char ch);
+bool
+cardano_has_char(char to_match, const char* begin, const char* end);
 
 bool
 cardano_handle_utf8_sequence(cardano_json_parse_context_t* ctx, cardano_buffer_t* buf);
@@ -58,7 +59,7 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx);
 cardano_json_object_t*
 cardano_parse_number_value(cardano_json_parse_context_t* ctx);
 
-static cardano_json_object_t*
+cardano_json_object_t*
 cardano_parse_object_value(cardano_json_parse_context_t* ctx);
 
 cardano_json_object_t*

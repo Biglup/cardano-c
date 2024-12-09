@@ -514,6 +514,7 @@ TEST(cardano_json_writer_write_bool, returnsErrorIfUsedInWrongContext)
   EXPECT_EQ(cardano_json_writer_reset(writer), CARDANO_SUCCESS);
 
   cardano_json_writer_write_bool(writer, true);
+  cardano_json_writer_write_start_object(writer);
   result = cardano_json_writer_encode(writer, buffer, 128);
 
   EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
@@ -542,6 +543,157 @@ TEST(cardano_json_writer_write_null, writesANullValue)
   EXPECT_STREQ(encoded, "{\n  \"null\": null\n}");
 
   // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_uint, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_uint(writer, UINT_MAX);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "4294967295");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_int, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_signed_int(writer, INT_MAX);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "2147483647");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_double, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_double(writer, MAXFLOAT);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "3.4028234663852886e+38");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_string, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_string(writer, "Hello, World!", 13);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "\"Hello, World!\"");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_bool, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_bool(writer, true);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "true");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_null, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_null(writer);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "null");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_bigint, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  cardano_bigint_t*      bigint = NULL;
+
+  EXPECT_EQ(cardano_bigint_from_string("123456789123456789", strlen("123456789123456789"), 10, &bigint), CARDANO_SUCCESS);
+
+  // Act
+  cardano_json_writer_write_bigint(writer, bigint);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "\"123456789123456789\"");
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
   cardano_json_writer_unref(&writer);
   free(encoded);
 }
@@ -586,6 +738,7 @@ TEST(cardano_json_writer_write_null, returnsErrorIfUsedInWrongContext)
   EXPECT_EQ(cardano_json_writer_reset(writer), CARDANO_SUCCESS);
 
   cardano_json_writer_write_bool(writer, true);
+  cardano_json_writer_write_start_object(writer);
   result = cardano_json_writer_encode(writer, buffer, 128);
 
   EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
@@ -1865,4 +2018,33 @@ TEST(cardano_json_writer_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
+}
+
+TEST(cardano_json_writer_write_object, canWriteObject)
+{
+  // Act
+  const char*  json      = "{\"data\":[{\"MainId\":1111,\"firstName\":\"Sherlock\",\"lastName\":\"Homes\",\"categories\":[{\"CategoryID\":-1.3,\"CategoryName\":\"Example\"}]},{\"MainId\":122,\"firstName\":\"James\",\"lastName\":\"Watson\",\"categories\":[{\"CategoryID\":2,\"CategoryName\":\"Example2\"}]}],\"messages\":[],\"success\":true}";
+  const size_t json_size = strlen(json);
+
+  cardano_json_object_t* object = cardano_json_object_parse(json, json_size);
+
+  EXPECT_NE(object, nullptr);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_json_writer_write_object(writer, object);
+
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(encoded, json);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_json_object_unref(&object);
+  free(encoded);
 }

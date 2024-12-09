@@ -79,6 +79,8 @@ cardano_json_object_new(void)
     object->uint_value       = 0;
     object->double_value     = 0.0;
     object->bool_value       = false;
+    object->is_real          = false;
+    object->is_negative      = false;
   }
 
   return object;
