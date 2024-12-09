@@ -48,17 +48,6 @@ size_t
 cardano_utf8_sequence_length(byte_t first_byte);
 
 /**
- * \brief Validates if the given byte sequence represents a valid UTF-8 encoded character.
- *
- * \param[in] data   Pointer to the byte sequence to validate.
- * \param[in] length The length of the byte sequence.
- *
- * \return `true` if the byte sequence is a valid UTF-8 character, `false` otherwise.
- */
-bool
-cardano_is_valid_utf8_char(const unsigned char* data, size_t length);
-
-/**
  * \brief Parses a single hexadecimal character and returns its integer value.
  *
  * \param[in] c The character to parse.

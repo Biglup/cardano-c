@@ -29,7 +29,15 @@ JSON Object
 
 ------------
 
+.. doxygenfunction:: cardano_json_object_get_value_at_ex
+
+------------
+
 .. doxygenfunction:: cardano_json_object_get
+
+------------
+
+.. doxygenfunction:: cardano_json_object_get_ex
 
 ------------
 
@@ -41,7 +49,19 @@ JSON Object
 
 ------------
 
+.. doxygenfunction:: cardano_json_object_array_get_ex
+
+------------
+
 .. doxygenfunction:: cardano_json_object_get_string
+
+------------
+
+.. doxygenfunction:: cardano_json_object_get_is_negative_number
+
+------------
+
+.. doxygenfunction:: cardano_json_object_get_is_real_number
 
 ------------
 

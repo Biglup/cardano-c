@@ -176,6 +176,17 @@ cardano_json_object_get_value_at(
   return kvp->value;
 }
 
+cardano_json_object_t*
+cardano_json_object_get_value_at_ex(
+  const cardano_json_object_t* json_object,
+  const size_t                 index)
+{
+  cardano_json_object_t* value = cardano_json_object_get_value_at(json_object, index);
+  cardano_json_object_unref(&value);
+
+  return value;
+}
+
 bool
 cardano_json_object_get(
   const cardano_json_object_t* json_object,
@@ -183,7 +194,7 @@ cardano_json_object_get(
   const size_t                 size,
   cardano_json_object_t**      value)
 {
-  if ((json_object == NULL) || (key == NULL) || (size == 0U))
+  if ((json_object == NULL) || (key == NULL) || (size == 0U) || (value == NULL))
   {
     return false;
   }
@@ -208,10 +219,27 @@ cardano_json_object_get(
     if (strncmp((const char*)cardano_buffer_get_data(kvp->key), key, key_size) == 0)
     {
       cardano_json_object_ref(kvp->value);
+
       *value = kvp->value;
 
       return true;
     }
+  }
+
+  return false;
+}
+
+bool
+cardano_json_object_get_ex(
+  const cardano_json_object_t* json_object,
+  const char*                  key,
+  size_t                       size,
+  cardano_json_object_t**      value)
+{
+  if (cardano_json_object_get(json_object, key, size, value))
+  {
+    cardano_json_object_unref(value);
+    return true;
   }
 
   return false;
@@ -249,6 +277,17 @@ cardano_json_object_array_get(
   return element;
 }
 
+cardano_json_object_t*
+cardano_json_object_array_get_ex(
+  const cardano_json_object_t* json_array,
+  const size_t                 index)
+{
+  cardano_json_object_t* element = cardano_json_object_array_get(json_array, index);
+  cardano_json_object_unref(&element);
+
+  return element;
+}
+
 const char*
 cardano_json_object_get_string(
   const cardano_json_object_t* json_object,
@@ -267,6 +306,28 @@ cardano_json_object_get_string(
   return (const char*)((const void*)cardano_buffer_get_data(json_object->string));
 }
 
+bool
+cardano_json_object_get_is_negative_number(const cardano_json_object_t* json_object)
+{
+  if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
+  {
+    return false;
+  }
+
+  return json_object->is_negative;
+}
+
+bool
+cardano_json_object_get_is_real_number(const cardano_json_object_t* json_object)
+{
+  if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
+  {
+    return false;
+  }
+
+  return json_object->is_real;
+}
+
 cardano_error_t
 cardano_json_object_get_uint(
   const cardano_json_object_t* json_object,
@@ -275,6 +336,11 @@ cardano_json_object_get_uint(
   if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
   {
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
+  }
+
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *value = json_object->uint_value;
@@ -292,6 +358,11 @@ cardano_json_object_get_signed_int(
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
   }
 
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   *value = json_object->int_value;
 
   return CARDANO_SUCCESS;
@@ -307,6 +378,11 @@ cardano_json_object_get_double(
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
   }
 
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   *value = json_object->double_value;
 
   return CARDANO_SUCCESS;
@@ -320,6 +396,11 @@ cardano_json_object_get_boolean(
   if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_BOOLEAN))
   {
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
+  }
+
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
   *value = json_object->bool_value;

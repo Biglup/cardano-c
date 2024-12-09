@@ -358,6 +358,80 @@ CARDANO_EXPORT cardano_json_object_t* cardano_json_object_get_value_at(
   size_t                       index);
 
 /**
+ * \brief Retrieves the value at a specific index in a JSON object without incrementing the reference count.
+ *
+ * This function provides access to the value associated with a specific index within a JSON object.
+ * It is an extended version of \ref cardano_json_object_get_value_at that does not increment the
+ * reference count of the returned object. This is useful in scenarios where the caller does not need
+ * to take ownership of the returned value.
+ *
+ * \param[in] json_object A pointer to the \ref cardano_json_object_t to query.
+ *                        This parameter must represent a JSON object and must not be \c NULL.
+ * \param[in] index The zero-based index of the value to retrieve. The index must be less than the
+ *                  number of properties in the JSON object, as determined by \ref cardano_json_object_get_property_count.
+ *
+ * \return A pointer to the \ref cardano_json_object_t representing the value at the specified index,
+ *         or \c NULL if the index is out of range, the \p json_object is not of type
+ *         \ref CARDANO_JSON_OBJECT_TYPE_OBJECT, or any parameter is invalid.
+ *
+ * \note Unlike \ref cardano_json_object_get_value_at, this function does not increment the reference
+ *       count of the returned object. The caller must ensure the lifetime of the \p json_object is valid
+ *       while the returned value is in use.
+ *
+ * \warning Do not modify or release the returned value directly unless you first increment its reference
+ *          count using \ref cardano_json_object_ref.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_json_object_t* json_object = cardano_json_object_parse("{\"name\":\"Alice\",\"age\":30}", 29);
+ *
+ * if (json_object != NULL)
+ * {
+ *   size_t property_count = cardano_json_object_get_property_count(json_object);
+ *   printf("Number of properties: %zu\n", property_count);
+ *
+ *   for (size_t i = 0; i < property_count; ++i)
+ *   {
+ *     cardano_json_object_t* value = cardano_json_object_get_value_at_ex(json_object, i);
+ *
+ *     if (value != NULL)
+ *     {
+ *       cardano_json_object_type_t type = cardano_json_object_get_type(value);
+ *
+ *       // Process the value without taking ownership
+ *       switch (type)
+ *       {
+ *         case CARDANO_JSON_OBJECT_TYPE_STRING:
+ *           printf("Property %zu is a string: %s\n", i, cardano_json_object_get_string(value, NULL));
+ *           break;
+ *         case CARDANO_JSON_OBJECT_TYPE_NUMBER:
+ *           printf("Property %zu is a number.\n", i);
+ *           break;
+ *         default:
+ *           printf("Property %zu has an unknown type.\n", i);
+ *           break;
+ *       }
+ *     }
+ *     else
+ *     {
+ *       printf("Failed to retrieve property value at index %zu.\n", i);
+ *     }
+ *   }
+ *
+ *   cardano_json_object_unref(&json_object); // Clean up
+ * }
+ * else
+ * {
+ *   printf("Failed to parse JSON data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_json_object_t* cardano_json_object_get_value_at_ex(
+  const cardano_json_object_t* json_object,
+  size_t                       index);
+
+/**
  * \brief Retrieves the value associated with a specified key in a JSON object.
  *
  * This function allows you to access the value of a property in a JSON object by specifying its key.
@@ -414,6 +488,74 @@ CARDANO_EXPORT cardano_json_object_t* cardano_json_object_get_value_at(
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_json_object_get(
+  const cardano_json_object_t* json_object,
+  const char*                  key,
+  size_t                       size,
+  cardano_json_object_t**      value);
+
+/**
+ * \brief Retrieves the value associated with a specified key in a JSON object without incrementing the reference count.
+ *
+ * This function allows access to the value of a property in a JSON object by specifying its key.
+ * It is an extended version of \ref cardano_json_object_get that does not increment the reference count
+ * of the returned value. This is useful in scenarios where the caller does not need to take ownership
+ * of the returned object.
+ *
+ * \param[in] json_object A pointer to the \ref cardano_json_object_t to query.
+ *                        This parameter must represent a JSON object and must not be \c NULL.
+ * \param[in] key A pointer to the key string to look up. The key does not need to be null-terminated,
+ *                as its length is specified by \p size. This parameter must not be \c NULL.
+ * \param[in] size The length of the key string, in bytes.
+ * \param[out] value A pointer to a \ref cardano_json_object_t pointer where the value associated with
+ *                   the key will be stored. The returned value does not have its reference count incremented.
+ *
+ * \return \c true if the key was found and \p value was successfully populated; otherwise, \c false.
+ *         On failure, \p value is set to \c NULL.
+ *
+ * \note Unlike \ref cardano_json_object_get, this function does not increment the reference count
+ *       of the returned object. The caller must ensure the lifetime of the \p json_object is valid
+ *       while the returned value is in use.
+ *
+ * \warning Do not modify or release the returned value directly unless you first increment its reference
+ *          count using \ref cardano_json_object_ref.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_json_object_t* json_object = cardano_json_object_parse("{\"name\":\"Alice\",\"age\":30}", 29);
+ *
+ * if (json_object != NULL)
+ * {
+ *   cardano_json_object_t* value = NULL;
+ *
+ *   if (cardano_json_object_get_ex(json_object, "name", 4, &value))
+ *   {
+ *     cardano_json_object_type_t type = cardano_json_object_get_type(value);
+ *
+ *     if (type == CARDANO_JSON_OBJECT_TYPE_STRING)
+ *     {
+ *       const char* name = cardano_json_object_get_string(value, NULL);
+ *       printf("Name: %s\n", name);
+ *     }
+ *     else
+ *     {
+ *       printf("The 'name' property is not a string.\n");
+ *     }
+ *   }
+ *   else
+ *   {
+ *     printf("Key 'name' not found.\n");
+ *   }
+ *
+ *   cardano_json_object_unref(&json_object); // Clean up
+ * }
+ * else
+ * {
+ *   printf("Failed to parse JSON data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_json_object_get_ex(
   const cardano_json_object_t* json_object,
   const char*                  key,
   size_t                       size,
@@ -549,6 +691,85 @@ CARDANO_EXPORT cardano_json_object_t* cardano_json_object_array_get(
   size_t                       index);
 
 /**
+ * \brief Retrieves the value at a specified index in a JSON array without incrementing the reference count.
+ *
+ * This function provides access to the value at a specific position within a JSON array.
+ * It is an extended version of \ref cardano_json_object_array_get that does not increment the
+ * reference count of the returned value. This is useful in scenarios where ownership of the
+ * returned object is not required.
+ *
+ * \param[in] json_array A pointer to the \ref cardano_json_object_t representing a JSON array.
+ *                       This parameter must not be \c NULL and must represent a JSON array.
+ * \param[in] index The zero-based index of the value to retrieve. The index must be less than
+ *                  the number of elements in the JSON array, as determined by
+ *                  \ref cardano_json_object_array_get_length.
+ *
+ * \return A pointer to the \ref cardano_json_object_t representing the value at the specified index,
+ *         or \c NULL if:
+ *         - The \p index is out of range.
+ *         - The \p json_array is not of type \ref CARDANO_JSON_OBJECT_TYPE_ARRAY.
+ *         - The \p json_array is \c NULL.
+ *
+ * \note Unlike \ref cardano_json_object_array_get, this function does not increment the reference count
+ *       of the returned object. The caller must ensure the lifetime of the returned object is valid for
+ *       the duration of its usage.
+ *
+ * \warning Avoid modifying or releasing the returned object directly. If you need to take ownership
+ *          of the returned object, use \ref cardano_json_object_ref to increment its reference count.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_json_object_t* json_array = cardano_json_object_parse("[\"Alice\", 30, true]", 19);
+ *
+ * if (json_array != NULL)
+ * {
+ *   size_t array_length = cardano_json_object_array_get_length(json_array);
+ *   printf("Array length: %zu\n", array_length);
+ *
+ *   for (size_t i = 0; i < array_length; ++i)
+ *   {
+ *     cardano_json_object_t* element = cardano_json_object_array_get_ex(json_array, i);
+ *
+ *     if (element != NULL)
+ *     {
+ *       cardano_json_object_type_t type = cardano_json_object_get_type(element);
+ *
+ *       switch (type)
+ *       {
+ *         case CARDANO_JSON_OBJECT_TYPE_STRING:
+ *           printf("Element %zu is a string: %s\n", i, cardano_json_object_get_string(element, NULL));
+ *           break;
+ *         case CARDANO_JSON_OBJECT_TYPE_NUMBER:
+ *           printf("Element %zu is a number.\n", i);
+ *           break;
+ *         case CARDANO_JSON_OBJECT_TYPE_BOOLEAN:
+ *           printf("Element %zu is a boolean.\n", i);
+ *           break;
+ *         default:
+ *           printf("Element %zu is of unknown type.\n", i);
+ *           break;
+ *       }
+ *     }
+ *     else
+ *     {
+ *       printf("Failed to retrieve element at index %zu\n", i);
+ *     }
+ *   }
+ *
+ *   cardano_json_object_unref(&json_array); // Clean up
+ * }
+ * else
+ * {
+ *   printf("Failed to parse JSON array.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_json_object_t* cardano_json_object_array_get_ex(
+  const cardano_json_object_t* json_array,
+  size_t                       index);
+
+/**
  * \brief Retrieves the string value from a JSON object.
  *
  * This function provides access to the string value of a JSON object. The caller can retrieve the
@@ -611,6 +832,106 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_json_object_get_string(
   const cardano_json_object_t* json_object,
   size_t*                      string_length);
+
+/**
+ * \brief Determines if a JSON object represents a negative number.
+ *
+ * This function checks whether the given \ref cardano_json_object_t represents a numeric value
+ * that is negative. A negative number is defined as any numeric value less than zero,
+ * regardless of whether it is an integer or a real number.
+ *
+ * \param[in] json_object A pointer to the \ref cardano_json_object_t to query. This parameter must represent
+ *                        a JSON number and must not be \c NULL.
+ *
+ * \return \c true if the JSON object represents a negative number; otherwise, \c false. If the \p json_object
+ *         is \c NULL, or if the JSON object is not a number, the function will return \c false.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_json_object_t* json_object = cardano_json_object_parse("{\"temperature\": -15.5, \"count\": 42}", 38);
+ *
+ * if (json_object != NULL)
+ * {
+ *   cardano_json_object_t* value = NULL;
+ *
+ *   if (cardano_json_object_get(json_object, "temperature", 11, &value))
+ *   {
+ *     bool is_negative = cardano_json_object_get_is_negative_number(value);
+ *     printf("\"temperature\" is negative: %s\n", is_negative ? "true" : "false");
+ *
+ *     cardano_json_object_unref(&value);
+ *   }
+ *
+ *   if (cardano_json_object_get(json_object, "count", 5, &value))
+ *   {
+ *     bool is_negative = cardano_json_object_get_is_negative_number(value);
+ *     printf("\"count\" is negative: %s\n", is_negative ? "true" : "false");
+ *
+ *     cardano_json_object_unref(&value);
+ *   }
+ *
+ *   cardano_json_object_unref(&json_object); // Clean up
+ * }
+ * else
+ * {
+ *   printf("Failed to parse JSON data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_json_object_get_is_negative_number(const cardano_json_object_t* json_object);
+
+/**
+ * \brief Determines if a JSON object represents a real (floating-point) number.
+ *
+ * This function checks whether the given \ref cardano_json_object_t represents a real number. A real number
+ * in JSON is a numeric value that includes a fractional part (e.g., `3.14`, `-0.01`).
+ *
+ * This function is specifically designed to distinguish between integral and real numbers within the JSON
+ * context. While JSON itself does not have distinct types for integers and floating-point numbers, this
+ * function interprets numbers with a fractional component or numbers expressed in scientific notation
+ * as real numbers.
+ *
+ * \param[in] json_object A pointer to the \ref cardano_json_object_t to query. This parameter must represent
+ *                        a JSON number and must not be \c NULL.
+ *
+ * \return \c true if the JSON object represents a real number; otherwise, \c false. If the \p json_object
+ *         is \c NULL, the function will also return \c false.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_json_object_t* json_object = cardano_json_object_parse("{\"pi\": 3.14159, \"count\": 42}", 29);
+ *
+ * if (json_object != NULL)
+ * {
+ *   cardano_json_object_t* value = NULL;
+ *
+ *   if (cardano_json_object_get(json_object, "pi", 2, &value))
+ *   {
+ *     bool is_real = cardano_json_object_get_is_real_number(value);
+ *     printf("\"pi\" is a real number: %s\n", is_real ? "true" : "false");
+ *
+ *     cardano_json_object_unref(&value);
+ *   }
+ *
+ *   if (cardano_json_object_get(json_object, "count", 5, &value))
+ *   {
+ *     bool is_real = cardano_json_object_get_is_real_number(value);
+ *     printf("\"count\" is a real number: %s\n", is_real ? "true" : "false");
+ *
+ *     cardano_json_object_unref(&value);
+ *   }
+ *
+ *   cardano_json_object_unref(&json_object); // Clean up
+ * }
+ * else
+ * {
+ *   printf("Failed to parse JSON data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_json_object_get_is_real_number(const cardano_json_object_t* json_object);
 
 /**
  * \brief Retrieves an unsigned integer value from a JSON object.

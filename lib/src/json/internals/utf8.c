@@ -55,32 +55,6 @@ cardano_utf8_sequence_length(const byte_t first_byte)
   }
 }
 
-bool
-cardano_is_valid_utf8_char(const unsigned char* data, const size_t length)
-{
-  if (length == 0U)
-  {
-    return false;
-  }
-
-  size_t seq_len = cardano_utf8_sequence_length(data[0]);
-
-  if ((seq_len == 0U) || (seq_len > length))
-  {
-    return false;
-  }
-
-  for (size_t i = 1U; i < seq_len; i++)
-  {
-    if ((data[i] & 0xc0U) != 0x80U)
-    {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 int32_t
 cardano_parse_hex_digit(const char c)
 {

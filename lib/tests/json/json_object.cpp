@@ -33,6 +33,10 @@
 #include <cardano/json/json_writer.h>
 #include <gmock/gmock.h>
 
+extern "C" {
+#include "../src/json/internals/json_parser.h"
+}
+
 /* STATIC FUNCTIONS **********************************************************/
 
 static void
@@ -224,6 +228,8 @@ TEST(cardano_json_object, verifyValid)
   verify_valid("\"Zażółć gęślą jaźń\"", "\"Zażółć gęślą jaźń\"");
   verify_valid("[1,]", "[1]");
   verify_valid("{ \"count\" : 1234, }", "{\"count\":1234}");
+  verify_valid("{ \"count\" : \"\u1f600\" }", "{\"count\":\"\u1f600\"}");
+  verify_valid("{ \"count\" : \"\u1f609\" }", "{\"count\":\"\u1f609\"}");
 }
 
 TEST(cardano_json_object_ref, doesntCrashIfGivenANullPtr)
@@ -299,4 +305,947 @@ TEST(cardano_json_object_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
+}
+
+TEST(cardano_json_object, returnsErrorIfLeftoverData)
+{
+  // Arrange
+  const char* json_object = "{\n  \"ints\": [\n    2147483647,\n    -36.0\n  ]\n}  *";
+
+  // Act
+  cardano_json_object_t* object = cardano_json_object_parse(json_object, strlen(json_object));
+
+  // Assert
+  EXPECT_EQ(object, nullptr);
+
+  // Cleanup
+  cardano_json_object_unref(&object);
+}
+
+TEST(cardano_json_object_get_type, returnsTypeNullIfGivenNull)
+{
+  const cardano_json_object_type_t type = cardano_json_object_get_type(NULL);
+
+  EXPECT_EQ(type, CARDANO_JSON_OBJECT_TYPE_NULL);
+}
+
+TEST(cardano_json_object_has_property, returnsFalseIfGivenNull)
+{
+  bool has_prop = cardano_json_object_has_property(NULL, NULL, 0);
+  EXPECT_EQ(has_prop, false);
+}
+
+TEST(cardano_json_object_has_property, returnsFalseIfNotAnObject)
+{
+  cardano_json_object_t* obj      = cardano_json_object_parse("1", 1);
+  bool                   has_prop = cardano_json_object_has_property(obj, "a", 1);
+  EXPECT_EQ(has_prop, false);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_has_property, returnsFalseIfNotFound)
+{
+  cardano_json_object_t* obj      = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  bool                   has_prop = cardano_json_object_has_property(obj, "a", 1);
+  EXPECT_EQ(has_prop, false);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_property_count, returnsZeroIfNotAnObject)
+{
+  cardano_json_object_t* obj   = cardano_json_object_parse("1", 1);
+  size_t                 count = cardano_json_object_get_property_count(obj);
+  EXPECT_EQ(count, 0);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_key_at, returnsNullIfGivenNull)
+{
+  const char* key = cardano_json_object_get_key_at(NULL, 0, NULL);
+  EXPECT_EQ(key, nullptr);
+}
+
+TEST(cardano_json_object_get_value_at, returnsNullIfGivenNull)
+{
+  const cardano_json_object_t* value = cardano_json_object_get_value_at(NULL, 0);
+  EXPECT_EQ(value, nullptr);
+}
+
+TEST(cardano_json_object_get_value_at, returnsNullIfIndexOutOfBounds)
+{
+  cardano_json_object_t*       obj   = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  const cardano_json_object_t* value = cardano_json_object_get_value_at(obj, 1);
+  EXPECT_EQ(value, nullptr);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_value_at_ex, returnsObjectWithoutReferenceIncrese)
+{
+  cardano_json_object_t* obj   = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  cardano_json_object_t* value = cardano_json_object_get_value_at_ex(obj, 0);
+
+  EXPECT_EQ(cardano_json_object_refcount(value), 1);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get, returnsFalseIfGivenNull)
+{
+  const bool has_object = cardano_json_object_get(NULL, NULL, 0, NULL);
+  EXPECT_EQ(has_object, false);
+}
+
+TEST(cardano_json_object_get, returnsFalseIfNotAnObject)
+{
+  cardano_json_object_t* obj        = cardano_json_object_parse("1", 1);
+  cardano_json_object_t* obj2       = NULL;
+  const bool             has_object = cardano_json_object_get(obj, "a", 1, &obj2);
+  EXPECT_EQ(has_object, false);
+
+  cardano_json_object_unref(&obj);
+  cardano_json_object_unref(&obj2);
+}
+
+TEST(cardano_json_object_get, returnsFalseIfNotFound)
+{
+  cardano_json_object_t* obj        = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  cardano_json_object_t* obj2       = NULL;
+  const bool             has_object = cardano_json_object_get(obj, "a", 1, &obj2);
+  EXPECT_EQ(has_object, false);
+
+  cardano_json_object_unref(&obj);
+  cardano_json_object_unref(&obj2);
+}
+
+TEST(cardano_json_object_get, returnsTrueIfFound)
+{
+  cardano_json_object_t* obj        = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  cardano_json_object_t* obj2       = NULL;
+  const bool             has_object = cardano_json_object_get(obj, "aaa", 3, &obj2);
+  EXPECT_EQ(has_object, true);
+
+  cardano_json_object_unref(&obj);
+  cardano_json_object_unref(&obj2);
+}
+
+TEST(cardano_json_object_get_ex, returnsObjectWithoutReferenceIncrese)
+{
+  cardano_json_object_t* obj   = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  cardano_json_object_t* value = NULL;
+
+  bool has_prop = cardano_json_object_get_ex(obj, "aaa", 3, &value);
+
+  EXPECT_EQ(cardano_json_object_refcount(value), 1);
+  EXPECT_EQ(has_prop, true);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_ex, returnsFalseIfObjectNotFound)
+{
+  cardano_json_object_t* obj   = cardano_json_object_parse("{ \"aaa\": 1}", strlen("{ \"aaa\": 1}"));
+  cardano_json_object_t* value = NULL;
+
+  bool has_prop = cardano_json_object_get_ex(obj, "a", 1, &value);
+
+  EXPECT_EQ(has_prop, false);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_array_get_length, returnsZeroIfGivenNull)
+{
+  const size_t length = cardano_json_object_array_get_length(NULL);
+  EXPECT_EQ(length, 0);
+}
+
+TEST(cardano_json_object_array_get, returnsNullIfGivenNull)
+{
+  const cardano_json_object_t* value = cardano_json_object_array_get(NULL, 0);
+  EXPECT_EQ(value, nullptr);
+}
+
+TEST(cardano_json_object_array_get, returnsNullIfIndexOutOfBounds)
+{
+  cardano_json_object_t*       obj   = cardano_json_object_parse("[1]", 3);
+  const cardano_json_object_t* value = cardano_json_object_array_get(obj, 1);
+  EXPECT_EQ(value, nullptr);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_array_get_ex, returnsObjectWithoutReferenceIncrese)
+{
+  cardano_json_object_t* obj   = cardano_json_object_parse("[1]", 3);
+  cardano_json_object_t* value = cardano_json_object_array_get_ex(obj, 0);
+
+  EXPECT_EQ(cardano_json_object_refcount(value), 1);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_string, returnsNullIfGivenNull)
+{
+  size_t      length = 0;
+  const char* value  = cardano_json_object_get_string(NULL, &length);
+  EXPECT_EQ(value, nullptr);
+}
+
+TEST(cardano_json_object_get_is_negative_number, returnsFalseIfGivenNull)
+{
+  const bool is_negative = cardano_json_object_get_is_negative_number(NULL);
+  EXPECT_EQ(is_negative, false);
+}
+
+TEST(cardano_json_object_get_is_negative_number, returnsFalseIfNotNegative)
+{
+  cardano_json_object_t* obj         = cardano_json_object_parse("1", 1);
+  const bool             is_negative = cardano_json_object_get_is_negative_number(obj);
+  EXPECT_EQ(is_negative, false);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_is_negative_number, returnsTrueIfNegative)
+{
+  cardano_json_object_t* obj         = cardano_json_object_parse("-1", 2);
+  const bool             is_negative = cardano_json_object_get_is_negative_number(obj);
+  EXPECT_EQ(is_negative, true);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_is_real_number, returnsFalseIfGivenNull)
+{
+  const bool is_real = cardano_json_object_get_is_real_number(NULL);
+  EXPECT_EQ(is_real, false);
+}
+
+TEST(cardano_json_object_get_is_real_number, returnsFalseIfNotReal)
+{
+  cardano_json_object_t* obj     = cardano_json_object_parse("1", 1);
+  const bool             is_real = cardano_json_object_get_is_real_number(obj);
+  EXPECT_EQ(is_real, false);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_is_real_number, returnsTrueIfReal)
+{
+  cardano_json_object_t* obj     = cardano_json_object_parse("1.0", 3);
+  const bool             is_real = cardano_json_object_get_is_real_number(obj);
+  EXPECT_EQ(is_real, true);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_uint, returnsErrorIfInvalidType)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("[]", 2);
+  uint64_t               num = 0;
+  cardano_error_t        err = cardano_json_object_get_uint(obj, &num);
+  EXPECT_EQ(err, CARDANO_ERROR_JSON_TYPE_MISMATCH);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_uint, returnsErrorIfNumIsNull)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("1", 1);
+  cardano_error_t        err = cardano_json_object_get_uint(obj, NULL);
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_int, returnsErrorIfInvalidType)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("true", 4);
+  int64_t                num = 0;
+  cardano_error_t        err = cardano_json_object_get_signed_int(obj, &num);
+  EXPECT_EQ(err, CARDANO_ERROR_JSON_TYPE_MISMATCH);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_signed_int, returnsErrorIfNumIsNull)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("1", 1);
+  cardano_error_t        err = cardano_json_object_get_signed_int(obj, NULL);
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_double, returnsErrorIfInvalidType)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("true", 4);
+  double                 num = 0;
+  cardano_error_t        err = cardano_json_object_get_double(obj, &num);
+  EXPECT_EQ(err, CARDANO_ERROR_JSON_TYPE_MISMATCH);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_double, returnsErrorIfNumIsNull)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("1", 1);
+  cardano_error_t        err = cardano_json_object_get_double(obj, NULL);
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_boolean, returnsErrorIfInvalidType)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("[]", 2);
+  bool                   num = false;
+  cardano_error_t        err = cardano_json_object_get_boolean(obj, &num);
+  EXPECT_EQ(err, CARDANO_ERROR_JSON_TYPE_MISMATCH);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_get_boolean, returnsErrorIfNumIsNull)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("true", 4);
+  cardano_error_t        err = cardano_json_object_get_boolean(obj, NULL);
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_json_object_set_last_error, canSetLastError)
+{
+  cardano_json_object_t* obj = cardano_json_object_parse("true", 4);
+  cardano_json_object_set_last_error(obj, "test");
+  const char* last_error = cardano_json_object_get_last_error(obj);
+  EXPECT_STREQ(last_error, "test");
+
+  cardano_json_object_unref(&obj);
+}
+
+TEST(cardano_handle_utf8_sequence, validSingleByte)
+{
+  // Arrange
+  byte_t            input[] = { 0x41 };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, validTwoByte)
+{
+  // Arrange
+  byte_t            input[] = { 0xC2, 0xA2 };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 2;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 2);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 2);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, validThreeByte)
+{
+  // Arrange
+  byte_t            input[] = { 0xE2, 0x82, 0xAC };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 3;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 3);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 3);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, validFourByte)
+{
+  // Arrange
+  byte_t            input[] = { 0xF0, 0xA4, 0xAD, 0xA2 };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 4;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 4);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 4);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, invalidTwoByte)
+{
+  // Arrange
+  byte_t            input[] = { 0xC2, 0x41 };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 2;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, invalidLength)
+{
+  // Arrange
+  byte_t            input[] = { 0xC2 };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_unicode_sequence, valid)
+{
+  // Arrange
+  byte_t            input[] = { '0', '0', '4', '1' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 6;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_unicode_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 4);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_unicode_sequence, invalidLength)
+{
+  // Arrange
+  byte_t            input[] = { '0', '0', '4' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 3;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_unicode_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_unicode_sequence, invalidCharacter)
+{
+  // Arrange
+  byte_t            input[] = { '0', '0', '4', 'G' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 4;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_unicode_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, valid)
+{
+  // Arrange
+  byte_t            input[] = { 'n' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, invalidCharacter)
+{
+  // Arrange
+  byte_t            input[] = { 'G' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeQuote)
+{
+  // Arrange
+  byte_t            input[] = { '\"' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeBackslash)
+{
+  // Arrange
+  byte_t            input[] = { '\\' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeSlash)
+{
+  // Arrange
+  byte_t            input[] = { '/' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeBackspace)
+{
+  // Arrange
+  byte_t            input[] = { 'b' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeFormfeed)
+{
+  // Arrange
+  byte_t            input[] = { 'f' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeNewline)
+{
+  // Arrange
+  byte_t            input[] = { 'n' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeCarriage)
+{
+  // Arrange
+  byte_t            input[] = { 'r' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, escapeTab)
+{
+  // Arrange
+  byte_t            input[] = { 't' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, returnsErrorIfOffsetIsGreaterThanLength)
+{
+  // Arrange
+  byte_t            input[] = { 't' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 1;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 1);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_escape_sequence, canScapeUnicode)
+{
+  // Arrange
+  byte_t            input[] = { 'u', '0', '0', '4', '1' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 5;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, buffer);
+
+  // Assert
+  EXPECT_EQ(valid, true);
+  EXPECT_EQ(context.offset, 5);
+  EXPECT_EQ(cardano_buffer_get_size(buffer), 1);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_parse_value, returnsErrorIfOffsetIsGreaterThanLength)
+{
+  // Arrange
+  byte_t            input[] = { 't' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 1;
+
+  // Act
+  cardano_json_object_t* object = cardano_parse_value(&context);
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_parse_literal, returnsErrorIfOffsetIsGreaterThanLength)
+{
+  // Arrange
+  byte_t            input[] = { 't', 'r', 'u', 'e' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 5;
+
+  // Act
+  cardano_json_object_t* object = cardano_parse_literal(&context, "true", 4, CARDANO_JSON_OBJECT_TYPE_BOOLEAN);
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_parse_array_value, returnsErrorIfOffsetIsGreaterThanLength)
+{
+  // Arrange
+  byte_t            input[] = { '[' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 1;
+
+  // Act
+  cardano_json_object_t* object = cardano_parse_array_value(&context);
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_parse_object_value, returnsErrorIfOffsetIsGreaterThanLength)
+{
+  // Arrange
+  byte_t            input[] = { '{' };
+  cardano_buffer_t* buffer  = cardano_buffer_new(128);
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 0;
+  context.offset                       = 1;
+
+  // Act
+  cardano_json_object_t* object = cardano_parse_object_value(&context);
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_handle_utf8_sequence, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  byte_t input[] = { 0x41 };
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_utf8_sequence(&context, nullptr);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+}
+
+TEST(cardano_handle_unicode_sequence, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  byte_t input[] = { '0', '0', '4', '1' };
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 6;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_unicode_sequence(&context, nullptr);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
+}
+
+TEST(cardano_handle_escape_sequence, returnsErrorIfBufferIsNull)
+{
+  // Arrange
+  byte_t input[] = { 'n' };
+
+  cardano_json_parse_context_t context = { nullptr };
+  context.input                        = (const char*)&input[0];
+  context.length                       = 1;
+  context.offset                       = 0;
+
+  // Act
+  bool valid = cardano_handle_escape_sequence(&context, nullptr);
+
+  // Assert
+  EXPECT_EQ(valid, false);
+  EXPECT_EQ(context.offset, 0);
 }
