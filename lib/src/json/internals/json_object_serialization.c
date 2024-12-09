@@ -47,11 +47,13 @@ cardano_write_json_object(cardano_json_writer_t* writer, const cardano_json_obje
   {
     case CARDANO_JSON_OBJECT_TYPE_OBJECT:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to write nested objects.
       cardano_write_json_object_type_object(writer, object);
       break;
     }
     case CARDANO_JSON_OBJECT_TYPE_ARRAY:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to write nested objects.
       cardano_write_json_object_type_array(writer, object);
       break;
     }
@@ -102,6 +104,7 @@ cardano_write_json_object_type_object(cardano_json_writer_t* writer, const carda
     cardano_json_object_t* value = cardano_json_object_get_value_at(object, i);
     cardano_json_object_unref(&value);
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to write nested objects.
     cardano_error_t result = cardano_write_json_object(writer, value);
 
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write object property.");
@@ -122,6 +125,7 @@ cardano_write_json_object_type_array(cardano_json_writer_t* writer, const cardan
     cardano_json_object_t* element = cardano_json_object_array_get(array, i);
     cardano_json_object_unref(&element);
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to write nested objects.
     cardano_error_t result = cardano_write_json_object(writer, element);
 
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write array element.");

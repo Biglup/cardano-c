@@ -81,14 +81,16 @@ cardano_has_char(const char to_match, const char* begin, const char* end)
   assert(end != NULL);
   assert(begin <= end);
 
-  while (begin < end)
+  const char* current = begin;
+
+  while (current < end)
   {
-    if (*begin == to_match)
+    if (*current == to_match)
     {
       return true;
     }
 
-    ++begin;
+    ++current;
   }
 
   return false;
@@ -440,14 +442,16 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
     return obj;
   }
 
-  while (true)
+  bool end_of_object = false;
+  while (!end_of_object)
   {
     if ((char)ctx->input[ctx->offset] == (char)'}')
     {
       ++ctx->offset;
       --ctx->depth;
 
-      break;
+      end_of_object = true;
+      continue;
     }
 
     cardano_json_object_t* key = cardano_parse_string_value(ctx);
@@ -474,7 +478,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     ++ctx->offset;
 
-    if (ctx->depth >= LIB_CARDANO_C_MAX_JSON_DEPTH)
+    if (ctx->depth >= (size_t)LIB_CARDANO_C_MAX_JSON_DEPTH)
     {
       set_last_error(ctx, "Maximum object depth exceeded");
       cardano_json_object_unref(&key);
@@ -523,7 +527,8 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
       ++ctx->offset;
       --ctx->depth;
 
-      break;
+      end_of_object = true;
+      continue;
     }
     else
     {
@@ -556,7 +561,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
   ++ctx->depth;
   ++ctx->offset;
 
-  if (ctx->depth >= LIB_CARDANO_C_MAX_JSON_DEPTH)
+  if (ctx->depth >= (size_t)LIB_CARDANO_C_MAX_JSON_DEPTH)
   {
     set_last_error(ctx, "Maximum object depth exceeded");
 
@@ -576,14 +581,16 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     return obj;
   }
 
-  while (true)
+  bool end_of_array = false;
+  while (!end_of_array)
   {
     if (((char)ctx->input[ctx->offset] == (char)']'))
     {
       ++ctx->offset;
       --ctx->depth;
 
-      break;
+      end_of_array = true;
+      continue;
     }
 
     // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to parse nested objects.
@@ -616,7 +623,8 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
       ++ctx->offset;
       --ctx->depth;
 
-      break;
+      end_of_array = true;
+      continue;
     }
     else
     {

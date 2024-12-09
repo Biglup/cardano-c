@@ -473,7 +473,7 @@ cardano_json_writer_write_start_array(
     return;
   }
 
-  if (current_context->item_count > 0U && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
+  if ((current_context->item_count > 0U) && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
   {
     cardano_error_t result = cardano_buffer_write(writer->buffer, COMMA, 1);
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write comma before starting array.");
@@ -544,7 +544,7 @@ cardano_json_writer_write_start_object(cardano_json_writer_t* writer)
     return;
   }
 
-  if (current_context->item_count > 0U && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
+  if ((current_context->item_count > 0U) && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
   {
     cardano_error_t result = cardano_buffer_write(writer->buffer, COMMA, 1);
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write comma before starting object.");
