@@ -65,7 +65,7 @@ cardano_parse_hex_digit(char c);
  * This function interprets a Unicode escape sequence in the form of `\uXXXX`, where `XXXX`
  * represents four hexadecimal digits, and converts it into a Unicode code point.
  *
- * \param[in] str A pointer to a 4-character string containing the hexadecimal digits of the Unicode escape sequence (e.g., "0041" for '\u0041').
+ * \param[in] str A pointer to a 4-character string containing the hexadecimal digits of the Unicode escape sequence (e.g., "0041" for '\\u0041').
  *
  * \return The integer value of the Unicode code point represented by the escape sequence.
  *         Returns -1 if the input contains invalid hexadecimal characters.
