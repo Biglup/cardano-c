@@ -883,7 +883,7 @@ cardano_json_writer_write_string(
     return;
   }
 
-  if ((value == NULL) || (value_size == 0U))
+  if (value == NULL)
   {
     writer->last_error = CARDANO_ERROR_POINTER_IS_NULL;
     cardano_object_set_last_error(&writer->base, "String value cannot be NULL or empty.");

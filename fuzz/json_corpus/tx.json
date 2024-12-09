@@ -1,0 +1,50 @@
+{
+  "body": {
+    "inputs": [
+      {
+        "transaction_id": "38685cff32e65bbf5be53e5478b2c9f91c686a663394484df2205d4733d19ad5",
+        "index": 1
+      }
+    ],
+    "outputs": [
+      {
+        "AlonzoFormatTxOut": {
+          "address": "addr_test1qz7mzl28dh765rgxh9c2r83xplyhh93zlfactlz3ypd922ehs85zw6lya0d072za0g56z39yea5p4aux73qumznwagzqrhkz9z",
+          "amount": {
+            "coin": 103430776,
+            "multiasset": {}
+          }
+        }
+      }
+    ],
+    "fee": 172057,
+    "ttl": 77458022,
+    "certs": [
+      {
+        "VoteDelegCert": {
+          "stake_credential": {
+            "PubKey": {
+              "hash": "3781e8276be4ebdaff285d7a29a144a4cf681af786f441cd8a6eea04"
+            }
+          },
+          "d_rep": {
+            "AlwaysAbstain": {}
+          }
+        }
+      }
+    ]
+  },
+  "witness_set": {
+    "vkeywitnesses": [
+      {
+        "vkey": "ed25519_pk12x9tdn9c9ncdkwynm3fj4u8ty77l66xkj6q3ladv79ky04re92eshvam49",
+        "ed25519_signature": "18f37f5f94397c10ab44d6d382a0abc83807ab8039b8bff3b172b5875d928cec5022f02d027e4077253a79910126562988c306c34f14dca9d79be4e1c6de940f"
+      },
+      {
+        "vkey": "ed25519_pk1wmmemeaj96nj24nntw3skjdxk9mwqdjp6zy0gwmyas5egqxewxmsgs8p26",
+        "ed25519_signature": "46f4ce5ee2d14ab15c38aa74063bf25c9481ceaec59f9cf55bc25f6aae20a3c8761db8f7e9621c5f6b3f5628c574f738c3c997f83210effd5790d54419254a0e"
+      }
+    ]
+  },
+  "is_valid": true
+}

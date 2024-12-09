@@ -230,6 +230,7 @@ TEST(cardano_json_object, verifyValid)
   verify_valid("{ \"count\" : 1234, }", "{\"count\":1234}");
   verify_valid("{ \"count\" : \"\u1f600\" }", "{\"count\":\"\u1f600\"}");
   verify_valid("{ \"count\" : \"\u1f609\" }", "{\"count\":\"\u1f609\"}");
+  verify_valid("\"\"", "\"\"");
 }
 
 TEST(cardano_json_object_ref, doesntCrashIfGivenANullPtr)

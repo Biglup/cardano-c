@@ -1,0 +1,58 @@
+{
+  "ada_per_utxo_byte": "64",
+  "collateral_percentage": 32,
+  "cost_models": {
+    "plutus_v1": "000000000000000000000000000000000000000000000000000000000000000",
+    "plutus_v2": "000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "d": {
+    "numerator": "123",
+    "denominator": "345"
+  },
+  "execution_costs": {
+    "mem_price": {
+      "numerator": "123",
+      "denominator": "345"
+    },
+    "step_price": {
+      "numerator": "123",
+      "denominator": "345"
+    }
+  },
+  "expansion_rate": {
+    "numerator": "123",
+    "denominator": "345"
+  },
+  "key_deposit": "64",
+  "max_block_body_size": 32,
+  "max_block_ex_units": {
+    "mem": "123",
+    "steps": "456"
+  },
+  "max_block_header_size": 32,
+  "max_collateral_inputs": 32,
+  "max_epoch": 32,
+  "max_tx_ex_units": {
+    "mem": "123",
+    "steps": "456"
+  },
+  "max_tx_size": 32,
+  "max_value_size": 32,
+  "min_pool_cost": "64",
+  "minfee_a": "64",
+  "minfee_b": "64",
+  "n_opt": "123467",
+  "pool_deposit": "64",
+  "pool_pledge_influence": {
+    "numerator": "123",
+    "denominator": "345"
+  },
+  "protocol_version": {
+    "major": 1,
+    "minor": 2
+  },
+  "treasury_growth_rate": {
+    "numerator": "123",
+    "denominator": "345"
+  }
+}

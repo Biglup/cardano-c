@@ -29,6 +29,7 @@
 #include "json_parser.h"
 #include "utf8.h"
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -327,7 +328,19 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
   cardano_skip_whitespace(ctx);
 
   const char* start = &ctx->input[ctx->offset];
-  char*       end   = NULL;
+  const char* end   = start;
+
+  while (
+    (end < &ctx->input[ctx->length]) &&
+    (isdigit((unsigned char)*end) ||
+     *end == '.' ||
+     *end == 'e' ||
+     *end == 'E' ||
+     *end == '-' ||
+     *end == '+'))
+  {
+    ++end;
+  }
 
   cardano_json_object_t* obj = cardano_json_object_new();
 
@@ -343,16 +356,21 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
   obj->int_value    = 0;
   obj->double_value = 0.0;
 
+  const size_t size     = end - start;
+  char         temp[64] = { 0 };
+  cardano_safe_memcpy(temp, 64, start, size);
+  temp[size] = '\0';
+
   bool is_out_of_range = false;
   errno                = 0;
-  uint64_t uint_value  = strtoull(start, &end, 10);
+  uint64_t uint_value  = strtoull(temp, NULL, 10);
 
   if (errno != 0)
   {
     is_out_of_range = true;
   }
 
-  obj->is_negative = (start[0] == '-');
+  obj->is_negative = (temp[0] == '-');
   bool is_uint     = (end != start) && !is_out_of_range && !obj->is_negative;
 
   if (is_uint)
@@ -362,7 +380,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 
   is_out_of_range   = false;
   errno             = 0;
-  int64_t int_value = strtoll(start, &end, 10);
+  int64_t int_value = strtoll(temp, NULL, 10);
 
   if (errno != 0)
   {
@@ -378,7 +396,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 
   is_out_of_range     = false;
   errno               = 0;
-  double double_value = strtod(start, &end);
+  double double_value = strtod(temp, NULL);
 
   if (errno != 0)
   {
