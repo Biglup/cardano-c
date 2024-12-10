@@ -712,6 +712,18 @@ TEST(cardano_error_to_string, canConvertScriptEvaluationFailure)
   ASSERT_STREQ(message, "Script evaluation failure");
 }
 
+TEST(cardano_error_to_string, canConvertJsonTypeMismatch)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_JSON_TYPE_MISMATCH;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "JSON type mismatch");
+}
+
 TEST(cardano_error_to_string, canConvertUnknown)
 {
   // Arrange

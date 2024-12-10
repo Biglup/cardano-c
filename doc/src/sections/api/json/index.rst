@@ -11,5 +11,7 @@ This section of the documentation provides detailed information on each function
     ./json_writer
     ./json_context
     ./json_format
+    ./json_object
+    ./json_object_type
 
 .. _JSON: https://www.json.org

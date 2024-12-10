@@ -32,6 +32,11 @@
 
 #include <gmock/gmock.h>
 
+extern "C" {
+#include "../src/json/internals/json_writer_common.h"
+#include "../src/json/internals/utf8.h"
+}
+
 /* STATIC FUNCTIONS **********************************************************/
 
 static void
@@ -514,6 +519,7 @@ TEST(cardano_json_writer_write_bool, returnsErrorIfUsedInWrongContext)
   EXPECT_EQ(cardano_json_writer_reset(writer), CARDANO_SUCCESS);
 
   cardano_json_writer_write_bool(writer, true);
+  cardano_json_writer_write_start_object(writer);
   result = cardano_json_writer_encode(writer, buffer, 128);
 
   EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
@@ -542,6 +548,157 @@ TEST(cardano_json_writer_write_null, writesANullValue)
   EXPECT_STREQ(encoded, "{\n  \"null\": null\n}");
 
   // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_uint, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_uint(writer, UINT_MAX);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "4294967295");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_int, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_signed_int(writer, INT_MAX);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "2147483647");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_double, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_double(writer, MAXFLOAT);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "3.4028234663852886e+38");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_string, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_string(writer, "Hello, World!", 13);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "\"Hello, World!\"");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_bool, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_bool(writer, true);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "true");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_null, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_write_null(writer);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "null");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_write_bigint, canWriteSingleValueAtRoot)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  cardano_bigint_t*      bigint = NULL;
+
+  EXPECT_EQ(cardano_bigint_from_string("123456789123456789", strlen("123456789123456789"), 10, &bigint), CARDANO_SUCCESS);
+
+  // Act
+  cardano_json_writer_write_bigint(writer, bigint);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, "\"123456789123456789\"");
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
   cardano_json_writer_unref(&writer);
   free(encoded);
 }
@@ -586,6 +743,7 @@ TEST(cardano_json_writer_write_null, returnsErrorIfUsedInWrongContext)
   EXPECT_EQ(cardano_json_writer_reset(writer), CARDANO_SUCCESS);
 
   cardano_json_writer_write_bool(writer, true);
+  cardano_json_writer_write_start_object(writer);
   result = cardano_json_writer_encode(writer, buffer, 128);
 
   EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
@@ -1865,4 +2023,323 @@ TEST(cardano_json_writer_refcount, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(ref_count, 0);
+}
+
+TEST(cardano_json_writer_write_object, canWriteObject)
+{
+  // Act
+  const char*  json      = "{\"data\":[{\"MainId\":1111,\"firstName\":\"Sherlock\",\"lastName\":\"Homes\",\"categories\":[{\"CategoryID\":-1.3,\"CategoryName\":\"Example\"}]},{\"MainId\":122,\"firstName\":\"James\",\"lastName\":\"Watson\",\"categories\":[{\"CategoryID\":2,\"CategoryName\":\"Example2\"}]}],\"messages\":[],\"success\":true}";
+  const size_t json_size = strlen(json);
+
+  cardano_json_object_t* object = cardano_json_object_parse(json, json_size);
+
+  EXPECT_NE(object, nullptr);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_json_writer_write_object(writer, object);
+
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(encoded, json);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_json_object_unref(&object);
+  free(encoded);
+}
+
+TEST(cardano_json_writer_set_message_if_error, setsTheMessageIfError)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_set_message_if_error(writer, CARDANO_ERROR_POINTER_IS_NULL, "This is an error message");
+
+  // Assert
+  EXPECT_STREQ(cardano_json_writer_get_last_error(writer), "This is an error message");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_json_writer_set_message_if_error, doesNothingIfAlreadyInError)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_json_writer_set_message_if_error(writer, CARDANO_ERROR_POINTER_IS_NULL, "This is an error message");
+  cardano_json_writer_set_message_if_error(writer, CARDANO_ERROR_POINTER_IS_NULL, "This is another error message");
+
+  // Assert
+  EXPECT_STREQ(cardano_json_writer_get_last_error(writer), "This is an error message");
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_utf8_sequence_length, canComputeCorrectByteLenght)
+{
+  // Act
+  size_t length = cardano_utf8_sequence_length(0x00);
+  EXPECT_EQ(length, 1);
+
+  length = cardano_utf8_sequence_length(0x7F);
+  EXPECT_EQ(length, 1);
+
+  length = cardano_utf8_sequence_length(0xC2);
+  EXPECT_EQ(length, 2);
+
+  length = cardano_utf8_sequence_length(0xDF);
+  EXPECT_EQ(length, 2);
+
+  length = cardano_utf8_sequence_length(0xE0);
+  EXPECT_EQ(length, 3);
+
+  length = cardano_utf8_sequence_length(0xEF);
+  EXPECT_EQ(length, 3);
+
+  length = cardano_utf8_sequence_length(0xF0);
+  EXPECT_EQ(length, 4);
+
+  length = cardano_utf8_sequence_length(0xF4);
+  EXPECT_EQ(length, 4);
+
+  length = cardano_utf8_sequence_length(0xFF);
+  EXPECT_EQ(length, 0);
+}
+
+TEST(cardano_parse_hex_digit, canConverHexNibbleToInt)
+{
+  // Act
+  int32_t digit = cardano_parse_hex_digit('0');
+  EXPECT_EQ(digit, 0);
+
+  digit = cardano_parse_hex_digit('1');
+  EXPECT_EQ(digit, 1);
+
+  digit = cardano_parse_hex_digit('2');
+  EXPECT_EQ(digit, 2);
+
+  digit = cardano_parse_hex_digit('3');
+  EXPECT_EQ(digit, 3);
+
+  digit = cardano_parse_hex_digit('4');
+  EXPECT_EQ(digit, 4);
+
+  digit = cardano_parse_hex_digit('5');
+  EXPECT_EQ(digit, 5);
+
+  digit = cardano_parse_hex_digit('6');
+  EXPECT_EQ(digit, 6);
+
+  digit = cardano_parse_hex_digit('7');
+  EXPECT_EQ(digit, 7);
+
+  digit = cardano_parse_hex_digit('8');
+  EXPECT_EQ(digit, 8);
+
+  digit = cardano_parse_hex_digit('9');
+  EXPECT_EQ(digit, 9);
+
+  digit = cardano_parse_hex_digit('A');
+  EXPECT_EQ(digit, 10);
+
+  digit = cardano_parse_hex_digit('B');
+  EXPECT_EQ(digit, 11);
+
+  digit = cardano_parse_hex_digit('C');
+  EXPECT_EQ(digit, 12);
+
+  digit = cardano_parse_hex_digit('D');
+  EXPECT_EQ(digit, 13);
+
+  digit = cardano_parse_hex_digit('E');
+  EXPECT_EQ(digit, 14);
+
+  digit = cardano_parse_hex_digit('F');
+  EXPECT_EQ(digit, 15);
+
+  digit = cardano_parse_hex_digit('a');
+  EXPECT_EQ(digit, 10);
+
+  digit = cardano_parse_hex_digit('b');
+  EXPECT_EQ(digit, 11);
+
+  digit = cardano_parse_hex_digit('c');
+  EXPECT_EQ(digit, 12);
+
+  digit = cardano_parse_hex_digit('d');
+  EXPECT_EQ(digit, 13);
+
+  digit = cardano_parse_hex_digit('e');
+  EXPECT_EQ(digit, 14);
+
+  digit = cardano_parse_hex_digit('f');
+  EXPECT_EQ(digit, 15);
+
+  digit = cardano_parse_hex_digit('G');
+  EXPECT_EQ(digit, -1);
+
+  digit = cardano_parse_hex_digit('g');
+  EXPECT_EQ(digit, -1);
+}
+
+TEST(cardano_encode_utf8, canEncodeUtf8)
+{
+  // Arrange
+  char buffer[4] = { 0 };
+
+  // Act & Assert
+  size_t length = cardano_encode_utf8(0x00, buffer);
+  EXPECT_EQ(length, 1);
+  EXPECT_EQ((unsigned char)buffer[0], 0x00);
+
+  length = cardano_encode_utf8(0x7F, buffer);
+  EXPECT_EQ(length, 1);
+  EXPECT_EQ((unsigned char)buffer[0], 0x7F);
+
+  length = cardano_encode_utf8(0x80, buffer);
+  EXPECT_EQ(length, 2);
+  EXPECT_EQ((unsigned char)buffer[0], 0xC2);
+  EXPECT_EQ((unsigned char)buffer[1], 0x80);
+
+  length = cardano_encode_utf8(0x7FF, buffer);
+  EXPECT_EQ(length, 2);
+  EXPECT_EQ((unsigned char)buffer[0], 0xDF);
+  EXPECT_EQ((unsigned char)buffer[1], 0xBF);
+
+  length = cardano_encode_utf8(0x800, buffer);
+  EXPECT_EQ(length, 3);
+  EXPECT_EQ((unsigned char)buffer[0], 0xE0);
+  EXPECT_EQ((unsigned char)buffer[1], 0xA0);
+  EXPECT_EQ((unsigned char)buffer[2], 0x80);
+
+  length = cardano_encode_utf8(0xFFFF, buffer);
+  EXPECT_EQ(length, 3);
+  EXPECT_EQ((unsigned char)buffer[0], 0xEF);
+  EXPECT_EQ((unsigned char)buffer[1], 0xBF);
+  EXPECT_EQ((unsigned char)buffer[2], 0xBF);
+
+  length = cardano_encode_utf8(0x10000, buffer);
+  EXPECT_EQ(length, 4);
+  EXPECT_EQ((unsigned char)buffer[0], 0xF0);
+  EXPECT_EQ((unsigned char)buffer[1], 0x90);
+  EXPECT_EQ((unsigned char)buffer[2], 0x80);
+  EXPECT_EQ((unsigned char)buffer[3], 0x80);
+
+  length = cardano_encode_utf8(0x10FFFF, buffer);
+  EXPECT_EQ(length, 4);
+  EXPECT_EQ((unsigned char)buffer[0], 0xF4);
+  EXPECT_EQ((unsigned char)buffer[1], 0x8F);
+  EXPECT_EQ((unsigned char)buffer[2], 0xBF);
+  EXPECT_EQ((unsigned char)buffer[3], 0xBF);
+
+  // Invalid code points
+  length = cardano_encode_utf8(0x110000, buffer);
+  EXPECT_EQ(length, 0);
+
+  length = cardano_encode_utf8(-1, buffer);
+  EXPECT_EQ(length, 1);
+}
+
+TEST(cardano_encode_utf8, fourByteSequence)
+{
+  char   utf8_buf[4] = { 0 };
+  size_t length      = cardano_encode_utf8(0x1F98B, utf8_buf); // U+1F98B = 🦋
+
+  EXPECT_EQ(length, 4);
+  EXPECT_EQ((byte_t)utf8_buf[0], 0xF0);
+  EXPECT_EQ((byte_t)utf8_buf[1], 0x9F);
+  EXPECT_EQ((byte_t)utf8_buf[2], 0xA6);
+  EXPECT_EQ((byte_t)utf8_buf[3], 0x8B);
+}
+
+TEST(cardano_decode_unicode_sequence, BasicUnicodeEscapes)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\u0041"; // 'A'
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 1);
+  EXPECT_EQ((unsigned char)output[0], 'A');
+  EXPECT_EQ(output[1], '\0'); // Ensure null termination
+}
+
+TEST(cardano_decode_unicode_sequence, surrogatePairs)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\uD83D\\uDE00"; // 😀
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 4);
+  EXPECT_EQ((unsigned char)output[0], 0xF0);
+  EXPECT_EQ((unsigned char)output[1], 0x9F);
+  EXPECT_EQ((unsigned char)output[2], 0x98);
+  EXPECT_EQ((unsigned char)output[3], 0x80);
+}
+
+TEST(cardano_decode_unicode_sequence, surrogatePairs2)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\uD83E\\uDD8B"; // 🦋
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 4);
+  EXPECT_EQ((unsigned char)output[0], 0xf0);
+  EXPECT_EQ((unsigned char)output[1], 0x9f);
+  EXPECT_EQ((unsigned char)output[2], 0xa6);
+  EXPECT_EQ((unsigned char)output[3], 0x8b);
+}
+
+TEST(cardano_decode_unicode_sequence, InvalidUnicodeEscape)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\uZZZZ";
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 0);
+}
+
+TEST(cardano_decode_unicode_sequence, IncompleteEscape)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\u00";
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 0);
+}
+
+TEST(cardano_decode_unicode_sequence, InvalidSurrogatePair)
+{
+  char        output[4] = { 0 };
+  const char* input     = "\\uD83D\\u1234";
+  size_t      len       = cardano_decode_unicode_sequence(input, strlen(input), output);
+
+  EXPECT_EQ(len, 0);
+}
+
+TEST(cardano_decode_unicode_sequence, BoundaryCases)
+{
+  char output[4] = { 0 };
+
+  const char* input1 = "\\u0000";
+  size_t      len1   = cardano_decode_unicode_sequence(input1, strlen(input1), output);
+  EXPECT_EQ(len1, 1);
+  EXPECT_EQ((unsigned char)output[0], 0x00);
+
+  const char* input2 = "\\uDBFF\\uDFFF";
+  size_t      len2   = cardano_decode_unicode_sequence(input2, strlen(input2), output);
+  EXPECT_EQ(len2, 4);
+  EXPECT_EQ((unsigned char)output[0], 0xF4);
+  EXPECT_EQ((unsigned char)output[1], 0x8F);
+  EXPECT_EQ((unsigned char)output[2], 0xBF);
+  EXPECT_EQ((unsigned char)output[3], 0xBF);
 }
