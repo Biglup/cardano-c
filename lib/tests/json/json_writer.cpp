@@ -193,10 +193,10 @@ test_primitives(const cardano_json_format_t format, const char* expected_string)
   cardano_json_writer_write_signed_int(writer, -INT_MAX);
 
   cardano_json_writer_write_property_name(writer, "d", 1);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
 
   cardano_json_writer_write_property_name(writer, "e", 1);
-  cardano_json_writer_write_double(writer, -MAXFLOAT);
+  cardano_json_writer_write_double(writer, -FLT_MAX);
 
   cardano_json_writer_write_property_name(writer, "f", 1);
   cardano_json_writer_write_string(writer, "Hello, World!", 13);
@@ -240,8 +240,8 @@ test_array_of_primitives(const cardano_json_format_t format, const char* expecte
   cardano_json_writer_write_uint(writer, UINT_MAX);
   cardano_json_writer_write_signed_int(writer, INT_MAX);
   cardano_json_writer_write_signed_int(writer, -INT_MAX);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
-  cardano_json_writer_write_double(writer, -MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
+  cardano_json_writer_write_double(writer, -FLT_MAX);
   cardano_json_writer_write_string(writer, "Hello, World!", 13);
   cardano_json_writer_write_bool(writer, true);
   cardano_json_writer_write_bool(writer, false);
@@ -600,7 +600,7 @@ TEST(cardano_json_writer_write_double, canWriteSingleValueAtRoot)
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
 
   // Act
-  cardano_json_writer_write_double(writer, MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
 
   // Assert
   const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
@@ -1472,7 +1472,7 @@ TEST(cardano_json_writer_write_double, writesADoubleValue)
   // Act
   cardano_json_writer_write_start_object(writer);
   cardano_json_writer_write_property_name(writer, "double", 6);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
   cardano_json_writer_write_end_object(writer);
 
   // Assert
@@ -1483,7 +1483,7 @@ TEST(cardano_json_writer_write_double, writesADoubleValue)
 
   // We need to compare the string representation of the float since the precision may vary.
   char expected[128];
-  snprintf(expected, 128, "{\n  \"double\": %.17g\n}", MAXFLOAT);
+  snprintf(expected, 128, "{\n  \"double\": %.17g\n}", FLT_MAX);
 
   EXPECT_STREQ(encoded, expected);
 
@@ -1501,7 +1501,7 @@ TEST(cardano_json_writer_write_double, returnsErrorIfGivenNull)
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
   cardano_json_writer_write_start_object(writer);
   cardano_json_writer_write_property_name(writer, "double", 6);
-  cardano_json_writer_write_double(nullptr, MAXFLOAT);
+  cardano_json_writer_write_double(nullptr, FLT_MAX);
 
   cardano_error_t result = cardano_json_writer_encode(writer, buffer, 128);
 
@@ -1509,7 +1509,7 @@ TEST(cardano_json_writer_write_double, returnsErrorIfGivenNull)
   EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
 
   // Don't crash
-  cardano_json_writer_write_double(nullptr, MAXFLOAT);
+  cardano_json_writer_write_double(nullptr, FLT_MAX);
 
   // Cleanup
   cardano_json_writer_unref(&writer);
@@ -1523,7 +1523,7 @@ TEST(cardano_json_writer_write_double, returnsErrorIfUsedInWrongContext)
   // Act
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
   cardano_json_writer_write_start_object(writer);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
 
   cardano_error_t result = cardano_json_writer_encode(writer, buffer, 128);
 
@@ -1543,8 +1543,8 @@ TEST(cardano_json_writer_write_double, canWriteArrayOfDoubles)
   cardano_json_writer_write_start_object(writer);
   cardano_json_writer_write_property_name(writer, "doubles", 7);
   cardano_json_writer_write_start_array(writer);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
-  cardano_json_writer_write_double(writer, MAXFLOAT);
+  cardano_json_writer_write_double(writer, FLT_MAX);
+  cardano_json_writer_write_double(writer, FLT_MAX);
   cardano_json_writer_write_end_array(writer);
   cardano_json_writer_write_end_object(writer);
 
@@ -1556,7 +1556,7 @@ TEST(cardano_json_writer_write_double, canWriteArrayOfDoubles)
 
   // We need to compare the string representation of the float since the precision may vary.
   char expected[128];
-  snprintf(expected, 128, "{\n  \"doubles\": [\n    %.17g,\n    %.17g\n  ]\n}", MAXFLOAT, MAXFLOAT);
+  snprintf(expected, 128, "{\n  \"doubles\": [\n    %.17g,\n    %.17g\n  ]\n}", FLT_MAX, FLT_MAX);
 
   EXPECT_STREQ(encoded, expected);
 
