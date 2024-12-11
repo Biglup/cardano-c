@@ -153,7 +153,7 @@ TEST(cardano_script_pubkey_from_json, returnsErrorIfMemoryPubKeyocationFails)
   cardano_script_pubkey_t* pubkey = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey), CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

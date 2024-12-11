@@ -149,7 +149,7 @@ TEST(cardano_script_invalid_after_from_json, returnsErrorIfMemoryInvalidAfteroca
   cardano_script_invalid_after_t* invalid_after = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_invalid_after_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_after), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_invalid_after_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_after), CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

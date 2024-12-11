@@ -24,6 +24,7 @@
 #include <cardano/buffer.h>
 #include <cardano/json/json_object.h>
 #include <cardano/json/json_object_type.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/object.h>
 
 #include "../allocators.h"
@@ -31,6 +32,7 @@
 #include <string.h>
 
 #include "../collections/array.h"
+#include "../string_safe.h"
 #include "./internals/json_object_common.h"
 #include "./internals/json_parser.h"
 
@@ -68,6 +70,69 @@ cardano_json_object_parse(const char* json, const size_t size)
   }
 
   return root;
+}
+
+const char*
+cardano_json_object_to_json_string(
+  cardano_json_object_t*      json_object,
+  const cardano_json_format_t format,
+  size_t*                     length)
+{
+  if (json_object == NULL)
+  {
+    return NULL;
+  }
+
+  if (json_object->json_string != NULL)
+  {
+    if (length != NULL)
+    {
+      *length = json_object->json_string_length;
+    }
+
+    return json_object->json_string;
+  }
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(format);
+
+  if (writer == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_json_writer_write_object(writer, json_object);
+
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+
+  if (encoded_size == 0U)
+  {
+    cardano_json_writer_unref(&writer);
+    return NULL;
+  }
+
+  char* buffer = _cardano_malloc(encoded_size);
+  CARDANO_UNUSED(memset(buffer, 0, encoded_size));
+
+  cardano_error_t result = cardano_json_writer_encode(writer, buffer, encoded_size);
+
+  cardano_json_writer_unref(&writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    _cardano_free(buffer);
+
+    return NULL;
+  }
+
+  json_object->json_string        = buffer;
+  json_object->json_string_length = encoded_size;
+
+  if (length != NULL)
+  {
+    *length = encoded_size;
+  }
+
+  return buffer;
 }
 
 cardano_json_object_type_t
@@ -333,7 +398,7 @@ cardano_json_object_get_uint(
   const cardano_json_object_t* json_object,
   uint64_t*                    value)
 {
-  if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
+  if ((json_object == NULL) || ((json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER) && (json_object->type != CARDANO_JSON_OBJECT_TYPE_STRING)))
   {
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
   }
@@ -341,6 +406,11 @@ cardano_json_object_get_uint(
   if (value == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_uint64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }
 
   *value = json_object->uint_value;
@@ -353,7 +423,7 @@ cardano_json_object_get_signed_int(
   const cardano_json_object_t* json_object,
   int64_t*                     value)
 {
-  if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
+  if ((json_object == NULL) || ((json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER) && (json_object->type != CARDANO_JSON_OBJECT_TYPE_STRING)))
   {
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
   }
@@ -361,6 +431,11 @@ cardano_json_object_get_signed_int(
   if (value == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_int64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }
 
   *value = json_object->int_value;
@@ -373,7 +448,7 @@ cardano_json_object_get_double(
   const cardano_json_object_t* json_object,
   double*                      value)
 {
-  if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER))
+  if ((json_object == NULL) || ((json_object->type != CARDANO_JSON_OBJECT_TYPE_NUMBER) && (json_object->type != CARDANO_JSON_OBJECT_TYPE_STRING)))
   {
     return CARDANO_ERROR_JSON_TYPE_MISMATCH;
   }
@@ -381,6 +456,11 @@ cardano_json_object_get_double(
   if (value == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_double((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }
 
   *value = json_object->double_value;

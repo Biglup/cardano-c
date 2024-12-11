@@ -24,8 +24,7 @@
 #include "blockfrost_parsers.h"
 #include "utils.h"
 
-#include <json-c/json.h>
-#include <stdlib.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -37,38 +36,35 @@ cardano_blockfrost_parse_datum(
   const size_t             size,
   cardano_plutus_data_t**  datum)
 {
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* datum_obj = NULL;
+  cardano_json_object_t* datum_obj = NULL;
 
-  if (!json_object_object_get_ex(parsed_json, "cbor", &datum_obj))
+  if (!cardano_json_object_get_ex(parsed_json, "cbor", 4, &datum_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse datum from JSON response");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char*  datum_data = json_object_get_string(datum_obj);
-  const size_t datum_len  = json_object_get_string_len(datum_obj);
+  size_t      datum_len  = 0U;
+  const char* datum_data = cardano_json_object_get_string(datum_obj, &datum_len);
 
-  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(datum_data, datum_len);
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(datum_data, datum_len - 1U);
 
   if (!reader)
   {
     cardano_utils_set_error_message(provider, "Failed to parse datum from JSON response");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
@@ -76,8 +72,7 @@ cardano_blockfrost_parse_datum(
   cardano_error_t error = cardano_plutus_data_from_cbor(reader, datum);
 
   cardano_cbor_reader_unref(&reader);
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return error;
 }

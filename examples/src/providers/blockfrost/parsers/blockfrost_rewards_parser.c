@@ -21,11 +21,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/json/json_object.h>
+
 #include "blockfrost_parsers.h"
 #include "utils.h"
 
-#include <json-c/json.h>
-#include <stdlib.h>
 #include <string.h>
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -37,26 +37,32 @@ cardano_blockfrost_parse_rewards(
   const size_t             size,
   uint64_t*                rewards)
 {
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* rewards_obj = NULL;
+  cardano_json_object_t* rewards_obj = NULL;
 
-  if (json_object_object_get_ex(parsed_json, "withdrawable_amount", &rewards_obj))
+  if (cardano_json_object_get_ex(parsed_json, "withdrawable_amount", strlen("withdrawable_amount"), &rewards_obj))
   {
-    *rewards = json_object_get_int64(rewards_obj);
+    cardano_error_t result = cardano_json_object_get_uint(rewards_obj, rewards);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utils_set_error_message(provider, "Failed to parse rewards from JSON response");
+      cardano_json_object_unref(&parsed_json);
+
+      return CARDANO_ERROR_INVALID_JSON;
+    }
   }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return CARDANO_SUCCESS;
 }

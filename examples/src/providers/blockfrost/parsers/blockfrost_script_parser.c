@@ -21,11 +21,12 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/json/json_object.h>
+
 #include "blockfrost/common/blockfrost_common.h"
 #include "blockfrost/common/blockfrost_url_builders.h"
 #include "utils.h"
 
-#include <json-c/json.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,31 +107,28 @@ parse_script_language(
   const size_t               size,
   cardano_script_language_t* language)
 {
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
 
-    json_tokener_free(tok);
-
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* script_obj = NULL;
+  cardano_json_object_t* script_obj = NULL;
 
-  if (!json_object_object_get_ex(parsed_json, "type", &script_obj))
+  if (!cardano_json_object_get_ex(parsed_json, "type", 4, &script_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse script type from JSON response");
 
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type = json_object_get_string(script_obj);
+  size_t      script_len = 0U;
+  const char* type       = cardano_json_object_get_string(script_obj, &script_len);
 
   if (strcmp(type, "timelock") == 0)
   {
@@ -152,14 +150,12 @@ parse_script_language(
   {
     cardano_utils_set_error_message(provider, "Invalid script type");
 
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return CARDANO_SUCCESS;
 }
@@ -189,30 +185,28 @@ parse_plutus_script(
   const cardano_script_language_t language,
   cardano_script_t**              script)
 {
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* script_obj = NULL;
+  cardano_json_object_t* script_obj = NULL;
 
-  if (!json_object_object_get_ex(parsed_json, "cbor", &script_obj))
+  if (!cardano_json_object_get_ex(parsed_json, "cbor", 4, &script_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse script from JSON response");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char*  script_data = json_object_get_string(script_obj);
-  const size_t script_len  = json_object_get_string_len(script_obj);
+  size_t      script_len  = 0U;
+  const char* script_data = cardano_json_object_get_string(script_obj, &script_len);
 
   cardano_error_t result = CARDANO_SUCCESS;
 
@@ -222,13 +216,13 @@ parse_plutus_script(
     {
       cardano_plutus_v1_script_t* plutus_v1_script = NULL;
 
-      result = cardano_plutus_v1_script_new_bytes_from_hex(script_data, script_len, &plutus_v1_script);
+      result = cardano_plutus_v1_script_new_bytes_from_hex(script_data, script_len - 1U, &plutus_v1_script);
 
       if (result != CARDANO_SUCCESS)
       {
         cardano_utils_set_error_message(provider, "Failed to parse Plutus V1 script from JSON response");
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+
+        cardano_json_object_unref(&parsed_json);
 
         return result;
       }
@@ -242,13 +236,13 @@ parse_plutus_script(
     {
       cardano_plutus_v2_script_t* plutus_v2_script = NULL;
 
-      result = cardano_plutus_v2_script_new_bytes_from_hex(script_data, script_len, &plutus_v2_script);
+      result = cardano_plutus_v2_script_new_bytes_from_hex(script_data, script_len - 1U, &plutus_v2_script);
 
       if (result != CARDANO_SUCCESS)
       {
         cardano_utils_set_error_message(provider, "Failed to parse Plutus V2 script from JSON response");
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+
+        cardano_json_object_unref(&parsed_json);
 
         return result;
       }
@@ -262,13 +256,13 @@ parse_plutus_script(
     {
       cardano_plutus_v3_script_t* plutus_v3_script = NULL;
 
-      result = cardano_plutus_v3_script_new_bytes_from_hex(script_data, script_len, &plutus_v3_script);
+      result = cardano_plutus_v3_script_new_bytes_from_hex(script_data, script_len - 1U, &plutus_v3_script);
 
       if (result != CARDANO_SUCCESS)
       {
         cardano_utils_set_error_message(provider, "Failed to parse Plutus V3 script from JSON response");
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+
+        cardano_json_object_unref(&parsed_json);
 
         return result;
       }
@@ -282,15 +276,14 @@ parse_plutus_script(
     default:
     {
       cardano_utils_set_error_message(provider, "Invalid Plutus language version");
-      json_object_put(parsed_json);
-      json_tokener_free(tok);
+
+      cardano_json_object_unref(&parsed_json);
 
       return CARDANO_ERROR_INVALID_JSON;
     }
   }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return result;
 }

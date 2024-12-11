@@ -411,7 +411,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 
   cardano_json_object_t* obj = cardano_json_object_new();
 
-  if (!obj)
+  if (obj == NULL)
   {
     set_last_error(ctx, "Memory allocation failed");
 
@@ -528,6 +528,14 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   }
 
   cardano_array_t* pairs = cardano_array_new(32);
+
+  if (pairs == NULL)
+  {
+    set_last_error(ctx, "Memory allocation failed");
+
+    return NULL;
+  }
+
   cardano_skip_whitespace(ctx);
 
   if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)'}'))
@@ -535,8 +543,17 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
     ++ctx->offset;
 
     cardano_json_object_t* obj = cardano_json_object_new();
-    obj->type                  = CARDANO_JSON_OBJECT_TYPE_OBJECT;
-    obj->pairs                 = pairs;
+
+    if (obj == NULL)
+    {
+      cardano_array_unref(&pairs);
+      set_last_error(ctx, "Memory allocation failed");
+
+      return NULL;
+    }
+
+    obj->type  = CARDANO_JSON_OBJECT_TYPE_OBJECT;
+    obj->pairs = pairs;
 
     return obj;
   }
@@ -608,6 +625,17 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     cardano_json_kvp_t* kvp = cardano_json_kvp_new();
 
+    if (kvp == NULL)
+    {
+      cardano_json_object_unref(&key);
+      cardano_json_object_unref(&val);
+      cardano_array_unref(&pairs);
+
+      set_last_error(ctx, "Memory allocation failed");
+
+      return NULL;
+    }
+
     cardano_buffer_ref(key->string);
 
     kvp->key = key->string;
@@ -647,8 +675,17 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   }
 
   cardano_json_object_t* obj = cardano_json_object_new();
-  obj->type                  = CARDANO_JSON_OBJECT_TYPE_OBJECT;
-  obj->pairs                 = pairs;
+
+  if (obj == NULL)
+  {
+    cardano_array_unref(&pairs);
+    set_last_error(ctx, "Memory allocation failed");
+
+    return NULL;
+  }
+
+  obj->type  = CARDANO_JSON_OBJECT_TYPE_OBJECT;
+  obj->pairs = pairs;
 
   return obj;
 }
@@ -676,14 +713,31 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
   }
 
   cardano_array_t* arr = cardano_array_new(32);
+
+  if (arr == NULL)
+  {
+    set_last_error(ctx, "Memory allocation failed");
+
+    return NULL;
+  }
+
   cardano_skip_whitespace(ctx);
 
   if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)']'))
   {
     ctx->offset++;
     cardano_json_object_t* obj = cardano_json_object_new();
-    obj->type                  = CARDANO_JSON_OBJECT_TYPE_ARRAY;
-    obj->array                 = arr;
+
+    if (obj == NULL)
+    {
+      cardano_array_unref(&arr);
+      set_last_error(ctx, "Memory allocation failed");
+
+      return NULL;
+    }
+
+    obj->type  = CARDANO_JSON_OBJECT_TYPE_ARRAY;
+    obj->array = arr;
 
     return obj;
   }
@@ -752,6 +806,14 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
   cardano_json_object_t* obj = cardano_json_object_new();
 
+  if (obj == NULL)
+  {
+    cardano_array_unref(&arr);
+    set_last_error(ctx, "Memory allocation failed");
+
+    return NULL;
+  }
+
   obj->type  = CARDANO_JSON_OBJECT_TYPE_ARRAY;
   obj->array = arr;
 
@@ -769,7 +831,14 @@ cardano_parse_literal(
   {
     ctx->offset                += literal_size;
     cardano_json_object_t* obj = cardano_json_object_new();
-    obj->type                  = type;
+
+    if (obj == NULL)
+    {
+      set_last_error(ctx, "Memory allocation failed");
+      return NULL;
+    }
+
+    obj->type = type;
 
     if (type == CARDANO_JSON_OBJECT_TYPE_BOOLEAN)
     {

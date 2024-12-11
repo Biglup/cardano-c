@@ -181,7 +181,7 @@ TEST(cardano_script_all_from_json, returnsErrorIfMemoryAllocationFails)
   cardano_script_all_t* all = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &all), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &all), CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

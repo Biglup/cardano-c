@@ -27,6 +27,7 @@
 #include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_format.h>
 #include <cardano/json/json_object_type.h>
 #include <cardano/typedefs.h>
 
@@ -86,6 +87,49 @@ typedef struct cardano_json_object_t cardano_json_object_t;
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_json_object_t* cardano_json_object_parse(const char* json, size_t size);
+
+/**
+ * \brief Serializes a JSON object into a JSON string.
+ *
+ * This function takes a JSON object and converts it into its JSON string representation.
+ * The resulting string is valid JSON and encoded in UTF-8. The caller must ensure the
+ * JSON object is valid and properly initialized before calling this function.
+ *
+ * \param[in] json_object A pointer to the JSON object to be serialized. Must not be NULL.
+ * \param[in] format The format to use when serializing the JSON object.
+ * \param[out] length A pointer to a size_t variable where the length of the resulting JSON
+ *                    string will be stored (excluding the null terminator). Must not be NULL.
+ *
+ * \return A pointer to a null-terminated UTF-8 JSON string representing the serialized object.
+ *         This points to an internal buffer and must not be modified or freed by the caller. The
+ *         string is valid until the JSON object is released.
+ *
+ * \note If the function returns NULL, the value of \p length is undefined.
+ *
+ * \code{.c}
+ * cardano_json_object_t* obj = ...
+ * size_t length = 0;
+ *
+ * const char* json_string = cardano_json_object_to_json_string(obj, CARDANO_JSON_FORMAT_COMPACT, &length);
+ *
+ * if (json_string != NULL)
+ * {
+ *   printf("JSON: %s\n", json_string);
+ *   printf("Length: %zu\n", length);
+ * }
+ * else
+ * {
+ *   printf("Failed to serialize JSON object.\n");
+ * }
+ *
+ * cardano_json_object_unref(&obj);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const char* cardano_json_object_to_json_string(
+  cardano_json_object_t* json_object,
+  cardano_json_format_t  format,
+  size_t*                length);
 
 /**
  * \brief Retrieves the type of a JSON object.

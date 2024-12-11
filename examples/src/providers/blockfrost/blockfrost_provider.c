@@ -21,6 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/json/json_object.h>
+
 #include "../provider_factory.h"
 
 #include "../../utils/utils.h"
@@ -28,7 +30,6 @@
 #include "blockfrost/common/blockfrost_url_builders.h"
 #include "blockfrost/parsers/blockfrost_parsers.h"
 
-#include <json-c/json.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -362,24 +363,21 @@ get_unspent_output_by_nft(
     return CARDANO_ERROR_INVALID_HTTP_REQUEST;
   }
 
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, (const char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
+  cardano_json_object_t* parsed_json = cardano_json_object_parse((const char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
 
   if (parsed_json == NULL)
   {
     cardano_buffer_unref(&response_buffer);
-    json_tokener_free(tok);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  size_t array_len = json_object_array_length(parsed_json);
+  size_t array_len = cardano_json_object_array_get_length(parsed_json);
 
   if (array_len == 0U)
   {
     cardano_buffer_unref(&response_buffer);
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     cardano_utils_set_error_message(provider_impl, "No asset found for the specified asset ID");
 
@@ -389,37 +387,38 @@ get_unspent_output_by_nft(
   if (array_len != 1U)
   {
     cardano_buffer_unref(&response_buffer);
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     cardano_utils_set_error_message(provider_impl, "Asset is not an NFT. Multiple assets found for the specified asset ID");
 
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  struct json_object* address_with_count_obj = json_object_array_get_idx(parsed_json, 0);
+  cardano_json_object_t* address_with_count_obj = cardano_json_object_array_get(parsed_json, 0);
 
   if (address_with_count_obj == NULL)
   {
     cardano_buffer_unref(&response_buffer);
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* address_obj = NULL;
-  cardano_address_t*  address     = NULL;
+  cardano_json_object_t* address_obj = NULL;
+  cardano_address_t*     address     = NULL;
 
-  if (json_object_object_get_ex(address_with_count_obj, "address", &address_obj))
+  if (cardano_json_object_get_ex(address_with_count_obj, "address", 7, &address_obj))
   {
-    result = cardano_address_from_string(json_object_get_string(address_obj), json_object_get_string_len(address_obj), &address);
+    size_t      address_len = 0U;
+    const char* address_str = cardano_json_object_get_string(address_obj, &address_len);
+
+    result = cardano_address_from_string(address_str, address_len - 1U, &address);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_buffer_unref(&response_buffer);
-      json_object_put(parsed_json);
-      json_tokener_free(tok);
+      cardano_json_object_unref(&parsed_json);
+
       return result;
     }
   }
@@ -427,8 +426,7 @@ get_unspent_output_by_nft(
   if (address == NULL)
   {
     cardano_buffer_unref(&response_buffer);
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
@@ -436,8 +434,7 @@ get_unspent_output_by_nft(
   cardano_utxo_list_t* utxo_list = NULL;
   result                         = get_unspent_outputs_with_asset(provider_impl, address, asset_id, &utxo_list);
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -566,26 +563,23 @@ resolve_unspent_outputs(
       return CARDANO_ERROR_INVALID_HTTP_REQUEST;
     }
 
-    struct json_tokener* tok         = json_tokener_new();
-    struct json_object*  parsed_json = json_tokener_parse_ex(tok, (const char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
+    cardano_json_object_t* parsed_json = cardano_json_object_parse((const char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
 
     if (parsed_json == NULL)
     {
       cardano_buffer_unref(&response_buffer);
-      json_tokener_free(tok);
       cardano_utxo_list_unref(utxo_list);
       free(tx_id_hex);
 
       return CARDANO_ERROR_INVALID_JSON;
     }
 
-    struct json_object* tx_outputs = NULL;
+    cardano_json_object_t* tx_outputs = NULL;
 
-    if (!json_object_object_get_ex(parsed_json, "outputs", &tx_outputs))
+    if (!cardano_json_object_get_ex(parsed_json, "outputs", 7, &tx_outputs))
     {
       cardano_buffer_unref(&response_buffer);
-      json_object_put(parsed_json);
-      json_tokener_free(tok);
+      cardano_json_object_unref(&parsed_json);
       cardano_utxo_list_unref(utxo_list);
       free(tx_id_hex);
 
@@ -593,16 +587,15 @@ resolve_unspent_outputs(
     }
 
     size_t      json_len    = 0;
-    const char* json_string = json_object_to_json_string_length(tx_outputs, JSON_C_TO_STRING_PLAIN, &json_len);
+    const char* json_string = cardano_json_object_to_json_string(tx_outputs, CARDANO_JSON_FORMAT_COMPACT, &json_len);
 
     cardano_utxo_list_t* tmp_utxo_list = NULL;
-    result                             = cardano_blockfrost_parse_tx_unspent_outputs(provider_impl, json_string, json_len, tx_id_hex, tx_id_hex_size - 1, &tmp_utxo_list);
+    result                             = cardano_blockfrost_parse_tx_unspent_outputs(provider_impl, json_string, json_len - 1U, tx_id_hex, tx_id_hex_size - 1, &tmp_utxo_list);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_buffer_unref(&response_buffer);
-      json_object_put(parsed_json);
-      json_tokener_free(tok);
+      cardano_json_object_unref(&parsed_json);
       cardano_utxo_list_unref(utxo_list);
       cardano_utxo_list_unref(&tmp_utxo_list);
       free(tx_id_hex);
@@ -620,8 +613,7 @@ resolve_unspent_outputs(
       if (result != CARDANO_SUCCESS)
       {
         cardano_buffer_unref(&response_buffer);
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+        cardano_json_object_unref(&parsed_json);
         cardano_utxo_list_unref(utxo_list);
         cardano_utxo_list_unref(&tmp_utxo_list);
         free(tx_id_hex);
@@ -635,8 +627,7 @@ resolve_unspent_outputs(
       if (out_tx_in == NULL)
       {
         cardano_buffer_unref(&response_buffer);
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+        cardano_json_object_unref(&parsed_json);
         cardano_utxo_list_unref(utxo_list);
         cardano_utxo_list_unref(&tmp_utxo_list);
         free(tx_id_hex);
@@ -651,8 +642,7 @@ resolve_unspent_outputs(
         if (result != CARDANO_SUCCESS)
         {
           cardano_buffer_unref(&response_buffer);
-          json_object_put(parsed_json);
-          json_tokener_free(tok);
+          cardano_json_object_unref(&parsed_json);
           cardano_utxo_list_unref(utxo_list);
           cardano_utxo_list_unref(&tmp_utxo_list);
           free(tx_id_hex);
@@ -667,8 +657,7 @@ resolve_unspent_outputs(
     cardano_buffer_unref(&response_buffer);
     cardano_utxo_list_unref(&tmp_utxo_list);
     free(tx_id_hex);
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
   }
 
   return result;
@@ -958,12 +947,10 @@ post_transaction_to_chain(
     return CARDANO_ERROR_INVALID_HTTP_REQUEST;
   }
 
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, (char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
+  cardano_json_object_t* parsed_json = cardano_json_object_parse((char*)cardano_buffer_get_data(response_buffer), (int32_t)cardano_buffer_get_size(response_buffer));
 
   if (parsed_json == NULL)
   {
-    json_tokener_free(tok);
     cardano_buffer_unref(&response_buffer);
 
     cardano_utils_set_error_message(provider_impl, "Failed to parse JSON response");
@@ -971,10 +958,8 @@ post_transaction_to_chain(
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  if (!json_object_is_type(parsed_json, json_type_string))
+  if (cardano_json_object_get_type(parsed_json) != CARDANO_JSON_OBJECT_TYPE_STRING)
   {
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
     cardano_buffer_unref(&response_buffer);
 
     cardano_utils_set_error_message(provider_impl, "Invalid JSON response");
@@ -982,15 +967,14 @@ post_transaction_to_chain(
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* hex_string = json_object_get_string(parsed_json);
-  size_t      hex_len    = cardano_utils_safe_strlen(hex_string, 256U);
+  size_t      hex_len    = 0U;
+  const char* hex_string = cardano_json_object_get_string(parsed_json, &hex_len);
 
-  result = cardano_blake2b_hash_from_hex(hex_string, hex_len, tx_id);
+  result = cardano_blake2b_hash_from_hex(hex_string, hex_len - 1, tx_id);
 
   cardano_buffer_unref(&response_buffer);
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return result;
 }
