@@ -202,7 +202,7 @@ TEST(cardano_script_n_of_k_from_json, returnsErrorIfMemoryNOfKocationFails)
   cardano_script_n_of_k_t* n_of_k = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_n_of_k_from_json(AT_LEAST_SCRIPT2, strlen(AT_LEAST_SCRIPT2), &n_of_k), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_script_n_of_k_from_json(AT_LEAST_SCRIPT2, strlen(AT_LEAST_SCRIPT2), &n_of_k), CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

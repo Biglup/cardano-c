@@ -39,7 +39,7 @@
 #include "../../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -515,7 +515,7 @@ cardano_native_script_to_cbor(
 }
 
 cardano_error_t
-cardano_native_script_from_json(const char* json, size_t json_size, cardano_native_script_t** native_script)
+cardano_native_script_from_json(const char* json, const size_t json_size, cardano_native_script_t** native_script)
 {
   if (json == NULL)
   {
@@ -527,7 +527,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* json_object = json_tokener_parse(json);
+  cardano_json_object_t* json_object = cardano_json_object_parse(json, json_size);
 
   if (json_object == NULL)
   {
@@ -537,21 +537,21 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
   cardano_error_t          result = CARDANO_SUCCESS;
   cardano_native_script_t* data   = NULL;
 
-  struct json_object* type = NULL;
+  cardano_json_object_t* type = NULL;
 
-  if (!json_object_object_get_ex(json_object, "type", &type))
+  if (!cardano_json_object_get_ex(json_object, "type", 4, &type))
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     cardano_native_script_unref(&data);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type_string = json_object_get_string(type);
+  const char* type_string = cardano_json_object_get_string(type, NULL);
 
   if (type_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     cardano_native_script_unref(&data);
 
     return CARDANO_ERROR_INVALID_JSON;
@@ -564,7 +564,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -579,7 +579,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -594,7 +594,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -609,7 +609,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -624,7 +624,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -639,7 +639,7 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       cardano_native_script_unref(&data);
       return result;
     }
@@ -649,12 +649,12 @@ cardano_native_script_from_json(const char* json, size_t json_size, cardano_nati
   }
   else
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     cardano_native_script_unref(&data);
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
   }
 
-  json_object_put(json_object);
+  cardano_json_object_unref(&json_object);
 
   if (result != CARDANO_SUCCESS)
   {

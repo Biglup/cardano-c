@@ -30,7 +30,7 @@
 #include "../../collections/array.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -216,7 +216,7 @@ cardano_native_script_list_from_json(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* root = json_tokener_parse(json);
+  cardano_json_object_t* root = cardano_json_object_parse(json, json_size);
 
   if (root == NULL)
   {
@@ -228,48 +228,54 @@ cardano_native_script_list_from_json(
 
   if (result != CARDANO_SUCCESS)
   {
-    json_object_put(root);
+    cardano_json_object_unref(&root);
     return result;
   }
 
-  struct json_object* array = NULL;
+  cardano_json_object_t* array = NULL;
 
-  if (!json_object_object_get_ex(root, "scripts", &array))
+  if (!cardano_json_object_get_ex(root, "scripts", 7, &array))
   {
     cardano_native_script_list_unref(&list);
-    json_object_put(root);
+    cardano_json_object_unref(&root);
+
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  if (!json_object_is_type(array, json_type_array))
+  if (cardano_json_object_get_type(array) != CARDANO_JSON_OBJECT_TYPE_ARRAY)
   {
     cardano_native_script_list_unref(&list);
-    json_object_put(root);
+    cardano_json_object_unref(&root);
+
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  for (size_t i = 0U; i < json_object_array_length(array); ++i)
+  const size_t array_size = cardano_json_object_array_get_length(array);
+
+  for (size_t i = 0U; i < array_size; ++i)
   {
-    struct json_object* element = json_object_array_get_idx(array, i);
+    cardano_json_object_t* element = cardano_json_object_array_get_ex(array, i);
 
     if (element == NULL)
     {
       cardano_native_script_list_unref(&list);
-      json_object_put(root);
+      cardano_json_object_unref(&root);
+
       return CARDANO_ERROR_INVALID_JSON;
     }
 
     cardano_native_script_t* script = NULL;
 
     size_t      json_length  = 0;
-    const char* element_json = json_object_to_json_string_length(element, JSON_C_TO_STRING_PLAIN, &json_length);
+    const char* element_json = cardano_json_object_to_json_string(element, CARDANO_JSON_FORMAT_COMPACT, &json_length);
 
-    result = cardano_native_script_from_json(element_json, json_length, &script);
+    result = cardano_native_script_from_json(element_json, json_length - 1U, &script);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_native_script_list_unref(&list);
-      json_object_put(root);
+      cardano_json_object_unref(&root);
+
       return result;
     }
 
@@ -280,12 +286,13 @@ cardano_native_script_list_from_json(
     if (result != CARDANO_SUCCESS)
     {
       cardano_native_script_list_unref(&list);
-      json_object_put(root);
+      cardano_json_object_unref(&root);
+
       return result;
     }
   }
 
-  json_object_put(root);
+  cardano_json_object_unref(&root);
 
   *native_script_list = list;
 

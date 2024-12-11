@@ -30,10 +30,9 @@
 
 #include "../../allocators.h"
 #include "../../cbor/cbor_validation.h"
-#include "../../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -220,26 +219,26 @@ cardano_script_any_from_json(const char* json, size_t json_size, cardano_script_
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* json_object = json_tokener_parse(json);
+  cardano_json_object_t* json_object = cardano_json_object_parse(json, json_size);
 
   if (json_object == NULL)
   {
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* type = NULL;
+  cardano_json_object_t* type = NULL;
 
-  if (!json_object_object_get_ex(json_object, "type", &type))
+  if (!cardano_json_object_get_ex(json_object, "type", 4, &type))
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type_string = json_object_get_string(type);
+  const char* type_string = cardano_json_object_get_string(type, NULL);
 
   if (type_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
@@ -251,17 +250,17 @@ cardano_script_any_from_json(const char* json, size_t json_size, cardano_script_
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
       return result;
     }
   }
   else
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
   }
 
-  json_object_put(json_object);
+  cardano_json_object_unref(&json_object);
 
   const cardano_error_t create_any_new_result = cardano_script_any_new(native_scripts, native_script);
   cardano_native_script_list_unref(&native_scripts);

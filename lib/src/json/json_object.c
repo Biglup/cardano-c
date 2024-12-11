@@ -24,6 +24,7 @@
 #include <cardano/buffer.h>
 #include <cardano/json/json_object.h>
 #include <cardano/json/json_object_type.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/object.h>
 
 #include "../allocators.h"
@@ -47,8 +48,8 @@ cardano_json_object_parse(const char* json, const size_t size)
   cardano_json_parse_context_t ctx;
 
   ctx.input  = json;
-  ctx.length = size;
-  ctx.offset = 0U;
+   ctx.length = size;
+   ctx.offset = 0U;
   ctx.depth  = 0U;
 
   cardano_json_object_t* root = cardano_parse_value(&ctx);
@@ -68,6 +69,69 @@ cardano_json_object_parse(const char* json, const size_t size)
   }
 
   return root;
+}
+
+const char*
+cardano_json_object_to_json_string(
+  cardano_json_object_t*      json_object,
+  const cardano_json_format_t format,
+  size_t*                     length)
+{
+  if (json_object == NULL)
+  {
+    return NULL;
+  }
+
+  if (json_object->json_string != NULL)
+  {
+    if (length != NULL)
+    {
+      *length = json_object->json_string_length;
+    }
+
+    return json_object->json_string;
+  }
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(format);
+
+  if (writer == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_json_writer_write_object(writer, json_object);
+
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+
+  if (encoded_size == 0U)
+  {
+    cardano_json_writer_unref(&writer);
+    return NULL;
+  }
+
+  char* buffer = _cardano_malloc(encoded_size);
+  CARDANO_UNUSED(memset(buffer, 0, encoded_size));
+
+  cardano_error_t result = cardano_json_writer_encode(writer, buffer, encoded_size);
+
+  cardano_json_writer_unref(&writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    _cardano_free(buffer);
+
+    return NULL;
+  }
+
+  json_object->json_string        = buffer;
+  json_object->json_string_length = encoded_size;
+
+  if (length != NULL)
+  {
+    *length = encoded_size;
+  }
+
+  return buffer;
 }
 
 cardano_json_object_type_t

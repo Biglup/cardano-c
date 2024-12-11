@@ -49,17 +49,19 @@
  */
 typedef struct cardano_json_object_t
 {
-    cardano_object_t           base;         /**< Reference counting and error handling base. */
-    cardano_json_object_type_t type;         /**< Type of the JSON value. */
-    cardano_array_t*           pairs;        /**< Array of key-value pairs for objects. */
-    cardano_array_t*           array;        /**< Array of elements for JSON arrays. */
-    cardano_buffer_t*          string;       /**< Buffer holding the UTF-8 string value. */
-    bool                       is_real;      /**< Indicates if the number is a floating-point value. */
-    bool                       is_negative;  /**< Indicates if the number is negative. */
-    int64_t                    int_value;    /**< Signed integer value for JSON numbers. */
-    uint64_t                   uint_value;   /**< Unsigned integer value for JSON numbers. */
-    double                     double_value; /**< Floating-point value for JSON numbers. */
-    bool                       bool_value;   /**< Boolean value for JSON booleans. */
+    cardano_object_t           base;               /**< Reference counting and error handling base. */
+    cardano_json_object_type_t type;               /**< Type of the JSON value. */
+    cardano_array_t*           pairs;              /**< Array of key-value pairs for objects. */
+    cardano_array_t*           array;              /**< Array of elements for JSON arrays. */
+    cardano_buffer_t*          string;             /**< Buffer holding the UTF-8 string value. */
+    bool                       is_real;            /**< Indicates if the number is a floating-point value. */
+    bool                       is_negative;        /**< Indicates if the number is negative. */
+    int64_t                    int_value;          /**< Signed integer value for JSON numbers. */
+    uint64_t                   uint_value;         /**< Unsigned integer value for JSON numbers. */
+    double                     double_value;       /**< Floating-point value for JSON numbers. */
+    bool                       bool_value;         /**< Boolean value for JSON booleans. */
+    char*                      json_string;        /**< String representation of the JSON value. */
+    size_t                     json_string_length; /**< Length of the string representation. */
 
 } cardano_json_object_t;
 

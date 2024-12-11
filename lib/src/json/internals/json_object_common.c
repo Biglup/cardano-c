@@ -54,6 +54,11 @@ cardano_json_object_deallocate(void* object)
   cardano_array_unref(&json_object->pairs);
   cardano_array_unref(&json_object->array);
 
+  if (json_object->json_string != NULL)
+  {
+    _cardano_free(json_object->json_string);
+  }
+
   _cardano_free(json_object);
 }
 
@@ -89,18 +94,20 @@ cardano_json_object_new(void)
 
   if (object != NULL)
   {
-    object->base.ref_count   = 1U;
-    object->base.deallocator = cardano_json_object_deallocate;
-    object->type             = CARDANO_JSON_OBJECT_TYPE_NULL;
-    object->pairs            = NULL;
-    object->array            = NULL;
-    object->string           = NULL;
-    object->int_value        = 0;
-    object->uint_value       = 0;
-    object->double_value     = 0.0;
-    object->bool_value       = false;
-    object->is_real          = false;
-    object->is_negative      = false;
+    object->base.ref_count     = 1U;
+    object->base.deallocator   = cardano_json_object_deallocate;
+    object->type               = CARDANO_JSON_OBJECT_TYPE_NULL;
+    object->pairs              = NULL;
+    object->array              = NULL;
+    object->string             = NULL;
+    object->int_value          = 0;
+    object->uint_value         = 0;
+    object->double_value       = 0.0;
+    object->bool_value         = false;
+    object->is_real            = false;
+    object->is_negative        = false;
+    object->json_string        = NULL;
+    object->json_string_length = 0U;
   }
 
   return object;

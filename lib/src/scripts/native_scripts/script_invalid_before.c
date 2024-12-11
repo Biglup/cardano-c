@@ -30,10 +30,9 @@
 
 #include "../../allocators.h"
 #include "../../cbor/cbor_validation.h"
-#include "../../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -215,50 +214,57 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* json_object = json_tokener_parse(json);
+  cardano_json_object_t* json_object = cardano_json_object_parse(json, json_size);
 
   if (json_object == NULL)
   {
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* type     = NULL;
-  bool                has_type = json_object_object_get_ex(json_object, "type", &type);
+  cardano_json_object_t* type     = NULL;
+  bool                   has_type = cardano_json_object_get_ex(json_object, "type", 4, &type);
 
   if (!has_type)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* slot_object = NULL;
+  cardano_json_object_t* slot_object = NULL;
 
-  if (!json_object_object_get_ex(json_object, "slot", &slot_object))
+  if (!cardano_json_object_get_ex(json_object, "slot", 4, &slot_object))
   {
-    json_object_put(json_object);
-
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type_string = json_object_get_string(type);
+  const char* type_string = cardano_json_object_get_string(type, NULL);
 
   if (type_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  size_t slot = json_object_get_uint64(slot_object);
+  size_t slot = 0U;
+
+  cardano_error_t result = cardano_json_object_get_uint(slot_object, &slot);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_json_object_unref(&json_object);
+    return result;
+  }
 
   if (strcmp(type_string, "before") != 0)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
   }
 
-  json_object_put(json_object);
+  cardano_json_object_unref(&json_object);
 
   return cardano_script_invalid_before_new(slot, native_script);
 }

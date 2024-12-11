@@ -9,6 +9,10 @@ JSON Object
 
 ------------
 
+.. doxygenfunction:: cardano_json_object_to_json_string
+
+------------
+
 .. doxygenfunction:: cardano_json_object_get_type
 
 ------------
