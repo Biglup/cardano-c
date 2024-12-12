@@ -1,4 +1,7 @@
-Next (V1.1.0)
+Next (V1.x.x)
+---------------------
+
+V1.1.0
 ---------------------
 - Added `cardano_json_writer_t` to write JSON to a buffer.
 - Added `cardano_json_object_t` to parse JSON from a strings.
