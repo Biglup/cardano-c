@@ -33,7 +33,7 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 - No shared global state - threading friendly
 - Proper handling of UTF-8
 - Extensive documentation and test suite
-- It has no runtime dependencies (The library depends on [libsodium](https://github.com/jedisct1/libsodium), [libjsonc](https://github.com/json-c/json-c) and [libgmp](https://gmplib.org/), but they are all statically linked)
+- It has no runtime dependencies (The library depends on [libsodium](https://github.com/jedisct1/libsodium) and [libgmp](https://gmplib.org/), but they are all statically linked)
 
 ## Basic Example
 
