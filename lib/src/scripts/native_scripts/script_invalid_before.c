@@ -247,7 +247,7 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  size_t slot = 0U;
+  uint64_t slot = 0U;
 
   cardano_error_t result = cardano_json_object_get_uint(slot_object, &slot);
 
