@@ -30,10 +30,9 @@
 
 #include "../../allocators.h"
 #include "../../cbor/cbor_validation.h"
-#include "../../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -235,70 +234,73 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* json_object = json_tokener_parse(json);
+  cardano_json_object_t* json_object = cardano_json_object_parse(json, json_size);
 
   if (json_object == NULL)
   {
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* type     = NULL;
-  bool                has_type = json_object_object_get_ex(json_object, "type", &type);
+  cardano_json_object_t* type     = NULL;
+  bool                   has_type = cardano_json_object_get_ex(json_object, "type", 4, &type);
 
   if (!has_type)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
+
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* req = NULL;
+  cardano_json_object_t* req = NULL;
 
-  if (!json_object_object_get_ex(json_object, "required", &req))
+  if (!cardano_json_object_get_ex(json_object, "required", 8, &req))
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type_string = json_object_get_string(type);
+  const char* type_string = cardano_json_object_get_string(type, NULL);
 
   if (type_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  size_t required = json_object_get_uint64(req);
+  size_t required = 0U;
 
-  if (required == 0U)
+  cardano_error_t result = cardano_json_object_get_uint(req, &required);
+
+  if (result != CARDANO_SUCCESS)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
-    return CARDANO_ERROR_INVALID_JSON;
+    return result;
   }
 
   cardano_native_script_list_t* native_scripts = NULL;
 
   if (strcmp(type_string, "atLeast") == 0)
   {
-    cardano_error_t result = cardano_native_script_list_from_json(json, json_size, &native_scripts);
+    result = cardano_native_script_list_from_json(json, json_size, &native_scripts);
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(json_object);
+      cardano_json_object_unref(&json_object);
 
       return result;
     }
   }
   else
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
   }
 
-  json_object_put(json_object);
+  cardano_json_object_unref(&json_object);
 
   const cardano_error_t create_n_of_k_new_result = cardano_script_n_of_k_new(native_scripts, required, native_script);
   cardano_native_script_list_unref(&native_scripts);

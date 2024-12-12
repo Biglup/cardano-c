@@ -314,7 +314,7 @@ TEST(cardano_native_script_list_from_json, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_native_script_list_from_json("[]", 2, &list);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -344,7 +344,7 @@ TEST(cardano_native_script_list_from_json, returnsErrorIfMemoryAllocationFails2)
   cardano_error_t result = cardano_native_script_list_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &list);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);

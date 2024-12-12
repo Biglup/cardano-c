@@ -21,9 +21,12 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/json/json_object.h>
+
 #include "blockfrost_parsers.h"
 #include "cardano/witness_set/redeemer_tag.h"
 #include "utils.h"
+#include <cardano/json/json_writer.h>
 
 #include <cardano/scripts/native_scripts/native_script.h>
 #include <cardano/scripts/native_scripts/script_all.h>
@@ -33,7 +36,6 @@
 #include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
 
-#include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,13 +47,13 @@
  * This function takes a native script clause, which can be a part of a multi-sig script or any other native script type,
  * and converts it into a JSON format. The serialized clause is then added to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized clause will be added. This parameter must not be NULL.
+ * \param[in] writer A pointer to an initialized \ref cardano_json_writer_t object used for writing JSON data. This parameter must not be NULL.
  * \param[in] script A pointer to a \ref cardano_native_script_t representing the native script clause that is to be serialized. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the clause was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
-static cardano_error_t clause_to_json(struct json_object* json_obj, cardano_native_script_t* script);
+static cardano_error_t clause_to_json(cardano_json_writer_t* writer, cardano_native_script_t* script);
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -61,17 +63,20 @@ static cardano_error_t clause_to_json(struct json_object* json_obj, cardano_nati
  * This function converts a signature clause, typically used in a native script to represent a required signature,
  * into a JSON format and appends it to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized signature clause will be added. This parameter must not be NULL.
+ * \param[in] writer A pointer to an initialized JSON writer object where the serialized clause will be added. This parameter must not be NULL.
  * \param[in] from A string representing the public key or address that is required to sign the transaction. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the signature clause was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
-clause_signature_to_json(struct json_object* json_obj, const char* from)
+clause_signature_to_json(cardano_json_writer_t* writer, const char* from)
 {
-  json_object_object_add(json_obj, "clause", json_object_new_string("signature"));
-  json_object_object_add(json_obj, "from", json_object_new_string(from));
+  cardano_json_writer_write_property_name(writer, "clause", strlen("clause"));
+  cardano_json_writer_write_string(writer, "signature", strlen("signature"));
+
+  cardano_json_writer_write_property_name(writer, "from", strlen("from"));
+  cardano_json_writer_write_string(writer, from, strlen(from));
 
   return CARDANO_SUCCESS;
 }
@@ -82,7 +87,7 @@ clause_signature_to_json(struct json_object* json_obj, const char* from)
  * This function converts a clause of type "before" or "after" (which represents time-locking conditions in a native script)
  * into a JSON format and appends it to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized clause will be added. This parameter must not be NULL.
+ * \param[in] writer A pointer to an initialized JSON writer object where the serialized clause will be added. This parameter must not be NULL.
  * \param[in] clause A string representing the type of clause, either "before" or "after". This parameter must not be NULL.
  * \param[in] slot A uint64_t representing the slot number used in the "before" or "after" clause. This parameter specifies the time-locking condition.
  *
@@ -90,10 +95,14 @@ clause_signature_to_json(struct json_object* json_obj, const char* from)
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
-clause_before_after_to_json(struct json_object* json_obj, const char* clause, const uint64_t slot)
+clause_before_after_to_json(cardano_json_writer_t* writer, const char* clause, const uint64_t slot)
 {
-  json_object_object_add(json_obj, "clause", json_object_new_string(clause));
-  json_object_object_add(json_obj, "slot", json_object_new_uint64(slot));
+  cardano_json_writer_write_property_name(writer, "clause", strlen("clause"));
+  cardano_json_writer_write_string(writer, clause, strlen(clause));
+
+  cardano_json_writer_write_property_name(writer, "slot", strlen("slot"));
+  cardano_json_writer_write_uint(writer, slot);
+
   return CARDANO_SUCCESS;
 }
 
@@ -103,7 +112,7 @@ clause_before_after_to_json(struct json_object* json_obj, const char* clause, co
  * This function converts a recursive clause (such as "all", "any", or "atLeast") from a \ref cardano_native_script_list_t
  * into a JSON format and appends it to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized recursive clause will be added. This parameter must not be NULL.
+ * \param[in] writer A pointer to an initialized JSON writer object where the serialized clause will be added. This parameter must not be NULL.
  * \param[in] clause A string representing the type of recursive clause (e.g., "all", "any", "atLeast"). This parameter must not be NULL.
  * \param[in] from A pointer to the \ref cardano_native_script_list_t containing the scripts to be serialized. This parameter must not be NULL.
  * \param[in] at_least The "atLeast" clause value. This parameter is used only if the clause is of type "atLeast".
@@ -113,20 +122,23 @@ clause_before_after_to_json(struct json_object* json_obj, const char* clause, co
  */
 static cardano_error_t
 clause_recursive_to_json(
-  struct json_object*           json_obj,
+  cardano_json_writer_t*        writer,
   const char*                   clause,
   cardano_native_script_list_t* from,
   const uint64_t                at_least)
 {
-  json_object_object_add(json_obj, "clause", json_object_new_string(clause));
+  cardano_json_writer_write_property_name(writer, "clause", strlen("clause"));
+  cardano_json_writer_write_string(writer, clause, strlen(clause));
 
   if (at_least > 0U)
   {
-    json_object_object_add(json_obj, "atLeast", json_object_new_uint64(at_least));
+    cardano_json_writer_write_property_name(writer, "atLeast", strlen("atLeast"));
+    cardano_json_writer_write_uint(writer, at_least);
   }
 
-  struct json_object* from_array = json_object_new_array();
-  const size_t        from_len   = cardano_native_script_list_get_length(from);
+  cardano_json_writer_write_property_name(writer, "from", strlen("from"));
+  cardano_json_writer_write_start_array(writer);
+  const size_t from_len = cardano_native_script_list_get_length(from);
 
   for (size_t i = 0U; i < from_len; ++i)
   {
@@ -137,21 +149,19 @@ clause_recursive_to_json(
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(from_array);
       return result;
     }
 
-    struct json_object* sub_script = json_object_new_object();
-    result                         = clause_to_json(sub_script, native_script);
+    result = clause_to_json(writer, native_script);
+
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(sub_script);
       return result;
     }
-    json_object_array_add(from_array, sub_script);
   }
 
-  json_object_object_add(json_obj, "from", from_array);
+  cardano_json_writer_write_end_array(writer);
+
   return CARDANO_SUCCESS;
 }
 
@@ -161,14 +171,14 @@ clause_recursive_to_json(
  * This function converts a specific clause of a \ref cardano_native_script_t object into a JSON format
  * and appends it to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized clause will be added. This parameter must not be NULL.
+ * \param[in] writer A pointer to the initialized \ref cardano_json_writer_t object used for writing JSON data. This parameter must not be NULL.
  * \param[in] script A pointer to the \ref cardano_native_script_t object containing the clause to serialize. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the clause was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
-clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
+clause_to_json(cardano_json_writer_t* writer, cardano_native_script_t* script)
 {
   cardano_native_script_type_t type   = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_PUBKEY;
   cardano_error_t              result = cardano_native_script_get_type(script, &type);
@@ -177,6 +187,8 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
   {
     return result;
   }
+
+  cardano_json_writer_write_start_object(writer);
 
   switch (type)
   {
@@ -220,10 +232,11 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
         return result;
       }
 
-      result = clause_signature_to_json(json_obj, hash_str);
+      result = clause_signature_to_json(writer, hash_str);
 
       free(hash_str);
 
+      cardano_json_writer_write_end_object(writer);
       return result;
     }
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
@@ -246,8 +259,9 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
         return result;
       }
 
-      result = clause_before_after_to_json(json_obj, "before", slot);
+      result = clause_before_after_to_json(writer, "before", slot);
 
+      cardano_json_writer_write_end_object(writer);
       return result;
     }
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER:
@@ -270,8 +284,9 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
         return result;
       }
 
-      result = clause_before_after_to_json(json_obj, "after", slot);
+      result = clause_before_after_to_json(writer, "after", slot);
 
+      cardano_json_writer_write_end_object(writer);
       return result;
     }
     case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ANY_OF:
@@ -296,7 +311,7 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
         return result;
       }
 
-      return clause_recursive_to_json(json_obj, "any", from, 0);
+      return clause_recursive_to_json(writer, "any", from, 0);
     }
     case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF:
     {
@@ -320,7 +335,7 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
         return result;
       }
 
-      return clause_recursive_to_json(json_obj, "all", from, 0);
+      return clause_recursive_to_json(writer, "all", from, 0);
     }
     case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_N_OF_K:
     {
@@ -346,7 +361,7 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
 
       uint64_t at_least = cardano_script_n_of_k_get_required(n_of_k_script);
 
-      return clause_recursive_to_json(json_obj, "n_of_k", from, at_least);
+      return clause_recursive_to_json(writer, "n_of_k", from, at_least);
     }
     default:
       return CARDANO_ERROR_INVALID_ARGUMENT;
@@ -359,28 +374,29 @@ clause_to_json(struct json_object* json_obj, cardano_native_script_t* script)
  * This function serializes the given \ref cardano_native_script_t object, which represents a native script,
  * into a JSON representation and appends it to the provided JSON object.
  *
- * \param[in] json_obj A pointer to an initialized JSON object where the serialized native script will be appended. This parameter must not be NULL.
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t object used for writing JSON data. This parameter must not be NULL.
  * \param[in] script A pointer to the \ref cardano_native_script_t object representing the native script. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
-script_native_to_json(struct json_object* json_obj, cardano_native_script_t* script)
+script_native_to_json(cardano_json_writer_t* writer, cardano_native_script_t* script)
 {
-  struct json_object* json_clause_obj = json_object_new_object();
-  cardano_error_t     result          = clause_to_json(json_clause_obj, script);
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "script", strlen("script"));
+  cardano_json_writer_write_property_name(writer, "language", strlen("language"));
+  cardano_json_writer_write_string(writer, "native", strlen("native"));
+
+  cardano_json_writer_write_property_name(writer, "json", strlen("json"));
+  cardano_error_t result = clause_to_json(writer, script);
 
   if (result != CARDANO_SUCCESS)
   {
-    json_object_put(json_clause_obj);
     return result;
   }
 
-  struct json_object* script_object = json_object_new_object();
-  json_object_object_add(script_object, "language", json_object_new_string("native"));
-  json_object_object_add(script_object, "json", json_clause_obj);
-  json_object_object_add(json_obj, "script", script_object);
+  cardano_json_writer_write_end_object(writer);
 
   return CARDANO_SUCCESS;
 }
@@ -392,7 +408,7 @@ script_native_to_json(struct json_object* json_obj, cardano_native_script_t* scr
  * into a JSON representation and appends it to the provided JSON object.
  *
  * \param[in] input A pointer to the \ref cardano_transaction_input_t object representing the transaction input. This parameter must not be NULL.
- * \param[out] output_obj A pointer to an initialized JSON object where the serialized transaction input will be appended. This parameter must not be NULL.
+ * \param[out] writer A pointer to the initialized \ref cardano_json_writer_t object where the serialized transaction input will be added. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the input was successfully serialized,
  * or an appropriate error code if serialization failed.
@@ -400,7 +416,7 @@ script_native_to_json(struct json_object* json_obj, cardano_native_script_t* scr
 static cardano_error_t
 transaction_input_to_json(
   cardano_transaction_input_t* input,
-  struct json_object*          output_obj)
+  cardano_json_writer_t*       writer)
 {
   const uint64_t          index = cardano_transaction_input_get_index(input);
   cardano_blake2b_hash_t* hash  = cardano_transaction_input_get_id(input);
@@ -423,18 +439,11 @@ transaction_input_to_json(
     return result;
   }
 
-  struct json_object* transaction_obj = json_object_new_object();
+  cardano_json_writer_write_property_name(writer, "id", strlen("id"));
+  cardano_json_writer_write_string(writer, hash_str, strlen(hash_str));
 
-  if (!transaction_obj)
-  {
-    free(hash_str);
-
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  json_object_object_add(transaction_obj, "id", json_object_new_string(hash_str));
-  json_object_object_add(output_obj, "index", json_object_new_uint64(index));
-  json_object_object_add(output_obj, "transaction", transaction_obj);
+  cardano_json_writer_write_property_name(writer, "index", strlen("index"));
+  cardano_json_writer_write_uint(writer, index);
 
   free(hash_str);
 
@@ -448,46 +457,35 @@ transaction_input_to_json(
  * into a JSON representation and appends it to the provided JSON object.
  *
  * \param[in] value A pointer to the \ref cardano_value_t object representing the transaction value. This parameter must not be NULL.
- * \param[out] final_obj A pointer to an initialized JSON object where the serialized transaction value will be appended. This parameter must not be NULL.
+ * \param[out] writer A pointer to the initialized \ref cardano_json_writer_t object where the serialized transaction value will be added. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the value was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
 transaction_value_to_json(
-  cardano_value_t*    value,
-  struct json_object* final_obj)
+  cardano_value_t*       value,
+  cardano_json_writer_t* writer)
 {
   const uint64_t         lovelace    = cardano_value_get_coin(value);
   cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
 
   cardano_multi_asset_unref(&multi_asset);
 
-  struct json_object* ada_value_obj = json_object_new_object();
+  cardano_json_writer_write_property_name(writer, "value", strlen("value"));
+  cardano_json_writer_write_start_object(writer);
 
-  if (!ada_value_obj)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  json_object_object_add(ada_value_obj, "lovelace", json_object_new_uint64(lovelace));
-
-  struct json_object* tmp_obj = json_object_new_object();
-
-  if (!tmp_obj)
-  {
-    json_object_put(ada_value_obj);
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  json_object_object_add(tmp_obj, "ada", ada_value_obj);
+  cardano_json_writer_write_property_name(writer, "ada", strlen("ada"));
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "lovelace", strlen("lovelace"));
+  cardano_json_writer_write_uint(writer, lovelace);
+  cardano_json_writer_write_end_object(writer);
 
   cardano_policy_id_list_t* policy_id_list = NULL;
   cardano_error_t           result         = cardano_multi_asset_get_keys(multi_asset, &policy_id_list);
 
   if (result != CARDANO_SUCCESS)
   {
-    json_object_put(tmp_obj);
     return result;
   }
 
@@ -501,7 +499,6 @@ transaction_value_to_json(
     if (result != CARDANO_SUCCESS)
     {
       cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
 
       return result;
     }
@@ -513,7 +510,7 @@ transaction_value_to_json(
     {
       cardano_blake2b_hash_unref(&policy_id);
       cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
+
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
@@ -524,19 +521,11 @@ transaction_value_to_json(
     {
       free(policy_id_str);
       cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
       return result;
     }
 
-    struct json_object* policy_obj = json_object_new_object();
-
-    if (!policy_obj)
-    {
-      free(policy_id_str);
-      cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
+    cardano_json_writer_write_property_name(writer, policy_id_str, strlen(policy_id_str));
+    cardano_json_writer_write_start_object(writer);
 
     cardano_asset_name_map_t* assets = NULL;
     result                           = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
@@ -544,9 +533,7 @@ transaction_value_to_json(
     if (result != CARDANO_SUCCESS)
     {
       free(policy_id_str);
-      json_object_put(policy_obj);
       cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
 
       return result;
     }
@@ -558,9 +545,7 @@ transaction_value_to_json(
     {
       cardano_asset_name_map_unref(&assets);
       free(policy_id_str);
-      json_object_put(policy_obj);
       cardano_policy_id_list_unref(&policy_id_list);
-      json_object_put(tmp_obj);
       return result;
     }
 
@@ -576,9 +561,7 @@ transaction_value_to_json(
         cardano_asset_name_list_unref(&asset_names);
         cardano_asset_name_map_unref(&assets);
         free(policy_id_str);
-        json_object_put(policy_obj);
         cardano_policy_id_list_unref(&policy_id_list);
-        json_object_put(tmp_obj);
         return result;
       }
 
@@ -591,27 +574,27 @@ transaction_value_to_json(
         cardano_asset_name_list_unref(&asset_names);
         cardano_asset_name_map_unref(&assets);
         free(policy_id_str);
-        json_object_put(policy_obj);
         cardano_policy_id_list_unref(&policy_id_list);
-        json_object_put(tmp_obj);
 
         return result;
       }
 
       const char* asset_name_str = cardano_asset_name_get_hex(asset_name);
-      json_object_object_add(policy_obj, asset_name_str, json_object_new_int64(asset_quantity));
+
+      cardano_json_writer_write_property_name(writer, asset_name_str, strlen(asset_name_str));
+      cardano_json_writer_write_signed_int(writer, asset_quantity);
 
       cardano_asset_name_unref(&asset_name);
     }
 
-    json_object_object_add(tmp_obj, policy_id_str, policy_obj);
+    cardano_json_writer_write_end_object(writer);
 
     cardano_asset_name_list_unref(&asset_names);
     cardano_asset_name_map_unref(&assets);
     free(policy_id_str);
   }
 
-  json_object_object_add(final_obj, "value", tmp_obj);
+  cardano_json_writer_write_end_object(writer);
 
   cardano_policy_id_list_unref(&policy_id_list);
 
@@ -625,15 +608,15 @@ transaction_value_to_json(
  * The address is a fundamental part of a transaction output, representing the recipient of the funds.
  *
  * \param[in] address A pointer to the \ref cardano_address_t object representing the output address. This parameter must not be NULL.
- * \param[out] json_output A pointer to an initialized JSON object where the serialized address will be appended. This parameter must not be NULL.
+ * \param[out] writer A pointer to the initialized \ref cardano_json_writer_t object where the serialized address will be added. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the address was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
 transaction_output_address_to_json(
-  cardano_address_t*  address,
-  struct json_object* json_output)
+  cardano_address_t*     address,
+  cardano_json_writer_t* writer)
 {
   const char* bech32 = cardano_address_get_string(address);
 
@@ -642,7 +625,8 @@ transaction_output_address_to_json(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  json_object_object_add(json_output, "address", json_object_new_string(bech32));
+  cardano_json_writer_write_property_name(writer, "address", strlen("address"));
+  cardano_json_writer_write_string(writer, bech32, strlen(bech32));
 
   return CARDANO_SUCCESS;
 }
@@ -654,15 +638,15 @@ transaction_output_address_to_json(
  * The datum is a critical component of the output in a Plutus transaction, where it can be either inline or referenced by a hash.
  *
  * \param[in] datum A pointer to the \ref cardano_datum_t object that holds the datum to be serialized. This parameter must not be NULL.
- * \param[out] json_output A pointer to an initialized JSON object where the serialized datum will be appended. This parameter must not be NULL.
+ * \param[out] json_writer A pointer to the initialized \ref cardano_json_writer_t object where the serialized datum will be added. This parameter must not be NULL.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the datum was successfully serialized,
  * or an appropriate error code if serialization failed.
  */
 static cardano_error_t
 transaction_output_datum_to_json(
-  cardano_datum_t*    datum,
-  struct json_object* json_output)
+  cardano_datum_t*       datum,
+  cardano_json_writer_t* json_writer)
 {
   cardano_datum_type_t type   = CARDANO_DATUM_TYPE_DATA_HASH;
   cardano_error_t      result = cardano_datum_get_type(datum, &type);
@@ -678,7 +662,8 @@ transaction_output_datum_to_json(
     {
       const char* hash_str = cardano_datum_get_data_hash_hex(datum);
 
-      json_object_object_add(json_output, "datumHash", json_object_new_string(hash_str));
+      cardano_json_writer_write_property_name(json_writer, "datumHash", strlen("datumHash"));
+      cardano_json_writer_write_string(json_writer, hash_str, strlen(hash_str));
 
       break;
     }
@@ -731,7 +716,8 @@ transaction_output_datum_to_json(
         return result;
       }
 
-      json_object_object_add(json_output, "datum", json_object_new_string(cbor_str));
+      cardano_json_writer_write_property_name(json_writer, "datum", strlen("datum"));
+      cardano_json_writer_write_string(json_writer, cbor_str, strlen(cbor_str));
 
       free(cbor_str);
       cardano_cbor_writer_unref(&writer);
@@ -777,7 +763,7 @@ get_plutus_script_string(cardano_script_language_t language)
  * \param[in] language The \ref cardano_script_language_t representing the language of the Plutus script.
  *                     It determines the type of Plutus script (e.g., PlutusV1 or PlutusV2).
  * \param[in] script A pointer to the \ref cardano_script_t representing the Plutus script to be serialized. This must not be NULL.
- * \param[out] json_output A pointer to an initialized \ref json_object where the serialized script data will be added. This must not be NULL.
+ * \param[out] json_writer A pointer to an initialized \ref cardano_json_writer_t where the serialized script data will be added. This must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script was successfully serialized,
  * or an appropriate error code if an error occurred.
@@ -786,7 +772,7 @@ static cardano_error_t
 transaction_output_plutus_script_to_json(
   cardano_script_language_t language,
   cardano_script_t*         script,
-  struct json_object*       json_output)
+  cardano_json_writer_t*    json_writer)
 {
   cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
 
@@ -821,10 +807,16 @@ transaction_output_plutus_script_to_json(
     return result;
   }
 
-  struct json_object* script_object = json_object_new_object();
-  json_object_object_add(script_object, "language", json_object_new_string(get_plutus_script_string(language)));
-  json_object_object_add(script_object, "cbor", json_object_new_string(cbor_str));
-  json_object_object_add(json_output, "script", script_object);
+  cardano_json_writer_write_property_name(json_writer, "script", strlen("script"));
+  cardano_json_writer_write_start_object(json_writer);
+
+  cardano_json_writer_write_property_name(json_writer, "language", strlen("language"));
+  cardano_json_writer_write_string(json_writer, get_plutus_script_string(language), strlen(get_plutus_script_string(language)));
+
+  cardano_json_writer_write_property_name(json_writer, "cbor", strlen("cbor"));
+  cardano_json_writer_write_string(json_writer, cbor_str, strlen(cbor_str));
+
+  cardano_json_writer_write_end_object(json_writer);
 
   free(cbor_str);
   cardano_cbor_writer_unref(&writer);
@@ -838,15 +830,15 @@ transaction_output_plutus_script_to_json(
  * This function serializes the given \ref cardano_script_t into a JSON object representation, adding the result to the provided \c json_output object.
  *
  * \param[in] script A pointer to the \ref cardano_script_t representing the script to be serialized. This must not be NULL.
- * \param[out] json_output A pointer to an initialized \ref json_object where the serialized script data will be added. This must not be NULL.
+ * \param[out] json_writer A pointer to an initialized \ref cardano_json_writer_t where the serialized script data will be added. This must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the script was successfully serialized,
  * or an appropriate error code if an error occurred.
  */
 static cardano_error_t
 transaction_output_script_to_json(
-  cardano_script_t*   script,
-  struct json_object* json_output)
+  cardano_script_t*      script,
+  cardano_json_writer_t* json_writer)
 {
   cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
   cardano_error_t           result   = cardano_script_get_language(script, &language);
@@ -870,13 +862,13 @@ transaction_output_script_to_json(
         return result;
       }
 
-      return script_native_to_json(json_output, native_script);
+      return script_native_to_json(json_writer, native_script);
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
     {
-      return transaction_output_plutus_script_to_json(language, script, json_output);
+      return transaction_output_plutus_script_to_json(language, script, json_writer);
     }
     default:
     {
@@ -892,7 +884,7 @@ transaction_output_script_to_json(
  * The serialized transaction output will be added to the provided \c main_obj.
  *
  * \param[in] output A pointer to the \ref cardano_transaction_output_t representing the transaction output to be serialized. This must not be NULL.
- * \param[out] main_obj A pointer to an initialized \ref json_object where the serialized transaction output data will be added. This must not be NULL.
+ * \param[out] writer A pointer to an initialized \ref cardano_json_writer_t where the serialized transaction output will be added. This must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the transaction output was successfully serialized,
  * or an appropriate error code if an error occurred.
@@ -900,7 +892,7 @@ transaction_output_script_to_json(
 static cardano_error_t
 transaction_output_to_json(
   cardano_transaction_output_t* output,
-  struct json_object*           main_obj)
+  cardano_json_writer_t*        writer)
 {
   cardano_address_t* address = cardano_transaction_output_get_address(output);
   cardano_address_unref(&address);
@@ -910,7 +902,7 @@ transaction_output_to_json(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = transaction_output_address_to_json(address, main_obj);
+  cardano_error_t result = transaction_output_address_to_json(address, writer);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -925,7 +917,7 @@ transaction_output_to_json(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  result = transaction_value_to_json(value, main_obj);
+  result = transaction_value_to_json(value, writer);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -937,7 +929,7 @@ transaction_output_to_json(
 
   if (datum != NULL)
   {
-    result = transaction_output_datum_to_json(datum, main_obj);
+    result = transaction_output_datum_to_json(datum, writer);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -950,7 +942,7 @@ transaction_output_to_json(
 
   if (script != NULL)
   {
-    result = transaction_output_script_to_json(script, main_obj);
+    result = transaction_output_script_to_json(script, writer);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -968,36 +960,30 @@ transaction_output_to_json(
  * The serialized UTXOs will be added to the provided \c json_main_obj.
  *
  * \param[in] utxos A pointer to the \ref cardano_utxo_list_t representing the UTXOs to be serialized. This must not be NULL.
- * \param[out] json_main_obj A pointer to an initialized \ref json_object where the serialized UTXO data will be added. This must not be NULL.
+ * \param[out] writer A pointer to an initialized \ref cardano_json_writer_t where the serialized UTXOs will be added. This must not be NULL.
  *
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the UTXOs were successfully serialized,
  * or an appropriate error code if an error occurred.
  */
 static cardano_error_t
 additional_utxos_to_json(
-  cardano_utxo_list_t* utxos,
-  struct json_object*  json_main_obj)
+  cardano_utxo_list_t*   utxos,
+  cardano_json_writer_t* writer)
 {
-  const size_t        utxos_len      = cardano_utxo_list_get_length(utxos);
-  struct json_object* main_array_obj = json_object_new_array();
+  const size_t utxos_len = cardano_utxo_list_get_length(utxos);
+
+  cardano_json_writer_write_property_name(writer, "additionalUtxo", strlen("additionalUtxo"));
+  cardano_json_writer_write_start_array(writer);
 
   if (utxos == NULL)
   {
-    json_object_object_add(json_main_obj, "additionalUtxo", main_array_obj);
-
+    cardano_json_writer_write_end_array(writer);
     return CARDANO_SUCCESS;
   }
 
   for (size_t i = 0U; i < utxos_len; ++i)
   {
-    struct json_object* utxo_val_obj = json_object_new_object();
-
-    if (utxo_val_obj == NULL)
-    {
-      json_object_put(main_array_obj);
-
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
+    cardano_json_writer_write_start_object(writer);
 
     cardano_utxo_t* utxo = NULL;
 
@@ -1017,12 +1003,16 @@ additional_utxos_to_json(
       return CARDANO_ERROR_POINTER_IS_NULL;
     }
 
-    result = transaction_input_to_json(input, utxo_val_obj);
+    result = transaction_input_to_json(input, writer);
 
     if (result != CARDANO_SUCCESS)
     {
       return result;
     }
+
+    cardano_json_writer_write_end_object(writer);
+
+    cardano_json_writer_write_start_object(writer);
 
     cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
     cardano_transaction_output_unref(&output);
@@ -1032,17 +1022,17 @@ additional_utxos_to_json(
       return CARDANO_ERROR_POINTER_IS_NULL;
     }
 
-    result = transaction_output_to_json(output, utxo_val_obj);
+    result = transaction_output_to_json(output, writer);
 
     if (result != CARDANO_SUCCESS)
     {
       return result;
     }
 
-    json_object_array_add(main_array_obj, utxo_val_obj);
+    cardano_json_writer_write_end_object(writer);
   }
 
-  json_object_object_add(json_main_obj, "additionalUtxo", main_array_obj);
+  cardano_json_writer_write_end_array(writer);
 
   return CARDANO_SUCCESS;
 }
@@ -1054,7 +1044,7 @@ additional_utxos_to_json(
  * The output \c out_obj must be an initialized \ref json_object where the serialized transaction will be stored.
  *
  * \param[in] transaction A pointer to the \ref cardano_transaction_t to be serialized. This must not be NULL.
- * \param[out] out_obj A pointer to an initialized \ref json_object where the serialized transaction data will be written. This must not be NULL.
+ * \param[out] out_obj A pointer to an initialized \ref json_object where the serialized transaction data will be added. This must not be NULL.
  *
  * \return A \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the transaction was successfully serialized,
  * or an appropriate error code if an error occurred.
@@ -1062,45 +1052,46 @@ additional_utxos_to_json(
 static cardano_error_t
 cardano_transaction_to_json(
   cardano_transaction_t* transaction,
-  struct json_object*    out_obj)
+  cardano_json_writer_t* writer)
 {
-  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* cbor_writer = cardano_cbor_writer_new();
 
   if (writer == NULL)
   {
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  cardano_error_t result = cardano_transaction_to_cbor(transaction, writer);
+  cardano_error_t result = cardano_transaction_to_cbor(transaction, cbor_writer);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_cbor_writer_unref(&writer);
+    cardano_cbor_writer_unref(&cbor_writer);
     return result;
   }
 
-  const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+  const size_t cbor_size = cardano_cbor_writer_get_hex_size(cbor_writer);
   char*        cbor_str  = malloc(cbor_size);
 
   if (cbor_str == NULL)
   {
-    cardano_cbor_writer_unref(&writer);
+    cardano_cbor_writer_unref(&cbor_writer);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result = cardano_cbor_writer_encode_hex(writer, cbor_str, cbor_size);
+  result = cardano_cbor_writer_encode_hex(cbor_writer, cbor_str, cbor_size);
 
   if (result != CARDANO_SUCCESS)
   {
     free(cbor_str);
-    cardano_cbor_writer_unref(&writer);
+    cardano_cbor_writer_unref(&cbor_writer);
     return result;
   }
 
-  json_object_object_add(out_obj, "cbor", json_object_new_string(cbor_str));
+  cardano_json_writer_write_property_name(writer, "cbor", strlen("cbor"));
+  cardano_json_writer_write_string(writer, cbor_str, strlen(cbor_str));
 
   free(cbor_str);
-  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_writer_unref(&cbor_writer);
 
   return CARDANO_SUCCESS;
 }
@@ -1160,50 +1151,47 @@ cardano_evaluate_params_to_json(
   char**                 json_main_obj_str,
   size_t*                json_main_obj_size)
 {
-  struct json_object* obj = json_object_new_object();
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
 
-  cardano_error_t result = cardano_transaction_to_json(transaction, obj);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    json_object_put(obj);
-
-    return result;
-  }
-
-  result = additional_utxos_to_json(utxos, obj);
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t result = cardano_transaction_to_json(transaction, writer);
 
   if (result != CARDANO_SUCCESS)
   {
-    json_object_put(obj);
-
+    cardano_json_writer_unref(&writer);
     return result;
   }
 
-  const char* json_string = json_object_to_json_string_length(obj, JSON_C_TO_STRING_PLAIN, json_main_obj_size);
+  result = additional_utxos_to_json(utxos, writer);
 
-  if (json_string == NULL)
+  if (result != CARDANO_SUCCESS)
   {
-    json_object_put(obj);
+    cardano_json_writer_unref(&writer);
+    return result;
+  }
 
+  cardano_json_writer_write_end_object(writer);
+
+  *json_main_obj_size = cardano_json_writer_get_encoded_size(writer);
+
+  if ((*json_main_obj_size) == 0)
+  {
+    cardano_json_writer_unref(&writer);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  *json_main_obj_str = malloc(*json_main_obj_size + 1);
+  *json_main_obj_str  = (char*)malloc(*json_main_obj_size);
+  result              = cardano_json_writer_encode(writer, *json_main_obj_str, *json_main_obj_size);
+  *json_main_obj_size = (*json_main_obj_size) - 1; // Remove the null terminator
 
-  CARDANO_UNUSED(memset(*json_main_obj_str, 0, (*json_main_obj_size) + 1));
-
-  if (*json_main_obj_str == NULL)
+  if (result != CARDANO_SUCCESS)
   {
-    *json_main_obj_size = 0;
-    json_object_put(obj);
-
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    cardano_json_writer_unref(&writer);
+    free((void*)json_main_obj_str);
+    return result;
   }
 
-  cardano_utils_safe_memcpy(*json_main_obj_str, *json_main_obj_size, json_string, *json_main_obj_size);
-
-  json_object_put(obj);
+  cardano_json_writer_unref(&writer);
 
   return CARDANO_SUCCESS;
 }
@@ -1223,53 +1211,55 @@ cardano_blockfrost_parse_tx_eval_response(
     return result;
   }
 
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_redeemer_list_unref(redeemers);
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* result_obj;
-  struct json_object* evaluation_result_obj;
+  cardano_json_object_t* result_obj;
+  cardano_json_object_t* evaluation_result_obj;
 
-  if (!json_object_object_get_ex(parsed_json, "result", &result_obj))
+  if (!cardano_json_object_get_ex(parsed_json, "result", 6, &result_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
     cardano_redeemer_list_unref(redeemers);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  if (json_object_object_get_ex(result_obj, "EvaluationFailure", &evaluation_result_obj))
+  if (cardano_json_object_get_ex(result_obj, "EvaluationFailure", 17, &evaluation_result_obj))
   {
     cardano_utils_set_error_message(provider, "Failed evaluate scripts");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
     cardano_redeemer_list_unref(redeemers);
 
     return CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
   }
 
-  if (!json_object_object_get_ex(result_obj, "EvaluationResult", &evaluation_result_obj))
+  if (!cardano_json_object_get_ex(result_obj, "EvaluationResult", 16, &evaluation_result_obj))
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_object_put(parsed_json);
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
+
     cardano_redeemer_list_unref(redeemers);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  json_object_object_foreach(evaluation_result_obj, key, val)
+  const size_t evaluation_result_size = cardano_json_object_get_property_count(evaluation_result_obj);
+
+  for (size_t i = 0; i < evaluation_result_size; i++)
   {
+    size_t                 key_size;
+    const char*            key = cardano_json_object_get_key_at(evaluation_result_obj, i, &key_size);
+    cardano_json_object_t* val = cardano_json_object_get_value_at_ex(evaluation_result_obj, i);
+
     const char* colon_ptr = strchr(key, ':');
 
     if (colon_ptr == NULL)
@@ -1310,21 +1300,42 @@ cardano_blockfrost_parse_tx_eval_response(
       continue;
     }
 
-    struct json_object* memory_obj = NULL;
-    struct json_object* steps_obj  = NULL;
+    cardano_json_object_t* memory_obj = NULL;
+    cardano_json_object_t* steps_obj  = NULL;
 
-    if (json_object_object_get_ex(val, "memory", &memory_obj) && json_object_object_get_ex(val, "steps", &steps_obj))
+    if (cardano_json_object_get_ex(val, "memory", 6, &memory_obj) && cardano_json_object_get_ex(val, "steps", 5, &steps_obj))
     {
-      uint64_t memory = json_object_get_uint64(memory_obj);
-      uint64_t steps  = json_object_get_uint64(steps_obj);
+      uint64_t memory = 0U;
+      uint64_t steps  = 0U;
+
+      result = cardano_json_object_get_uint(memory_obj, &memory);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_utils_set_error_message(provider, "Failed to parse JSON response");
+        cardano_json_object_unref(&parsed_json);
+        cardano_redeemer_list_unref(redeemers);
+
+        return result;
+      }
+
+      result = cardano_json_object_get_uint(steps_obj, &steps);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_utils_set_error_message(provider, "Failed to parse JSON response");
+        cardano_json_object_unref(&parsed_json);
+        cardano_redeemer_list_unref(redeemers);
+
+        return result;
+      }
 
       result = cardano_redeemer_list_set_ex_units(*redeemers, tag_enum, index, memory, steps);
 
       if (result != CARDANO_SUCCESS)
       {
         cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-        json_object_put(parsed_json);
-        json_tokener_free(tok);
+        cardano_json_object_unref(&parsed_json);
         cardano_redeemer_list_unref(redeemers);
 
         return result;
@@ -1336,8 +1347,7 @@ cardano_blockfrost_parse_tx_eval_response(
     }
   }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return CARDANO_SUCCESS;
 }

@@ -23,7 +23,7 @@
 
 #include "utils.h"
 
-#include <json-c/json.h>
+#include <cardano/json/json_object.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,7 +47,7 @@
 typedef cardano_error_t (*parameter_handler_t)(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   void*                          setter_func);
 
 /* STRUCTURES ****************************************************************/
@@ -98,11 +98,11 @@ typedef struct
  */
 static cardano_error_t
 process_cost_model(
-  struct json_object*                     json_array,
+  cardano_json_object_t*                  json_array,
   const cardano_plutus_language_version_t language_version,
   cardano_cost_model_t**                  cost_model)
 {
-  const size_t array_len  = json_object_array_length(json_array);
+  const size_t array_len  = cardano_json_object_array_get_length(json_array);
   int64_t*     cost_array = malloc(array_len * sizeof(int64_t));
 
   if (cost_array == NULL)
@@ -112,8 +112,14 @@ process_cost_model(
 
   for (size_t i = 0U; i < array_len; ++i)
   {
-    struct json_object* item = json_object_array_get_idx(json_array, i);
-    cost_array[i]            = json_object_get_int64(item);
+    cardano_json_object_t* item   = cardano_json_object_array_get_ex(json_array, i);
+    cardano_error_t        result = cardano_json_object_get_signed_int(item, &cost_array[i]);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      free(cost_array);
+      return result;
+    }
   }
 
   cardano_error_t result = cardano_cost_model_new(language_version, cost_array, array_len, cost_model);
@@ -144,12 +150,19 @@ static cardano_error_t
 handle_uint64(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, uint64_t))
 {
   CARDANO_UNUSED(key);
 
-  const uint64_t value = json_object_get_uint64(json_obj);
+  uint64_t value = 0U;
+
+  cardano_error_t result = cardano_json_object_get_uint(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
 
   return setter_func(parameters, value);
 }
@@ -175,14 +188,21 @@ static cardano_error_t
 handle_unit_interval(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_unit_interval_t*))
 {
   CARDANO_UNUSED(key);
 
-  const double             value    = json_object_get_double(json_obj);
+  double          value  = 0.0;
+  cardano_error_t result = cardano_json_object_get_double(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   cardano_unit_interval_t* interval = NULL;
-  cardano_error_t          result   = cardano_unit_interval_from_double(value, &interval);
+  result                            = cardano_unit_interval_from_double(value, &interval);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -217,13 +237,18 @@ static cardano_error_t
 handle_version(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_protocol_version_t*))
 {
-  const uint64_t              value   = json_object_get_uint64(json_obj);
-  cardano_protocol_version_t* version = cardano_protocol_parameters_get_protocol_version(parameters);
+  uint64_t        value  = 0U;
+  cardano_error_t result = cardano_json_object_get_uint(json_obj, &value);
 
-  cardano_error_t result = CARDANO_SUCCESS;
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_protocol_version_t* version = cardano_protocol_parameters_get_protocol_version(parameters);
 
   if (strcmp(key, "protocol_major_ver") == 0)
   {
@@ -275,12 +300,20 @@ static cardano_error_t
 handle_prices(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_ex_unit_prices_t*))
 {
-  const double             value    = json_object_get_double(json_obj);
+  double value = 0.0;
+
+  cardano_error_t result = cardano_json_object_get_double(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   cardano_unit_interval_t* interval = NULL;
-  cardano_error_t          result   = cardano_unit_interval_from_double(value, &interval);
+  result                            = cardano_unit_interval_from_double(value, &interval);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -340,10 +373,17 @@ static cardano_error_t
 handle_max_ex(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_ex_units_t*))
 {
-  const uint64_t value = json_object_get_uint64(json_obj);
+  uint64_t value = 0U;
+
+  cardano_error_t result = cardano_json_object_get_uint(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
 
   cardano_ex_units_t* units = NULL;
 
@@ -355,8 +395,6 @@ handle_max_ex(
   {
     units = cardano_protocol_parameters_get_max_block_ex_units(parameters);
   }
-
-  cardano_error_t result = CARDANO_SUCCESS;
 
   if ((strcmp(key, "max_tx_ex_mem") == 0) || (strcmp(key, "max_block_ex_mem") == 0))
   {
@@ -400,12 +438,20 @@ static cardano_error_t
 handle_pvt(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_pool_voting_thresholds_t*))
 {
-  const double             value    = json_object_get_double(json_obj);
+  double value = 0.0;
+
+  cardano_error_t result = cardano_json_object_get_double(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   cardano_unit_interval_t* interval = NULL;
-  cardano_error_t          result   = cardano_unit_interval_from_double(value, &interval);
+  result                            = cardano_unit_interval_from_double(value, &interval);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -477,12 +523,20 @@ static cardano_error_t
 handle_dvt(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_drep_voting_thresholds_t*))
 {
-  const double             value    = json_object_get_double(json_obj);
+  double value = 0.0;
+
+  cardano_error_t result = cardano_json_object_get_double(json_obj, &value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   cardano_unit_interval_t* interval = NULL;
-  cardano_error_t          result   = cardano_unit_interval_from_double(value, &interval);
+  result                            = cardano_unit_interval_from_double(value, &interval);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -574,14 +628,15 @@ static cardano_error_t
 handle_buffer(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_buffer_t*))
 {
   CARDANO_UNUSED(key);
 
-  const char*       value     = json_object_get_string(json_obj);
-  const size_t      value_len = json_object_get_string_len(json_obj);
-  cardano_buffer_t* entropy   = cardano_buffer_from_hex(value, value_len);
+  size_t      value_len = 0U;
+  const char* value     = cardano_json_object_get_string(json_obj, &value_len);
+
+  cardano_buffer_t* entropy = cardano_buffer_from_hex(value, value_len - 1U);
 
   if (entropy == NULL)
   {
@@ -610,14 +665,14 @@ handle_buffer(
  */
 static cardano_error_t
 process_and_insert_cost_model(
-  struct json_object* json_obj,
-  const char*         version_key,
-  int                 language_version,
-  cardano_costmdls_t* cost_models)
+  cardano_json_object_t* json_obj,
+  const char*            version_key,
+  int                    language_version,
+  cardano_costmdls_t*    cost_models)
 {
-  struct json_object* json_version = NULL;
+  cardano_json_object_t* json_version = NULL;
 
-  if (json_object_object_get_ex(json_obj, version_key, &json_version))
+  if (cardano_json_object_get_ex(json_obj, version_key, strlen(version_key), &json_version))
   {
     cardano_cost_model_t* cost_model = NULL;
     cardano_error_t       result     = process_cost_model(json_version, language_version, &cost_model);
@@ -658,7 +713,7 @@ static cardano_error_t
 handle_cost_models(
   const char*                    key,
   cardano_protocol_parameters_t* parameters,
-  struct json_object*            json_obj,
+  cardano_json_object_t*         json_obj,
   cardano_error_t (*setter_func)(cardano_protocol_parameters_t*, cardano_costmdls_t*))
 {
   CARDANO_UNUSED(key);
@@ -769,13 +824,11 @@ cardano_blockfrost_parse_protocol_parameters(
   const size_t                    size,
   cardano_protocol_parameters_t** parameters)
 {
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = json_tokener_parse_ex(tok, json, (int32_t)size);
+  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, size);
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
@@ -783,15 +836,16 @@ cardano_blockfrost_parse_protocol_parameters(
   cardano_error_t result = cardano_protocol_parameters_new(parameters);
   if (result != CARDANO_SUCCESS)
   {
-    json_tokener_free(tok);
+    cardano_json_object_unref(&parsed_json);
+
     return result;
   }
 
   for (parameter_map_entry_t* entry = parameter_map; entry->key != NULL; ++entry)
   {
-    struct json_object* json_obj = NULL;
+    cardano_json_object_t* json_obj = NULL;
 
-    if (!json_object_object_get_ex(parsed_json, entry->key, &json_obj))
+    if (!cardano_json_object_get_ex(parsed_json, entry->key, strlen(entry->key), &json_obj))
     {
       continue;
     }
@@ -800,13 +854,12 @@ cardano_blockfrost_parse_protocol_parameters(
 
     if (result != CARDANO_SUCCESS)
     {
-      json_object_put(parsed_json);
+      cardano_json_object_unref(&parsed_json);
       return result;
     }
   }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  cardano_json_object_unref(&parsed_json);
 
   return CARDANO_SUCCESS;
 }

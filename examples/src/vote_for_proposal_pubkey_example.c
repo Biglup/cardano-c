@@ -349,7 +349,7 @@ main(void)
   }
 
   // Registers as a DRep
-  // register_as_drep(provider, key_handler, protocol_params, payment_address, drep_id);
+  register_as_drep(provider, key_handler, protocol_params, payment_address, drep_id);
   // Example register as DRep transaction created by this sample:
   // https://preprod.cardanoscan.io/transaction/6a50b38075037d0b18067e24a2040b44a2bf0f31814d28a5383406b2df8cc310
 

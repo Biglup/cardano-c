@@ -30,10 +30,9 @@
 
 #include "../../allocators.h"
 #include "../../cbor/cbor_validation.h"
-#include "../../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
+#include <cardano/json/json_object.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
@@ -227,7 +226,7 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  struct json_object* json_object = json_tokener_parse(json);
+  cardano_json_object_t* json_object = cardano_json_object_parse(json, json_size);
 
   if (json_object == NULL)
   {
@@ -236,39 +235,39 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  struct json_object* type     = NULL;
-  bool                has_type = json_object_object_get_ex(json_object, "type", &type);
+  cardano_json_object_t* type     = NULL;
+  bool                   has_type = cardano_json_object_get_ex(json_object, "type", 4, &type);
 
   if (!has_type)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const char* type_string = json_object_get_string(type);
+  const char* type_string = cardano_json_object_get_string(type, NULL);
 
   if (type_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  struct json_object* hash_object = NULL;
+  cardano_json_object_t* hash_object = NULL;
 
-  if (!json_object_object_get_ex(json_object, "keyHash", &hash_object))
+  if (!cardano_json_object_get_ex(json_object, "keyHash", 7, &hash_object))
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  const size_t hash_len    = json_object_get_string_len(hash_object);
-  const char*  hash_string = json_object_get_string(hash_object);
+  size_t      hash_len    = 0U;
+  const char* hash_string = cardano_json_object_get_string(hash_object, &hash_len);
 
   if (hash_string == NULL)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_JSON;
   }
@@ -277,21 +276,21 @@ cardano_script_pubkey_from_json(const char* json, size_t json_size, cardano_scri
 
   if (strcmp(type_string, "sig") != 0)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
   }
 
-  result = cardano_blake2b_hash_from_hex(hash_string, hash_len, &hash);
+  result = cardano_blake2b_hash_from_hex(hash_string, hash_len - 1U, &hash);
 
   if (result != CARDANO_SUCCESS)
   {
-    json_object_put(json_object);
+    cardano_json_object_unref(&json_object);
 
     return result;
   }
 
-  json_object_put(json_object);
+  cardano_json_object_unref(&json_object);
 
   const cardano_error_t create_pubkey_new_result = cardano_script_pubkey_new(hash, native_script);
   cardano_blake2b_hash_unref(&hash);

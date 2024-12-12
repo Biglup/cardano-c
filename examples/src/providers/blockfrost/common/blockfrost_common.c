@@ -27,8 +27,8 @@
 
 #include <cardano/export.h>
 
+#include <cardano/json/json_object.h>
 #include <curl/curl.h>
-#include <json-c/json.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,29 +72,56 @@ cardano_blockfrost_parse_error(cardano_provider_impl_t* provider, cardano_buffer
     return;
   }
 
-  struct json_tokener* tok         = json_tokener_new();
-  struct json_object*  parsed_json = NULL;
-  struct json_object*  status_code = NULL;
-  struct json_object*  error       = NULL;
-  struct json_object*  message     = NULL;
+  cardano_json_object_t* parsed_json = NULL;
+  cardano_json_object_t* status_code = NULL;
+  cardano_json_object_t* error       = NULL;
+  cardano_json_object_t* message     = NULL;
 
-  parsed_json = json_tokener_parse_ex(tok, (char*)cardano_buffer_get_data(buffer), (int32_t)cardano_buffer_get_size(buffer));
+  parsed_json = cardano_json_object_parse((char*)cardano_buffer_get_data(buffer), (int32_t)cardano_buffer_get_size(buffer));
 
   if (parsed_json == NULL)
   {
     cardano_utils_set_error_message(provider, "Failed to parse JSON response");
-    json_tokener_free(tok);
     return;
   }
 
-  CARDANO_UNUSED(json_object_object_get_ex(parsed_json, "status_code", &status_code));
-  CARDANO_UNUSED(json_object_object_get_ex(parsed_json, "error", &error));
-  CARDANO_UNUSED(json_object_object_get_ex(parsed_json, "message", &message));
+  if (!cardano_json_object_get_ex(parsed_json, "status_code", 11, &status_code))
+  {
+    cardano_utils_set_error_message(provider, "Failed to parse status_code from JSON response");
+    cardano_json_object_unref(&parsed_json);
+    return;
+  }
 
-  CARDANO_UNUSED(snprintf(provider->error_message, 1024, "%lu - %s - %s", json_object_get_uint64(status_code), json_object_get_string(error), json_object_get_string(message)));
+  if (!cardano_json_object_get_ex(parsed_json, "error", 5, &error))
+  {
+    cardano_utils_set_error_message(provider, "Failed to parse error from JSON response");
+    cardano_json_object_unref(&parsed_json);
+    return;
+  }
 
-  json_object_put(parsed_json);
-  json_tokener_free(tok);
+  if (!cardano_json_object_get_ex(parsed_json, "message", 7, &message))
+  {
+    cardano_utils_set_error_message(provider, "Failed to parse message from JSON response");
+    cardano_json_object_unref(&parsed_json);
+    return;
+  }
+
+  uint64_t        status_code_value = 0;
+  cardano_error_t result            = cardano_json_object_get_uint(status_code, &status_code_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utils_set_error_message(provider, "Failed to parse status_code from JSON response");
+    cardano_json_object_unref(&parsed_json);
+    return;
+  }
+
+  size_t error_size   = 0U;
+  size_t message_size = 0U;
+
+  CARDANO_UNUSED(snprintf(provider->error_message, 1024, "%lu - %s - %s", status_code_value, cardano_json_object_get_string(error, &error_size), cardano_json_object_get_string(message, &message_size)));
+
+  cardano_json_object_unref(&parsed_json);
 }
 
 size_t

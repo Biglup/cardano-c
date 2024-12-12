@@ -32,10 +32,8 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
-#include "../string_safe.h"
 
 #include <assert.h>
-#include <json.h>
 #include <string.h>
 
 /* STRUCTURES ****************************************************************/
