@@ -209,7 +209,7 @@ cardano_script_n_of_k_to_cbor(
     return result;
   }
 
-  result = cardano_cbor_writer_write_uint(writer, script_n_of_k->required);
+  result = cardano_cbor_writer_write_uint(writer, (uint64_t)script_n_of_k->required);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -269,7 +269,7 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  size_t required = 0U;
+  uint64_t required = 0U;
 
   cardano_error_t result = cardano_json_object_get_uint(req, &required);
 
@@ -302,7 +302,7 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
 
   cardano_json_object_unref(&json_object);
 
-  const cardano_error_t create_n_of_k_new_result = cardano_script_n_of_k_new(native_scripts, required, native_script);
+  const cardano_error_t create_n_of_k_new_result = cardano_script_n_of_k_new(native_scripts, (size_t)required, native_script);
   cardano_native_script_list_unref(&native_scripts);
 
   return create_n_of_k_new_result;
