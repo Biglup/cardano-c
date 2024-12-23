@@ -41,6 +41,10 @@ see https://www.gnu.org/licenses/.  */
 /* For size_t */
 #include <stddef.h>
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

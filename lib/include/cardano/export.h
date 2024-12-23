@@ -29,13 +29,15 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifndef CARDANO_EXPORT
-#if defined(_MSC_VER) && defined(CARDANO_C_DLL)
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#define CARDANO_EXPORT EMSCRIPTEN_KEEPALIVE extern
+#elif defined(_MSC_VER) && defined(CARDANO_C_DLL)
 #define CARDANO_EXPORT __declspec(dllexport) extern
 #else
 #define CARDANO_EXPORT extern
 #endif
 #endif
-
 #ifdef __GNUC__
 #define CARDANO_NODISCARD __attribute__((warn_unused_result))
 #elif defined(_MSC_VER)
