@@ -15,10 +15,10 @@ jobs:
       matrix:
         include:
           # Ubuntu
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: x86_64
             compiler: gcc
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: arm64
             compiler: gcc
           # macOS
@@ -35,6 +35,10 @@ jobs:
           - os: windows-latest
             arch: x86_64
             compiler: mingw
+          # WebAssembly
+          - os: ubuntu-22.04
+            arch: wasm
+            compiler: emscripten
 
     name: Build on ${{ matrix.os }} for ${{ matrix.arch }} using ${{ matrix.compiler }}
 
@@ -96,7 +100,7 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             sudo apt-get update
             case "${{ matrix.arch }}" in
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;

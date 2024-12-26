@@ -9,7 +9,7 @@ on:
       - '*'
 jobs:
   build_and_unit_tests_little_endian:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Install Dependencies
         run: |
@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: mips-unknown-linux-gnu
             toolchain: stable
     steps:
