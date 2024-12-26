@@ -147,7 +147,7 @@ jobs:
 
       # Build on Unix systems
       - name: Build (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && matrix.compiler != 'emscripten'
         shell: bash
         run: |
           case "${{ matrix.arch }}" in
