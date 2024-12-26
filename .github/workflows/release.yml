@@ -15,10 +15,10 @@ jobs:
       matrix:
         include:
           # Ubuntu
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: x86_64
             compiler: gcc
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: arm64
             compiler: gcc
           # macOS
@@ -35,6 +35,10 @@ jobs:
           - os: windows-latest
             arch: x86_64
             compiler: mingw
+          # WebAssembly
+          - os: ubuntu-22.04
+            arch: wasm
+            compiler: emscripten
 
     name: Build on ${{ matrix.os }} for ${{ matrix.arch }} using ${{ matrix.compiler }}
 
@@ -96,7 +100,7 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             sudo apt-get update
             case "${{ matrix.arch }}" in
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
@@ -128,6 +132,20 @@ jobs:
         with:
           arch: x64
 
+      # Install Emscripten
+      - name: Install Emscripten
+        if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+          echo "source $PWD/emsdk_env.sh" >> $GITHUB_ENV
+
       # Build on Unix systems
       - name: Build (Unix)
         if: runner.os != 'Windows'
@@ -151,6 +169,19 @@ jobs:
                 .
               ;;
           esac
+          cmake --build . --config Release
+
+      # Build on Emscripten
+      - name: Build (Emscripten)
+        if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
+        shell: bash
+        run: |
+          source emsdk/emsdk_env.sh || true
+          cmake -DCMAKE_BUILD_TYPE=Release \
+            -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+            -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+            -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+            .
           cmake --build . --config Release
 
       # Build on Windows MSVC
@@ -237,6 +268,18 @@ jobs:
           cd $RELEASE_DIR
           7z a "../${{ env.RELEASE_NAME }}.zip" *
           cd ..
+
+      - name: Package binaries (Emscripten)
+        if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
+        shell: bash
+        run: |
+          RELEASE_DIR=release/${{ env.RELEASE_NAME }}
+          mkdir -p $RELEASE_DIR
+          cp build/release/lib/*.js  $RELEASE_DIR/ 2>/dev/null || true
+          cp build/release/lib/*.wasm $RELEASE_DIR/ 2>/dev/null || true
+          cp README.md $RELEASE_DIR/
+          cp COPYING   $RELEASE_DIR/LICENSE
+          tar -czf "${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
 
       # Upload artifacts to GitHub Release (Unix)
       - name: Upload artifacts to GitHub Release (Unix)

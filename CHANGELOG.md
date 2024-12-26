@@ -1,6 +1,11 @@
 Next (V1.x.x)
 ---------------------
 
+V1.1.1
+---------------------
+- Adjusted exports for Emscripten builds.
+- Added a WASM release target.
+
 V1.1.0
 ---------------------
 - Added `cardano_json_writer_t` to write JSON to a buffer.
