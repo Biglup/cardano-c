@@ -73,19 +73,22 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
 
-      # Set Release Name on Unix systems
       - name: Set Release Name (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
-            OS_NAME="linux"
-          elif [[ "${{ matrix.os }}" == *"macos"* ]]; then
-            OS_NAME="macos"
+          if [[ "${{ matrix.arch }}" == "wasm" ]]; then
+            echo "RELEASE_NAME=libcardano-c-${{ env.VERSION }}-wasm-emscripten" >> $GITHUB_ENV
           else
-            OS_NAME="${{ matrix.os }}"
+            if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+              OS_NAME="linux"
+            elif [[ "${{ matrix.os }}" == *"macos"* ]]; then
+              OS_NAME="macos"
+            else
+              OS_NAME="${{ matrix.os }}"
+            fi
+            echo "RELEASE_NAME=libcardano-c-${{ env.VERSION }}-${OS_NAME}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
           fi
-          echo "RELEASE_NAME=libcardano-c-${{ env.VERSION }}-${OS_NAME}-${{ matrix.arch }}-${{ matrix.compiler }}" >> $GITHUB_ENV
 
       # Set Release Name on Windows systems
       - name: Set Release Name (Windows)
@@ -174,12 +177,18 @@ jobs:
         if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
         shell: bash
         run: |
+          # Activate the Emscripten environment
           source $EMSDK/emsdk_env.sh
-          cmake -DCMAKE_BUILD_TYPE=Release \
+          
+          # Use the Emscripten toolchain file:
+          cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
             -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
             .
+          
           cmake --build . --config Release
 
       # Build on Windows MSVC
