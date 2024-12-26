@@ -226,7 +226,7 @@ jobs:
 
       # Package binaries (Unix)
       - name: Package binaries (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && matrix.compiler != 'emscripten'
         shell: bash
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
