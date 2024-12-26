@@ -132,7 +132,6 @@ jobs:
         with:
           arch: x64
 
-      # Install Emscripten
       - name: Install Emscripten
         if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
         shell: bash
@@ -143,8 +142,8 @@ jobs:
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          source ./emsdk_env.sh
-          echo "source $PWD/emsdk_env.sh" >> $GITHUB_ENV
+          echo "EMSDK=$PWD" >> $GITHUB_ENV
+          echo "PATH=$PWD:$PWD/upstream/emscripten:$PATH" >> $GITHUB_ENV
 
       # Build on Unix systems
       - name: Build (Unix)
@@ -171,12 +170,11 @@ jobs:
           esac
           cmake --build . --config Release
 
-      # Build on Emscripten
       - name: Build (Emscripten)
         if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
         shell: bash
         run: |
-          source emsdk/emsdk_env.sh || true
+          source $EMSDK/emsdk_env.sh
           cmake -DCMAKE_BUILD_TYPE=Release \
             -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
             -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
