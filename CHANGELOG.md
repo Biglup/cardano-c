@@ -1,6 +1,10 @@
 Next (V1.x.x)
 ---------------------
 
+V1.1.2
+---------------------
+- EMSCRIPTEN: Wasm file is now embedded in the cardano-c.js file.
+
 V1.1.1
 ---------------------
 - Adjusted exports for Emscripten builds.
