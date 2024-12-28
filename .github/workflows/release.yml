@@ -282,6 +282,7 @@ jobs:
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR
+          sed -i 's/_cardano_//g' build/release/lib/*.js
           cp build/release/lib/*.js  $RELEASE_DIR/ 2>/dev/null || true
           cp build/release/lib/*.wasm $RELEASE_DIR/ 2>/dev/null || true
           cp README.md $RELEASE_DIR/
