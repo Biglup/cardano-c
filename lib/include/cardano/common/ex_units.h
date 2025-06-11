@@ -199,6 +199,43 @@ CARDANO_EXPORT uint64_t cardano_ex_units_get_memory(
   const cardano_ex_units_t* ex_units);
 
 /**
+ * \brief Retrieves the memory budget of an \ref cardano_ex_units_t object.
+ *
+ * \param[in]  ex_units  A pointer to an initialised \ref cardano_ex_units_t object.
+ *                       Must not be \c NULL.
+ * \param[out] memory    A pointer to a 64-bit unsigned integer that will receive the
+ *                       memory count on success. Must not be \c NULL.
+ *
+ * \return A \ref cardano_error_t value:
+ *   - \ref CARDANO_SUCCESS               – The call succeeded and *steps now contains the memory budget.
+ *   - \ref CARDANO_ERROR_POINTER_IS_NULL – \p ex_units or \p memory was \c NULL.
+ *   - Any other error code propagated from the underlying implementation.
+ *
+ * \note If the function fails, a descriptive message can be obtained by calling \ref cardano_ex_units_get_last_error on the \p ex_units object.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_ex_units_t* ex_units = // previously initialised;
+ * uint64_t memory = 0;
+ *
+ * cardano_error_t rc = cardano_ex_units_get_memory_ex(ex_units, &memory);
+ *
+ * if (rc == CARDANO_SUCCESS)
+ * {
+ *   printf("Memory steps allocated: %llu\n", (unsigned long long)memory);
+ * }
+ * else
+ * {
+ *   printf("Failed to read memory steps: %s\n", cardano_ex_units_get_last_error(ex_units));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_ex_units_get_memory_ex(
+  const cardano_ex_units_t* ex_units,
+  uint64_t*                 memory);
+
+/**
  * \brief Sets the memory amount for the execution units.
  *
  * This function sets the memory units in the \ref cardano_ex_units_t object.
@@ -251,6 +288,43 @@ CARDANO_EXPORT cardano_error_t cardano_ex_units_set_memory(
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT uint64_t cardano_ex_units_get_cpu_steps(const cardano_ex_units_t* ex_units);
+
+/**
+ * \brief Retrieves the CPU-step budget of an \ref cardano_ex_units_t object.
+ *
+ * \param[in]  ex_units  A pointer to an initialised \ref cardano_ex_units_t object.
+ *                       Must not be \c NULL.
+ * \param[out] steps     A pointer to a 64-bit unsigned integer that will receive the
+ *                       CPU-step count on success. Must not be \c NULL.
+ *
+ * \return A \ref cardano_error_t value:
+ *   - \ref CARDANO_SUCCESS               – The call succeeded and *steps now contains the CPU budget.
+ *   - \ref CARDANO_ERROR_POINTER_IS_NULL – \p ex_units or \p steps was \c NULL.
+ *   - Any other error code propagated from the underlying implementation.
+ *
+ * \note If the function fails, a descriptive message can be obtained by calling \ref cardano_ex_units_get_last_error on the \p ex_units object.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_ex_units_t* ex_units = // previously initialised;
+ * uint64_t cpu_steps = 0;
+ *
+ * cardano_error_t rc = cardano_ex_units_get_cpu_steps_ex(ex_units, &cpu_steps);
+ *
+ * if (rc == CARDANO_SUCCESS)
+ * {
+ *   printf("CPU steps allocated: %llu\n", (unsigned long long)cpu_steps);
+ * }
+ * else
+ * {
+ *   printf("Failed to read CPU steps: %s\n", cardano_ex_units_get_last_error(ex_units));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_ex_units_get_cpu_steps_ex(
+  const cardano_ex_units_t* ex_units,
+  uint64_t*                 steps);
 
 /**
  * \brief Sets the CPU steps for the specified execution units object.

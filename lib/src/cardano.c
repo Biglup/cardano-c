@@ -31,6 +31,7 @@
 const char*
 cardano_get_lib_version(void)
 {
+  // cppcheck-suppress misra-c2012-7.4; Reason: Returning pointer to const literal; no modification possible.
   return LIB_CARDANO_C_VERSION;
 }
 
