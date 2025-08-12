@@ -205,6 +205,19 @@ cardano_ex_units_get_memory(const cardano_ex_units_t* ex_units)
 }
 
 cardano_error_t
+cardano_ex_units_get_memory_ex(const cardano_ex_units_t* ex_units, uint64_t* memory)
+{
+  if ((ex_units == NULL) || (memory == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *memory = ex_units->memory;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_ex_units_set_memory(cardano_ex_units_t* ex_units, const uint64_t memory)
 {
   if (ex_units == NULL)
@@ -226,6 +239,19 @@ cardano_ex_units_get_cpu_steps(const cardano_ex_units_t* ex_units)
   }
 
   return ex_units->cpu;
+}
+
+cardano_error_t
+cardano_ex_units_get_cpu_steps_ex(const cardano_ex_units_t* ex_units, uint64_t* steps)
+{
+  if ((ex_units == NULL) || (steps == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *steps = ex_units->cpu;
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t

@@ -488,3 +488,101 @@ TEST(cardano_ex_units_set_cpu_steps, returnErrorIfExUnitsIsNull)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_ex_units_get_memory_ex, returnsMemoryValue)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = nullptr;
+  cardano_error_t     error    = cardano_ex_units_new(147852369874563U, 369852147852369U, &ex_units);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  uint64_t memory = 0;
+  error           = cardano_ex_units_get_memory_ex(ex_units, &memory);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(memory, 147852369874563U);
+
+  // Cleanup
+  cardano_ex_units_unref(&ex_units);
+}
+
+TEST(cardano_ex_units_get_memory_ex, returnsErrorIfExUnitsIsNull)
+{
+  // Act
+  uint64_t        memory = 0;
+  cardano_error_t error  = cardano_ex_units_get_memory_ex(nullptr, &memory);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(memory, 0);
+}
+
+TEST(cardano_ex_units_get_memory_ex, returnsErrorIfMemoryIsNull)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = nullptr;
+  cardano_error_t     error    = cardano_ex_units_new(147852369874563U, 369852147852369U, &ex_units);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_ex_units_get_memory_ex(ex_units, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_ex_units_unref(&ex_units);
+}
+
+TEST(cardano_ex_units_get_cpu_steps_ex, returnsCpuStepsValue)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = nullptr;
+  cardano_error_t     error    = cardano_ex_units_new(147852369874563U, 369852147852369U, &ex_units);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  uint64_t cpu_steps = 0;
+  error              = cardano_ex_units_get_cpu_steps_ex(ex_units, &cpu_steps);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cpu_steps, 369852147852369U);
+
+  // Cleanup
+  cardano_ex_units_unref(&ex_units);
+}
+
+TEST(cardano_ex_units_get_cpu_steps_ex, returnsErrorIfExUnitsIsNull)
+{
+  // Act
+  uint64_t        cpu_steps = 0;
+  cardano_error_t error     = cardano_ex_units_get_cpu_steps_ex(nullptr, &cpu_steps);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cpu_steps, 0);
+}
+
+TEST(cardano_ex_units_get_cpu_steps_ex, returnsErrorIfCpuStepsIsNull)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = nullptr;
+  cardano_error_t     error    = cardano_ex_units_new(147852369874563U, 369852147852369U, &ex_units);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_ex_units_get_cpu_steps_ex(ex_units, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_ex_units_unref(&ex_units);
+}

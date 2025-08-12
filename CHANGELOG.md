@@ -1,5 +1,9 @@
-Next (V1.x.x)
+Next (V1.1.x)
 ---------------------
+
+Next (V1.1.4)
+---------------------
+- Added emscripten blockchain provider.
 
 V1.1.3
 ---------------------

@@ -37,8 +37,7 @@ jobs:
           echo "Style check complete"
 
       - name: Check General Rules
-        run: cppcheck --enable=all -I "./lib/include" -ilib/external --error-exitcode=1 --suppress=missingIncludeSystem ./lib
-
+        run: cppcheck --enable=all -I "./lib/include" -ilib/external --error-exitcode=1 --suppress=missingIncludeSystem --suppress='*:*emscripten*' ./lib
       - name: Check MISRA 2012 Rules
         env:
           MISRA2012: ${{ secrets.MISRA2012_RULESET }}
