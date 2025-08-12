@@ -184,16 +184,9 @@ ELSE()
   ENDIF()
 
   SET_TARGET_PROPERTIES(${LIB_OUTPUT_NAME} PROPERTIES
-    LINK_FLAGS
-    "-s EXPORT_ALL=1                                    \
-     -s ALLOW_MEMORY_GROWTH=1                           \
-     -s MODULARIZE=1                                    \
-     --no-entry                                         \
-     --whole-archive                                    \
-     -s SINGLE_FILE=1                                   \
-     -s ASYNCIFY                                        \
-     -s ENVIRONMENT=web,node                            \
-   ${EMS_BUILD_FLAGS}"
+          OUTPUT_NAME "${LIB_JS_OUTPUT_NAME}"
+          RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+          LINK_FLAGS "-s EXPORT_ALL=1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --no-entry --whole-archive -s SINGLE_FILE=1 -s ASYNCIFY -s ENVIRONMENT=web,node ${EMS_BUILD_FLAGS}"
   )
 ENDIF()
 
