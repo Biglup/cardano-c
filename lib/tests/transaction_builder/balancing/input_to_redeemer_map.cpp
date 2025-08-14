@@ -34,6 +34,7 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR          = "8258200102030405060708090a0b0c0d0e0f0e0d0c0b0a09080706050403020100102005";
+static const char* CBOR2         = "8258201102030405060708090a0b0c0d0e0f0e0d0c0b0a09080706050403020100102005";
 static const char* REDEEMER_CBOR = "840000d8799f0102030405ff821821182c";
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -412,7 +413,7 @@ TEST(cardano_input_to_redeemer_map_get, returnsTheRightElementIfMoreThanOne)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   cardano_transaction_input_t* address1  = new_default_input(CBOR);
-  cardano_transaction_input_t* address2  = new_default_input(CBOR);
+  cardano_transaction_input_t* address2  = new_default_input(CBOR2);
   cardano_redeemer_t*          redeemer1 = new_default_redeemer();
   cardano_redeemer_t*          redeemer2 = new_default_redeemer();
 
@@ -450,7 +451,7 @@ TEST(cardano_input_to_redeemer_map_get, returnsTheRightElementIfMoreThanOne2)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   cardano_transaction_input_t* address1  = new_default_input(CBOR);
-  cardano_transaction_input_t* address2  = new_default_input(CBOR);
+  cardano_transaction_input_t* address2  = new_default_input(CBOR2);
   cardano_redeemer_t*          redeemer1 = new_default_redeemer();
   cardano_redeemer_t*          redeemer2 = new_default_redeemer();
 

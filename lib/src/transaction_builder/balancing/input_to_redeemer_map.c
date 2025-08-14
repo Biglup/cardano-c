@@ -178,7 +178,7 @@ cardano_input_to_redeemer_map_get(
     cardano_object_t*                    object = cardano_array_get(input_to_redeemer_map->array, i);
     cardano_input_to_redeemer_map_kvp_t* kvp    = (cardano_input_to_redeemer_map_kvp_t*)((void*)object);
 
-    if (kvp->key == key)
+    if (cardano_transaction_input_equals(kvp->key, key))
     {
       cardano_redeemer_ref(kvp->value);
       *element = kvp->value;

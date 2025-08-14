@@ -244,9 +244,23 @@ set_transaction_inputs(
 
       return result;
     }
+  }
 
-    if (input_to_redeemer_map != NULL)
+  if (input_to_redeemer_map != NULL)
+  {
+    for (size_t i = 0U; i < num_inputs; ++i)
     {
+      cardano_transaction_input_t* input = NULL;
+
+      result = cardano_transaction_input_set_get(inputs, i, &input);
+      cardano_transaction_input_unref(&input);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_transaction_input_set_unref(&inputs);
+        return result;
+      }
+
       result = cardano_input_to_redeemer_map_update_redeemer_index(input_to_redeemer_map, input, i);
 
       if (result != CARDANO_SUCCESS)
