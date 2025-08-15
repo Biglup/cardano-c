@@ -86,6 +86,20 @@ emscripten_provider_context_new(const uint32_t object_id)
 extern void* get_provider_from_registry(uint32_t object_id);
 
 /**
+ * @brief Reports an exception from the C provider layer back to the JavaScript side.
+ *
+ * This function is implemented in JavaScript and imported into the C/WASM module. It
+ * serves as a bridge to pass an error that occurred within a C provider's asynchronous
+ * operation back to the JavaScript error handling system.
+ *
+ * @param object_id The unique identifier of the JavaScript provider instance that
+ * initiated the operation.
+ * @param exception A pointer to an object or string containing the details of the
+ * exception.
+ */
+extern void report_provider_bridge_error(uint32_t object_id, void* exception);
+
+/**
  * @brief Marshals a JavaScript object into a C `cardano_protocol_parameters_t`.
  *
  * @param[in] params_obj A handle to the JavaScript object containing protocol parameters.
@@ -235,6 +249,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_get_parameters, (uint32_t o
   }
   catch (e)
   {
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -275,7 +290,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_get_unspent_outputs, (uint3
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] get_unspent_outputs: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -311,7 +326,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_get_rewards_balance, (uint3
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] get_rewards_balance: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -348,7 +363,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_get_unspent_outputs_with_as
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] get_unspent_outputs_with_asset: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -384,7 +399,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_get_unspent_output_by_nft, 
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] get_unspent_output_by_nft: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -419,7 +434,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_resolve_unspent_outputs, (u
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] resolve_unspent_outputs: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -455,7 +470,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_resolve_datum, (uint32_t ob
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] resolve_datum: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -487,7 +502,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_confirm_transaction, (uint3
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] confirm_transaction: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -523,7 +538,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_submit_transaction, (uint32
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] submit_transaction: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });
@@ -563,7 +578,7 @@ EM_ASYNC_JS(cardano_error_t, cardano_provider_bridge_evaluate_transaction, (uint
   }
   catch (e)
   {
-    console.error("[C->JS Bridge] evaluate_transaction: Error occurred:", e);
+    report_provider_bridge_error(object_id, e);
     return 1;
   }
 });

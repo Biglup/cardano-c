@@ -204,7 +204,7 @@ cardano_blake2b_hash_to_redeemer_map_get(
     cardano_object_t*                           object = cardano_array_get(map->array, i);
     cardano_blake2b_hash_to_redeemer_map_kvp_t* kvp    = (cardano_blake2b_hash_to_redeemer_map_kvp_t*)((void*)object);
 
-    if (kvp->key == key)
+    if (cardano_blake2b_hash_equals(kvp->key, key))
     {
       cardano_redeemer_ref(kvp->value);
       *element = kvp->value;
