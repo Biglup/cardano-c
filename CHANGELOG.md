@@ -1,7 +1,14 @@
 Next (V1.1.x)
 ---------------------
 
-Next (V1.1.4)
+V1.1.5
+---------------------
+
+- Added emscripten coin selector.
+- Added emscripten tx evaluator.
+- Fixed a bug in the transaction balancer that was setting wrong redeemer index sometimes.
+
+V1.1.4
 ---------------------
 - Added emscripten blockchain provider.
 
