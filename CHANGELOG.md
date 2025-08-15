@@ -4,7 +4,7 @@ Next (V1.1.x)
 V1.1.6
 ---------------------
 
-- Pin Emscripten to version 3.1.5.
+- Pin Emscripten to version 3.1.49.
 
 V1.1.5
 ---------------------
