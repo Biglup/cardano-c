@@ -41,6 +41,10 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_set_donation
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_set_utxos
 
 ------------

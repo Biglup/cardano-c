@@ -496,6 +496,13 @@ cardano_balance_transaction(
 
   uint64_t fee            = cardano_transaction_body_get_fee(body);
   uint64_t change_padding = 0U;
+  uint64_t donation       = 0;
+
+  const uint64_t* donationPtr = cardano_transaction_body_get_donation(body);
+  if (donationPtr != NULL)
+  {
+    donation = *donationPtr;
+  }
 
   while (!is_balanced)
   {
@@ -529,7 +536,7 @@ cardano_balance_transaction(
 
     result = cardano_value_new(
       ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) -
-        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)change_padding),
+        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)change_padding + (int64_t)donation),
       mint,
       &implicit_value);
 
@@ -960,12 +967,14 @@ cardano_is_transaction_balanced(
     return result;
   }
 
-  const uint64_t fee                 = cardano_transaction_body_get_fee(body);
-  const int64_t  implicit_coin_value = ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) - (int64_t)implicit_coin.deposits;
+  const uint64_t* donationPtr         = cardano_transaction_body_get_donation(body);
+  const uint64_t  donation            = (donationPtr != NULL) ? *donationPtr : 0U;
+  const uint64_t  fee                 = cardano_transaction_body_get_fee(body);
+  const int64_t   implicit_coin_value = ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) - (int64_t)implicit_coin.deposits;
 
   cardano_value_t* implicit_value = NULL;
 
-  result = cardano_value_new(implicit_coin_value - (int64_t)fee, mint, &implicit_value);
+  result = cardano_value_new(implicit_coin_value - ((int64_t)fee + (int64_t)donation), mint, &implicit_value);
 
   if (result != CARDANO_SUCCESS)
   {

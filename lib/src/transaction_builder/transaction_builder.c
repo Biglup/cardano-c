@@ -1061,6 +1061,45 @@ cardano_tx_builder_set_minimum_fee(
 }
 
 void
+cardano_tx_builder_set_donation(
+  cardano_tx_builder_t* builder,
+  const uint64_t        donation)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  if (body == NULL)
+  {
+    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  if (donation == 0U)
+  {
+    result = cardano_transaction_body_set_donation(body, NULL);
+  }
+  else
+  {
+    result = cardano_transaction_body_set_donation(body, &donation);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to set donation.");
+    builder->last_error = result;
+  }
+}
+
+void
 cardano_tx_builder_set_utxos(
   cardano_tx_builder_t* builder,
   cardano_utxo_list_t*  utxos)

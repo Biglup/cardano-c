@@ -256,7 +256,7 @@ new_default_utxo(const char* utxo)
 };
 
 static cardano_utxo_list_t*
-new_default_utxo_list()
+new_default_utxo_list(const uint64_t donation = 0)
 {
   cardano_utxo_list_t* list = NULL;
 
@@ -267,6 +267,19 @@ new_default_utxo_list()
   cardano_utxo_t* gai1 = new_default_utxo(CBOR_DIFFERENT_VAL1);
   cardano_utxo_t* gai2 = new_default_utxo(CBOR_DIFFERENT_VAL2);
   cardano_utxo_t* gai3 = new_default_utxo(CBOR_DIFFERENT_VAL3);
+
+  // Add donation to first UTXO
+  if (donation > 0)
+  {
+    cardano_transaction_output_t* output = cardano_utxo_get_output(gai1);
+    cardano_transaction_output_unref(&output);
+
+    cardano_value_t* value = cardano_transaction_output_get_value(output);
+    cardano_value_unref(&value);
+
+    const uint64_t original_coin = cardano_value_get_coin(value);
+    EXPECT_EQ(cardano_value_set_coin(value, original_coin + donation), CARDANO_SUCCESS);
+  }
 
   EXPECT_EQ(cardano_utxo_list_add(list, gai2), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_utxo_list_add(list, gai1), CARDANO_SUCCESS);
@@ -405,6 +418,57 @@ TEST(cardano_balance_transaction, canBalanceATransaction2)
   cardano_tx_evaluator_t*        evaluator        = NULL;
   cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
 
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator);
+
+  // Assert
+  bool is_balanced = false;
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, canBalanceATransactionWithDonations)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  const uint64_t donation = 123456;
+  EXPECT_EQ(cardano_transaction_body_set_donation(body, &donation), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
 
@@ -595,6 +659,34 @@ TEST(cardano_is_transaction_balanced, returnsTrueIfTheTransactionIsBalanced)
   cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
   cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
   cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  // Act
+  bool is_balanced = false;
+
+  cardano_error_t result = cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced);
+
+  // Assert
+  EXPECT_TRUE(is_balanced);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_is_transaction_balanced, returnsTrueIfTheTransactionIsBalancedAnHasDeposit)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list(2000000);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  const uint64_t donation = 2000000;
+  EXPECT_EQ(cardano_transaction_body_set_donation(body, &donation), CARDANO_SUCCESS);
 
   // Act
   bool is_balanced = false;
