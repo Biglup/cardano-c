@@ -46,7 +46,7 @@ static const int64_t EMBEDDED_GROUP_SIZE = 2;
 typedef struct cardano_pool_metadata_t
 {
     cardano_object_t        base;
-    char                    url[65];
+    char                    url[129];
     cardano_blake2b_hash_t* hash;
 } cardano_pool_metadata_t;
 
@@ -96,7 +96,7 @@ cardano_pool_metadata_new(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (url_length > 64U)
+  if (url_length > 128U)
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
@@ -117,11 +117,11 @@ cardano_pool_metadata_new(
   (*pool_metadata)->base.ref_count     = 1;
   (*pool_metadata)->base.last_error[0] = '\0';
 
-  CARDANO_UNUSED(memset((*pool_metadata)->url, 0, 65));
+  CARDANO_UNUSED(memset((*pool_metadata)->url, 0, 129));
 
-  cardano_safe_memcpy((*pool_metadata)->url, 65, url, url_length);
+  cardano_safe_memcpy((*pool_metadata)->url, 129, url, url_length);
 
-  const size_t url_size           = cardano_safe_strlen((*pool_metadata)->url, 64);
+  const size_t url_size           = cardano_safe_strlen((*pool_metadata)->url, 128);
   (*pool_metadata)->url[url_size] = '\0';
 
   cardano_blake2b_hash_ref(hash);
@@ -148,7 +148,7 @@ cardano_pool_metadata_from_hash_hex(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (url_size > 64U)
+  if (url_size > 128U)
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
@@ -239,7 +239,15 @@ cardano_pool_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_meta
     return new_result;
   }
 
-  return cardano_cbor_validate_end_array(validator_name, reader);
+  const cardano_error_t end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
+
+  if (end_array_result != CARDANO_SUCCESS)
+  {
+    cardano_pool_metadata_unref(pool_metadata);
+    *pool_metadata = NULL;
+  }
+
+  return end_array_result;
 }
 
 cardano_error_t
@@ -267,7 +275,7 @@ cardano_pool_metadata_to_cbor(const cardano_pool_metadata_t* pool_metadata, card
   cardano_error_t write_string_result = cardano_cbor_writer_write_textstring(
     writer,
     pool_metadata->url,
-    cardano_safe_strlen(pool_metadata->url, 64));
+    cardano_safe_strlen(pool_metadata->url, 128));
 
   if (write_string_result != CARDANO_SUCCESS)
   {
@@ -286,7 +294,7 @@ cardano_pool_metadata_get_url_size(
     return 0;
   }
 
-  return cardano_safe_strlen(pool_metadata->url, 64);
+  return cardano_safe_strlen(pool_metadata->url, 128);
 }
 
 const char*
@@ -317,14 +325,14 @@ cardano_pool_metadata_set_url(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (url_size > 64U)
+  if (url_size > 128U)
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  cardano_safe_memcpy(pool_metadata->url, 65, url, url_size);
+  cardano_safe_memcpy(pool_metadata->url, 129, url, url_size);
 
-  const size_t url_length        = cardano_safe_strlen(pool_metadata->url, 64);
+  const size_t url_length        = cardano_safe_strlen(pool_metadata->url, 128);
   pool_metadata->url[url_length] = '\0';
 
   return CARDANO_SUCCESS;

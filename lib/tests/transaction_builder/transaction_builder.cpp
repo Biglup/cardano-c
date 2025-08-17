@@ -956,6 +956,75 @@ TEST(cardano_tx_builder_set_minimum_fee, returnsErrorIfBodyIsNull)
   cardano_provider_unref(&provider);
 }
 
+TEST(cardano_tx_builder_set_donation, doesntCrashWehnGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = NULL;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_set_donation(nullptr, 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_tx_builder_unref(&builder);
+}
+
+TEST(cardano_tx_builder_set_donation, canSetDonationFee)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = NULL;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_set_donation(builder, 1000);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_EQ(*cardano_transaction_body_get_donation(body), 1000);
+
+  // Cleanup
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+}
+
+TEST(cardano_tx_builder_set_donation, canUnsetDonation)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_provider_t*            provider = NULL;
+
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* builder = cardano_tx_builder_new(params, provider);
+
+  // Act
+  cardano_tx_builder_set_donation(builder, 0);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_EQ(cardano_transaction_body_get_donation(body), (uint64_t*)NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+}
+
 TEST(cardano_tx_builder_new, returnsErrorWhenGiveNull)
 {
   // Act

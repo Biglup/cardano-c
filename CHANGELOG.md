@@ -1,6 +1,12 @@
 Next (V1.1.x)
 ---------------------
 
+V1.1.7
+---------------------
+
+- Add donate to treasury function to tx builder.
+- Increase url max size on pool metadata from 64 to 128 bytes.
+
 V1.1.6
 ---------------------
 

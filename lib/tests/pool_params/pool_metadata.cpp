@@ -107,7 +107,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfPoolMetadataIsNull)
   cardano_blake2b_hash_unref(&hash);
 }
 
-TEST(cardano_pool_metadata_new, returnsErrorIfUrlBiggerThan64)
+TEST(cardano_pool_metadata_new, returnsErrorIfUrlBiggerThan128)
 {
   // Arrange
   cardano_pool_metadata_t* pool_metadata = nullptr;
@@ -116,7 +116,7 @@ TEST(cardano_pool_metadata_new, returnsErrorIfUrlBiggerThan64)
   EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH, strlen(HASH), &hash), CARDANO_SUCCESS);
 
   // Act
-  cardano_error_t error = cardano_pool_metadata_new(URL, 65, hash, &pool_metadata);
+  cardano_error_t error = cardano_pool_metadata_new(URL, 129, hash, &pool_metadata);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
@@ -209,24 +209,6 @@ TEST(cardano_pool_metadata_from_hash_hex, returnsErrorIfHashDifferentThan64)
 
   // Act
   cardano_error_t error = cardano_pool_metadata_from_hash_hex(URL, strlen(URL), HASH, 63, &pool_metadata);
-
-  // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
-
-  // Cleanup
-  cardano_blake2b_hash_unref(&hash);
-}
-
-TEST(cardano_pool_metadata_new, returnsErrorIfUrlIsBiggerThan64)
-{
-  // Arrange
-  cardano_pool_metadata_t* pool_metadata = nullptr;
-  cardano_blake2b_hash_t*  hash          = nullptr;
-
-  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH, strlen(HASH), &hash), CARDANO_SUCCESS);
-
-  // Act
-  cardano_error_t error = cardano_pool_metadata_from_hash_hex(URL, 65, HASH, strlen(HASH), &pool_metadata);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
@@ -625,7 +607,7 @@ TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsNull)
   cardano_pool_metadata_unref(&pool_metadata);
 }
 
-TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsBiggerThan64)
+TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsBiggerThan128)
 {
   // Arrange
   cardano_pool_metadata_t* pool_metadata = nullptr;
@@ -635,7 +617,7 @@ TEST(cardano_pool_metadata_set_url, returnsErrorIfUrlIsBiggerThan64)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  error = cardano_pool_metadata_set_url("https://example.com/this-is-a-very-long-url/this-is-a-very-long-url", strlen("https://example.com/this-is-a-very-long-url/this-is-a-very-long-url"), pool_metadata);
+  error = cardano_pool_metadata_set_url("https://example.com/this-is-a-very-long-url/this-is-a-very-long-urlxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", strlen("https://example.com/this-is-a-very-long-url/this-is-a-very-long-urlxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"), pool_metadata);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);

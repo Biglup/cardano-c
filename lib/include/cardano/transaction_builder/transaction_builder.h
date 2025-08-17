@@ -311,6 +311,25 @@ CARDANO_EXPORT void cardano_tx_builder_set_collateral_change_address_ex(cardano_
 CARDANO_EXPORT void cardano_tx_builder_set_minimum_fee(cardano_tx_builder_t* builder, uint64_t minimum_fee);
 
 /**
+ * \brief Sets the donation amount for the transaction builder.
+ *
+ * This function sets the donation amount. Donations are a Conway-era
+ * feature that contributes a specific amount to the treasury.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance where the donation will be set.
+ * \param[in] donation The donation amount, specified in lovelace.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...; // Initialized transaction builder
+ * uint64_t donation = 1000000;         // 1 ADA donation in lovelace
+ *
+ * cardano_tx_builder_set_donation(tx_builder, donation);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_tx_builder_set_donation(cardano_tx_builder_t* builder, uint64_t donation);
+
+/**
  * \brief Sets the available UTXOs for coin selection in transaction balancing.
  *
  * This function assigns a list of available UTXOs (`cardano_utxo_list_t`) to the transaction builder.
