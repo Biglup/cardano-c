@@ -65,6 +65,10 @@ Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_get_unique_signers
+
+------------
+
 .. doxygenfunction:: cardano_transaction_unref
 
 ------------

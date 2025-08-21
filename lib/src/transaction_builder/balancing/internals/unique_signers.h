@@ -301,7 +301,8 @@ _cardano_voting_procedures_pub_key_hashes(
  * \param[in] tx A pointer to an initialized \ref cardano_transaction_t object that represents the Cardano transaction
  *               for which the unique signers are to be determined. This parameter is required and must not be NULL.
  * \param[in] resolved_inputs A pointer to an initialized \ref cardano_utxo_list_t object containing the list of resolved UTXOs
- *                            (inputs) referenced in the transaction. This parameter is required and must not be NULL.
+ *                            (inputs) referenced in the transaction. If this parameters is NULL, the function will ignore inputs
+ *                            and collateral inputs.
  * \param[out] unique_signers On successful execution, this will point to a newly created \ref cardano_blake2b_hash_set_t object
  *                            containing the unique public key hashes required to authorize the transaction. The caller is responsible
  *                            for managing the lifecycle of this object. Specifically, the caller must release it by calling
