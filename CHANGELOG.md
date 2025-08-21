@@ -1,5 +1,10 @@
-Next (V1.1.x)
+Next (V1.1.9)
 ---------------------
+
+V1.1.8
+---------------------
+
+- Expose cardano_transaction_get_unique_signers to the public API
 
 V1.1.7
 ---------------------

@@ -1019,7 +1019,7 @@ _cardano_get_unique_signers(
   cardano_utxo_list_t*         resolved_inputs,
   cardano_blake2b_hash_set_t** unique_signers)
 {
-  if ((tx == NULL) || (resolved_inputs == NULL) || (unique_signers == NULL))
+  if ((tx == NULL) || (unique_signers == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -1056,24 +1056,27 @@ _cardano_get_unique_signers(
     return result;
   }
 
-  result = _cardano_add_input_signers(*unique_signers, inputs, resolved_inputs);
-
-  if (result != CARDANO_SUCCESS)
+  if (resolved_inputs != NULL)
   {
-    cardano_blake2b_hash_set_unref(unique_signers);
-
-    return result;
-  }
-
-  if (collateral_inputs != NULL)
-  {
-    result = _cardano_add_input_signers(*unique_signers, collateral_inputs, resolved_inputs);
+    result = _cardano_add_input_signers(*unique_signers, inputs, resolved_inputs);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_blake2b_hash_set_unref(unique_signers);
 
       return result;
+    }
+
+    if (collateral_inputs != NULL)
+    {
+      result = _cardano_add_input_signers(*unique_signers, collateral_inputs, resolved_inputs);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_blake2b_hash_set_unref(unique_signers);
+
+        return result;
+      }
     }
   }
 

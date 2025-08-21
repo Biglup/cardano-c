@@ -1169,3 +1169,8 @@ TEST(cardano_transaction_from_cbor, returnsErrorIfInvalidAssetNameInTransaction)
   cardano_cbor_reader_unref(&reader);
   cardano_transaction_unref(&transaction);
 }
+
+TEST(cardano_transaction_get_unique_signers, returnsErrorIfGivenNull)
+{
+  EXPECT_EQ(cardano_transaction_get_unique_signers(nullptr, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+}

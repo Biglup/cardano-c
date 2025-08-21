@@ -26,7 +26,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
-#include "../string_safe.h"
+#include "../transaction_builder/balancing/internals/unique_signers.h"
 
 #include <assert.h>
 #include <string.h>
@@ -566,6 +566,15 @@ cardano_transaction_unref(cardano_transaction_t** transaction)
     *transaction = NULL;
     return;
   }
+}
+
+cardano_error_t
+cardano_transaction_get_unique_signers(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         resolved_inputs,
+  cardano_blake2b_hash_set_t** unique_signers)
+{
+  return _cardano_get_unique_signers(tx, resolved_inputs, unique_signers);
 }
 
 void

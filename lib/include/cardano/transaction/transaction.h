@@ -54,6 +54,11 @@ extern "C" {
 typedef struct cardano_transaction_t cardano_transaction_t;
 
 /**
+ * \brief Represents a list of UTxO.
+ */
+typedef struct cardano_utxo_list_t cardano_utxo_list_t;
+
+/**
  * \brief Creates and initializes a new Cardano transaction.
  *
  * This function allocates and initializes a new instance of a \ref cardano_transaction_t object,
@@ -678,6 +683,33 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_apply_vkey_witnesses(
 CARDANO_NODISCARD
 CARDANO_EXPORT bool
 cardano_transaction_has_script_data(cardano_transaction_t* transaction);
+
+/**
+ * \brief Extracts the unique set of public key hashes (signers) required to sign a Cardano transaction.
+ *
+ * This function computes the unique set of signers for a given Cardano transaction by analyzing the transaction body
+ * and resolved inputs. This set is represented as a `cardano_blake2b_hash_set_t` containing the hashes of public keys
+ * that are required to authorize the transaction.
+ *
+ * \param[in] tx A pointer to an initialized \ref cardano_transaction_t object that represents the Cardano transaction
+ *               for which the unique signers are to be determined. This parameter is required and must not be NULL.
+ * \param[in] resolved_inputs A pointer to an initialized \ref cardano_utxo_list_t object containing the list of resolved UTXOs
+ *                            (inputs) referenced in the transaction. If this parameters is NULL, the function will ignore inputs
+ *                            and collateral inputs.
+ * \param[out] unique_signers On successful execution, this will point to a newly created \ref cardano_blake2b_hash_set_t object
+ *                            containing the unique public key hashes required to authorize the transaction. The caller is responsible
+ *                            for managing the lifecycle of this object. Specifically, the caller must release it by calling
+ *                            \ref cardano_blake2b_hash_set_unref once it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the unique signers were
+ *         successfully computed, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if required inputs (tx or resolved_inputs) are NULL.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_get_unique_signers(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         resolved_inputs,
+  cardano_blake2b_hash_set_t** unique_signers);
 
 /**
  * \brief Decrements the reference count of a cardano_transaction_t object.
