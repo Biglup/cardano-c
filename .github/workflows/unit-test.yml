@@ -50,42 +50,30 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   build_and_unit_tests_big_endian:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            target: mips-unknown-linux-gnu
-            toolchain: stable
+    runs-on: ubuntu-22.04
     steps:
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install build-essential
-          sudo apt install cmake
-          sudo apt install libgtest-dev
-          sudo apt install clang-tidy
-          sudo apt install m4
-
-      - name: Setup Gtest
-        run: |
-          cd $(mktemp -d)
-          cmake /usr/src/googletest
-          make
-          sudo make install
-          cd -
-
       - name: Checkout the repository
         uses: actions/checkout@v3
         with:
           submodules: "true"
 
-      - name: Build
-        run: |
-          ./scripts/create-debug-makefiles.sh
-          make
-
-      - name: Run Unit Tests
-        run: |
-          make test
+      - name: Build & test on big-endian (s390x)
+        uses: uraimo/run-on-arch-action@v3
+        with:
+          arch: s390x
+          distro: ubuntu22.04
+          install: |
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y \
+              build-essential cmake libgtest-dev clang-tidy m4
+            # Build & install gtest
+            cd "$(mktemp -d)"
+            cmake /usr/src/googletest
+            make -j"$(nproc)"
+            make install
+          run: |
+            set -euo pipefail
+            cd "$GITHUB_WORKSPACE"
+            ./scripts/create-debug-makefiles.sh
+            make -j"$(nproc)"
+            make test
