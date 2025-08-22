@@ -548,12 +548,12 @@ TEST(xxx_cardano_set_collateral_output, doesNothingWhenNoCollateralInputsAreGive
 
 TEST(xxx_cardano_set_collateral_output, doesntCrashOnMemoryAllocationFail)
 {
-  cardano_transaction_t*         transaction     = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_transaction_t*         transaction     = new_default_transaction(COMPLEX_TX_CBOR);
   cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
   cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
   cardano_utxo_list_t*           utxos           = new_default_utxo_list();
 
-  for (int i = 0; i < 66; ++i)
+  for (int i = 0; i < 65; ++i)
   {
     reset_allocators_run_count();
     set_malloc_limit(i);
@@ -597,7 +597,7 @@ TEST(xxx_cardano_set_collateral_output, returnsErrorIfGivenNull)
 
 TEST(xxx_cardano_set_collateral_output, returnsNotEnoughBalanceIfCantMakeValidUtxo)
 {
-  cardano_transaction_t*         transaction     = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_transaction_t*         transaction     = new_default_transaction(COMPLEX_TX_CBOR);
   cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
   cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
   cardano_utxo_list_t*           utxos           = new_default_utxo_list();

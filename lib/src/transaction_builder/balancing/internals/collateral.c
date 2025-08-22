@@ -238,7 +238,15 @@ _cardano_set_collateral_output(
 
   const size_t collateral_count = cardano_utxo_list_get_length(available_collateral_outputs);
 
-  if (collateral_count == 0U)
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witnesses);
+
+  cardano_redeemer_list_t* current_redeemers = cardano_witness_set_get_redeemers(witnesses);
+  cardano_redeemer_list_unref(&current_redeemers);
+
+  const bool has_plutus_scripts = cardano_redeemer_list_get_length(current_redeemers) > 0U;
+
+  if ((collateral_count == 0U) || (!has_plutus_scripts))
   {
     return CARDANO_SUCCESS;
   }

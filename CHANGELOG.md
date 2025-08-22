@@ -1,5 +1,10 @@
-Next (V1.1.9)
+Next (V1.1.10)
 ---------------------
+
+V1.1.9
+---------------------
+
+- Fix a bug in _cardano_set_collateral_output that was causing the collateral output to sometimes be set when not needed.
 
 V1.1.8
 ---------------------
