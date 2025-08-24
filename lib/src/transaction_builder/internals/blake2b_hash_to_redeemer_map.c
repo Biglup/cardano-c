@@ -235,11 +235,6 @@ cardano_blake2b_hash_to_redeemer_map_insert(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (value == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   cardano_redeemer_t* element = NULL;
   cardano_error_t     result  = cardano_blake2b_hash_to_redeemer_map_get(map, key, &element);
 
@@ -283,6 +278,11 @@ cardano_blake2b_hash_to_redeemer_map_insert(
     cardano_object_unref(&object);
 
     cardano_blake2b_hash_to_redeemer_map_kvp_t* entry = (cardano_blake2b_hash_to_redeemer_map_kvp_t*)((void*)object);
+
+    if ((entry == NULL) || (entry->value == NULL))
+    {
+      continue;
+    }
 
     result = cardano_redeemer_set_index(entry->value, i);
 
@@ -437,7 +437,7 @@ cardano_blake2b_hash_to_redeemer_map_update_redeemer_index(
   cardano_error_t     result   = cardano_blake2b_hash_to_redeemer_map_get(map, blake2b_hash, &redeemer);
   cardano_redeemer_unref(&redeemer);
 
-  if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+  if ((result == CARDANO_ERROR_ELEMENT_NOT_FOUND) || (redeemer == NULL))
   {
     return CARDANO_SUCCESS;
   }

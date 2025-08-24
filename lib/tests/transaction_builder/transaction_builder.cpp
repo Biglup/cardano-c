@@ -73,12 +73,16 @@ static const char* PLUTUS_DATA_CBOR            = "d8799f0102030405ff";
 static const char* COSTMDLS_ALL_CBOR           = "a30098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a0298b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
 static const char* SCRIPT_ADDRESS              = "addr1x8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gt7r0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shskhj42g";
 static const char* HASH_HEX                    = "00000000000000000000000000000000000000000000000000000000";
+static const char* HASH_HEX1                   = "10000000000000000000000000000000000000000000000000000000";
 static const char* ASSET_ID_HEX                = "0000000000000000000000000000000000000000000000000000000054455854";
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
 static const char* PLUTUS_V2_CBOR              = "82025908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
 static const char* PLUTUS_V3_CBOR              = "82035908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
 static const char* NATIVE_SCRIPT_CBOR          = "82008202828200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d3985388201838205190bb88200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c378204190fa0";
 static const char* REWARD_ADDRESS              = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
+static const char* REWARD_ADDRESS2             = "stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn";
+static const char* SCRIPT_REWARD_ADDRESS       = "stake_test17rphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcljw6kf";
+static const char* SCRIPT_REWARD_ADDRESS2      = "stake_test17rphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4ggq9fnfqd";
 static const char* DREP_KEY_HASH_CBOR          = "8200581c00000000000000000000000000000000000000000000000000000000";
 static const char* DREP_ID                     = "drep15cfxz9exyn5rx0807zvxfrvslrjqfchrd4d47kv9e0f46uedqtc";
 static const char* ANCHOR_HASH                 = "26ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
@@ -91,8 +95,23 @@ static const char* CREDENTIAL_SET_CBOR         = "d90102848200581c00000000000000
 static const char* COMITTEE_MEMBERS_MAP_CBOR   = "a48200581c00000000000000000000000000000000000000000000000000000000008200581c10000000000000000000000000000000000000000000000000000000018200581c20000000000000000000000000000000000000000000000000000000028200581c3000000000000000000000000000000000000000000000000000000003";
 static const char* CONSTITUTION_CBOR           = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
 static const char* CIP129_BECH32_1             = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
+static const char* CBOR_YES_WITHOUT_ANCHOR     = "8201f6";
 
 /* STATIC FUNCTIONS **********************************************************/
+
+static cardano_voting_procedure_t*
+new_default_voting_procedure()
+{
+  cardano_voting_procedure_t* voting_procedure = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(CBOR_YES_WITHOUT_ANCHOR, strlen(CBOR_YES_WITHOUT_ANCHOR));
+  cardano_error_t             result           = cardano_voting_procedure_from_cbor(reader, &voting_procedure);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return voting_procedure;
+};
 
 static cardano_script_t*
 create_script(const char* script)
@@ -395,6 +414,26 @@ static cardano_voter_t*
 new_default_voter()
 {
   static const char* CBOR = "8200581c00000000000000000000000000000000000000000000000000000000";
+
+  cardano_voter_t*       voter  = NULL;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_error_t        result = cardano_voter_from_cbor(reader, &voter);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return voter;
+};
+
+/**
+ * Creates a new default instance of the voter.
+ * \return A new instance of the voter.
+ */
+static cardano_voter_t*
+new_default_voter2()
+{
+  static const char* CBOR = "8201581c01000000000000000000000000000000000000000000000000000000";
 
   cardano_voter_t*       voter  = NULL;
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
@@ -3636,10 +3675,12 @@ TEST(cardano_tx_builder_mint_token, canSentMintToken)
   cardano_provider_t*            provider   = NULL;
   cardano_asset_name_t*          asset_name = NULL;
   cardano_blake2b_hash_t*        policy_id  = NULL;
+  cardano_blake2b_hash_t*        policy_id1 = NULL;
   cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
 
   EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX1, strlen(HASH_HEX1), &policy_id1), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
 
@@ -3649,6 +3690,7 @@ TEST(cardano_tx_builder_mint_token, canSentMintToken)
   cardano_transaction_t* tx = nullptr;
   cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 4, redeemer);
   cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 4, redeemer);
+  cardano_tx_builder_mint_token(tx_builder, policy_id1, asset_name, 5, NULL);
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
   cardano_transaction_body_unref(&body);
@@ -3659,8 +3701,12 @@ TEST(cardano_tx_builder_mint_token, canSentMintToken)
   int64_t quantity = 0;
   EXPECT_EQ(cardano_multi_asset_get(mint, policy_id, asset_name, &quantity), CARDANO_SUCCESS);
 
+  int64_t quantity2 = 0;
+  EXPECT_EQ(cardano_multi_asset_get(mint, policy_id1, asset_name, &quantity2), CARDANO_SUCCESS);
+
   // Assert
   EXPECT_EQ(quantity, 4);
+  EXPECT_EQ(quantity2, 5);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -3669,6 +3715,7 @@ TEST(cardano_tx_builder_mint_token, canSentMintToken)
   cardano_transaction_unref(&tx);
   cardano_asset_name_unref(&asset_name);
   cardano_blake2b_hash_unref(&policy_id);
+  cardano_blake2b_hash_unref(&policy_id1);
   cardano_plutus_data_unref(&redeemer);
 }
 
@@ -3696,6 +3743,7 @@ TEST(cardano_tx_builder_mint_token, returnsErrorIfMemoryAllocationFails)
 
     // Act
     cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 4, redeemer);
+    cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 4, NULL);
 
     // Assert
     EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -4466,18 +4514,28 @@ TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfRewardAmountLessThanZero
 TEST(cardano_tx_builder_withdraw_rewards, canWithdrawRewards)
 {
   // Arrange
-  cardano_protocol_parameters_t* params         = init_protocol_parameters();
-  cardano_provider_t*            provider       = NULL;
-  cardano_reward_address_t*      reward_address = nullptr;
-  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_protocol_parameters_t* params          = init_protocol_parameters();
+  cardano_provider_t*            provider        = NULL;
+  cardano_reward_address_t*      reward_address  = nullptr;
+  cardano_reward_address_t*      script_reward   = nullptr;
+  cardano_reward_address_t*      reward_address2 = nullptr;
+  cardano_reward_address_t*      script_reward2  = nullptr;
+  cardano_plutus_data_t*         redeemer        = create_plutus_data(PLUTUS_DATA_CBOR);
 
   EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &script_reward), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), &reward_address2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS2, strlen(SCRIPT_REWARD_ADDRESS2), &script_reward2), CARDANO_SUCCESS);
+
   EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
   // Act
   cardano_tx_builder_withdraw_rewards(tx_builder, reward_address, 1000, redeemer);
+  cardano_tx_builder_withdraw_rewards(tx_builder, reward_address2, 1001, NULL);
+  cardano_tx_builder_withdraw_rewards(tx_builder, script_reward, 1002, redeemer);
+  cardano_tx_builder_withdraw_rewards(tx_builder, script_reward2, 1003, NULL);
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
   cardano_transaction_body_unref(&body);
@@ -4485,33 +4543,52 @@ TEST(cardano_tx_builder_withdraw_rewards, canWithdrawRewards)
   cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
   cardano_withdrawal_map_unref(&withdrawals);
 
-  uint64_t withdrawal = 0;
+  uint64_t withdrawal1 = 0;
+  uint64_t withdrawal2 = 0;
+  uint64_t withdrawal3 = 0;
+  uint64_t withdrawal4 = 0;
 
-  EXPECT_EQ(cardano_withdrawal_map_get(withdrawals, reward_address, &withdrawal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_get(withdrawals, reward_address, &withdrawal1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_get(withdrawals, reward_address2, &withdrawal2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_get(withdrawals, script_reward, &withdrawal3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_get(withdrawals, script_reward2, &withdrawal4), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(withdrawal, 1000);
+  EXPECT_EQ(withdrawal1, 1000);
+  EXPECT_EQ(withdrawal2, 1001);
+  EXPECT_EQ(withdrawal3, 1002);
+  EXPECT_EQ(withdrawal4, 1003);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
   cardano_provider_unref(&provider);
   cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&script_reward);
+  cardano_reward_address_unref(&reward_address2);
+  cardano_reward_address_unref(&script_reward2);
   cardano_plutus_data_unref(&redeemer);
 }
 
 TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange
-  cardano_protocol_parameters_t* params         = init_protocol_parameters();
-  cardano_provider_t*            provider       = NULL;
-  cardano_reward_address_t*      reward_address = nullptr;
-  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_protocol_parameters_t* params          = init_protocol_parameters();
+  cardano_provider_t*            provider        = NULL;
+  cardano_reward_address_t*      reward_address  = nullptr;
+  cardano_reward_address_t*      script_reward   = nullptr;
+  cardano_reward_address_t*      reward_address2 = nullptr;
+  cardano_reward_address_t*      script_reward2  = nullptr;
+  cardano_plutus_data_t*         redeemer        = create_plutus_data(PLUTUS_DATA_CBOR);
 
   EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &script_reward), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), &reward_address2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS2, strlen(SCRIPT_REWARD_ADDRESS2), &script_reward2), CARDANO_SUCCESS);
+
   EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
 
-  for (int i = 0; i < 13; ++i)
+  for (int i = 0; i < 45; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
@@ -4521,6 +4598,9 @@ TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFails)
 
     // Act
     cardano_tx_builder_withdraw_rewards(tx_builder, reward_address, 1000, redeemer);
+    cardano_tx_builder_withdraw_rewards(tx_builder, reward_address2, 1001, NULL);
+    cardano_tx_builder_withdraw_rewards(tx_builder, script_reward, 1002, redeemer);
+    cardano_tx_builder_withdraw_rewards(tx_builder, script_reward2, 1003, NULL);
 
     // Assert
     EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -4538,6 +4618,9 @@ TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFails)
   cardano_protocol_parameters_unref(&params);
   cardano_provider_unref(&provider);
   cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&script_reward);
+  cardano_reward_address_unref(&reward_address2);
+  cardano_reward_address_unref(&script_reward2);
   cardano_plutus_data_unref(&redeemer);
   cardano_set_allocators(malloc, realloc, free);
 }
@@ -5924,6 +6007,8 @@ TEST(cardano_tx_builder_vote, returnsErrorIfGivenNull)
   cardano_protocol_parameters_t*  params    = init_protocol_parameters();
   cardano_provider_t*             provider  = nullptr;
   cardano_voter_t*                voter     = new_default_voter();
+  cardano_voter_t*                voter2    = new_default_voter2();
+  cardano_voting_procedure_t*     proc      = new_default_voting_procedure();
   cardano_plutus_data_t*          redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
   cardano_governance_action_id_t* action_id = nullptr;
   cardano_voting_procedure_t*     procedure = nullptr;
@@ -5950,6 +6035,26 @@ TEST(cardano_tx_builder_vote, returnsErrorIfGivenNull)
   EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_tx_builder_unref(&tx_builder);
 
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_vote(tx_builder, voter, action_id, proc, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_vote(tx_builder, voter, action_id, proc, redeemer);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_vote(tx_builder, voter2, action_id, proc, nullptr);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  cardano_tx_builder_unref(&tx_builder);
+
+  tx_builder = cardano_tx_builder_new(params, provider);
+  cardano_tx_builder_vote(tx_builder, voter2, action_id, proc, redeemer);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  cardano_tx_builder_unref(&tx_builder);
+
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
@@ -5960,6 +6065,8 @@ TEST(cardano_tx_builder_vote, returnsErrorIfGivenNull)
   cardano_cbor_reader_unref(&gov_action_reader);
   cardano_cbor_reader_unref(&voting_procedure_reader);
   cardano_voter_unref(&voter);
+  cardano_voter_unref(&voter2);
+  cardano_voting_procedure_unref(&proc);
 }
 
 TEST(cardano_tx_builder_vote, canVote)
@@ -6015,6 +6122,7 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
   cardano_protocol_parameters_t*  params    = init_protocol_parameters();
   cardano_provider_t*             provider  = nullptr;
   cardano_voter_t*                voter     = new_default_voter();
+  cardano_voter_t*                voter2    = new_default_voter2();
   cardano_plutus_data_t*          redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
   cardano_governance_action_id_t* action_id = nullptr;
   cardano_voting_procedure_t*     procedure = nullptr;
@@ -6026,7 +6134,7 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_voting_procedure_from_cbor(voting_procedure_reader, &procedure), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
 
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 52; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, provider);
 
@@ -6036,6 +6144,9 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
 
     // Act
     cardano_tx_builder_vote(tx_builder, voter, action_id, procedure, redeemer);
+    cardano_tx_builder_vote(tx_builder, voter, action_id, procedure, NULL);
+    cardano_tx_builder_vote(tx_builder, voter2, action_id, procedure, redeemer);
+    cardano_tx_builder_vote(tx_builder, voter2, action_id, procedure, NULL);
 
     // Assert
     EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -6059,6 +6170,7 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
   cardano_cbor_reader_unref(&gov_action_reader);
   cardano_cbor_reader_unref(&voting_procedure_reader);
   cardano_voter_unref(&voter);
+  cardano_voter_unref(&voter2);
   cardano_set_allocators(malloc, realloc, free);
 }
 

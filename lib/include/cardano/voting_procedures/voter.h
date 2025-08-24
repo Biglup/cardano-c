@@ -368,6 +368,48 @@ CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_voter_equals(const cardano_voter_t* lhs, const cardano_voter_t* rhs);
 
 /**
+ * \brief Compares two voter objects.
+ *
+ * This function compares two voter objects and returns an integer indicating
+ * their relative order.
+ *
+ * \param[in] lhs Pointer to the first voter object.
+ * \param[in] rhs Pointer to the second voter object.
+ *
+ * \return A negative value if lhs is less than rhs, zero if they are equal, and a positive value if lhs is greater than rhs.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_voter_t* voter1 = NULL;
+ * cardano_voter_t* voter2 = NULL;
+ *
+ * // Assume voter1 and voter2 are initialized properly
+ *
+ * int32_t comparison = cardano_voter_compare(voter1, voter2);
+ * if (comparison < 0)
+ * {
+ *   printf("voter1 is less than voter2.\n");
+ * }
+ * else if (comparison == 0)
+ * {
+ *   printf("voter1 is equal to voter2.\n");
+ * }
+ * else
+ * {
+ *   printf("voter1 is greater than voter2.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_voter_unref(&voter1);
+ * cardano_voter_unref(&voter2);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT int32_t cardano_voter_compare(
+  const cardano_voter_t* lhs,
+  const cardano_voter_t* rhs);
+
+/**
  * \brief Decrements the reference count of a voter object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_voter_t object

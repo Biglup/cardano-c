@@ -154,10 +154,8 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_redeemer_map_get(cardano_
  *
  * \param[in] map A constant pointer to the \ref cardano_blake2b_hash_to_redeemer_map_t blake2b hash where
  *                       the key-value pair is to be inserted.
- * \param[in] key The key to be inserted into the map. The caller is responsible for managing
- *                the lifecycle of the key blake2b_hash.
+ * \param[in] key The key to be inserted into the map.
  * \param[in] value The value to be associated with the key and inserted into the map.
- *                  The caller is responsible for managing the lifecycle of the value blake2b_hash.
  *
  * \return \ref CARDANO_SUCCESS if the key-value pair was successfully inserted, or an appropriate
  *         error code if the input parameters are invalid or any other error occurs.

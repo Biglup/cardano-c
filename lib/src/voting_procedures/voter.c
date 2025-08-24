@@ -355,6 +355,34 @@ cardano_voter_equals(const cardano_voter_t* lhs, const cardano_voter_t* rhs)
   return cardano_credential_equals(lhs->credential, rhs->credential);
 }
 
+int32_t
+cardano_voter_compare(
+  const cardano_voter_t* lhs,
+  const cardano_voter_t* rhs)
+{
+  if (lhs == rhs)
+  {
+    return 0;
+  }
+
+  if (lhs == NULL)
+  {
+    return -1;
+  }
+
+  if (rhs == NULL)
+  {
+    return 1;
+  }
+
+  if (lhs->type != rhs->type)
+  {
+    return (lhs->type < rhs->type) ? -1 : 1;
+  }
+
+  return cardano_credential_compare(lhs->credential, rhs->credential);
+}
+
 void
 cardano_voter_unref(cardano_voter_t** voter)
 {

@@ -716,6 +716,167 @@ add_proposing_redeemer(
   return result;
 }
 
+/**
+ * @brief Computes a deterministic, sortable hash ID for a voter and governance action pair.
+ *
+ * This function creates a unique identifier by concatenating the voter's type and credential hash
+ * with the governance action's transaction ID and index.
+ *
+ * This ID can be used to uniquely identify a voting procedure and to establish a canonical
+ * sorting order.
+ *
+ * @param[in] voter A pointer to the `cardano_voter_t` object.
+ * @param[in] action_id A pointer to the `cardano_governance_action_id_t` object.
+ * @param[out] id On success, this will be populated with a pointer to a newly allocated
+ * `cardano_blake2b_hash_t` object representing the unique ID.
+ *
+ * @return `CARDANO_SUCCESS` if the ID was computed successfully. Returns an appropriate
+ * error code on failure.
+ *
+ * @note The caller is responsible for managing the lifecycle of the returned `id` object
+ * and must release it by calling `cardano_blake2b_hash_unref`.
+ */
+static cardano_error_t
+compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_governance_action_id_t* action_id, cardano_blake2b_hash_t** id)
+{
+  if ((id == NULL) || (voter == NULL) || (action_id == NULL))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  cardano_credential_t*   credential = cardano_voter_get_credential(voter);
+  cardano_blake2b_hash_t* hash       = cardano_credential_get_hash(credential);
+
+  const byte_t* hash_bytes = cardano_blake2b_hash_get_data(hash);
+  size_t        hash_size  = cardano_blake2b_hash_get_bytes_size(hash);
+
+  cardano_voter_type_t voter_type;
+  result = cardano_voter_get_type(voter, &voter_type);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    return result;
+  }
+
+  const size_t   gov_id_size      = cardano_governance_action_id_get_hash_bytes_size(action_id);
+  const uint8_t* gov_id_bytes     = cardano_governance_action_id_get_hash_bytes(action_id);
+  uint64_t       gov_action_index = 0;
+
+  result = cardano_governance_action_id_get_index(action_id, &gov_action_index);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    return result;
+  }
+
+  const size_t total_size = sizeof(voter_type) + hash_size + gov_id_size + sizeof(gov_action_index);
+  byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
+
+  if (id_bytes == NULL)
+  {
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  size_t cursor = 0;
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size, &voter_type, sizeof(voter_type));
+  cursor += sizeof(voter_type);
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
+  cursor += hash_size;
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, gov_id_bytes, gov_id_size);
+  cursor += gov_id_size;
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, &gov_action_index, sizeof(gov_action_index));
+
+  cardano_blake2b_hash_unref(&hash);
+  cardano_credential_unref(&credential);
+
+  cardano_blake2b_hash_t* id_hash = NULL;
+  result                          = cardano_blake2b_hash_from_bytes(id_bytes, total_size, &id_hash);
+
+  _cardano_free(id_bytes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *id = id_hash;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * @brief Computes a deterministic, sortable hash ID for a credential.
+ *
+ * This function creates a unique identifier by concatenating the credential's type
+ * and its raw hash bytes.
+ *
+ * @param[in] credential A pointer to the `cardano_credential_t` object.
+ * @param[out] id On success, this will be populated with a pointer to a newly allocated
+ * `cardano_blake2b_hash_t` object representing the unique ID.
+ *
+ * @return `CARDANO_SUCCESS` if the ID was computed successfully, or an appropriate
+ * error code on failure.
+ *
+ * @note The caller is responsible for managing the lifecycle of the returned `id` object
+ * and must release it by calling `cardano_blake2b_hash_unref`.
+ */
+static cardano_error_t
+compute_credential_sortable_id(cardano_credential_t* credential, cardano_blake2b_hash_t** id)
+{
+  if ((credential == NULL) || (id == NULL))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  cardano_credential_type_t type;
+  cardano_error_t           result = cardano_credential_get_type(credential, &type);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_blake2b_hash_t* hash       = cardano_credential_get_hash(credential);
+  const byte_t*           hash_bytes = cardano_blake2b_hash_get_data(hash);
+  size_t                  hash_size  = cardano_blake2b_hash_get_bytes_size(hash);
+
+  const size_t total_size = sizeof(type) + hash_size;
+  byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
+
+  if (id_bytes == NULL)
+  {
+    cardano_blake2b_hash_unref(&hash);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  size_t cursor = 0;
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size, &type, sizeof(type));
+  cursor += sizeof(type);
+
+  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  result = cardano_blake2b_hash_from_bytes(id_bytes, total_size, id);
+
+  _cardano_free(id_bytes);
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_tx_builder_t*
@@ -2159,6 +2320,18 @@ cardano_tx_builder_mint_token(
       builder->last_error = result;
     }
   }
+  else
+  {
+    // We still want to add an entry in the mints_to_redeemer_map with a NULL redeemer
+    // so it can compute the indices correctly.
+    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->mints_to_redeemer_map, policy_id, NULL);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_tx_builder_set_last_error(builder, "Failed to add mint.");
+      builder->last_error = result;
+    }
+  }
 }
 
 void
@@ -2517,15 +2690,24 @@ cardano_tx_builder_withdraw_rewards(
     return;
   }
 
+  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
+  cardano_credential_unref(&credential);
+
+  cardano_blake2b_hash_t* hash = NULL;
+
+  result = compute_credential_sortable_id(credential, &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to compute credential sortable ID.");
+    builder->last_error = result;
+    return;
+  }
+
   if (redeemer != NULL)
   {
     cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
     cardano_witness_set_unref(&witnesses);
-
-    cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-    cardano_credential_unref(&credential);
-
-    cardano_blake2b_hash_t* hash = cardano_credential_get_hash(credential);
 
     result = add_redeemer(witnesses, hash, redeemer, CARDANO_REDEEMER_TAG_REWARD, builder);
 
@@ -2536,6 +2718,40 @@ cardano_tx_builder_withdraw_rewards(
       cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
       builder->last_error = result;
     }
+  }
+  else
+  {
+    // We still want to add an entry in the withdrawals_to_redeemer_map with a NULL redeemer
+    // so it can compute the indices correctly.
+    cardano_credential_type_t cred_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+    result                              = cardano_credential_get_type(credential, &cred_type);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_unref(&hash);
+      cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
+      builder->last_error = result;
+
+      return;
+    }
+
+    // For withdrawals due to a quirk in the node, script credentials are processed first than pub key
+    // hash credentials regardless of the canonical sorting, so we need to skip them when computing
+    // the redeemer index.
+    if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
+    {
+      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->withdrawals_to_redeemer_map, hash, NULL);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_blake2b_hash_unref(&hash);
+        cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
+        builder->last_error = result;
+        return;
+      }
+    }
+
+    cardano_blake2b_hash_unref(&hash);
   }
 }
 
@@ -3360,24 +3576,67 @@ cardano_tx_builder_vote(
     return;
   }
 
+  cardano_credential_t* credential = cardano_voter_get_credential(voter);
+  cardano_credential_unref(&credential);
+
+  cardano_blake2b_hash_t* id_hash = NULL;
+  result                          = compute_voting_procedures_sortable_id(voter, action_id, &id_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create voting procedure ID hash.");
+    builder->last_error = result;
+    return;
+  }
+
   if (redeemer != NULL)
   {
     cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
     cardano_witness_set_unref(&witnesses);
 
-    cardano_credential_t* credential = cardano_voter_get_credential(voter);
-    cardano_credential_unref(&credential);
-
-    cardano_blake2b_hash_t* hash = cardano_credential_get_hash(credential);
-
-    result = add_redeemer(witnesses, hash, redeemer, CARDANO_REDEEMER_TAG_VOTING, builder);
-    cardano_blake2b_hash_unref(&hash);
+    result = add_redeemer(witnesses, id_hash, redeemer, CARDANO_REDEEMER_TAG_VOTING, builder);
+    cardano_blake2b_hash_unref(&id_hash);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
       builder->last_error = result;
     }
+  }
+  else
+  {
+    // We still want to add an entry in the votes_to_redeemer_map with a NULL redeemer
+    // so it can compute the indices correctly.
+    cardano_credential_type_t cred_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+    result                              = cardano_credential_get_type(credential, &cred_type);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_unref(&id_hash);
+      cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
+      builder->last_error = result;
+
+      return;
+    }
+
+    // For votes due to a quirk in the node, script credentials are processed first than pub key
+    // hash credentials regardless of the canonical sorting, so we need to skip them when computing
+    // the redeemer index.
+    if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
+    {
+      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, id_hash, NULL);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_blake2b_hash_unref(&id_hash);
+        cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
+        builder->last_error = result;
+
+        return;
+      }
+    }
+
+    cardano_blake2b_hash_unref(&id_hash);
   }
 }
 
