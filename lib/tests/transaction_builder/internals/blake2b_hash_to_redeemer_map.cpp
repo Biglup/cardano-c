@@ -310,7 +310,6 @@ TEST(cardano_blake2b_hash_to_redeemer_map_insert, returnsErrorIfObjectIsNull)
   // Act
   EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_insert(nullptr, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_insert((cardano_blake2b_hash_to_redeemer_map_t*)"", nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_insert((cardano_blake2b_hash_to_redeemer_map_t*)"", (cardano_blake2b_hash_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_blake2b_hash_to_redeemer_map_insert, returnErrorIfMemoryAllocationFails)

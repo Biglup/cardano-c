@@ -975,8 +975,6 @@ _cardano_voting_procedures_pub_key_hashes(
     if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
     {
       cardano_voter_unref(&voter);
-      cardano_voter_list_unref(&voters);
-
       continue;
     }
 

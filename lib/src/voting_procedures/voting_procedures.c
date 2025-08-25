@@ -29,6 +29,7 @@
 #include <cardano/voting_procedures/voting_procedures.h>
 
 #include "../allocators.h"
+#include "../cbor/cbor_validation.h"
 #include "../collections/array.h"
 #include "voting_procedure_map.h"
 
@@ -93,11 +94,11 @@ cardano_voting_procedures_deallocate(void* object)
 /**
  * \brief Deallocates a voting_procedure map key value pair object.
  *
- * This function is responsible for properly deallocating a voting_procedure map key value pair object (`cardano_voting_procedure_map_kvp_t`)
+ * This function is responsible for properly deallocating a voting_procedure map key value pair object (`cardano_voting_procedure_kvp_t`)
  * and its associated resources.
  *
  * \param object A void pointer to the voting_procedure_map object to be deallocated. The function casts this
- *               pointer to the appropriate type (`cardano_voting_procedure_map_kvp_t*`).
+ *               pointer to the appropriate type (`cardano_voting_procedure_kvp_t*`).
  *
  * \note It is assumed that this function is called only when the reference count of the voting_procedure_map
  *       object reaches zero, as part of the reference counting mechanism implemented for managing the
@@ -121,6 +122,30 @@ cardano_voting_procedure_kvp_deallocate(void* object)
   }
 
   _cardano_free(map);
+}
+
+/**
+ * \brief Compares two cardano_voting_procedure_kvp_t objects based on their voter.
+ *
+ * \param[in] lhs Pointer to the first cardano_object_t object.
+ * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
+ *
+ * \return A negative value if the voter id of lhs is less than the voter id of rhs, zero if they are equal,
+ *         and a positive value if the voter id of lhs is greater than the voter id of rhs.
+ */
+static int32_t
+compare_by_voter(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
+{
+  assert(lhs != NULL);
+  assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
+
+  const cardano_voting_procedure_kvp_t* lhs_kvp = (const cardano_voting_procedure_kvp_t*)((const void*)lhs);
+  const cardano_voting_procedure_kvp_t* rhs_kvp = (const cardano_voting_procedure_kvp_t*)((const void*)rhs);
+
+  return cardano_voter_compare(lhs_kvp->key, rhs_kvp->key);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -309,11 +334,21 @@ cardano_voting_procedures_from_cbor(cardano_cbor_reader_t* reader, cardano_votin
     }
 
     cardano_voter_unref(&voter);
+
+    cardano_array_sort(data->array, compare_by_voter, NULL);
+  }
+
+  cardano_error_t result = cardano_cbor_validate_end_map("voting_procedures", reader);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_voting_procedures_unref(&data);
+    return result;
   }
 
   *voting_procedures = data;
 
-  return cardano_cbor_reader_read_end_map(reader);
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t
@@ -539,6 +574,8 @@ cardano_voting_procedures_insert(
     cardano_voting_procedure_kvp_deallocate(kvp);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
+
+  cardano_array_sort(voting_procedures->array, compare_by_voter, NULL);
 
   return CARDANO_SUCCESS;
 }

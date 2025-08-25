@@ -118,6 +118,61 @@ cardano_voting_procedure_map_kvp_deallocate(void* object)
   _cardano_free(map);
 }
 
+/**
+ * \brief Compares two cardano_voting_procedure_map_kvp_t objects based on their governance action id.
+ *
+ * \param[in] lhs Pointer to the first cardano_object_t object.
+ * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
+ *
+ * \return A negative value if the governance action id of lhs is less than the governance action id of rhs, zero if they are equal,
+ *         and a positive value if the governance action id of lhs is greater than the governance action id of rhs.
+ */
+static int32_t
+compare_by_governance_action_id(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
+{
+  assert(lhs != NULL);
+  assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
+
+  const cardano_voting_procedure_map_kvp_t* lhs_kvp = (const cardano_voting_procedure_map_kvp_t*)((const void*)lhs);
+  const cardano_voting_procedure_map_kvp_t* rhs_kvp = (const cardano_voting_procedure_map_kvp_t*)((const void*)rhs);
+
+  const size_t lhs_size = cardano_governance_action_id_get_hash_bytes_size(lhs_kvp->key);
+  const size_t rhs_size = cardano_governance_action_id_get_hash_bytes_size(rhs_kvp->key);
+
+  if (lhs_size != rhs_size)
+  {
+    return (lhs_size < rhs_size) ? -1 : 1;
+  }
+
+  const uint8_t* lhs_bytes   = cardano_governance_action_id_get_hash_bytes(lhs_kvp->key);
+  const uint8_t* rhs_bytes   = cardano_governance_action_id_get_hash_bytes(rhs_kvp->key);
+  const int32_t  comp_result = memcmp(lhs_bytes, rhs_bytes, lhs_size);
+
+  if (comp_result != 0)
+  {
+    return comp_result;
+  }
+
+  uint64_t lhs_gov_action_index = 0;
+  uint64_t rhs_gov_action_index = 0;
+
+  cardano_error_t result = cardano_governance_action_id_get_index(lhs_kvp->key, &lhs_gov_action_index);
+  CARDANO_UNUSED(result);
+
+  result = cardano_governance_action_id_get_index(rhs_kvp->key, &rhs_gov_action_index);
+  CARDANO_UNUSED(result);
+
+  if (lhs_gov_action_index == rhs_gov_action_index)
+  {
+    return 0;
+  }
+
+  return (lhs_gov_action_index < rhs_gov_action_index) ? -1 : 1;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -248,6 +303,8 @@ cardano_voting_procedure_map_insert(
 
   CARDANO_UNUSED(old_size);
   CARDANO_UNUSED(new_size);
+
+  cardano_array_sort(voting_procedure_map->array, compare_by_governance_action_id, NULL);
 
   return CARDANO_SUCCESS;
 }

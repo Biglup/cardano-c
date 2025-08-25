@@ -39,6 +39,10 @@
 
 static const char* GOVERNANCE_ACTION_ID_CBOR_1 = "825820000000000000000000000000000000000000000000000000000000000000000001";
 static const char* GOVERNANCE_ACTION_ID_CBOR_2 = "825820000000000000000000000000000000000000000000000000000000000000000002";
+static const char* GOVERNANCE_ACTION_ID_CBOR_3 = "825820200000000000000000000000000000000000000000000000000000000000000002";
+static const char* GOVERNANCE_ACTION_ID_CBOR_4 = "825820100000000000000000000000000000000000000000000000000000000000000003";
+static const char* GOVERNANCE_ACTION_ID_CBOR_5 = "825820100000000000000000000000000000000000000000000000000000000000000000";
+static const char* GOVERNANCE_ACTION_ID_CBOR_6 = "825820200000000000000000000000000000000000000000000000000000000000000001";
 
 static const char* VOTING_PROCEDURE_CBOR_1 = "8200827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000";
 
@@ -442,6 +446,93 @@ TEST(cardano_voting_procedure_map_get, returnsErrorIfElementIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
+  cardano_voting_procedure_map_unref(&voting_procedure_map);
+}
+
+TEST(cardano_voting_procedure_map_insert, keepsElementsSortedByGovernanceId)
+{
+  // Arrange
+  cardano_voting_procedure_map_t* voting_procedure_map = nullptr;
+  cardano_error_t                 error                = cardano_voting_procedure_map_new(&voting_procedure_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* key1 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_1);
+  cardano_voting_procedure_t*     val1 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  cardano_governance_action_id_t* key2 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_2);
+  cardano_voting_procedure_t*     val2 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  cardano_governance_action_id_t* key3 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_3);
+  cardano_voting_procedure_t*     val3 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  cardano_governance_action_id_t* key4 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_4);
+  cardano_voting_procedure_t*     val4 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  cardano_governance_action_id_t* key5 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_5);
+  cardano_voting_procedure_t*     val5 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  cardano_governance_action_id_t* key6 = new_default_governance_action_id(GOVERNANCE_ACTION_ID_CBOR_6);
+  cardano_voting_procedure_t*     val6 = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  // Act
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key1, val1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key2, val2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key3, val3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key4, val4), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key5, val5), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_map_insert(voting_procedure_map, key6, val6), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_voting_procedure_map_get_length(voting_procedure_map), 6);
+
+  // Verify the order of keys
+  cardano_governance_action_id_list_t* keys = nullptr;
+  EXPECT_EQ(cardano_voting_procedure_map_get_keys(voting_procedure_map, &keys), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_governance_action_id_list_get_length(keys), 6);
+
+  cardano_governance_action_id_t* out1 = NULL;
+  cardano_governance_action_id_t* out2 = NULL;
+  cardano_governance_action_id_t* out3 = NULL;
+  cardano_governance_action_id_t* out4 = NULL;
+  cardano_governance_action_id_t* out5 = NULL;
+  cardano_governance_action_id_t* out6 = NULL;
+
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 0, &out1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 1, &out2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 2, &out3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 3, &out4), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 4, &out5), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_list_get(keys, 5, &out6), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_governance_action_id_equals(out1, key1), true);
+  EXPECT_EQ(cardano_governance_action_id_equals(out2, key2), true);
+  EXPECT_EQ(cardano_governance_action_id_equals(out3, key5), true);
+  EXPECT_EQ(cardano_governance_action_id_equals(out4, key4), true);
+  EXPECT_EQ(cardano_governance_action_id_equals(out5, key6), true);
+  EXPECT_EQ(cardano_governance_action_id_equals(out6, key3), true);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&key1);
+  cardano_governance_action_id_unref(&key2);
+  cardano_governance_action_id_unref(&key3);
+  cardano_governance_action_id_unref(&key4);
+  cardano_governance_action_id_unref(&key5);
+  cardano_governance_action_id_unref(&key6);
+  cardano_governance_action_id_unref(&out1);
+  cardano_governance_action_id_unref(&out2);
+  cardano_governance_action_id_unref(&out3);
+  cardano_governance_action_id_unref(&out4);
+  cardano_governance_action_id_unref(&out5);
+  cardano_governance_action_id_unref(&out6);
+  cardano_governance_action_id_list_unref(&keys);
+  cardano_voting_procedure_unref(&val1);
+  cardano_voting_procedure_unref(&val2);
+  cardano_voting_procedure_unref(&val3);
+  cardano_voting_procedure_unref(&val4);
+  cardano_voting_procedure_unref(&val5);
+  cardano_voting_procedure_unref(&val6);
   cardano_voting_procedure_map_unref(&voting_procedure_map);
 }
 

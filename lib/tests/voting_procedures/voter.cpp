@@ -36,6 +36,7 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR            = "8200581c00000000000000000000000000000000000000000000000000000000";
+static const char* CBOR_2          = "8200581c00000000000000000000000000000000000000000000000000000001";
 static const char* CREDENTIAL_CBOR = "8200581c00000000000000000000000000000000000000000000000000000000";
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -49,6 +50,24 @@ new_default_voter()
 {
   cardano_voter_t*       voter  = NULL;
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_error_t        result = cardano_voter_from_cbor(reader, &voter);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return voter;
+};
+
+/**
+ * Creates a new default instance of the voter.
+ * @return A new instance of the voter.
+ */
+static cardano_voter_t*
+new_default_voter2()
+{
+  cardano_voter_t*       voter  = NULL;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR_2, strlen(CBOR_2));
   cardano_error_t        result = cardano_voter_from_cbor(reader, &voter);
 
   EXPECT_THAT(result, CARDANO_SUCCESS);
@@ -633,4 +652,132 @@ TEST(cardano_voter_equals, returnsTrueIfBothObjectsAreNull)
 
   // Assert
   EXPECT_TRUE(result);
+}
+
+TEST(cardano_voter_compare, returnsZeroIfBothAreNullPtr)
+{
+  // Act
+  int result = cardano_voter_compare(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+}
+
+TEST(cardano_voter_compare, returnsMinusOneIfFirstVoterIsNull)
+{
+  // Arrange
+  cardano_voter_t* voter = new_default_voter();
+
+  // Act
+  int result = cardano_voter_compare(nullptr, voter);
+
+  // Assert
+  EXPECT_EQ(result, -1);
+
+  // Cleanup
+  cardano_voter_unref(&voter);
+}
+
+TEST(cardano_voter_compare, returnsOneIfSecondVoterIsNull)
+{
+  // Arrange
+  cardano_voter_t* voter = new_default_voter();
+
+  // Act
+  int result = cardano_voter_compare(voter, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, 1);
+
+  // Cleanup
+  cardano_voter_unref(&voter);
+}
+
+TEST(cardano_voter_compare, returnsZeroIfVotersAreEqual)
+{
+  // Arrange
+  cardano_voter_t* voter1 = new_default_voter();
+  cardano_voter_t* voter2 = new_default_voter();
+
+  // Act
+  int result = cardano_voter_compare(voter1, voter2);
+
+  // Assert
+  EXPECT_EQ(result, 0);
+
+  // Cleanup
+  cardano_voter_unref(&voter1);
+  cardano_voter_unref(&voter2);
+}
+
+TEST(cardano_voter_compare, returnsNegativeIfFirstVoterIsLessThanSecond)
+{
+  // Arrange
+  cardano_voter_t* voter1 = new_default_voter();
+  cardano_voter_t* voter2 = new_default_voter();
+
+  EXPECT_EQ(cardano_voter_set_type(voter2, CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH), CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_voter_compare(voter1, voter2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_voter_unref(&voter1);
+  cardano_voter_unref(&voter2);
+}
+
+TEST(cardano_voter_compare, returnsPositiveIfFirstVoterIsGreaterThanSecond)
+{
+  // Arrange
+  cardano_voter_t* voter1 = new_default_voter();
+  cardano_voter_t* voter2 = new_default_voter();
+
+  EXPECT_EQ(cardano_voter_set_type(voter1, CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH), CARDANO_SUCCESS);
+
+  // Act
+  int result = cardano_voter_compare(voter1, voter2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_voter_unref(&voter1);
+  cardano_voter_unref(&voter2);
+}
+
+TEST(cardano_voter_compare, returnsNegativeIfFirstVoterHashIsLessThanSecond)
+{
+  // Arrange
+  cardano_voter_t* voter1 = new_default_voter();
+  cardano_voter_t* voter2 = new_default_voter2();
+
+  // Act
+  int result = cardano_voter_compare(voter1, voter2);
+
+  // Assert
+  EXPECT_LT(result, 0);
+
+  // Cleanup
+  cardano_voter_unref(&voter1);
+  cardano_voter_unref(&voter2);
+}
+
+TEST(cardano_voter_compare, returnsPositiveIfFirstvoterTypeIsGreaterThanSecond)
+{
+  // Arrange
+  cardano_voter_t* voter1 = new_default_voter2();
+  cardano_voter_t* voter2 = new_default_voter();
+
+  // Act
+  int result = cardano_voter_compare(voter1, voter2);
+
+  // Assert
+  EXPECT_GT(result, 0);
+
+  // Cleanup
+  cardano_voter_unref(&voter1);
+  cardano_voter_unref(&voter2);
 }
