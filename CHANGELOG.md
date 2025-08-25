@@ -1,7 +1,7 @@
 Next (V1.1.11)
 ---------------------
 
-V1.1.19
+V1.1.10
 ---------------------
 
 - Fixed several bugs with redeemer indices calculation while building the transaction.
