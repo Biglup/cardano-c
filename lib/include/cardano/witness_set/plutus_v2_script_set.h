@@ -211,8 +211,6 @@ CARDANO_EXPORT cardano_error_t cardano_plutus_v2_script_set_to_cbor(
  *
  * \return CARDANO_SUCCESS                 On success.
  * \return CARDANO_ERROR_POINTER_IS_NULL   If \p plutus_v2_scripts or \p writer is NULL.
- * \return <propagated error>              If reading a script from the set or serializing a
- *                                         script fails; the specific error is returned.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t

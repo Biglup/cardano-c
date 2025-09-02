@@ -593,3 +593,64 @@ TEST(cardano_script_all_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_script_all_unref(&script_all);
 }
+
+TEST(cardano_script_all_to_cip116_json, canSerializeAny)
+{
+  // Arrange
+  cardano_script_all_t*  all    = NULL;
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  cardano_error_t error = cardano_script_all_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &all);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_script_all_to_cip116_json(all, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[2048] = { 0 };
+  size_t size         = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"all\",\n"
+    "  \"scripts\": [\n"
+    "    {\n"
+    "      \"tag\": \"timelock_start\",\n"
+    "      \"slot\": \"3000\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"pubkey\",\n"
+    "      \"pubkey\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"timelock_expiry\",\n"
+    "      \"slot\": \"4000\"\n"
+    "    }\n"
+    "  ]\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_script_all_unref(&all);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_script_all_to_cip116_json, returnsErrorIfNOfKIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  // Act
+  cardano_error_t error = cardano_script_all_to_cip116_json(nullptr, writer);
+  ASSERT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+}

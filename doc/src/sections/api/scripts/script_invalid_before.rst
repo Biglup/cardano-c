@@ -17,6 +17,10 @@ Native Script - Require Time After
 
 ------------
 
+.. doxygenfunction:: cardano_script_invalid_before_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_script_invalid_before_from_json
 
 ------------

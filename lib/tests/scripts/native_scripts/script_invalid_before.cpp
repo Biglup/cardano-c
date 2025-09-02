@@ -43,15 +43,15 @@ static const char* PUBKEY_SCRIPT =
   "  \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "}";
 
-static const char* AFTER_SCRIPT =
+static const char* BEFORE_SCRIPT =
   "{\n"
-  "  \"type\": \"before\",\n"
+  "  \"type\": \"after\",\n"
   "  \"slot\": 3000\n"
   "}";
 
-static const char* AFTER_SCRIPT2 =
+static const char* BEFORE_SCRIPT2 =
   "{\n"
-  "  \"type\": \"before\",\n"
+  "  \"type\": \"after\",\n"
   "  \"slot\": 4000\n"
   "}";
 
@@ -137,7 +137,7 @@ TEST(cardano_script_invalid_before_from_json, returnsErrorIfJsonIsNull)
 
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfInvalidAfterIsNull)
 {
-  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_script_invalid_before_from_json, returnsErrorIfMemoryInvalidAfterocationFails)
@@ -149,7 +149,7 @@ TEST(cardano_script_invalid_before_from_json, returnsErrorIfMemoryInvalidAfteroc
   cardano_script_invalid_before_t* invalid_before = NULL;
 
   // Act
-  EXPECT_EQ(cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before), CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before), CARDANO_ERROR_INVALID_JSON);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
@@ -181,7 +181,7 @@ TEST(cardano_script_invalid_before_equals, returnsFalseIfInvalidAfterIsNull)
   // Arrange
   cardano_script_invalid_before_t* invalid_before = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -199,7 +199,7 @@ TEST(cardano_script_invalid_before_equals, returnsFalseIfInvalidAfterIsNull2)
   // Arrange
   cardano_script_invalid_before_t* invalid_before = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -218,10 +218,10 @@ TEST(cardano_script_invalid_before_equals, returnsTrueIfBothAreTheSame)
   cardano_script_invalid_before_t* invalid_before1 = NULL;
   cardano_script_invalid_before_t* invalid_before2 = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before1);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before2);
+  error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -241,10 +241,10 @@ TEST(cardano_script_invalid_before_equals, returnsFalseIfBothAreDifferent)
   cardano_script_invalid_before_t* invalid_before1 = NULL;
   cardano_script_invalid_before_t* invalid_before2 = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before1);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  error = cardano_script_invalid_before_from_json(AFTER_SCRIPT2, strlen(AFTER_SCRIPT2), &invalid_before2);
+  error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT2, strlen(BEFORE_SCRIPT2), &invalid_before2);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -264,7 +264,7 @@ TEST(cardano_script_invalid_before_equals, returnsFalseIfOneIsNull)
   cardano_script_invalid_before_t* invalid_before1 = NULL;
   cardano_script_invalid_before_t* invalid_before2 = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before1);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before1);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -292,7 +292,7 @@ TEST(cardano_script_invalid_before_equals, returnsFalseIfNotTheSameType)
   cardano_script_invalid_before_t* invalid_before = NULL;
   cardano_script_pubkey_t*         pubkey         = NULL;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   error = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
@@ -314,7 +314,7 @@ TEST(cardano_script_invalid_before_ref, increasesTheReferenceCount)
 {
   // Arrange
   cardano_script_invalid_before_t* script_all = nullptr;
-  cardano_error_t                  error      = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &script_all);
+  cardano_error_t                  error      = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &script_all);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -355,7 +355,7 @@ TEST(cardano_script_invalid_before_unref, decreasesTheReferenceCount)
 {
   // Arrange
   cardano_script_invalid_before_t* script_all = nullptr;
-  cardano_error_t                  error      = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &script_all);
+  cardano_error_t                  error      = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &script_all);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -378,7 +378,7 @@ TEST(cardano_script_invalid_before_unref, freesTheObjectIfReferenceReachesZero)
 {
   // Arrange
   cardano_script_invalid_before_t* script_all = nullptr;
-  cardano_error_t                  error      = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &script_all);
+  cardano_error_t                  error      = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &script_all);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -426,7 +426,7 @@ TEST(cardano_script_invalid_before_set_last_error, doesNothingWhenWhenMessageIsN
 {
   // Arrange
   cardano_script_invalid_before_t* script_all = nullptr;
-  cardano_error_t                  error      = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &script_all);
+  cardano_error_t                  error      = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &script_all);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
@@ -458,7 +458,7 @@ TEST(cardano_script_invalid_before_get_slot, returnsErrorIfSlotIsNull)
   // Arrange
   cardano_script_invalid_before_t* invalid_before = nullptr;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -473,7 +473,7 @@ TEST(cardano_script_invalid_before_get_slot, returnsSlot)
   // Arrange
   cardano_script_invalid_before_t* invalid_before = nullptr;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -498,7 +498,7 @@ TEST(cardano_script_invalid_before_set_slot, setsSlot)
   // Arrange
   cardano_script_invalid_before_t* invalid_before = nullptr;
 
-  cardano_error_t error = cardano_script_invalid_before_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_before);
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
@@ -511,4 +511,55 @@ TEST(cardano_script_invalid_before_set_slot, setsSlot)
 
   // Cleanup
   cardano_script_invalid_before_unref(&invalid_before);
+}
+
+TEST(cardano_script_invalid_before_to_cip116_json, canSerializeInvalidAfter)
+{
+  // Arrange
+  cardano_script_invalid_before_t* invalid_before = nullptr;
+
+  cardano_error_t error = cardano_script_invalid_before_from_json(BEFORE_SCRIPT, strlen(BEFORE_SCRIPT), &invalid_before);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  // Act
+  error = cardano_script_invalid_before_to_cip116_json(invalid_before, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[256] = { 0 };
+  size_t size        = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"timelock_start\",\n"
+    "  \"slot\": \"3000\"\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_script_invalid_before_unref(&invalid_before);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_script_invalid_before_to_cip116_json, returnsErrorIfInvalidAfterIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  // Act
+  cardano_error_t error = cardano_script_invalid_before_to_cip116_json(nullptr, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
 }

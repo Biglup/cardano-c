@@ -52,18 +52,10 @@ jobs:
           NumViolations=`cat .results/error_count`
           echo $NumViolations
 
-      - name: Set up Google Cloud credential # We need this to upload the MISRA Compliance Report to Google Cloud Storage
-        if: always()
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: |
-          echo "$GCP_SA_KEY" | base64 -di >> "$HOME"/gcp-key.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json" >> $GITHUB_ENV
-
       - name: Generate MISRA Compliance Report
         if: always()
         id: misra-compliance-report
-        uses: Biglup/misra-compliance-github-action@v0.2
+        uses: Biglup/misra-compliance-github-action@v0.5
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           project: 'libcardano-c'

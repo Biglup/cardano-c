@@ -17,6 +17,10 @@ Native Script - Require Signature
 
 ------------
 
+.. doxygenfunction:: cardano_script_pubkey_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_script_pubkey_from_json
 
 ------------

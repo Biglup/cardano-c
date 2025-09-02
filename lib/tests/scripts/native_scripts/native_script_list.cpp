@@ -46,7 +46,7 @@ static const char* ALL_SCRIPT =
   "  \"scripts\":\n"
   "  [\n"
   "    {\n"
-  "      \"type\": \"after\",\n"
+  "      \"type\": \"before\",\n"
   "      \"slot\": 3000\n"
   "    },\n"
   "    {\n"
@@ -54,7 +54,7 @@ static const char* ALL_SCRIPT =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -66,7 +66,7 @@ static const char* ALL_SCRIPT_2 =
   "  \"scripts\":\n"
   "  [\n"
   "    {\n"
-  "      \"type\": \"after\",\n"
+  "      \"type\": \"before\",\n"
   "      \"slot\": 2000\n"
   "    },\n"
   "    {\n"
@@ -74,7 +74,7 @@ static const char* ALL_SCRIPT_2 =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -90,7 +90,7 @@ static const char* ALL_SCRIPT_3 =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -721,4 +721,19 @@ TEST(cardano_native_script_list_equals, returnsTrueIfBothListsAreNull)
 
   // Assert
   ASSERT_TRUE(result);
+}
+
+TEST(cardano_native_script_list_to_cip116_json, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_native_script_list_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }

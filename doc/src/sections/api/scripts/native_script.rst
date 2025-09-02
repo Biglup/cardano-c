@@ -37,6 +37,10 @@ Native Script
 
 ------------
 
+.. doxygenfunction:: cardano_native_script_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_native_script_from_json
 
 ------------

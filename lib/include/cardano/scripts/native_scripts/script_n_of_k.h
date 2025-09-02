@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -183,6 +184,32 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_to_cbor(
   const cardano_script_n_of_k_t* script_n_of_k,
   cardano_cbor_writer_t*         writer);
+
+/**
+ * \brief Serializes a native \c n_of_k script to CIP-116 JSON.
+ *
+ * This function writes the JSON representation of a native script of kind
+ * "n-of-k" into \p writer following the CIP-116.
+ *
+ * The function emits a complete JSON object (it writes the opening and
+ * closing braces). It can be called at the root, as an array element, or
+ * as the value of a property in an enclosing object.
+ *
+ * For determinism, fields are written in the order: \c "tag", \c "scripts",
+ * then \c "n".
+ *
+ * \param[in]     script_n_of_k A valid pointer to an \ref cardano_script_n_of_k_t.
+ * \param[in,out] writer        A valid JSON writer positioned where a value is expected.
+ *
+ * \return CARDANO_SUCCESS               The script was serialized successfully.
+ * \return CARDANO_ERROR_POINTER_IS_NULL \p script_n_of_k or \p writer is \c NULL.
+ * \return CARDANO_ERROR_ENCODING        A nested script failed to serialize or the writer
+ *                                       reported an encoding error.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_to_cip116_json(
+  const cardano_script_n_of_k_t* script_n_of_k,
+  cardano_json_writer_t*         writer);
 
 /**
  * \brief Creates a script_n_of_k from a JSON string.

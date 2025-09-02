@@ -515,6 +515,46 @@ cardano_native_script_to_cbor(
 }
 
 cardano_error_t
+cardano_native_script_to_cip116_json(
+  const cardano_native_script_t* script,
+  cardano_json_writer_t*         writer)
+{
+  if ((script == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  switch (script->type)
+  {
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF:
+      result = cardano_script_all_to_cip116_json(script->all, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ANY_OF:
+      result = cardano_script_any_to_cip116_json(script->any, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_N_OF_K:
+      result = cardano_script_n_of_k_to_cip116_json(script->n_of_k, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_PUBKEY:
+      result = cardano_script_pubkey_to_cip116_json(script->pubkey, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER:
+      result = cardano_script_invalid_after_to_cip116_json(script->invalid_after, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
+      result = cardano_script_invalid_before_to_cip116_json(script->invalid_before, writer);
+      break;
+    default:
+      result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
+      break;
+  }
+
+  return result;
+}
+
+cardano_error_t
 cardano_native_script_from_json(const char* json, const size_t json_size, cardano_native_script_t** native_script)
 {
   if (json == NULL)
@@ -617,7 +657,7 @@ cardano_native_script_from_json(const char* json, const size_t json_size, cardan
     result = cardano_native_script_new_pubkey(script_pubkey, &data);
     cardano_script_pubkey_unref(&script_pubkey);
   }
-  else if (strcmp(type_string, "after") == 0)
+  else if (strcmp(type_string, "before") == 0)
   {
     cardano_script_invalid_after_t* invalid_after = NULL;
     result                                        = cardano_script_invalid_after_from_json(json, json_size, &invalid_after);
@@ -632,7 +672,7 @@ cardano_native_script_from_json(const char* json, const size_t json_size, cardan
     result = cardano_native_script_new_invalid_after(invalid_after, &data);
     cardano_script_invalid_after_unref(&invalid_after);
   }
-  else if (strcmp(type_string, "before") == 0)
+  else if (strcmp(type_string, "after") == 0)
   {
     cardano_script_invalid_before_t* invalid_before = NULL;
     result                                          = cardano_script_invalid_before_from_json(json, json_size, &invalid_before);

@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -179,6 +180,32 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_script_pubkey_to_cbor(
   const cardano_script_pubkey_t* script_pubkey,
   cardano_cbor_writer_t*         writer);
+
+/**
+ * \brief Serializes a script public key (pubkey) to CIP-116 JSON.
+ *
+ * The script public key is emitted as a JSON object with the following shape:
+ *
+ * \code{.json}
+ * {
+ *   "tag": "pubkey",
+ *   "pubkey": "<28-byte-blake2b-hex>"
+ * }
+ * \endcode
+ *
+ * \param[in]     script_pubkey A valid pointer to the script public key to serialize.
+ * \param[in,out] writer        A valid JSON writer, positioned where a value is expected.
+ *
+ * \retval CARDANO_SUCCESS               On success.
+ * \retval CARDANO_ERROR_POINTER_IS_NULL If \p script_pubkey or \p writer is NULL.
+ * \retval <propagated error>            If underlying operations (e.g., writing JSON,
+ *                                       converting the key hash to hex) fail.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_script_pubkey_to_cip116_json(
+  const cardano_script_pubkey_t* script_pubkey,
+  cardano_json_writer_t*         writer);
 
 /**
  * \brief Creates a script_pubkey from a JSON string.

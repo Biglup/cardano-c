@@ -54,7 +54,7 @@ static const char* NESTED_NATIVE_SCRIPT =
   "      \"scripts\":\n"
   "      [\n"
   "        {\n"
-  "          \"type\": \"after\",\n"
+  "          \"type\": \"before\",\n"
   "          \"slot\": 3000\n"
   "        },\n"
   "        {\n"
@@ -62,7 +62,7 @@ static const char* NESTED_NATIVE_SCRIPT =
   "          \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "        },\n"
   "        {\n"
-  "          \"type\": \"before\",\n"
+  "          \"type\": \"after\",\n"
   "          \"slot\": 4000\n"
   "        },\n"
   "      ]\n"
@@ -78,19 +78,19 @@ static const char* PUBKEY_SCRIPT =
 
 static const char* BEFORE_SCRIPT =
   "{\n"
-  "  \"type\": \"before\",\n"
+  "  \"type\": \"after\",\n"
   "  \"slot\": 40000010\n"
   "}";
 
 static const char* BEFORE_SCRIPT_SMALL =
   "{\n"
-  "  \"type\": \"before\",\n"
+  "  \"type\": \"after\",\n"
   "  \"slot\": 4000\n"
   "}";
 
 static const char* AFTER_SCRIPT =
   "{\n"
-  "  \"type\": \"after\",\n"
+  "  \"type\": \"before\",\n"
   "  \"slot\": 3000\n"
   "}";
 
@@ -100,7 +100,7 @@ static const char* ALL_SCRIPT =
   "  \"scripts\":\n"
   "  [\n"
   "    {\n"
-  "      \"type\": \"after\",\n"
+  "      \"type\": \"before\",\n"
   "      \"slot\": 3000\n"
   "    },\n"
   "    {\n"
@@ -108,7 +108,7 @@ static const char* ALL_SCRIPT =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -120,7 +120,7 @@ static const char* ANY_SCRIPT =
   "  \"scripts\":\n"
   "  [\n"
   "    {\n"
-  "      \"type\": \"after\",\n"
+  "      \"type\": \"before\",\n"
   "      \"slot\": 3000\n"
   "    },\n"
   "    {\n"
@@ -128,7 +128,7 @@ static const char* ANY_SCRIPT =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -141,7 +141,7 @@ static const char* AT_LEAST_SCRIPT =
   "  \"scripts\":\n"
   "  [\n"
   "    {\n"
-  "      \"type\": \"after\",\n"
+  "      \"type\": \"before\",\n"
   "      \"slot\": 3000\n"
   "    },\n"
   "    {\n"
@@ -149,7 +149,7 @@ static const char* AT_LEAST_SCRIPT =
   "      \"keyHash\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
   "    },\n"
   "    {\n"
-  "      \"type\": \"before\",\n"
+  "      \"type\": \"after\",\n"
   "      \"slot\": 4000\n"
   "    }\n"
   "  ]\n"
@@ -2419,4 +2419,137 @@ TEST(cardano_native_script_equals, returnsTrueIfBothAreTheSameInvalidBeforeScrip
   // Cleanup
   cardano_native_script_unref(&script1);
   cardano_native_script_unref(&script2);
+}
+
+TEST(cardano_native_script_to_cip116_json, canSerializeAny)
+{
+  cardano_native_script_t* script = NULL;
+  cardano_json_writer_t*   writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  cardano_error_t error = cardano_native_script_from_json(ANY_SCRIPT, strlen(ANY_SCRIPT), &script);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_native_script_to_cip116_json(script, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[2048] = { 0 };
+  size_t size         = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"any\",\n"
+    "  \"scripts\": [\n"
+    "    {\n"
+    "      \"tag\": \"timelock_expiry\",\n"
+    "      \"slot\": \"3000\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"pubkey\",\n"
+    "      \"pubkey\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"timelock_start\",\n"
+    "      \"slot\": \"4000\"\n"
+    "    }\n"
+    "  ]\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_to_cip116_json, canSerializeNoK)
+{
+  cardano_native_script_t* script = NULL;
+  cardano_json_writer_t*   writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  cardano_error_t error = cardano_native_script_from_json(AT_LEAST_SCRIPT, strlen(AT_LEAST_SCRIPT), &script);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_native_script_to_cip116_json(script, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[2048] = { 0 };
+  size_t size         = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"n_of_k\",\n"
+    "  \"scripts\": [\n"
+    "    {\n"
+    "      \"tag\": \"timelock_expiry\",\n"
+    "      \"slot\": \"3000\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"pubkey\",\n"
+    "      \"pubkey\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"timelock_start\",\n"
+    "      \"slot\": \"4000\"\n"
+    "    }\n"
+    "  ],\n"
+    "  \"n\": 2\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_to_cip116_json, canSerializeAll)
+{
+  cardano_native_script_t* script = NULL;
+  cardano_json_writer_t*   writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  cardano_error_t error = cardano_native_script_from_json(ALL_SCRIPT, strlen(ALL_SCRIPT), &script);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_native_script_to_cip116_json(script, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[2048] = { 0 };
+  size_t size         = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"all\",\n"
+    "  \"scripts\": [\n"
+    "    {\n"
+    "      \"tag\": \"timelock_expiry\",\n"
+    "      \"slot\": \"3000\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"pubkey\",\n"
+    "      \"pubkey\": \"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"\n"
+    "    },\n"
+    "    {\n"
+    "      \"tag\": \"timelock_start\",\n"
+    "      \"slot\": \"4000\"\n"
+    "    }\n"
+    "  ]\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_native_script_unref(&script);
 }

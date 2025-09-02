@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -170,6 +171,36 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_native_script_list_to_cbor(
   const cardano_native_script_list_t* native_script_list,
   cardano_cbor_writer_t*              writer);
+
+/**
+ * \brief Serializes a list of native scripts to a CIP-116 JSON array.
+ *
+ * This function writes the JSON representation of \p native_script_list into
+ * \p writer as a JSON array. Each element in the array is one native script
+ * encoded in its CIP-116 form (e.g., \c "pubkey", \c "all", \c "any",
+ * \c "n_of_k", \c "timelock_start", \c "timelock_expiry").
+ *
+ * The function emits the full array delimiters (it writes the opening \c '['
+ * and the closing \c ']'). It can be called at the root, as an array element,
+ * or as the value of a property in an enclosing object.
+ *
+ * - The array preserves the order of scripts as stored in \p native_script_list.
+ * - Each script element is serialized using its own CIP-116 serializer with
+ *   deterministic key order for that element type.
+ *
+ * \param[in]     native_script_list  A valid pointer to a \ref cardano_native_script_list_t.
+ * \param[in,out] writer              A valid JSON writer positioned where a value is expected.
+ *
+ * \return CARDANO_SUCCESS               The list was serialized successfully.
+ * \return CARDANO_ERROR_POINTER_IS_NULL \p native_script_list or \p writer is \c NULL.
+ * \return CARDANO_ERROR_ENCODING        A contained script failed to serialize or the writer
+ *                                       reported an encoding error.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_native_script_list_to_cip116_json(
+  const cardano_native_script_list_t* native_script_list,
+  cardano_json_writer_t*              writer);
 
 /**
  * \brief Creates a native_script_list from a JSON string.
