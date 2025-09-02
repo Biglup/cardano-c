@@ -17,6 +17,10 @@ BLAKE2b Hash Set
 
 ------------
 
+.. doxygenfunction:: cardano_blake2b_hash_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_blake2b_hash_set_get_length
 
 ------------

@@ -21,6 +21,10 @@ Transaction Input
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_input_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_transaction_input_get_id
 
 ------------

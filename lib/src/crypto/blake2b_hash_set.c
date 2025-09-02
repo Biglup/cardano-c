@@ -23,6 +23,7 @@
 
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_set.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/object.h>
 
 #include "../allocators.h"
@@ -290,6 +291,39 @@ cardano_blake2b_hash_set_to_cbor(const cardano_blake2b_hash_set_t* blake2b_hash_
   }
 
   return result;
+}
+
+cardano_error_t
+cardano_blake2b_hash_set_to_cip116_json(const cardano_blake2b_hash_set_t* hashes, cardano_json_writer_t* json)
+{
+  if ((hashes == NULL) || (json == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(json);
+
+  const size_t count = cardano_blake2b_hash_set_get_length(hashes);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    cardano_blake2b_hash_t* hash = NULL;
+
+    cardano_error_t error = cardano_blake2b_hash_set_get(hashes, i, (cardano_blake2b_hash_t**)&hash);
+    cardano_blake2b_hash_unref(&hash);
+
+    assert(error == CARDANO_SUCCESS);
+    CARDANO_UNUSED(error);
+
+    error = cardano_blake2b_hash_to_cip116_json(hash, json);
+
+    assert(error == CARDANO_SUCCESS);
+    CARDANO_UNUSED(error);
+  }
+
+  cardano_json_writer_write_end_array(json);
+
+  return CARDANO_SUCCESS;
 }
 
 size_t

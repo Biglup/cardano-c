@@ -658,3 +658,64 @@ TEST(cardano_plutus_v3_script_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_plutus_v3_script_unref(&script);
 }
+
+TEST(cardano_plutus_v3_script_to_cip116_json, canSerializePlutusV1Script)
+{
+  // Arrange
+  cardano_json_writer_t*      json           = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_plutus_v3_script_t* script         = nullptr;
+  const byte_t                SCRIPT_BYTES[] = { 0x01, 0x02, 0x03, 0x04 };
+
+  cardano_error_t error = cardano_plutus_v3_script_new_bytes(SCRIPT_BYTES, sizeof(SCRIPT_BYTES), &script);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_plutus_v3_script_to_cip116_json(script, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{\"language\":\"plutus_v3\",\"bytes\":\"01020304\"}");
+
+  // Cleanup
+  free(json_str);
+  cardano_plutus_v3_script_unref(&script);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v3_script_to_cip116_json, returnsErrorIfScriptIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_plutus_v3_script_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v3_script_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_plutus_v3_script_t* script         = nullptr;
+  const byte_t                SCRIPT_BYTES[] = { 0x01 };
+
+  ASSERT_EQ(cardano_plutus_v3_script_new_bytes(SCRIPT_BYTES, sizeof(SCRIPT_BYTES), &script), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_plutus_v3_script_to_cip116_json(script, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_plutus_v3_script_unref(&script);
+}

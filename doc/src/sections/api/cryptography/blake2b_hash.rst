@@ -25,6 +25,10 @@ BLAKE2b Hash
 
 ------------
 
+.. doxygenfunction:: cardano_blake2b_hash_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_blake2b_hash_equals
 
 ------------

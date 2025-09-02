@@ -24,6 +24,7 @@
 #include <cardano/error.h>
 
 #include <cardano/crypto/blake2b_hash_set.h>
+#include <cardano/json/json_writer.h>
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -749,4 +750,92 @@ TEST(cardano_blake2b_hash_set_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_blake2b_hash_set_unref(&blake2b_hash_set);
+}
+
+TEST(cardano_blake2b_hash_set_to_cip116_json, canSerializeAnEmptyBlake2bHashSet)
+{
+  // Arrange
+  cardano_blake2b_hash_set_t* blake2b_hash_set = nullptr;
+  cardano_json_writer_t*      json             = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  cardano_error_t error = cardano_blake2b_hash_set_new(&blake2b_hash_set);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_blake2b_hash_set_to_cip116_json(blake2b_hash_set, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(json, testing::Not((cardano_json_writer_t*)nullptr));
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(
+    json_str,
+    "[]");
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&blake2b_hash_set);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(cardano_blake2b_hash_set_to_cip116_json, canSerializeBlake2bHashSet)
+{
+  // Arrange
+  cardano_blake2b_hash_set_t* blake2b_hash_set = nullptr;
+  cardano_json_writer_t*      json             = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  cardano_error_t error = cardano_blake2b_hash_set_new(&blake2b_hash_set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* blake2b_hashs[] = { BLAKE2B_HASH1_CBOR, BLAKE2B_HASH2_CBOR, BLAKE2B_HASH3_CBOR, BLAKE2B_HASH4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_blake2b_hash_t* blake2b_hash = new_default_blake2b_hash(blake2b_hashs[i]);
+
+    EXPECT_EQ(cardano_blake2b_hash_set_add(blake2b_hash_set, blake2b_hash), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&blake2b_hash);
+  }
+
+  // Act
+  error = cardano_blake2b_hash_set_to_cip116_json(blake2b_hash_set, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(
+    json_str,
+    "[\"00000000000000000000000000000000000000000000000000000001\",\"00000000000000000000000000000000000000000000000000000002\",\"00000000000000000000000000000000000000000000000000000003\",\"00000000000000000000000000000000000000000000000000000004\"]");
+
+  // Cleanup
+  free(json_str);
+  cardano_blake2b_hash_set_unref(&blake2b_hash_set);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_blake2b_hash_set_to_cip116_json, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_set_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }

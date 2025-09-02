@@ -269,6 +269,45 @@ cardano_plutus_v3_script_set_to_cbor(const cardano_plutus_v3_script_set_t* plutu
   return result;
 }
 
+cardano_error_t
+cardano_plutus_v3_script_set_to_cip116_json(
+  const cardano_plutus_v3_script_set_t* plutus_v3_scripts,
+  cardano_json_writer_t*                writer)
+{
+  if ((plutus_v3_scripts == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  const size_t count = cardano_plutus_v3_script_set_get_length(plutus_v3_scripts);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    cardano_plutus_v3_script_t* script = NULL;
+
+    cardano_error_t error = cardano_plutus_v3_script_set_get(plutus_v3_scripts, i, &script);
+
+    assert(error == CARDANO_SUCCESS);
+    CARDANO_UNUSED(error);
+
+    error = cardano_plutus_v3_script_to_cip116_json(script, writer);
+
+    cardano_plutus_v3_script_unref(&script);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_json_writer_set_last_error(writer, "Failed to serialize Plutus v3 script to CIP-116 JSON.");
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_plutus_v3_script_set_get_length(const cardano_plutus_v3_script_set_t* plutus_v3_script_set)
 {

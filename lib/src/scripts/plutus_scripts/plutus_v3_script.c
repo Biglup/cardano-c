@@ -247,6 +247,47 @@ cardano_plutus_v3_script_to_cbor(
 }
 
 cardano_error_t
+cardano_plutus_v3_script_to_cip116_json(
+  const cardano_plutus_v3_script_t* plutus_v3_script,
+  cardano_json_writer_t*            writer)
+{
+  if ((plutus_v3_script == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "language", 8);
+  cardano_json_writer_write_string(writer, "plutus_v3", 9);
+
+  cardano_json_writer_write_property_name(writer, "bytes", 5);
+
+  const size_t hex_size = cardano_buffer_get_hex_size(plutus_v3_script->compiled_code);
+  char*        hex      = (char*)_cardano_malloc(hex_size);
+
+  if (hex == NULL)
+  {
+    cardano_json_writer_write_end_object(writer);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  const cardano_error_t to_hex_result =
+    cardano_buffer_to_hex(plutus_v3_script->compiled_code, hex, hex_size);
+
+  assert(to_hex_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(to_hex_result);
+
+  cardano_json_writer_write_string(writer, hex, hex_size - 1U);
+
+  _cardano_free(hex);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_plutus_v3_script_to_raw_bytes(
   cardano_plutus_v3_script_t* plutus_v3_script,
   cardano_buffer_t**          compiled_script)

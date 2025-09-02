@@ -17,6 +17,10 @@ Plutus V1 Script set
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_v1_script_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_v1_script_set_get_length
 
 ------------

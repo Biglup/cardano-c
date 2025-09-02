@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/crypto/blake2b_hash_size.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/object.h>
 #include <cardano/transaction_body/transaction_input.h>
 
@@ -272,6 +273,30 @@ cardano_transaction_input_to_cbor(
   {
     return write_uint_result;
   }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_transaction_input_to_cip116_json(cardano_transaction_input_t* input, cardano_json_writer_t* json)
+{
+  if ((input == NULL) || (json == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  char                  hex[128]      = { 0 };
+  const cardano_error_t to_hex_result = cardano_blake2b_hash_to_hex(input->id, hex, 128);
+
+  assert(to_hex_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(to_hex_result);
+
+  cardano_json_writer_write_start_object(json);
+  cardano_json_writer_write_property_name(json, "transaction_id", 14);
+  cardano_json_writer_write_string(json, hex, cardano_safe_strlen(hex, 128));
+  cardano_json_writer_write_property_name(json, "index", 5);
+  cardano_json_writer_write_uint(json, input->index);
+  cardano_json_writer_write_end_object(json);
 
   return CARDANO_SUCCESS;
 }
