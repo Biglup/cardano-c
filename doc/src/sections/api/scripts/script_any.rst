@@ -17,6 +17,10 @@ Native Script - Require Any Of
 
 ------------
 
+.. doxygenfunction:: cardano_script_any_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_script_any_from_json
 
 ------------

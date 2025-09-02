@@ -184,6 +184,31 @@ CARDANO_EXPORT cardano_error_t cardano_script_all_to_cbor(
   cardano_cbor_writer_t*      writer);
 
 /**
+ * \brief Serializes a native \c all script to CIP-116 JSON.
+ *
+ * This function writes the JSON representation of a native script of kind
+ * "all" into \p writer following the CIP-116.
+ *
+ * The function emits a complete JSON object (it writes the opening and
+ * closing braces). It can be called at the root, as an array element, or
+ * as the value of a property in an enclosing object.
+ *
+ * For determinism, fields are written in the order: \c "tag" then \c "scripts".
+ *
+ * \param[in]     script_all A valid pointer to an \ref cardano_script_all_t.
+ * \param[in,out] writer     A valid JSON writer positioned where a value is expected.
+ *
+ * \return CARDANO_SUCCESS               The script was serialized successfully.
+ * \return CARDANO_ERROR_POINTER_IS_NULL \p script_all or \p writer is \c NULL.
+ * \return CARDANO_ERROR_ENCODING        A nested script failed to serialize or the writer
+ *                                       reported an encoding error.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_script_all_to_cip116_json(
+  const cardano_script_all_t* script_all,
+  cardano_json_writer_t*      writer);
+
+/**
  * \brief Creates a script_all from a JSON string.
  *
  * This function parses JSON data using a provided JSON string and constructs a \ref cardano_script_all_t object.

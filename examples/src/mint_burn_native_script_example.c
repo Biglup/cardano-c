@@ -52,7 +52,7 @@ static const char* ALWAYS_SUCCEEDS_NATIVE_SCRIPT = "{\n"
                                                    "  \"scripts\":\n"
                                                    "  [\n"
                                                    "    {\n"
-                                                   "      \"type\": \"after\",\n"
+                                                   "      \"type\": \"before\",\n"
                                                    "      \"slot\": \"1001655683199\"\n" // Invalid after year 33658
                                                    "    }\n"
                                                    "  ]\n"

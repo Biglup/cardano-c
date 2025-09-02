@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/scripts/native_scripts/native_script_type.h>
 #include <cardano/typedefs.h>
 
@@ -448,6 +449,34 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_native_script_to_cbor(
   const cardano_native_script_t* native_script,
   cardano_cbor_writer_t*         writer);
+
+/**
+ * \brief Serializes a single native script to a CIP-116 JSON object.
+ *
+ * This function writes the JSON representation of a single native script into
+ * \p writer as a JSON object (it emits the opening and closing braces).
+ * The exact shape depends on the script tag:
+ *
+ * Notes:
+ * - The function can be called at the root, as a property value, or as an element of an array.
+ * - For nested variants (\c "all", \c "any", \c "n_of_k"), each child script is serialized
+ *   using this same function recursively.
+ *
+ * \param[in]     script A pointer to the script to serialize (single native script).
+ *                       \note Despite the parameter name, this is a single script,
+ *                       not a list.
+ * \param[in,out] writer A valid JSON writer positioned where a value is expected.
+ *
+ * \retval CARDANO_SUCCESS               The script was serialized successfully.
+ * \retval CARDANO_ERROR_POINTER_IS_NULL \p native_script_list or \p writer is \c NULL.
+ * \retval CARDANO_ERROR_ENCODING        A nested script failed to serialize or the writer
+ *                                       reported an encoding error.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_native_script_to_cip116_json(
+  const cardano_native_script_t* script,
+  cardano_json_writer_t*         writer);
 
 /**
  * \brief Creates a native_script from a JSON string.

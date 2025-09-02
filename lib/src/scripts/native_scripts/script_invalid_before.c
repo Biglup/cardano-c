@@ -30,6 +30,7 @@
 
 #include "../../allocators.h"
 #include "../../cbor/cbor_validation.h"
+#include "../../string_safe.h"
 
 #include <assert.h>
 #include <cardano/json/json_object.h>
@@ -197,6 +198,35 @@ cardano_script_invalid_before_to_cbor(
 }
 
 cardano_error_t
+cardano_script_invalid_before_to_cip116_json(
+  const cardano_script_invalid_before_t* script_invalid_before,
+  cardano_json_writer_t*                 writer)
+{
+  if ((script_invalid_before == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "timelock_start", 14);
+  cardano_json_writer_write_property_name(writer, "slot", 4);
+
+  char         number_str[32] = { 0 };
+  const size_t size           = cardano_safe_uint64_to_string(script_invalid_before->slot, number_str, sizeof(number_str));
+
+  assert(size > 0U);
+  CARDANO_UNUSED(size);
+
+  cardano_json_writer_write_string(writer, number_str, cardano_safe_strlen(number_str, 32));
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_script_invalid_before_from_json(const char* json, const size_t json_size, cardano_script_invalid_before_t** native_script)
 {
   if (json == NULL)
@@ -257,7 +287,7 @@ cardano_script_invalid_before_from_json(const char* json, const size_t json_size
     return result;
   }
 
-  if (strcmp(type_string, "before") != 0)
+  if (strcmp(type_string, "after") != 0)
   {
     cardano_json_object_unref(&json_object);
 

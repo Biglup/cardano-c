@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -179,6 +180,34 @@ CARDANO_EXPORT cardano_error_t cardano_script_invalid_before_to_cbor(
   cardano_cbor_writer_t*                 writer);
 
 /**
+ * \brief Serializes a native script "timelock_start" to CIP-116 JSON.
+ *
+ * Writes a single JSON object representing a timelock that is invalid before a
+ * given slot. The function emits the surrounding braces `{}` and the object
+ * contains the fields shown below.
+ *
+ * JSON shape:
+ * \code{.json}
+ * {
+ *   "tag":  "timelock_start",
+ *   "slot": "<uint>"
+ * }
+ * \endcode
+ *
+ * \param[in]  script_invalid_before A valid pointer to the timelock object to serialize.
+ * \param[in]  writer               A valid JSON writer positioned where a value is expected.
+ *
+ * \return \c CARDANO_SUCCESS on success; \c CARDANO_ERROR_POINTER_IS_NULL if
+ * either parameter is \c NULL.
+ *
+ * \note Keys are emitted in a stable order: first \c "tag", then \c "slot".
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_script_invalid_before_to_cip116_json(
+  const cardano_script_invalid_before_t* script_invalid_before,
+  cardano_json_writer_t*                 writer);
+
+/**
  * \brief Creates a script_invalid_before from a JSON string.
  *
  * This function parses JSON data using a provided JSON string and constructs a \ref cardano_script_invalid_before_t object.
@@ -197,7 +226,7 @@ CARDANO_EXPORT cardano_error_t cardano_script_invalid_before_to_cbor(
  *
  * Usage Example:
  * \code{.c}
- * const char* json_string = "{\"type\": \"before\", \"slot\": 500}"; // Example JSON string
+ * const char* json_string = "{\"type\": \"after\", \"slot\": 500}"; // Example JSON string
  * size_t json_size = strlen(json_string); // Calculate the size of the JSON string
  * cardano_script_invalid_before_t* script_invalid_before = NULL;
  *

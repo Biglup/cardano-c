@@ -17,6 +17,10 @@ Native Script - Require M Of N
 
 ------------
 
+.. doxygenfunction:: cardano_script_n_of_k_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_script_n_of_k_from_json
 
 ------------

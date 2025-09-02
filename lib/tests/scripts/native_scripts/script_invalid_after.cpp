@@ -29,9 +29,9 @@
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/scripts/native_scripts/native_script_list.h>
 #include <cardano/scripts/native_scripts/script_invalid_after.h>
-#include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
 #include <gmock/gmock.h>
 
@@ -45,13 +45,13 @@ static const char* PUBKEY_SCRIPT =
 
 static const char* AFTER_SCRIPT =
   "{\n"
-  "  \"type\": \"after\",\n"
+  "  \"type\": \"before\",\n"
   "  \"slot\": 3000\n"
   "}";
 
 static const char* AFTER_SCRIPT2 =
   "{\n"
-  "  \"type\": \"after\",\n"
+  "  \"type\": \"before\",\n"
   "  \"slot\": 4000\n"
   "}";
 
@@ -511,4 +511,55 @@ TEST(cardano_script_invalid_after_set_slot, setsSlot)
 
   // Cleanup
   cardano_script_invalid_after_unref(&invalid_after);
+}
+
+TEST(cardano_script_invalid_after_to_cip116_json, canSerializeInvalidAfter)
+{
+  // Arrange
+  cardano_script_invalid_after_t* invalid_after = nullptr;
+
+  cardano_error_t error = cardano_script_invalid_after_from_json(AFTER_SCRIPT, strlen(AFTER_SCRIPT), &invalid_after);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  // Act
+  error = cardano_script_invalid_after_to_cip116_json(invalid_after, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  char   buffer[256] = { 0 };
+  size_t size        = sizeof(buffer);
+
+  error = cardano_json_writer_encode(writer, buffer, size);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_json =
+    "{\n"
+    "  \"tag\": \"timelock_expiry\",\n"
+    "  \"slot\": \"3000\"\n"
+    "}";
+
+  EXPECT_STREQ((const char*)buffer, expected_json);
+
+  // Cleanup
+  cardano_script_invalid_after_unref(&invalid_after);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_script_invalid_after_to_cip116_json, returnsErrorIfInvalidAfterIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  ASSERT_THAT(writer, testing::Not((cardano_json_writer_t*)nullptr));
+
+  // Act
+  cardano_error_t error = cardano_script_invalid_after_to_cip116_json(nullptr, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
 }

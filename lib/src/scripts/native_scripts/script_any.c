@@ -207,6 +207,32 @@ cardano_script_any_to_cbor(
 }
 
 cardano_error_t
+cardano_script_any_to_cip116_json(
+  const cardano_script_any_t* script_any,
+  cardano_json_writer_t*      writer)
+{
+  if ((script_any == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "any", 3);
+  cardano_json_writer_write_property_name(writer, "scripts", 7);
+
+  cardano_error_t error = cardano_native_script_list_to_cip116_json(script_any->scripts, writer);
+
+  assert(error == CARDANO_SUCCESS);
+  CARDANO_UNUSED(error);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_script_any_from_json(const char* json, size_t json_size, cardano_script_any_t** native_script)
 {
   if (json == NULL)

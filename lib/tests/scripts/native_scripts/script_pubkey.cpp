@@ -56,7 +56,7 @@ static const char* PUBKEY_SCRIPT_SHORT_HASH =
 
 static const char* AFTER_SCRIPT =
   "{\n"
-  "  \"type\": \"after\",\n"
+  "  \"type\": \"before\",\n"
   "  \"slot\": 3000\n"
   "}";
 
@@ -547,4 +547,43 @@ TEST(cardano_script_pubkey_get_key_hash, returnsTheKey)
   cardano_script_pubkey_unref(&pubkey);
   free(hex);
   cardano_blake2b_hash_unref(&key_hash);
+}
+
+TEST(cardano_script_pubkey_to_cip116_json, canSerializeScriptPubkey)
+{
+  // Arrange
+  cardano_script_pubkey_t* pubkey = NULL;
+  cardano_json_writer_t*   json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t          error  = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_script_pubkey_to_cip116_json(pubkey, json);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{\"tag\":\"pubkey\",\"pubkey\":\"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37\"}");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_script_pubkey_unref(&pubkey);
+}
+
+TEST(cardano_script_pubkey_to_cip116_json, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_script_pubkey_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }
