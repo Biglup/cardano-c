@@ -27,6 +27,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -259,6 +260,24 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_cbor(
   const cardano_blake2b_hash_t* blake2b_hash,
   cardano_cbor_writer_t*        writer);
+
+/**
+ * \brief Serializes a BLAKE2b-256 hash to CIP-116 JSON.
+ *
+ * Writes exactly one JSON string (64 lowercase hex characters) to \p writer:
+ *
+ * \code{.json}
+ * "0000000000000000000000000000000000000000000000000000000000000000"
+ * \endcode
+ *
+ * \param[in]     blake2b_hash  The hash to serialize. Must not be NULL.
+ * \param[in,out] writer        A valid JSON writer positioned where a value is expected. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success; an appropriate error code otherwise.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_blake2b_hash_to_cip116_json(const cardano_blake2b_hash_t* blake2b_hash, cardano_json_writer_t* writer);
 
 /**
  * \brief Compares two Blake2b hash objects for equality.

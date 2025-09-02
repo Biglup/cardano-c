@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -227,6 +228,26 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_transaction_input_to_cbor(
   const cardano_transaction_input_t* transaction_input,
   cardano_cbor_writer_t*             writer);
+
+/**
+ * \brief Serializes a cardano_transaction_input_t as a CIP-116 JSON object.
+ *
+ * Writes exactly one JSON object to \p json (including the opening/closing braces):
+ *
+ * \code{.json}
+ * {
+ *   "transaction_id": "<64-hex-bytes>",
+ *   "index": 0
+ * }
+ * \endcode
+ *
+ * \param[in]     input  A valid cardano_transaction_input_t to serialize. Must not be NULL.
+ * \param[in,out] json   A valid JSON writer positioned where a value is expected. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success; an appropriate error code otherwise.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_input_to_cip116_json(cardano_transaction_input_t* input, cardano_json_writer_t* json);
 
 /**
  * \brief Retrieves the transaction ID associated with a transaction input.

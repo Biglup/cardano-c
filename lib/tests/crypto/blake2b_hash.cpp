@@ -26,6 +26,7 @@
 #include <cardano/buffer.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
+#include <cardano/json/json_writer.h>
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -885,4 +886,49 @@ TEST(cardano_blake2b_hash_to_hex, returnsErrorIfHashIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_blake2b_hash_to_cip116_json, canSerializeBlake2bHash)
+{
+  // Arrange
+  cardano_json_writer_t*  json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  cardano_error_t error = cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_blake2b_hash_to_cip116_json(hash, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(
+    json_str,
+    "\"8e009c642a5e5ba8916a637ad745fb9269245d75cdbd92571a852230c6defc156d066607bf9baf9b6ab07faabadbf49b59d4d3f3be39d17ed48711ad1447996b\"");
+
+  // Cleanup
+  free(json_str);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_blake2b_hash_to_cip116_json, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }

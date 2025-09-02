@@ -21,6 +21,10 @@ Plutus Script - V1
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_v1_script_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_v1_script_to_raw_bytes
 
 ------------

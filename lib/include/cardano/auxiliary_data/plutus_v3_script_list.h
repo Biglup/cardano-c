@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -178,6 +179,38 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_plutus_v3_script_list_to_cbor(
   const cardano_plutus_v3_script_list_t* plutus_v3_scripts,
   cardano_cbor_writer_t*                 writer);
+
+/**
+ * \brief Serializes a list of Plutus v3 scripts to CIP-116 JSON.
+ *
+ * Writes a JSON array where each element is a Plutus v3 script object with the shape:
+ *
+ * \code{.json}
+ * [
+ *   { "language": "plutus_v3", "bytes": "<hex-bytes>" },
+ *   { "language": "plutus_v3", "bytes": "<hex-bytes>" }
+ * ]
+ * \endcode
+ *
+ * This function emits the surrounding array brackets (`[` and `]`). It does not write a
+ * property name; if you need this list as a field value inside another object, write the
+ * property name first (via \ref cardano_json_writer_write_property_name) and then call
+ * this function.
+ *
+ * Keys in each element are emitted in a stable order: `"language"`, then `"bytes"`.
+ *
+ * \param[in] plutus_v3_scripts A valid pointer to a list of Plutus v3 scripts.
+ * \param[in,out] writer        A valid JSON writer. The function writes exactly one JSON array.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or:
+ *         - \ref CARDANO_ERROR_POINTER_IS_NULL if \p plutus_v3_scripts or \p writer is NULL.
+ *         - Any error propagated from underlying list accessors or element serialization.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_plutus_v3_script_list_to_cip116_json(
+  const cardano_plutus_v3_script_list_t* plutus_v3_scripts,
+  cardano_json_writer_t*                 writer);
 
 /**
  * \brief Retrieves the length of a plutus v3 script list.

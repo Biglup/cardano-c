@@ -30,6 +30,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -226,6 +227,52 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_plutus_v3_script_to_cbor(
   const cardano_plutus_v3_script_t* plutus_v3_script,
   cardano_cbor_writer_t*            writer);
+
+/**
+ * \brief Serializes a Plutus v2 script into a CIP-116 JSON object.
+ *
+ * Writes a single JSON object representing the script:
+ * \code{.json}
+ * {
+ *   "language": "plutus_v2",
+ *   "bytes": "<hex-lowercase>"
+ * }
+ * \endcode
+ *
+ * The function emits both the opening and closing braces. It may be called at the
+ * JSON root or anywhere a value is expected (e.g., as an array element or after a
+ * property name).
+ *
+ * \param[in]     plutus_v3_script  A valid pointer to the script to serialize.
+ * \param[in,out] writer            A valid JSON writer positioned where a value can be written.
+ *
+ * \return
+ * - \c CARDANO_SUCCESS on success.
+ * - \c CARDANO_ERROR_POINTER_IS_NULL if \p plutus_v3_script or \p writer is \c NULL.
+ * - \c CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if a temporary buffer cannot be allocated.
+ * - An error propagated from the writer if it is already in an error state (see
+ *   \ref cardano_json_writer_get_last_error).
+ *
+ * \code{.c}
+ * cardano_json_writer_t* w = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+ * cardano_error_t rc = cardano_plutus_v3_script_to_cip116_json(script, w);
+ *
+ * if (rc == CARDANO_SUCCESS)
+ * {
+ *   cardano_buffer_t* out = NULL;
+ *   rc = cardano_json_writer_encode_in_buffer(w, &out);
+ *   // Use 'out' ...
+ *   cardano_buffer_unref(&out);
+ * }
+ *
+ * cardano_json_writer_unref(&w);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_plutus_v3_script_to_cip116_json(
+  const cardano_plutus_v3_script_t* plutus_v3_script,
+  cardano_json_writer_t*            writer);
 
 /**
  * \brief Gets the raw bytes of a compiled Plutus v3 script. If you need "cborBytes" for cardano-cli use \ref cardano_plutus_v3_script_to_cbor instead.

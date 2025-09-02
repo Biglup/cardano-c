@@ -62,6 +62,29 @@ new_default_plutus_v1_script(const char* cbor)
   return plutus_v1_script;
 }
 
+/**
+ * Encodes the JSON writer content into a string.
+ * @param writer The JSON writer to encode.
+ * @return A newly allocated string containing the encoded JSON. The caller is responsible for freeing the memory.
+ */
+static char*
+encode_json(cardano_json_writer_t* writer)
+{
+  const size_t json_size = cardano_json_writer_get_encoded_size(writer);
+  char*        json_str  = static_cast<char*>(malloc(json_size ? json_size : 1));
+
+  if (json_size != 0)
+  {
+    EXPECT_EQ(cardano_json_writer_encode(writer, json_str, json_size), CARDANO_SUCCESS);
+  }
+  else
+  {
+    json_str[0] = '\0';
+  }
+
+  return json_str;
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_plutus_v1_script_list_new, canCreateTransactionOutputList)
@@ -661,4 +684,163 @@ TEST(cardano_plutus_v1_script_list_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_plutus_v1_script_list_unref(&plutus_v1_script_list);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, returnsErrorIfGivenNullList)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, returnsErrorIfGivenNullWriter)
+{
+  // Arrange
+  cardano_plutus_v1_script_list_t* list = nullptr;
+  ASSERT_EQ(cardano_plutus_v1_script_list_new(&list), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(list, nullptr);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_plutus_v1_script_list_unref(&list);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, canSerializeEmptyList)
+{
+  // Arrange
+  cardano_json_writer_t*           json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_plutus_v1_script_list_t* list = nullptr;
+
+  ASSERT_EQ(cardano_plutus_v1_script_list_new(&list), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(list, json);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_SUCCESS);
+
+  char* json_str = encode_json(json);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  free(json_str);
+  cardano_plutus_v1_script_list_unref(&list);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, canSerializeSingleScript)
+{
+  // Arrange
+  cardano_json_writer_t*           json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_plutus_v1_script_list_t* list = nullptr;
+  ASSERT_EQ(cardano_plutus_v1_script_list_new(&list), CARDANO_SUCCESS);
+
+  const byte_t                BYTES1[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+  cardano_plutus_v1_script_t* s1       = nullptr;
+  ASSERT_EQ(cardano_plutus_v1_script_new_bytes(BYTES1, sizeof(BYTES1), &s1), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_v1_script_list_add(list, s1), CARDANO_SUCCESS);
+  cardano_plutus_v1_script_unref(&s1); // list holds its own ref
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(list, json);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_SUCCESS);
+
+  char* json_str = encode_json(json);
+  EXPECT_STREQ(json_str, R"([{"language":"plutus_v1","bytes":"deadbeef"}])");
+
+  // Cleanup
+  free(json_str);
+  cardano_plutus_v1_script_list_unref(&list);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, canSerializeMultipleScripts)
+{
+  // Arrange
+  cardano_json_writer_t*           json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_plutus_v1_script_list_t* list = nullptr;
+  ASSERT_EQ(cardano_plutus_v1_script_list_new(&list), CARDANO_SUCCESS);
+
+  const byte_t BYTES1[] = { 0x00, 0x01 };
+  const byte_t BYTES2[] = { 0xAA, 0xBB, 0xCC };
+
+  cardano_plutus_v1_script_t* s1 = nullptr;
+  cardano_plutus_v1_script_t* s2 = nullptr;
+
+  ASSERT_EQ(cardano_plutus_v1_script_new_bytes(BYTES1, sizeof(BYTES1), &s1), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_v1_script_new_bytes(BYTES2, sizeof(BYTES2), &s2), CARDANO_SUCCESS);
+
+  ASSERT_EQ(cardano_plutus_v1_script_list_add(list, s1), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_v1_script_list_add(list, s2), CARDANO_SUCCESS);
+
+  // Release local refs; the list retains them
+  cardano_plutus_v1_script_unref(&s1);
+  cardano_plutus_v1_script_unref(&s2);
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(list, json);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_SUCCESS);
+
+  char* json_str = encode_json(json);
+  EXPECT_STREQ(json_str, R"([{"language":"plutus_v1","bytes":"0001"},{"language":"plutus_v1","bytes":"aabbcc"}])");
+
+  // Cleanup
+  free(json_str);
+  cardano_plutus_v1_script_list_unref(&list);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_v1_script_list_to_cip116_json, returnsErrorIfEventualMemoryAllocationFails)
+{
+  // Arrange
+  cardano_json_writer_t*           json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_plutus_v1_script_list_t* list = nullptr;
+  ASSERT_EQ(cardano_plutus_v1_script_list_new(&list), CARDANO_SUCCESS);
+
+  const byte_t BYTES1[] = { 0x00, 0x01 };
+  const byte_t BYTES2[] = { 0xAA, 0xBB, 0xCC };
+
+  cardano_plutus_v1_script_t* s1 = nullptr;
+  cardano_plutus_v1_script_t* s2 = nullptr;
+
+  ASSERT_EQ(cardano_plutus_v1_script_new_bytes(BYTES1, sizeof(BYTES1), &s1), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_v1_script_new_bytes(BYTES2, sizeof(BYTES2), &s2), CARDANO_SUCCESS);
+
+  ASSERT_EQ(cardano_plutus_v1_script_list_add(list, s1), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_v1_script_list_add(list, s2), CARDANO_SUCCESS);
+
+  // Release local refs; the list retains them
+  cardano_plutus_v1_script_unref(&s1);
+  cardano_plutus_v1_script_unref(&s2);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  const cardano_error_t err = cardano_plutus_v1_script_list_to_cip116_json(list, json);
+
+  // Assert
+  EXPECT_EQ(err, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_plutus_v1_script_list_unref(&list);
+  cardano_json_writer_unref(&json);
+  cardano_set_allocators(malloc, realloc, free);
+  reset_allocators_run_count();
 }

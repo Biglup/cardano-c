@@ -25,6 +25,7 @@
 
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/crypto/blake2b_hash.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/transaction_body/transaction_input.h>
 
 #include "tests/allocators_helpers.h"
@@ -803,4 +804,46 @@ TEST(cardano_transaction_input_compare, returnsErrorIfHashesAreDifferent)
   cardano_transaction_input_unref(&transaction_input1);
   cardano_transaction_input_unref(&transaction_input2);
   cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_transaction_input_to_cip116_json, canPrint)
+{
+  // Arrange
+  cardano_transaction_input_t* transaction_input1 = new_default_transaction_input();
+  cardano_json_writer_t*       json               = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  const cardano_error_t result = cardano_transaction_input_to_cip116_json(transaction_input1, json);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*  json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(
+    json_str,
+    "{\"transaction_id\":\"0102030405060708090a0b0c0d0e0f0e0d0c0b0a090807060504030201001020\",\"index\":5}");
+
+  // Cleanup
+  free(json_str);
+  cardano_transaction_input_unref(&transaction_input1);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_transaction_input_to_cip116_json, returnsErrorOnNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  const cardano_error_t result = cardano_transaction_input_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }

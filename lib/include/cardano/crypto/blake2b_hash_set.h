@@ -174,6 +174,29 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_set_to_cbor(
   cardano_cbor_writer_t*            writer);
 
 /**
+ * \brief Serializes a set of BLAKE2b-256 hashes to CIP-116 JSON.
+ *
+ * Writes exactly one JSON array of lowercase hex strings (each 64 hex chars):
+ *
+ * \code{.json}
+ * [
+ *   "0000000000000000000000000000000000000000000000000000000000000000",
+ *   "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ * ]
+ * \endcode
+ *
+ * An empty set produces \code{.json}[]\endcode.
+ *
+ * \param[in]     hashes  A valid set of hashes to serialize. Must not be NULL.
+ * \param[in,out] json    A valid JSON writer positioned where a value is expected. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success; an appropriate error code otherwise.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_blake2b_hash_set_to_cip116_json(const cardano_blake2b_hash_set_t* hashes, cardano_json_writer_t* json);
+
+/**
  * \brief Retrieves the length of a blake2b_hash list.
  *
  * This function retrieves the number of elements in the provided \ref cardano_blake2b_hash_set_t object.
