@@ -30,6 +30,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/scripts/script_language.h>
 #include <cardano/typedefs.h>
 
@@ -347,6 +348,32 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_script_to_cbor(
   const cardano_script_t* script,
   cardano_cbor_writer_t*  writer);
+
+/**
+ * \brief Serializes a \ref cardano_script_t as a CIP-116 ScriptRef JSON object.
+ *
+ * This function writes a single JSON object.
+ *
+ * The inner \c value is produced by the corresponding serializer:
+ * - Native: \ref cardano_native_script_to_cip116_json
+ * - Plutus v1: \ref cardano_plutus_v1_script_to_cip116_json
+ * - Plutus v2: \ref cardano_plutus_v2_script_to_cip116_json
+ * - Plutus v3: \ref cardano_plutus_v3_script_to_cip116_json
+ *
+ * Keys are emitted in the order: "tag", then "value".
+ *
+ * \param[in]  script A valid pointer to the script to serialize.
+ * \param[in,out] writer A valid JSON writer positioned where a value is expected.
+ *
+ * \return CARDANO_SUCCESS                       On success.
+ * \return CARDANO_ERROR_POINTER_IS_NULL         If \p script or \p writer is NULL.
+ * \return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE If the script language is not supported.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_script_to_cip116_json(
+  const cardano_script_t* script,
+  cardano_json_writer_t*  writer);
 
 /**
  * \brief Retrieves the language of the script.

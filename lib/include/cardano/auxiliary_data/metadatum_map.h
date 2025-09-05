@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -178,6 +179,31 @@ CARDANO_EXPORT cardano_error_t cardano_metadatum_map_to_cbor(
   cardano_cbor_writer_t*         writer);
 
 /**
+ * \brief Serializes a \ref cardano_metadatum_map_t to CIP-116 JSON.
+ *
+ * Writes a single JSON object.
+ *
+ * Each \c key and \c value is serialized using
+ * \ref cardano_metadatum_to_cip116_json, so any valid metadatum type
+ * (map, list, int, bytes, string) is supported recursively.
+ *
+ * The function always writes a complete JSON object (enclosed in \c { } ).
+ *
+ * \param[in] map    A valid metadatum map to serialize.
+ * \param[in] writer A valid JSON writer positioned where a value is expected.
+ *
+ * \return CARDANO_SUCCESS on success.
+ * \return CARDANO_ERROR_POINTER_IS_NULL if \p map or \p writer is \c NULL.
+ * \return CARDANO_ERROR_ENCODING if a pair cannot be retrieved or an element
+ *         fails to serialize; a descriptive error is set on \p writer.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_metadatum_map_to_cip116_json(
+  const cardano_metadatum_map_t* map,
+  cardano_json_writer_t*         writer);
+
+/**
  * \brief Retrieves the length of the metadatum_map.
  *
  * This function returns the number of key-value pairs contained in the specified metadatum_map.
@@ -247,6 +273,62 @@ CARDANO_EXPORT size_t cardano_metadatum_map_get_length(const cardano_metadatum_m
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_metadatum_map_get(cardano_metadatum_map_t* metadatum_map, cardano_metadatum_t* key, cardano_metadatum_t** element);
+
+/**
+ * \brief Retrieves the key/value pair at the given index from a metadatum map.
+ *
+ * Returns the \a index-th entry of \p metadatum_map, providing both the key and the
+ * associated value via output parameters. The index is zero-based and must be
+ * less than the number of entries in the map.
+ *
+ * On success, \p *key and \p *element receive strong references to the key and value
+ * at the requested position. The caller becomes responsible for releasing both by
+ * calling \ref cardano_metadatum_unref on each.
+ *
+ * \param[in]  metadatum_map A pointer to the \ref cardano_metadatum_map_t to query.
+ * \param[in]  index         Zero-based index of the entry to retrieve.
+ * \param[out] key           Receives the key metadatum at \p index. Must not be NULL.
+ *                           On success, \p *key is non-NULL and must be released with
+ *                           \ref cardano_metadatum_unref.
+ * \param[out] element       Receives the value metadatum at \p index. Must not be NULL.
+ *                           On success, \p *element is non-NULL and must be released with
+ *                           \ref cardano_metadatum_unref.
+ *
+ * \return \ref CARDANO_SUCCESS on success; an appropriate error code otherwise, e.g.:
+ *         - \ref CARDANO_ERROR_POINTER_IS_NULL if any required pointer is NULL;
+ *         - \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS (or equivalent) if \p index is invalid;
+ *         - \ref CARDANO_ERROR_ENCODING (or equivalent) if retrieval fails unexpectedly.
+ *
+ * \note The iteration order is the map’s internal order and may not correspond to insertion order.
+ *
+ * \par Usage Example
+ * \code{.c}
+ * size_t len = cardano_metadatum_map_get_length(map);
+ *
+ * for (size_t i = 0; i < len; ++i)
+ * {
+ *   cardano_metadatum_t* key = NULL;
+ *   cardano_metadatum_t* val = NULL;
+ *
+ *   cardano_error_t rc = cardano_metadatum_map_get_at(map, i, &key, &val);
+ *   if (rc != CARDANO_SUCCESS) {
+ *     // handle error...
+ *     break;
+ *   }
+ *
+ *   // Use key/val...
+ *
+ *   cardano_metadatum_unref(&key);
+ *   cardano_metadatum_unref(&val);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_metadatum_map_get_at(
+  cardano_metadatum_map_t* metadatum_map,
+  size_t                   index,
+  cardano_metadatum_t**    key,
+  cardano_metadatum_t**    element);
 
 /**
  * \brief Inserts a key-value pair into the metadatum map.

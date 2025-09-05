@@ -1066,3 +1066,62 @@ TEST(cardano_transaction_metadata_get_key_value_at, returnsTheElement)
   cardano_metadatum_unref(&metadatum);
   cardano_metadatum_unref(&value_out);
 }
+
+TEST(cardano_transaction_metadata_to_cip116_json, canEncodeMetadata)
+{
+  // Arrange
+  cardano_transaction_metadata_t* transaction_metadata = nullptr;
+  cardano_error_t                 error                = cardano_transaction_metadata_new(&transaction_metadata);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t key = 10;
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_metadatum_t* metadatum = new_default_metadatum(METADATUM_CBOR);
+
+  error = cardano_transaction_metadata_insert(transaction_metadata, key, metadatum);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  error                         = cardano_transaction_metadata_to_cip116_json(transaction_metadata, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t json_size = cardano_json_writer_get_encoded_size(writer);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_json_writer_encode(writer, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(json, "[{\"key\":\"10\",\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"123\"},\"value\":{\"tag\":\"int\",\"value\":,\"1234\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key\"},\"value\":{\"tag\":\"string\",\"value\":\"value\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key2\"},\"value\":{\"tag\":\"bytes\",\"value\":\"000102030405\"}},{\"key\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"567\"},\"value\":{\"tag\":\"string\",\"value\":\"eight\"}}]},\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"666\"},\"value\":{\"tag\":\"string\",\"value\":\"cake\"}}]}}]}}]");
+
+  // Cleanup
+  cardano_metadatum_unref(&metadatum);
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_transaction_metadata_unref(&transaction_metadata);
+}
+
+TEST(cardano_transaction_metadata_to_cip116_json, returnErrorIfNullPointer)
+{
+  // Arrange
+  cardano_transaction_metadata_t* transaction_metadata = nullptr;
+  cardano_error_t                 error                = cardano_transaction_metadata_new(&transaction_metadata);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  EXPECT_EQ(cardano_transaction_metadata_to_cip116_json(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_metadata_to_cip116_json(transaction_metadata, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  cardano_transaction_metadata_unref(&transaction_metadata);
+}

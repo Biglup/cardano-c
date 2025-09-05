@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -170,6 +171,33 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_metadatum_list_to_cbor(
   const cardano_metadatum_list_t* metadatum_list,
   cardano_cbor_writer_t*          writer);
+
+/**
+ * \brief Serializes a \ref cardano_metadatum_list_t to CIP-116 JSON.
+ *
+ * Produces a single JSON object.
+ *
+ * Each element in \c contents is itself a full CIP-116 metadatum object as
+ * written by \ref cardano_metadatum_to_cip116_json.
+ *
+ * The function always writes a complete JSON object (it begins with \c { and ends with \c }).
+ * It assumes \p writer is positioned where a value is valid (root, array element, or after
+ * a property name).
+ *
+ * \note Property order ("tag" then "contents") is stable for readability, but not required by CIP-116.
+ *
+ * \param[in]  list A valid metadatum list to serialize.
+ * \param[in]  writer             A valid JSON writer.
+ *
+ * \return CARDANO_SUCCESS on success.
+ * \return CARDANO_ERROR_POINTER_IS_NULL if any pointer parameter is \c NULL.
+ * \return CARDANO_ERROR_ENCODING if an element cannot be retrieved or serialized.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_metadatum_list_to_cip116_json(
+  const cardano_metadatum_list_t* list,
+  cardano_json_writer_t*          writer);
 
 /**
  * \brief Retrieves the length of a metadatum list.

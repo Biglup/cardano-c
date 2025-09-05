@@ -154,7 +154,7 @@ cardano_bigint_from_string(const char* string, const size_t size, const int32_t 
 }
 
 size_t
-cardano_bigint_get_string_size(cardano_bigint_t* bigint, const int32_t base)
+cardano_bigint_get_string_size(const cardano_bigint_t* bigint, const int32_t base)
 {
   if (bigint == NULL)
   {

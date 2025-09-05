@@ -256,6 +256,54 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
   return result;
 }
 
+cardano_error_t
+cardano_metadatum_list_to_cip116_json(
+  const cardano_metadatum_list_t* list,
+  cardano_json_writer_t*          writer)
+{
+  if ((list == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "list", 4);
+
+  cardano_json_writer_write_property_name(writer, "contents", 8);
+  cardano_json_writer_write_start_array(writer);
+
+  const size_t count = cardano_metadatum_list_get_length(list);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    cardano_metadatum_t* item = NULL;
+
+    cardano_error_t error = cardano_metadatum_list_get(list, i, &item);
+
+    if ((error != CARDANO_SUCCESS) || (item == NULL))
+    {
+      cardano_json_writer_set_last_error(writer, "Failed to retrieve metadatum from list.");
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    error = cardano_metadatum_to_cip116_json(item, writer);
+
+    cardano_metadatum_unref(&item);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_metadatum_list_get_length(const cardano_metadatum_list_t* metadatum_list)
 {

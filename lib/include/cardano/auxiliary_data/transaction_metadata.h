@@ -165,6 +165,30 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_metadata_to_cbor(
   cardano_cbor_writer_t*                writer);
 
 /**
+ * \brief Serializes transaction metadata to CIP-116 JSON.
+ *
+ * This function writes the transaction metadata (a map of metadatum labels to values)
+ * as a JSON array of key/value entries using the CIP-116 shape.
+ *
+ * Notes:
+ * - The \c key is the metadatum label serialized as a **decimal string**.
+ * - The \c value is produced by \ref cardano_metadatum_to_cip116_json.
+ * - The function writes both the opening `[` and closing `]` of the array.
+ * - The writer must be in a context where a JSON value is valid.
+ *
+ * \param[in]  metadata A valid pointer to a \ref cardano_transaction_metadata_t instance.
+ * \param[in]  writer   A valid pointer to a \ref cardano_json_writer_t positioned where a value is expected.
+ *
+ * \return \ref CARDANO_SUCCESS on success;
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if any pointer parameter is \c NULL;
+ *         \ref CARDANO_ERROR_ENCODING if an element cannot be retrieved or serialized.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_metadata_to_cip116_json(
+  const cardano_transaction_metadata_t* metadata,
+  cardano_json_writer_t*                writer);
+
+/**
  * \brief Retrieves the length of the transaction metadata.
  *
  * This function returns the number of key-value pairs contained in the specified transaction metadata.

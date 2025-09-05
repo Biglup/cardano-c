@@ -142,7 +142,7 @@ cardano_bigint_from_string(const char* string, size_t size, int32_t base, cardan
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT size_t
-cardano_bigint_get_string_size(cardano_bigint_t* bigint, int32_t base);
+cardano_bigint_get_string_size(const cardano_bigint_t* bigint, int32_t base);
 
 /**
  * \brief Creates a bigint from an integer value.

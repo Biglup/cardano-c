@@ -348,8 +348,8 @@ CARDANO_EXPORT void cardano_json_writer_write_null(
  * \endcode
  */
 CARDANO_EXPORT void cardano_json_writer_write_bigint(
-  cardano_json_writer_t* writer,
-  cardano_bigint_t*      bigint);
+  cardano_json_writer_t*  writer,
+  const cardano_bigint_t* bigint);
 
 /**
  * \brief Begins a JSON array in the output.

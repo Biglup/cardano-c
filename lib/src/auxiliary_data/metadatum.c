@@ -1222,6 +1222,106 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
 }
 
 cardano_error_t
+cardano_metadatum_to_cip116_json(
+  const cardano_metadatum_t* metadatum,
+  cardano_json_writer_t*     writer)
+{
+  if ((metadatum == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  switch (metadatum->kind)
+  {
+    case CARDANO_METADATUM_KIND_MAP:
+      return cardano_metadatum_map_to_cip116_json(metadatum->map, writer);
+    case CARDANO_METADATUM_KIND_LIST:
+      return cardano_metadatum_list_to_cip116_json(metadatum->list, writer);
+    case CARDANO_METADATUM_KIND_INTEGER:
+    {
+      cardano_json_writer_write_start_object(writer);
+
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "int", 3);
+
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_bigint(writer, metadatum->integer);
+
+      cardano_json_writer_write_end_object(writer);
+      return CARDANO_SUCCESS;
+    }
+
+    case CARDANO_METADATUM_KIND_BYTES:
+    {
+      const size_t hex_size = cardano_buffer_get_hex_size(metadatum->bytes);
+      if (hex_size == 0U)
+      {
+        cardano_json_writer_write_start_object(writer);
+        cardano_json_writer_write_property_name(writer, "tag", 3);
+        cardano_json_writer_write_string(writer, "bytes", 5);
+        cardano_json_writer_write_property_name(writer, "value", 5);
+        cardano_json_writer_write_string(writer, "", 0);
+        cardano_json_writer_write_end_object(writer);
+
+        return CARDANO_SUCCESS;
+      }
+
+      char* hex = (char*)_cardano_malloc(hex_size);
+
+      if (hex == NULL)
+      {
+        cardano_json_writer_set_last_error(writer, "Out of memory while serializing metadatum bytes to hex.");
+        return CARDANO_ERROR_ENCODING;
+      }
+
+      const cardano_error_t to_hex = cardano_buffer_to_hex(metadatum->bytes, hex, hex_size);
+      if (to_hex != CARDANO_SUCCESS)
+      {
+        _cardano_free(hex);
+        cardano_json_writer_set_last_error(writer, "Failed to convert metadatum bytes to hex.");
+        return CARDANO_ERROR_ENCODING;
+      }
+
+      cardano_json_writer_write_start_object(writer);
+
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "bytes", 5);
+
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_string(writer, hex, hex_size - 1U);
+
+      cardano_json_writer_write_end_object(writer);
+
+      _cardano_free(hex);
+      return CARDANO_SUCCESS;
+    }
+
+    case CARDANO_METADATUM_KIND_TEXT:
+    {
+      const size_t  size = cardano_buffer_get_size(metadatum->text);
+      const byte_t* data = cardano_buffer_get_data(metadatum->text);
+
+      cardano_json_writer_write_start_object(writer);
+
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "string", 6);
+
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_string(writer, (const char*)(const void*)data, size);
+
+      cardano_json_writer_write_end_object(writer);
+      return CARDANO_SUCCESS;
+    }
+
+    default:
+      cardano_json_writer_set_last_error(writer, "Invalid metadatum kind.");
+      return CARDANO_ERROR_ENCODING;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_metadatum_get_kind(
   const cardano_metadatum_t* metadatum,
   cardano_metadatum_kind_t*  kind)

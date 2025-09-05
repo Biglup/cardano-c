@@ -1451,3 +1451,143 @@ TEST(cardano_metadatum_map_equals, returnsTrueIfMetadatumMapsAreEqual)
   cardano_metadatum_map_unref(&metadatum_map);
   cardano_metadatum_map_unref(&other);
 }
+
+TEST(cardano_metadatum_map_get_at, returnsErrorIfMetadatumMapIsNull)
+{
+  // Arrange
+  cardano_metadatum_t* key = nullptr;
+  cardano_metadatum_t* val = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_metadatum_map_get_at(nullptr, 0, &key, &val);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_metadatum_map_get_at, returnsErrorIfKeyIsNull)
+{
+  // Arrange
+  cardano_metadatum_map_t* metadatum_map = nullptr;
+  cardano_error_t          error         = cardano_metadatum_map_new(&metadatum_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_metadatum_t* val = nullptr;
+  error                    = cardano_metadatum_map_get_at(metadatum_map, 0, nullptr, &val);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_metadatum_map_unref(&metadatum_map);
+}
+
+TEST(cardano_metadatum_map_get_at, returnsErrorIfValueIsNull)
+{
+  // Arrange
+  cardano_metadatum_map_t* metadatum_map = nullptr;
+  cardano_error_t          error         = cardano_metadatum_map_new(&metadatum_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_metadatum_t* key = nullptr;
+  error                    = cardano_metadatum_map_get_at(metadatum_map, 0, &key, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_metadatum_map_unref(&metadatum_map);
+}
+
+TEST(cardano_metadatum_map_get_at, returnsErrorIfIndexIsOutOfBounds)
+{
+  // Arrange
+  cardano_metadatum_map_t* metadatum_map = nullptr;
+  cardano_error_t          error         = cardano_metadatum_map_new(&metadatum_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_metadatum_t* key = nullptr;
+  cardano_metadatum_t* val = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(2, &val), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_metadatum_map_insert(metadatum_map, key, val), CARDANO_SUCCESS);
+
+  cardano_metadatum_unref(&key);
+  cardano_metadatum_unref(&val);
+
+  // Act
+  cardano_metadatum_t* out_key = nullptr;
+  cardano_metadatum_t* out_val = nullptr;
+  error                        = cardano_metadatum_map_get_at(metadatum_map, 1, &out_key, &out_val);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(out_key, (cardano_metadatum_t*)nullptr);
+  EXPECT_EQ(out_val, (cardano_metadatum_t*)nullptr);
+
+  // Cleanup
+  cardano_metadatum_map_unref(&metadatum_map);
+}
+
+TEST(cardano_metadatum_map_get_at, returnsKeyAndValueAtGivenIndex)
+{
+  // Arrange
+  cardano_metadatum_map_t* metadatum_map = nullptr;
+  cardano_error_t          error         = cardano_metadatum_map_new(&metadatum_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_metadatum_t* key = nullptr;
+  cardano_metadatum_t* val = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(2, &val), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_metadatum_map_insert(metadatum_map, key, val), CARDANO_SUCCESS);
+
+  cardano_metadatum_unref(&key);
+  cardano_metadatum_unref(&val);
+
+  // Act
+  cardano_metadatum_t* out_key = nullptr;
+  cardano_metadatum_t* out_val = nullptr;
+  error                        = cardano_metadatum_map_get_at(metadatum_map, 0, &out_key, &out_val);
+
+  cardano_bigint_t* key_result = NULL;
+  EXPECT_EQ(cardano_metadatum_to_integer(out_key, &key_result), CARDANO_SUCCESS);
+
+  cardano_bigint_t* val_result = NULL;
+  EXPECT_EQ(cardano_metadatum_to_integer(out_val, &val_result), CARDANO_SUCCESS);
+
+  cardano_metadatum_unref(&out_key);
+  cardano_metadatum_unref(&out_val);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(key_result), 1);
+  EXPECT_EQ(cardano_bigint_to_int(val_result), 2);
+
+  cardano_bigint_unref(&key_result);
+  cardano_bigint_unref(&val_result);
+
+  // Cleanup
+  cardano_metadatum_map_unref(&metadatum_map);
+}
+
+TEST(cardano_metadatum_map_to_cip116_json, returnErrorIfNullPointer)
+{
+  // Act
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  EXPECT_EQ(cardano_metadatum_map_to_cip116_json(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_map_to_cip116_json((cardano_metadatum_map_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_writer_unref(&writer);
+}
