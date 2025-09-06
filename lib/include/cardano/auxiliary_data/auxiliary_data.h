@@ -188,6 +188,37 @@ CARDANO_EXPORT cardano_error_t cardano_auxiliary_data_to_cbor(
   cardano_cbor_writer_t*          writer);
 
 /**
+ * \brief Serializes auxiliary data to CIP-116 JSON.
+ *
+ * This function writes a JSON object representing the auxiliary data using the
+ * CIP-116 shapes for each component:
+ *
+ * - **metadata**: an array of `{ "key": "<decimal label>", "value": <TransactionMetadatum> }`
+ *   entries, where each value is encoded via \ref cardano_metadatum_to_cip116_json.
+ * - **native_scripts**: an array of CIP-116 NativeScript objects, encoded via
+ *   \ref cardano_native_script_list_to_cip116_json.
+ * - **plutus_scripts**: an array of Plutus script objects, each shaped as
+ *   `{ "language": "plutus_v1", "bytes": "<hex>" }` for Plutus v1 scripts
+ *   (encoded via \ref cardano_plutus_v1_script_list_to_cip116_json).
+ *
+ * The function writes the enclosing `{}` object. Properties that are not present
+ * (i.e., corresponding list or map is NULL or empty) are omitted.
+ *
+ * \param[in] auxiliary_data A valid pointer to a \ref cardano_auxiliary_data_t instance.
+ * \param[in] writer         A valid pointer to a \ref cardano_json_writer_t positioned
+ *                           where a JSON value is expected.
+ *
+ * \return \ref CARDANO_SUCCESS on success; an appropriate error code otherwise (e.g.,
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL for invalid arguments, or a downstream
+ *         serialization error).
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_auxiliary_data_to_cip116_json(
+  const cardano_auxiliary_data_t* auxiliary_data,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the transaction metadata from an auxiliary data object.
  *
  * This function extracts the transaction metadata from a given \ref cardano_auxiliary_data_t object.
