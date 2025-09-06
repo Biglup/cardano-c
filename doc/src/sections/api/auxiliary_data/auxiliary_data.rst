@@ -17,6 +17,10 @@ Auxiliary Data
 
 ------------
 
+.. doxygenfunction:: cardano_auxiliary_data_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_auxiliary_data_get_transaction_metadata
 
 ------------

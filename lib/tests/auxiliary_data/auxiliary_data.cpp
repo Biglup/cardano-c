@@ -26,6 +26,7 @@
 #include <cardano/auxiliary_data/auxiliary_data.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/crypto/blake2b_hash.h>
+#include <cardano/json/json_writer.h>
 
 #include "tests/allocators_helpers.h"
 
@@ -1283,4 +1284,229 @@ TEST(cardano_auxiliary_data_clear_cbor_cache, clearsTheCache)
   cardano_cbor_writer_unref(&writer2);
   free(cbor);
   free(cbor2);
+}
+
+TEST(cardano_auxiliary_data_to_cip116_json, returnsErrorIfObjectIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_error_t result = cardano_auxiliary_data_to_cip116_json(nullptr, writer);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  result = cardano_auxiliary_data_to_cip116_json((cardano_auxiliary_data_t*)"", nullptr);
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_auxiliary_data_to_cip116_json, convertsToJson)
+{
+  // Arrange
+  cardano_auxiliary_data_t* auxiliary_data = NULL;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex(AUXILIARY_DATA_CBOR, strlen(AUXILIARY_DATA_CBOR));
+
+  EXPECT_THAT(cardano_auxiliary_data_from_cbor(reader, &auxiliary_data), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  // Act
+  cardano_error_t result = cardano_auxiliary_data_to_cip116_json(auxiliary_data, writer);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  size_t json_size = cardano_json_writer_get_encoded_size(writer);
+  char*  json      = (char*)malloc(json_size);
+
+  EXPECT_THAT(cardano_json_writer_encode(writer, json, json_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(json, "{\n"
+                     "  \"metadata\": [\n"
+                     "    {\n"
+                     "      \"key\": \"725\",\n"
+                     "      \"value\": {\n"
+                     "        \"tag\": \"map\",\n"
+                     "        \"contents\": [\n"
+                     "          {\n"
+                     "            \"key\": {\n"
+                     "              \"tag\": \"int\",\n"
+                     "              \"value\": ,\"123\"\n"
+                     "            },\n"
+                     "            \"value\": {\n"
+                     "              \"tag\": \"int\",\n"
+                     "              \"value\": ,\"1234\"\n"
+                     "            }\n"
+                     "          },\n"
+                     "          {\n"
+                     "            \"key\": {\n"
+                     "              \"tag\": \"string\",\n"
+                     "              \"value\": \"key\"\n"
+                     "            },\n"
+                     "            \"value\": {\n"
+                     "              \"tag\": \"string\",\n"
+                     "              \"value\": \"value\"\n"
+                     "            }\n"
+                     "          },\n"
+                     "          {\n"
+                     "            \"key\": {\n"
+                     "              \"tag\": \"string\",\n"
+                     "              \"value\": \"key2\"\n"
+                     "            },\n"
+                     "            \"value\": {\n"
+                     "              \"tag\": \"bytes\",\n"
+                     "              \"value\": \"000102030405\"\n"
+                     "            }\n"
+                     "          },\n"
+                     "          {\n"
+                     "            \"key\": {\n"
+                     "              \"tag\": \"map\",\n"
+                     "              \"contents\": [\n"
+                     "                {\n"
+                     "                  \"key\": {\n"
+                     "                    \"tag\": \"int\",\n"
+                     "                    \"value\": ,\"567\"\n"
+                     "                  },\n"
+                     "                  \"value\": {\n"
+                     "                    \"tag\": \"string\",\n"
+                     "                    \"value\": \"eight\"\n"
+                     "                  }\n"
+                     "                }\n"
+                     "              ]\n"
+                     "            },\n"
+                     "            \"value\": {\n"
+                     "              \"tag\": \"map\",\n"
+                     "              \"contents\": [\n"
+                     "                {\n"
+                     "                  \"key\": {\n"
+                     "                    \"tag\": \"int\",\n"
+                     "                    \"value\": ,\"666\"\n"
+                     "                  },\n"
+                     "                  \"value\": {\n"
+                     "                    \"tag\": \"string\",\n"
+                     "                    \"value\": \"cake\"\n"
+                     "                  }\n"
+                     "                }\n"
+                     "              ]\n"
+                     "            }\n"
+                     "          }\n"
+                     "        ]\n"
+                     "      }\n"
+                     "    }\n"
+                     "  ],\n"
+                     "  \"native_scripts\": [\n"
+                     "    {\n"
+                     "      \"tag\": \"timelock_start\",\n"
+                     "      \"slot\": \"3\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"tag\": \"timelock_expiry\",\n"
+                     "      \"slot\": \"9\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"tag\": \"any\",\n"
+                     "      \"scripts\": [\n"
+                     "        {\n"
+                     "          \"tag\": \"pubkey\",\n"
+                     "          \"pubkey\": \"3542acb3a64d80c29302260d62c3b87a742ad14abf855ebc6733081e\"\n"
+                     "        }\n"
+                     "      ]\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"tag\": \"n_of_k\",\n"
+                     "      \"scripts\": [\n"
+                     "        {\n"
+                     "          \"tag\": \"pubkey\",\n"
+                     "          \"pubkey\": \"b5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54\"\n"
+                     "        }\n"
+                     "      ],\n"
+                     "      \"n\": 0\n"
+                     "    }\n"
+                     "  ],\n"
+                     "  \"plutus_scripts\": [\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v1\",\n"
+                     "      \"bytes\": \"46010000220010\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v1\",\n"
+                     "      \"bytes\": \"46010000220011\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v1\",\n"
+                     "      \"bytes\": \"46010000220012\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v1\",\n"
+                     "      \"bytes\": \"46010000220013\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v2\",\n"
+                     "      \"bytes\": \"46010000220010\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v2\",\n"
+                     "      \"bytes\": \"46010000220011\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v2\",\n"
+                     "      \"bytes\": \"46010000220012\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v2\",\n"
+                     "      \"bytes\": \"46010000220013\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v3\",\n"
+                     "      \"bytes\": \"46010000220010\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v3\",\n"
+                     "      \"bytes\": \"46010000220011\"\n"
+                     "    },\n"
+                     "    {\n"
+                     "      \"language\": \"plutus_v3\",\n"
+                     "      \"bytes\": \"46010000220012\"\n"
+                     "    }\n"
+                     "  ]\n"
+                     "}");
+  // Cleanup
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_cbor_reader_unref(&reader);
+  cardano_json_writer_unref(&writer);
+  free(json);
+}
+
+TEST(cardano_auxiliary_data_to_cip116_json, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_auxiliary_data_t* auxiliary_data = NULL;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex(AUXILIARY_DATA_CBOR, strlen(AUXILIARY_DATA_CBOR));
+
+  EXPECT_THAT(cardano_auxiliary_data_from_cbor(reader, &auxiliary_data), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 16; ++i)
+  {
+    cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_auxiliary_data_to_cip116_json(auxiliary_data, writer);
+
+    // Assert
+    EXPECT_NE(result, CARDANO_SUCCESS);
+
+    cardano_json_writer_unref(&writer);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  // Cleanup
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_cbor_reader_unref(&reader);
 }
