@@ -391,8 +391,8 @@ cardano_json_writer_write_null(cardano_json_writer_t* writer)
 
 void
 cardano_json_writer_write_bigint(
-  cardano_json_writer_t* writer,
-  cardano_bigint_t*      bigint)
+  cardano_json_writer_t*  writer,
+  const cardano_bigint_t* bigint)
 {
   if ((writer == NULL) || (writer->last_error != CARDANO_SUCCESS))
   {

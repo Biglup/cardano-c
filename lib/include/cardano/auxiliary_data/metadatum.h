@@ -31,6 +31,7 @@
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -687,6 +688,31 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_metadatum_to_cbor(
   const cardano_metadatum_t* metadatum,
   cardano_cbor_writer_t*     writer);
+
+/**
+ * \brief Serializes a \ref cardano_metadatum_t to CIP-116 JSON.
+ *
+ * This function emits a single JSON object representing a Cardano transaction metadatum
+ * using the CIP-116 JSON shape.
+ *
+ * The function always writes a complete JSON object (it begins with `{` and ends with `}`).
+ * It assumes \p writer is positioned where a value is valid (root, array element, or after a
+ * property name).
+ *
+ * \note Unlike on-chain CBOR encoding constraints, this JSON encoder does **not** enforce the
+ *  64-byte bounds on bytes/text metadata. It emits the full content as provided.
+ *
+ * \param[in] metadatum A valid pointer to the metadatum to serialize.
+ * \param[in,out] writer A valid JSON writer.
+ *
+ * \return CARDANO_SUCCESS on success.
+ * \return CARDANO_ERROR_POINTER_IS_NULL if any pointer parameter is NULL.
+ * \return CARDANO_ERROR_ENCODING on encoding errors (e.g., allocation failure or conversion failure).
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_metadatum_to_cip116_json(
+  const cardano_metadatum_t* metadatum,
+  cardano_json_writer_t*     writer);
 
 /**
  * \brief Retrieves the kind of the metadatum.

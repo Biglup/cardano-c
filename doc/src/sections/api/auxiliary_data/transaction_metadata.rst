@@ -17,6 +17,10 @@ Transaction Metadata
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_metadata_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_transaction_metadata_get_length
 
 ------------

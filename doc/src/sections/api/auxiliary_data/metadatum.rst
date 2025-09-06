@@ -57,6 +57,10 @@ Metadatum
 
 ------------
 
+.. doxygenfunction:: cardano_metadatum_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_metadatum_to_cbor
 
 ------------

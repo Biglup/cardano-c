@@ -17,6 +17,10 @@ Metadatum List
 
 ------------
 
+.. doxygenfunction:: cardano_metadatum_list_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_metadatum_list_get_length
 
 ------------

@@ -340,6 +340,66 @@ cardano_metadatum_map_to_cbor(const cardano_metadatum_map_t* metadatum_map, card
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_metadatum_map_to_cip116_json(
+  const cardano_metadatum_map_t* map,
+  cardano_json_writer_t*         writer)
+{
+  if ((map == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "map", 3);
+
+  cardano_json_writer_write_property_name(writer, "contents", 8);
+  cardano_json_writer_write_start_array(writer);
+
+  const size_t n = cardano_array_get_size(map->array);
+
+  for (size_t i = 0; i < n; ++i)
+  {
+    cardano_object_t* obj = cardano_array_get(map->array, i);
+
+    if (obj == NULL)
+    {
+      return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+    }
+
+    cardano_metadatum_map_kvp_t* kvp = (cardano_metadatum_map_kvp_t*)((void*)obj);
+
+    cardano_json_writer_write_start_object(writer);
+
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    cardano_error_t error = cardano_metadatum_to_cip116_json(kvp->key, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&obj);
+      return error;
+    }
+
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    error = cardano_metadatum_to_cip116_json(kvp->value, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&obj);
+      return error;
+    }
+
+    cardano_json_writer_write_end_object(writer);
+    cardano_object_unref(&obj);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_metadatum_map_get_length(const cardano_metadatum_map_t* metadatum_map)
 {
@@ -390,6 +450,48 @@ cardano_metadatum_map_get(
   }
 
   return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+}
+
+cardano_error_t
+cardano_metadatum_map_get_at(
+  cardano_metadatum_map_t* metadatum_map,
+  size_t                   index,
+  cardano_metadatum_t**    key,
+  cardano_metadatum_t**    element)
+{
+  if ((metadatum_map == NULL) || (key == NULL) || (element == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *key     = NULL;
+  *element = NULL;
+
+  const size_t size = cardano_array_get_size(metadatum_map->array);
+
+  if (index >= size)
+  {
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  cardano_object_t* object = cardano_array_get(metadatum_map->array, index);
+
+  if (object == NULL)
+  {
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  cardano_metadatum_map_kvp_t* kvp = (cardano_metadatum_map_kvp_t*)((void*)object);
+
+  cardano_metadatum_ref(kvp->key);
+  cardano_metadatum_ref(kvp->value);
+
+  *key     = kvp->key;
+  *element = kvp->value;
+
+  cardano_object_unref(&object);
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t

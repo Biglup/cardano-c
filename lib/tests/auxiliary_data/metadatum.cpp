@@ -74,6 +74,243 @@ static const char* JSON_1 =
 
 const char* JSON_1_CBOR = "a178383136306238356535336532356566343932373263343231663034623730326263333231383464313032383635666431646338383135636465a177486f72726f637562653030373236783636363636364544a56563617264739fa1646e616d65664845524d4954a1646e616d656a54454d504552414e4345a1646e616d6565444556494cff65696d6167657835697066733a2f2f516d5471464d786f447a514531336f785661746b5773646134755a474a524c35746b734a4c5176394a52764e7251646e616d6570486f72726f63756265202330303732366a70726f70657274696573a86661737065637467416e67756973686a6261636b67726f756e6465477265656e68636f6d6d75746572674f6e656972696364636f7265781f476f6c64656e204b616461746869616e20537465656c20467261676d656e74696d656368616e69736d6c476169616e20526970706572686f726e616d656e74744d6f6c74656e20566f6f6e697468205475736b7368737570706f727473724c75636966657269616e20536861636b6c6562696400697369676e6174757265a36172782c414a5270544a614d75374356376b364952636b4f2b71467a6251484d79566c516e47686c6c67717a327545446173782c414f745242626c56644f30354f7775636b3955435531356c36785a4f2f662f63536b634d5241546f56545373717365637572697479416c676f726974686d744563647361536563703235366b31536861323536";
 
+static const char* CIP116_JSON =
+  "{\n"
+  "  \"tag\": \"map\",\n"
+  "  \"contents\": [\n"
+  "    {\n"
+  "      \"key\": {\n"
+  "        \"tag\": \"string\",\n"
+  "        \"value\": \"160b85e53e25ef49272c421f04b702bc32184d102865fd1dc8815cde\"\n"
+  "      },\n"
+  "      \"value\": {\n"
+  "        \"tag\": \"map\",\n"
+  "        \"contents\": [\n"
+  "          {\n"
+  "            \"key\": {\n"
+  "              \"tag\": \"string\",\n"
+  "              \"value\": \"Horrocube00726x666666ED\"\n"
+  "            },\n"
+  "            \"value\": {\n"
+  "              \"tag\": \"map\",\n"
+  "              \"contents\": [\n"
+  "                {\n"
+  "                  \"key\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"cards\"\n"
+  "                  },\n"
+  "                  \"value\": {\n"
+  "                    \"tag\": \"list\",\n"
+  "                    \"contents\": [\n"
+  "                      {\n"
+  "                        \"tag\": \"map\",\n"
+  "                        \"contents\": [\n"
+  "                          {\n"
+  "                            \"key\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"name\"\n"
+  "                            },\n"
+  "                            \"value\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"HERMIT\"\n"
+  "                            }\n"
+  "                          }\n"
+  "                        ]\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"tag\": \"map\",\n"
+  "                        \"contents\": [\n"
+  "                          {\n"
+  "                            \"key\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"name\"\n"
+  "                            },\n"
+  "                            \"value\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"TEMPERANCE\"\n"
+  "                            }\n"
+  "                          }\n"
+  "                        ]\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"tag\": \"map\",\n"
+  "                        \"contents\": [\n"
+  "                          {\n"
+  "                            \"key\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"name\"\n"
+  "                            },\n"
+  "                            \"value\": {\n"
+  "                              \"tag\": \"string\",\n"
+  "                              \"value\": \"DEVIL\"\n"
+  "                            }\n"
+  "                          }\n"
+  "                        ]\n"
+  "                      }\n"
+  "                    ]\n"
+  "                  }\n"
+  "                },\n"
+  "                {\n"
+  "                  \"key\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"image\"\n"
+  "                  },\n"
+  "                  \"value\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"ipfs://QmTqFMxoDzQE13oxVatkWsda4uZGJRL5tksJLQv9JRvNrQ\"\n"
+  "                  }\n"
+  "                },\n"
+  "                {\n"
+  "                  \"key\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"name\"\n"
+  "                  },\n"
+  "                  \"value\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"Horrocube #00726\"\n"
+  "                  }\n"
+  "                },\n"
+  "                {\n"
+  "                  \"key\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"properties\"\n"
+  "                  },\n"
+  "                  \"value\": {\n"
+  "                    \"tag\": \"map\",\n"
+  "                    \"contents\": [\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"aspect\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Anguish\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"background\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Green\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"commuter\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Oneiric\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"core\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Golden Kadathian Steel Fragment\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"mechanism\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Gaian Ripper\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"ornament\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Molten Voonith Tusks\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"supports\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"Luciferian Shackle\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"id\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"int\",\n"
+  "                          \"value\": ,\"0\"\n"
+  "                        }\n"
+  "                      }\n"
+  "                    ]\n"
+  "                  }\n"
+  "                },\n"
+  "                {\n"
+  "                  \"key\": {\n"
+  "                    \"tag\": \"string\",\n"
+  "                    \"value\": \"signature\"\n"
+  "                  },\n"
+  "                  \"value\": {\n"
+  "                    \"tag\": \"map\",\n"
+  "                    \"contents\": [\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"r\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"AJRpTJaMu7CV7k6IRckO+qFzbQHMyVlQnGhllgqz2uED\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"s\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"AOtRBblVdO05Owuck9UCU15l6xZO/f/cSkcMRAToVTSs\"\n"
+  "                        }\n"
+  "                      },\n"
+  "                      {\n"
+  "                        \"key\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"securityAlgorithm\"\n"
+  "                        },\n"
+  "                        \"value\": {\n"
+  "                          \"tag\": \"string\",\n"
+  "                          \"value\": \"EcdsaSecp256k1Sha256\"\n"
+  "                        }\n"
+  "                      }\n"
+  "                    ]\n"
+  "                  }\n"
+  "                }\n"
+  "              ]\n"
+  "            }\n"
+  "          }\n"
+  "        ]\n"
+  "      }\n"
+  "    }\n"
+  "  ]\n"
+  "}";
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_metadatum_new_integer_from_int, returnsErrorWhenMemoryAllocationFailes)
@@ -2474,6 +2711,79 @@ TEST(cardano_metadatum_to_json, canConvertToJson)
   // Cleanup
   cardano_metadatum_unref(&data);
   free(json);
+}
+
+TEST(cardano_metadatum_to_cip116_json, canConvertToJson)
+{
+  // Arrange
+  cardano_metadatum_t*   data   = nullptr;
+  cardano_error_t        error  = cardano_metadatum_from_json(JSON_1, strlen(JSON_1), &data);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_metadatum_to_cip116_json(data, writer);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t json_size = cardano_json_writer_get_encoded_size(writer);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_json_writer_encode(writer, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json, CIP116_JSON);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+  free(json);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_metadatum_to_cip116_json, canEncodeBytesMetadatum)
+{
+  // Arrange
+  cardano_metadatum_t* metadatum = nullptr;
+  const uint8_t        bytes[]   = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+
+  // Act
+  cardano_error_t error = cardano_metadatum_new_bytes(bytes, sizeof(bytes), &metadatum);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(metadatum, testing::Not((cardano_metadatum_t*)nullptr));
+
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  error                         = cardano_metadatum_to_cip116_json(metadatum, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t json_size = cardano_json_writer_get_encoded_size(writer);
+  char*        json      = (char*)malloc(json_size);
+
+  error = cardano_json_writer_encode(writer, json, json_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(json, "{\n  \"tag\": \"bytes\",\n  \"value\": \"0102030405\"\n}");
+
+  // Cleanup
+  cardano_metadatum_unref(&metadatum);
+  free(json);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_metadatum_to_cip116_json, returnErrorIfNullPointer)
+{
+  // Act
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  EXPECT_EQ(cardano_metadatum_to_cip116_json(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_to_cip116_json((cardano_metadatum_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_writer_unref(&writer);
 }
 
 TEST(cardano_metadatum_to_json, returnErrorIfNullPointer)

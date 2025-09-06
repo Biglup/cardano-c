@@ -404,6 +404,65 @@ cardano_script_to_cbor(
 }
 
 cardano_error_t
+cardano_script_to_cip116_json(
+  const cardano_script_t* script,
+  cardano_json_writer_t*  writer)
+{
+  if ((script == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+
+  switch (script->language)
+  {
+    case CARDANO_SCRIPT_LANGUAGE_NATIVE:
+      cardano_json_writer_write_string(writer, "native_script", 13);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+      cardano_json_writer_write_string(writer, "plutus_script", 13);
+      break;
+    default:
+      cardano_json_writer_write_end_object(writer);
+      return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+  }
+
+  cardano_json_writer_write_property_name(writer, "value", 5);
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  switch (script->language)
+  {
+    case CARDANO_SCRIPT_LANGUAGE_NATIVE:
+      result = cardano_native_script_to_cip116_json(script->native_script, writer);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
+      result = cardano_plutus_v1_script_to_cip116_json(script->plutus_v1_script, writer);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
+      result = cardano_plutus_v2_script_to_cip116_json(script->plutus_v2_script, writer);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+      result = cardano_plutus_v3_script_to_cip116_json(script->plutus_v3_script, writer);
+      break;
+    default:
+      result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+      break;
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_script_get_language(
   const cardano_script_t*    script,
   cardano_script_language_t* language)

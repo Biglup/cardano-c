@@ -17,11 +17,19 @@ Metadatum Map
 
 ------------
 
+.. doxygenfunction:: cardano_metadatum_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_metadatum_map_get_length
 
 ------------
 
 .. doxygenfunction:: cardano_metadatum_map_get
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_map_get_at
 
 ------------
 

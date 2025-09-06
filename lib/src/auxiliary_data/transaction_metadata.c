@@ -29,6 +29,7 @@
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
 #include "../collections/set.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <string.h>
@@ -327,6 +328,58 @@ cardano_transaction_metadata_to_cbor(const cardano_transaction_metadata_t* trans
 
     cardano_object_unref(&kvp);
   }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_transaction_metadata_to_cip116_json(
+  const cardano_transaction_metadata_t* metadata,
+  cardano_json_writer_t*                writer)
+{
+  if ((metadata == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  const size_t count = cardano_transaction_metadata_get_length(metadata);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    uint64_t             label = 0U;
+    cardano_metadatum_t* value = NULL;
+
+    cardano_error_t error = cardano_transaction_metadata_get_key_value_at(metadata, i, &label, &value);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    cardano_json_writer_write_start_object(writer);
+
+    char key_buf[32] = { 0 };
+
+    const size_t string_size = cardano_safe_uint64_to_string(label, key_buf, sizeof(key_buf));
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    cardano_json_writer_write_string(writer, key_buf, string_size);
+
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    error = cardano_metadatum_to_cip116_json(value, writer);
+
+    cardano_metadatum_unref(&value);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    cardano_json_writer_write_end_object(writer);
+  }
+
+  cardano_json_writer_write_end_array(writer);
 
   return CARDANO_SUCCESS;
 }

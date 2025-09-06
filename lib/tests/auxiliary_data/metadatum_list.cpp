@@ -899,3 +899,14 @@ TEST(cardano_metadatum_list_equals, returnsTrueIfMetadatumListsAreEqual)
   cardano_metadatum_unref(&data1);
   cardano_metadatum_unref(&data2);
 }
+
+TEST(cardano_metadatum_list_to_cip116_json, returnErrorIfNullPointer)
+{
+  // Act
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+
+  EXPECT_EQ(cardano_metadatum_list_to_cip116_json(nullptr, writer), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_metadatum_list_to_cip116_json((cardano_metadatum_list_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_json_writer_unref(&writer);
+}
