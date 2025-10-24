@@ -326,6 +326,37 @@ cardano_credential_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_credential_to_cip116_json(
+  const cardano_credential_t* credential,
+  cardano_json_writer_t*      writer)
+{
+  if ((credential == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+
+  if (credential->type == CARDANO_CREDENTIAL_TYPE_KEY_HASH)
+  {
+    cardano_json_writer_write_string(writer, "pubkey_hash", 11);
+  }
+  else
+  {
+    cardano_json_writer_write_string(writer, "script_hash", 11);
+  }
+
+  cardano_json_writer_write_property_name(writer, "value", 5);
+  cardano_json_writer_write_string(writer, credential->hash_hex, sizeof(credential->hash_hex) - 1U);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_blake2b_hash_t*
 cardano_credential_get_hash(const cardano_credential_t* credential)
 {

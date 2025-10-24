@@ -25,6 +25,10 @@ Credential
 
 ------------
 
+.. doxygenfunction:: cardano_credential_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_credential_get_hash
 
 ------------
