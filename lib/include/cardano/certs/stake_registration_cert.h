@@ -182,6 +182,26 @@ CARDANO_EXPORT cardano_error_t cardano_stake_registration_cert_to_cbor(
   cardano_cbor_writer_t*                   writer);
 
 /**
+ * \brief Serializes a stake registration certificate to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", then "credential".
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_stake_registration_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ *         CARDANO_ERROR_POINTER_IS_NULL  If \p cert or \p writer is NULL.
+ *         CARDANO_ERROR_ENCODING         If the certificate is malformed (e.g., missing credential).
+ *         Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_stake_registration_cert_to_cip116_json(
+  const cardano_stake_registration_cert_t* cert,
+  cardano_json_writer_t*                   writer);
+
+/**
  * \brief Retrieves the credential associated with a stake registration certificate.
  *
  * This function extracts the credential from the specified \ref cardano_stake_registration_cert_t object.

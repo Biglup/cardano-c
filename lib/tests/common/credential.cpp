@@ -1521,4 +1521,3 @@ TEST(cardano_credential_to_cip116_json, returnsErrorIfJsonIsNull)
   // Cleanup
   cardano_credential_unref(&credential);
 }
-
