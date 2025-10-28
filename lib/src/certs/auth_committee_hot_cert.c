@@ -236,6 +236,51 @@ cardano_auth_committee_hot_cert_to_cbor(
 }
 
 cardano_error_t
+cardano_auth_committee_hot_cert_to_cip116_json(
+  const cardano_auth_committee_hot_cert_t* cert,
+  cardano_json_writer_t*                   writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const cardano_credential_t* cold = cert->committee_cold_cred;
+  const cardano_credential_t* hot  = cert->committee_hot_cred;
+
+  if ((cold == NULL) || (hot == NULL))
+  {
+    cardano_json_writer_set_last_error(writer, "Auth committee cert missing cold or hot credential");
+    return CARDANO_ERROR_ENCODING;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "auth_committee_hot", 18);
+
+  cardano_json_writer_write_property_name(writer, "committee_cold_credential", 25);
+  cardano_error_t err = cardano_credential_to_cip116_json(cold, writer);
+
+  if (err != CARDANO_SUCCESS)
+  {
+    return err;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee_hot_credential", 24);
+  err = cardano_credential_to_cip116_json(hot, writer);
+
+  if (err != CARDANO_SUCCESS)
+  {
+    return err;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_auth_committee_hot_cert_set_cold_cred(
   cardano_auth_committee_hot_cert_t* auth_committee_hot,
   cardano_credential_t*              credential)
