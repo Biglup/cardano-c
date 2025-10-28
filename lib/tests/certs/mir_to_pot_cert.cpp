@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/mir_to_pot_cert.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -483,6 +484,87 @@ TEST(cardano_mir_to_pot_cert_set_pot, canSetPot)
 
   EXPECT_EQ(cardano_mir_to_pot_cert_get_pot(mir_to_pot_cert, &type), CARDANO_SUCCESS);
   EXPECT_EQ(type, CARDANO_MIR_CERT_POT_TYPE_RESERVE);
+
+  // Cleanup
+  cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
+}
+
+TEST(cardano_mir_to_pot_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_mir_to_pot_cert_t* mir_to_pot_cert = nullptr;
+  cardano_error_t            result          = cardano_mir_to_pot_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, 1000000, &mir_to_pot_cert);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_mir_to_pot_cert_to_cip116_json(mir_to_pot_cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_other_pot","pot":"treasury","amount":"1000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
+  free(json_str);
+}
+
+TEST(cardano_mir_to_pot_cert_to_cip116_json, canConvertReservesToCip116Json)
+{
+  // Arrange
+  cardano_mir_to_pot_cert_t* mir_to_pot_cert = nullptr;
+  cardano_error_t            result          = cardano_mir_to_pot_cert_new(CARDANO_MIR_CERT_POT_TYPE_RESERVE, 1000000, &mir_to_pot_cert);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_mir_to_pot_cert_to_cip116_json(mir_to_pot_cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_other_pot","pot":"reserves","amount":"1000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
+  free(json_str);
+}
+
+TEST(cardano_mir_to_pot_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t result = cardano_mir_to_pot_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_mir_to_pot_cert_to_cip116_json, returnsErrorIfJsonIsNull)
+{
+  // Arrange
+  cardano_mir_to_pot_cert_t* mir_to_pot_cert = nullptr;
+  cardano_error_t            result          = cardano_mir_to_pot_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, 1000000, &mir_to_pot_cert);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_mir_to_pot_cert_to_cip116_json(mir_to_pot_cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);

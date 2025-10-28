@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <cardano/certs/mir_cert_type.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -379,6 +380,71 @@ cardano_mir_to_stake_creds_cert_to_cbor(const cardano_mir_to_stake_creds_cert_t*
 
     cardano_object_unref(&kvp);
   }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_mir_to_stake_creds_cert_to_cip116_json(
+  const cardano_mir_to_stake_creds_cert_t* cert,
+  cardano_json_writer_t*                   writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "to_stake_creds", 14);
+
+  cardano_json_writer_write_property_name(writer, "pot", 3);
+  if (cert->pot == CARDANO_MIR_CERT_POT_TYPE_TREASURY)
+  {
+    cardano_json_writer_write_string(writer, "treasury", 8);
+  }
+  else
+  {
+    cardano_json_writer_write_string(writer, "reserves", 8);
+  }
+
+  cardano_json_writer_write_property_name(writer, "rewards", 7);
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0; i < cardano_array_get_size(cert->array); ++i)
+  {
+    cardano_object_t* kvp = cardano_array_get(cert->array, i);
+
+    if (kvp == NULL)
+    {
+      cardano_json_writer_set_last_error(writer, "Element in MIR to stake credentials certificate is NULL");
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    cardano_mir_to_stake_creds_cert_kvp_t* kvp_data = (cardano_mir_to_stake_creds_cert_kvp_t*)((void*)kvp);
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    cardano_error_t result = cardano_credential_to_cip116_json(kvp_data->key, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return result;
+    }
+
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    char         amount_str[128] = { 0 };
+    const size_t str_size        = cardano_safe_uint64_to_string(kvp_data->value, amount_str, sizeof(amount_str));
+
+    cardano_json_writer_write_string(writer, amount_str, str_size);
+    cardano_json_writer_write_end_object(writer);
+    cardano_object_unref(&kvp);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
 
   return CARDANO_SUCCESS;
 }

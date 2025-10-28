@@ -185,6 +185,26 @@ CARDANO_EXPORT cardano_error_t cardano_genesis_key_delegation_cert_to_cbor(
   cardano_cbor_writer_t*                       writer);
 
 /**
+ * \brief Serializes a genesis-key-delegation certificate to CIP-116 JSON.
+ *
+ * Keys are written in deterministic order: "tag", "genesis_hash", "genesis_delegate_hash", "vrf_keyhash".
+ * The function writes the full JSON object, including surrounding braces.
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_genesis_key_delegation_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ *         CARDANO_ERROR_POINTER_IS_NULL  If \p cert or \p writer is NULL.
+ *         CARDANO_ERROR_ENCODING         If required fields are missing/invalid.
+ *         Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_genesis_key_delegation_cert_to_cip116_json(
+  const cardano_genesis_key_delegation_cert_t* cert,
+  cardano_json_writer_t*                       writer);
+
+/**
  * \brief Retrieves the genesis hash from a genesis key delegation certificate.
  *
  * This function extracts the genesis hash from the specified \ref cardano_genesis_key_delegation_cert_t object.

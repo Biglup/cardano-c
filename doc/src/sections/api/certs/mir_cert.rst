@@ -21,6 +21,10 @@ Move Instantaneous Rewards Certificate (MIR)
 
 ------------
 
+.. doxygenfunction:: cardano_mir_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_mir_cert_get_type
 
 ------------

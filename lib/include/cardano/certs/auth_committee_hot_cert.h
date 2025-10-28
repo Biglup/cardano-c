@@ -183,6 +183,26 @@ CARDANO_EXPORT cardano_error_t cardano_auth_committee_hot_cert_to_cbor(
   cardano_cbor_writer_t*                   writer);
 
 /**
+ * \brief Serializes an auth-committee-hot certificate to CIP-116 JSON.
+ *
+ * Keys are written in deterministic order: "tag", "committee_cold_credential", "committee_hot_credential".
+ * The function writes the full JSON object, including surrounding braces.
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_auth_committee_hot_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ *         CARDANO_ERROR_POINTER_IS_NULL  If \p cert or \p writer is NULL.
+ *         CARDANO_ERROR_ENCODING         If required fields are missing/invalid.
+ *         Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_auth_committee_hot_cert_to_cip116_json(
+  const cardano_auth_committee_hot_cert_t* cert,
+  cardano_json_writer_t*                   writer);
+
+/**
  * \brief Sets the cold credential for an authorization committee hot certificate.
  *
  * This function assigns a new cold credential to a given \ref cardano_auth_committee_hot_cert_t object.

@@ -28,6 +28,8 @@
 #include <cardano/certs/genesis_key_delegation_cert.h>
 #include <cardano/crypto/blake2b_hash.h>
 
+#include "../json_helpers.h"
+
 #include <allocators.h>
 
 #include <gmock/gmock.h>
@@ -818,4 +820,54 @@ TEST(cardano_genesis_key_delegation_cert_set_vrf_key_hash, returnsErrorIfHashIsN
 
   // Cleanup
   cardano_genesis_key_delegation_cert_unref(&genesis_key_delegation_cert);
+}
+
+TEST(cardano_genesis_key_delegation_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_genesis_key_delegation_cert_t* cert = new_default_cert();
+  cardano_json_writer_t*                 json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_genesis_key_delegation_cert_to_cip116_json(cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"genesis_key_delegation","genesis_hash":"00010001000100010001000100010001000100010001000100010001","genesis_delegate_hash":"00020002000200020002000200020002000200020002000200020002","vrf_keyhash":"0003000300030003000300030003000300030003000300030003000300030003"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_genesis_key_delegation_cert_unref(&cert);
+  free(json_str);
+}
+
+TEST(cardano_genesis_key_delegation_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_genesis_key_delegation_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_genesis_key_delegation_cert_to_cip116_json, returnsErrorIfJsonIsNull)
+{
+  // Arrange
+  cardano_genesis_key_delegation_cert_t* cert = new_default_cert();
+
+  // Act
+  cardano_error_t error = cardano_genesis_key_delegation_cert_to_cip116_json(cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_genesis_key_delegation_cert_unref(&cert);
 }

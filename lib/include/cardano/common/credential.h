@@ -275,6 +275,24 @@ CARDANO_EXPORT cardano_error_t cardano_credential_to_cbor(
   cardano_cbor_writer_t*      writer);
 
 /**
+ * \brief Serializes a credential to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ *
+ * \param[in]  credential  Pointer to a valid \ref cardano_credential_t.
+ * \param[in]  writer      Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ *         CARDANO_ERROR_POINTER_IS_NULL  If \p credential or \p writer is NULL.
+ *         CARDANO_ERROR_ENCODING         If the credential is malformed (e.g., missing hash).
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_credential_to_cip116_json(
+  const cardano_credential_t* credential,
+  cardano_json_writer_t*      writer);
+
+/**
  * \brief Retrieves the hash associated with a credential.
  *
  * This function provides access to the hash part of a \ref cardano_credential_t object.

@@ -267,6 +267,64 @@ cardano_genesis_key_delegation_cert_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_genesis_key_delegation_cert_to_cip116_json(
+  const cardano_genesis_key_delegation_cert_t* cert,
+  cardano_json_writer_t*                       writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const cardano_blake2b_hash_t* genesis_hash  = cert->genesis_hash;
+  const cardano_blake2b_hash_t* delegate_hash = cert->genesis_delegate_hash;
+  const cardano_blake2b_hash_t* vrf           = cert->vrf_key_hash;
+
+  if ((genesis_hash == NULL) || (delegate_hash == NULL) || (vrf == NULL))
+  {
+    cardano_json_writer_set_last_error(writer, "Genesis key delegation cert missing required fields");
+
+    return CARDANO_ERROR_ENCODING;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "genesis_key_delegation", 22);
+
+  cardano_json_writer_write_property_name(writer, "genesis_hash", 12);
+
+  cardano_error_t err = cardano_blake2b_hash_to_cip116_json(genesis_hash, writer);
+
+  if (err != CARDANO_SUCCESS)
+  {
+    return err;
+  }
+
+  cardano_json_writer_write_property_name(writer, "genesis_delegate_hash", 21);
+
+  err = cardano_blake2b_hash_to_cip116_json(delegate_hash, writer);
+
+  if (err != CARDANO_SUCCESS)
+  {
+    return err;
+  }
+
+  cardano_json_writer_write_property_name(writer, "vrf_keyhash", 11);
+
+  err = cardano_blake2b_hash_to_cip116_json(vrf, writer);
+
+  if (err != CARDANO_SUCCESS)
+  {
+    return err;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_blake2b_hash_t*
 cardano_genesis_key_delegation_cert_get_genesis_hash(cardano_genesis_key_delegation_cert_t* certificate)
 {

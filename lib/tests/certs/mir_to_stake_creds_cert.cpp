@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/mir_to_stake_creds_cert.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -892,4 +893,121 @@ TEST(cardano_mir_to_stake_creds_cert_insert, keysAreKeptSortedAtInsertion)
   cardano_credential_unref(&credential1);
   cardano_credential_unref(&credential2);
   cardano_credential_unref(&credential3);
+}
+
+TEST(cardano_mir_to_stake_creds_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_mir_to_stake_creds_cert_t* mir_to_stake_creds_cert = NULL;
+  cardano_credential_t*              credential1             = NULL;
+  cardano_credential_t*              credential2             = NULL;
+  cardano_credential_t*              credential3             = NULL;
+
+  cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, &mir_to_stake_creds_cert);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH, strlen(CREDENTIAL_HASH), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential1);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH2, strlen(CREDENTIAL_HASH2), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential2);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH3, strlen(CREDENTIAL_HASH3), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential3);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Act
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential1, 100), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential2, 200), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential3, 300), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json     = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error    = cardano_mir_to_stake_creds_cert_to_cip116_json(mir_to_stake_creds_cert, json);
+  char*                  json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_stake_creds","pot":"treasury","rewards":[{"key":{"tag":"pubkey_hash","value":"00010101010101010101010101010101010101010101010101010101"},"value":"200"},{"key":{"tag":"pubkey_hash","value":"01010101010101010101010101010101010101010101010101010101"},"value":"100"},{"key":{"tag":"pubkey_hash","value":"ff010101010101010101010101010101010101010101010101010101"},"value":"300"}]})");
+
+  // Cleanup
+  cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+  cardano_credential_unref(&credential3);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(cardano_mir_to_stake_creds_cert_to_cip116_json, canConvertReservesToCip116Json)
+{
+  // Arrange
+  cardano_mir_to_stake_creds_cert_t* mir_to_stake_creds_cert = NULL;
+  cardano_credential_t*              credential1             = NULL;
+  cardano_credential_t*              credential2             = NULL;
+  cardano_credential_t*              credential3             = NULL;
+
+  cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_RESERVE, &mir_to_stake_creds_cert);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH, strlen(CREDENTIAL_HASH), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential1);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH2, strlen(CREDENTIAL_HASH2), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential2);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_credential_from_hash_hex(CREDENTIAL_HASH3, strlen(CREDENTIAL_HASH3), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential3);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Act
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential1, 100), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential2, 200), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_mir_to_stake_creds_cert_insert(mir_to_stake_creds_cert, credential3, 300), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json     = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error    = cardano_mir_to_stake_creds_cert_to_cip116_json(mir_to_stake_creds_cert, json);
+  char*                  json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_stake_creds","pot":"reserves","rewards":[{"key":{"tag":"pubkey_hash","value":"00010101010101010101010101010101010101010101010101010101"},"value":"200"},{"key":{"tag":"pubkey_hash","value":"01010101010101010101010101010101010101010101010101010101"},"value":"100"},{"key":{"tag":"pubkey_hash","value":"ff010101010101010101010101010101010101010101010101010101"},"value":"300"}]})");
+
+  // Cleanup
+  cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
+  cardano_credential_unref(&credential1);
+  cardano_credential_unref(&credential2);
+  cardano_credential_unref(&credential3);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(cardano_mir_to_stake_creds_cert_to_cip116_json, returnsErrorIfMirCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t result = cardano_mir_to_stake_creds_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_mir_to_stake_creds_cert_to_cip116_json, returnsErrorIfJsonIsNull)
+{
+  // Arrange
+  cardano_mir_to_stake_creds_cert_t* mir_to_stake_creds_cert = NULL;
+
+  cardano_error_t result = cardano_mir_to_stake_creds_cert_new(CARDANO_MIR_CERT_POT_TYPE_TREASURY, &mir_to_stake_creds_cert);
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  // Act
+  result = cardano_mir_to_stake_creds_cert_to_cip116_json(mir_to_stake_creds_cert, nullptr);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
 }

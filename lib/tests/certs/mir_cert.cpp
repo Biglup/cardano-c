@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/mir_cert.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -734,4 +735,82 @@ TEST(cardano_mir_cert_as_to_stake_creds, canGetToStakeCredsCert)
   cardano_mir_cert_unref(&mir_cert);
   cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_mir_cert_to_cip116_json, canConvertToCredsToCip116Json)
+{
+  // Arrange
+  cardano_mir_cert_t*    mir_cert = NULL;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR_USE_RESERVES_TO_CREDS, strlen(CBOR_USE_RESERVES_TO_CREDS));
+
+  cardano_error_t result = cardano_mir_cert_from_cbor(reader, &mir_cert);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_mir_cert_to_cip116_json(mir_cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_stake_creds","pot":"reserves","rewards":[{"key":{"tag":"pubkey_hash","value":"01010101010101010101010101010101010101010101010101010101"},"value":"0"}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_mir_cert_unref(&mir_cert);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_mir_cert_to_cip116_json, canConvertToPotToCip116Json)
+{
+  // Arrange
+  cardano_mir_cert_t*    mir_cert = NULL;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR_USE_RESERVES_TO_POT, strlen(CBOR_USE_RESERVES_TO_POT));
+
+  cardano_error_t result = cardano_mir_cert_from_cbor(reader, &mir_cert);
+
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_mir_cert_to_cip116_json(mir_cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"to_other_pot","pot":"reserves","amount":"1000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_mir_cert_unref(&mir_cert);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_mir_cert_to_cip116_json, returnsErrorIfMirCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t result = cardano_mir_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_mir_cert_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Act
+  cardano_error_t result = cardano_mir_cert_to_cip116_json((cardano_mir_cert_t*)"", nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }

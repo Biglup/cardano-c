@@ -26,6 +26,7 @@
 #include <cardano/common/credential.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1425,4 +1426,98 @@ TEST(cardano_credential_compare, returnsPositiveIfFirstCredentialTypeIsGreaterTh
   // Cleanup
   cardano_credential_unref(&credential1);
   cardano_credential_unref(&credential2);
+}
+
+TEST(cardano_credential_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_credential_t*  credential = nullptr;
+  cardano_json_writer_t* json       = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error          = cardano_credential_to_cip116_json(credential, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(cardano_credential_to_cip116_json, canConvertScriptCredToCip116Json)
+{
+  // Arrange
+  cardano_credential_t*  credential = nullptr;
+  cardano_json_writer_t* json       = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error          = cardano_credential_to_cip116_json(credential, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"script_hash","value":"00000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(cardano_credential_to_cip116_json, returnsErrorIfCredentialIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_credential_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_credential_to_cip116_json, returnsErrorIfJsonIsNull)
+{
+  // Arrange
+  cardano_credential_t* credential = nullptr;
+
+  cardano_error_t error = cardano_credential_from_hash_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    CARDANO_CREDENTIAL_TYPE_KEY_HASH,
+    &credential);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_credential_to_cip116_json(credential, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
 }

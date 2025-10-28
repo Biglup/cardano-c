@@ -30,6 +30,7 @@
 #include "../cbor/cbor_validation.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -180,6 +181,45 @@ cardano_mir_to_pot_cert_to_cbor(
   }
 
   return cardano_cbor_writer_write_uint(writer, mir_to_pot_cert->amount);
+}
+
+cardano_error_t
+cardano_mir_to_pot_cert_to_cip116_json(
+  const cardano_mir_to_pot_cert_t* cert,
+  cardano_json_writer_t*           writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const uint64_t amount = cert->amount;
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "to_other_pot", 12);
+
+  cardano_json_writer_write_property_name(writer, "pot", 3);
+
+  if (cert->pot == CARDANO_MIR_CERT_POT_TYPE_TREASURY)
+  {
+    cardano_json_writer_write_string(writer, "treasury", 8);
+  }
+  else
+  {
+    cardano_json_writer_write_string(writer, "reserves", 8);
+  }
+
+  cardano_json_writer_write_property_name(writer, "amount", 6);
+  char         amount_str[128] = { 0 };
+  const size_t str_size        = cardano_safe_uint64_to_string(amount, amount_str, sizeof(amount_str));
+
+  cardano_json_writer_write_string(writer, amount_str, str_size);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t

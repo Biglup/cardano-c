@@ -17,6 +17,10 @@ Auth Committee Member Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_auth_committee_hot_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_auth_committee_hot_cert_set_cold_cred
 
 ------------
