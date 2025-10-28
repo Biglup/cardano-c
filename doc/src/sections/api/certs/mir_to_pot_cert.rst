@@ -17,6 +17,10 @@ MIR Between Pots
 
 ------------
 
+.. doxygenfunction:: cardano_mir_to_pot_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_mir_to_pot_cert_get_pot
 
 ------------

@@ -17,6 +17,10 @@ Genesis Key Delegation Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_genesis_key_delegation_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_genesis_key_delegation_cert_get_genesis_hash
 
 ------------

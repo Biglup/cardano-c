@@ -17,6 +17,10 @@ MIR To Stake Credentials
 
 ------------
 
+.. doxygenfunction:: cardano_mir_to_stake_creds_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_mir_to_stake_creds_cert_get_pot
 
 ------------
