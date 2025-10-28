@@ -343,6 +343,24 @@ cardano_mir_cert_to_cbor(
 }
 
 cardano_error_t
+cardano_mir_cert_to_cip116_json(
+  const cardano_mir_cert_t* cert,
+  cardano_json_writer_t*    writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (cert->type == CARDANO_MIR_CERT_TYPE_TO_POT)
+  {
+    return cardano_mir_to_pot_cert_to_cip116_json(cert->mir_to_pot_cert, writer);
+  }
+
+  return cardano_mir_to_stake_creds_cert_to_cip116_json(cert->mir_to_stake_creds_cert, writer);
+}
+
+cardano_error_t
 cardano_mir_cert_get_type(const cardano_mir_cert_t* mir_cert, cardano_mir_cert_type_t* type)
 {
   if (mir_cert == NULL)

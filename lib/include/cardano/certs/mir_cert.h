@@ -29,6 +29,7 @@
 #include <cardano/certs/mir_cert_type.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -222,6 +223,29 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_mir_cert_to_cbor(
   const cardano_mir_cert_t* mir_cert,
   cardano_cbor_writer_t*    writer);
+
+/**
+ * \brief Serializes a Move Instantaneous Rewards (MIR) certificate to CIP-116 JSON.
+ *
+ * This function dispatches based on the MIR certificate variant and emits the
+ * corresponding CIP-116 JSON object exactly as produced by the concrete helpers:
+ *
+ * - \ref cardano_mir_to_pot_cert_to_cip116_json for MIR-to-pot certificates
+ * - \ref cardano_mir_to_stake_creds_cert_to_cip116_json for MIR-to-stake-creds
+ *
+ * \param[in]  cert   Pointer to a valid \ref cardano_mir_cert_t.
+ * \param[in]  writer Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ *         CARDANO_ERROR_POINTER_IS_NULL  If \p cert or \p writer is NULL.
+ *         CARDANO_ERROR_INVALID_CERTIFICATE_TYPE If the MIR variant is unknown.
+ *         Other                          Any error propagated from nested serializers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_mir_cert_to_cip116_json(
+  const cardano_mir_cert_t* cert,
+  cardano_json_writer_t*    writer);
 
 /**
  * \brief Retrieves the type of a Move Instantaneous Rewards (MIR) certificate.
