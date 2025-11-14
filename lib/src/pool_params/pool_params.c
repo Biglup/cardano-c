@@ -502,7 +502,7 @@ cardano_pool_params_to_cip116_json(
   assert((params->reward_account != NULL));
 
   cardano_json_writer_write_property_name(writer, "reward_account", 14);
-  cardano_json_writer_write_string(writer, cardano_reward_address_get_string(params->reward_account), cardano_reward_address_get_bech32_size(params->reward_account) - 1);
+  cardano_json_writer_write_string(writer, cardano_reward_address_get_string(params->reward_account), cardano_reward_address_get_bech32_size(params->reward_account) - 1U);
 
   assert((params->owners != NULL));
 
