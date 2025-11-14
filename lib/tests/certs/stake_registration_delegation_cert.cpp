@@ -664,8 +664,8 @@ TEST(cardano_stake_registration_delegation_cert_to_cip116_json, canConvertToCip1
   cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
 
   // Act
-  cardano_error_t error = cardano_stake_registration_delegation_cert_to_cip116_json(cert, json);
-  char* json_str  = encode_json(json);
+  cardano_error_t error    = cardano_stake_registration_delegation_cert_to_cip116_json(cert, json);
+  char*           json_str = encode_json(json);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);

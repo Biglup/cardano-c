@@ -198,7 +198,7 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_stake_registration_delegation_cert_to_cip116_json(
   const cardano_stake_registration_delegation_cert_t* cert,
-  cardano_json_writer_t* writer);
+  cardano_json_writer_t*                              writer);
 
 /**
  * \brief Retrieves the stake credential from a stake registration and delegation certificate.
