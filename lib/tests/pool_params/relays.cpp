@@ -26,8 +26,11 @@
 #include <cardano/pool_params/relays.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
+#include <cardano/pool_params/multi_host_name_relay.h>
+#include <cardano/pool_params/single_host_addr_relay.h>
 #include <cardano/pool_params/single_host_name_relay.h>
 #include <gmock/gmock.h>
 
@@ -623,6 +626,104 @@ TEST(cardano_relays_add, returnsErrorIfDataIsNull)
 
   // Act
   error = cardano_relays_add(relays, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_relays_unref(&relays);
+}
+
+TEST(cardano_relays_to_cip116_json, canConvertListOfRelaysToCip116Json)
+{
+  // Arrange
+  cardano_relays_t* relays = NULL;
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  cardano_multi_host_name_relay_t* multi_relay = NULL;
+  EXPECT_EQ(cardano_multi_host_name_relay_new("example.com", strlen("example.com"), &multi_relay), CARDANO_SUCCESS);
+
+  cardano_relay_t* relay1 = NULL;
+  EXPECT_EQ(cardano_relay_new_multi_host_name(multi_relay, &relay1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_relays_add(relays, relay1), CARDANO_SUCCESS);
+
+  uint16_t        port = 3000;
+  cardano_ipv4_t* ipv4 = NULL;
+  EXPECT_EQ(cardano_ipv4_from_string("127.0.0.1", 10, &ipv4), CARDANO_SUCCESS);
+
+  cardano_single_host_addr_relay_t* addr_relay = NULL;
+  EXPECT_EQ(cardano_single_host_addr_relay_new(&port, ipv4, NULL, &addr_relay), CARDANO_SUCCESS);
+
+  cardano_relay_t* relay2 = NULL;
+  EXPECT_EQ(cardano_relay_new_single_host_addr(addr_relay, &relay2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_relays_add(relays, relay2), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_relays_to_cip116_json(relays, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"([{"tag":"multi_host_name","dns_name":"example.com"},{"tag":"single_host_addr","port":3000,"ipv4":"127.0.0.1","ipv6":null}])");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_relays_unref(&relays);
+  cardano_multi_host_name_relay_unref(&multi_relay);
+  cardano_single_host_addr_relay_unref(&addr_relay);
+  cardano_relay_unref(&relay1);
+  cardano_relay_unref(&relay2);
+  cardano_ipv4_unref(&ipv4);
+  free(json_str);
+}
+
+TEST(cardano_relays_to_cip116_json, canConvertEmptyList)
+{
+  // Arrange
+  cardano_relays_t* relays = NULL;
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_relays_to_cip116_json(relays, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_relays_unref(&relays);
+  free(json_str);
+}
+
+TEST(cardano_relays_to_cip116_json, returnsErrorIfRelaysIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_relays_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_relays_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_relays_t* relays = NULL;
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_relays_to_cip116_json(relays, nullptr);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);

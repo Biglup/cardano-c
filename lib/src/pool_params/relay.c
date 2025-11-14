@@ -358,6 +358,39 @@ cardano_relay_to_cbor(
 }
 
 cardano_error_t
+cardano_relay_to_cip116_json(
+  const cardano_relay_t* relay,
+  cardano_json_writer_t* writer)
+{
+  if ((relay == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  switch (relay->type)
+  {
+    case CARDANO_RELAY_TYPE_SINGLE_HOST_ADDRESS:
+    {
+      return cardano_single_host_addr_relay_to_cip116_json(relay->single_host_addr_relay, writer);
+    }
+    case CARDANO_RELAY_TYPE_SINGLE_HOST_NAME:
+    {
+      return cardano_single_host_name_relay_to_cip116_json(relay->single_host_name_relay, writer);
+    }
+    case CARDANO_RELAY_TYPE_MULTI_HOST_NAME:
+    {
+      return cardano_multi_host_name_relay_to_cip116_json(relay->multi_host_name_relay, writer);
+    }
+    default:
+    {
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_relay_get_type(
   const cardano_relay_t* relay,
   cardano_relay_type_t*  type)

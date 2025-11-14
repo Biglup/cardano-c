@@ -238,6 +238,44 @@ cardano_relays_to_cbor(const cardano_relays_t* relays, cardano_cbor_writer_t* wr
   return result;
 }
 
+cardano_error_t
+cardano_relays_to_cip116_json(
+  const cardano_relays_t* relays,
+  cardano_json_writer_t*  writer)
+{
+  if ((relays == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t length = cardano_relays_get_length(relays);
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_relay_t* relay = NULL;
+    cardano_error_t  error = cardano_relays_get(relays, i, &relay);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_relay_to_cip116_json(relay, writer);
+    cardano_relay_unref(&relay);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_relays_get_length(const cardano_relays_t* relays)
 {

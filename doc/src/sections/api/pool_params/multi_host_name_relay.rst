@@ -17,6 +17,10 @@ Multi Hostname Relay
 
 ------------
 
+.. doxygenfunction:: cardano_multi_host_name_relay_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_multi_host_name_relay_get_dns_size
 
 ------------

@@ -26,6 +26,7 @@
 #include <cardano/pool_params/multi_host_name_relay.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -554,4 +555,59 @@ TEST(cardano_multi_host_name_relay_get_dns, returnsNullIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(dns, (const char*)nullptr);
+}
+
+TEST(cardano_multi_host_name_relay_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_multi_host_name_relay_t* relay = NULL;
+  cardano_error_t                  error = cardano_multi_host_name_relay_new("example.com", strlen("example.com"), &relay);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_multi_host_name_relay_to_cip116_json(relay, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"multi_host_name","dns_name":"example.com"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_multi_host_name_relay_unref(&relay);
+  free(json_str);
+}
+
+TEST(cardano_multi_host_name_relay_to_cip116_json, returnsErrorIfRelayIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_multi_host_name_relay_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_multi_host_name_relay_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_multi_host_name_relay_t* relay = NULL;
+  cardano_error_t                  error = cardano_multi_host_name_relay_new("example.com", strlen("example.com"), &relay);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_multi_host_name_relay_to_cip116_json(relay, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_multi_host_name_relay_unref(&relay);
 }

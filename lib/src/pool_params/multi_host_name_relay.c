@@ -213,6 +213,29 @@ cardano_multi_host_name_relay_to_cbor(const cardano_multi_host_name_relay_t* mul
   return cardano_cbor_writer_write_textstring(writer, multi_host_name_relay->dns, cardano_safe_strlen(multi_host_name_relay->dns, 64));
 }
 
+cardano_error_t
+cardano_multi_host_name_relay_to_cip116_json(
+  const cardano_multi_host_name_relay_t* relay,
+  cardano_json_writer_t*                 writer)
+{
+  if ((relay == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "multi_host_name", 15);
+
+  cardano_json_writer_write_property_name(writer, "dns_name", 8);
+  cardano_json_writer_write_string(writer, relay->dns, cardano_safe_strlen(relay->dns, 64));
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_multi_host_name_relay_get_dns_size(
   const cardano_multi_host_name_relay_t* multi_host_name_relay)
