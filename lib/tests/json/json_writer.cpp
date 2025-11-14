@@ -226,6 +226,45 @@ test_primitives(const cardano_json_format_t format, const char* expected_string)
 }
 
 static void
+test_primitives_as_string(const cardano_json_format_t format, const char* expected_string)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(format);
+
+  // Act
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "a", 1);
+  cardano_json_writer_write_uint_as_string(writer, UINT_MAX);
+
+  cardano_json_writer_write_property_name(writer, "b", 1);
+  cardano_json_writer_write_signed_int_as_string(writer, INT_MAX);
+
+  cardano_json_writer_write_property_name(writer, "c", 1);
+  cardano_json_writer_write_signed_int_as_string(writer, -INT_MAX);
+
+  cardano_json_writer_write_property_name(writer, "d", 1);
+  cardano_json_writer_write_double_as_string(writer, FLT_MAX);
+
+  cardano_json_writer_write_property_name(writer, "e", 1);
+  cardano_json_writer_write_double_as_string(writer, -FLT_MAX);
+
+  cardano_json_writer_write_end_object(writer);
+
+  // Assert
+  const size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+  char*        encoded      = (char*)malloc(encoded_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(writer, encoded, encoded_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(encoded, expected_string);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+  free(encoded);
+}
+
+static void
 test_array_of_primitives(const cardano_json_format_t format, const char* expected_string)
 {
   // Arrange
@@ -323,6 +362,23 @@ TEST(cardano_json_writer, canCreatePrimitives)
   test_primitives(
     CARDANO_JSON_FORMAT_COMPACT,
     R"({"a":4294967295,"b":2147483647,"c":-2147483647,"d":3.4028234663852886e+38,"e":-3.4028234663852886e+38,"f":"Hello, World!","g":true,"h":false,"i":null})");
+}
+
+TEST(cardano_json_writer, canCreateNumericPrimitivesAsStrings)
+{
+  test_primitives_as_string(
+    CARDANO_JSON_FORMAT_PRETTY,
+    R"({
+  "a": "4294967295",
+  "b": "2147483647",
+  "c": "-2147483647",
+  "d": "3.4028234663852886e+38",
+  "e": "-3.4028234663852886e+38"
+})");
+
+  test_primitives_as_string(
+    CARDANO_JSON_FORMAT_COMPACT,
+    R"({"a":"4294967295","b":"2147483647","c":"-2147483647","d":"3.4028234663852886e+38","e":"-3.4028234663852886e+38"})");
 }
 
 TEST(cardano_json_writer, canCreateArrayOfPrimitives)

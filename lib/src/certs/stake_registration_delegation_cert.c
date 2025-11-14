@@ -30,8 +30,10 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "../string_safe.h"
 
 #include <assert.h>
+
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -257,6 +259,45 @@ cardano_stake_registration_delegation_cert_to_cbor(
   {
     return write_deposit_result;
   }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_stake_registration_delegation_cert_to_cip116_json(
+  const cardano_stake_registration_delegation_cert_t* cert,
+  cardano_json_writer_t*                              writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "stake_registration_delegation", 29);
+
+  cardano_json_writer_write_property_name(writer, "credential", 10);
+  cardano_error_t error = cardano_credential_to_cip116_json(cert->credential, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pool_keyhash", 12);
+  error = cardano_blake2b_hash_to_cip116_json(cert->pool_key_hash, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "coin", 4);
+  cardano_json_writer_write_uint_as_string(writer, cert->deposit);
+
+  cardano_json_writer_write_end_object(writer);
 
   return CARDANO_SUCCESS;
 }

@@ -45,7 +45,15 @@ JSON Writer
 
 ------------
 
+.. doxygenfunction:: cardano_json_writer_write_object
+
+------------
+
 .. doxygenfunction:: cardano_json_writer_write_uint
+
+------------
+
+.. doxygenfunction:: cardano_json_writer_write_uint_as_string
 
 ------------
 
@@ -53,7 +61,15 @@ JSON Writer
 
 ------------
 
+.. doxygenfunction:: cardano_json_writer_write_signed_int_as_string
+
+------------
+
 .. doxygenfunction:: cardano_json_writer_write_double
+
+------------
+
+.. doxygenfunction:: cardano_json_writer_write_double_as_string
 
 ------------
 
