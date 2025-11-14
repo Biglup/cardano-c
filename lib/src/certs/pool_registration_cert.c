@@ -209,6 +209,37 @@ cardano_pool_registration_cert_to_cbor(
 }
 
 cardano_error_t
+cardano_pool_registration_cert_to_cip116_json(
+  const cardano_pool_registration_cert_t* cert,
+  cardano_json_writer_t*                  writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "pool_registration", 17);
+
+  cardano_json_writer_write_property_name(writer, "pool_params", 11);
+
+  assert(cert->params != NULL);
+
+  const cardano_error_t error = cardano_pool_params_to_cip116_json(cert->params, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_pool_registration_cert_get_params(
   cardano_pool_registration_cert_t* cert,
   cardano_pool_params_t**           params)
