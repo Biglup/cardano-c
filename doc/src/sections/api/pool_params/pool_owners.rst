@@ -17,6 +17,10 @@ Pool Owners
 
 ------------
 
+.. doxygenfunction:: cardano_pool_owners_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_owners_get_length
 
 ------------

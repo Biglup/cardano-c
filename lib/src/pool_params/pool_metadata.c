@@ -285,6 +285,34 @@ cardano_pool_metadata_to_cbor(const cardano_pool_metadata_t* pool_metadata, card
   return cardano_blake2b_hash_to_cbor(pool_metadata->hash, writer);
 }
 
+cardano_error_t
+cardano_pool_metadata_to_cip116_json(
+  const cardano_pool_metadata_t* metadata,
+  cardano_json_writer_t*         writer)
+{
+  if ((metadata == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "url", 3);
+  cardano_json_writer_write_string(writer, metadata->url, cardano_safe_strlen(metadata->url, 128));
+
+  cardano_json_writer_write_property_name(writer, "hash", 4);
+  cardano_error_t error = cardano_blake2b_hash_to_cip116_json(metadata->hash, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_pool_metadata_get_url_size(
   const cardano_pool_metadata_t* pool_metadata)

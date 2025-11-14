@@ -27,6 +27,7 @@
 #include <cardano/common/unit_interval.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -581,4 +582,58 @@ TEST(cardano_unit_interval_from_double, returnErrorIfValueIsNegative)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
   EXPECT_EQ(unit_interval, (cardano_unit_interval_t*)nullptr);
+}
+
+TEST(cardano_unit_interval_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_unit_interval_t* interval = NULL;
+  cardano_error_t          error    = cardano_unit_interval_new(123, 345, &interval);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_unit_interval_to_cip116_json(interval, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"numerator":"123","denominator":"345"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_unit_interval_unref(&interval);
+  free(json_str);
+}
+
+TEST(cardano_unit_interval_to_cip116_json, returnsErrorIfIntervalIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_unit_interval_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_unit_interval_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* interval = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 2, &interval), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_unit_interval_to_cip116_json(interval, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_unit_interval_unref(&interval);
 }

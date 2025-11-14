@@ -27,6 +27,7 @@
 #include <cardano/pool_params/pool_metadata.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -773,4 +774,69 @@ TEST(cardano_pool_metadata_set_hash, setsTheHash)
   cardano_blake2b_hash_unref(&hash);
   cardano_blake2b_hash_unref(&actual_hash);
   free(actual_hash_str);
+}
+
+TEST(cardano_pool_metadata_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  const char* url      = "https://example.com/foo.json";
+  const char* hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  cardano_pool_metadata_t* metadata = NULL;
+  EXPECT_EQ(cardano_pool_metadata_new(url, strlen(url), hash, &metadata), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_pool_metadata_to_cip116_json(metadata, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"url":"https://example.com/foo.json","hash":"0000000000000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_metadata_unref(&metadata);
+  cardano_blake2b_hash_unref(&hash);
+  free(json_str);
+}
+
+TEST(cardano_pool_metadata_to_cip116_json, returnsErrorIfMetadataIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_pool_metadata_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_pool_metadata_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  const char*             url  = "https://example.com";
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("0000000000000000000000000000000000000000000000000000000000000000", 64, &hash), CARDANO_SUCCESS);
+
+  cardano_pool_metadata_t* metadata = NULL;
+  EXPECT_EQ(cardano_pool_metadata_new(url, strlen(url), hash, &metadata), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_pool_metadata_to_cip116_json(metadata, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_pool_metadata_unref(&metadata);
+  cardano_blake2b_hash_unref(&hash);
 }

@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -219,6 +220,26 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_unit_interval_to_cbor(
   const cardano_unit_interval_t* unit_interval,
   cardano_cbor_writer_t*         writer);
+
+/**
+ * \brief Serializes a unit interval to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "numerator", "denominator".
+ * Both values are encoded as strings to ensure precision for 64-bit integers in JSON.
+ *
+ * \param[in]  interval Pointer to a valid \ref cardano_unit_interval_t.
+ * \param[in]  writer   Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p interval or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_unit_interval_to_cip116_json(
+  const cardano_unit_interval_t* interval,
+  cardano_json_writer_t*         writer);
 
 /**
  * \brief Retrieves the numerator of the Unit Interval.

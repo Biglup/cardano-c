@@ -27,6 +27,7 @@
 #include <cardano/pool_params/pool_owners.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -735,4 +736,86 @@ TEST(cardano_pool_owners_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_pool_owners_unref(&pool_owners);
+}
+
+TEST(cardano_pool_owners_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_pool_owners_t* owners = NULL;
+  EXPECT_EQ(cardano_pool_owners_new(&owners), CARDANO_SUCCESS);
+
+  const char*             hash_hex = "1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361";
+  cardano_blake2b_hash_t* hash     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_pool_owners_add(owners, hash), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_pool_owners_to_cip116_json(owners, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"(["1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361"])");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_owners_unref(&owners);
+  cardano_blake2b_hash_unref(&hash);
+  free(json_str);
+}
+
+TEST(cardano_pool_owners_to_cip116_json, canConvertEmptyList)
+{
+  // Arrange
+  cardano_pool_owners_t* owners = NULL;
+  EXPECT_EQ(cardano_pool_owners_new(&owners), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_pool_owners_to_cip116_json(owners, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_owners_unref(&owners);
+  free(json_str);
+}
+
+TEST(cardano_pool_owners_to_cip116_json, returnsErrorIfOwnersIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_pool_owners_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_pool_owners_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_pool_owners_t* owners = NULL;
+  EXPECT_EQ(cardano_pool_owners_new(&owners), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_pool_owners_to_cip116_json(owners, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_pool_owners_unref(&owners);
 }
