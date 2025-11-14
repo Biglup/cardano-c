@@ -165,6 +165,24 @@ CARDANO_EXPORT cardano_error_t cardano_relays_to_cbor(
   cardano_cbor_writer_t*  writer);
 
 /**
+ * \brief Serializes a list of relays to CIP-116 JSON.
+ *
+ * The function writes a JSON array containing the serialized relays.
+ *
+ * \param[in]  relays  Pointer to a valid \ref cardano_relays_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p relays or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_relays_to_cip116_json(
+  const cardano_relays_t* relays,
+  cardano_json_writer_t*  writer);
+
+/**
  * \brief Retrieves the length of a relays set.
  *
  * This function retrieves the number of relays in the provided \ref cardano_relays_t object.

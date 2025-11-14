@@ -17,6 +17,10 @@ Relays
 
 ------------
 
+.. doxygenfunction:: cardano_relays_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_relays_get_length
 
 ------------

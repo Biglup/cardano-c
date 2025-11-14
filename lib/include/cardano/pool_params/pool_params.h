@@ -213,6 +213,25 @@ CARDANO_EXPORT cardano_error_t cardano_pool_params_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes pool parameters to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ *
+ * \param[in]  params  Pointer to a valid \ref cardano_pool_params_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p params or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED  If memory allocation fails.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_pool_params_to_cip116_json(
+  const cardano_pool_params_t* params,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the operator's key hash from the pool parameters.
  *
  * This function provides access to the operator's key hash stored within the pool parameters.

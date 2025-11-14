@@ -723,6 +723,15 @@ CARDANO_EXPORT void cardano_json_writer_write_raw_value(
   const char*            data,
   size_t                 size);
 
+/**
+ * \brief Writes a JSON object to the writer.
+ *
+ * This function serializes the contents of the provided \ref cardano_json_object_t
+ * and writes it to the output stream managed by the writer.
+ *
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] object A pointer to the \ref cardano_json_object_t to be written.
+ */
 CARDANO_EXPORT void cardano_json_writer_write_object(
   cardano_json_writer_t* writer,
   cardano_json_object_t* object);
@@ -802,6 +811,79 @@ CARDANO_EXPORT void cardano_json_writer_write_uint(
   uint64_t               value);
 
 /**
+ * \brief Writes an unsigned integer value to the JSON output.
+ *
+ * This function writes an unsigned integer (\c uint64_t) as a JSON string value.
+ * The value is written in its numeric representation as a string.
+ *
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
+ *          This must be a valid, non-NULL JSON writer.
+ * \param[in] value The unsigned integer value to be written.
+ *
+ * \pre The JSON writer must currently be in a valid context for writing a value
+ *   (e.g., after a property name in an object or as an element in an array).
+ *   Calling this function in an invalid context will result in deferred error reporting.
+ *
+ * \note If an error occurs during this function, the error is deferred until the user
+ *    calls \ref cardano_json_writer_encode or \ref cardano_json_writer_encode_in_buffer.
+ *    Once an error occurs, the writer enters an error state, and subsequent calls
+ *    to writer functions will have no effect.
+ *
+ * Usage Example:
+ * \code{.c}
+ *  // Create a new JSON writer
+ *  cardano_json_writer_t* writer = cardano_json_writer_new();
+ *
+ *  if (writer == NULL)
+ *  {
+ *    printf("Failed to create JSON writer.\n");
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  // Start writing a JSON object
+ *  cardano_json_writer_write_start_object(writer);        // Start object
+ *  cardano_json_writer_write_property_name(writer, "count", 5); // Property: "count"
+ *  cardano_json_writer_write_uint(writer, 123456);        // Value: "123456"
+ *  cardano_json_writer_write_end_object(writer);       // End object
+ *
+ *  // Encode and print the resulting JSON
+ *  char buffer[128] = { 0 };
+ *  size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+ *
+ *  if (encoded_size > sizeof(buffer))
+ *  {
+ *    printf("Buffer size is too small for the JSON output.\n");
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  cardano_error_t result = cardano_json_writer_encode(writer, (byte_t*)buffer, sizeof(buffer));
+ *
+ *  if (result != CARDANO_SUCCESS)
+ *  {
+ *    printf("Failed to encode JSON.\n");
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  printf("%s\n", buffer);
+ *
+ *  // Example output:
+ *  // {
+ *  //   "count": "123456"
+ *  // }
+ *
+ *  // Clean up
+ *  cardano_json_writer_unref(&writer);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_json_writer_write_uint_as_string(
+  cardano_json_writer_t* writer,
+  uint64_t               value);
+
+/**
  * \brief Writes an signed integer value to the JSON output.
  *
  * This function writes an signed integer (\c int64_t) as a JSON value.
@@ -872,6 +954,79 @@ CARDANO_EXPORT void cardano_json_writer_write_uint(
  * \endcode
  */
 CARDANO_EXPORT void cardano_json_writer_write_signed_int(
+  cardano_json_writer_t* writer,
+  int64_t                value);
+
+/**
+ * \brief Writes an signed integer value to the JSON output.
+ *
+ * This function writes an signed integer (\c int64_t) as a JSON string value.
+ * The value is written in its numeric representation as a string.
+ *
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
+ *          This must be a valid, non-NULL JSON writer.
+ * \param[in] value The signed integer value to be written.
+ *
+ * \pre The JSON writer must currently be in a valid context for writing a value
+ *   (e.g., after a property name in an object or as an element in an array).
+ *   Calling this function in an invalid context will result in deferred error reporting.
+ *
+ * \note If an error occurs during this function, the error is deferred until the user
+ *    calls \ref cardano_json_writer_encode or \ref cardano_json_writer_encode_in_buffer.
+ *    Once an error occurs, the writer enters an error state, and subsequent calls
+ *    to writer functions will have no effect.
+ *
+ * Usage Example:
+ * \code{.c}
+ *  // Create a new JSON writer
+ *  cardano_json_writer_t* writer = cardano_json_writer_new();
+ *
+ *  if (writer == NULL)
+ *  {
+ *    printf("Failed to create JSON writer.\n");
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  // Start writing a JSON object
+ *  cardano_json_writer_write_start_object(writer);        // Start object
+ *  cardano_json_writer_write_property_name(writer, "count", 5); // Property: "count"
+ *  cardano_json_writer_write_signed_int_as_string(writer, -123456);    // Value: "-123456"
+ *  cardano_json_writer_write_end_object(writer);       // End object
+ *
+ *  // Encode and print the resulting JSON
+ *  char buffer[128] = { 0 };
+ *  size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+ *
+ *  if (encoded_size > sizeof(buffer))
+ *  {
+ *    printf("Buffer size is too small for the JSON output.\n");
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  cardano_error_t result = cardano_json_writer_encode(writer, (byte_t*)buffer, sizeof(buffer));
+ *
+ *  if (result != CARDANO_SUCCESS)
+ *  {
+ *    printf("Failed to encode JSON.\n");
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  printf("%s\n", buffer);
+ *
+ *  // Example output:
+ *  // {
+ *  //   "count": "-123456"
+ *  // }
+ *
+ *  // Clean up
+ *  cardano_json_writer_unref(&writer);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_json_writer_write_signed_int_as_string(
   cardano_json_writer_t* writer,
   int64_t                value);
 
@@ -949,6 +1104,83 @@ CARDANO_EXPORT void cardano_json_writer_write_signed_int(
  * \endcode
  */
 CARDANO_EXPORT void cardano_json_writer_write_double(
+  cardano_json_writer_t* writer,
+  double                 value);
+
+/**
+ * \brief Writes a double-precision floating-point value to the JSON output.
+ *
+ * This function writes a double-precision floating-point number (\c double) as a string JSON value.
+ * The value is written in its numeric representation as a string.
+ *
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
+ *          This must be a valid, non-NULL JSON writer.
+ * \param[in] value The double value to be written.
+ *
+ * \pre The JSON writer must currently be in a valid context for writing a value
+ *   (e.g., after a property name in an object or as an element in an array).
+ *   Calling this function in an invalid context will result in deferred error reporting.
+ *
+ * \note If an error occurs during this function, the error is deferred until the user
+ *    calls \ref cardano_json_writer_encode or \ref cardano_json_writer_encode_in_buffer.
+ *    Once an error occurs, the writer enters an error state, and subsequent calls
+ *    to writer functions will have no effect.
+ *
+ * Usage Example:
+ * \code{.c}
+ *  // Create a new JSON writer
+ *  cardano_json_writer_t* writer = cardano_json_writer_new();
+ *
+ *  if (writer == NULL)
+ *  {
+ *    printf("Failed to create JSON writer.\n");
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  // Start writing a JSON object
+ *  cardano_json_writer_write_start_object(writer);           // Start object: {
+ *  cardano_json_writer_write_property_name(writer, "pi", 2); // Property: "pi"
+ *  cardano_json_writer_write_double_as_string(writer, "3.14159265359");  // Value: 3.14159265359
+ *  cardano_json_writer_write_property_name(writer, "e", 1);  // Property: "e"
+ *  cardano_json_writer_write_double_as_string(writer, "2.71828182845");  // Value: 2.71828182845
+ *  cardano_json_writer_write_end_object(writer);             // End object: }
+ *
+ *  // Encode and print the resulting JSON
+ *  char buffer[128] = { 0 };
+ *  size_t encoded_size = cardano_json_writer_get_encoded_size(writer);
+ *
+ *  if (encoded_size > sizeof(buffer))
+ *  {
+ *    printf("Buffer size is too small for the JSON output.\n");
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  cardano_error_t result = cardano_json_writer_encode(writer, (byte_t*)buffer, sizeof(buffer));
+ *  if (result != CARDANO_SUCCESS)
+ *  {
+ *    printf("Failed to encode JSON.\n");
+ *    printf("Error: %s\n", cardano_json_writer_get_last_error(writer));
+ *    cardano_json_writer_unref(&writer);
+ *
+ *    return EXIT_FAILURE;
+ *  }
+ *
+ *  printf("%s\n", buffer);
+ *
+ *  // Example output:
+ *  // {
+ *  //   "pi": "3.14159265359",
+ *  //   "e": "2.71828182845"
+ *  // }
+ *
+ *  // Clean up
+ *  cardano_json_writer_unref(&writer);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_json_writer_write_double_as_string(
   cardano_json_writer_t* writer,
   double                 value);
 

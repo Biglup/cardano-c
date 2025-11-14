@@ -165,6 +165,26 @@ CARDANO_EXPORT cardano_error_t cardano_pool_owners_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes a list of pool owners to CIP-116 JSON.
+ *
+ * The function writes a JSON array of strings, where each string is the
+ * hexadecimal representation of the pool owner's public key hash.
+ *
+ * \param[in]  owners  Pointer to a valid \ref cardano_pool_owners_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                 On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p owners or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED  If memory allocation fails during string conversion.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_pool_owners_to_cip116_json(
+  const cardano_pool_owners_t* owners,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the length of a owners set.
  *
  * This function retrieves the number of owners in the provided \ref cardano_pool_owners_t object.

@@ -25,6 +25,10 @@ Relay
 
 ------------
 
+.. doxygenfunction:: cardano_relay_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_relay_get_type
 
 ------------

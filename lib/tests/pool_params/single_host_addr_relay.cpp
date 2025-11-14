@@ -26,6 +26,7 @@
 #include <cardano/pool_params/single_host_addr_relay.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1047,4 +1048,139 @@ TEST(cardano_single_host_addr_relay_set_ipv6, returnErrorIfRelayIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_single_host_addr_relay_to_cip116_json, canConvertToCip116JsonWithAllFields)
+{
+  // Arrange
+  uint16_t                          port                   = 65535;
+  cardano_single_host_addr_relay_t* single_host_addr_relay = nullptr;
+
+  cardano_ipv6_t* ipv6_addr = nullptr;
+  cardano_error_t error     = cardano_ipv6_from_string("2001:0db8:85a3:0000:0000:8a2e:0370:7334", strlen("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), &ipv6_addr);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_ipv4_t* ipv4_addr = nullptr;
+  error                     = cardano_ipv4_from_string("10.3.2.10", strlen("10.3.2.10"), &ipv4_addr);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_single_host_addr_relay_new(&port, ipv4_addr, ipv6_addr, &single_host_addr_relay);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_single_host_addr_relay_to_cip116_json(single_host_addr_relay, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"single_host_addr","port":65535,"ipv4":"10.3.2.10","ipv6":"2001:0db8:85a3:0000:0000:8a2e:0370:7334"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_single_host_addr_relay_unref(&single_host_addr_relay);
+  cardano_ipv4_unref(&ipv4_addr);
+  cardano_ipv6_unref(&ipv6_addr);
+  free(json_str);
+}
+
+TEST(cardano_single_host_addr_relay_to_cip116_json, canConvertToCip116JsonWithOnlyIpv4)
+{
+  // Arrange
+  uint16_t                          port                   = 65535;
+  cardano_single_host_addr_relay_t* single_host_addr_relay = nullptr;
+
+  cardano_ipv4_t* ipv4_addr = nullptr;
+  cardano_error_t error     = cardano_ipv4_from_string("10.3.2.10", strlen("10.3.2.10"), &ipv4_addr);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_single_host_addr_relay_new(&port, ipv4_addr, nullptr, &single_host_addr_relay);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_single_host_addr_relay_to_cip116_json(single_host_addr_relay, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"single_host_addr","port":65535,"ipv4":"10.3.2.10","ipv6":null})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_single_host_addr_relay_unref(&single_host_addr_relay);
+  cardano_ipv4_unref(&ipv4_addr);
+  free(json_str);
+}
+
+TEST(cardano_single_host_addr_relay_to_cip116_json, canConvertToCip116JsonWithOnlyIpv6)
+{
+  // Arrange
+  uint16_t                          port                   = 65535;
+  cardano_single_host_addr_relay_t* single_host_addr_relay = nullptr;
+
+  cardano_ipv6_t* ipv6_addr = nullptr;
+  cardano_error_t error     = cardano_ipv6_from_string("2001:0db8:85a3:0000:0000:8a2e:0370:7334", strlen("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), &ipv6_addr);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_single_host_addr_relay_new(&port, nullptr, ipv6_addr, &single_host_addr_relay);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_single_host_addr_relay_to_cip116_json(single_host_addr_relay, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"single_host_addr","port":65535,"ipv4":null,"ipv6":"2001:0db8:85a3:0000:0000:8a2e:0370:7334"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_single_host_addr_relay_unref(&single_host_addr_relay);
+  cardano_ipv6_unref(&ipv6_addr);
+  free(json_str);
+}
+
+TEST(cardano_single_host_addr_relay_to_cip116_json, returnsErrorIfRelayIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_single_host_addr_relay_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_single_host_addr_relay_to_cip116_json, returnsErrorIfJsonIsNull)
+{
+  // Arrange
+  cardano_single_host_addr_relay_t* single_host_addr_relay = nullptr;
+  cardano_ipv4_t*                   ipv4_addr              = nullptr;
+  cardano_ipv6_t*                   ipv6_addr              = nullptr;
+
+  const uint16_t port = 10;
+
+  EXPECT_EQ(cardano_ipv4_from_string(IPV4, strlen(IPV4), &ipv4_addr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ipv6_from_string(IPV6, strlen(IPV6), &ipv6_addr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_single_host_addr_relay_new(&port, ipv4_addr, ipv6_addr, &single_host_addr_relay), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_single_host_addr_relay_to_cip116_json(single_host_addr_relay, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_single_host_addr_relay_unref(&single_host_addr_relay);
+  cardano_ipv4_unref(&ipv4_addr);
+  cardano_ipv6_unref(&ipv6_addr);
 }

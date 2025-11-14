@@ -291,6 +291,45 @@ cardano_pool_owners_to_cbor(const cardano_pool_owners_t* pool_owners, cardano_cb
   return result;
 }
 
+cardano_error_t
+cardano_pool_owners_to_cip116_json(
+  const cardano_pool_owners_t* owners,
+  cardano_json_writer_t*       writer)
+{
+  if ((owners == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t length = cardano_pool_owners_get_length(owners);
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_blake2b_hash_t* owner_hash = NULL;
+    cardano_error_t         error      = cardano_pool_owners_get(owners, i, &owner_hash);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_blake2b_hash_to_cip116_json(owner_hash, writer);
+
+    cardano_blake2b_hash_unref(&owner_hash);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_pool_owners_get_length(const cardano_pool_owners_t* pool_owners)
 {

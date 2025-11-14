@@ -288,6 +288,40 @@ cardano_single_host_name_relay_to_cbor(const cardano_single_host_name_relay_t* s
   return cardano_cbor_writer_write_textstring(writer, single_host_name_relay->dns, cardano_safe_strlen(single_host_name_relay->dns, 64));
 }
 
+cardano_error_t
+cardano_single_host_name_relay_to_cip116_json(
+  const cardano_single_host_name_relay_t* relay,
+  cardano_json_writer_t*                  writer)
+{
+  if ((relay == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "single_host_name", 16);
+
+  cardano_json_writer_write_property_name(writer, "port", 4);
+
+  if (relay->port != NULL)
+  {
+    cardano_json_writer_write_uint(writer, *relay->port);
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_property_name(writer, "dns_name", 8);
+  cardano_json_writer_write_string(writer, relay->dns, cardano_safe_strlen(relay->dns, 64));
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 const uint16_t*
 cardano_single_host_name_relay_get_port(
   const cardano_single_host_name_relay_t* relay)

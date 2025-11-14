@@ -21,6 +21,10 @@ Unit Interval
 
 ------------
 
+.. doxygenfunction:: cardano_unit_interval_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_unit_interval_get_numerator
 
 ------------

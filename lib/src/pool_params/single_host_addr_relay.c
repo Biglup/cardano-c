@@ -380,6 +380,61 @@ cardano_single_host_addr_relay_to_cbor(const cardano_single_host_addr_relay_t* s
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_single_host_addr_relay_to_cip116_json(
+  const cardano_single_host_addr_relay_t* relay,
+  cardano_json_writer_t*                  writer)
+{
+  if ((relay == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "single_host_addr", 16);
+
+  cardano_json_writer_write_property_name(writer, "port", 4);
+
+  if (relay->port != NULL)
+  {
+    cardano_json_writer_write_uint(writer, *relay->port);
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_property_name(writer, "ipv4", 4);
+
+  if (relay->ipv4 != NULL)
+  {
+    const char* addrString = cardano_ipv4_get_string(relay->ipv4);
+    cardano_json_writer_write_string(writer, addrString, cardano_safe_strlen(addrString, 16));
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_property_name(writer, "ipv6", 4);
+
+  if (relay->ipv6 != NULL)
+  {
+    const char* addrString = cardano_ipv6_get_string(relay->ipv6);
+    cardano_json_writer_write_string(writer, addrString, cardano_safe_strlen(addrString, 40));
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 const uint16_t*
 cardano_single_host_addr_relay_get_port(
   const cardano_single_host_addr_relay_t* relay)

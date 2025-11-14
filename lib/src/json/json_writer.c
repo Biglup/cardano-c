@@ -781,6 +781,17 @@ cardano_json_writer_write_uint(
 }
 
 void
+cardano_json_writer_write_uint_as_string(
+  cardano_json_writer_t* writer,
+  const uint64_t         value)
+{
+  char         amount_str[128] = { 0 };
+  const size_t str_size        = cardano_safe_uint64_to_string(value, amount_str, sizeof(amount_str));
+
+  cardano_json_writer_write_string(writer, amount_str, str_size);
+}
+
+void
 cardano_json_writer_write_signed_int(
   cardano_json_writer_t* writer,
   int64_t                value)
@@ -835,6 +846,16 @@ cardano_json_writer_write_signed_int(
 }
 
 void
+cardano_json_writer_write_signed_int_as_string(
+  cardano_json_writer_t* writer,
+  const int64_t          value)
+{
+  char         amount_str[128] = { 0 };
+  const size_t str_size        = cardano_safe_int64_to_string(value, amount_str, sizeof(amount_str));
+  cardano_json_writer_write_string(writer, amount_str, str_size);
+}
+
+void
 cardano_json_writer_write_double(
   cardano_json_writer_t* writer,
   double                 value)
@@ -886,6 +907,16 @@ cardano_json_writer_write_double(
 
   current_context->item_count++;
   current_context->expect_value = current_context->context == CARDANO_JSON_CONTEXT_ARRAY;
+}
+
+void
+cardano_json_writer_write_double_as_string(
+  cardano_json_writer_t* writer,
+  const double           value)
+{
+  char         amount_str[128] = { 0 };
+  const size_t str_size        = cardano_safe_double_to_string(value, amount_str, sizeof(amount_str));
+  cardano_json_writer_write_string(writer, amount_str, str_size);
 }
 
 void

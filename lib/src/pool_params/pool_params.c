@@ -452,6 +452,100 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
 }
 
 cardano_error_t
+cardano_pool_params_to_cip116_json(
+  const cardano_pool_params_t* params,
+  cardano_json_writer_t*       writer)
+{
+  if ((params == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "operator", 8);
+
+  assert((params->operator_hash != NULL));
+
+  cardano_error_t error = cardano_blake2b_hash_to_cip116_json(params->operator_hash, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "vrf_keyhash", 11);
+
+  assert((params->vrf_vk_hash != NULL));
+
+  error = cardano_blake2b_hash_to_cip116_json(params->vrf_vk_hash, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pledge", 6);
+  cardano_json_writer_write_uint_as_string(writer, params->pledge);
+
+  cardano_json_writer_write_property_name(writer, "cost", 4);
+  cardano_json_writer_write_uint_as_string(writer, params->cost);
+
+  cardano_json_writer_write_property_name(writer, "margin", 6);
+  error = cardano_unit_interval_to_cip116_json(params->margin, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  assert((params->reward_account != NULL));
+
+  cardano_json_writer_write_property_name(writer, "reward_account", 14);
+  cardano_json_writer_write_string(writer, cardano_reward_address_get_string(params->reward_account), cardano_reward_address_get_bech32_size(params->reward_account) - 1U);
+
+  assert((params->owners != NULL));
+
+  cardano_json_writer_write_property_name(writer, "pool_owners", 11);
+  error = cardano_pool_owners_to_cip116_json(params->owners, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  assert((params->relays != NULL));
+
+  cardano_json_writer_write_property_name(writer, "relays", 6);
+  error = cardano_relays_to_cip116_json(params->relays, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pool_metadata", 13);
+
+  if (params->metadata != NULL)
+  {
+    error = cardano_pool_metadata_to_cip116_json(params->metadata, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_pool_params_get_operator_key_hash(
   cardano_pool_params_t*   pool_params,
   cardano_blake2b_hash_t** operator_key_hash)

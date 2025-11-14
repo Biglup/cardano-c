@@ -23,6 +23,7 @@
 
 #include <cardano/error.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/pool_registration_cert.h>
@@ -493,4 +494,113 @@ TEST(cardano_pool_registration_cert_set_params, canSetParams)
   cardano_pool_params_unref(&params);
   cardano_pool_registration_cert_unref(&pool_registration_cert);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_pool_registration_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_blake2b_hash_t* operator_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20", 56, &operator_hash), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* vrf_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("ec3d672178061731255b26040701764e56424f705c8d5c049166867e0e4647c6", 64, &vrf_hash), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &margin), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_addr = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32("stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y", strlen("stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y"), &reward_addr), CARDANO_SUCCESS);
+
+  cardano_pool_owners_t* owners = NULL;
+  EXPECT_EQ(cardano_pool_owners_new(&owners), CARDANO_SUCCESS);
+
+  cardano_relays_t* relays = NULL;
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  cardano_pool_params_t* params = NULL;
+  EXPECT_EQ(cardano_pool_params_new(operator_hash, vrf_hash, 100, 340000000, margin, reward_addr, owners, relays, NULL, &params), CARDANO_SUCCESS);
+
+  cardano_pool_registration_cert_t* cert = NULL;
+  error                                  = cardano_pool_registration_cert_new(params, &cert);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_pool_registration_cert_to_cip116_json(cert, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"pool_registration","pool_params":{"operator":"56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20","vrf_keyhash":"ec3d672178061731255b26040701764e56424f705c8d5c049166867e0e4647c6","pledge":"100","cost":"340000000","margin":{"numerator":"1","denominator":"10"},"reward_account":"stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y","pool_owners":[],"relays":[],"pool_metadata":null}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_pool_params_unref(&params);
+  cardano_blake2b_hash_unref(&operator_hash);
+  cardano_blake2b_hash_unref(&vrf_hash);
+  cardano_unit_interval_unref(&margin);
+  cardano_reward_address_unref(&reward_addr);
+  cardano_pool_owners_unref(&owners);
+  cardano_relays_unref(&relays);
+  free(json_str);
+}
+
+TEST(cardano_pool_registration_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_pool_registration_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_pool_registration_cert_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  // Create minimal params for cert
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20", 56, &hash), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(0, 1, &margin), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* addr = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32("stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y", 59, &addr), CARDANO_SUCCESS);
+
+  cardano_pool_owners_t* owners = NULL;
+  EXPECT_EQ(cardano_pool_owners_new(&owners), CARDANO_SUCCESS);
+
+  cardano_relays_t* relays = NULL;
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  cardano_pool_params_t* params = NULL;
+  EXPECT_EQ(cardano_pool_params_new(hash, hash, 0, 0, margin, addr, owners, relays, NULL, &params), CARDANO_SUCCESS);
+
+  cardano_pool_registration_cert_t* cert = NULL;
+  EXPECT_EQ(cardano_pool_registration_cert_new(params, &cert), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_pool_registration_cert_to_cip116_json(cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_pool_params_unref(&params);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_unit_interval_unref(&margin);
+  cardano_reward_address_unref(&addr);
+  cardano_pool_owners_unref(&owners);
+  cardano_relays_unref(&relays);
 }

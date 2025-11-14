@@ -17,6 +17,10 @@ Pool Registration Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_pool_registration_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_registration_cert_get_params
 
 ------------

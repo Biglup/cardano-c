@@ -17,6 +17,10 @@ Pool Parameters
 
 ------------
 
+.. doxygenfunction:: cardano_pool_params_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_params_get_operator_key_hash
 
 ------------

@@ -17,6 +17,10 @@ Pool Metadata
 
 ------------
 
+.. doxygenfunction:: cardano_pool_metadata_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_metadata_get_url_size
 
 ------------

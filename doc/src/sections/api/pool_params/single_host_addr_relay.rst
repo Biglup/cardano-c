@@ -17,6 +17,10 @@ Single Address Relay
 
 ------------
 
+.. doxygenfunction:: cardano_single_host_addr_relay_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_single_host_addr_relay_get_port
 
 ------------

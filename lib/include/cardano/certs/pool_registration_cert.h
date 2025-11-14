@@ -176,6 +176,25 @@ CARDANO_EXPORT cardano_error_t cardano_pool_registration_cert_to_cbor(
   cardano_cbor_writer_t*                  writer);
 
 /**
+ * \brief Serializes a pool registration certificate to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "pool_params".
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_pool_registration_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p cert or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_pool_registration_cert_to_cip116_json(
+  const cardano_pool_registration_cert_t* cert,
+  cardano_json_writer_t*                  writer);
+
+/**
  * \brief Retrieves the pool parameters from a pool registration certificate.
  *
  * This function extracts the pool parameters from the specified \ref cardano_pool_registration_cert_t object.

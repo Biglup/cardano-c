@@ -302,6 +302,29 @@ cardano_unit_interval_to_cbor(const cardano_unit_interval_t* unit_interval, card
   return cardano_cbor_writer_write_uint(writer, unit_interval->denominator);
 }
 
+cardano_error_t
+cardano_unit_interval_to_cip116_json(
+  const cardano_unit_interval_t* interval,
+  cardano_json_writer_t*         writer)
+{
+  if ((interval == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "numerator", 9);
+  cardano_json_writer_write_uint_as_string(writer, interval->numerator);
+
+  cardano_json_writer_write_property_name(writer, "denominator", 11);
+  cardano_json_writer_write_uint_as_string(writer, interval->denominator);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 uint64_t
 cardano_unit_interval_get_numerator(const cardano_unit_interval_t* unit_interval)
 {
