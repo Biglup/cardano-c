@@ -25,6 +25,10 @@ Anchor
 
 ------------
 
+.. doxygenfunction:: cardano_anchor_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_anchor_get_hash
 
 ------------

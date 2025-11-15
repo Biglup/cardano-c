@@ -21,6 +21,10 @@ DRep
 
 ------------
 
+.. doxygenfunction:: cardano_drep_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_drep_get_string_size
 
 ------------

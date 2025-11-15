@@ -424,6 +424,63 @@ cardano_drep_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_drep_to_cip116_json(
+  const cardano_drep_t*  drep,
+  cardano_json_writer_t* writer)
+{
+  if ((drep == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_drep_type_t type  = CARDANO_DREP_TYPE_KEY_HASH;
+  cardano_error_t     error = cardano_drep_get_type(drep, &type);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  switch (type)
+  {
+    case CARDANO_DREP_TYPE_KEY_HASH:
+    case CARDANO_DREP_TYPE_SCRIPT_HASH:
+    {
+      error = cardano_credential_to_cip116_json(drep->credential, writer);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
+      break;
+    }
+    case CARDANO_DREP_TYPE_ABSTAIN:
+    {
+      cardano_json_writer_write_start_object(writer);
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "always_abstain", 14);
+      cardano_json_writer_write_end_object(writer);
+      break;
+    }
+    case CARDANO_DREP_TYPE_NO_CONFIDENCE:
+    {
+      cardano_json_writer_write_start_object(writer);
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "always_no_confidence", 20);
+      cardano_json_writer_write_end_object(writer);
+      break;
+    }
+    default:
+    {
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_drep_get_string_size(const cardano_drep_t* drep)
 {

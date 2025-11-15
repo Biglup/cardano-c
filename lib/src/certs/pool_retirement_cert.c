@@ -227,6 +227,40 @@ cardano_pool_retirement_cert_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_pool_retirement_cert_to_cip116_json(
+  const cardano_pool_retirement_cert_t* cert,
+  cardano_json_writer_t*                writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "pool_retirement", 15);
+
+  cardano_json_writer_write_property_name(writer, "pool_keyhash", 12);
+
+  assert(cert->pool_key_hash != NULL);
+
+  cardano_error_t result = cardano_blake2b_hash_to_cip116_json(cert->pool_key_hash, writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_json_writer_write_property_name(writer, "epoch", 5);
+  cardano_json_writer_write_uint(writer, cert->epoch);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_blake2b_hash_t*
 cardano_pool_retirement_cert_get_pool_key_hash(cardano_pool_retirement_cert_t* certificate)
 {

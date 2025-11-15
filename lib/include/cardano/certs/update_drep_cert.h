@@ -170,6 +170,23 @@ CARDANO_EXPORT cardano_error_t cardano_update_drep_cert_to_cbor(
   cardano_cbor_writer_t*            writer);
 
 /**
+ * \brief Serializes an update DRep certificate to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "drep_credential", "anchor".
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_update_drep_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p cert or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_update_drep_cert_to_cip116_json(const cardano_update_drep_cert_t* cert, cardano_json_writer_t* writer);
+
+/**
  * \brief Sets the drep credential in the certificate.
  *
  * \param[in,out] certificate A pointer to an initialized \ref cardano_update_drep_cert_t object to which the credential will be set.

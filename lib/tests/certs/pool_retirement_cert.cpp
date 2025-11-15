@@ -27,6 +27,7 @@
 #include <cardano/certs/pool_retirement_cert.h>
 #include <cardano/crypto/blake2b_hash.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -538,6 +539,65 @@ TEST(cardano_pool_retirement_cert_set_epoch, setsTheEpoch)
 
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_pool_retirement_cert_unref(&cert);
+}
+
+TEST(cardano_pool_retirement_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_blake2b_hash_t* pool_hash = NULL;
+  error                             = cardano_blake2b_hash_from_hex("56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20", 56, &pool_hash);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t epoch = 12345;
+
+  cardano_pool_retirement_cert_t* cert = NULL;
+  error                                = cardano_pool_retirement_cert_new(pool_hash, epoch, &cert);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&pool_hash);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_pool_retirement_cert_to_cip116_json(cert, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"pool_retirement","pool_keyhash":"56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20","epoch":12345})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_retirement_cert_unref(&cert);
+  free(json_str);
+}
+
+TEST(cardano_pool_retirement_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_pool_retirement_cert_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_pool_retirement_cert_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* pool_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20", 56, &pool_hash), CARDANO_SUCCESS);
+  cardano_pool_retirement_cert_t* cert = NULL;
+  EXPECT_EQ(cardano_pool_retirement_cert_new(pool_hash, 100, &cert), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&pool_hash);
+
+  // Act
+  cardano_error_t error = cardano_pool_retirement_cert_to_cip116_json(cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_pool_retirement_cert_unref(&cert);
