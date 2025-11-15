@@ -45,6 +45,7 @@
 #include <cardano/certs/vote_delegation_cert.h>
 #include <cardano/certs/vote_registration_delegation_cert.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -4083,4 +4084,43 @@ TEST(cardano_vote_registration_delegation_cert_get_key, returnErrorIfInvalidType
   cardano_certificate_unref(&cert);
   cardano_cbor_reader_unref(&reader);
   cardano_vote_registration_delegation_cert_unref(&vote_registration_delegation);
+}
+
+TEST(cardano_certificate_to_cip116_json, canConvertWrappedRegistrationCert)
+{
+  // Arrange
+  cardano_cbor_reader_t*                       reader                       = cardano_cbor_reader_from_hex(CBOR_REGISTRATION, strlen(CBOR_REGISTRATION));
+  cardano_certificate_t*                       cert                         = NULL;
+  cardano_vote_registration_delegation_cert_t* vote_registration_delegation = NULL;
+  ASSERT_EQ(cardano_certificate_from_cbor(reader, &cert), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_certificate_to_cip116_json(cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"registration","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_certificate_unref(&cert);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_certificate_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_certificate_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_certificate_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_error_t error = cardano_certificate_to_cip116_json((cardano_certificate_t*)"", nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }

@@ -17,6 +17,10 @@ Unregistration Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_unregistration_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_unregistration_cert_get_credential
 
 ------------

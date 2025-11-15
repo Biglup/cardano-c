@@ -29,6 +29,7 @@
 #include <cardano/certs/cert_type.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -1048,6 +1049,26 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_certificate_to_cbor(
   const cardano_certificate_t* auth_committee_hot,
   cardano_cbor_writer_t*       writer);
+
+/**
+ * \brief Serializes a certificate to CIP-116 JSON.
+ *
+ * This function acts as a dispatcher, identifying the specific type of the certificate
+ * and calling the appropriate serialization function.
+ *
+ * \param[in]  certificate Pointer to a valid \ref cardano_certificate_t.
+ * \param[in]  writer      Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p certificate or \p writer is NULL.
+ * CARDANO_ERROR_INVALID_CERTIFICATE_TYPE If the certificate type is unknown or unsupported.
+ * Other                                     Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_certificate_to_cip116_json(
+  const cardano_certificate_t* certificate,
+  cardano_json_writer_t*       writer);
 
 /**
  * \brief Retrieves the type of a Cardano certificate.

@@ -17,6 +17,10 @@ Certificate Set
 
 ------------
 
+.. doxygenfunction:: cardano_certificate_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_certificate_set_get_length
 
 ------------

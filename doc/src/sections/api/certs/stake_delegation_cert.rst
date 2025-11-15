@@ -17,6 +17,10 @@ Stake Delegation Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_stake_delegation_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_stake_delegation_cert_get_credential
 
 ------------

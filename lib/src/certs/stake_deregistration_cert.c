@@ -209,6 +209,37 @@ cardano_stake_deregistration_cert_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_stake_deregistration_cert_to_cip116_json(
+  const cardano_stake_deregistration_cert_t* cert,
+  cardano_json_writer_t*                     writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "stake_deregistration", 20);
+
+  cardano_json_writer_write_property_name(writer, "credential", 10);
+
+  assert(cert->credential != NULL);
+
+  cardano_error_t error = cardano_credential_to_cip116_json(cert->credential, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_credential_t*
 cardano_stake_deregistration_cert_get_credential(cardano_stake_deregistration_cert_t* certificate)
 {
