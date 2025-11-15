@@ -17,6 +17,10 @@ Resignation Committee Member Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_resign_committee_cold_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_resign_committee_cold_cert_get_credential
 
 ------------

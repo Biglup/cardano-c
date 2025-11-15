@@ -26,6 +26,7 @@
 #include <cardano/common/drep.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1188,6 +1189,128 @@ TEST(cardano_drep_to_string, canConvertToString)
 
   EXPECT_EQ(cardano_drep_to_string(drep, &message[0], 99), CARDANO_SUCCESS);
   EXPECT_STREQ(message, DREP_CIP129_SCRIPT_HASH);
+
+  cardano_drep_unref(&drep);
+}
+
+TEST(cardano_drep_to_cip116_json, canConvertKeyHash)
+{
+  // Arrange
+  cardano_credential_t* cred  = NULL;
+  cardano_error_t       error = cardano_credential_from_hash_hex(DREP_CRED_HASH, strlen(DREP_CRED_HASH), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &cred);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_drep_t* drep = NULL;
+  error                = cardano_drep_new(CARDANO_DREP_TYPE_KEY_HASH, cred, &drep);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_drep_to_cip116_json(drep, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&cred);
+  free(json_str);
+}
+
+TEST(cardano_drep_to_cip116_json, canConvertScriptHash)
+{
+  // Arrange
+  cardano_credential_t* cred  = NULL;
+  cardano_error_t       error = cardano_credential_from_hash_hex(DREP_CRED_HASH, strlen(DREP_CRED_HASH), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_drep_t* drep = NULL;
+  error                = cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, cred, &drep);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_drep_to_cip116_json(drep, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"script_hash","value":"00000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&cred);
+  free(json_str);
+}
+
+TEST(cardano_drep_to_cip116_json, canConvertAlwaysAbstain)
+{
+  // Arrange
+  cardano_drep_t* drep  = NULL;
+  cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, &drep);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_drep_to_cip116_json(drep, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"always_abstain"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_drep_unref(&drep);
+  free(json_str);
+}
+
+TEST(cardano_drep_to_cip116_json, canConvertAlwaysNoConfidence)
+{
+  // Arrange
+  cardano_drep_t* drep  = NULL;
+  cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_NO_CONFIDENCE, NULL, &drep);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_drep_to_cip116_json(drep, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"always_no_confidence"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_drep_unref(&drep);
+  free(json_str);
+}
+
+TEST(cardano_drep_to_cip116_json, returnsErrorIfDrepIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_drep_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_drep_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_drep_t* drep  = NULL;
+  cardano_error_t error = cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, &drep);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_drep_to_cip116_json(drep, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   cardano_drep_unref(&drep);
 }

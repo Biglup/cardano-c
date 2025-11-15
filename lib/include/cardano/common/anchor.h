@@ -290,6 +290,26 @@ CARDANO_EXPORT cardano_error_t cardano_anchor_to_cbor(
   cardano_cbor_writer_t*  writer);
 
 /**
+ * \brief Serializes an anchor to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "url", "data_hash".
+ *
+ * \param[in]  anchor  Pointer to a valid \ref cardano_anchor_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p anchor or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_anchor_to_cip116_json(
+  const cardano_anchor_t* anchor,
+  cardano_json_writer_t*  writer);
+
+/**
  * \brief Retrieves the hash associated with a anchor.
  *
  * This function provides access to the hash part of a \ref cardano_anchor_t object.

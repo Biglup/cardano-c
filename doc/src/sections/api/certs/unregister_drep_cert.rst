@@ -17,6 +17,10 @@ Unregister DRep Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_unregister_drep_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_unregister_drep_cert_get_credential
 
 ------------

@@ -27,6 +27,7 @@
 #include <cardano/common/anchor.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1035,4 +1036,72 @@ TEST(cardano_anchor_get_hash_bytes_size, returnsZeroIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(size, 0);
+}
+
+TEST(cardano_anchor_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char* url      = "https://example.com/metadata.json";
+  const char* hash_hex = "2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e";
+
+  cardano_blake2b_hash_t* hash = NULL;
+  error                        = cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_anchor_t* anchor = NULL;
+  error                    = cardano_anchor_new(url, strlen(url), hash, &anchor);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_anchor_to_cip116_json(anchor, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"url":"https://example.com/metadata.json","data_hash":"2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_anchor_unref(&anchor);
+  cardano_blake2b_hash_unref(&hash);
+  free(json_str);
+}
+
+TEST(cardano_anchor_to_cip116_json, returnsErrorIfAnchorIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_anchor_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_anchor_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e", 64, &hash), CARDANO_SUCCESS);
+
+  cardano_anchor_t* anchor = NULL;
+  EXPECT_EQ(cardano_anchor_new("url", 3, hash, &anchor), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_anchor_to_cip116_json(anchor, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_anchor_unref(&anchor);
+  cardano_blake2b_hash_unref(&hash);
 }

@@ -187,6 +187,25 @@ CARDANO_EXPORT cardano_error_t cardano_unregister_drep_cert_to_cbor(
   cardano_cbor_writer_t*                writer);
 
 /**
+ * \brief Serializes an unregister DRep certificate to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "drep_credential", "coin".
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_unregister_drep_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                 On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p cert or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_unregister_drep_cert_to_cip116_json(
+  const cardano_unregister_drep_cert_t* cert,
+  cardano_json_writer_t*                writer);
+
+/**
  * \brief Retrieves the stake credential associated with a DRep unregistration certificate.
  *
  * This function extracts the stake credential from a given \ref cardano_unregister_drep_cert_t object.

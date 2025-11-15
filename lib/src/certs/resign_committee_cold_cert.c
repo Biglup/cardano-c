@@ -268,6 +268,52 @@ cardano_resign_committee_cold_cert_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_resign_committee_cold_cert_to_cip116_json(
+  const cardano_resign_committee_cold_cert_t* cert,
+  cardano_json_writer_t*                      writer)
+{
+  if ((cert == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "resign_committee_cold", 21);
+
+  cardano_json_writer_write_property_name(writer, "committee_cold_credential", 25);
+
+  assert(cert->credential != NULL);
+  cardano_error_t error = cardano_credential_to_cip116_json(cert->credential, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "anchor", 6);
+
+  if (cert->anchor != NULL)
+  {
+    error = cardano_anchor_to_cip116_json(cert->anchor, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+  else
+  {
+    cardano_json_writer_write_null(writer);
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_credential_t*
 cardano_resign_committee_cold_cert_get_credential(cardano_resign_committee_cold_cert_t* certificate)
 {

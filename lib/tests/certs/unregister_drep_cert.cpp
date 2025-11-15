@@ -27,6 +27,7 @@
 #include <cardano/certs/unregister_drep_cert.h>
 #include <cardano/crypto/blake2b_hash.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -540,4 +541,55 @@ TEST(cardano_unregister_drep_cert_get_deposit, returnsZeroIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(deposit, 0);
+}
+
+TEST(cardano_unregister_drep_cert_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_unregister_drep_cert_t* cert = new_default_cert();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_unregister_drep_cert_to_cip116_json(cert, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"unregister_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_unregister_drep_cert_unref(&cert);
+  free(json_str);
+}
+
+TEST(cardano_unregister_drep_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_unregister_drep_cert_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_unregister_drep_cert_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_unregister_drep_cert_t* cert = new_default_cert();
+
+  // Act
+  cardano_error_t error = cardano_unregister_drep_cert_to_cip116_json(cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_unregister_drep_cert_unref(&cert);
 }

@@ -17,6 +17,10 @@ Vote Delegation Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_vote_delegation_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_vote_delegation_cert_get_credential
 
 ------------

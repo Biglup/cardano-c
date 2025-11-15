@@ -17,6 +17,10 @@ Update DRep Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_update_drep_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_update_drep_cert_set_credential
 
 ------------

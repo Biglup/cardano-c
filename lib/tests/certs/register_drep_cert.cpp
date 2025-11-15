@@ -27,6 +27,7 @@
 #include <cardano/certs/register_drep_cert.h>
 #include <cardano/common/anchor.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -698,4 +699,85 @@ TEST(cardano_register_drep_cert_get_anchor, returnsErrorIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(anchor, nullptr);
+}
+
+TEST(cardano_register_drep_cert_to_cip116_json, canConvertToCip116JsonWithAnchor)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  // Credential
+  cardano_register_drep_cert_t* cert   = new_default_cert();
+  cardano_anchor_t*             anchor = NULL;
+  cardano_cbor_reader_t*        reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+
+  cardano_error_t result = cardano_anchor_from_cbor(reader, &anchor);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  result = cardano_register_drep_cert_set_anchor(cert, anchor);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  // Act
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_register_drep_cert_to_cip116_json(cert, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"register_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0","anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_register_drep_cert_unref(&cert);
+  cardano_anchor_unref(&anchor);
+  free(json_str);
+}
+
+TEST(cardano_register_drep_cert_to_cip116_json, canConvertToCip116JsonWithoutAnchor)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_register_drep_cert_t* cert = new_default_cert();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_register_drep_cert_to_cip116_json(cert, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"register_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0","anchor":null})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_register_drep_cert_unref(&cert);
+  free(json_str);
+}
+
+TEST(cardano_register_drep_cert_to_cip116_json, returnsErrorIfCertIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_register_drep_cert_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_register_drep_cert_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_register_drep_cert_t* cert = new_default_cert();
+  // Act
+  cardano_error_t error = cardano_register_drep_cert_to_cip116_json(cert, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_register_drep_cert_unref(&cert);
 }

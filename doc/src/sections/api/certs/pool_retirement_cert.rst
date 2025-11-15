@@ -17,6 +17,10 @@ Pool Retirement Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_pool_retirement_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_retirement_cert_get_pool_key_hash
 
 ------------

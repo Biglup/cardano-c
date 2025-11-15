@@ -17,6 +17,10 @@ Registration Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_registration_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_registration_cert_get_stake_credential
 
 ------------
