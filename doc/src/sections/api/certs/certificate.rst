@@ -89,6 +89,11 @@ Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_certificate_to_cip116_json
+
+
+------------
+
 .. doxygenfunction:: cardano_cert_get_type
 
 ------------

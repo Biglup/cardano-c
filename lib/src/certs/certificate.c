@@ -1271,6 +1271,130 @@ cardano_certificate_to_cbor(
 }
 
 cardano_error_t
+cardano_certificate_to_cip116_json(
+  const cardano_certificate_t* certificate,
+  cardano_json_writer_t*       writer)
+{
+  if (certificate == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  switch (certificate->type)
+  {
+    case CARDANO_CERT_TYPE_REGISTRATION:
+    {
+      result = cardano_registration_cert_to_cip116_json(certificate->registration_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_UNREGISTRATION:
+    {
+      result = cardano_unregistration_cert_to_cip116_json(certificate->unregistration_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT:
+    {
+      result = cardano_auth_committee_hot_cert_to_cip116_json(certificate->auth_committee_hot_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION:
+    {
+      result = cardano_genesis_key_delegation_cert_to_cip116_json(certificate->genesis_key_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS:
+    {
+      result = cardano_mir_cert_to_cip116_json(certificate->mir_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_POOL_REGISTRATION:
+    {
+      result = cardano_pool_registration_cert_to_cip116_json(certificate->pool_registration_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_POOL_RETIREMENT:
+    {
+      result = cardano_pool_retirement_cert_to_cip116_json(certificate->pool_retirement_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_DREP_REGISTRATION:
+    {
+      result = cardano_register_drep_cert_to_cip116_json(certificate->register_drep_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_REGISTRATION:
+    {
+      result = cardano_stake_registration_cert_to_cip116_json(certificate->stake_registration_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_RESIGN_COMMITTEE_COLD:
+    {
+      result = cardano_resign_committee_cold_cert_to_cip116_json(certificate->resign_committee_cold_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_DELEGATION:
+    {
+      result = cardano_stake_delegation_cert_to_cip116_json(certificate->stake_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_DEREGISTRATION:
+    {
+      result = cardano_stake_deregistration_cert_to_cip116_json(certificate->stake_deregistration_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION:
+    {
+      result = cardano_stake_registration_delegation_cert_to_cip116_json(certificate->stake_registration_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_VOTE_DELEGATION:
+    {
+      result = cardano_stake_vote_delegation_cert_to_cip116_json(certificate->stake_vote_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_VOTE_REGISTRATION_DELEGATION:
+    {
+      result = cardano_stake_vote_registration_delegation_cert_to_cip116_json(certificate->stake_vote_registration_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_DREP_UNREGISTRATION:
+    {
+      result = cardano_unregister_drep_cert_to_cip116_json(certificate->unregister_drep_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_UPDATE_DREP:
+    {
+      result = cardano_update_drep_cert_to_cip116_json(certificate->update_drep_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_VOTE_DELEGATION:
+    {
+      result = cardano_vote_delegation_cert_to_cip116_json(certificate->vote_delegation_cert, writer);
+      break;
+    }
+    case CARDANO_CERT_TYPE_VOTE_REGISTRATION_DELEGATION:
+    {
+      result = cardano_vote_registration_delegation_cert_to_cip116_json(certificate->vote_registration_delegation_cert, writer);
+      break;
+    }
+    default:
+    {
+      result = CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
+      break;
+    }
+  }
+
+  return result;
+}
+
+cardano_error_t
 cardano_cert_get_type(const cardano_certificate_t* certificate, cardano_cert_type_t* type)
 {
   if (certificate == NULL)

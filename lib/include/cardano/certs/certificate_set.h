@@ -173,6 +173,24 @@ CARDANO_EXPORT cardano_error_t cardano_certificate_set_to_cbor(
   cardano_cbor_writer_t*           writer);
 
 /**
+ * \brief Serializes a set of certificates to CIP-116 JSON.
+ *
+ * The function writes a JSON array containing the serialized certificates.
+ *
+ * \param[in]  certs   Pointer to a valid \ref cardano_certificate_set_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p certs or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_certificate_set_to_cip116_json(
+  const cardano_certificate_set_t* certs,
+  cardano_json_writer_t*           writer);
+
+/**
  * \brief Retrieves the length of a certificate list.
  *
  * This function retrieves the number of elements in the provided \ref cardano_certificate_set_t object.

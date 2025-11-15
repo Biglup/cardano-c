@@ -189,6 +189,26 @@ CARDANO_EXPORT cardano_error_t cardano_stake_delegation_cert_to_cbor(
   cardano_cbor_writer_t*                 writer);
 
 /**
+ * \brief Serializes a stake delegation certificate to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "credential", "pool_keyhash".
+ *
+ * \param[in]  cert    Pointer to a valid \ref cardano_stake_delegation_cert_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p cert or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_stake_delegation_cert_to_cip116_json(
+  const cardano_stake_delegation_cert_t* cert,
+  cardano_json_writer_t*                 writer);
+
+/**
  * \brief Retrieves the credential from a stake delegation certificate.
  *
  * This function fetches the credential associated with a given \ref cardano_stake_delegation_cert_t object.

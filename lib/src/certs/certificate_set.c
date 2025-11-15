@@ -262,6 +262,44 @@ cardano_certificate_set_to_cbor(const cardano_certificate_set_t* certificate_set
   return result;
 }
 
+cardano_error_t
+cardano_certificate_set_to_cip116_json(
+  const cardano_certificate_set_t* certs,
+  cardano_json_writer_t*           writer)
+{
+  if ((certs == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t length = cardano_certificate_set_get_length(certs);
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_certificate_t* cert  = NULL;
+    cardano_error_t        error = cardano_certificate_set_get(certs, i, &cert);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_certificate_to_cip116_json(cert, writer);
+    cardano_certificate_unref(&cert);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_certificate_set_get_length(const cardano_certificate_set_t* certificate_set)
 {

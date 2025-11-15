@@ -26,6 +26,7 @@
 #include <cardano/certs/certificate_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -707,4 +708,78 @@ TEST(cardano_certificate_set_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_certificate_set_unref(&certificate_set);
+}
+
+TEST(cardano_certificate_set_to_cip116_json, canConvertSetOfCertificates)
+{
+  // Arrange
+  cardano_certificate_set_t* certs = NULL;
+  EXPECT_EQ(cardano_certificate_set_new(&certs), CARDANO_SUCCESS);
+
+  cardano_certificate_t* cert1 = new_default_certificate(CERTIFICATE1_CBOR);
+
+  EXPECT_EQ(cardano_certificate_set_add(certs, cert1), CARDANO_SUCCESS);
+
+  cardano_certificate_t* cert2 = new_default_certificate(CERTIFICATE2_CBOR);
+
+  EXPECT_EQ(cardano_certificate_set_add(certs, cert2), CARDANO_SUCCESS);
+
+  cardano_certificate_unref(&cert1);
+  cardano_certificate_unref(&cert2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_certificate_set_to_cip116_json(certs, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"tag":"registration","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0"},{"tag":"unregistration","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0"}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_certificate_set_unref(&certs);
+  free(json_str);
+}
+
+TEST(cardano_certificate_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_certificate_set_t* certs = NULL;
+  EXPECT_EQ(cardano_certificate_set_new(&certs), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_certificate_set_to_cip116_json(certs, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_certificate_set_unref(&certs);
+  free(json_str);
+}
+
+TEST(cardano_certificate_set_to_cip116_json, returnsErrorIfCertsIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_certificate_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_certificate_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_certificate_set_t* certs = NULL;
+  EXPECT_EQ(cardano_certificate_set_new(&certs), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_certificate_set_to_cip116_json(certs, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_certificate_set_unref(&certs);
 }

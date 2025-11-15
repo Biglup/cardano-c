@@ -17,6 +17,10 @@ Stake De-Registration Certificate
 
 ------------
 
+.. doxygenfunction:: cardano_stake_deregistration_cert_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_stake_deregistration_cert_get_credential
 
 ------------
