@@ -508,6 +508,93 @@ cardano_drep_voting_thresholds_to_cbor(const cardano_drep_voting_thresholds_t* d
 }
 
 cardano_error_t
+cardano_drep_voting_thresholds_to_cip116_json(
+  const cardano_drep_voting_thresholds_t* thresholds,
+  cardano_json_writer_t*                  writer)
+{
+  if ((thresholds == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "motion_no_confidence", 20);
+  cardano_error_t error = cardano_unit_interval_to_cip116_json(thresholds->motion_no_confidence, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee_normal", 16);
+  error = cardano_unit_interval_to_cip116_json(thresholds->committee_normal, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee_no_confidence", 23);
+  error = cardano_unit_interval_to_cip116_json(thresholds->committee_no_confidence, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "update_constitution", 19);
+  error = cardano_unit_interval_to_cip116_json(thresholds->update_constitution, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "hard_fork_initiation", 20);
+  error = cardano_unit_interval_to_cip116_json(thresholds->hard_fork_initiation, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pp_network_group", 16);
+  error = cardano_unit_interval_to_cip116_json(thresholds->pp_network_group, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pp_economic_group", 17);
+  error = cardano_unit_interval_to_cip116_json(thresholds->pp_economic_group, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pp_technical_group", 18);
+  error = cardano_unit_interval_to_cip116_json(thresholds->pp_technical_group, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "pp_gov_group", 12);
+  error = cardano_unit_interval_to_cip116_json(thresholds->pp_governance_group, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "treasury_withdrawal", 19);
+  error = cardano_unit_interval_to_cip116_json(thresholds->treasury_withdrawal, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_drep_voting_thresholds_get_motion_no_confidence(
   cardano_drep_voting_thresholds_t* drep_voting_thresholds,
   cardano_unit_interval_t**         motion_no_confidence)

@@ -17,6 +17,10 @@ Execution Units Prices
 
 ------------
 
+.. doxygenfunction:: cardano_ex_unit_prices_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_ex_unit_prices_get_memory_prices
 
 ------------

@@ -17,6 +17,10 @@ Proposed Protocol Parameter Updates
 
 ------------
 
+.. doxygenfunction:: cardano_proposed_param_updates_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_proposed_param_updates_get_size
 
 ------------

@@ -326,6 +326,58 @@ cardano_pool_voting_thresholds_to_cbor(const cardano_pool_voting_thresholds_t* p
 }
 
 cardano_error_t
+cardano_pool_voting_thresholds_to_cip116_json(
+  const cardano_pool_voting_thresholds_t* thresholds,
+  cardano_json_writer_t*                  writer)
+{
+  if ((thresholds == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "motion_no_confidence", 20);
+  cardano_error_t error = cardano_unit_interval_to_cip116_json(thresholds->motion_no_confidence, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee_normal", 16);
+  error = cardano_unit_interval_to_cip116_json(thresholds->committee_normal, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee_no_confidence", 23);
+  error = cardano_unit_interval_to_cip116_json(thresholds->committee_no_confidence, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "hard_fork_initiation", 20);
+  error = cardano_unit_interval_to_cip116_json(thresholds->hard_fork_initiation, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "security_relevant_param", 23);
+  error = cardano_unit_interval_to_cip116_json(thresholds->security_relevant_param, writer);
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_pool_voting_thresholds_get_motion_no_confidence(
   cardano_pool_voting_thresholds_t* pool_voting_thresholds,
   cardano_unit_interval_t**         motion_no_confidence)

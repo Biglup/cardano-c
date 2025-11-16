@@ -17,6 +17,10 @@ Protocol Parameter Update
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_param_update_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_protocol_param_update_get_min_fee_a
 
 ------------

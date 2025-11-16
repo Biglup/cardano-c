@@ -26,6 +26,7 @@
 #include <cardano/common/ex_units.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -579,6 +580,60 @@ TEST(cardano_ex_units_get_cpu_steps_ex, returnsErrorIfCpuStepsIsNull)
 
   // Act
   error = cardano_ex_units_get_cpu_steps_ex(ex_units, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_ex_units_unref(&ex_units);
+}
+
+TEST(cardano_ex_units_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = NULL;
+  cardano_error_t     error    = cardano_ex_units_new(123, 456, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_ex_units_to_cip116_json(ex_units, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"mem":"123","steps":"456"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_ex_units_unref(&ex_units);
+  free(json_str);
+}
+
+TEST(cardano_ex_units_to_cip116_json, returnsErrorIfExUnitsIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_ex_units_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_ex_units_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_ex_units_t* ex_units = NULL;
+  EXPECT_EQ(cardano_ex_units_new(100, 100, &ex_units), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_ex_units_to_cip116_json(ex_units, nullptr);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);

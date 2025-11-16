@@ -340,6 +340,61 @@ cardano_proposed_param_updates_to_cbor(const cardano_proposed_param_updates_t* p
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_proposed_param_updates_to_cip116_json(
+  const cardano_proposed_param_updates_t* updates,
+  cardano_json_writer_t*                  writer)
+{
+  if ((updates == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  size_t array_size = cardano_array_get_size(updates->array);
+
+  for (size_t i = 0; i < array_size; ++i)
+  {
+    cardano_object_t* kvp = cardano_array_get(updates->array, i);
+
+    if (kvp == NULL)
+    {
+      return CARDANO_ERROR_POINTER_IS_NULL;
+    }
+
+    cardano_proposed_param_updates_kvp_t* kvp_data = (cardano_proposed_param_updates_kvp_t*)((void*)kvp);
+    char                                  hex[128] = { 0 };
+    const size_t                          size     = cardano_blake2b_hash_get_hex_size(kvp_data->key);
+    cardano_error_t                       error    = cardano_blake2b_hash_to_hex(
+      kvp_data->key,
+      hex,
+      sizeof(hex));
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return error;
+    }
+
+    cardano_json_writer_write_property_name(writer, hex, size - 1U);
+
+    error = cardano_protocol_param_update_to_cip116_json(kvp_data->value, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return error;
+    }
+
+    cardano_object_unref(&kvp);
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_proposed_param_updates_get_size(const cardano_proposed_param_updates_t* proposed_params_updates)
 {

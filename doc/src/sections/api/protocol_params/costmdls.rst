@@ -17,6 +17,10 @@ Cost Models
 
 ------------
 
+.. doxygenfunction:: cardano_costmdls_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_costmdls_insert
 
 ------------

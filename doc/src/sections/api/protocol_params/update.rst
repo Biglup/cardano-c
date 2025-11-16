@@ -17,6 +17,10 @@ Update
 
 ------------
 
+.. doxygenfunction:: cardano_update_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_update_get_epoch
 
 ------------

@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/scripts/plutus_scripts/plutus_language_version.h>
 #include <cardano/typedefs.h>
 
@@ -180,6 +181,25 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cost_model_to_cbor(
   const cardano_cost_model_t* cost_model,
   cardano_cbor_writer_t*      writer);
+
+/**
+ * \brief Serializes a cost model to CIP-116 JSON.
+ *
+ * The function writes a JSON array containing the cost model parameters.
+ * Each parameter is written as a string representation of the integer value.
+ *
+ * \param[in]  cost_model Pointer to a valid \ref cardano_cost_model_t.
+ * \param[in]  writer     Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p cost_model or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_cost_model_to_cip116_json(
+  const cardano_cost_model_t* cost_model,
+  cardano_json_writer_t*      writer);
 
 /**
  * \brief Sets the cost for a specific operation in the Cost Model.

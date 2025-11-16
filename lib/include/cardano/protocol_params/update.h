@@ -178,6 +178,24 @@ CARDANO_EXPORT cardano_error_t cardano_update_to_cbor(
   cardano_cbor_writer_t*  writer);
 
 /**
+ * \brief Serializes an update to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "epoch", "proposed_protocol_parameter_updates".
+ *
+ * \param[in]  update  Pointer to a valid \ref cardano_update_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p update or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_update_to_cip116_json(
+  const cardano_update_t* update,
+  cardano_json_writer_t*  writer);
+
+/**
  * \brief Retrieves the epoch number from the update.
  *
  * This function returns the epoch number in which the proposal will come into effect if accepted.

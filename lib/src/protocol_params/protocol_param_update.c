@@ -1611,6 +1611,299 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
 }
 
 cardano_error_t
+cardano_protocol_param_update_to_cip116_json(
+  const cardano_protocol_param_update_t* update,
+  cardano_json_writer_t*                 writer)
+{
+  if ((update == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  if (update->min_fee_a != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "min_fee_a", 9);
+    cardano_json_writer_write_uint_as_string(writer, *update->min_fee_a);
+  }
+
+  if (update->min_fee_b != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "min_fee_b", 9);
+    cardano_json_writer_write_uint_as_string(writer, *update->min_fee_b);
+  }
+
+  if (update->max_block_body_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_block_body_size", 19);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_block_body_size);
+  }
+
+  if (update->max_tx_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_tx_size", 11);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_tx_size);
+  }
+
+  if (update->max_block_header_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_block_header_size", 21);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_block_header_size);
+  }
+
+  if (update->key_deposit != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "key_deposit", 11);
+    cardano_json_writer_write_uint_as_string(writer, *update->key_deposit);
+  }
+
+  if (update->pool_deposit != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "pool_deposit", 12);
+    cardano_json_writer_write_uint_as_string(writer, *update->pool_deposit);
+  }
+
+  if (update->max_epoch != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_epoch", 9);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_epoch);
+  }
+
+  if (update->n_opt != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "n_opt", 5);
+    cardano_json_writer_write_uint_as_string(writer, *update->n_opt);
+  }
+
+  if (update->pool_pledge_influence != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "pool_pledge_influence", 21);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->pool_pledge_influence, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->expansion_rate != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "expansion_rate", 14);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->expansion_rate, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->treasury_growth_rate != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "treasury_growth_rate", 20);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->treasury_growth_rate, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->d != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "d", 1);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->d, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->extra_entropy != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "extra_entropy", 13);
+    const size_t size    = cardano_buffer_get_hex_size(update->extra_entropy);
+    char*        hex_str = _cardano_malloc(size);
+
+    if (hex_str == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    cardano_error_t error = cardano_buffer_to_hex(update->extra_entropy, hex_str, size);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      _cardano_free(hex_str);
+      return error;
+    }
+
+    cardano_json_writer_write_string(writer, hex_str, size - 1U);
+
+    _cardano_free(hex_str);
+  }
+
+  if (update->protocol_version != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "protocol_version", 16);
+    cardano_error_t error = cardano_protocol_version_to_cip116_json(update->protocol_version, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->min_pool_cost != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "min_pool_cost", 13);
+    cardano_json_writer_write_uint_as_string(writer, *update->min_pool_cost);
+  }
+
+  if (update->ada_per_utxo_byte != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ada_per_utxo_byte", 17);
+    cardano_json_writer_write_uint_as_string(writer, *update->ada_per_utxo_byte);
+  }
+
+  if (update->cost_models != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "cost_models", 11);
+    cardano_error_t error = cardano_costmdls_to_cip116_json(update->cost_models, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->execution_costs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "execution_costs", 15);
+    cardano_error_t error = cardano_ex_unit_prices_to_cip116_json(update->execution_costs, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_tx_ex_units != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_tx_ex_units", 15);
+    cardano_error_t error = cardano_ex_units_to_cip116_json(update->max_tx_ex_units, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_block_ex_units != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_block_ex_units", 18);
+    cardano_error_t error = cardano_ex_units_to_cip116_json(update->max_block_ex_units, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_value_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_value_size", 14);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_value_size);
+  }
+
+  if (update->collateral_percentage != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "collateral_percentage", 21);
+    cardano_json_writer_write_uint_as_string(writer, *update->collateral_percentage);
+  }
+
+  if (update->max_collateral_inputs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_collateral_inputs", 21);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_collateral_inputs);
+  }
+
+  if (update->pool_voting_thresholds != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "pool_voting_thresholds", 22);
+    cardano_error_t error = cardano_pool_voting_thresholds_to_cip116_json(update->pool_voting_thresholds, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->drep_voting_thresholds != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "drep_voting_thresholds", 22);
+    cardano_error_t error = cardano_drep_voting_thresholds_to_cip116_json(update->drep_voting_thresholds, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->min_committee_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "min_committee_size", 18);
+    cardano_json_writer_write_uint_as_string(writer, *update->min_committee_size);
+  }
+
+  if (update->committee_term_limit != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "committee_term_limit", 20);
+    cardano_json_writer_write_uint_as_string(writer, *update->committee_term_limit);
+  }
+
+  if (update->governance_action_validity_period != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "governance_action_validity_period", 33);
+    cardano_json_writer_write_uint_as_string(writer, *update->governance_action_validity_period);
+  }
+
+  if (update->governance_action_deposit != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "governance_action_deposit", 25);
+    cardano_json_writer_write_uint_as_string(writer, *update->governance_action_deposit);
+  }
+
+  if (update->drep_deposit != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "drep_deposit", 12);
+    cardano_json_writer_write_uint_as_string(writer, *update->drep_deposit);
+  }
+
+  if (update->drep_inactivity_period != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "drep_inactivity_period", 22);
+    cardano_json_writer_write_uint_as_string(writer, *update->drep_inactivity_period);
+  }
+
+  if (update->ref_script_cost_per_byte != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ref_script_cost_per_byte", 24);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->ref_script_cost_per_byte, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_protocol_param_update_get_min_fee_a(
   const cardano_protocol_param_update_t* protocol_param_update,
   uint64_t*                              min_fee_a)

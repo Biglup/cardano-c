@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -174,6 +175,25 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_version_to_cbor(
   const cardano_protocol_version_t* protocol_version,
   cardano_cbor_writer_t*            writer);
+
+/**
+ * \brief Serializes a protocol version to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "major", "minor".
+ *
+ * \param[in]  version Pointer to a valid \ref cardano_protocol_version_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p version or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_protocol_version_to_cip116_json(
+  const cardano_protocol_version_t* version,
+  cardano_json_writer_t*            writer);
 
 /**
  * \brief Retrieves the major version number of the Protocol Version.

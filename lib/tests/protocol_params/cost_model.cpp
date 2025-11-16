@@ -27,6 +27,7 @@
 #include <cardano/protocol_params/cost_model.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -780,4 +781,50 @@ TEST(cardano_cost_model_get_language, returnErrorIfLanguageIsNull)
   // Cleanup
   cardano_cost_model_unref(&cost_model);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_cost_model_t* cost_model = NULL;
+  const int64_t         costs[]    = { 100, 200, -300 };
+  cardano_error_t       error      = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, costs, 3, &cost_model);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_cost_model_to_cip116_json(cost_model, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_start = R"(["100","200","-300")";
+  EXPECT_TRUE(strstr(json_str, expected_start) != NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_cost_model_unref(&cost_model);
+  free(json_str);
+}
+
+TEST(cardano_cost_model_to_cip116_json, returnsErrorIfModelIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_cost_model_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_cost_model_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_cost_model_t* cost_model = NULL;
+  const int64_t         costs[]    = { 100, 200, -300 };
+  EXPECT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, costs, 3, &cost_model), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_cost_model_to_cip116_json(cost_model, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_cost_model_unref(&cost_model);
 }
