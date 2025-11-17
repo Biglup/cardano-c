@@ -27,6 +27,7 @@
 #include <cardano/common/anchor.h>
 #include <cardano/voting_procedures/voting_procedures.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -897,4 +898,108 @@ TEST(cardano_voting_procedures_get_voters, returnsErrorIfVotersIsNull)
 
   // Cleanup
   cardano_voting_procedures_unref(&voting_procedures);
+}
+
+TEST(cardano_voting_procedures_to_cip116_json, canConvertVotingProcedures)
+{
+  // Arrange
+  cardano_error_t              error      = CARDANO_SUCCESS;
+  cardano_voting_procedures_t* procedures = NULL;
+  EXPECT_EQ(cardano_voting_procedures_new(&procedures), CARDANO_SUCCESS);
+
+  cardano_credential_t* drep_cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("0000000000000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &drep_cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter1 = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_KEY_HASH, drep_cred, &voter1), CARDANO_SUCCESS);
+  cardano_credential_unref(&drep_cred);
+
+  const char*             hash_hex_1 = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_1, strlen(hash_hex_1), &hash1), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id1 = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash1, 0, &action_id1), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash1);
+
+  cardano_voting_procedure_t* vote1 = NULL;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_YES, NULL, &vote1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_voting_procedures_insert(procedures, voter1, action_id1, vote1), CARDANO_SUCCESS);
+
+  const char*             hash_hex_2 = "1111111111111111111111111111111111111111111111111111111111111111";
+  cardano_blake2b_hash_t* hash2      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_2, strlen(hash_hex_2), &hash2), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id2 = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash2, 1, &action_id2), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash2);
+
+  cardano_voting_procedure_t* vote2 = NULL;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_NO, NULL, &vote2), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_voting_procedures_insert(procedures, voter1, action_id2, vote2), CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_voter_unref(&voter1);
+  cardano_governance_action_id_unref(&action_id1);
+  cardano_voting_procedure_unref(&vote1);
+  cardano_governance_action_id_unref(&action_id2);
+  cardano_voting_procedure_unref(&vote2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_voting_procedures_to_cip116_json(procedures, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"([{"key":{"tag":"drep_credential","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}},"value":[{"key":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"0"},"value":{"vote":"yes"}},{"key":{"transaction_id":"1111111111111111111111111111111111111111111111111111111111111111","gov_action_index":"1"},"value":{"vote":"no"}}]}])");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedures_unref(&procedures);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedures_to_cip116_json, canConvertEmpty)
+{
+  // Arrange
+  cardano_voting_procedures_t* procedures = NULL;
+  EXPECT_EQ(cardano_voting_procedures_new(&procedures), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voting_procedures_to_cip116_json(procedures, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedures_unref(&procedures);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedures_to_cip116_json, returnsErrorIfProceduresIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_voting_procedures_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_voting_procedures_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_voting_procedures_t* procedures = NULL;
+  EXPECT_EQ(cardano_voting_procedures_new(&procedures), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_voting_procedures_to_cip116_json(procedures, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_voting_procedures_unref(&procedures);
 }

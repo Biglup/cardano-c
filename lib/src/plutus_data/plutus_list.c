@@ -282,6 +282,49 @@ cardano_plutus_list_to_cbor(const cardano_plutus_list_t* plutus_list, cardano_cb
   return result;
 }
 
+cardano_error_t
+cardano_plutus_list_to_cip116_json(
+  const cardano_plutus_list_t* list,
+  cardano_json_writer_t*       writer)
+{
+  if ((list == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "list", 4);
+  cardano_json_writer_write_property_name(writer, "contents", 8);
+  cardano_json_writer_write_start_array(writer);
+
+  size_t len = cardano_plutus_list_get_length(list);
+
+  for (size_t i = 0; i < len; ++i)
+  {
+    cardano_plutus_data_t* elem  = NULL;
+    cardano_error_t        error = cardano_plutus_list_get(list, i, &elem);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_plutus_data_to_cip116_json(elem, writer);
+    cardano_plutus_data_unref(&elem);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_plutus_list_get_length(const cardano_plutus_list_t* plutus_list)
 {

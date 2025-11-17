@@ -49,6 +49,10 @@ Plutus Data
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_data_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_data_get_kind
 
 ------------

@@ -265,6 +265,71 @@ cardano_voter_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_voter_to_cip116_json(
+  const cardano_voter_t* voter,
+  cardano_json_writer_t* writer)
+{
+  if ((voter == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+
+  switch (voter->type)
+  {
+    case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH:
+    case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH:
+      cardano_json_writer_write_string(writer, "cc_credential", 13);
+      cardano_json_writer_write_property_name(writer, "credential", 10);
+
+      cardano_error_t cc_error = cardano_credential_to_cip116_json(voter->credential, writer);
+
+      if (cc_error != CARDANO_SUCCESS)
+      {
+        return cc_error;
+      }
+
+      break;
+    case CARDANO_VOTER_TYPE_DREP_KEY_HASH:
+    case CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH:
+      cardano_json_writer_write_string(writer, "drep_credential", 15);
+      cardano_json_writer_write_property_name(writer, "credential", 10);
+
+      cardano_error_t drep_error = cardano_credential_to_cip116_json(voter->credential, writer);
+
+      if (drep_error != CARDANO_SUCCESS)
+      {
+        return drep_error;
+      }
+
+      break;
+    case CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH:
+      cardano_json_writer_write_string(writer, "spo_keyhash", 11);
+      cardano_json_writer_write_property_name(writer, "pubkey_hash", 11);
+
+      cardano_blake2b_hash_t* hash = cardano_credential_get_hash(voter->credential);
+
+      cardano_error_t hash_error = cardano_blake2b_hash_to_cip116_json(hash, writer);
+      cardano_blake2b_hash_unref(&hash);
+
+      if (hash_error != CARDANO_SUCCESS)
+      {
+        return hash_error;
+      }
+
+      break;
+    default:
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_credential_t*
 cardano_voter_get_credential(cardano_voter_t* voter)
 {

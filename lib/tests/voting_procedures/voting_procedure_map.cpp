@@ -30,6 +30,7 @@
 #include <cardano/voting_procedures/voting_procedure_list.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 #include "../src/voting_procedures/voting_procedure_map.h"
 
@@ -867,4 +868,105 @@ TEST(cardano_voting_procedure_map_get_values, returnsListOfValues)
   // Cleanup
   cardano_voting_procedure_list_unref(&values);
   cardano_voting_procedure_map_unref(&voting_procedure_map);
+}
+
+TEST(cardano_voting_procedure_map_to_cip116_json, canConvertMap)
+{
+  // Arrange
+  cardano_error_t                 error = CARDANO_SUCCESS;
+  cardano_voting_procedure_map_t* map   = NULL;
+  EXPECT_EQ(cardano_voting_procedure_map_new(&map), CARDANO_SUCCESS);
+
+  // 1. Create KVP 1
+  const char*             hash_hex_1 = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_1, strlen(hash_hex_1), &hash1), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* key1 = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash1, 0, &key1), CARDANO_SUCCESS);
+
+  cardano_voting_procedure_t* value1 = NULL;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_YES, NULL, &value1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_voting_procedure_map_insert(map, key1, value1), CARDANO_SUCCESS);
+
+  // 2. Create KVP 2
+  const char*             hash_hex_2 = "1111111111111111111111111111111111111111111111111111111111111111";
+  cardano_blake2b_hash_t* hash2      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_2, strlen(hash_hex_2), &hash2), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* key2 = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash2, 1, &key2), CARDANO_SUCCESS);
+
+  cardano_voting_procedure_t* value2 = NULL;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_NO, NULL, &value2), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_voting_procedure_map_insert(map, key2, value2), CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_blake2b_hash_unref(&hash1);
+  cardano_governance_action_id_unref(&key1);
+  cardano_voting_procedure_unref(&value1);
+  cardano_blake2b_hash_unref(&hash2);
+  cardano_governance_action_id_unref(&key2);
+  cardano_voting_procedure_unref(&value2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_voting_procedure_map_to_cip116_json(map, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Note: The map implementation sorts by key, so "000..." comes before "111..."
+  const char* expected = R"([{"key":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"0"},"value":{"vote":"yes"}},{"key":{"transaction_id":"1111111111111111111111111111111111111111111111111111111111111111","gov_action_index":"1"},"value":{"vote":"no"}}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedure_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedure_map_to_cip116_json, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_voting_procedure_map_t* map = NULL;
+  EXPECT_EQ(cardano_voting_procedure_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voting_procedure_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedure_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedure_map_to_cip116_json, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_voting_procedure_map_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_voting_procedure_map_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_voting_procedure_map_t* map = NULL;
+  EXPECT_EQ(cardano_voting_procedure_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_voting_procedure_map_to_cip116_json(map, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_voting_procedure_map_unref(&map);
 }

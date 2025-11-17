@@ -26,6 +26,7 @@
 #include <cardano/common/governance_action_id.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 #include "../src/string_safe.h"
 
@@ -1358,4 +1359,73 @@ TEST(cardano_governance_action_id_get_string, returnsTheString)
   EXPECT_STREQ(str, CIP129_BECH32_1);
 
   cardano_governance_action_id_unref(&governance_action_id);
+}
+
+TEST(cardano_governance_action_id_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char*             hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash     = NULL;
+  error                            = cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint32_t index = 1;
+
+  cardano_governance_action_id_t* action_id = NULL;
+  error                                     = cardano_governance_action_id_new(hash, index, &action_id);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_governance_action_id_to_cip116_json(action_id, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"1"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_governance_action_id_unref(&action_id);
+  free(json_str);
+}
+
+TEST(cardano_governance_action_id_to_cip116_json, returnsErrorIfActionIdIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_governance_action_id_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_governance_action_id_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("0000000000000000000000000000000000000000000000000000000000000000", 64, &hash), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash, 0, &action_id), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  // Act
+  cardano_error_t error = cardano_governance_action_id_to_cip116_json(action_id, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_governance_action_id_unref(&action_id);
 }

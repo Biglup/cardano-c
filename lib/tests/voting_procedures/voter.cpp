@@ -27,6 +27,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/voting_procedures/voter.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -780,4 +781,134 @@ TEST(cardano_voter_compare, returnsPositiveIfFirstvoterTypeIsGreaterThanSecond)
   // Cleanup
   cardano_voter_unref(&voter1);
   cardano_voter_unref(&voter2);
+}
+
+TEST(cardano_voter_to_cip116_json, canConvertDrepKeyHash)
+{
+  // Arrange
+  cardano_credential_t* cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_KEY_HASH, cred, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&cred);
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voter_to_cip116_json(voter, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"drep_credential","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voter_unref(&voter);
+  free(json_str);
+}
+
+TEST(cardano_voter_to_cip116_json, canConvertDrepScriptHash)
+{
+  // Arrange
+  cardano_credential_t* cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, cred, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&cred);
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voter_to_cip116_json(voter, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"drep_credential","credential":{"tag":"script_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voter_unref(&voter);
+  free(json_str);
+}
+
+TEST(cardano_voter_to_cip116_json, canConvertCCpKeyHash)
+{
+  // Arrange
+  cardano_credential_t* cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH, cred, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&cred);
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voter_to_cip116_json(voter, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"cc_credential","credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voter_unref(&voter);
+  free(json_str);
+}
+
+TEST(cardano_voter_to_cip116_json, canConvertCCScriptHash)
+{
+  // Arrange
+  cardano_credential_t* cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH, cred, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&cred);
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voter_to_cip116_json(voter, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"cc_credential","credential":{"tag":"script_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voter_unref(&voter);
+  free(json_str);
+}
+
+TEST(cardano_voter_to_cip116_json, canConvertSPOKeyHash)
+{
+  // Arrange
+  cardano_credential_t* cred = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &cred), CARDANO_SUCCESS);
+
+  cardano_voter_t* voter = NULL;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH, cred, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&cred);
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_voter_to_cip116_json(voter, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"spo_keyhash","pubkey_hash":"00000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voter_unref(&voter);
+  free(json_str);
 }

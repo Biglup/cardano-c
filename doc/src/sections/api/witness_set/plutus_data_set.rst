@@ -17,6 +17,10 @@ Plutus Data Set
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_data_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_data_set_get_length
 
 ------------

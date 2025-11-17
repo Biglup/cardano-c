@@ -37,7 +37,7 @@ cardano_json_writer_set_message_if_error(
   assert(writer != NULL);
   assert(message != NULL);
 
-  if (writer->last_error != CARDANO_SUCCESS)
+  if ((writer->last_error != CARDANO_SUCCESS) || (error == CARDANO_SUCCESS))
   {
     return;
   }

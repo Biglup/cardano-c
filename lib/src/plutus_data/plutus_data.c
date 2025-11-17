@@ -845,6 +845,82 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
 }
 
 cardano_error_t
+cardano_plutus_data_to_cip116_json(
+  const cardano_plutus_data_t* data,
+  cardano_json_writer_t*       writer)
+{
+  if ((data == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  switch (data->kind)
+  {
+    case CARDANO_PLUTUS_DATA_KIND_CONSTR:
+    {
+      error = cardano_constr_plutus_data_to_cip116_json(data->constr, writer);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
+      break;
+    }
+    case CARDANO_PLUTUS_DATA_KIND_MAP:
+    {
+      error = cardano_plutus_map_to_cip116_json(data->map, writer);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
+      break;
+    }
+    case CARDANO_PLUTUS_DATA_KIND_LIST:
+    {
+      error = cardano_plutus_list_to_cip116_json(data->list, writer);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
+      break;
+    }
+    case CARDANO_PLUTUS_DATA_KIND_INTEGER:
+    {
+      cardano_json_writer_write_start_object(writer);
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "integer", 7);
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_bigint(writer, data->integer);
+      cardano_json_writer_write_end_object(writer);
+      break;
+    }
+    case CARDANO_PLUTUS_DATA_KIND_BYTES:
+    {
+      cardano_json_writer_write_start_object(writer);
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "bytes", 5);
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_buffer_as_hex(writer, data->bytes);
+      cardano_json_writer_write_end_object(writer);
+      break;
+    }
+    default:
+    {
+      error = CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  return error;
+}
+
+cardano_error_t
 cardano_plutus_data_get_kind(
   const cardano_plutus_data_t* plutus_data,
   cardano_plutus_data_kind_t*  kind)

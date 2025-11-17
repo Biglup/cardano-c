@@ -184,6 +184,24 @@ CARDANO_EXPORT cardano_error_t cardano_plutus_list_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes a Plutus list to a CIP-116 JSON array.
+ *
+ * This function recursively serializes the elements of the Plutus list as a JSON array.
+ * Each element in the list is serialized as a PlutusData object.
+ *
+ * \param[in]  list    Pointer to a valid \ref cardano_plutus_list_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p list or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_plutus_list_to_cip116_json(
+  const cardano_plutus_list_t* list,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the length of a plutus list.
  *
  * This function retrieves the number of elements in the provided \ref cardano_plutus_list_t object.

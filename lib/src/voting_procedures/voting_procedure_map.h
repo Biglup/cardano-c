@@ -79,6 +79,24 @@ CARDANO_EXPORT cardano_error_t
 cardano_voting_procedure_map_new(cardano_voting_procedure_map_t** voting_procedure_map);
 
 /**
+ * \brief Serializes a voting procedure map to a CIP-116 JSON array.
+ *
+ * This function serializes a map of [GovActionId -> VotingProcedure] into
+ * a JSON array of key-value objects.
+ *
+ * \param[in]  map     Pointer to a valid \ref cardano_voting_procedure_map_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p map or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_voting_procedure_map_to_cip116_json(
+  const cardano_voting_procedure_map_t* map,
+  cardano_json_writer_t*                writer);
+
+/**
  * \brief Retrieves the length of the voting_procedure_map.
  *
  * This function returns the number of key-value pairs contained in the specified voting_procedure_map.

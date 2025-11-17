@@ -30,6 +30,7 @@
 #include <cardano/plutus_data/plutus_list.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1173,4 +1174,64 @@ TEST(cardano_constr_plutus_equals, returnsFalseIfOnePointerIsNull)
   // Cleanup
   cardano_constr_plutus_data_unref(&constr_plutus_data);
   cardano_plutus_list_unref(&list);
+}
+
+TEST(cardano_constr_plutus_data_to_cip116_json, canConvertConstr)
+{
+  // Arrange
+  cardano_plutus_list_t* list = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_bigint_t* bigint = NULL;
+  EXPECT_EQ(cardano_bigint_from_string("99", 2, 10, &bigint), CARDANO_SUCCESS);
+  cardano_plutus_data_t* elem1 = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer(bigint, &elem1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_list_add(list, elem1), CARDANO_SUCCESS);
+
+  cardano_plutus_data_unref(&elem1);
+  cardano_bigint_unref(&bigint);
+
+  cardano_constr_plutus_data_t* constr_data = NULL;
+  EXPECT_EQ(cardano_constr_plutus_data_new(121, list, &constr_data), CARDANO_SUCCESS);
+  cardano_plutus_list_unref(&list);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_constr_plutus_data_to_cip116_json(constr_data, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"constr","alternative":"121","data":[{"tag":"integer","value":"99"}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_constr_plutus_data_unref(&constr_data);
+  free(json_str);
+}
+
+TEST(cardano_constr_plutus_data_to_cip116_json, returnsErrorIfDataIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_constr_plutus_data_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_constr_plutus_data_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_plutus_list_t* list = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+  cardano_constr_plutus_data_t* data = NULL;
+  EXPECT_EQ(cardano_constr_plutus_data_new(0U, list, &data), CARDANO_SUCCESS);
+
+  cardano_plutus_list_unref(&list);
+
+  cardano_constr_plutus_data_t* constr_data = (cardano_constr_plutus_data_t*)data;
+
+  cardano_error_t error = cardano_constr_plutus_data_to_cip116_json(constr_data, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_constr_plutus_data_unref(&data);
 }

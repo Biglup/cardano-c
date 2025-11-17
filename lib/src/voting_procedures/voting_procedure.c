@@ -239,6 +239,53 @@ cardano_voting_procedure_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_voting_procedure_to_cip116_json(
+  const cardano_voting_procedure_t* procedure,
+  cardano_json_writer_t*            writer)
+{
+  if ((procedure == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "vote", 4);
+
+  switch (procedure->vote)
+  {
+    case CARDANO_VOTE_YES:
+      cardano_json_writer_write_string(writer, "yes", 3);
+      break;
+    case CARDANO_VOTE_NO:
+      cardano_json_writer_write_string(writer, "no", 2);
+      break;
+    case CARDANO_VOTE_ABSTAIN:
+      cardano_json_writer_write_string(writer, "abstain", 7);
+      break;
+    default:
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (procedure->anchor != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "anchor", 6);
+    error = cardano_anchor_to_cip116_json(procedure->anchor, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_vote_t
 cardano_voting_procedure_get_vote(const cardano_voting_procedure_t* voting_procedure)
 {

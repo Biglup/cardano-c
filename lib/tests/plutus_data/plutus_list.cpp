@@ -27,6 +27,7 @@
 #include <cardano/plutus_data/plutus_list.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -867,4 +868,81 @@ TEST(cardano_plutus_list_equals, returnsTrueIfPlutusListsAreEqual)
   cardano_plutus_list_unref(&plutus_list2);
   cardano_plutus_data_unref(&data1);
   cardano_plutus_data_unref(&data2);
+}
+
+TEST(cardano_plutus_list_to_cip116_json, canConvertList)
+{
+  // Arrange
+  cardano_plutus_list_t* list = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+
+  // Add element 1 (Integer)
+  cardano_bigint_t* bigint1 = NULL;
+  EXPECT_EQ(cardano_bigint_from_string("1", 1, 10, &bigint1), CARDANO_SUCCESS);
+  cardano_plutus_data_t* elem1 = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer(bigint1, &elem1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_list_add(list, elem1), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&elem1);
+  cardano_bigint_unref(&bigint1);
+
+  // Add element 2 (Bytes)
+  byte_t                 bytes[] = { 0xAA };
+  cardano_plutus_data_t* elem2   = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &elem2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_list_add(list, elem2), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&elem2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_list_to_cip116_json(list, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"list","contents":[{"tag":"integer","value":"1"},{"tag":"bytes","value":"aa"}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_plutus_list_to_cip116_json, canConvertEmptyList)
+{
+  // Arrange
+  cardano_plutus_list_t* list = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_list_to_cip116_json(list, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"list","contents":[]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_plutus_list_to_cip116_json, returnsErrorIfListIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_plutus_list_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_list_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_plutus_list_t* list = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_plutus_list_to_cip116_json(list, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_plutus_list_unref(&list);
 }

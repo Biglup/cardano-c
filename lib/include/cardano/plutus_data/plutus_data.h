@@ -30,6 +30,7 @@
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/plutus_data/plutus_data_kind.h>
 #include <cardano/typedefs.h>
 
@@ -558,6 +559,26 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_plutus_data_to_cbor(
   const cardano_plutus_data_t* plutus_data,
   cardano_cbor_writer_t*       writer);
+
+/**
+ * \brief Serializes a Plutus data object to CIP-116 JSON.
+ *
+ * This function recursively serializes the Plutus data structure according to the
+ * schema definitions (constr, map, list, integer, bytes).
+ *
+ * \param[in]  data    Pointer to a valid \ref cardano_plutus_data_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p data or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * CARDANO_ERROR_INVALID_ARGUMENT         If the data type is unknown.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_plutus_data_to_cip116_json(
+  const cardano_plutus_data_t* data,
+  cardano_json_writer_t*       writer);
 
 /**
  * \brief Retrieves the kind of the plutus_data.

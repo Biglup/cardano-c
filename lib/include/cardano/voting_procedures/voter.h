@@ -180,6 +180,27 @@ CARDANO_EXPORT cardano_error_t cardano_voter_to_cbor(
   cardano_cbor_writer_t* writer);
 
 /**
+ * \brief Serializes a voter object to CIP-116 JSON based on the provided schema.
+ *
+ * This function serializes the voter object according to its type:
+ * - CC: { "tag": "cc_credential", "credential": { ... } }
+ * - DRep: { "tag": "drep_credential", "credential": { ... } }
+ * - SPO: { "tag": "spo_keyhash", "pubkey_hash": "<hex_hash>" }
+ *
+ * \param[in]  voter   Pointer to a valid \ref cardano_voter_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS        On success.
+ * CARDANO_ERROR_POINTER_IS_NULL  If \p voter or \p writer is NULL.
+ * CARDANO_ERROR_INVALID_ARGUMENT If the voter type is unknown.
+ * Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_voter_to_cip116_json(
+  const cardano_voter_t* voter,
+  cardano_json_writer_t* writer);
+
+/**
  * \brief Sets the type for a voter.
  *
  * This function assigns a type to the specified \ref cardano_voter_t object.

@@ -26,6 +26,7 @@
 #include <cardano/witness_set/plutus_data_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -850,4 +851,80 @@ TEST(cardano_plutus_data_get_set_use_tag, returnsFalseIfGivenNull)
 {
   // Act
   EXPECT_EQ(cardano_plutus_data_set_get_use_tag(nullptr), false);
+}
+
+TEST(cardano_plutus_data_set_to_cip116_json, canConvertSet)
+{
+  // Arrange
+  cardano_plutus_data_set_t* set = NULL;
+  EXPECT_EQ(cardano_plutus_data_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_bigint_t* bigint1 = NULL;
+  EXPECT_EQ(cardano_bigint_from_string("123", 3, 10, &bigint1), CARDANO_SUCCESS);
+  cardano_plutus_data_t* elem1 = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer(bigint1, &elem1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(set, elem1), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&elem1);
+  cardano_bigint_unref(&bigint1);
+
+  // Add element 2 (Bytes)
+  byte_t                 bytes[] = { 0xAA };
+  cardano_plutus_data_t* elem2   = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &elem2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(set, elem2), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&elem2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_data_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"([{"tag":"integer","value":"123"},{"tag":"bytes","value":"aa"}])");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_data_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_plutus_data_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_plutus_data_set_t* set = NULL;
+  EXPECT_EQ(cardano_plutus_data_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_data_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"([])");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_data_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_plutus_data_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_plutus_data_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_data_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_plutus_data_set_t* set = NULL;
+  EXPECT_EQ(cardano_plutus_data_set_new(&set), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_plutus_data_set_to_cip116_json(set, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_plutus_data_set_unref(&set);
 }

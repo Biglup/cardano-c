@@ -17,6 +17,10 @@ Redeemer
 
 ------------
 
+.. doxygenfunction:: cardano_redeemer_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_redeemer_get_tag
 
 ------------

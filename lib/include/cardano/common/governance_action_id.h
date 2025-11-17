@@ -322,6 +322,26 @@ CARDANO_EXPORT cardano_error_t cardano_governance_action_id_to_cbor(
   cardano_cbor_writer_t*                writer);
 
 /**
+ * \brief Serializes a governance action ID to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "transaction_id", "gov_action_index".
+ *
+ * \param[in]  action_id Pointer to a valid \ref cardano_governance_action_id_t.
+ * \param[in]  writer    Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p action_id or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_governance_action_id_to_cip116_json(
+  const cardano_governance_action_id_t* action_id,
+  cardano_json_writer_t*                writer);
+
+/**
  * \brief Computes the required buffer size for a CIP-29 compliant Bech32 representation of a governance action ID.
  *
  * This function calculates the minimum buffer size, including null termination, needed to store the Bech32 string representation

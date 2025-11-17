@@ -441,6 +441,28 @@ cardano_governance_action_id_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_governance_action_id_to_cip116_json(
+  const cardano_governance_action_id_t* action_id,
+  cardano_json_writer_t*                writer)
+{
+  if ((action_id == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "transaction_id", 14);
+  cardano_json_writer_write_bytes_as_hex(writer, action_id->hash_bytes, sizeof(action_id->hash_bytes));
+  cardano_json_writer_write_property_name(writer, "gov_action_index", 16);
+  cardano_json_writer_write_uint_as_string(writer, action_id->index);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_governance_action_id_get_bech32_size(const cardano_governance_action_id_t* governance_action_id)
 {

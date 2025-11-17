@@ -481,6 +481,50 @@ cardano_datum_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_datum_to_cip116_json(
+  const cardano_datum_t* datum,
+  cardano_json_writer_t* writer)
+{
+  if ((datum == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  switch (datum->type)
+  {
+    case CARDANO_DATUM_TYPE_DATA_HASH:
+    {
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "datum_hash", 10);
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      cardano_json_writer_write_bytes_as_hex(writer, datum->hash_bytes, sizeof(datum->hash_bytes));
+      break;
+    }
+
+    case CARDANO_DATUM_TYPE_INLINE_DATA:
+    {
+      cardano_json_writer_write_property_name(writer, "tag", 3);
+      cardano_json_writer_write_string(writer, "datum", 5);
+      cardano_json_writer_write_property_name(writer, "value", 5);
+      error = cardano_plutus_data_to_cip116_json(datum->inline_data, writer);
+      break;
+    }
+    default:
+    {
+      error = CARDANO_ERROR_INVALID_ARGUMENT;
+      break;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+  return error;
+}
+
 cardano_plutus_data_t*
 cardano_datum_get_inline_data(cardano_datum_t* datum)
 {

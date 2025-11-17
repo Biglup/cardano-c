@@ -17,6 +17,10 @@ Constr Plutus Data
 
 ------------
 
+.. doxygenfunction:: cardano_constr_plutus_data_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_constr_plutus_data_get_data
 
 ------------

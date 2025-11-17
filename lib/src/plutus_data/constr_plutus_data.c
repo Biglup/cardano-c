@@ -29,6 +29,7 @@
 #include "../cbor/cbor_validation.h"
 
 #include <assert.h>
+#include <cardano/plutus_data/plutus_data.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -348,6 +349,53 @@ cardano_constr_plutus_data_to_cbor(const cardano_constr_plutus_data_t* constr_pl
   }
 
   return cardano_plutus_list_to_cbor(constr_plutus_data->data, writer);
+}
+
+cardano_error_t
+cardano_constr_plutus_data_to_cip116_json(
+  const cardano_constr_plutus_data_t* constr_data,
+  cardano_json_writer_t*              writer)
+{
+  if ((constr_data == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "constr", 6);
+
+  cardano_json_writer_write_property_name(writer, "alternative", 11);
+  cardano_json_writer_write_uint_as_string(writer, constr_data->alternative);
+
+  cardano_json_writer_write_property_name(writer, "data", 4);
+  size_t len = cardano_plutus_list_get_length(constr_data->data);
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0; i < len; ++i)
+  {
+    cardano_plutus_data_t* elem  = NULL;
+    cardano_error_t        error = cardano_plutus_list_get(constr_data->data, i, &elem);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_plutus_data_to_cip116_json(elem, writer);
+    cardano_plutus_data_unref(&elem);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t

@@ -206,6 +206,25 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_to_cbor(
   cardano_cbor_writer_t*    writer);
 
 /**
+ * \brief Serializes a redeemer to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "index", "data", "ex_units".
+ *
+ * \param[in]  redeemer Pointer to a valid \ref cardano_redeemer_t.
+ * \param[in]  writer   Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS        On success.
+ * CARDANO_ERROR_POINTER_IS_NULL  If \p redeemer or \p writer is NULL.
+ * CARDANO_ERROR_INVALID_ARGUMENT If the redeemer tag is invalid.
+ * Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_redeemer_to_cip116_json(
+  const cardano_redeemer_t* redeemer,
+  cardano_json_writer_t*    writer);
+
+/**
  * \brief Retrieves the tag associated with a redeemer.
  *
  * This function fetches the tag from a given \ref cardano_redeemer_t object. The tag specifies the type
