@@ -28,6 +28,7 @@
 #include <cardano/json/json_writer.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -2398,4 +2399,106 @@ TEST(cardano_decode_unicode_sequence, BoundaryCases)
   EXPECT_EQ((unsigned char)output[1], 0x8F);
   EXPECT_EQ((unsigned char)output[2], 0xBF);
   EXPECT_EQ((unsigned char)output[3], 0xBF);
+}
+
+TEST(cardano_json_writer_write_buffer_as_hex, canWriteBufferAsHex)
+{
+  // Arrange
+  byte_t            data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(data, sizeof(data));
+  EXPECT_TRUE(buffer != NULL);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_buffer_as_hex(json, buffer);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, R"("deadbeef")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_json_writer_write_buffer_as_hex, canWriteEmptyBufferAsHex)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new_from(NULL, 0);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_buffer_as_hex(json, buffer);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, R"("")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_json_writer_write_bytes_as_hex, canWriteBytesAsHex)
+{
+  // Arrange
+  byte_t                 data[] = { 0xCA, 0xFE, 0xBA, 0xBE };
+  cardano_json_writer_t* json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_bytes_as_hex(json, data, sizeof(data));
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, R"("cafebabe")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_json_writer_write_bytes_as_hex, setsErrorIfBytesIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_bytes_as_hex(json, nullptr, 10);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(cardano_json_writer_get_last_error(json), "Failed to create buffer from bytes.");
+  EXPECT_STREQ(json_str, "");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_json_writer_write_bytes_as_hex, setsErrorIfBytesSizeIsZero)
+{
+  // Arrange
+  byte_t                 data[] = { 0xCA, 0xFE };
+  cardano_json_writer_t* json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_bytes_as_hex(json, data, 0);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(cardano_json_writer_get_last_error(json), "");
+  EXPECT_STREQ(json_str, R"("")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
 }

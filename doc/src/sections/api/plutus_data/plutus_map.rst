@@ -17,6 +17,10 @@ Plutus Map
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_map_get_length
 
 ------------

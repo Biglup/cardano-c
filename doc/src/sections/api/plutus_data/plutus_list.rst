@@ -17,6 +17,10 @@ Plutus List
 
 ------------
 
+.. doxygenfunction:: cardano_plutus_list_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_plutus_list_get_length
 
 ------------

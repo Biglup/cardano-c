@@ -317,6 +317,70 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_redeemer_to_cip116_json(
+  const cardano_redeemer_t* redeemer,
+  cardano_json_writer_t*    writer)
+{
+  if ((redeemer == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+
+  switch (redeemer->tag)
+  {
+    case CARDANO_REDEEMER_TAG_SPEND:
+      cardano_json_writer_write_string(writer, "spend", 5);
+      break;
+    case CARDANO_REDEEMER_TAG_MINT:
+      cardano_json_writer_write_string(writer, "mint", 4);
+      break;
+    case CARDANO_REDEEMER_TAG_CERTIFYING:
+      cardano_json_writer_write_string(writer, "cert", 4);
+      break;
+    case CARDANO_REDEEMER_TAG_REWARD:
+      cardano_json_writer_write_string(writer, "reward", 6);
+      break;
+    case CARDANO_REDEEMER_TAG_VOTING:
+      cardano_json_writer_write_string(writer, "voting", 6);
+      break;
+    case CARDANO_REDEEMER_TAG_PROPOSING:
+      cardano_json_writer_write_string(writer, "proposing", 9);
+      break;
+    default:
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  cardano_json_writer_write_property_name(writer, "index", 5);
+  cardano_json_writer_write_uint_as_string(writer, redeemer->index);
+
+  cardano_json_writer_write_property_name(writer, "data", 4);
+  error = cardano_plutus_data_to_cip116_json(redeemer->data, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "ex_units", 8);
+  error = cardano_ex_units_to_cip116_json(redeemer->execution_units, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_redeemer_tag_t
 cardano_redeemer_get_tag(const cardano_redeemer_t* redeemer)
 {

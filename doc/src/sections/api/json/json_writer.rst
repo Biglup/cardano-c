@@ -73,6 +73,14 @@ JSON Writer
 
 ------------
 
+.. doxygenfunction:: cardano_json_writer_write_buffer_as_hex
+
+------------
+
+.. doxygenfunction:: cardano_json_writer_write_bytes_as_hex
+
+------------
+
 .. doxygenfunction:: cardano_json_writer_write_string
 
 ------------

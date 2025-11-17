@@ -27,6 +27,7 @@
 #include <cardano/common/ex_units.h>
 #include <cardano/witness_set/redeemer.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -787,4 +788,265 @@ TEST(cardano_redeemer_clear_cbor_cache, doesNothingIfObjectIsNull)
 {
   // Act
   cardano_redeemer_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertSpendToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_SPEND, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"spend","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertMintToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_MINT, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"mint","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertCertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_CERTIFYING, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"cert","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertRewardToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_REWARD, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"reward","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertVotingToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_VOTING, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"voting","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertProposingToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_PROPOSING, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"proposing","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, returnsErrorIfRedeemerIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_redeemer_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
 }

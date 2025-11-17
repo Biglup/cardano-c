@@ -27,6 +27,7 @@
 #include <cardano/common/anchor.h>
 #include <cardano/voting_procedures/voting_procedure.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -549,4 +550,112 @@ TEST(cardano_voting_procedure_get_vote, returnsNoIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(vote, CARDANO_VOTE_NO);
+}
+
+TEST(cardano_voting_procedure_to_cip116_json, canConvertVoteYesWithAnchor)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  // Anchor
+  cardano_blake2b_hash_t* hash = NULL;
+  error                        = cardano_blake2b_hash_from_hex("2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e", 64, &hash);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_anchor_t* anchor = NULL;
+  error                    = cardano_anchor_new("https://example.com", strlen("https://example.com"), hash, &anchor);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  // Procedure
+  cardano_voting_procedure_t* proc = NULL;
+  error                            = cardano_voting_procedure_new(CARDANO_VOTE_YES, anchor, &proc);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_anchor_unref(&anchor);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_voting_procedure_to_cip116_json(proc, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"vote":"yes","anchor":{"url":"https://example.com","data_hash":"2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedure_unref(&proc);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedure_to_cip116_json, canConvertVoteNoWithoutAnchor)
+{
+  // Arrange
+  cardano_voting_procedure_t* proc  = NULL;
+  cardano_error_t             error = cardano_voting_procedure_new(CARDANO_VOTE_NO, NULL, &proc);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_voting_procedure_to_cip116_json(proc, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"vote":"no"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedure_unref(&proc);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedure_to_cip116_json, canConvertVoteAbstainWithoutAnchor)
+{
+  // Arrange
+  cardano_voting_procedure_t* proc  = NULL;
+  cardano_error_t             error = cardano_voting_procedure_new(CARDANO_VOTE_ABSTAIN, NULL, &proc);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_voting_procedure_to_cip116_json(proc, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"vote":"abstain"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_voting_procedure_unref(&proc);
+  free(json_str);
+}
+
+TEST(cardano_voting_procedure_to_cip116_json, returnsErrorIfProcIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_voting_procedure_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_voting_procedure_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_voting_procedure_t* proc = NULL;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_YES, NULL, &proc), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_voting_procedure_to_cip116_json(proc, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_voting_procedure_unref(&proc);
 }

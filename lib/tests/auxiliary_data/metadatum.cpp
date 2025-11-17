@@ -255,7 +255,7 @@ static const char* CIP116_JSON =
   "                        },\n"
   "                        \"value\": {\n"
   "                          \"tag\": \"int\",\n"
-  "                          \"value\": ,\"0\"\n"
+  "                          \"value\": \"0\"\n"
   "                        }\n"
   "                      }\n"
   "                    ]\n"

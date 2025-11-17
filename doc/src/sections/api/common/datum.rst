@@ -29,6 +29,10 @@ Datum
 
 ------------
 
+.. doxygenfunction:: cardano_datum_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_datum_get_inline_data
 
 ------------

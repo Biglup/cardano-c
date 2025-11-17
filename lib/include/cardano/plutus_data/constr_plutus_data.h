@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -153,6 +154,24 @@ cardano_constr_plutus_data_new(
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_constr_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_constr_plutus_data_t** constr_plutus_data);
+
+/**
+ * \brief Serializes a Plutus constructor data object to CIP-116 JSON.
+ *
+ * This function serializes the Plutus constructor data structure, including its
+ * tag, alternative, and data list.
+ *
+ * \param[in]  constr_data Pointer to a valid \ref cardano_constr_plutus_data_t.
+ * \param[in]  writer      Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p constr_data or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_constr_plutus_data_to_cip116_json(
+  const cardano_constr_plutus_data_t* constr_data,
+  cardano_json_writer_t*              writer);
 
 /**
  * \brief Serializes a \ref cardano_cbor_reader_t into CBOR format using a CBOR writer.

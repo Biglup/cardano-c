@@ -178,6 +178,26 @@ CARDANO_EXPORT cardano_error_t cardano_voting_procedure_to_cbor(
   cardano_cbor_writer_t*            writer);
 
 /**
+ * \brief Serializes a voting procedure to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "vote", then "anchor" (if present).
+ *
+ * \param[in]  procedure Pointer to a valid \ref cardano_voting_procedure_t.
+ * \param[in]  writer    Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS        On success.
+ * CARDANO_ERROR_POINTER_IS_NULL  If \p procedure or \p writer is NULL.
+ * CARDANO_ERROR_INVALID_ARGUMENT If the vote type is invalid.
+ * Other                          Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_voting_procedure_to_cip116_json(
+  const cardano_voting_procedure_t* procedure,
+  cardano_json_writer_t*            writer);
+
+/**
  * \brief Retrieves the vote type from a voting procedure.
  *
  * This function retrieves the vote type from the given \ref cardano_voting_procedure_t object.

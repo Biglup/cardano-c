@@ -28,6 +28,7 @@
 #include <cardano/plutus_data/plutus_map.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <cardano/plutus_data/constr_plutus_data.h>
@@ -1503,4 +1504,95 @@ TEST(cardano_plutus_map_equals, returnsTrueIfPlutusMapsAreEqual)
   // Cleanup
   cardano_plutus_map_unref(&plutus_map);
   cardano_plutus_map_unref(&other);
+}
+
+TEST(cardano_plutus_map_to_cip116_json_contents, canConvertMap)
+{
+  // Arrange
+  cardano_plutus_map_t* map = NULL;
+  EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_bigint_t* bigint1 = NULL;
+  EXPECT_EQ(cardano_bigint_from_string("1", 1, 10, &bigint1), CARDANO_SUCCESS);
+  cardano_plutus_data_t* key1 = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer(bigint1, &key1), CARDANO_SUCCESS);
+
+  byte_t                 bytes[] = { 0xAA };
+  cardano_plutus_data_t* value1  = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &value1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_plutus_map_insert(map, key1, value1), CARDANO_SUCCESS);
+
+  cardano_bigint_unref(&bigint1);
+  cardano_plutus_data_unref(&key1);
+  cardano_plutus_data_unref(&value1);
+
+  byte_t                 bytes2[] = { 0xBB };
+  cardano_plutus_data_t* key2     = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_bytes(bytes2, sizeof(bytes2), &key2), CARDANO_SUCCESS);
+
+  cardano_bigint_t* bigint2 = NULL;
+  EXPECT_EQ(cardano_bigint_from_string("2", 1, 10, &bigint2), CARDANO_SUCCESS);
+  cardano_plutus_data_t* value2 = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer(bigint2, &value2), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_plutus_map_insert(map, key2, value2), CARDANO_SUCCESS);
+
+  cardano_bigint_unref(&bigint2);
+  cardano_plutus_data_unref(&key2);
+  cardano_plutus_data_unref(&value2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"map","contents":[{"key":{"tag":"integer","value":"1"},"value":{"tag":"bytes","value":"aa"}},{"key":{"tag":"bytes","value":"bb"},"value":{"tag":"integer","value":"2"}}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_plutus_map_to_cip116_json_contents, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_plutus_map_t* map = NULL;
+  EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_plutus_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"map","contents":[]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_plutus_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_plutus_map_to_cip116_json_contents, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_plutus_map_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_plutus_map_to_cip116_json_contents, returnsErrorIfWriterIsNull)
+{
+  cardano_plutus_map_t* map = NULL;
+  EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_plutus_map_to_cip116_json(map, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_plutus_map_unref(&map);
 }

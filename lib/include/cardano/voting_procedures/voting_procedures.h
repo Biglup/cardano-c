@@ -172,6 +172,24 @@ CARDANO_EXPORT cardano_error_t cardano_voting_procedures_to_cbor(
   cardano_cbor_writer_t*             writer);
 
 /**
+ * \brief Serializes voting procedures to a CIP-116 JSON array.
+ *
+ * This function serializes a map of [Voter -> [GovActionId -> VotingProcedure]]
+ * into a JSON array of key-value objects, as specified by the schema.
+ *
+ * \param[in]  procedures Pointer to a valid \ref cardano_voting_procedures_t.
+ * \param[in]  writer     Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p procedures or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_voting_procedures_to_cip116_json(
+  const cardano_voting_procedures_t* procedures,
+  cardano_json_writer_t*             writer);
+
+/**
  * \brief Inserts a voting procedure associated with a specific voter and governance action ID into the voting procedures map.
  *
  * This function inserts a new entry into the \ref cardano_voting_procedures_t map, linking a voter and a governance action ID

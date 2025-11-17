@@ -1723,25 +1723,7 @@ cardano_protocol_param_update_to_cip116_json(
   if (update->extra_entropy != NULL)
   {
     cardano_json_writer_write_property_name(writer, "extra_entropy", 13);
-    const size_t size    = cardano_buffer_get_hex_size(update->extra_entropy);
-    char*        hex_str = _cardano_malloc(size);
-
-    if (hex_str == NULL)
-    {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-
-    cardano_error_t error = cardano_buffer_to_hex(update->extra_entropy, hex_str, size);
-
-    if (error != CARDANO_SUCCESS)
-    {
-      _cardano_free(hex_str);
-      return error;
-    }
-
-    cardano_json_writer_write_string(writer, hex_str, size - 1U);
-
-    _cardano_free(hex_str);
+    cardano_json_writer_write_buffer_as_hex(writer, update->extra_entropy);
   }
 
   if (update->protocol_version != NULL)

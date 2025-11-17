@@ -1098,7 +1098,7 @@ TEST(cardano_transaction_metadata_to_cip116_json, canEncodeMetadata)
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(json, "[{\"key\":\"10\",\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"123\"},\"value\":{\"tag\":\"int\",\"value\":,\"1234\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key\"},\"value\":{\"tag\":\"string\",\"value\":\"value\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key2\"},\"value\":{\"tag\":\"bytes\",\"value\":\"000102030405\"}},{\"key\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"567\"},\"value\":{\"tag\":\"string\",\"value\":\"eight\"}}]},\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":,\"666\"},\"value\":{\"tag\":\"string\",\"value\":\"cake\"}}]}}]}}]");
+  EXPECT_STREQ(json, "[{\"key\":\"10\",\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":\"123\"},\"value\":{\"tag\":\"int\",\"value\":\"1234\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key\"},\"value\":{\"tag\":\"string\",\"value\":\"value\"}},{\"key\":{\"tag\":\"string\",\"value\":\"key2\"},\"value\":{\"tag\":\"bytes\",\"value\":\"000102030405\"}},{\"key\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":\"567\"},\"value\":{\"tag\":\"string\",\"value\":\"eight\"}}]},\"value\":{\"tag\":\"map\",\"contents\":[{\"key\":{\"tag\":\"int\",\"value\":\"666\"},\"value\":{\"tag\":\"string\",\"value\":\"cake\"}}]}}]}}]");
 
   // Cleanup
   cardano_metadatum_unref(&metadatum);

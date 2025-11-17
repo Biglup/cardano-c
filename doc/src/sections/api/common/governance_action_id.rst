@@ -29,6 +29,10 @@ Governance Action Id
 
 ------------
 
+.. doxygenfunction:: cardano_governance_action_id_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_governance_action_id_get_bech32_size
 
 ------------

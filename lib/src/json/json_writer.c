@@ -419,7 +419,7 @@ cardano_json_writer_write_bigint(
     return;
   }
 
-  if (current_context->item_count > 0U)
+  if ((current_context->item_count > 0U) && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
   {
     cardano_error_t result = cardano_buffer_write(writer->buffer, COMMA, 1);
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write comma before bigint value.");
@@ -920,6 +920,68 @@ cardano_json_writer_write_double_as_string(
 }
 
 void
+cardano_json_writer_write_buffer_as_hex(
+  cardano_json_writer_t*  writer,
+  const cardano_buffer_t* value)
+{
+  if ((writer == NULL) || (writer->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const size_t size = cardano_buffer_get_hex_size(value);
+
+  if (size <= 1U) // Account for null termination on empty strings
+  {
+    cardano_json_writer_write_string(writer, "", 0U);
+    return;
+  }
+
+  char* hex_str = _cardano_malloc(size);
+
+  if (hex_str == NULL)
+  {
+    writer->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    cardano_object_set_last_error(&writer->base, "Failed to allocate memory for hex string.");
+    return;
+  }
+
+  cardano_error_t error = cardano_buffer_to_hex(value, hex_str, size);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    writer->last_error = error;
+    cardano_object_set_last_error(&writer->base, "Failed to convert buffer to hex string.");
+    _cardano_free(hex_str);
+    return;
+  }
+
+  const size_t hex_str_size = cardano_safe_strlen(hex_str, size);
+
+  cardano_json_writer_write_string(writer, hex_str, hex_str_size);
+  _cardano_free(hex_str);
+}
+
+void
+cardano_json_writer_write_bytes_as_hex(
+  cardano_json_writer_t* writer,
+  const byte_t*          bytes,
+  const size_t           bytes_size)
+{
+  cardano_buffer_t* buffer = cardano_buffer_new_from(bytes, bytes_size);
+
+  if (buffer == NULL)
+  {
+    writer->last_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    cardano_object_set_last_error(&writer->base, "Failed to create buffer from bytes.");
+    return;
+  }
+
+  cardano_json_writer_write_buffer_as_hex(writer, buffer);
+  cardano_buffer_unref(&buffer);
+}
+
+void
 cardano_json_writer_write_string(
   cardano_json_writer_t* writer,
   const char*            value,
@@ -930,7 +992,7 @@ cardano_json_writer_write_string(
     return;
   }
 
-  if (value == NULL)
+  if ((value == NULL) && (value_size != 0U))
   {
     writer->last_error = CARDANO_ERROR_POINTER_IS_NULL;
     cardano_object_set_last_error(&writer->base, "String value cannot be NULL or empty.");

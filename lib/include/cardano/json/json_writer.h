@@ -1185,6 +1185,41 @@ CARDANO_EXPORT void cardano_json_writer_write_double_as_string(
   double                 value);
 
 /**
+ * \brief Writes the contents of a buffer as a JSON string (hex encoded).
+ *
+ * This function converts the binary data from the \ref cardano_buffer_t into its
+ * hexadecimal string representation and writes it to the JSON output enclosed in quotes.
+ *
+ * \note If memory allocation for the hex string fails or the buffer-to-hex
+ * conversion fails, this function will set the \p writer's last error
+ * and return without writing to the JSON stream.
+ *
+ * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] value  The \ref cardano_buffer_t containing the binary data to be written.
+ */
+CARDANO_EXPORT void
+cardano_json_writer_write_buffer_as_hex(
+  cardano_json_writer_t*  writer,
+  const cardano_buffer_t* value);
+
+/**
+ * \brief Writes a raw byte array as a JSON string (hex encoded).
+ *
+ * \note If the \p bytes pointer is NULL, \p bytes_size is 0, or memory allocation
+ * for the temporary buffer fails, this function will set the \p writer's last error
+ * and return without writing to the JSON stream.
+ *
+ * \param[in] writer     A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] bytes      A pointer to the raw byte array to be written.
+ * \param[in] bytes_size The number of bytes in the \p bytes array.
+ */
+CARDANO_EXPORT void
+cardano_json_writer_write_bytes_as_hex(
+  cardano_json_writer_t* writer,
+  const byte_t*          bytes,
+  size_t                 bytes_size);
+
+/**
  * \brief Writes a string value to the JSON output.
  *
  * This function writes a string value to the JSON output. The string will be enclosed

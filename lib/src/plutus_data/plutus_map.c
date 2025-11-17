@@ -366,6 +366,71 @@ cardano_plutus_map_to_cbor(const cardano_plutus_map_t* plutus_map, cardano_cbor_
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_plutus_map_to_cip116_json(
+  const cardano_plutus_map_t* map,
+  cardano_json_writer_t*      writer)
+{
+  if (map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "map", 3);
+  cardano_json_writer_write_property_name(writer, "contents", 8);
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0; i < cardano_array_get_size(map->array); ++i)
+  {
+    cardano_object_t* kvp = cardano_array_get(map->array, i);
+
+    if (kvp == NULL)
+    {
+      cardano_json_writer_set_last_error(writer, "Element in plutus map is NULL");
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    cardano_plutus_map_kvp_t* kvp_data = (cardano_plutus_map_kvp_t*)((void*)kvp);
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    result = cardano_plutus_data_to_cip116_json(kvp_data->key, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return result;
+    }
+
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    result = cardano_plutus_data_to_cip116_json(kvp_data->value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return result;
+    }
+
+    cardano_json_writer_write_end_object(writer);
+
+    cardano_object_unref(&kvp);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+
+  return result;
+}
+
 size_t
 cardano_plutus_map_get_length(const cardano_plutus_map_t* plutus_map)
 {

@@ -307,6 +307,32 @@ CARDANO_EXPORT cardano_error_t cardano_datum_to_cbor(
   cardano_cbor_writer_t* writer);
 
 /**
+ * \brief Serializes a datum to CIP-116 JSON.
+ *
+ * This function serializes the datum object, which can be either inline
+ * Plutus data or a datum hash, according to the schema.
+ *
+ * Schema (Inline):
+ * { "tag": "datum", "value": { ...PlutusData... } }
+ *
+ * Schema (Hash):
+ * { "tag": "datum_hash", "value": "<hex_hash>" }
+ *
+ * \param[in]  datum   Pointer to a valid \ref cardano_datum_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p datum or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_datum_to_cip116_json(
+  const cardano_datum_t* datum,
+  cardano_json_writer_t* writer);
+
+/**
  * \brief Retrieves the inline data associated with a datum.
  *
  * This function provides access to the inline data part of a \ref cardano_datum_t object.

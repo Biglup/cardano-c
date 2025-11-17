@@ -302,6 +302,44 @@ cardano_plutus_data_set_to_cbor(const cardano_plutus_data_set_t* plutus_data_set
   return result;
 }
 
+cardano_error_t
+cardano_plutus_data_set_to_cip116_json(
+  const cardano_plutus_data_set_t* set,
+  cardano_json_writer_t*           writer)
+{
+  if ((set == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t len = cardano_plutus_data_set_get_length(set);
+
+  for (size_t i = 0; i < len; ++i)
+  {
+    cardano_plutus_data_t* data  = NULL;
+    cardano_error_t        error = cardano_plutus_data_set_get(set, i, &data);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_plutus_data_to_cip116_json(data, writer);
+    cardano_plutus_data_unref(&data);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_plutus_data_set_get_length(const cardano_plutus_data_set_t* plutus_data_set)
 {

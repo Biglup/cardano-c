@@ -17,6 +17,10 @@ Voter
 
 ------------
 
+.. doxygenfunction:: cardano_voter_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_voter_set_type
 
 ------------

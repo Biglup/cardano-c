@@ -17,6 +17,10 @@ Voting Procedure
 
 ------------
 
+.. doxygenfunction:: cardano_voting_procedure_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_voting_procedure_get_vote
 
 ------------

@@ -26,6 +26,7 @@
 #include <cardano/common/datum.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1221,6 +1222,86 @@ TEST(cardano_datum_equals, returnsFalseIfOneIsNull2)
 
   // Assert
   EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_datum_to_cip116_json, canConvertDatumHash)
+{
+  // Arrange
+  const char*             hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  cardano_datum_t* datum = NULL;
+  EXPECT_EQ(cardano_datum_new_data_hash(hash, &datum), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_datum_to_cip116_json(datum, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"datum_hash","value":"0000000000000000000000000000000000000000000000000000000000000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_datum_unref(&datum);
+  free(json_str);
+}
+
+TEST(cardano_datum_to_cip116_json, canConvertInlineDatum)
+{
+  // Arrange
+  cardano_plutus_data_t* integer = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(10, &integer), CARDANO_SUCCESS);
+
+  cardano_datum_t* datum = NULL;
+  EXPECT_EQ(cardano_datum_new_inline_data(integer, &datum), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&integer);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_datum_to_cip116_json(datum, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"datum","value":{"tag":"integer","value":"10"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_datum_unref(&datum);
+  free(json_str);
+}
+
+TEST(cardano_datum_to_cip116_json, returnsErrorIfDatumIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_datum_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_datum_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("0000000000000000000000000000000000000000000000000000000000000000", 64, &hash), CARDANO_SUCCESS);
+  cardano_datum_t* datum = NULL;
+  EXPECT_EQ(cardano_datum_new_data_hash(hash, &datum), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  // Act
+  cardano_error_t error = cardano_datum_to_cip116_json(datum, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_datum_unref(&datum);

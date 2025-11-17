@@ -207,6 +207,60 @@ cardano_voting_procedure_map_new(cardano_voting_procedure_map_t** voting_procedu
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_voting_procedure_map_to_cip116_json(
+  const cardano_voting_procedure_map_t* map,
+  cardano_json_writer_t*                writer)
+{
+  if ((map == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t array_size = cardano_array_get_size(map->array);
+
+  for (size_t i = 0; i < array_size; ++i)
+  {
+    cardano_object_t* kvp = cardano_array_get(map->array, i);
+
+    if (kvp == NULL)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    cardano_voting_procedure_map_kvp_t* kvp_data = (cardano_voting_procedure_map_kvp_t*)((void*)kvp);
+
+    cardano_json_writer_write_start_object(writer);
+
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    cardano_error_t error = cardano_governance_action_id_to_cip116_json(kvp_data->key, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return error;
+    }
+
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    error = cardano_voting_procedure_to_cip116_json(kvp_data->value, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&kvp);
+      return error;
+    }
+
+    cardano_json_writer_write_end_object(writer);
+    cardano_object_unref(&kvp);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_voting_procedure_map_get_length(const cardano_voting_procedure_map_t* voting_procedure_map)
 {
