@@ -27,6 +27,7 @@
 #include <cardano/protocol_params/proposed_param_updates.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1017,4 +1018,84 @@ TEST(cardano_proposed_param_updates_get_key_value_at, returnsTheElement)
   cardano_blake2b_hash_unref(&hash_out);
   cardano_protocol_param_update_unref(&update);
   cardano_protocol_param_update_unref(&update_out);
+}
+
+TEST(cardano_proposed_param_updates_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_proposed_param_updates_t* updates = NULL;
+  EXPECT_EQ(cardano_proposed_param_updates_new(&updates), CARDANO_SUCCESS);
+
+  const char*             hash_hex     = "10000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* genesis_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &genesis_hash), CARDANO_SUCCESS);
+
+  cardano_protocol_param_update_t* param_update = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_new(&param_update), CARDANO_SUCCESS);
+  const uint64_t param = 12345U;
+  EXPECT_EQ(cardano_protocol_param_update_set_min_fee_a(param_update, &param), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_proposed_param_updates_insert(updates, genesis_hash, param_update), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&genesis_hash);
+  cardano_protocol_param_update_unref(&param_update);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_proposed_param_updates_to_cip116_json(updates, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"10000000000000000000000000000000000000000000000000000000":{"min_fee_a":"12345"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_proposed_param_updates_unref(&updates);
+  free(json_str);
+}
+
+TEST(cardano_proposed_param_updates_to_cip116_json, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_proposed_param_updates_t* updates = NULL;
+  EXPECT_EQ(cardano_proposed_param_updates_new(&updates), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_proposed_param_updates_to_cip116_json(updates, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{}");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_proposed_param_updates_unref(&updates);
+  free(json_str);
+}
+
+TEST(cardano_proposed_param_updates_to_cip116_json, returnsErrorIfUpdatesIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_proposed_param_updates_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_proposed_param_updates_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_proposed_param_updates_t* updates = NULL;
+  EXPECT_EQ(cardano_proposed_param_updates_new(&updates), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_proposed_param_updates_to_cip116_json(updates, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_proposed_param_updates_unref(&updates);
 }

@@ -193,6 +193,29 @@ cardano_ex_units_to_cbor(const cardano_ex_units_t* ex_units, cardano_cbor_writer
   return cardano_cbor_writer_write_uint(writer, ex_units->cpu);
 }
 
+cardano_error_t
+cardano_ex_units_to_cip116_json(
+  const cardano_ex_units_t* ex_units,
+  cardano_json_writer_t*    writer)
+{
+  if ((ex_units == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "mem", 3);
+  cardano_json_writer_write_uint_as_string(writer, ex_units->memory);
+
+  cardano_json_writer_write_property_name(writer, "steps", 5);
+  cardano_json_writer_write_uint_as_string(writer, ex_units->cpu);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 uint64_t
 cardano_ex_units_get_memory(const cardano_ex_units_t* ex_units)
 {

@@ -249,6 +249,38 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
 }
 
 cardano_error_t
+cardano_cost_model_to_cip116_json(
+  const cardano_cost_model_t* cost_model,
+  cardano_json_writer_t*      writer)
+{
+  if ((cost_model == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t count = cardano_cost_model_get_costs_size(cost_model);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    int64_t         value = 0;
+    cardano_error_t error = cardano_cost_model_get_cost(cost_model, i, &value);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    cardano_json_writer_write_signed_int_as_string(writer, value);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_cost_model_set_cost(
   cardano_cost_model_t* cost_model,
   size_t                operation,

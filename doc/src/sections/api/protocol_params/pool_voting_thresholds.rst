@@ -17,6 +17,10 @@ Pool Voting Thresholds
 
 ------------
 
+.. doxygenfunction:: cardano_pool_voting_thresholds_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_pool_voting_thresholds_get_motion_no_confidence
 
 ------------

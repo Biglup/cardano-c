@@ -27,6 +27,7 @@
 #include <cardano/protocol_params/costmdls.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1012,4 +1013,76 @@ TEST(cardano_costmdls_get_language_views_encoding, returnErrorWhenMemoryAllocati
   cardano_cost_model_unref(&cost_model_v1);
   cardano_cost_model_unref(&cost_model_v2);
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_costmdls_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_ALL_CBOR, strlen(COSTMDLS_ALL_CBOR));
+  cardano_error_t        error    = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_costmdls_to_cip116_json(costmdls, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected_v1_part = R"("plutus_v1":[)";
+  const char* expected_v2_part = R"("plutus_v2":[)";
+  const char* expected_v3_part = R"("plutus_v3":[)";
+
+  EXPECT_TRUE(strstr(json_str, expected_v1_part) != NULL);
+  EXPECT_TRUE(strstr(json_str, expected_v2_part) != NULL);
+  EXPECT_TRUE(strstr(json_str, expected_v3_part) != NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_costmdls_to_cip116_json, canConvertEmptyCostMdls)
+{
+  // Arrange
+  cardano_costmdls_t* costmdls = NULL;
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_costmdls_to_cip116_json(costmdls, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{}");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_costmdls_unref(&costmdls);
+  free(json_str);
+}
+
+TEST(cardano_costmdls_to_cip116_json, returnsErrorIfCostMdlsIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_costmdls_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_costmdls_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_costmdls_t* costmdls = NULL;
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_costmdls_to_cip116_json(costmdls, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_costmdls_unref(&costmdls);
 }

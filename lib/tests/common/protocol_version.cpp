@@ -27,6 +27,7 @@
 #include <cardano/common/protocol_version.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -488,4 +489,58 @@ TEST(cardano_protocol_version_set_minor, returnErrorIfProtocolVersionIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_version_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_protocol_version_t* version = NULL;
+  cardano_error_t             error   = cardano_protocol_version_new(8, 0, &version);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_protocol_version_to_cip116_json(version, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"major":8,"minor":0})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_protocol_version_unref(&version);
+  free(json_str);
+}
+
+TEST(cardano_protocol_version_to_cip116_json, returnsErrorIfVersionIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_protocol_version_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_protocol_version_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(1, 2, &version), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_version_to_cip116_json(version, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_version_unref(&version);
 }

@@ -198,6 +198,29 @@ cardano_protocol_version_to_cbor(const cardano_protocol_version_t* protocol_vers
   return cardano_cbor_writer_write_uint(writer, protocol_version->minor);
 }
 
+cardano_error_t
+cardano_protocol_version_to_cip116_json(
+  const cardano_protocol_version_t* version,
+  cardano_json_writer_t*            writer)
+{
+  if ((version == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "major", 5);
+  cardano_json_writer_write_uint(writer, version->major);
+
+  cardano_json_writer_write_property_name(writer, "minor", 5);
+  cardano_json_writer_write_uint(writer, version->minor);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 uint64_t
 cardano_protocol_version_get_major(const cardano_protocol_version_t* protocol_version)
 {

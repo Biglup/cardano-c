@@ -26,6 +26,7 @@
 #include <cardano/protocol_params/pool_voting_thresholds.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1006,4 +1007,50 @@ TEST(cardano_pool_voting_thresholds_set_security_relevant_param, returnsErrorIfG
 
   // Cleanup
   cardano_pool_voting_thresholds_unref(&pool_voting_thresholds);
+}
+
+TEST(cardano_pool_voting_thresholds_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_pool_voting_thresholds_t* thresholds = init_pool_voting_thresholds();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_pool_voting_thresholds_to_cip116_json(thresholds, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"motion_no_confidence":{"numerator":"0","denominator":"0"},"committee_normal":{"numerator":"1","denominator":"1"},"committee_no_confidence":{"numerator":"2","denominator":"2"},"hard_fork_initiation":{"numerator":"3","denominator":"3"},"security_relevant_param":{"numerator":"4","denominator":"4"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_voting_thresholds_unref(&thresholds);
+  free(json_str);
+}
+
+TEST(cardano_pool_voting_thresholds_to_cip116_json, returnsErrorIfThresholdsIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_pool_voting_thresholds_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_pool_voting_thresholds_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Dummy data for construction
+  cardano_pool_voting_thresholds_t* thresholds = init_pool_voting_thresholds();
+
+  // Act
+  cardano_error_t error = cardano_pool_voting_thresholds_to_cip116_json(thresholds, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_pool_voting_thresholds_unref(&thresholds);
 }

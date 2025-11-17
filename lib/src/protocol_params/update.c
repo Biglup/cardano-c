@@ -206,6 +206,37 @@ cardano_update_to_cbor(const cardano_update_t* update, cardano_cbor_writer_t* wr
 }
 
 cardano_error_t
+cardano_update_to_cip116_json(
+  const cardano_update_t* update,
+  cardano_json_writer_t*  writer)
+{
+  if ((update == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "epoch", 5);
+  cardano_json_writer_write_uint(writer, update->epoch);
+
+  cardano_json_writer_write_property_name(writer, "proposed_protocol_parameter_updates", 35);
+
+  assert(update->proposed_param_updates != NULL);
+
+  cardano_error_t error = cardano_proposed_param_updates_to_cip116_json(update->proposed_param_updates, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_update_get_epoch(
   const cardano_update_t* update,
   uint64_t*               epoch)

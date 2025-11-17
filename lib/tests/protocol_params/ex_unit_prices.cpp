@@ -26,6 +26,7 @@
 #include <cardano/protocol_params/ex_unit_prices.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -631,4 +632,73 @@ TEST(cardano_ex_unit_prices_set_memory_prices, canBeSet)
   cardano_ex_unit_prices_unref(&ex_unit_prices);
   cardano_unit_interval_unref(&memory_prices);
   cardano_unit_interval_unref(&steps_prices);
+}
+
+TEST(cardano_ex_unit_prices_to_cip116_json, canConvertToCip116Json)
+{
+  // Arrange
+  cardano_unit_interval_t* mem_price = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 2, &mem_price), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* step_price = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(3, 4, &step_price), CARDANO_SUCCESS);
+
+  cardano_ex_unit_prices_t* prices = NULL;
+  cardano_error_t           error  = cardano_ex_unit_prices_new(mem_price, step_price, &prices);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_unit_interval_unref(&mem_price);
+  cardano_unit_interval_unref(&step_price);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_ex_unit_prices_to_cip116_json(prices, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"mem_price":{"numerator":"1","denominator":"2"},"step_price":{"numerator":"3","denominator":"4"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_ex_unit_prices_unref(&prices);
+  free(json_str);
+}
+
+TEST(cardano_ex_unit_prices_to_cip116_json, returnsErrorIfPricesIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_ex_unit_prices_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_ex_unit_prices_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* interval = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 1, &interval), CARDANO_SUCCESS);
+
+  cardano_ex_unit_prices_t* prices = NULL;
+  EXPECT_EQ(cardano_ex_unit_prices_new(interval, interval, &prices), CARDANO_SUCCESS);
+  cardano_unit_interval_unref(&interval);
+
+  // Act
+  cardano_error_t error = cardano_ex_unit_prices_to_cip116_json(prices, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_ex_unit_prices_unref(&prices);
 }

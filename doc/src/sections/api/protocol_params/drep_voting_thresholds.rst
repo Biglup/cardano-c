@@ -17,6 +17,10 @@ DREP Voting Thresholds
 
 ------------
 
+.. doxygenfunction:: cardano_drep_voting_thresholds_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_drep_voting_thresholds_get_motion_no_confidence
 
 ------------

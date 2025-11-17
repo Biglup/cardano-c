@@ -174,6 +174,24 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_cbor(
   cardano_cbor_writer_t*                 writer);
 
 /**
+ * \brief Serializes a protocol parameter update to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * It checks each optional field; if a field is set in the update object, it is written to the JSON.
+ *
+ * \param[in]  update  Pointer to a valid \ref cardano_protocol_param_update_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p update or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_cip116_json(
+  const cardano_protocol_param_update_t* update,
+  cardano_json_writer_t*                 writer);
+
+/**
  * \brief Retrieves the minimum fee A parameter from the protocol parameter update.
  *
  * This function returns the minimum fee A parameter from the protocol parameter update.

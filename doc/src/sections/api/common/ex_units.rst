@@ -17,6 +17,10 @@ Execution Units
 
 ------------
 
+.. doxygenfunction:: cardano_ex_units_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_ex_units_get_memory
 
 ------------

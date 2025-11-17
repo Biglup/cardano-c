@@ -172,6 +172,25 @@ CARDANO_EXPORT cardano_error_t cardano_proposed_param_updates_to_cbor(
   cardano_cbor_writer_t*                  writer);
 
 /**
+ * \brief Serializes proposed parameter updates to CIP-116 JSON.
+ *
+ * The function writes a JSON object where keys are the hexadecimal representation
+ * of the genesis hash, and values are the protocol parameter update objects.
+ *
+ * \param[in]  updates Pointer to a valid \ref cardano_proposed_param_updates_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p updates or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_proposed_param_updates_to_cip116_json(
+  const cardano_proposed_param_updates_t* updates,
+  cardano_json_writer_t*                  writer);
+
+/**
  * \brief Retrieves the number of proposed parameter updates.
  *
  * This function returns the number of proposed parameter updates in the

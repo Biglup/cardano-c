@@ -174,6 +174,24 @@ CARDANO_EXPORT cardano_error_t cardano_costmdls_to_cbor(
   cardano_cbor_writer_t*    writer);
 
 /**
+ * \brief Serializes a collection of cost models to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are: "plutus_v1", "plutus_v2", "plutus_v3".
+ *
+ * \param[in]  costmdls Pointer to a valid \ref cardano_costmdls_t.
+ * \param[in]  writer   Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p costmdls or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_costmdls_to_cip116_json(
+  const cardano_costmdls_t* costmdls,
+  cardano_json_writer_t*    writer);
+
+/**
  * \brief Inserts a new Cost Model into the Costmdls map.
  *
  * This function inserts a new Cost Model into the Costmdls map. Each Cost Model is associated with a specific

@@ -194,6 +194,24 @@ CARDANO_EXPORT cardano_error_t cardano_ex_unit_prices_to_cbor(
   cardano_cbor_writer_t*          writer);
 
 /**
+ * \brief Serializes execution unit prices to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "mem_price", "step_price".
+ *
+ * \param[in]  prices  Pointer to a valid \ref cardano_ex_unit_prices_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p prices or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_ex_unit_prices_to_cip116_json(
+  const cardano_ex_unit_prices_t* prices,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the memory price from the execution unit prices.
  *
  * This function returns the memory price from the execution unit prices object.

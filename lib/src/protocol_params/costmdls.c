@@ -274,6 +274,56 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
 }
 
 cardano_error_t
+cardano_costmdls_to_cip116_json(
+  const cardano_costmdls_t* costmdls,
+  cardano_json_writer_t*    writer)
+{
+  if ((costmdls == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  if (costmdls->plutus_v1_costs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_v1", 9);
+    cardano_error_t write_v1_result = cardano_cost_model_to_cip116_json(costmdls->plutus_v1_costs, writer);
+
+    if (write_v1_result != CARDANO_SUCCESS)
+    {
+      return write_v1_result;
+    }
+  }
+
+  if (costmdls->plutus_v2_costs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_v2", 9);
+    cardano_error_t write_v2_result = cardano_cost_model_to_cip116_json(costmdls->plutus_v2_costs, writer);
+
+    if (write_v2_result != CARDANO_SUCCESS)
+    {
+      return write_v2_result;
+    }
+  }
+
+  if (costmdls->plutus_v3_costs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_v3", 9);
+    cardano_error_t write_v3_result = cardano_cost_model_to_cip116_json(costmdls->plutus_v3_costs, writer);
+
+    if (write_v3_result != CARDANO_SUCCESS)
+    {
+      return write_v3_result;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_costmdls_insert(
   cardano_costmdls_t*   costmdls,
   cardano_cost_model_t* cost_model)

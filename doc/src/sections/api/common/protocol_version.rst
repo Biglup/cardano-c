@@ -17,6 +17,10 @@ Protocol Version
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_version_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_protocol_version_get_major
 
 ------------
