@@ -792,7 +792,6 @@ TEST(cardano_new_constitution_action_to_cip116_json, returnsErrorIfActionIsNull)
 TEST(cardano_new_constitution_action_to_cip116_json, returnsErrorIfWriterIsNull)
 {
   cardano_blake2b_hash_t* hash = NULL;
-  EXPECT_EQ(cardano_blake2b_hash_from_hex("00", 2, &hash), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_blake2b_hash_from_hex("2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e", 64, &hash), CARDANO_SUCCESS);
   cardano_anchor_t* anchor = NULL;
   EXPECT_EQ(cardano_anchor_new("url", 3, hash, &anchor), CARDANO_SUCCESS);
