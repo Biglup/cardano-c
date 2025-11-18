@@ -17,6 +17,10 @@ New Constitution Action
 
 ------------
 
+.. doxygenfunction:: cardano_new_constitution_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_new_constitution_action_set_constitution
 
 ------------

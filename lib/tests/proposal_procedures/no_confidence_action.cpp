@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/no_confidence_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -546,4 +547,81 @@ TEST(cardano_no_confidence_action_get_governance_action_id, returnsErrorIfObject
 
   // Assert
   EXPECT_EQ(governance_action_id, nullptr);
+}
+
+TEST(cardano_no_confidence_action_to_cip116_json, canConvertActionWithId)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char*             hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash, 4, &action_id), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  cardano_no_confidence_action_t* action = NULL;
+  error                                  = cardano_no_confidence_action_new(action_id, &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_governance_action_id_unref(&action_id);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_no_confidence_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"no_confidence","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"4"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_no_confidence_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_no_confidence_action_to_cip116_json, canConvertActionWithoutId)
+{
+  // Arrange
+  cardano_no_confidence_action_t* action = NULL;
+  cardano_error_t                 error  = cardano_no_confidence_action_new(NULL, &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_no_confidence_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"no_confidence"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_no_confidence_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_no_confidence_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_no_confidence_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_no_confidence_action_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_no_confidence_action_t* action = NULL;
+  EXPECT_EQ(cardano_no_confidence_action_new(NULL, &action), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_no_confidence_action_to_cip116_json(action, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_no_confidence_action_unref(&action);
 }

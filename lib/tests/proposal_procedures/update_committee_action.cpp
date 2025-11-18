@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/update_committee_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -955,4 +956,107 @@ TEST(cardano_update_committee_action_get_quorum, returnsErrorIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(quorum, nullptr);
+}
+
+TEST(cardano_update_committee_action_to_cip116_json, canConvertAction)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char*             hash_hex_1 = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_1, strlen(hash_hex_1), &hash1), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash1, 5, &action_id), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash1);
+
+  cardano_credential_set_t* members_to_remove = NULL;
+  EXPECT_EQ(cardano_credential_set_new(&members_to_remove), CARDANO_SUCCESS);
+
+  cardano_credential_t* cred_rem = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex(hash_hex_1, 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &cred_rem), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_credential_set_add(members_to_remove, cred_rem), CARDANO_SUCCESS);
+  cardano_credential_unref(&cred_rem);
+
+  cardano_committee_members_map_t* committee = new_default_committee_members_map(MEMBERS_TO_BE_ADDED_CBOR);
+
+  cardano_unit_interval_t* threshold = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(2, 3, &threshold), CARDANO_SUCCESS);
+
+  cardano_update_committee_action_t* action = NULL;
+  error                                     = cardano_update_committee_action_new(
+    members_to_remove,
+    committee,
+    threshold,
+    action_id,
+    &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_governance_action_id_unref(&action_id);
+  cardano_credential_set_unref(&members_to_remove);
+  cardano_committee_members_map_unref(&committee);
+  cardano_unit_interval_unref(&threshold);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_update_committee_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"update_committee","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"5"},"members_to_remove":[{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}],"committee":[{"key":{"tag":"pubkey_hash","value":"30000000000000000000000000000000000000000000000000000000"},"value":"1"},{"key":{"tag":"pubkey_hash","value":"40000000000000000000000000000000000000000000000000000000"},"value":"2"}],"signature_threshold":{"numerator":"2","denominator":"3"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_update_committee_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_update_committee_action_to_cip116_json, canConvertWithoutGovActionId)
+{
+  // Arrange
+  cardano_credential_set_t* members_to_remove = NULL;
+  EXPECT_EQ(cardano_credential_set_new(&members_to_remove), CARDANO_SUCCESS);
+
+  cardano_committee_members_map_t* committee = new_default_committee_members_map(MEMBERS_TO_BE_ADDED_CBOR);
+
+  cardano_unit_interval_t* threshold = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 1, &threshold), CARDANO_SUCCESS);
+
+  cardano_update_committee_action_t* action = NULL;
+  EXPECT_EQ(cardano_update_committee_action_new(members_to_remove, committee, threshold, NULL, &action), CARDANO_SUCCESS);
+
+  cardano_credential_set_unref(&members_to_remove);
+  cardano_committee_members_map_unref(&committee);
+  cardano_unit_interval_unref(&threshold);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_update_committee_action_to_cip116_json(action, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"update_committee","members_to_remove":[],"committee":[{"key":{"tag":"pubkey_hash","value":"30000000000000000000000000000000000000000000000000000000"},"value":"1"},{"key":{"tag":"pubkey_hash","value":"40000000000000000000000000000000000000000000000000000000"},"value":"2"}],"signature_threshold":{"numerator":"1","denominator":"1"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_update_committee_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_update_committee_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_update_committee_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
 }

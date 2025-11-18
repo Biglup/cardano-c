@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -164,6 +165,24 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_info_action_to_cbor(
   const cardano_info_action_t* info_action,
   cardano_cbor_writer_t*       writer);
+
+/**
+ * \brief Serializes an info action to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Key written: "tag".
+ *
+ * \param[in]  action  Pointer to a valid \ref cardano_info_action_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p action or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_info_action_to_cip116_json(
+  const cardano_info_action_t* action,
+  cardano_json_writer_t*       writer);
 
 /**
  * \brief Decrements the reference count of a cardano_info_action_t object.

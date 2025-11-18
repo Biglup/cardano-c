@@ -198,6 +198,24 @@ CARDANO_EXPORT cardano_error_t cardano_no_confidence_action_to_cbor(
   cardano_cbor_writer_t*                writer);
 
 /**
+ * \brief Serializes a no confidence action to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "gov_action_id" (if present).
+ *
+ * \param[in]  action  Pointer to a valid \ref cardano_no_confidence_action_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p action or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_no_confidence_action_to_cip116_json(
+  const cardano_no_confidence_action_t* action,
+  cardano_json_writer_t*                writer);
+
+/**
  * \brief Sets the governance action ID in the no_confidence_action.
  *
  * This function updates the governance action ID of a \ref cardano_no_confidence_action_t object.

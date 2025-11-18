@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/info_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -335,4 +336,44 @@ TEST(cardano_info_action_from_cbor, returnsErrorIfInvalidId)
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_info_action_to_cip116_json, canConvertInfoAction)
+{
+  // Arrange
+  cardano_info_action_t* action = NULL;
+  cardano_error_t        error  = cardano_info_action_new(&action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_info_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"tag":"info_action"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_info_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_info_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_info_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_info_action_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_info_action_t* action = NULL;
+  EXPECT_EQ(cardano_info_action_new(&action), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_info_action_to_cip116_json(action, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_info_action_unref(&action);
 }

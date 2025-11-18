@@ -273,6 +273,47 @@ cardano_hard_fork_initiation_action_to_cbor(
 }
 
 cardano_error_t
+cardano_hard_fork_initiation_action_to_cip116_json(
+  const cardano_hard_fork_initiation_action_t* action,
+  cardano_json_writer_t*                       writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "hard_fork_initiation_action", 27);
+
+  if (action->governance_action_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "gov_action_id", 13);
+    error = cardano_governance_action_id_to_cip116_json(action->governance_action_id, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_property_name(writer, "protocol_version", 16);
+
+  error = cardano_protocol_version_to_cip116_json(action->protocol_version, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_hard_fork_initiation_action_set_protocol_version(
   cardano_hard_fork_initiation_action_t* hard_fork_initiation_action,
   cardano_protocol_version_t*            protocol_version)

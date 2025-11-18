@@ -540,6 +540,25 @@ CARDANO_EXPORT cardano_error_t cardano_proposal_procedure_to_cbor(
   cardano_cbor_writer_t*              writer);
 
 /**
+ * \brief Serializes a proposal procedure to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "deposit", "reward_account", "gov_action", "anchor".
+ *
+ * \param[in]  procedure Pointer to a valid \ref cardano_proposal_procedure_t.
+ * \param[in]  writer    Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p procedure or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_proposal_procedure_to_cip116_json(
+  const cardano_proposal_procedure_t* procedure,
+  cardano_json_writer_t*              writer);
+
+/**
  * \brief Retrieves the type of governance action associated with a proposal procedure.
  *
  * This function extracts the type of governance action, represented by a \ref cardano_governance_action_id_t object,

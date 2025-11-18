@@ -17,6 +17,10 @@ Info Action
 
 ------------
 
+.. doxygenfunction:: cardano_info_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_info_action_unref
 
 ------------

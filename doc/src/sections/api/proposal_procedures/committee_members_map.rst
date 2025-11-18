@@ -17,6 +17,10 @@ Committee Members Map
 
 ------------
 
+.. doxygenfunction:: cardano_committee_members_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_committee_members_map_get_length
 
 ------------

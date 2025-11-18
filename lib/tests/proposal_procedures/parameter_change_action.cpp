@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/parameter_change_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -890,4 +891,103 @@ TEST(cardano_parameter_change_action_get_policy_hash, returnsErrorIfObjectIsNull
 
   // Assert
   EXPECT_EQ(policy_hash, nullptr);
+}
+
+TEST(cardano_parameter_change_action_to_cip116_json, canConvertActionWithAllFields)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_protocol_param_update_t* updates = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_new(&updates), CARDANO_SUCCESS);
+  const uint64_t min_fee_b = 1000;
+  EXPECT_EQ(cardano_protocol_param_update_set_min_fee_b(updates, &min_fee_b), CARDANO_SUCCESS);
+
+  const char*             hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash, 1, &action_id), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  const char*             policy_hex  = "1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361";
+  cardano_blake2b_hash_t* policy_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(policy_hex, 56, &policy_hash), CARDANO_SUCCESS);
+
+  cardano_parameter_change_action_t* action = NULL;
+  error                                     = cardano_parameter_change_action_new(updates, action_id, policy_hash, &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_protocol_param_update_unref(&updates);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_blake2b_hash_unref(&policy_hash);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_parameter_change_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"parameter_change_action","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"1"},"protocol_param_update":{"min_fee_b":"1000"},"policy_hash":"1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361"})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_parameter_change_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_parameter_change_action_to_cip116_json, canConvertWithRequiredFieldsOnly)
+{
+  // Arrange
+  cardano_protocol_param_update_t* updates = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_new(&updates), CARDANO_SUCCESS);
+  const uint64_t min_fee_b = 500;
+  EXPECT_EQ(cardano_protocol_param_update_set_min_fee_b(updates, &min_fee_b), CARDANO_SUCCESS);
+
+  cardano_parameter_change_action_t* action = NULL;
+  EXPECT_EQ(cardano_parameter_change_action_new(updates, NULL, NULL, &action), CARDANO_SUCCESS);
+  cardano_protocol_param_update_unref(&updates);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_parameter_change_action_to_cip116_json(action, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"parameter_change_action","protocol_param_update":{"min_fee_b":"500"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_parameter_change_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_parameter_change_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_parameter_change_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_parameter_change_action_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_protocol_param_update_t* updates = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_new(&updates), CARDANO_SUCCESS);
+  cardano_parameter_change_action_t* action = NULL;
+  EXPECT_EQ(cardano_parameter_change_action_new(updates, NULL, NULL, &action), CARDANO_SUCCESS);
+  cardano_protocol_param_update_unref(&updates);
+
+  cardano_error_t error = cardano_parameter_change_action_to_cip116_json(action, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_parameter_change_action_unref(&action);
 }

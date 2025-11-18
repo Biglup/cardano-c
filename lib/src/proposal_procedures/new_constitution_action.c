@@ -273,6 +273,47 @@ cardano_new_constitution_action_to_cbor(
 }
 
 cardano_error_t
+cardano_new_constitution_action_to_cip116_json(
+  const cardano_new_constitution_action_t* action,
+  cardano_json_writer_t*                   writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "new_constitution", 16);
+
+  if (action->governance_action_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "gov_action_id", 13);
+    error = cardano_governance_action_id_to_cip116_json(action->governance_action_id, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_property_name(writer, "constitution", 12);
+
+  error = cardano_constitution_to_cip116_json(action->constitution, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
+cardano_error_t
 cardano_new_constitution_action_set_constitution(
   cardano_new_constitution_action_t* new_constitution_action,
   cardano_constitution_t*            constitution)

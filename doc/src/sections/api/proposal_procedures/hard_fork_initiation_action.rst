@@ -17,6 +17,10 @@ Hard Fork Initiation Action
 
 ------------
 
+.. doxygenfunction:: cardano_hard_fork_initiation_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_hard_fork_initiation_action_set_protocol_version
 
 ------------

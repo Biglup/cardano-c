@@ -17,6 +17,10 @@ No Confidence Action
 
 ------------
 
+.. doxygenfunction:: cardano_no_confidence_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_no_confidence_action_set_governance_action_id
 
 ------------

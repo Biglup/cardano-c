@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -681,4 +682,96 @@ TEST(cardano_treasury_withdrawals_action_get_policy_hash, returnsErrorIfObjectIs
 
   // Assert
   EXPECT_EQ(policy_hash, nullptr);
+}
+
+TEST(cardano_treasury_withdrawals_action_to_cip116_json, canConvertActionWithPolicyHash)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_withdrawal_map_t* withdrawals = NULL;
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* addr = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32("stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y", 59, &addr), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, addr, 100000000U), CARDANO_SUCCESS);
+  cardano_reward_address_unref(&addr);
+
+  cardano_blake2b_hash_t* policy_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex("1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361", 56, &policy_hash), CARDANO_SUCCESS);
+
+  cardano_treasury_withdrawals_action_t* action = NULL;
+  error                                         = cardano_treasury_withdrawals_action_new(withdrawals, policy_hash, &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_blake2b_hash_unref(&policy_hash);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_treasury_withdrawals_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"treasury_withdrawals_action","rewards":[{"key":"stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y","value":"100000000"}],"policy_hash":"1c12f03c1ef2e935acc35ec2e6f96c650fd3bfba3e96550504d53361"})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_treasury_withdrawals_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_treasury_withdrawals_action_to_cip116_json, canConvertActionWithoutPolicyHash)
+{
+  // Arrange
+  cardano_withdrawal_map_t* withdrawals = NULL;
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+
+  cardano_treasury_withdrawals_action_t* action = NULL;
+  EXPECT_EQ(cardano_treasury_withdrawals_action_new(withdrawals, NULL, &action), CARDANO_SUCCESS);
+  cardano_withdrawal_map_unref(&withdrawals);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_treasury_withdrawals_action_to_cip116_json(action, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"treasury_withdrawals_action","rewards":[]})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_treasury_withdrawals_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_treasury_withdrawals_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_treasury_withdrawals_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_treasury_withdrawals_action_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_withdrawal_map_t* withdrawals = NULL;
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  cardano_treasury_withdrawals_action_t* action = NULL;
+  EXPECT_EQ(cardano_treasury_withdrawals_action_new(withdrawals, NULL, &action), CARDANO_SUCCESS);
+  cardano_withdrawal_map_unref(&withdrawals);
+
+  cardano_error_t error = cardano_treasury_withdrawals_action_to_cip116_json(action, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_treasury_withdrawals_action_unref(&action);
 }

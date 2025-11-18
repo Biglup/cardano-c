@@ -342,6 +342,64 @@ cardano_update_committee_action_to_cbor(
 }
 
 cardano_error_t
+cardano_update_committee_action_to_cip116_json(
+  const cardano_update_committee_action_t* action,
+  cardano_json_writer_t*                   writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "update_committee", 16);
+
+  if (action->governance_action_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "gov_action_id", 13);
+    error = cardano_governance_action_id_to_cip116_json(action->governance_action_id, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_property_name(writer, "members_to_remove", 17);
+
+  error = cardano_credential_set_to_cip116_json(action->members_to_be_removed, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "committee", 9);
+  error = cardano_committee_members_map_to_cip116_json(action->members_to_be_added, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "signature_threshold", 19);
+
+  error = cardano_unit_interval_to_cip116_json(action->new_quorum, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
+cardano_error_t
 cardano_update_committee_action_set_members_to_be_removed(
   cardano_update_committee_action_t* update_committee_action,
   cardano_credential_set_t*          members_to_be_removed)

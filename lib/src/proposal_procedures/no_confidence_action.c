@@ -243,6 +243,37 @@ cardano_no_confidence_action_to_cbor(
 }
 
 cardano_error_t
+cardano_no_confidence_action_to_cip116_json(
+  const cardano_no_confidence_action_t* action,
+  cardano_json_writer_t*                writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "no_confidence", 13);
+
+  if (action->governance_action_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "gov_action_id", 13);
+    cardano_error_t error = cardano_governance_action_id_to_cip116_json(action->governance_action_id, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_no_confidence_action_set_governance_action_id(
   cardano_no_confidence_action_t* no_confidence_action,
   cardano_governance_action_id_t* governance_action_id)

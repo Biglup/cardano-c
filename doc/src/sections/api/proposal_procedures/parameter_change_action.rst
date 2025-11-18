@@ -17,6 +17,10 @@ Parameter Change Action
 
 ------------
 
+.. doxygenfunction:: cardano_parameter_change_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_parameter_change_action_set_protocol_param_update
 
 ------------

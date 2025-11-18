@@ -25,6 +25,7 @@
 #include <cardano/proposal_procedures/committee_members_map.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1117,4 +1118,77 @@ TEST(cardano_committee_members_map_get_key_value_at, returnsTheElement)
   cardano_committee_members_map_unref(&committee_members_map);
   cardano_credential_unref(&credential);
   cardano_credential_unref(&credential_out);
+}
+
+TEST(cardano_committee_members_map_to_cip116_json, canConvertMap)
+{
+  // Arrange
+  cardano_error_t                  error = CARDANO_SUCCESS;
+  cardano_committee_members_map_t* map   = NULL;
+  EXPECT_EQ(cardano_committee_members_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_credential_t* key1 = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex("00000000000000000000000000000000000000000000000000000000", 56, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &key1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_committee_members_map_insert(map, key1, 1000000), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&key1);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_committee_members_map_to_cip116_json(map, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"key":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"value":"1000000"}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_committee_members_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_committee_members_map_to_cip116_json, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_committee_members_map_t* map = NULL;
+  EXPECT_EQ(cardano_committee_members_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_committee_members_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_committee_members_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_committee_members_map_to_cip116_json, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_committee_members_map_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_committee_members_map_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_committee_members_map_t* map = NULL;
+  EXPECT_EQ(cardano_committee_members_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_committee_members_map_to_cip116_json(map, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_committee_members_map_unref(&map);
 }
