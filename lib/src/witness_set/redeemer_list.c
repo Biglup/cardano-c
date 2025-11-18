@@ -429,6 +429,45 @@ cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_
 }
 
 cardano_error_t
+cardano_redeemer_list_to_cip116_json(
+  const cardano_redeemer_list_t* list,
+  cardano_json_writer_t*         writer)
+{
+  if ((list == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t          length = cardano_redeemer_list_get_length(list);
+  cardano_error_t error  = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+    error                        = cardano_redeemer_list_get(list, i, &redeemer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_redeemer_to_cip116_json(redeemer, writer);
+    cardano_redeemer_unref(&redeemer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return error;
+}
+
+cardano_error_t
 cardano_redeemer_list_to_cbor(const cardano_redeemer_list_t* redeemer_list, cardano_cbor_writer_t* writer)
 {
   if (redeemer_list == NULL)

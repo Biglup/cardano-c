@@ -1030,6 +1030,166 @@ cardano_witness_set_to_cbor(const cardano_witness_set_t* witness_set, cardano_cb
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_witness_set_to_cip116_json(
+  const cardano_witness_set_t* witness_set,
+  cardano_json_writer_t*       writer)
+{
+  if ((witness_set == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  if ((witness_set->vkey_witnesses != NULL) && (cardano_vkey_witness_set_get_length(witness_set->vkey_witnesses) > 0U))
+  {
+    cardano_json_writer_write_property_name(writer, "vkey_witnesses", 14);
+    error = cardano_vkey_witness_set_to_cip116_json(witness_set->vkey_witnesses, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if ((witness_set->native_scripts != NULL) && (cardano_native_script_set_get_length(witness_set->native_scripts) > 0U))
+  {
+    cardano_json_writer_write_property_name(writer, "native_scripts", 14);
+    error = cardano_native_script_set_to_cip116_json(witness_set->native_scripts, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if ((witness_set->bootstrap_witnesses != NULL) && (cardano_bootstrap_witness_set_get_length(witness_set->bootstrap_witnesses) > 0U))
+  {
+    cardano_json_writer_write_property_name(writer, "bootstraps", 10);
+    error = cardano_bootstrap_witness_set_to_cip116_json(witness_set->bootstrap_witnesses, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_plutus_v1_script_set_t* plutus_v1_scripts = witness_set->plutus_v1_scripts;
+  cardano_plutus_v2_script_set_t* plutus_v2_scripts = witness_set->plutus_v2_scripts;
+  cardano_plutus_v3_script_set_t* plutus_v3_scripts = witness_set->plutus_v3_scripts;
+  const bool                      hash_plutus_v1    = (plutus_v1_scripts != NULL) && (cardano_plutus_v1_script_set_get_length(plutus_v1_scripts) > 0U);
+  const bool                      hash_plutus_v2    = (plutus_v2_scripts != NULL) && (cardano_plutus_v2_script_set_get_length(plutus_v2_scripts) > 0U);
+  const bool                      hash_plutus_v3    = (plutus_v3_scripts != NULL) && (cardano_plutus_v3_script_set_get_length(plutus_v3_scripts) > 0U);
+
+  if (hash_plutus_v1 || hash_plutus_v2 || hash_plutus_v3)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_scripts", 14);
+    cardano_json_writer_write_start_array(writer);
+
+    if (hash_plutus_v1)
+    {
+      const size_t length = cardano_plutus_v1_script_set_get_length(plutus_v1_scripts);
+
+      for (size_t i = 0U; i < length; ++i)
+      {
+        cardano_plutus_v1_script_t* script = NULL;
+        error                              = cardano_plutus_v1_script_set_get(plutus_v1_scripts, i, &script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+
+        error = cardano_plutus_v1_script_to_cip116_json(script, writer);
+        cardano_plutus_v1_script_unref(&script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+      }
+    }
+
+    if (hash_plutus_v2)
+    {
+      const size_t length = cardano_plutus_v2_script_set_get_length(plutus_v2_scripts);
+
+      for (size_t i = 0U; i < length; ++i)
+      {
+        cardano_plutus_v2_script_t* script = NULL;
+        error                              = cardano_plutus_v2_script_set_get(plutus_v2_scripts, i, &script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+
+        error = cardano_plutus_v2_script_to_cip116_json(script, writer);
+        cardano_plutus_v2_script_unref(&script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+      }
+    }
+
+    if (hash_plutus_v3)
+    {
+      const size_t length = cardano_plutus_v3_script_set_get_length(plutus_v3_scripts);
+
+      for (size_t i = 0U; i < length; ++i)
+      {
+        cardano_plutus_v3_script_t* script = NULL;
+        error                              = cardano_plutus_v3_script_set_get(plutus_v3_scripts, i, &script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+
+        error = cardano_plutus_v3_script_to_cip116_json(script, writer);
+        cardano_plutus_v3_script_unref(&script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+      }
+    }
+
+    cardano_json_writer_write_end_array(writer);
+  }
+
+  if ((witness_set->plutus_data != NULL) && (cardano_plutus_data_set_get_length(witness_set->plutus_data) > 0U))
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_data", 11);
+    error = cardano_plutus_data_set_to_cip116_json(witness_set->plutus_data, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if ((witness_set->redeemer != NULL) && (cardano_redeemer_list_get_length(witness_set->redeemer) > 0U))
+  {
+    cardano_json_writer_write_property_name(writer, "redeemers", 9);
+    error = cardano_redeemer_list_to_cip116_json(witness_set->redeemer, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
 cardano_vkey_witness_set_t*
 cardano_witness_set_get_vkeys(cardano_witness_set_t* witness_set)
 {

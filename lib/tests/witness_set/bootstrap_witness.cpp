@@ -27,6 +27,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/witness_set/bootstrap_witness.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -810,4 +811,45 @@ TEST(cardano_bootstrap_witness_set_attributes, returnsErrorIfAttributesIsNull)
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);
+}
+
+TEST(cardano_bootstrap_witness_to_cip116_json, canConvertWitness)
+{
+  // Arrange
+  cardano_bootstrap_witness_t* witness = new_default_witness();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_bootstrap_witness_to_cip116_json(witness, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"attributes":"a0","chain_code":"0000000000000000000000000000000000000000000000000000000000000000","signature":"6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a","vkey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_bootstrap_witness_unref(&witness);
+  free(json_str);
+}
+
+TEST(cardano_bootstrap_witness_to_cip116_json, returnsErrorIfWitnessIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_bootstrap_witness_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_bootstrap_witness_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_bootstrap_witness_t* witness = new_default_witness();
+
+  cardano_error_t error = cardano_bootstrap_witness_to_cip116_json(witness, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_bootstrap_witness_unref(&witness);
 }

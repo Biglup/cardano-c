@@ -201,6 +201,25 @@ CARDANO_EXPORT cardano_error_t cardano_bootstrap_witness_to_cbor(
   cardano_cbor_writer_t*             writer);
 
 /**
+ * \brief Serializes a bootstrap witness to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "attributes", "chain_code", "signature", "vkey".
+ *
+ * \param[in]  witness Pointer to a valid \ref cardano_bootstrap_witness_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p witness or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_bootstrap_witness_to_cip116_json(
+  const cardano_bootstrap_witness_t* witness,
+  cardano_json_writer_t*             writer);
+
+/**
  * \brief Retrieves the verification key (VKey) from a Bootstrap Witness.
  *
  * This function returns the \ref cardano_ed25519_public_key_t object representing the public verification key

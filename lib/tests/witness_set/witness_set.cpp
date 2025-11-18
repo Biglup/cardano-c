@@ -27,6 +27,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/witness_set/witness_set.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -1318,4 +1319,56 @@ TEST(cardano_witness_set_add_script, canAddPlutusV3Script)
   // Cleanup
   cardano_witness_set_unref(&witness_set);
   cardano_script_unref(&script);
+}
+
+TEST(cardano_witness_set_to_cip116_json, canConvertFullSet)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = new_default_witness_set();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_witness_set_to_cip116_json(witness_set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_witness_set_unref(&witness_set);
+  free(json_str);
+}
+
+TEST(cardano_witness_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_witness_set_to_cip116_json(witness_set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{}");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_witness_set_unref(&witness_set);
+  free(json_str);
+}
+
+TEST(cardano_witness_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_witness_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
 }

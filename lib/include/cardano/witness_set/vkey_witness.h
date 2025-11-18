@@ -185,6 +185,25 @@ CARDANO_EXPORT cardano_error_t cardano_vkey_witness_to_cbor(
   cardano_cbor_writer_t*        writer);
 
 /**
+ * \brief Serializes a VKey witness to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "vkey", "signature".
+ *
+ * \param[in]  witness Pointer to a valid \ref cardano_vkey_witness_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p witness or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_vkey_witness_to_cip116_json(
+  const cardano_vkey_witness_t* witness,
+  cardano_json_writer_t*        writer);
+
+/**
  * \brief Checks if a vkey_witness contains a specific public key.
  *
  * This function checks if the provided \ref cardano_vkey_witness_t object contains the specified Ed25519 public key.

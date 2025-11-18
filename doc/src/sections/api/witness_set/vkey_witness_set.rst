@@ -17,6 +17,10 @@ VKey Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_vkey_witness_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_vkey_witness_set_get_length
 
 ------------

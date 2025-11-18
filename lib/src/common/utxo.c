@@ -219,6 +219,40 @@ cardano_utxo_to_cbor(const cardano_utxo_t* utxo, cardano_cbor_writer_t* writer)
   return cardano_transaction_output_to_cbor(utxo->output, writer);
 }
 
+cardano_error_t
+cardano_utxo_to_cip116_json(
+  const cardano_utxo_t*  utxo,
+  cardano_json_writer_t* writer)
+{
+  if ((utxo == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "input", 5);
+  error = cardano_transaction_input_to_cip116_json(utxo->input, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "output", 6);
+  error = cardano_transaction_output_to_cip116_json(utxo->output, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_transaction_input_t*
 cardano_utxo_get_input(cardano_utxo_t* utxo)
 {

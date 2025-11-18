@@ -17,6 +17,10 @@ VKey Witness
 
 ------------
 
+.. doxygenfunction:: cardano_vkey_witness_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_vkey_witness_has_public_key
 
 ------------

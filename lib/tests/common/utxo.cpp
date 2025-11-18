@@ -23,6 +23,7 @@
 
 #include <cardano/error.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/common/utxo.h>
@@ -674,6 +675,52 @@ TEST(cardano_utxo_equals, returnsFalseIfOneIsNull2)
 
   // Assert
   EXPECT_FALSE(result);
+
+  // Cleanup
+  cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_utxo_to_cip116_json, canConvertUtxo)
+{
+  // Arrange
+  cardano_utxo_t* utxo = new_default_utxo();
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_utxo_to_cip116_json(utxo, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"input":{"transaction_id":"bb217abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e0","index":1},"output":{"address":"addr_test1qq585l3hyxgj3nas2v3xymd23vvartfhceme6gv98aaeg9muzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q2g7k3g","amount":{"coin":"4027026465","assets":{"1ec85dcee27f2d90ec1f9a1e4ce74a667dc9be8b184463223f9c9601":{"50584c":"5"},"659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82":{"54534c41":"10"}}}}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_utxo_unref(&utxo);
+  free(json_str);
+}
+
+TEST(cardano_utxo_to_cip116_json, returnsErrorIfUtxoIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_utxo_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_utxo_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_utxo_t* utxo = new_default_utxo();
+
+  // Act
+  cardano_error_t error = cardano_utxo_to_cip116_json(utxo, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_utxo_unref(&utxo);

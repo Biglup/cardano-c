@@ -317,6 +317,39 @@ cardano_bootstrap_witness_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_bootstrap_witness_to_cip116_json(
+  const cardano_bootstrap_witness_t* witness,
+  cardano_json_writer_t*             writer)
+{
+  if ((witness == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "attributes", 10);
+  cardano_json_writer_write_buffer_as_hex(writer, witness->attributes);
+
+  cardano_json_writer_write_property_name(writer, "chain_code", 10);
+  cardano_json_writer_write_buffer_as_hex(writer, witness->chain_code);
+
+  cardano_json_writer_write_property_name(writer, "signature", 9);
+  const byte_t* sig_data = cardano_ed25519_signature_get_data(witness->signature);
+  const size_t  sig_size = cardano_ed25519_signature_get_bytes_size(witness->signature);
+  cardano_json_writer_write_bytes_as_hex(writer, sig_data, sig_size);
+
+  cardano_json_writer_write_property_name(writer, "vkey", 4);
+  const byte_t* vkey_data = cardano_ed25519_public_key_get_data(witness->vkey);
+  const size_t  vkey_size = cardano_ed25519_public_key_get_bytes_size(witness->vkey);
+  cardano_json_writer_write_bytes_as_hex(writer, vkey_data, vkey_size);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_ed25519_public_key_t*
 cardano_bootstrap_witness_get_vkey(
   cardano_bootstrap_witness_t* bootstrap_witness)
