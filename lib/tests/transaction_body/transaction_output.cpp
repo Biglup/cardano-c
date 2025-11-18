@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/transaction_body/transaction_output.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -943,7 +944,6 @@ TEST(cardano_transaction_output_to_cbor, canDeserializeMayOutputWithPointerAddre
   free(hex);
 }
 
-// a400583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d01000033222220051200120011
 TEST(cardano_transaction_output_from_cbor, returnsErrorIfInvalidMap)
 {
   // Arrange
@@ -1339,4 +1339,69 @@ TEST(cardano_transaction_output_equals, returnsFalseIfOneIsNull2)
 
   // Cleanup
   cardano_transaction_output_unref(&output);
+}
+
+TEST(cardano_transaction_output_to_cip116_json, canConvertOutput)
+{
+  // Arrange
+  cardano_transaction_output_t* output = new_default_output(CBOR);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_transaction_output_to_cip116_json(output, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"address":"addr_test1qpfhhfy2qgls50r9u4yh0l7z67xpg0a5rrhkmvzcuqrd0znuzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q9gw0lz","amount":{"coin":"1000000","assets":{"00000000000000000000000000000000000000000000000000000000":{"30313232":"100","33343536":"99","40414242":"10"},"11111111111111111111111111111111111111111111111111111111":{"30313232":"100","33343536":"99","40414242":"10"}}},"plutus_data":{"tag":"datum","value":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]}},"script_ref":{"tag":"plutus_script","value":{"language":"plutus_v1","bytes":"4d01000033222220051200120011"}}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_output_unref(&output);
+  free(json_str);
+}
+
+TEST(cardano_transaction_output_to_cip116_json, canConvertLegacyOutput)
+{
+  // Arrange
+  cardano_transaction_output_t* output = new_default_output(LEGACY_OUTPUT_CBOR);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_transaction_output_to_cip116_json(output, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"address":"addr_test1qpfhhfy2qgls50r9u4yh0l7z67xpg0a5rrhkmvzcuqrd0znuzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q9gw0lz","amount":{"coin":"1000000","assets":{"00000000000000000000000000000000000000000000000000000000":{"30313232":"100","33343536":"99","40414242":"10"},"11111111111111111111111111111111111111111111111111111111":{"30313232":"100","33343536":"99","40414242":"10"}}},"plutus_data":{"tag":"datum_hash","value":"0000000000000000000000000000000000000000000000000000000000000000"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_output_unref(&output);
+  free(json_str);
+}
+
+TEST(cardano_transaction_output_to_cip116_json, canConvertMaryPointerOutput)
+{
+  // Arrange
+  cardano_transaction_output_t* output = new_default_output(MARY_OUTPUT_POINTER_CBOR);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_transaction_output_to_cip116_json(output, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"address":"addr1gy5p8wv6sr8mgqjrwj7s75pft9y94ftwqey9vnlcqhew2xuvmxqe2cdam3npgxncrcd","amount":{"coin":"50000000"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_output_unref(&output);
+  free(json_str);
 }

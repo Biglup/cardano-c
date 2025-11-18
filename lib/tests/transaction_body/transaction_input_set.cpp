@@ -27,6 +27,7 @@
 #include <cardano/transaction_body/transaction_input_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -801,4 +802,92 @@ TEST(cardano_transaction_input_set_is_tagged, returnsFalseIfFromCborReadUntagged
   // Cleanup
   cardano_transaction_input_set_unref(&transaction_input_set);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_input_set_to_cip116_json, canConvertSet)
+{
+  // Arrange
+  cardano_error_t                  error = CARDANO_SUCCESS;
+  cardano_transaction_input_set_t* set   = NULL;
+  EXPECT_EQ(cardano_transaction_input_set_new(&set), CARDANO_SUCCESS);
+
+  const char*             hash_hex_1 = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_1, strlen(hash_hex_1), &hash1), CARDANO_SUCCESS);
+
+  cardano_transaction_input_t* input1 = NULL;
+  EXPECT_EQ(cardano_transaction_input_new(hash1, 0, &input1), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash1);
+
+  EXPECT_EQ(cardano_transaction_input_set_add(set, input1), CARDANO_SUCCESS);
+  cardano_transaction_input_unref(&input1);
+
+  const char*             hash_hex_2 = "1111111111111111111111111111111111111111111111111111111111111111";
+  cardano_blake2b_hash_t* hash2      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex_2, strlen(hash_hex_2), &hash2), CARDANO_SUCCESS);
+
+  cardano_transaction_input_t* input2 = NULL;
+  EXPECT_EQ(cardano_transaction_input_new(hash2, 1, &input2), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash2);
+
+  EXPECT_EQ(cardano_transaction_input_set_add(set, input2), CARDANO_SUCCESS);
+  cardano_transaction_input_unref(&input2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_transaction_input_set_to_cip116_json(set, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","index":0},{"transaction_id":"1111111111111111111111111111111111111111111111111111111111111111","index":1}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_input_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_transaction_input_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_transaction_input_set_t* set = NULL;
+  EXPECT_EQ(cardano_transaction_input_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_transaction_input_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_input_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_transaction_input_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_transaction_input_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_transaction_input_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_transaction_input_set_t* set = NULL;
+  EXPECT_EQ(cardano_transaction_input_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_transaction_input_set_to_cip116_json(set, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_transaction_input_set_unref(&set);
 }

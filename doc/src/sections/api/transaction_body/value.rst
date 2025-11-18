@@ -25,6 +25,10 @@ Value
 
 ------------
 
+.. doxygenfunction:: cardano_value_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_value_get_multi_asset
 
 ------------

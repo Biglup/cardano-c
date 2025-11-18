@@ -25,6 +25,7 @@
 
 #include <cardano/assets/asset_name.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -677,4 +678,81 @@ TEST(cardano_asset_name_from_cbor, returnErroIfInvalidByteString)
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_asset_name_to_cip116_json_string, canConvertAssetName)
+{
+  byte_t                data[]     = { 0x4D, 0x79, 0x41, 0x73, 0x73, 0x65, 0x74 };
+  cardano_asset_name_t* asset_name = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(data, sizeof(data), &asset_name), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_error_t error    = cardano_asset_name_to_cip116_json(asset_name, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"("4d794173736574")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_asset_name_unref(&asset_name);
+}
+
+TEST(cardano_asset_name_to_cip116_json_string, canConvertEmptyAssetName)
+{
+  // Arrange
+  cardano_asset_name_t* asset_name = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(NULL, 0, &asset_name), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_error_t error    = cardano_asset_name_to_cip116_json(asset_name, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"("")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_asset_name_unref(&asset_name);
+}
+
+TEST(cardano_asset_name_to_cip116_json_string, returnsErrorIfNameIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = cardano_asset_name_to_cip116_json(nullptr, json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_asset_name_to_cip116_json_string, returnsErrorIfWriterIsNull)
+{
+  // Arrange
+  cardano_asset_name_t* asset_name = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(NULL, 0, &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_asset_name_to_cip116_json(asset_name, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_asset_name_unref(&asset_name);
 }

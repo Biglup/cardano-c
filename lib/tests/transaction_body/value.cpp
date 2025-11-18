@@ -26,6 +26,7 @@
 #include <cardano/transaction_body/value.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -2248,4 +2249,85 @@ TEST(cardano_value_add_asset_with_id_ex, returnsErrorWhenGivenNull)
 {
   EXPECT_EQ(cardano_value_add_asset_with_id_ex(nullptr, nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_value_add_asset_with_id_ex((cardano_value_t*)"", nullptr, 0, 100), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_value_to_cip116_json, canConvertAdaOnly)
+{
+  // Arrange
+  cardano_value_t* value = cardano_value_new_from_coin(1000000);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_value_to_cip116_json(value, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"coin":"1000000"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_value_unref(&value);
+  free(json_str);
+}
+
+TEST(cardano_value_to_cip116_json, canConvertAdaAndAssets)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_multi_asset_t* multi_asset = NULL;
+  EXPECT_EQ(cardano_multi_asset_new(&multi_asset), CARDANO_SUCCESS);
+
+  const char*             policy_hex_1 = "00000000000000000000000000000000000000000000000000000001";
+  cardano_blake2b_hash_t* policy1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(policy_hex_1, strlen(policy_hex_1), &policy1), CARDANO_SUCCESS);
+
+  byte_t                asset_bytes[] = { 0xAA };
+  cardano_asset_name_t* asset_name1   = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(asset_bytes, sizeof(asset_bytes), &asset_name1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_multi_asset_set(multi_asset, policy1, asset_name1, 100), CARDANO_SUCCESS);
+
+  cardano_value_t* value = NULL;
+  EXPECT_EQ(cardano_value_new(5000, multi_asset, &value), CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_blake2b_hash_unref(&policy1);
+  cardano_multi_asset_unref(&multi_asset);
+  cardano_asset_name_unref(&asset_name1);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_value_to_cip116_json(value, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"coin":"5000","assets":{"00000000000000000000000000000000000000000000000000000001":{"aa":"100"}}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_value_unref(&value);
+  free(json_str);
+}
+
+TEST(cardano_value_to_cip116_json, returnsErrorIfValueIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_value_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_value_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_value_t* value = cardano_value_new_from_coin(1);
+
+  cardano_error_t error = cardano_value_to_cip116_json(value, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_value_unref(&value);
 }

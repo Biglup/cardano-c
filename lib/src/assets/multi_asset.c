@@ -30,6 +30,7 @@
 #include "../collections/array.h"
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -353,6 +354,69 @@ cardano_multi_asset_to_cbor(
       return write_asset_name_map_result;
     }
   }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_multi_asset_to_cip116_json(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_json_writer_t*       writer)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  size_t size = cardano_array_get_size(multi_asset->array);
+
+  cardano_json_writer_write_start_object(writer);
+
+  for (size_t i = 0U; i < size; ++i)
+  {
+    cardano_multi_asset_kvp_t* kvp = (cardano_multi_asset_kvp_t*)((void*)cardano_array_get(multi_asset->array, i));
+    cardano_object_unref((cardano_object_t**)((void*)&kvp));
+
+    if (kvp == NULL)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    const size_t policy_id_hex_size = cardano_blake2b_hash_get_hex_size(kvp->key);
+    char*        policy_id_hex      = _cardano_malloc(policy_id_hex_size);
+
+    if (policy_id_hex == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    cardano_error_t result = cardano_blake2b_hash_to_hex(kvp->key, policy_id_hex, policy_id_hex_size);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      _cardano_free(policy_id_hex);
+      return result;
+    }
+
+    const size_t hex_size = cardano_safe_strlen(policy_id_hex, policy_id_hex_size);
+    cardano_json_writer_write_property_name(writer, policy_id_hex, hex_size);
+
+    _cardano_free(policy_id_hex);
+
+    result = cardano_asset_name_map_to_cip116_json(kvp->value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
 
   return CARDANO_SUCCESS;
 }

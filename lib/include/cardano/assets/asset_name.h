@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -271,6 +272,25 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_asset_name_to_cbor(
   const cardano_asset_name_t* asset_name,
   cardano_cbor_writer_t*      writer);
+
+/**
+ * \brief Serializes an asset name to its CIP-116 JSON string representation.
+ *
+ * The function writes the hexadecimal representation of the asset name
+ * as a JSON string (e.g., "4d794173736574").
+ *
+ * \param[in]  asset_name Pointer to a valid \ref cardano_asset_name_t.
+ * \param[in]  writer     Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p asset_name or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_asset_name_to_cip116_json(
+  const cardano_asset_name_t* asset_name,
+  cardano_json_writer_t*      writer);
 
 /**
  * \brief Retrieves the string representation of a Cardano asset name.
