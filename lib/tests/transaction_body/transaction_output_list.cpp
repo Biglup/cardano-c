@@ -27,6 +27,7 @@
 #include <cardano/transaction_body/transaction_output_list.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -661,4 +662,82 @@ TEST(cardano_transaction_output_list_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_transaction_output_list_unref(&transaction_output_list);
+}
+
+TEST(cardano_transaction_output_list_to_cip116_json, canConvertList)
+{
+  // Arrange
+  cardano_error_t                    error = CARDANO_SUCCESS;
+  cardano_transaction_output_list_t* list  = NULL;
+  EXPECT_EQ(cardano_transaction_output_list_new(&list), CARDANO_SUCCESS);
+
+  const char* transaction_outputs[] = { TRANSACTION_OUTPUT1_CBOR, TRANSACTION_OUTPUT2_CBOR, TRANSACTION_OUTPUT3_CBOR, TRANSACTION_OUTPUT4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_transaction_output_t* transaction_output = new_default_transaction_output(transaction_outputs[i]);
+
+    cardano_error_t result = cardano_transaction_output_list_add(list, transaction_output);
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+
+    cardano_transaction_output_unref(&transaction_output);
+  }
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_transaction_output_list_to_cip116_json(list, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"address":"addr_test1qpfhhfy2qgls50r9u4yh0l7z67xpg0a5rrhkmvzcuqrd0znuzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q9gw0lz","amount":{"coin":"1000000","assets":{"00000000000000000000000000000000000000000000000000000000":{"30313232":"100","33343536":"99","40414242":"10"},"11111111111111111111111111111111111111111111111111111111":{"30313232":"100","33343536":"99","40414242":"10"}}},"plutus_data":{"tag":"datum","value":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]}},"script_ref":{"tag":"plutus_script","value":{"language":"plutus_v1","bytes":"4d01000033222220051200120011"}}},{"address":"addr_test1qpfhhfy2qgls50r9u4yh0l7z67xpg0a5rrhkmvzcuqrd0znuzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q9gw0lz","amount":{"coin":"1000000","assets":{"00000000000000000000000000000000000000000000000000000000":{"30313232":"100","33343536":"99","40414242":"10"},"11111111111111111111111111111111111111111111111111111111":{"30313232":"100","33343536":"99","40414242":"10"}}},"plutus_data":{"tag":"datum_hash","value":"0000000000000000000000000000000000000000000000000000000000000000"}},{"address":"addr_test1qpfhhfy2qgls50r9u4yh0l7z67xpg0a5rrhkmvzcuqrd0znuzcjqw982pcftgx53fu5527z2cj2tkx2h8ux2vxsg475q9gw0lz","amount":{"coin":"1000000","assets":{"00000000000000000000000000000000000000000000000000000000":{"30313232":"100","33343536":"99","40414242":"10"},"11111111111111111111111111111111111111111111111111111111":{"30313232":"100","33343536":"99","40414242":"10"}}},"plutus_data":{"tag":"datum","value":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]}}},{"address":"addr1gy5p8wv6sr8mgqjrwj7s75pft9y94ftwqey9vnlcqhew2xuvmxqe2cdam3npgxncrcd","amount":{"coin":"50000000"}}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_output_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_transaction_output_list_to_cip116_json, canConvertEmptyList)
+{
+  // Arrange
+  cardano_transaction_output_list_t* list = NULL;
+  EXPECT_EQ(cardano_transaction_output_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_transaction_output_list_to_cip116_json(list, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_transaction_output_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_transaction_output_list_to_cip116_json, returnsErrorIfListIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_transaction_output_list_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_transaction_output_list_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_transaction_output_list_t* list = NULL;
+  EXPECT_EQ(cardano_transaction_output_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_transaction_output_list_to_cip116_json(list, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_transaction_output_list_unref(&list);
 }

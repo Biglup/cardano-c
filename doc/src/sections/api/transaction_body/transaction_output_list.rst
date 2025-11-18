@@ -17,6 +17,10 @@ Transaction Output List
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_output_list_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_transaction_output_list_get_length
 
 ------------

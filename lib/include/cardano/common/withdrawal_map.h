@@ -165,6 +165,26 @@ CARDANO_EXPORT cardano_error_t cardano_withdrawal_map_to_cbor(
   cardano_cbor_writer_t*          writer);
 
 /**
+ * \brief Serializes a withdrawal map to a CIP-116 JSON array.
+ *
+ * This function serializes a map of [RewardAddress -> Coin] into
+ * a JSON array of key-value objects:
+ * [ { "key": "<reward_addr_bech32>", "value": "<uint64_string>" }, ... ]
+ *
+ * \param[in]  map     Pointer to a valid \ref cardano_withdrawal_map_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                 On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p map or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED  If memory allocation fails.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_withdrawal_map_to_cip116_json(
+  const cardano_withdrawal_map_t* map,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the length of the withdrawal_map.
  *
  * This function returns the number of key-value pairs contained in the specified withdrawal_map.

@@ -174,6 +174,28 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes a multi-asset collection to its CIP-116 JSON object representation.
+ *
+ * This function serializes the multi-asset structure into a JSON object where
+ * keys are the hex-encoded Policy IDs (ScriptHash) and values are the
+ * corresponding asset name maps (also JSON objects).
+ *
+ * This format is used for the "assets" field within a "Value" object.
+ *
+ * \param[in]  multi_asset Pointer to a valid \ref cardano_multi_asset_t.
+ * \param[in]  writer      Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p multi_asset or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_multi_asset_to_cip116_json(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the number of distinct policy IDs within a multi-asset container.
  *
  * This function counts the number of distinct policy IDs in a given \ref cardano_multi_asset_t object.

@@ -26,6 +26,7 @@
 #include <cardano/assets/asset_name_map.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1747,4 +1748,83 @@ TEST(cardano_asset_name_map_equals, returnsTrueIfMapsAreEqual)
   cardano_asset_name_map_unref(&lhs_asset_name_map);
   cardano_asset_name_map_unref(&rhs_asset_name_map);
   cardano_asset_name_unref(&asset_name1);
+}
+
+TEST(cardano_asset_name_map_to_cip116_json, canConvertMap)
+{
+  // Arrange
+  cardano_error_t           error = CARDANO_SUCCESS;
+  cardano_asset_name_map_t* map   = NULL;
+  EXPECT_EQ(cardano_asset_name_map_new(&map), CARDANO_SUCCESS);
+
+  byte_t                asset_bytes[] = { 0x4D, 0x79, 0x41, 0x73, 0x73, 0x65, 0x74 };
+  cardano_asset_name_t* asset1        = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(asset_bytes, sizeof(asset_bytes), &asset1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_asset_name_map_insert(map, asset1, 123), CARDANO_SUCCESS);
+
+  cardano_asset_name_t* asset2 = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(NULL, 0, &asset2), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_asset_name_map_insert(map, asset2, -456), CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_asset_name_unref(&asset1);
+  cardano_asset_name_unref(&asset2);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_asset_name_map_to_cip116_json(map, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"":"-456","4d794173736574":"123"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_asset_name_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_asset_name_map_to_cip116_json, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_asset_name_map_t* map = NULL;
+  EXPECT_EQ(cardano_asset_name_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_asset_name_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "{}");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_asset_name_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_asset_name_map_to_cip116_json, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_asset_name_map_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_asset_name_map_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_asset_name_map_t* map = NULL;
+  EXPECT_EQ(cardano_asset_name_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_asset_name_map_to_cip116_json(map, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_asset_name_map_unref(&map);
 }

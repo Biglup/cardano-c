@@ -666,6 +666,62 @@ cardano_transaction_output_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_transaction_output_to_cip116_json(
+  const cardano_transaction_output_t* output,
+  cardano_json_writer_t*              writer)
+{
+  if ((output == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "address", 7);
+
+  size_t      addr_len = cardano_address_get_string_size(output->address);
+  const char* address  = cardano_address_get_string(output->address);
+
+  cardano_json_writer_write_string(writer, address, cardano_safe_strlen(address, addr_len));
+
+  cardano_json_writer_write_property_name(writer, "amount", 6);
+
+  error = cardano_value_to_cip116_json(output->value, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (output->datum != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_data", 11);
+    error = cardano_datum_to_cip116_json(output->datum, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (output->script_ref != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "script_ref", 10);
+    error = cardano_script_to_cip116_json(output->script_ref, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_address_t*
 cardano_transaction_output_get_address(cardano_transaction_output_t* output)
 {

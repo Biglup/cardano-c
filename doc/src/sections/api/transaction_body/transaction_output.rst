@@ -17,6 +17,10 @@ Transaction Output
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_output_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_transaction_output_get_address
 
 ------------

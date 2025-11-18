@@ -27,6 +27,7 @@
 #include <cardano/common/withdrawal_map.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1136,4 +1137,84 @@ TEST(cardano_withdrawal_map_insert_ex, returnsErrorIfTheAddresIsInvalid)
 
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawal_map);
+}
+
+TEST(cardano_withdrawal_map_to_cip116_json, canConvertMap)
+{
+  // Arrange
+  cardano_withdrawal_map_t* withdrawal_map = nullptr;
+  cardano_error_t           error          = cardano_withdrawal_map_new(&withdrawal_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_reward_address_t* address1 = new_default_reward_address(rewardKey);
+  cardano_reward_address_t* address2 = new_default_reward_address(rewardScript);
+
+  error = cardano_withdrawal_map_insert(withdrawal_map, address1, 966);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_withdrawal_map_insert(withdrawal_map, address2, 22563);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_withdrawal_map_to_cip116_json(withdrawal_map, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"key":"stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw","value":"966"},{"key":"stake178phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcccycj5","value":"22563"}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_withdrawal_map_unref(&withdrawal_map);
+  cardano_reward_address_unref(&address1);
+  cardano_reward_address_unref(&address2);
+  free(json_str);
+}
+
+TEST(cardano_withdrawal_map_to_cip116_json, canConvertEmptyMap)
+{
+  // Arrange
+  cardano_withdrawal_map_t* map = NULL;
+  EXPECT_EQ(cardano_withdrawal_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_withdrawal_map_to_cip116_json(map, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_withdrawal_map_unref(&map);
+  free(json_str);
+}
+
+TEST(cardano_withdrawal_map_to_cip116_json, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_withdrawal_map_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_withdrawal_map_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_withdrawal_map_t* map = NULL;
+  EXPECT_EQ(cardano_withdrawal_map_new(&map), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_withdrawal_map_to_cip116_json(map, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_withdrawal_map_unref(&map);
 }

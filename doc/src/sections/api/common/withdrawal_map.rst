@@ -17,6 +17,10 @@ Withdrawal Map
 
 ------------
 
+.. doxygenfunction:: cardano_withdrawal_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_withdrawal_map_get_length
 
 ------------

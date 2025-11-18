@@ -362,6 +362,44 @@ cardano_value_to_cbor(
   return cardano_multi_asset_to_cbor(value->multi_asset, writer);
 }
 
+cardano_error_t
+cardano_value_to_cip116_json(
+  const cardano_value_t* value,
+  cardano_json_writer_t* writer)
+{
+  if (value == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "coin", 4);
+  cardano_json_writer_write_signed_int_as_string(writer, value->coin);
+
+  if ((value->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U))
+  {
+    cardano_json_writer_write_end_object(writer);
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_json_writer_write_property_name(writer, "assets", 6);
+  cardano_error_t error = cardano_multi_asset_to_cip116_json(value->multi_asset, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_multi_asset_t*
 cardano_value_get_multi_asset(cardano_value_t* value)
 {

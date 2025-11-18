@@ -165,6 +165,25 @@ CARDANO_EXPORT cardano_error_t cardano_asset_name_map_to_cbor(
   cardano_cbor_writer_t*          writer);
 
 /**
+ * \brief Serializes an asset name map to a CIP-116 JSON object.
+ *
+ * The function writes a JSON object where keys are the hexadecimal representation
+ * of the asset names, and values are the string representation of the amounts.
+ *
+ * \param[in]  map     Pointer to a valid \ref cardano_asset_name_map_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p map or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_asset_name_map_to_cip116_json(
+  const cardano_asset_name_map_t* map,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the length of the asset_name_map.
  *
  * This function returns the number of key-value pairs contained in the specified asset_name_map.

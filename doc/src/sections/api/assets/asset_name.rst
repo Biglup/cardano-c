@@ -21,6 +21,10 @@ Asset Name
 
 ------------
 
+.. doxygenfunction:: cardano_asset_name_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_asset_name_to_cbor
 
 ------------

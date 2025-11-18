@@ -262,6 +262,21 @@ cardano_asset_name_to_cbor(const cardano_asset_name_t* asset_name, cardano_cbor_
   return write_result;
 }
 
+cardano_error_t
+cardano_asset_name_to_cip116_json(
+  const cardano_asset_name_t* asset_name,
+  cardano_json_writer_t*      writer)
+{
+  if ((asset_name == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_string(writer, asset_name->hex, asset_name->hex_size);
+
+  return CARDANO_SUCCESS;
+}
+
 const char*
 cardano_asset_name_get_string(const cardano_asset_name_t* asset_name)
 {
