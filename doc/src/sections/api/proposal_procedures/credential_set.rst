@@ -17,6 +17,10 @@ Credential Set
 
 ------------
 
+.. doxygenfunction:: cardano_credential_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_credential_set_get_length
 
 ------------

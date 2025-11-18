@@ -276,6 +276,46 @@ cardano_treasury_withdrawals_action_to_cbor(
 }
 
 cardano_error_t
+cardano_treasury_withdrawals_action_to_cip116_json(
+  const cardano_treasury_withdrawals_action_t* action,
+  cardano_json_writer_t*                       writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "treasury_withdrawals_action", 27);
+
+  cardano_json_writer_write_property_name(writer, "rewards", 7);
+
+  cardano_error_t error = cardano_withdrawal_map_to_cip116_json(action->withdrawals, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (action->policy_hash != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "policy_hash", 11);
+    error = cardano_blake2b_hash_to_cip116_json(action->policy_hash, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
+cardano_error_t
 cardano_treasury_withdrawals_action_set_withdrawals(
   cardano_treasury_withdrawals_action_t* treasury_withdrawals_action,
   cardano_withdrawal_map_t*              withdrawals)

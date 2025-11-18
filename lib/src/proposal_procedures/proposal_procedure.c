@@ -39,6 +39,7 @@
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 
 #include <assert.h>
+#include <src/string_safe.h>
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -930,6 +931,129 @@ cardano_proposal_procedure_to_cbor(
   }
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_proposal_procedure_to_cip116_json(
+  const cardano_proposal_procedure_t* procedure,
+  cardano_json_writer_t*              writer)
+{
+  if ((procedure == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "deposit", 7);
+  cardano_json_writer_write_uint_as_string(writer, procedure->deposit);
+
+  const char*  address           = cardano_reward_address_get_string(procedure->reward_address);
+  const size_t addr_len          = cardano_reward_address_get_bech32_size(procedure->reward_address);
+  const size_t size_with_no_null = cardano_safe_strlen(address, addr_len);
+
+  cardano_json_writer_write_property_name(writer, "reward_account", 14);
+  cardano_json_writer_write_string(writer, address, size_with_no_null);
+
+  cardano_json_writer_write_property_name(writer, "gov_action", 10);
+
+  switch (procedure->action_type)
+  {
+    case CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE:
+    {
+      cardano_error_t write_action_result = cardano_parameter_change_action_to_cip116_json(procedure->parameter_change_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_HARD_FORK_INITIATION:
+    {
+      cardano_error_t write_action_result = cardano_hard_fork_initiation_action_to_cip116_json(procedure->hard_fork_initiation_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS:
+    {
+      cardano_error_t write_action_result = cardano_treasury_withdrawals_action_to_cip116_json(procedure->treasury_withdrawals_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_NO_CONFIDENCE:
+    {
+      cardano_error_t write_action_result = cardano_no_confidence_action_to_cip116_json(procedure->no_confidence_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_UPDATE_COMMITTEE:
+    {
+      cardano_error_t write_action_result = cardano_update_committee_action_to_cip116_json(procedure->update_committee_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION:
+    {
+      cardano_error_t write_action_result = cardano_new_constitution_action_to_cip116_json(procedure->new_constitution_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_INFO:
+    {
+      cardano_error_t write_action_result = cardano_info_action_to_cip116_json(procedure->info_action, writer);
+
+      if (write_action_result != CARDANO_SUCCESS)
+      {
+        return write_action_result;
+      }
+
+      break;
+    }
+    default:
+    {
+      return CARDANO_ERROR_INVALID_PROCEDURE_PROPOSAL_TYPE;
+    }
+  }
+
+  cardano_json_writer_write_property_name(writer, "anchor", 6);
+  error = cardano_anchor_to_cip116_json(procedure->anchor, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
 }
 
 cardano_error_t

@@ -17,6 +17,10 @@ Proposal Procedure Set
 
 ------------
 
+.. doxygenfunction:: cardano_proposal_procedure_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_proposal_procedure_set_get_length
 
 ------------

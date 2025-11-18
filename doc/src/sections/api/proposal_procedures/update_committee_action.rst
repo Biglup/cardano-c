@@ -17,6 +17,10 @@ Update Committee Action
 
 ------------
 
+.. doxygenfunction:: cardano_update_committee_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_update_committee_action_set_members_to_be_removed
 
 ------------

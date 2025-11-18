@@ -170,6 +170,24 @@ CARDANO_EXPORT cardano_error_t cardano_credential_set_to_cbor(
   cardano_cbor_writer_t*          writer);
 
 /**
+ * \brief Serializes a set of credentials to a CIP-116 JSON array.
+ *
+ * This function iterates over the set and serializes each \ref cardano_credential_t
+ * into a JSON array.
+ *
+ * \param[in]  set     Pointer to a valid \ref cardano_credential_set_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p set or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_credential_set_to_cip116_json(
+  const cardano_credential_set_t* set,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the length of a credential list.
  *
  * This function retrieves the number of elements in the provided \ref cardano_credential_set_t object.

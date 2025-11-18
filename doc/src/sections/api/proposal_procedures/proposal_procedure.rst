@@ -41,6 +41,10 @@ Proposal Procedure
 
 ------------
 
+.. doxygenfunction:: cardano_proposal_procedure_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_proposal_procedure_get_action_type
 
 ------------

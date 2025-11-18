@@ -17,6 +17,10 @@ Treasury Withdrawals Action
 
 ------------
 
+.. doxygenfunction:: cardano_treasury_withdrawals_action_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_treasury_withdrawals_action_set_withdrawals
 
 ------------

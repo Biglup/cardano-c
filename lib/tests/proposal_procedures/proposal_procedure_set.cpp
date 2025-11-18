@@ -26,6 +26,7 @@
 #include <cardano/proposal_procedures/proposal_procedure_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -707,4 +708,78 @@ TEST(cardano_proposal_procedure_set_add, returnsErrorIfDataIsNull)
 
   // Cleanup
   cardano_proposal_procedure_set_unref(&proposal_procedure_set);
+}
+
+TEST(cardano_proposal_procedure_set_to_cip116_json, canConvertSet)
+{
+  // Arrange
+  cardano_proposal_procedure_set_t* set = NULL;
+  EXPECT_EQ(cardano_proposal_procedure_set_new(&set), CARDANO_SUCCESS);
+
+  const char* proposal_procedures[] = { PROPOSAL_PROCEDURE1_CBOR, PROPOSAL_PROCEDURE2_CBOR, PROPOSAL_PROCEDURE3_CBOR, PROPOSAL_PROCEDURE4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_proposal_procedure_t* proposal_procedure = new_default_proposal_procedure(proposal_procedures[i]);
+
+    cardano_error_t result = cardano_proposal_procedure_set_add(set, proposal_procedure);
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+
+    cardano_proposal_procedure_unref(&proposal_procedure);
+  }
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_proposal_procedure_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"([{"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"parameter_change_action","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"3"},"protocol_param_update":{"min_fee_a":"100","min_fee_b":"200","max_block_body_size":"300","max_tx_size":"400","max_block_header_size":"500","key_deposit":"2000000","pool_deposit":"200000000","max_epoch":"800","n_opt":"900","pool_pledge_influence":{"numerator":"1","denominator":"2"},"expansion_rate":{"numerator":"1","denominator":"3"},"treasury_growth_rate":{"numerator":"1","denominator":"4"},"d":{"numerator":"1","denominator":"5"},"extra_entropy":"0000000000000000000000000000000000000000000000000000000000000000","min_pool_cost":"1000","ada_per_utxo_byte":"35000","cost_models":{"plutus_v1":["205665","812","1","1","1000","571","0","1","1000","24177","4","1","1000","32","117366","10475","4","23000","100","23000","100","23000","100","23000","100","23000","100","23000","100","100","100","23000","100","19537","32","175354","32","46417","4","221973","511","0","1","89141","32","497525","14068","4","2","196500","453240","220","0","1","1","1000","28662","4","2","245000","216773","62","1","1060367","12586","1","208512","421","1","187000","1000","52998","1","80436","32","43249","32","1000","32","80556","1","57667","4","1000","10","197145","156","1","197145","156","1","204924","473","1","208896","511","1","52467","32","64832","32","65493","32","22558","32","16563","32","76511","32","196500","453240","220","0","1","1","69522","11687","0","1","60091","32","196500","453240","220","0","1","1","196500","453240","220","0","1","1","806990","30482","4","1927926","82523","4","265318","0","4","0","85931","32","205665","812","1","1","41182","32","212342","32","31220","32","32696","32","43357","32","32247","32","38314","32","57996947","18975","10"],"plutus_v2":["205665","812","1","1","1000","571","0","1","1000","24177","4","1","1000","32","117366","10475","4","23000","100","23000","100","23000","100","23000","100","23000","100","23000","100","100","100","23000","100","19537","32","175354","32","46417","4","221973","511","0","1","89141","32","497525","14068","4","2","196500","453240","220","0","1","1","1000","28662","4","2","245000","216773","62","1","1060367","12586","1","208512","421","1","187000","1000","52998","1","80436","32","43249","32","1000","32","80556","1","57667","4","1000","10","197145","156","1","197145","156","1","204924","473","1","208896","511","1","52467","32","64832","32","65493","32","22558","32","16563","32","76511","32","196500","453240","220","0","1","1","69522","11687","0","1","60091","32","196500","453240","220","0","1","1","196500","453240","220","0","1","1","1159724","392670","0","2","806990","30482","4","1927926","82523","4","265318","0","4","0","85931","32","205665","812","1","1","41182","32","212342","32","31220","32","32696","32","43357","32","32247","32","38314","32","35892428","10","57996947","18975","10","38887044","32947","10"]},"execution_costs":{"mem_price":{"numerator":"1","denominator":"2"},"step_price":{"numerator":"1","denominator":"2"}},"max_tx_ex_units":{"mem":"4294967296","steps":"4294967296"},"max_block_ex_units":{"mem":"4294967296","steps":"4294967296"},"max_value_size":"954","collateral_percentage":"852","max_collateral_inputs":"100","pool_voting_thresholds":{"motion_no_confidence":{"numerator":"0","denominator":"0"},"committee_normal":{"numerator":"1","denominator":"1"},"committee_no_confidence":{"numerator":"2","denominator":"2"},"hard_fork_initiation":{"numerator":"3","denominator":"3"},"security_relevant_param":{"numerator":"1","denominator":"1"}},"drep_voting_thresholds":{"motion_no_confidence":{"numerator":"0","denominator":"0"},"committee_normal":{"numerator":"1","denominator":"1"},"committee_no_confidence":{"numerator":"2","denominator":"2"},"update_constitution":{"numerator":"3","denominator":"3"},"hard_fork_initiation":{"numerator":"4","denominator":"4"},"pp_network_group":{"numerator":"5","denominator":"5"},"pp_economic_group":{"numerator":"6","denominator":"6"},"pp_technical_group":{"numerator":"7","denominator":"7"},"pp_gov_group":{"numerator":"8","denominator":"8"},"treasury_withdrawal":{"numerator":"9","denominator":"9"}},"min_committee_size":"100","committee_term_limit":"200","governance_action_validity_period":"300","governance_action_deposit":"1000","drep_deposit":"2000","drep_inactivity_period":"5000"},"policy_hash":"8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80d"},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}},{"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"hard_fork_initiation_action","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"3"},"protocol_version":{"major":1,"minor":3}},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}},{"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"treasury_withdrawals_action","rewards":[{"key":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","value":"1"}],"policy_hash":"8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80d"},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}},{"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"no_confidence","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"3"}},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_proposal_procedure_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_proposal_procedure_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_proposal_procedure_set_t* set = NULL;
+  EXPECT_EQ(cardano_proposal_procedure_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_proposal_procedure_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_proposal_procedure_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_proposal_procedure_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_proposal_procedure_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_proposal_procedure_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_proposal_procedure_set_t* set = NULL;
+  EXPECT_EQ(cardano_proposal_procedure_set_new(&set), CARDANO_SUCCESS);
+  cardano_error_t error = cardano_proposal_procedure_set_to_cip116_json(set, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_proposal_procedure_set_unref(&set);
 }

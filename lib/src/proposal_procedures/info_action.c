@@ -178,6 +178,26 @@ cardano_info_action_to_cbor(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_info_action_to_cip116_json(
+  const cardano_info_action_t* action,
+  cardano_json_writer_t*       writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "info_action", 11);
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_info_action_unref(cardano_info_action_t** info_action)
 {

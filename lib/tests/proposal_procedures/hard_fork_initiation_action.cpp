@@ -26,6 +26,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -684,4 +685,95 @@ TEST(cardano_hard_fork_initiation_action_get_governance_action_id, returnsErrorI
 
   // Assert
   EXPECT_EQ(governance_action_id, nullptr);
+}
+
+TEST(cardano_hard_fork_initiation_action_to_cip116_json, canConvertActionWithId)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char*             hash_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_blake2b_hash_t* hash     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hash_hex, strlen(hash_hex), &hash), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_new(hash, 2, &action_id), CARDANO_SUCCESS);
+  cardano_blake2b_hash_unref(&hash);
+
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(9, 0, &version), CARDANO_SUCCESS);
+
+  cardano_hard_fork_initiation_action_t* action = NULL;
+  error                                         = cardano_hard_fork_initiation_action_new(version, action_id, &action);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_governance_action_id_unref(&action_id);
+  cardano_protocol_version_unref(&version);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_hard_fork_initiation_action_to_cip116_json(action, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"({"tag":"hard_fork_initiation_action","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"2"},"protocol_version":{"major":9,"minor":0}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_hard_fork_initiation_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_hard_fork_initiation_action_to_cip116_json, canConvertActionWithoutId)
+{
+  // Arrange
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(3, 0, &version), CARDANO_SUCCESS);
+
+  // Create Action with NULL ID
+  cardano_hard_fork_initiation_action_t* action = NULL;
+  EXPECT_EQ(cardano_hard_fork_initiation_action_new(version, NULL, &action), CARDANO_SUCCESS);
+  cardano_protocol_version_unref(&version);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_hard_fork_initiation_action_to_cip116_json(action, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"hard_fork_initiation_action","protocol_version":{"major":3,"minor":0}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_hard_fork_initiation_action_unref(&action);
+  free(json_str);
+}
+
+TEST(cardano_hard_fork_initiation_action_to_cip116_json, returnsErrorIfActionIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_hard_fork_initiation_action_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_hard_fork_initiation_action_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(1, 0, &version), CARDANO_SUCCESS);
+  cardano_hard_fork_initiation_action_t* action = NULL;
+  EXPECT_EQ(cardano_hard_fork_initiation_action_new(version, NULL, &action), CARDANO_SUCCESS);
+  cardano_protocol_version_unref(&version);
+
+  cardano_error_t error = cardano_hard_fork_initiation_action_to_cip116_json(action, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_hard_fork_initiation_action_unref(&action);
 }

@@ -339,6 +339,59 @@ cardano_parameter_change_action_to_cbor(
 }
 
 cardano_error_t
+cardano_parameter_change_action_to_cip116_json(
+  const cardano_parameter_change_action_t* action,
+  cardano_json_writer_t*                   writer)
+{
+  if ((action == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+  cardano_json_writer_write_string(writer, "parameter_change_action", 23);
+
+  if (action->governance_action_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "gov_action_id", 13);
+    error = cardano_governance_action_id_to_cip116_json(action->governance_action_id, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_property_name(writer, "protocol_param_update", 21);
+
+  error = cardano_protocol_param_update_to_cip116_json(action->protocol_param_update, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (action->policy_hash != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "policy_hash", 11);
+
+    error = cardano_blake2b_hash_to_cip116_json(action->policy_hash, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
+cardano_error_t
 cardano_parameter_change_action_set_protocol_param_update(
   cardano_parameter_change_action_t* parameter_change_action,
   cardano_protocol_param_update_t*   protocol_param_update)

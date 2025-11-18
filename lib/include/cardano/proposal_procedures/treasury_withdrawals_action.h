@@ -205,6 +205,25 @@ CARDANO_EXPORT cardano_error_t cardano_treasury_withdrawals_action_to_cbor(
   cardano_cbor_writer_t*                       writer);
 
 /**
+ * \brief Serializes a treasury withdrawals action to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "tag", "rewards", "policy_hash" (if present).
+ *
+ * \param[in]  action  Pointer to a valid \ref cardano_treasury_withdrawals_action_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS                On success.
+ * CARDANO_ERROR_POINTER_IS_NULL          If \p action or \p writer is NULL.
+ * CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation fails.
+ * Other                                  Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_treasury_withdrawals_action_to_cip116_json(
+  const cardano_treasury_withdrawals_action_t* action,
+  cardano_json_writer_t*                       writer);
+
+/**
  * \brief Sets the withdrawals in the treasury withdrawals action.
  *
  * This function updates the withdrawals section of a \ref cardano_treasury_withdrawals_action_t object.

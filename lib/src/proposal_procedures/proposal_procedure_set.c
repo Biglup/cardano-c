@@ -263,6 +263,45 @@ cardano_proposal_procedure_set_to_cbor(const cardano_proposal_procedure_set_t* p
   return result;
 }
 
+cardano_error_t
+cardano_proposal_procedure_set_to_cip116_json(
+  const cardano_proposal_procedure_set_t* procedures,
+  cardano_json_writer_t*                  writer)
+{
+  if ((procedures == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t          length = cardano_proposal_procedure_set_get_length(procedures);
+  cardano_error_t error  = CARDANO_SUCCESS;
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_proposal_procedure_t* procedure = NULL;
+    error                                   = cardano_proposal_procedure_set_get(procedures, i, &procedure);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_proposal_procedure_to_cip116_json(procedure, writer);
+    cardano_proposal_procedure_unref(&procedure);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return error;
+}
+
 size_t
 cardano_proposal_procedure_set_get_length(const cardano_proposal_procedure_set_t* proposal_procedure_set)
 {
