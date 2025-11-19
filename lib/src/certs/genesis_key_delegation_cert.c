@@ -313,12 +313,12 @@ cardano_genesis_key_delegation_cert_to_cip116_json(
 
   cardano_json_writer_write_property_name(writer, "vrf_keyhash", 11);
 
-  err = cardano_blake2b_hash_to_cip116_json(vrf, writer);
-
-  if (err != CARDANO_SUCCESS)
-  {
-    return err;
-  }
+  cardano_json_writer_write_bytes_as_bech32(
+    writer,
+    "vrf_vkh",
+    7,
+    cardano_blake2b_hash_get_data(vrf),
+    cardano_blake2b_hash_get_bytes_size(vrf));
 
   cardano_json_writer_write_end_object(writer);
 

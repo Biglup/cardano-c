@@ -278,19 +278,16 @@ cardano_constitution_to_cip116_json(
     return error;
   }
 
-  cardano_json_writer_write_property_name(writer, "script_hash", 11);
   if (constitution->script_hash != NULL)
   {
+    cardano_json_writer_write_property_name(writer, "script_hash", 11);
+
     error = cardano_blake2b_hash_to_cip116_json(constitution->script_hash, writer);
 
     if (error != CARDANO_SUCCESS)
     {
       return error;
     }
-  }
-  else
-  {
-    cardano_json_writer_write_null(writer);
   }
 
   cardano_json_writer_write_end_object(writer);

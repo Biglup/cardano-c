@@ -31,6 +31,7 @@
 #include "internals/json_writer_common.h"
 
 #include <assert.h>
+#include <cardano/encoding/bech32.h>
 #include <cardano/json/json_format.h>
 #include <string.h>
 
@@ -979,6 +980,79 @@ cardano_json_writer_write_bytes_as_hex(
 
   cardano_json_writer_write_buffer_as_hex(writer, buffer);
   cardano_buffer_unref(&buffer);
+}
+
+void
+cardano_json_writer_write_bytes_as_bech32(
+  cardano_json_writer_t* writer,
+  const char*            hrp,
+  const size_t           hrp_length,
+  const byte_t*          bytes,
+  const size_t           bytes_size)
+{
+  if ((writer == NULL) || (hrp == NULL) || (bytes == NULL))
+  {
+    return;
+  }
+
+  const size_t encoded_size = cardano_encoding_bech32_get_encoded_length(
+    hrp,
+    hrp_length,
+    bytes,
+    bytes_size);
+
+  if (encoded_size == 0U)
+  {
+    writer->last_error = CARDANO_ERROR_INVALID_ARGUMENT;
+    cardano_object_set_last_error(&writer->base, "Invalid arguments for Bech32 encoding.");
+    return;
+  }
+
+  char* buffer = _cardano_malloc(encoded_size);
+
+  if (buffer == NULL)
+  {
+    writer->last_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    cardano_object_set_last_error(&writer->base, "Failed to allocate temporary buffer.");
+    return;
+  }
+
+  cardano_error_t error = cardano_encoding_bech32_encode(
+    hrp,
+    hrp_length,
+    bytes,
+    bytes_size,
+    buffer,
+    encoded_size);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    _cardano_free(buffer);
+    writer->last_error = error;
+    cardano_object_set_last_error(&writer->base, "Failed during Bech32 encoding.");
+    return;
+  }
+
+  cardano_json_writer_write_string(writer, buffer, cardano_safe_strlen(buffer, encoded_size));
+  _cardano_free(buffer);
+}
+
+void
+cardano_json_writer_write_buffer_as_bech32(
+  cardano_json_writer_t*  writer,
+  const char*             hrp,
+  const size_t            hrp_length,
+  const cardano_buffer_t* value)
+{
+  if ((writer == NULL) || (value == NULL))
+  {
+    return;
+  }
+
+  const byte_t* bytes      = cardano_buffer_get_data(value);
+  const size_t  bytes_size = cardano_buffer_get_size(value);
+
+  cardano_json_writer_write_bytes_as_bech32(writer, hrp, hrp_length, bytes, bytes_size);
 }
 
 void

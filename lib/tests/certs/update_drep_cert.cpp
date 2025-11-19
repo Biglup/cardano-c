@@ -688,7 +688,7 @@ TEST(cardano_update_drep_cert_to_cip116_json, canConvertToCip116JsonWithoutAncho
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"update_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"anchor":null})");
+  EXPECT_STREQ(json_str, R"({"tag":"update_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
 
   // Cleanup
   cardano_json_writer_unref(&json);

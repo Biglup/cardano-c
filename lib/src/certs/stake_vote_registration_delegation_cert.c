@@ -324,12 +324,12 @@ cardano_stake_vote_registration_delegation_cert_to_cip116_json(
   cardano_json_writer_write_property_name(writer, "pool_keyhash", 12);
   assert(cert->pool_key_hash != NULL);
 
-  error = cardano_blake2b_hash_to_cip116_json(cert->pool_key_hash, writer);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    return error;
-  }
+  cardano_json_writer_write_bytes_as_bech32(
+    writer,
+    "pool",
+    4,
+    cardano_blake2b_hash_get_data(cert->pool_key_hash),
+    cardano_blake2b_hash_get_bytes_size(cert->pool_key_hash));
 
   cardano_json_writer_write_property_name(writer, "drep", 4);
   assert(cert->drep != NULL);

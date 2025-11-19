@@ -320,20 +320,15 @@ cardano_register_drep_cert_to_cip116_json(
   cardano_json_writer_write_property_name(writer, "coin", 4);
   cardano_json_writer_write_uint_as_string(writer, cert->deposit);
 
-  cardano_json_writer_write_property_name(writer, "anchor", 6);
-
   if (cert->anchor != NULL)
   {
+    cardano_json_writer_write_property_name(writer, "anchor", 6);
     error = cardano_anchor_to_cip116_json(cert->anchor, writer);
 
     if (error != CARDANO_SUCCESS)
     {
       return error;
     }
-  }
-  else
-  {
-    cardano_json_writer_write_null(writer);
   }
 
   cardano_json_writer_write_end_object(writer);

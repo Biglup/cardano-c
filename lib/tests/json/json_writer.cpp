@@ -2502,3 +2502,84 @@ TEST(cardano_json_writer_write_bytes_as_hex, setsErrorIfBytesSizeIsZero)
   free(json_str);
   cardano_json_writer_unref(&json);
 }
+
+TEST(cardano_json_writer_write_bytes_as_bech32, canWriteBytesAsBech32)
+{
+  // Arrange
+  byte_t                 data[] = { 0x61, 0xFA, 0xB2, 0x02, 0xCB, 0x68, 0xA9, 0x13, 0xF3, 0x24, 0x42, 0xDA, 0xC7, 0xB0, 0x19, 0x70, 0xD9, 0x9D, 0x93, 0xFA, 0xB9, 0xC0, 0x80, 0x5A, 0x3E, 0x52, 0x4D, 0x67, 0x7F };
+  cardano_json_writer_t* json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_bytes_as_bech32(json, "addr", 4, data, sizeof(data));
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, R"("addr1v8atyqktdz538ueygtdv0vqewrvemyl6h8qgqk372fxkwlc7e2df5")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_json_writer_write_bytes_as_bech32, setsErrorIfBytesIsNull)
+{
+  // Arrange
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_bytes_as_bech32(json, "addr", 4, nullptr, 10);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, "");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_json_writer_write_buffer_as_bech32, canWriteBufferAsBech32)
+{
+  // Arrange
+  byte_t            data[] = { 0x61, 0xFA, 0xB2, 0x02, 0xCB, 0x68, 0xA9, 0x13, 0xF3, 0x24, 0x42, 0xDA, 0xC7, 0xB0, 0x19, 0x70, 0xD9, 0x9D, 0x93, 0xFA, 0xB9, 0xC0, 0x80, 0x5A, 0x3E, 0x52, 0x4D, 0x67, 0x7F };
+  cardano_buffer_t* buffer = cardano_buffer_new_from(data, sizeof(data));
+  EXPECT_TRUE(buffer != NULL);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_buffer_as_bech32(json, "addr", 4, buffer);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, R"("addr1v8atyqktdz538ueygtdv0vqewrvemyl6h8qgqk372fxkwlc7e2df5")");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_json_writer_write_buffer_as_bech32, canWriteEmptyBufferAsBech32)
+{
+  // Arrange
+  cardano_buffer_t* buffer = cardano_buffer_new_from(NULL, 0);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  EXPECT_TRUE(json != NULL);
+
+  // Act
+  cardano_json_writer_write_buffer_as_bech32(json, "addr", 4, buffer);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_STREQ(json_str, "");
+
+  // Cleanup
+  free(json_str);
+  cardano_json_writer_unref(&json);
+  cardano_buffer_unref(&buffer);
+}

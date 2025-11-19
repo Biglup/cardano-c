@@ -293,20 +293,15 @@ cardano_resign_committee_cold_cert_to_cip116_json(
     return error;
   }
 
-  cardano_json_writer_write_property_name(writer, "anchor", 6);
-
   if (cert->anchor != NULL)
   {
+    cardano_json_writer_write_property_name(writer, "anchor", 6);
     error = cardano_anchor_to_cip116_json(cert->anchor, writer);
 
     if (error != CARDANO_SUCCESS)
     {
       return error;
     }
-  }
-  else
-  {
-    cardano_json_writer_write_null(writer);
   }
 
   cardano_json_writer_write_end_object(writer);

@@ -467,23 +467,23 @@ cardano_pool_params_to_cip116_json(
 
   assert((params->operator_hash != NULL));
 
-  cardano_error_t error = cardano_blake2b_hash_to_cip116_json(params->operator_hash, writer);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    return error;
-  }
+  cardano_json_writer_write_bytes_as_bech32(
+    writer,
+    "pool",
+    4,
+    cardano_blake2b_hash_get_data(params->operator_hash),
+    cardano_blake2b_hash_get_bytes_size(params->operator_hash));
 
   cardano_json_writer_write_property_name(writer, "vrf_keyhash", 11);
 
   assert((params->vrf_vk_hash != NULL));
 
-  error = cardano_blake2b_hash_to_cip116_json(params->vrf_vk_hash, writer);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    return error;
-  }
+  cardano_json_writer_write_bytes_as_bech32(
+    writer,
+    "vrf_vkh",
+    7,
+    cardano_blake2b_hash_get_data(params->vrf_vk_hash),
+    cardano_blake2b_hash_get_bytes_size(params->vrf_vk_hash));
 
   cardano_json_writer_write_property_name(writer, "pledge", 6);
   cardano_json_writer_write_uint_as_string(writer, params->pledge);
@@ -492,7 +492,7 @@ cardano_pool_params_to_cip116_json(
   cardano_json_writer_write_uint_as_string(writer, params->cost);
 
   cardano_json_writer_write_property_name(writer, "margin", 6);
-  error = cardano_unit_interval_to_cip116_json(params->margin, writer);
+  cardano_error_t error = cardano_unit_interval_to_cip116_json(params->margin, writer);
 
   if (error != CARDANO_SUCCESS)
   {
@@ -524,20 +524,15 @@ cardano_pool_params_to_cip116_json(
     return error;
   }
 
-  cardano_json_writer_write_property_name(writer, "pool_metadata", 13);
-
   if (params->metadata != NULL)
   {
+    cardano_json_writer_write_property_name(writer, "pool_metadata", 13);
     error = cardano_pool_metadata_to_cip116_json(params->metadata, writer);
 
     if (error != CARDANO_SUCCESS)
     {
       return error;
     }
-  }
-  else
-  {
-    cardano_json_writer_write_null(writer);
   }
 
   cardano_json_writer_write_end_object(writer);

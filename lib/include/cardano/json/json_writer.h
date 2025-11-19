@@ -113,6 +113,7 @@ CARDANO_EXPORT cardano_json_writer_t* cardano_json_writer_new(cardano_json_forma
  * cardano_json_writer_unref(&writer); // Release resources
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_property_name(
   cardano_json_writer_t* writer,
   const char*            name,
@@ -190,6 +191,7 @@ CARDANO_EXPORT void cardano_json_writer_write_property_name(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_bool(
   cardano_json_writer_t* writer,
   bool                   value);
@@ -257,6 +259,7 @@ CARDANO_EXPORT void cardano_json_writer_write_bool(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_null(
   cardano_json_writer_t* writer);
 
@@ -347,6 +350,7 @@ CARDANO_EXPORT void cardano_json_writer_write_null(
  * }
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_bigint(
   cardano_json_writer_t*  writer,
   const cardano_bigint_t* bigint);
@@ -425,6 +429,7 @@ CARDANO_EXPORT void cardano_json_writer_write_bigint(
  * }
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_start_array(
   cardano_json_writer_t* writer);
 
@@ -497,6 +502,7 @@ CARDANO_EXPORT void cardano_json_writer_write_start_array(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_end_array(cardano_json_writer_t* writer);
 
 /**
@@ -570,6 +576,7 @@ CARDANO_EXPORT void cardano_json_writer_write_end_array(cardano_json_writer_t* w
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_start_object(
   cardano_json_writer_t* writer);
 
@@ -641,6 +648,7 @@ CARDANO_EXPORT void cardano_json_writer_write_start_object(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_end_object(cardano_json_writer_t* writer);
 
 /**
@@ -718,6 +726,7 @@ CARDANO_EXPORT void cardano_json_writer_write_end_object(cardano_json_writer_t* 
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_raw_value(
   cardano_json_writer_t* writer,
   const char*            data,
@@ -732,6 +741,7 @@ CARDANO_EXPORT void cardano_json_writer_write_raw_value(
  * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
  * \param[in] object A pointer to the \ref cardano_json_object_t to be written.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_object(
   cardano_json_writer_t* writer,
   cardano_json_object_t* object);
@@ -806,6 +816,7 @@ CARDANO_EXPORT void cardano_json_writer_write_object(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_uint(
   cardano_json_writer_t* writer,
   uint64_t               value);
@@ -879,6 +890,7 @@ CARDANO_EXPORT void cardano_json_writer_write_uint(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_uint_as_string(
   cardano_json_writer_t* writer,
   uint64_t               value);
@@ -953,6 +965,7 @@ CARDANO_EXPORT void cardano_json_writer_write_uint_as_string(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_signed_int(
   cardano_json_writer_t* writer,
   int64_t                value);
@@ -1026,6 +1039,7 @@ CARDANO_EXPORT void cardano_json_writer_write_signed_int(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_signed_int_as_string(
   cardano_json_writer_t* writer,
   int64_t                value);
@@ -1103,6 +1117,7 @@ CARDANO_EXPORT void cardano_json_writer_write_signed_int_as_string(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_double(
   cardano_json_writer_t* writer,
   double                 value);
@@ -1180,6 +1195,7 @@ CARDANO_EXPORT void cardano_json_writer_write_double(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_double_as_string(
   cardano_json_writer_t* writer,
   double                 value);
@@ -1197,6 +1213,7 @@ CARDANO_EXPORT void cardano_json_writer_write_double_as_string(
  * \param[in] writer A pointer to the \ref cardano_json_writer_t instance.
  * \param[in] value  The \ref cardano_buffer_t containing the binary data to be written.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void
 cardano_json_writer_write_buffer_as_hex(
   cardano_json_writer_t*  writer,
@@ -1213,11 +1230,54 @@ cardano_json_writer_write_buffer_as_hex(
  * \param[in] bytes      A pointer to the raw byte array to be written.
  * \param[in] bytes_size The number of bytes in the \p bytes array.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void
 cardano_json_writer_write_bytes_as_hex(
   cardano_json_writer_t* writer,
   const byte_t*          bytes,
   size_t                 bytes_size);
+
+/**
+ * \brief Writes a raw byte array as a quoted Bech32 string to the JSON output.
+ *
+ * This function is a utility helper that converts a raw byte payload (hash or address data)
+ * into a Bech32 string using the specified Human-Readable Part (HRP) and writes the result
+ * as a JSON string literal (enclosed in quotes).
+ *
+ * \param[in] writer     A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] hrp        The Human-Readable Part (HRP/prefix) for the Bech32 encoding (e.g., "stake1", "pool1").
+ * \param[in] hrp_length The length of the HRP string.
+ * \param[in] bytes      The raw byte array (data payload) to be encoded.
+ * \param[in] bytes_size The size of the raw byte array.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT void
+cardano_json_writer_write_bytes_as_bech32(
+  cardano_json_writer_t* writer,
+  const char*            hrp,
+  size_t                 hrp_length,
+  const byte_t*          bytes,
+  size_t                 bytes_size);
+
+/**
+ * \brief Writes a raw byte array as a quoted Bech32 string to the JSON output.
+ *
+ * This function is a utility helper that converts a raw byte payload (hash or address data)
+ * into a Bech32 string using the specified Human-Readable Part (HRP) and writes the result
+ * as a JSON string literal (enclosed in quotes).
+ *
+ * \param[in] writer     A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] hrp        The Human-Readable Part (HRP/prefix) for the Bech32 encoding (e.g., "stake1", "pool1").
+ * \param[in] hrp_length The length of the HRP string.
+ * \param[in] value      The \ref cardano_buffer_t containing the binary data to be written.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT void
+cardano_json_writer_write_buffer_as_bech32(
+  cardano_json_writer_t*  writer,
+  const char*             hrp,
+  size_t                  hrp_length,
+  const cardano_buffer_t* value);
 
 /**
  * \brief Writes a string value to the JSON output.
@@ -1298,6 +1358,7 @@ cardano_json_writer_write_bytes_as_hex(
  *  cardano_json_writer_unref(&writer);
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_write_string(
   cardano_json_writer_t* writer,
   const char*            value,
@@ -1342,6 +1403,7 @@ CARDANO_EXPORT void cardano_json_writer_write_string(
  *  }
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT cardano_json_context_t cardano_json_writer_get_context(cardano_json_writer_t* writer);
 
 /**
@@ -1528,6 +1590,7 @@ CARDANO_EXPORT cardano_error_t cardano_json_writer_reset(cardano_json_writer_t* 
  * \note After calling \ref cardano_json_writer_unref, the pointer to the \ref cardano_json_writer_t object
  *    will be set to NULL to prevent its reuse.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_unref(cardano_json_writer_t** json_writer);
 
 /**
@@ -1552,6 +1615,7 @@ CARDANO_EXPORT void cardano_json_writer_unref(cardano_json_writer_t** json_write
  * \note Always ensure that for every call to \ref cardano_json_writer_ref there is a corresponding
  * call to \ref cardano_json_writer_unref to prevent memory leaks.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_ref(cardano_json_writer_t* json_writer);
 
 /**
@@ -1600,6 +1664,7 @@ CARDANO_EXPORT size_t cardano_json_writer_refcount(const cardano_json_writer_t* 
  * \note The error message is limited to 1023 characters, including the null terminator, due to the
  * fixed size of the last_error buffer.
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT void cardano_json_writer_set_last_error(cardano_json_writer_t* writer, const char* message);
 
 /**

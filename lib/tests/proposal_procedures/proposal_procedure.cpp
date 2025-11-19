@@ -2421,7 +2421,7 @@ TEST(cardano_proposal_procedure_to_cip116_json, canConvertNewConstitutionProposa
 
   char* json_str = encode_json(json);
 
-  const char* expected = R"({"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"new_constitution","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"3"},"constitution":{"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"script_hash":null}},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}})";
+  const char* expected = R"({"deposit":"1000000","reward_account":"stake1u89sasnfyjtmgk8ydqfv3fdl52f36x3djedfnzfc9rkgzrcss5vgr","gov_action":{"tag":"new_constitution","gov_action_id":{"transaction_id":"0000000000000000000000000000000000000000000000000000000000000000","gov_action_index":"3"},"constitution":{"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}}},"anchor":{"url":"https://www.someurl.io","data_hash":"0000000000000000000000000000000000000000000000000000000000000000"}})";
 
   EXPECT_STREQ(json_str, expected);
   free(json_str);

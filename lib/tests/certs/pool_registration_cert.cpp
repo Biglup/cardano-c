@@ -534,7 +534,7 @@ TEST(cardano_pool_registration_cert_to_cip116_json, canConvertToCip116Json)
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"pool_registration","pool_params":{"operator":"56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20","vrf_keyhash":"ec3d672178061731255b26040701764e56424f705c8d5c049166867e0e4647c6","pledge":"100","cost":"340000000","margin":{"numerator":"1","denominator":"10"},"reward_account":"stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y","pool_owners":[],"relays":[],"pool_metadata":null}})");
+  EXPECT_STREQ(json_str, R"({"tag":"pool_registration","pool_params":{"operator":"pool12c6egd4sj3e9ey7y2skx35gx2l3cc4l9t46t07r5t48jqmd4qf0","vrf_keyhash":"vrf_vkh1as7kwgtcqctnzf2myczqwqtkfetyynmstjx4cpy3v6r8urjxglrq0dd0dt","pledge":"100","cost":"340000000","margin":{"numerator":"1","denominator":"10"},"reward_account":"stake1u87qlejzjkrxm9ja7k6h0x7xuepd3q8njesv2s62lz83ttszp4x0y","pool_owners":[],"relays":[]}})");
 
   // Cleanup
   cardano_json_writer_unref(&json);

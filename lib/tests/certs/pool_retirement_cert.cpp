@@ -568,7 +568,7 @@ TEST(cardano_pool_retirement_cert_to_cip116_json, canConvertToCip116Json)
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"pool_retirement","pool_keyhash":"56359436b094725c93c4542c68d10657e38c57e55d74b7f8745d4f20","epoch":12345})");
+  EXPECT_STREQ(json_str, R"({"tag":"pool_retirement","pool_keyhash":"pool12c6egd4sj3e9ey7y2skx35gx2l3cc4l9t46t07r5t48jqmd4qf0","epoch":12345})");
 
   // Cleanup
   cardano_json_writer_unref(&json);
