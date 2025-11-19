@@ -17,6 +17,10 @@ Transaction Body
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_body_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_transaction_body_get_inputs
 
 ------------

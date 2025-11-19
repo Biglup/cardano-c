@@ -327,6 +327,55 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_transaction_to_cip116_json(
+  const cardano_transaction_t* tx,
+  cardano_json_writer_t*       writer)
+{
+  if ((tx == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "body", 4);
+  error = cardano_transaction_body_to_cip116_json(tx->body, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "is_valid", 8);
+  cardano_json_writer_write_bool(writer, tx->is_valid);
+
+  cardano_json_writer_write_property_name(writer, "witness_set", 11);
+  error = cardano_witness_set_to_cip116_json(tx->witness_set, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (tx->auxiliary_data != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "auxiliary_data", 14);
+
+    error = cardano_auxiliary_data_to_cip116_json(tx->auxiliary_data, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
 cardano_transaction_body_t*
 cardano_transaction_get_body(cardano_transaction_t* transaction)
 {

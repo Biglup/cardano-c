@@ -1720,6 +1720,215 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transaction_body, cardano_json_writer_t* writer)
+{
+  if ((transaction_body == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+
+  cardano_json_writer_write_property_name(writer, "inputs", 6);
+  cardano_error_t result = cardano_transaction_input_set_to_cip116_json(transaction_body->inputs, writer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (transaction_body->outputs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "outputs", 7);
+    result = cardano_transaction_output_list_to_cip116_json(transaction_body->outputs, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  const uint64_t fee = (transaction_body->fee == NULL) ? (0U) : (*transaction_body->fee);
+  cardano_json_writer_write_property_name(writer, "fee", 3);
+  cardano_json_writer_write_uint_as_string(writer, fee);
+
+  if (transaction_body->invalid_after != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ttl", 3);
+    cardano_json_writer_write_uint_as_string(writer, *transaction_body->invalid_after);
+  }
+
+  if (transaction_body->certificates != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "certs", 5);
+    result = cardano_certificate_set_to_cip116_json(transaction_body->certificates, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->withdrawals != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "withdrawals", 11);
+    result = cardano_withdrawal_map_to_cip116_json(transaction_body->withdrawals, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->update != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "update", 6);
+    result = cardano_update_to_cip116_json(transaction_body->update, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->aux_data_hash != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "auxiliary_data_hash", 19);
+    result = cardano_blake2b_hash_to_cip116_json(transaction_body->aux_data_hash, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->invalid_before != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "validity_start_interval", 23);
+    cardano_json_writer_write_uint_as_string(writer, *transaction_body->invalid_before);
+  }
+
+  if (transaction_body->mint != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "mint", 4);
+    result = cardano_multi_asset_to_cip116_json_ex(transaction_body->mint, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->script_data_hash != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "script_data_hash", 16);
+    result = cardano_blake2b_hash_to_cip116_json(transaction_body->script_data_hash, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->collateral != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "collateral", 10);
+    result = cardano_transaction_input_set_to_cip116_json(transaction_body->collateral, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->required_signers != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "required_signers", 16);
+    result = cardano_blake2b_hash_set_to_cip116_json(transaction_body->required_signers, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->network_id != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "network_id", 10);
+
+    const cardano_network_id_t network_id     = *transaction_body->network_id;
+    const char*                network_id_str = (network_id == CARDANO_NETWORK_ID_MAIN_NET) ? "mainnet" : "testnet";
+    cardano_json_writer_write_string(writer, network_id_str, 7);
+  }
+
+  if (transaction_body->collateral_return != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "collateral_return", 17);
+    result = cardano_transaction_output_to_cip116_json(transaction_body->collateral_return, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->total_collateral != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "total_collateral", 16);
+    cardano_json_writer_write_uint_as_string(writer, *transaction_body->total_collateral);
+  }
+
+  if (transaction_body->reference_inputs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "reference_inputs", 16);
+    result = cardano_transaction_input_set_to_cip116_json(transaction_body->reference_inputs, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->voting_procedures != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "voting_procedures", 17);
+    result = cardano_voting_procedures_to_cip116_json(transaction_body->voting_procedures, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->proposal_procedures != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "proposal_procedures", 19);
+    result = cardano_proposal_procedure_set_to_cip116_json(transaction_body->proposal_procedures, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->treasury_value != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "treasury_value", 14);
+    cardano_json_writer_write_uint_as_string(writer, *transaction_body->treasury_value);
+  }
+
+  if (transaction_body->donation != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "donation", 8);
+    cardano_json_writer_write_uint_as_string(writer, *transaction_body->donation);
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return result;
+}
+
 cardano_transaction_input_set_t*
 cardano_transaction_body_get_inputs(cardano_transaction_body_t* transaction_body)
 {

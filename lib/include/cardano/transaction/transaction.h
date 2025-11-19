@@ -208,6 +208,24 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes a transaction to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "body", "is_valid", "witness_set", "auxiliary_data" (if present).
+ *
+ * \param[in]  tx      Pointer to a valid \ref cardano_transaction_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS               On success.
+ * \return CARDANO_ERROR_POINTER_IS_NULL If \p tx or \p writer is NULL.
+ * \return Other                         Any error propagated from nested serialization calls.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_to_cip116_json(
+  const cardano_transaction_t* tx,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the transaction body from a transaction object.
  *
  * This function extracts the transaction body (\ref cardano_transaction_body_t) from a given

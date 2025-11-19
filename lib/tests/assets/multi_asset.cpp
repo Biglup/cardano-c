@@ -2300,3 +2300,82 @@ TEST(cardano_multi_asset_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_multi_asset_unref(&multi_asset);
 }
+
+TEST(cardano_multi_asset_to_cip116_json_ex, canConvertMultiAsset)
+{
+  // Arrange
+  cardano_error_t        error       = CARDANO_SUCCESS;
+  cardano_multi_asset_t* multi_asset = NULL;
+  EXPECT_EQ(cardano_multi_asset_new(&multi_asset), CARDANO_SUCCESS);
+
+  const char*             policy_hex_1 = "00000000000000000000000000000000000000000000000000000001";
+  cardano_blake2b_hash_t* policy1      = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(policy_hex_1, strlen(policy_hex_1), &policy1), CARDANO_SUCCESS);
+
+  byte_t                asset_bytes[] = { 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x31 };
+  cardano_asset_name_t* asset_name1   = NULL;
+  EXPECT_EQ(cardano_asset_name_from_bytes(asset_bytes, sizeof(asset_bytes), &asset_name1), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_multi_asset_set(multi_asset, policy1, asset_name1, 100), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&policy1);
+  cardano_asset_name_unref(&asset_name1);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_multi_asset_to_cip116_json_ex(multi_asset, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"script_hash":"00000000000000000000000000000000000000000000000000000001","assets":{"546f6b656e31":"100"}}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_multi_asset_unref(&multi_asset);
+  free(json_str);
+}
+
+TEST(cardano_multi_asset_to_cip116_json_ex, canConvertEmpty)
+{
+  // Arrange
+  cardano_multi_asset_t* multi_asset = NULL;
+  EXPECT_EQ(cardano_multi_asset_new(&multi_asset), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_multi_asset_to_cip116_json_ex(multi_asset, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_multi_asset_unref(&multi_asset);
+  free(json_str);
+}
+
+TEST(cardano_multi_asset_to_cip116_json_ex, returnsErrorIfMapIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_multi_asset_to_cip116_json_ex(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_multi_asset_to_cip116_json_ex, returnsErrorIfWriterIsNull)
+{
+  cardano_multi_asset_t* multi_asset = NULL;
+  EXPECT_EQ(cardano_multi_asset_new(&multi_asset), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_multi_asset_to_cip116_json_ex(multi_asset, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_multi_asset_unref(&multi_asset);
+}
