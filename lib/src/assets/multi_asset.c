@@ -421,6 +421,60 @@ cardano_multi_asset_to_cip116_json(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_multi_asset_to_cip116_json_ex(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_json_writer_t*       writer)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  size_t size = cardano_array_get_size(multi_asset->array);
+
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0U; i < size; ++i)
+  {
+    cardano_multi_asset_kvp_t* kvp = (cardano_multi_asset_kvp_t*)((void*)cardano_array_get(multi_asset->array, i));
+    cardano_object_unref((cardano_object_t**)((void*)&kvp));
+
+    if (kvp == NULL)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "script_hash", 11);
+    cardano_error_t result = cardano_blake2b_hash_to_cip116_json(kvp->key, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_json_writer_write_property_name(writer, "assets", 6);
+    result = cardano_asset_name_map_to_cip116_json(kvp->value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_json_writer_write_end_object(writer);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_multi_asset_get_policy_count(const cardano_multi_asset_t* multi_asset)
 {

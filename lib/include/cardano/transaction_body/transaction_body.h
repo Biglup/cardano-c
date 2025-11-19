@@ -216,6 +216,26 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_body_to_cbor(
   cardano_cbor_writer_t*            writer);
 
 /**
+ * \brief Serializes a transaction body to CIP-116 JSON format.
+ *
+ * This function takes a Cardano transaction body structure and converts all its
+ * components (inputs, outputs, fees, optional fields like collateral, mint, and governance data)
+ * into a single JSON object string compliant with the CIP-116 specification.
+ *
+ * \param[in]  body    Pointer to the valid \ref cardano_transaction_body_t object to be serialized.
+ * \param[in]  writer  Pointer to the active \ref cardano_json_writer_t instance where the JSON output will be written.
+ *
+ * \return CARDANO_SUCCESS                        On successful serialization.
+ * \return CARDANO_ERROR_POINTER_IS_NULL          If \p body or \p writer is NULL.
+ * \return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED If memory allocation for internal hex strings fails.
+ * \return Other                                  Any error propagated from recursive serialization calls (e.g., \ref cardano_transaction_input_set_to_cip116_json).
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_body_to_cip116_json(
+  const cardano_transaction_body_t* body,
+  cardano_json_writer_t*            writer);
+
+/**
  * \brief Retrieves the set of transaction inputs from a transaction body.
  *
  * This function returns the set of transaction inputs associated with a given \ref cardano_transaction_body_t object.

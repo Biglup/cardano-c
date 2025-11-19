@@ -21,6 +21,10 @@ Multi Asset
 
 ------------
 
+.. doxygenfunction:: cardano_multi_asset_to_cip116_json_ex
+
+------------
+
 .. doxygenfunction:: cardano_multi_asset_get_policy_count
 
 ------------

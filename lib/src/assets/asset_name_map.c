@@ -444,6 +444,52 @@ cardano_asset_name_map_to_cip116_json(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_asset_name_map_to_cip116_json_ex(
+  const cardano_asset_name_map_t* map,
+  cardano_json_writer_t*          writer)
+{
+  if (map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0; i < cardano_array_get_size(map->array); ++i)
+  {
+    cardano_object_t* kvp = cardano_array_get(map->array, i);
+    cardano_object_unref(&kvp);
+
+    if (kvp == NULL)
+    {
+      cardano_json_writer_set_last_error(writer, "Element in asset_name map is NULL");
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    cardano_asset_name_map_kvp_t* kvp_data = (cardano_asset_name_map_kvp_t*)((void*)kvp);
+
+    const byte_t* asset_name_data = cardano_asset_name_get_bytes(kvp_data->key);
+    const size_t  asset_name_size = cardano_asset_name_get_bytes_size(kvp_data->key);
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "asset_name", 10);
+    cardano_json_writer_write_bytes_as_hex(writer, asset_name_data, asset_name_size);
+    cardano_json_writer_write_property_name(writer, "amount", 6);
+    cardano_json_writer_write_signed_int_as_string(writer, kvp_data->value);
+    cardano_json_writer_write_end_object(writer);
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 size_t
 cardano_asset_name_map_get_length(const cardano_asset_name_map_t* asset_name_map)
 {

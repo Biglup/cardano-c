@@ -196,6 +196,27 @@ CARDANO_EXPORT cardano_error_t cardano_multi_asset_to_cip116_json(
   cardano_json_writer_t*       writer);
 
 /**
+ * \brief Serializes a multi-asset collection into the specific CIP-116 'Mint' array format.
+ *
+ * This function converts the internal map structure (Policy ID -> Asset Name Map) into
+ * a JSON **array** of policy objects, which is the format required for the 'mint' field in the
+ * \ref cardano_transaction_body_t. The output structure is:
+ * [ { "script_hash": "<policy_hex>", "assets": { ...asset_map... } }, ... ]
+ *
+ * \param[in]  multi_asset Pointer to the valid \ref cardano_multi_asset_t collection to be serialized.
+ * \param[in]  writer      Pointer to the active \ref cardano_json_writer_t instance.
+ *
+ * \return CARDANO_SUCCESS                 On successful serialization.
+ * \return CARDANO_ERROR_POINTER_IS_NULL   If \p multi_asset or \p writer is NULL.
+ * \return CARDANO_ERROR_ELEMENT_NOT_FOUND If a null element is encountered in the internal array.
+ * \return Other                           Any error propagated from nested serialization calls
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_multi_asset_to_cip116_json_ex(
+  const cardano_multi_asset_t* multi_asset,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the number of distinct policy IDs within a multi-asset container.
  *
  * This function counts the number of distinct policy IDs in a given \ref cardano_multi_asset_t object.

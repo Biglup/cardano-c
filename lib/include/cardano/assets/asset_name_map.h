@@ -184,6 +184,27 @@ CARDANO_EXPORT cardano_error_t cardano_asset_name_map_to_cip116_json(
   cardano_json_writer_t*          writer);
 
 /**
+ * \brief Serializes an asset name map to a CIP-116 JSON array of key-value objects.
+ *
+ * This function converts the internal map structure of [AssetName -> Amount] into an
+ * ordered JSON array, matching the schema required for the 'assets' field within the 'Mint' structure
+ * (Transaction Body). Each map entry is serialized as a JSON object:
+ * { "asset_name": "<hex_string>", "amount": "<amount_string>" }
+ *
+ * \param[in]  map     Pointer to a valid \ref cardano_asset_name_map_t.
+ * \param[in]  writer  Pointer to the active \ref cardano_json_writer_t instance.
+ *
+ * \return CARDANO_SUCCESS               On successful serialization.
+ * \return CARDANO_ERROR_POINTER_IS_NULL If \p map or \p writer is NULL.
+ * \return CARDANO_ERROR_ENCODING        If an element within the map is NULL.
+ * \return Other                         Any error propagated from nested writers.
+ */
+cardano_error_t
+cardano_asset_name_map_to_cip116_json_ex(
+  const cardano_asset_name_map_t* map,
+  cardano_json_writer_t*          writer);
+
+/**
  * \brief Retrieves the length of the asset_name_map.
  *
  * This function returns the number of key-value pairs contained in the specified asset_name_map.
