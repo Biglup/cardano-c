@@ -17,6 +17,10 @@ Bootstrap Witness
 
 ------------
 
+.. doxygenfunction:: cardano_bootstrap_witness_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_bootstrap_witness_get_vkey
 
 ------------

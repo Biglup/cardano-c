@@ -269,6 +269,45 @@ cardano_bootstrap_witness_set_to_cbor(const cardano_bootstrap_witness_set_t* boo
   return result;
 }
 
+cardano_error_t
+cardano_bootstrap_witness_set_to_cip116_json(
+  const cardano_bootstrap_witness_set_t* witnesses,
+  cardano_json_writer_t*                 writer)
+{
+  if ((witnesses == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  size_t          length = cardano_bootstrap_witness_set_get_length(witnesses);
+  cardano_error_t error  = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_bootstrap_witness_t* witness = NULL;
+    error                                = cardano_bootstrap_witness_set_get(witnesses, i, &witness);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    error = cardano_bootstrap_witness_to_cip116_json(witness, writer);
+    cardano_bootstrap_witness_unref(&witness);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return error;
+}
+
 size_t
 cardano_bootstrap_witness_set_get_length(const cardano_bootstrap_witness_set_t* bootstrap_witness_set)
 {

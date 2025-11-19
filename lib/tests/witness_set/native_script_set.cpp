@@ -26,6 +26,7 @@
 #include <cardano/witness_set/native_script_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -780,4 +781,82 @@ TEST(cardano_native_script_get_set_use_tag, returnsFalseIfGivenNull)
 {
   // Act
   EXPECT_EQ(cardano_native_script_set_get_use_tag(nullptr), false);
+}
+
+TEST(cardano_native_script_set_to_cip116_json, canConvertSet)
+{
+  // Arrange
+  cardano_native_script_set_t* set = nullptr;
+
+  cardano_error_t error = cardano_native_script_set_new(&set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* native_scripts[] = { NATIVE_SCRIPT1_CBOR, NATIVE_SCRIPT2_CBOR, NATIVE_SCRIPT3_CBOR, NATIVE_SCRIPT4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_native_script_t* native_script = new_default_native_script(native_scripts[i]);
+
+    EXPECT_EQ(cardano_native_script_set_add(set, native_script), CARDANO_SUCCESS);
+
+    cardano_native_script_unref(&native_script);
+  }
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_native_script_set_to_cip116_json(set, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"([{"tag":"pubkey","pubkey":"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37"},{"tag":"pubkey","pubkey":"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37"},{"tag":"pubkey","pubkey":"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37"},{"tag":"pubkey","pubkey":"966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37"}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_native_script_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_native_script_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_native_script_set_t* set = NULL;
+  EXPECT_EQ(cardano_native_script_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_native_script_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_native_script_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_native_script_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_native_script_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_native_script_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_native_script_set_t* set = NULL;
+  EXPECT_EQ(cardano_native_script_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_native_script_set_to_cip116_json(set, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_native_script_set_unref(&set);
 }

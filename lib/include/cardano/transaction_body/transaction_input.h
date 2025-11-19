@@ -247,7 +247,7 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_input_to_cbor(
  * \return CARDANO_SUCCESS on success; an appropriate error code otherwise.
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_transaction_input_to_cip116_json(cardano_transaction_input_t* input, cardano_json_writer_t* json);
+CARDANO_EXPORT cardano_error_t cardano_transaction_input_to_cip116_json(const cardano_transaction_input_t* input, cardano_json_writer_t* json);
 
 /**
  * \brief Retrieves the transaction ID associated with a transaction input.

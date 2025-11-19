@@ -136,6 +136,24 @@ CARDANO_EXPORT cardano_error_t
 cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_list_t** redeemers);
 
 /**
+ * \brief Serializes a list of redeemers to a CIP-116 JSON array.
+ *
+ * This function iterates over the list and serializes each \ref cardano_redeemer_t
+ * into a JSON array.
+ *
+ * \param[in]  list    Pointer to a valid \ref cardano_redeemer_list_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p list or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_redeemer_list_to_cip116_json(
+  const cardano_redeemer_list_t* list,
+  cardano_json_writer_t*         writer);
+
+/**
  * \brief Serializes a redeemer into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_redeemer_list_t object using a \ref cardano_cbor_writer_t.

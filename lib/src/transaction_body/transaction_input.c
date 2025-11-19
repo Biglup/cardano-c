@@ -278,7 +278,7 @@ cardano_transaction_input_to_cbor(
 }
 
 cardano_error_t
-cardano_transaction_input_to_cip116_json(cardano_transaction_input_t* input, cardano_json_writer_t* json)
+cardano_transaction_input_to_cip116_json(const cardano_transaction_input_t* input, cardano_json_writer_t* json)
 {
   if ((input == NULL) || (json == NULL))
   {

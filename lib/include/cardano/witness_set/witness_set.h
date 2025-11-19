@@ -193,6 +193,25 @@ CARDANO_EXPORT cardano_error_t cardano_witness_set_to_cbor(
   cardano_cbor_writer_t*       writer);
 
 /**
+ * \brief Serializes a transaction witness set to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * It checks for the existence of each witness type (vkeywitnesses, native_scripts,
+ * bootstraps, plutus_scripts, plutus_data, redeemers) and writes them if present and non-empty.
+ *
+ * \param[in]  witness_set Pointer to a valid \ref cardano_witness_set_t.
+ * \param[in]  writer      Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p witness_set or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_witness_set_to_cip116_json(
+  const cardano_witness_set_t* witness_set,
+  cardano_json_writer_t*       writer);
+
+/**
  * \brief Retrieves the vkey (verification key) witness set from a witness set.
  *
  * This function extracts the set of vkey witnesses (public key and signature pairs) from a given

@@ -185,6 +185,24 @@ CARDANO_EXPORT cardano_error_t cardano_utxo_to_cbor(
   cardano_cbor_writer_t* writer);
 
 /**
+ * \brief Serializes a transaction unspent output (UTXO) to CIP-116 JSON.
+ *
+ * The function writes the full JSON object, including the surrounding braces.
+ * Keys are written in the order: "input", "output".
+ *
+ * \param[in]  utxo    Pointer to a valid \ref cardano_utxo_t.
+ * \param[in]  writer  Pointer to a valid \ref cardano_json_writer_t.
+ *
+ * \return CARDANO_SUCCESS       On success.
+ * CARDANO_ERROR_POINTER_IS_NULL If \p utxo or \p writer is NULL.
+ * Other                         Any error propagated from nested writers.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_utxo_to_cip116_json(
+  const cardano_utxo_t*  utxo,
+  cardano_json_writer_t* writer);
+
+/**
  * \brief Retrieves the transaction input from a UTXO.
  *
  * This function fetches the transaction input associated with a given \ref cardano_utxo_t object.

@@ -27,6 +27,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/witness_set/vkey_witness.h>
 
+#include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 
 #include <allocators.h>
@@ -588,4 +589,69 @@ TEST(cardano_vkey_witness_has_public_key, returnFalseIfVkeyIsNull)
 
   // Assert
   EXPECT_FALSE(has_public_key);
+}
+
+TEST(cardano_vkey_witness_to_cip116_json, canConvertWitness)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  const char*                   vkey_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+  cardano_ed25519_public_key_t* vkey     = NULL;
+  error                                  = cardano_ed25519_public_key_from_hex(vkey_hex, strlen(vkey_hex), &vkey);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char*                  sig_hex   = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+  cardano_ed25519_signature_t* signature = NULL;
+  error                                  = cardano_ed25519_signature_from_hex(sig_hex, strlen(sig_hex), &signature);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_vkey_witness_t* witness = NULL;
+  error                           = cardano_vkey_witness_new(vkey, signature, &witness);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_ed25519_public_key_unref(&vkey);
+  cardano_ed25519_signature_unref(&signature);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_vkey_witness_to_cip116_json(witness, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"vkey":"0000000000000000000000000000000000000000000000000000000000000000","signature":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_vkey_witness_unref(&witness);
+  free(json_str);
+}
+
+TEST(cardano_vkey_witness_to_cip116_json, returnsErrorIfWitnessIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_vkey_witness_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_vkey_witness_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_ed25519_public_key_t* vkey = NULL;
+  EXPECT_EQ(cardano_ed25519_public_key_from_hex("0000000000000000000000000000000000000000000000000000000000000000", 64, &vkey), CARDANO_SUCCESS);
+  cardano_ed25519_signature_t* sig = NULL;
+  EXPECT_EQ(cardano_ed25519_signature_from_hex("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 128, &sig), CARDANO_SUCCESS);
+
+  cardano_vkey_witness_t* witness = NULL;
+  EXPECT_EQ(cardano_vkey_witness_new(vkey, sig, &witness), CARDANO_SUCCESS);
+  cardano_ed25519_public_key_unref(&vkey);
+  cardano_ed25519_signature_unref(&sig);
+
+  cardano_error_t error = cardano_vkey_witness_to_cip116_json(witness, nullptr);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_vkey_witness_unref(&witness);
 }

@@ -17,6 +17,10 @@ Unspent Transaction Output (UTxO)
 
 ------------
 
+.. doxygenfunction:: cardano_utxo_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_utxo_get_input
 
 ------------

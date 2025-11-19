@@ -26,6 +26,7 @@
 #include <cardano/witness_set/bootstrap_witness_set.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -780,4 +781,83 @@ TEST(cardano_bootstrap_witness_get_set_use_tag, returnsFalseIfGivenNull)
 {
   // Act
   EXPECT_EQ(cardano_bootstrap_witness_set_get_use_tag(nullptr), false);
+}
+
+TEST(cardano_bootstrap_witness_set_to_cip116_json, canConvertSet)
+{
+  cardano_bootstrap_witness_set_t* set = nullptr;
+
+  cardano_error_t error = cardano_bootstrap_witness_set_new(&set);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* bootstrap_witnesss[] = { BOOTSTRAP_WITNESS1_CBOR, BOOTSTRAP_WITNESS2_CBOR, BOOTSTRAP_WITNESS3_CBOR, BOOTSTRAP_WITNESS4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_bootstrap_witness_t* bootstrap_witness = new_default_bootstrap_witness(bootstrap_witnesss[i]);
+
+    EXPECT_EQ(cardano_bootstrap_witness_set_add(set, bootstrap_witness), CARDANO_SUCCESS);
+
+    cardano_bootstrap_witness_unref(&bootstrap_witness);
+  }
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_bootstrap_witness_set_to_cip116_json(set, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Expected array with 1 element
+  const char* expected = R"([{"attributes":"a0","chain_code":"0000000000000000000000000000000000000000000000000000000000000000","signature":"6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a","vkey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"},{"attributes":"a0","chain_code":"0000000000000000000000000000000000000000000000000000000000000000","signature":"6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a","vkey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"},{"attributes":"a0","chain_code":"0000000000000000000000000000000000000000000000000000000000000000","signature":"6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a","vkey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"},{"attributes":"a0","chain_code":"0000000000000000000000000000000000000000000000000000000000000000","signature":"6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a","vkey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_bootstrap_witness_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_bootstrap_witness_set_to_cip116_json, canConvertEmptySet)
+{
+  // Arrange
+  cardano_bootstrap_witness_set_t* set = NULL;
+  EXPECT_EQ(cardano_bootstrap_witness_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_bootstrap_witness_set_to_cip116_json(set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_bootstrap_witness_set_unref(&set);
+  free(json_str);
+}
+
+TEST(cardano_bootstrap_witness_set_to_cip116_json, returnsErrorIfSetIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_bootstrap_witness_set_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_bootstrap_witness_set_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_bootstrap_witness_set_t* set = NULL;
+  EXPECT_EQ(cardano_bootstrap_witness_set_new(&set), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_bootstrap_witness_set_to_cip116_json(set, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_bootstrap_witness_set_unref(&set);
 }

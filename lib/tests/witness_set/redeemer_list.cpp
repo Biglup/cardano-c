@@ -27,6 +27,7 @@
 #include <cardano/witness_set/redeemer_list.h>
 
 #include "../allocators_helpers.h"
+#include "../json_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
@@ -1172,4 +1173,82 @@ TEST(cardano_redeemer_list_clone, canCloneRedeemerSet)
   cardano_redeemer_unref(&elem2);
   cardano_redeemer_unref(&elem3);
   cardano_redeemer_unref(&elem4);
+}
+
+TEST(cardano_redeemer_list_to_cip116_json, canConvertList)
+{
+  // Arrange
+  cardano_redeemer_list_t* list  = nullptr;
+  cardano_error_t          error = cardano_redeemer_list_new(&list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* redeemers[] = { REDEEMER1_CBOR, REDEEMER2_CBOR, REDEEMER3_CBOR, REDEEMER4_CBOR };
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_redeemer_t* redeemer = new_default_redeemer(redeemers[i]);
+
+    EXPECT_EQ(cardano_redeemer_list_add(list, redeemer), CARDANO_SUCCESS);
+
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_list_to_cip116_json(list, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* expected = R"([{"tag":"spend","index":"0","data":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]},"ex_units":{"mem":"33","steps":"44"}},{"tag":"mint","index":"1","data":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]},"ex_units":{"mem":"33","steps":"44"}},{"tag":"reward","index":"3","data":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]},"ex_units":{"mem":"33","steps":"44"}},{"tag":"voting","index":"4","data":{"tag":"constr","alternative":"0","data":[{"tag":"integer","value":"1"},{"tag":"integer","value":"2"},{"tag":"integer","value":"3"},{"tag":"integer","value":"4"},{"tag":"integer","value":"5"}]},"ex_units":{"mem":"33","steps":"44"}}])";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_list_to_cip116_json, canConvertEmptyList)
+{
+  // Arrange
+  cardano_redeemer_list_t* list = NULL;
+  EXPECT_EQ(cardano_redeemer_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_redeemer_list_to_cip116_json(list, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "[]");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_list_unref(&list);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_list_to_cip116_json, returnsErrorIfListIsNull)
+{
+  cardano_json_writer_t* json  = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_error_t        error = cardano_redeemer_list_to_cip116_json(nullptr, json);
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_redeemer_list_to_cip116_json, returnsErrorIfWriterIsNull)
+{
+  cardano_redeemer_list_t* list = NULL;
+  EXPECT_EQ(cardano_redeemer_list_new(&list), CARDANO_SUCCESS);
+
+  cardano_error_t error = cardano_redeemer_list_to_cip116_json(list, nullptr);
+
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_redeemer_list_unref(&list);
 }
