@@ -1,8 +1,6 @@
 Next (V1.1.12)
 ---------------------
 
-- Added support for CIP-116 to serialize domain objects to JSON.
-
 V1.1.11
 ---------------------
 
