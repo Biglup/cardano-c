@@ -834,7 +834,7 @@ TEST(cardano_genesis_key_delegation_cert_to_cip116_json, canConvertToCip116Json)
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"genesis_key_delegation","genesis_hash":"00010001000100010001000100010001000100010001000100010001","genesis_delegate_hash":"00020002000200020002000200020002000200020002000200020002","vrf_keyhash":"0003000300030003000300030003000300030003000300030003000300030003"})");
+  EXPECT_STREQ(json_str, R"({"tag":"genesis_key_delegation","genesis_hash":"00010001000100010001000100010001000100010001000100010001","genesis_delegate_hash":"00020002000200020002000200020002000200020002000200020002","vrf_keyhash":"vrf_vkh1qqpsqqcqqvqqxqqrqqpsqqcqqvqqxqqrqqpsqqcqqvqqxqqrqqpsexqwxw"})");
 
   // Cleanup
   cardano_json_writer_unref(&json);

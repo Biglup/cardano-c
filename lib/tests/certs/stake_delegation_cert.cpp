@@ -603,7 +603,7 @@ TEST(cardano_stake_delegation_cert_to_cip116_json, canConvertToCip116Json)
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  const char* expected = R"({"tag":"stake_delegation","credential":{"tag":"pubkey_hash","value":"cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f"},"pool_keyhash":"d85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef92"})";
+  const char* expected = R"({"tag":"stake_delegation","credential":{"tag":"pubkey_hash","value":"cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f"},"pool_keyhash":"pool1mpgg03jxj52qwxvvy7cmj58a96vl9pvxcqqvuw0kumheygxmn34"})";
   EXPECT_STREQ(json_str, expected);
 
   // Cleanup

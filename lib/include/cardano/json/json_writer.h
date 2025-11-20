@@ -1220,6 +1220,46 @@ cardano_json_writer_write_bytes_as_hex(
   size_t                 bytes_size);
 
 /**
+ * \brief Writes a raw byte array as a quoted Bech32 string to the JSON output.
+ *
+ * This function is a utility helper that converts a raw byte payload (hash or address data)
+ * into a Bech32 string using the specified Human-Readable Part (HRP) and writes the result
+ * as a JSON string literal (enclosed in quotes).
+ *
+ * \param[in] writer     A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] hrp        The Human-Readable Part (HRP/prefix) for the Bech32 encoding (e.g., "stake1", "pool1").
+ * \param[in] hrp_length The length of the HRP string.
+ * \param[in] bytes      The raw byte array (data payload) to be encoded.
+ * \param[in] bytes_size The size of the raw byte array.
+ */
+CARDANO_EXPORT void
+cardano_json_writer_write_bytes_as_bech32(
+  cardano_json_writer_t* writer,
+  const char*            hrp,
+  size_t                 hrp_length,
+  const byte_t*          bytes,
+  size_t                 bytes_size);
+
+/**
+ * \brief Writes a raw byte array as a quoted Bech32 string to the JSON output.
+ *
+ * This function is a utility helper that converts a raw byte payload (hash or address data)
+ * into a Bech32 string using the specified Human-Readable Part (HRP) and writes the result
+ * as a JSON string literal (enclosed in quotes).
+ *
+ * \param[in] writer     A pointer to the \ref cardano_json_writer_t instance.
+ * \param[in] hrp        The Human-Readable Part (HRP/prefix) for the Bech32 encoding (e.g., "stake1", "pool1").
+ * \param[in] hrp_length The length of the HRP string.
+ * \param[in] value      The \ref cardano_buffer_t containing the binary data to be written.
+ */
+CARDANO_EXPORT void
+cardano_json_writer_write_buffer_as_bech32(
+  cardano_json_writer_t*  writer,
+  const char*             hrp,
+  size_t                  hrp_length,
+  const cardano_buffer_t* value);
+
+/**
  * \brief Writes a string value to the JSON output.
  *
  * This function writes a string value to the JSON output. The string will be enclosed
@@ -1342,6 +1382,7 @@ CARDANO_EXPORT void cardano_json_writer_write_string(
  *  }
  * \endcode
  */
+CARDANO_NODISCARD
 CARDANO_EXPORT cardano_json_context_t cardano_json_writer_get_context(cardano_json_writer_t* writer);
 
 /**

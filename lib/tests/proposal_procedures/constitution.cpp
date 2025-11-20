@@ -694,7 +694,7 @@ TEST(cardano_constitution_to_cip116_json, canConvertWithAnchorOnly)
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  const char* expected = R"({"anchor":{"url":"https://example.com","data_hash":"2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e"},"script_hash":null})";
+  const char* expected = R"({"anchor":{"url":"https://example.com","data_hash":"2a3f9a878b3b9ac18a65c16ed1c92c37fd4f5a16e629580a23330f6e0f6e0f6e"}})";
   EXPECT_STREQ(json_str, expected);
 
   // Cleanup

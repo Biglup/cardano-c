@@ -40,7 +40,19 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   result = cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_hex_size);
   CARDANO_UNUSED(result);
 
+  cardano_json_writer_t* json_writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
+  result                             = cardano_transaction_to_cip116_json(transaction, json_writer);
+  CARDANO_UNUSED(result);
+
+  const size_t json_size = cardano_json_writer_get_encoded_size(json_writer);
+  char*        json_str  = (char*)malloc(json_size);
+
+  result = cardano_json_writer_encode(json_writer, json_str, json_size);
+  CARDANO_UNUSED(result);
+
+  free(json_str);
   free(cbor_hex);
+  cardano_json_writer_unref(&json_writer);
   cardano_cbor_reader_unref(&reader);
   cardano_transaction_unref(&transaction);
   cardano_cbor_writer_unref(&writer);

@@ -246,12 +246,12 @@ cardano_pool_retirement_cert_to_cip116_json(
 
   assert(cert->pool_key_hash != NULL);
 
-  cardano_error_t result = cardano_blake2b_hash_to_cip116_json(cert->pool_key_hash, writer);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
+  cardano_json_writer_write_bytes_as_bech32(
+    writer,
+    "pool",
+    4,
+    cardano_blake2b_hash_get_data(cert->pool_key_hash),
+    cardano_blake2b_hash_get_bytes_size(cert->pool_key_hash));
 
   cardano_json_writer_write_property_name(writer, "epoch", 5);
   cardano_json_writer_write_uint(writer, cert->epoch);

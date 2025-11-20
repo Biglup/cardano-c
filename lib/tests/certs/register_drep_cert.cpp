@@ -731,6 +731,7 @@ TEST(cardano_register_drep_cert_to_cip116_json, canConvertToCip116JsonWithAnchor
   EXPECT_STREQ(json_str, expected);
 
   // Cleanup
+  cardano_cbor_reader_unref(&reader);
   cardano_json_writer_unref(&json);
   cardano_register_drep_cert_unref(&cert);
   cardano_anchor_unref(&anchor);
@@ -752,7 +753,7 @@ TEST(cardano_register_drep_cert_to_cip116_json, canConvertToCip116JsonWithoutAnc
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"register_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0","anchor":null})");
+  EXPECT_STREQ(json_str, R"({"tag":"register_drep","drep_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"coin":"0"})");
 
   // Cleanup
   cardano_json_writer_unref(&json);

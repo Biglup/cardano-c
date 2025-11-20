@@ -687,7 +687,7 @@ TEST(cardano_resign_committee_cold_cert_to_cip116_json, canConvertToCip116JsonWi
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"tag":"resign_committee_cold","committee_cold_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"},"anchor":null})");
+  EXPECT_STREQ(json_str, R"({"tag":"resign_committee_cold","committee_cold_credential":{"tag":"pubkey_hash","value":"00000000000000000000000000000000000000000000000000000000"}})");
 
   // Cleanup
   cardano_json_writer_unref(&json);
