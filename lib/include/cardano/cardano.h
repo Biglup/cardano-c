@@ -133,6 +133,7 @@
 #include <cardano/key_handlers/secure_key_handler_impl.h>
 #include <cardano/key_handlers/secure_key_handler_type.h>
 #include <cardano/key_handlers/software_secure_key_handler.h>
+#include <cardano/message_signing/cip8.h>
 #include <cardano/object.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
