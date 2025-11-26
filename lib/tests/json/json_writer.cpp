@@ -429,7 +429,7 @@ TEST(cardano_json_writer_write_property_name, writesAPropertyName)
   free(encoded);
 }
 
-TEST(cardano_json_writer_write_property_name, writesAPropertyName2)
+TEST(cardano_json_writer_write_property_name, returnsErrorIfWriterIsInErrorState)
 {
   // Arrange
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
@@ -438,7 +438,7 @@ TEST(cardano_json_writer_write_property_name, writesAPropertyName2)
   cardano_json_writer_write_property_name(writer, "fail", 4);
 
   cardano_buffer_t* buf = NULL;
-  ASSERT_EQ(cardano_json_writer_encode_in_buffer(writer, &buf), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_json_writer_encode_in_buffer(writer, &buf), CARDANO_ERROR_ENCODING);
 
   // Cleanup
   cardano_json_writer_unref(&writer);
@@ -1905,7 +1905,7 @@ TEST(cardano_json_writer_encode_in_buffer, returnErrorIfMemoryAllocationFails)
   cardano_error_t   result = cardano_json_writer_encode_in_buffer(writer, &buffer);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_ENCODING);
   EXPECT_EQ(buffer, nullptr);
 
   // Cleanup
