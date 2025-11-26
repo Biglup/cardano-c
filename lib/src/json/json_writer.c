@@ -1206,6 +1206,19 @@ cardano_json_writer_encode_in_buffer(cardano_json_writer_t* writer, cardano_buff
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if (writer->last_error != CARDANO_SUCCESS)
+  {
+    return writer->last_error;
+  }
+
+  const size_t buffer_size = cardano_buffer_get_size(writer->buffer);
+
+  if (buffer_size == 0U)
+  {
+    cardano_json_writer_set_last_error(writer, "JSON document is empty.");
+    return CARDANO_ERROR_ENCODING;
+  }
+
   *buffer = cardano_buffer_new(cardano_buffer_get_size(writer->buffer));
 
   if (*buffer == NULL)

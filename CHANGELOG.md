@@ -1,6 +1,9 @@
 Next (V1.1.13)
 ---------------------
 
+- Fixes a bug on the JSON writer that was causing a segfault when calling `cardano_json_writer_encode_in_buffer` on an empty writer.
+- `cardano_json_object_t` now properly initializes `last_error` as an empty string when created with `cardano_json_object_parse`.
+
 V1.1.12
 ---------------------
 

@@ -429,6 +429,21 @@ TEST(cardano_json_writer_write_property_name, writesAPropertyName)
   free(encoded);
 }
 
+TEST(cardano_json_writer_write_property_name, writesAPropertyName2)
+{
+  // Arrange
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_json_writer_write_property_name(writer, "fail", 4);
+
+  cardano_buffer_t* buf = NULL;
+  ASSERT_EQ(cardano_json_writer_encode_in_buffer(writer, &buf), CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_json_writer_unref(&writer);
+}
+
 TEST(cardano_json_writer, returnsErrorIfMaxNestedLevelReached)
 {
   // Arrange

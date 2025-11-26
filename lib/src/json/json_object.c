@@ -48,10 +48,11 @@ cardano_json_object_parse(const char* json, const size_t size)
 
   cardano_json_parse_context_t ctx;
 
-  ctx.input  = json;
-  ctx.length = size;
-  ctx.offset = 0U;
-  ctx.depth  = 0U;
+  ctx.input         = json;
+  ctx.length        = size;
+  ctx.offset        = 0U;
+  ctx.depth         = 0U;
+  ctx.last_error[0] = '\0';
 
   cardano_json_object_t* root = cardano_parse_value(&ctx);
 
