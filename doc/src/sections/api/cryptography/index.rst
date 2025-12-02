@@ -14,5 +14,6 @@ This section of the documentation provides detailed information on each cryptogr
     ./blake2b_hash
     ./blake2b_hash_set
     ./blake2b_hash_size
+    ./crc32
     ./emip3
     ./pbkdf2

@@ -2326,7 +2326,9 @@ cardano_tx_builder_mint_token(
     // so it can compute the indices correctly.
     result = cardano_blake2b_hash_to_redeemer_map_insert(builder->mints_to_redeemer_map, policy_id, NULL);
 
-    if (result != CARDANO_SUCCESS)
+    // Avoid error on duplicated key, as it can happen when minting multiple assets
+    // under the same policy without redeemer.
+    if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
     {
       cardano_tx_builder_set_last_error(builder, "Failed to add mint.");
       builder->last_error = result;

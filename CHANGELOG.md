@@ -1,8 +1,12 @@
-Next (V1.1.13)
+Next (V1.1.14)
+---------------------
+
+V1.1.13
 ---------------------
 
 - Fixes a bug on the JSON writer that was causing a segfault when calling `cardano_json_writer_encode_in_buffer` on an empty writer.
 - `cardano_json_object_t` now properly initializes `last_error` as an empty string when created with `cardano_json_object_parse`.
+- Fixed a bug in the transaction builder that was preventing two mint policies with the same script hash from being added to the transaction.
 
 V1.1.12
 ---------------------
