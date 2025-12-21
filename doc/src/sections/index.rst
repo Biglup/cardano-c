@@ -98,6 +98,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/error
     api/object
     api/time
+    api/slot_config
 
 .. _libsodium: https://github.com/jedisct1/libsodium
 .. _libjsonc: https://github.com/json-c/json-c

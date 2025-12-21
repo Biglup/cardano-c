@@ -30,6 +30,7 @@
 #include "console.h"
 #include <cardano/error.h>
 #include <cardano/providers/provider.h>
+#include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -531,6 +532,16 @@ create_utxo(cardano_blake2b_hash_t* tx_id, uint32_t index, cardano_transaction_o
  */
 cardano_utxo_t*
 get_utxo_at_index(cardano_transaction_t* transaction, uint32_t index);
+
+/**
+ * \brief Retrieves the transaction evaluator from a Cardano provider.
+ *
+ * \param provider A pointer to the \ref cardano_provider_t object from which to retrieve the transaction evaluator.
+ *
+ * \return A pointer to the \ref cardano_tx_evaluator_t object if successful.
+ */
+cardano_tx_evaluator_t*
+get_tx_evaluator(cardano_provider_t* provider);
 
 /**
  * \brief Creates a Cardano DRep voter object from a DRep ID.

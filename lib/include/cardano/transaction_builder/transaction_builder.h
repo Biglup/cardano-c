@@ -28,6 +28,7 @@
 #include <cardano/error.h>
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/providers/provider.h>
+#include <cardano/slot_config.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
 #include <cardano/typedefs.h>
@@ -59,40 +60,63 @@ typedef struct cardano_tx_builder_t cardano_tx_builder_t;
 /**
  * \brief Creates a new transaction builder instance.
  *
- * This function initializes a new transaction builder (`cardano_tx_builder_t`) using the specified
- * protocol parameters and provider. The builder enables incremental construction of a transaction
- * while ensuring it adheres to protocol rules and balances according to the specified parameters.
+ * This function initializes a new transaction builder (`cardano_tx_builder_t`)
+ * using the supplied protocol parameters and slot configuration. The builder
+ * enables incremental, rule-safe construction of a transaction, including input
+ * selection, output balancing, fee calculation, and script evaluation—based on
+ * the specified protocol settings.
  *
- * \param[in] params A pointer to the \ref cardano_protocol_parameters_t structure containing the
- *                   protocol parameters to configure the transaction builder.
- * \param[in] provider A pointer to the \ref cardano_provider_t instance, which supplies the builder
- *                     with necessary external data and services during transaction construction.
+ * The protocol parameters determine limits and constants such as:
+ * - Minimum fees (`minFeeA`, `minFeeB`)
+ * - Execution unit prices and limits
+ * - Maximum transaction size
+ * - UTxO cost per byte
+ * - Cost models for script evaluation
  *
- * \returns A pointer to a newly created \ref cardano_tx_builder_t instance configured with the given
- *          protocol parameters and provider, or `NULL` if memory allocation fails or if `params` or
- *          `provider` is invalid.
+ * The slot configuration provides time/slot conversion rules needed for
+ * unix time to slot conversions.
  *
- * Usage Example:
+ * \param[in] params
+ *   A pointer to a \ref cardano_protocol_parameters_t structure containing the
+ *   protocol parameters used to configure the transaction builder.
+ *   Must not be `NULL`.
+ *
+ * \param[in] slot_config
+ *   A pointer to the \ref cardano_slot_config_t structure that defines the
+ *   slot/time translation rules for the current network. Must not be `NULL`. Constants for every public network can be found at `cardano/slot_config.h`:
+ *   \ref CARDANO_MAINNET_SLOT_CONFIG
+ *   \ref CARDANO_PREVIEW_SLOT_CONFIG
+ *   \ref CARDANO_PREPROD_SLOT_CONFIG
+ *
+ * \returns
+ *   A pointer to a newly created \ref cardano_tx_builder_t instance configured
+ *   with the given protocol parameters and slot configuration, or `NULL` if
+ *   memory allocation fails or if any argument is invalid.
+ *
+ * \par Usage Example:
  * \code{.c}
- * cardano_protocol_parameters_t* protocol_params = ...;  // Initialize protocol parameters
- * cardano_provider_t* provider = ...;  // Initialize provider instance
- * cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, provider);
+ * cardano_protocol_parameters_t* protocol_params = ...;            // Initialized protocol parameters
+ * cardano_slot_config_t slot_config = CARDANO_PREVIEW_SLOT_CONFIG; // Constants for slot config for every public network can be found at cardano/slot_config.h
+ *
+ * cardano_tx_builder_t* tx_builder =
+ *     cardano_tx_builder_new(protocol_params, &slot_config);
  *
  * if (tx_builder != NULL)
  * {
- *   // Proceed with building the transaction
+ *   // Proceed with constructing the transaction
  * }
  *
  * cardano_tx_builder_unref(&tx_builder);
  * \endcode
  *
- * \note The caller is responsible for freeing the `cardano_tx_builder_t` instance when it is no
- *       longer needed by using the appropriate cleanup function.
+ * \note
+ * The caller is responsible for releasing the `cardano_tx_builder_t` instance
+ * using \ref cardano_tx_builder_unref once it is no longer needed.
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_tx_builder_t* cardano_tx_builder_new(
   cardano_protocol_parameters_t* params,
-  cardano_provider_t*            provider);
+  const cardano_slot_config_t*   slot_config);
 
 /**
  * \brief Sets the coin selector for the transaction builder.
