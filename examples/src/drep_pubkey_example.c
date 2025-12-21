@@ -124,7 +124,7 @@ register_as_drep(
   console_info("- Metadata Hash: %s", ANCHOR_HASH);
 
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
@@ -182,7 +182,7 @@ unregister_as_drep(
   console_info("Unregistering DRep: %s", drep_id);
 
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
@@ -242,7 +242,7 @@ register_and_delegate(
   const char*                    drep_id)
 {
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
@@ -301,7 +301,7 @@ unregister_and_withdraw_rewards(
   const char*                    reward_address)
 {
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 

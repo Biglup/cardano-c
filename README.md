@@ -44,7 +44,7 @@ This is a basic cardano-c example, it sends `LOVELACE_TO_SEND` coins to `RECEIVI
 const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
 // 1.- Build transaction
-cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, provider);
+cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
 cardano_tx_builder_set_utxos(tx_builder, utxo_list);
 cardano_tx_builder_set_change_address(tx_builder, payment_address);

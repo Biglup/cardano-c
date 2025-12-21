@@ -1027,6 +1027,25 @@ get_utxo_at_index(cardano_transaction_t* transaction, const uint32_t index)
   return utxo;
 }
 
+cardano_tx_evaluator_t*
+get_tx_evaluator(cardano_provider_t* provider)
+{
+  cardano_tx_evaluator_t* evaluator = NULL;
+
+  cardano_error_t result = cardano_tx_evaluator_from_provider(provider, &evaluator);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to get transaction evaluator");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+    console_error("%s", cardano_provider_get_last_error(provider));
+
+    exit(result);
+  }
+
+  return evaluator;
+}
+
 cardano_voter_t*
 create_drep_voter(const char* drep_id)
 {

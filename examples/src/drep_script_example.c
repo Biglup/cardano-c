@@ -118,12 +118,15 @@ register_as_drep(
   console_info("- Metadata URL: %s", ANCHOR_URL);
   console_info("- Metadata Hash: %s", ANCHOR_HASH);
 
-  cardano_utxo_list_t*   utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+
+  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
   cardano_plutus_data_t* redeemer   = create_void_plutus_data();
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_collateral_utxos(tx_builder, utxo_list);
@@ -155,6 +158,7 @@ register_as_drep(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
   cardano_plutus_data_unref(&redeemer);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("DRep registered successfully.");
 }
@@ -182,12 +186,15 @@ unregister_as_drep(
 {
   console_info("Unregistering DRep: %s", drep_id);
 
-  cardano_utxo_list_t*   utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+
+  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
   cardano_plutus_data_t* redeemer   = create_void_plutus_data();
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_collateral_utxos(tx_builder, utxo_list);
@@ -219,6 +226,7 @@ unregister_as_drep(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
   cardano_plutus_data_unref(&redeemer);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("DRep unregistered successfully.");
 }
@@ -246,11 +254,14 @@ register_and_delegate(
   const char*                    reward_address,
   const char*                    drep_id)
 {
-  cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_invalid_after_ex(tx_builder, invalid_after);
@@ -280,6 +291,7 @@ register_and_delegate(
   cardano_utxo_list_unref(&utxo_list);
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("Stake key registered and delegated successfully.");
 }
@@ -305,11 +317,14 @@ unregister_and_withdraw_rewards(
   cardano_address_t*             funding_address,
   const char*                    reward_address)
 {
-  cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_invalid_after_ex(tx_builder, invalid_after);
@@ -341,6 +356,7 @@ unregister_and_withdraw_rewards(
   cardano_utxo_list_unref(&utxo_list);
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("Stake key unregistered and rewards withdrawn successfully.");
 }

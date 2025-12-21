@@ -487,6 +487,10 @@ cardano_balance_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "Failed to compute implicit coin for transaction balancing.");
+
     return result;
   }
 
@@ -557,6 +561,7 @@ cardano_balance_transaction(
     if (result != CARDANO_SUCCESS)
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+
       return result;
     }
 
@@ -575,6 +580,10 @@ cardano_balance_transaction(
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
       cardano_value_unref(&required_input_value);
+
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        cardano_coin_selector_get_last_error(coin_selector));
 
       return result;
     }
@@ -604,6 +613,10 @@ cardano_balance_transaction(
       cardano_value_unref(&required_input_value);
       cardano_utxo_list_unref(&selection);
       cardano_utxo_list_unref(&remaining_utxo);
+
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "Failed to coalesce selected transaction inputs for balancing.");
 
       return result;
     }
@@ -725,6 +738,19 @@ cardano_balance_transaction(
 
     if (has_plutus_scripts)
     {
+      if (evaluator == NULL)
+      {
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Transaction evaluator not set. Transaction evaluator is required to balance transactions with Plutus scripts.");
+
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        cardano_utxo_list_unref(&selection);
+        cardano_utxo_list_unref(&remaining_utxo);
+
+        return CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
+      }
+
       cardano_redeemer_list_t* redeemers = NULL;
       result                             = cardano_tx_evaluator_evaluate(evaluator, unbalanced_tx, selection, &redeemers);
 
@@ -733,6 +759,11 @@ cardano_balance_transaction(
         cardano_transaction_output_list_unref(&shallow_cloned_outputs);
         cardano_utxo_list_unref(&selection);
         cardano_utxo_list_unref(&remaining_utxo);
+
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          cardano_tx_evaluator_get_last_error(evaluator));
+
         return result;
       }
 

@@ -124,7 +124,7 @@ main(void)
   // 1.- Build transaction
   console_info("Building transaction...");
 
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, payment_address);

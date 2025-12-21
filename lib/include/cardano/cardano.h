@@ -188,6 +188,7 @@
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
 #include <cardano/scripts/script.h>
 #include <cardano/scripts/script_language.h>
+#include <cardano/slot_config.h>
 #include <cardano/time.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/transaction_body.h>
