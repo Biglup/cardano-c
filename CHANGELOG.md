@@ -1,5 +1,11 @@
-Next (V1.1.14)
+Next (V1.2.1)
 ---------------------
+
+V1.2.0
+---------------------
+
+- cardano_tx_builder_new no longer takes a provider and instead take a cardano_slot_config_t to configure slot settings.
+- cardano_tx_builder no properly bubbles up errors from the coin selection process.
 
 V1.1.13
 ---------------------

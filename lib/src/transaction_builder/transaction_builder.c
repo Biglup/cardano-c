@@ -28,7 +28,6 @@
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
-#include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/witness_set/redeemer.h>
 
@@ -73,7 +72,7 @@ typedef struct cardano_tx_builder_t
     cardano_error_t                last_error;
     cardano_transaction_t*         transaction;
     cardano_protocol_parameters_t* params;
-    cardano_provider_t*            provider;
+    cardano_slot_config_t          slot_config;
     cardano_coin_selector_t*       coin_selector;
     cardano_tx_evaluator_t*        tx_evaluator;
     cardano_address_t*             change_address;
@@ -117,7 +116,6 @@ cardano_tx_builder_deallocate(void* object)
   cardano_tx_builder_t* builder = (cardano_tx_builder_t*)object;
 
   cardano_transaction_unref(&builder->transaction);
-  cardano_provider_unref(&builder->provider);
   cardano_protocol_parameters_unref(&builder->params);
   cardano_coin_selector_unref(&builder->coin_selector);
   cardano_tx_evaluator_unref(&builder->tx_evaluator);
@@ -882,9 +880,9 @@ compute_credential_sortable_id(cardano_credential_t* credential, cardano_blake2b
 cardano_tx_builder_t*
 cardano_tx_builder_new(
   cardano_protocol_parameters_t* params,
-  cardano_provider_t*            provider)
+  const cardano_slot_config_t*   slot_config)
 {
-  if ((params == NULL) || (provider == NULL))
+  if ((params == NULL) || (slot_config == NULL))
   {
     return NULL;
   }
@@ -903,7 +901,7 @@ cardano_tx_builder_new(
   builder->last_error                  = CARDANO_SUCCESS;
   builder->transaction                 = NULL;
   builder->params                      = NULL;
-  builder->provider                    = NULL;
+  builder->slot_config                 = *slot_config;
   builder->coin_selector               = NULL;
   builder->tx_evaluator                = NULL;
   builder->change_address              = NULL;
@@ -916,22 +914,12 @@ cardano_tx_builder_new(
   builder->withdrawals_to_redeemer_map = NULL;
   builder->mints_to_redeemer_map       = NULL;
   builder->votes_to_redeemer_map       = NULL;
+  builder->tx_evaluator                = NULL;
 
   cardano_protocol_parameters_ref(params);
   builder->params = params;
 
-  cardano_provider_ref(provider);
-  builder->provider = provider;
-
   cardano_error_t result = cardano_large_first_coin_selector_new(&builder->coin_selector);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_tx_evaluator_from_provider(provider, &builder->tx_evaluator);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1355,9 +1343,8 @@ cardano_tx_builder_set_invalid_after_ex(
     return;
   }
 
-  cardano_network_magic_t network_magic = cardano_provider_get_network_magic(builder->provider);
-  const uint64_t          slot          = cardano_compute_slot_from_unix_time(network_magic, unix_time);
-  cardano_error_t         result        = cardano_transaction_body_set_invalid_after(body, &slot);
+  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->slot_config);
+  cardano_error_t result = cardano_transaction_body_set_invalid_after(body, &slot);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1417,9 +1404,8 @@ cardano_tx_builder_set_invalid_before_ex(
     return;
   }
 
-  cardano_network_magic_t network_magic = cardano_provider_get_network_magic(builder->provider);
-  const uint64_t          slot          = cardano_compute_slot_from_unix_time(network_magic, unix_time);
-  cardano_error_t         result        = cardano_transaction_body_set_invalid_before(body, &slot);
+  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->slot_config);
+  cardano_error_t result = cardano_transaction_body_set_invalid_before(body, &slot);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -4991,6 +4977,10 @@ cardano_tx_builder_build(
   if (result != CARDANO_SUCCESS)
   {
     builder->last_error = result;
+    cardano_tx_builder_set_last_error(
+      builder,
+      cardano_transaction_get_last_error(tx));
+
     return result;
   }
 

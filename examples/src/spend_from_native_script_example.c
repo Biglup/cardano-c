@@ -122,7 +122,7 @@ fund_script_address(
   console_info("Funding script address: %s", cardano_address_get_string(script_address));
 
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
@@ -197,7 +197,7 @@ main(void)
   cardano_utxo_list_t* script_utxo_list = get_unspent_utxos(provider, script_address);
   cardano_utxo_list_t* utxo_list        = get_unspent_utxos(provider, payment_address);
 
-  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, provider);
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 

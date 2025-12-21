@@ -26,6 +26,7 @@
 
 #include <cardano/common/network_magic.h>
 #include <cardano/export.h>
+#include <cardano/slot_config.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -33,6 +34,78 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+/**
+ * \brief Computes the Unix start time (in milliseconds) of a given slot.
+ *
+ * This function converts a slot number into the Unix timestamp (milliseconds)
+ * representing the exact beginning of that slot. The calculation is performed
+ * using the linear slot progression model defined by the supplied
+ * \ref cardano_slot_config_t structure, which specifies:
+ *
+ * - `zero_time`   — the Unix time (ms) corresponding to `zero_slot`
+ * - `zero_slot`   — the reference slot number
+ * - `slot_length` — duration of a single slot in milliseconds
+ *
+ * The formula used is:
+ * \code
+ * unix_time = config->zero_time
+ *           + (slot - config->zero_slot) * config->slot_length;
+ * \endcode
+ *
+ * \param[in] slot
+ *   The absolute slot number whose starting Unix time should be computed.
+ *
+ * \param[in] config
+ *   Pointer to a valid \ref cardano_slot_config_t providing slot timing rules.
+ *   Must not be `NULL`.
+ *
+ * \return
+ *   The Unix start time of the given slot, expressed in milliseconds since
+ *   the Unix epoch. If `config` is `NULL`, the returned value is unspecified.
+ *
+ * \note
+ *   This function assumes constant slot duration and does not model historical
+ *   hard-fork boundaries or era transitions where slot lengths changed.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t
+slot_to_begin_unix_time(uint64_t slot, const cardano_slot_config_t* config);
+
+/**
+ * \brief Converts a Unix timestamp (in milliseconds) to the enclosing slot number.
+ *
+ * This function calculates the slot that *contains* the specified Unix time using
+ * the linear relation defined by \ref cardano_slot_config_t. The operation
+ * determines how many full slot intervals have elapsed since `zero_time`, and
+ * returns the slot at or immediately before the provided timestamp.
+ *
+ * The formula used is:
+ * \code
+ * slot = config->zero_slot
+ *      + (unix_time - config->zero_time) / config->slot_length;
+ * \endcode
+ *
+ * \param[in] unix_time
+ *   The Unix timestamp in milliseconds for which the corresponding slot should
+ *   be determined.
+ *
+ * \param[in] config
+ *   Pointer to a valid \ref cardano_slot_config_t supplying slot timing rules.
+ *   Must not be `NULL`.
+ *
+ * \return
+ *   The slot number that encloses the given timestamp. If `config` is `NULL`,
+ *   the returned value is unspecified.
+ *
+ * \note
+ *   This function uses truncation toward zero to determine the enclosing slot.
+ *   It assumes a fixed slot length and does not account for historical chain
+ *   eras with variable slot durations.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t
+unix_time_to_enclosing_slot(uint64_t unix_time, const cardano_slot_config_t* config);
 
 /**
  * \brief Computes the Cardano network slot for a given Unix time.
@@ -87,34 +160,6 @@ CARDANO_EXPORT uint64_t cardano_compute_slot_from_unix_time(cardano_network_magi
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT uint64_t cardano_compute_unix_time_from_slot(cardano_network_magic_t magic, uint64_t slot);
-
-/**
- * \brief Computes the epoch number corresponding to a given Unix timestamp.
- *
- * This function determines the epoch number for a specified Unix time (in seconds) based on the network configuration,
- * which is determined by the `magic` parameter. Different networks may have distinct epoch configurations, so this
- * calculation takes the network's settings into account.
- *
- * \param[in] magic The \ref cardano_network_magic_t that specifies the network identifier, which may influence epoch length
- *                  and other configuration details.
- * \param[in] unix_time The Unix timestamp in seconds for which to compute the epoch number.
- *
- * \return The epoch number corresponding to the specified Unix time.
- *
- * \note This function leverages network-specific configurations, such as epoch length and initial slot settings, to
- *       compute the epoch accurately. It is useful for converting timestamps to Cardano's epoch-based timekeeping system.
- *
- * Usage Example:
- * \code{.c}
- * uint64_t unix_time = 1609459200000; // Unix time in seconds (e.g., Jan 1, 2021)
- * cardano_network_magic_t network_magic = CARDANO_NETWORK_MAGIC_MAINNET; // Example network magic identifier
- *
- * uint64_t epoch = cardano_compute_epoch_from_unix_time(network_magic, unix_time);
- * printf("Unix time %llu seconds corresponds to epoch %llu\n", unix_time, epoch);
- * \endcode
- */
-CARDANO_NODISCARD
-CARDANO_EXPORT uint64_t cardano_compute_epoch_from_unix_time(cardano_network_magic_t magic, uint64_t unix_time);
 
 #ifdef __cplusplus
 }

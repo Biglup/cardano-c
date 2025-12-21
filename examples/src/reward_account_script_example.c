@@ -108,12 +108,14 @@ register_and_delegate(
   cardano_reward_address_t*      reward_address,
   cardano_blake2b_hash_t*        pool_id)
 {
-  cardano_utxo_list_t*   utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, provider);
-  cardano_plutus_data_t* redeemer   = create_void_plutus_data();
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+  cardano_tx_builder_t*   tx_builder   = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
+  cardano_plutus_data_t*  redeemer     = create_void_plutus_data();
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_collateral_utxos(tx_builder, utxo_list);
@@ -142,6 +144,7 @@ register_and_delegate(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
   cardano_plutus_data_unref(&redeemer);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("Stake key registered and delegated successfully.");
 }
@@ -169,12 +172,14 @@ unregister_and_withdraw_rewards(
   cardano_address_t*             funding_address,
   cardano_reward_address_t*      reward_address)
 {
-  cardano_utxo_list_t*   utxo_list  = get_unspent_utxos(provider, funding_address);
-  cardano_tx_builder_t*  tx_builder = cardano_tx_builder_new(pparams, provider);
-  cardano_plutus_data_t* redeemer   = create_void_plutus_data();
+  cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
+  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
+  cardano_tx_builder_t*   tx_builder   = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
+  cardano_plutus_data_t*  redeemer     = create_void_plutus_data();
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_collateral_utxos(tx_builder, utxo_list);
@@ -204,6 +209,7 @@ unregister_and_withdraw_rewards(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
   cardano_plutus_data_unref(&redeemer);
+  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("Stake key registered and delegated successfully.");
 }
