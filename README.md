@@ -35,6 +35,18 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 - Extensive documentation and test suite
 - It has no runtime dependencies (The library depends on [libsodium](https://github.com/jedisct1/libsodium) and [libgmp](https://gmplib.org/), but they are all statically linked)
 
+## Bindings
+
+Here is a list with all the languages/bindings available.
+
+| Name                                                                                     | libcardano-c version | Language                                                             | License              |
+| :--------------------------------------------------------------------------------------- | :------------------: | :------------------------------------------------------------------: | :------------------: |
+| [libcarcano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.0**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
+| [cometa.js](https://github.com/Biglup/cometa.js)                                         | **1.2.0**            | [JavaScript](https://en.wikipedia.org/wiki/JavaScript)               | Apache 2.0           |
+| [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
+
+More bindings to come, check https://cometa.dev for the upcoming list
+
 ## Basic Example
 
 This is a basic cardano-c example, it sends `LOVELACE_TO_SEND` coins to `RECEIVING_ADDRESS`. Check full example at [send lovelace](examples/src/send_lovelace_example.c).
