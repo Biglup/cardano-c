@@ -587,3 +587,66 @@ TEST(cardano_script_pubkey_to_cip116_json, returnsErrorIfGivenANullPtr)
   // Cleanup
   cardano_json_writer_unref(&json);
 }
+
+TEST(cardano_script_pubkey_set_key_hash, returnsErrorIfPubKeyIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_script_pubkey_set_key_hash(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_script_pubkey_set_key_hash, returnsErrorIfKeyHashIsNull)
+{
+  // Arrange
+  cardano_script_pubkey_t* pubkey = nullptr;
+
+  cardano_error_t error = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_script_pubkey_set_key_hash(pubkey, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_script_pubkey_unref(&pubkey);
+}
+
+TEST(cardano_script_pubkey_set_key_hash, setsTheKeyHash)
+{
+  // Arrange
+  cardano_script_pubkey_t* pubkey    = nullptr;
+  cardano_blake2b_hash_t*  new_hash  = nullptr;
+  cardano_blake2b_hash_t*  retrieved = nullptr;
+
+  cardano_error_t error = cardano_script_pubkey_from_json(PUBKEY_SCRIPT, strlen(PUBKEY_SCRIPT), &pubkey);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_blake2b_hash_from_hex("666e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37", strlen("666e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37"), &new_hash);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_script_pubkey_set_key_hash(pubkey, new_hash);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_script_pubkey_get_key_hash(pubkey, &retrieved);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // retrieved convert to hex
+  const size_t hex_size = cardano_blake2b_hash_get_hex_size(retrieved);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(retrieved, hex, hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(hex, "666e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37");
+
+  // Cleanup
+  free(hex);
+  cardano_script_pubkey_unref(&pubkey);
+  cardano_blake2b_hash_unref(&new_hash);
+  cardano_blake2b_hash_unref(&retrieved);
+}
