@@ -61,7 +61,8 @@ SET (CARDANO_C_VERSION "${CARDANO_C_VERSION_MAJOR}.${CARDANO_C_VERSION_MINOR}.${
 
 FIND_PROGRAM (CLANG_TIDY_EXE NAMES "clang-tidy")
 
-if(CLANG_TIDY_EXE)
+# Disable clang-tidy for cross-compilation (ARM flags are incompatible with host clang-tidy)
+if(CLANG_TIDY_EXE AND NOT CMAKE_CROSSCOMPILING)
     SET (CMAKE_C_CLANG_TIDY "${CLANG_TIDY_EXE}")
 endif()
 
