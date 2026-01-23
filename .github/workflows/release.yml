@@ -185,7 +185,7 @@ jobs:
               cmake -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
                 -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                -DCMAKE_C_FLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard" \
+                -DCMAKE_C_FLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard" \
                 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
                 -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
