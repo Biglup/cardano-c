@@ -114,14 +114,7 @@ jobs:
             sudo apt-get update
             case "${{ matrix.arch }}" in
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
-              armv7) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
-              armv6)
-                # ARMv6 requires Raspberry Pi's toolchain
-                sudo apt-get install -y wget
-                wget -q https://github.com/nicotine-plus/armv6-toolchains/releases/download/v1.0/arm-linux-gnueabihf-gcc14-glibc2.39-armv6.tar.xz
-                sudo tar -xf arm-linux-gnueabihf-gcc14-glibc2.39-armv6.tar.xz -C /opt
-                echo "/opt/arm-linux-gnueabihf-gcc14-glibc2.39-armv6/bin" >> $GITHUB_PATH
-                ;;
+              armv7|armv6) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             # CMake is already installed on macOS runners
