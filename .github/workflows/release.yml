@@ -114,7 +114,11 @@ jobs:
             sudo apt-get update
             case "${{ matrix.arch }}" in
               arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
-              armv7|armv6) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
+              armv7) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
+              armv6)
+                # Use Zig for true ARMv6 hard-float cross-compilation
+                sudo snap install zig --classic --beta
+                ;;
             esac
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             # CMake is already installed on macOS runners
@@ -182,10 +186,13 @@ jobs:
                 .
               ;;
             armv6)
+              # Create zig-cc wrapper for CMake
+              echo '#!/bin/bash' > /tmp/zig-cc
+              echo 'zig cc -target arm-linux-gnueabihf -mcpu=arm1176jzf_s "$@"' >> /tmp/zig-cc
+              chmod +x /tmp/zig-cc
               cmake -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
-                -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                -DCMAKE_C_FLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard" \
+                -DCMAKE_C_COMPILER=/tmp/zig-cc \
                 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
                 -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
