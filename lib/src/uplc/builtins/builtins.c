@@ -2858,15 +2858,16 @@ body_integer_to_byte_string(
     {
       size_t  significant = value_bytes - lead;
       byte_t* msb         = raw + lead;
+      size_t  width_sz    = (size_t)width;
 
-      if ((width != 0U) && (significant > (size_t)width))
+      if ((width_sz != 0U) && (value_bytes > (width_sz + lead)))
       {
         _cardano_free(raw);
 
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      out_len = (width != 0U) ? (size_t)width : significant;
+      out_len = (width_sz != 0U) ? width_sz : significant;
 
       scratch = (byte_t*)cardano_uplc_arena_alloc(arena, out_len, 1U);
 
@@ -6428,7 +6429,7 @@ body_insert_coin(
 
       found_ccy = true;
 
-      if ((tcount + 1U) > 0U && new_tokens == NULL)
+      if (new_tokens == NULL)
       {
         *host_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
 

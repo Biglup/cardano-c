@@ -4337,12 +4337,12 @@ maybe_coin(const uint64_t* coin, cardano_plutus_data_t** out)
  */
 static cardano_error_t
 script_info_v3(
-  cardano_transaction_t*  tx,
-  cardano_utxo_list_t*    resolved_inputs,
-  cardano_redeemer_t*     redeemer,
-  cardano_plutus_data_t*  datum,
-  bool                    with_datum,
-  cardano_plutus_data_t** script_info);
+  cardano_transaction_t*     tx,
+  const cardano_utxo_list_t* resolved_inputs,
+  cardano_redeemer_t*        redeemer,
+  cardano_plutus_data_t*     datum,
+  bool                       with_datum,
+  cardano_plutus_data_t**    script_info);
 
 /**
  * \brief Encodes the redeemers of a V3 transaction as a map of ScriptPurpose -> redeemer data.
@@ -4420,10 +4420,10 @@ cardano_uplc_int_build_tx_info_v2(
 
 cardano_error_t
 cardano_uplc_int_build_script_purpose_v1v2(
-  cardano_transaction_t*  tx,
-  cardano_utxo_list_t*    resolved_inputs,
-  cardano_redeemer_t*     redeemer,
-  cardano_plutus_data_t** purpose)
+  cardano_transaction_t*     tx,
+  const cardano_utxo_list_t* resolved_inputs,
+  cardano_redeemer_t*        redeemer,
+  cardano_plutus_data_t**    purpose)
 {
   if ((tx == NULL) || (resolved_inputs == NULL) || (redeemer == NULL) || (purpose == NULL))
   {
@@ -4940,12 +4940,12 @@ cardano_uplc_int_build_tx_info_v3(
 
 static cardano_error_t
 script_info_v3(
-  cardano_transaction_t*  tx,
-  cardano_utxo_list_t*    resolved_inputs,
-  cardano_redeemer_t*     redeemer,
-  cardano_plutus_data_t*  datum,
-  const bool              with_datum,
-  cardano_plutus_data_t** script_info)
+  cardano_transaction_t*     tx,
+  const cardano_utxo_list_t* resolved_inputs,
+  cardano_redeemer_t*        redeemer,
+  cardano_plutus_data_t*     datum,
+  const bool                 with_datum,
+  cardano_plutus_data_t**    script_info)
 {
   if ((tx == NULL) || (resolved_inputs == NULL) || (redeemer == NULL) || (script_info == NULL))
   {

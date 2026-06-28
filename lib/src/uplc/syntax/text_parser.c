@@ -872,7 +872,7 @@ read_string(parser_t* parser, cardano_buffer_t** out)
 
   while (true)
   {
-    char            c         = '\0';
+    char            c;
     bool            have_byte = false;
     byte_t          emitted   = 0U;
     cardano_error_t result    = CARDANO_SUCCESS;
@@ -899,7 +899,7 @@ read_string(parser_t* parser, cardano_buffer_t** out)
     }
     else
     {
-      char esc = '\0';
+      char esc;
 
       if (parser->pos >= parser->len)
       {
@@ -2027,7 +2027,6 @@ value_acc_insert(
   const cardano_bigint_t* amount)
 {
   size_t pi = 0U;
-  size_t ti = 0U;
 
   while ((pi < *count) && (value_compare_buffers((*policies)[pi].policy, policy) < 0))
   {
@@ -2069,6 +2068,7 @@ value_acc_insert(
 
   {
     policy_acc_t* entry = &(*policies)[pi];
+    size_t        ti    = 0U;
 
     while ((ti < entry->token_count) && (value_compare_buffers(entry->tokens[ti].name, name) < 0))
     {
@@ -3051,7 +3051,7 @@ parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** 
 static cardano_error_t
 parse_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** out)
 {
-  char c = '\0';
+  char c;
 
   if (depth >= PARSER_MAX_DEPTH)
   {

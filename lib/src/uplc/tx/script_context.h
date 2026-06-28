@@ -133,10 +133,10 @@ cardano_uplc_int_build_tx_info_v2(
  */
 cardano_error_t
 cardano_uplc_int_build_script_purpose_v1v2(
-  cardano_transaction_t*  tx,
-  cardano_utxo_list_t*    resolved_inputs,
-  cardano_redeemer_t*     redeemer,
-  cardano_plutus_data_t** purpose);
+  cardano_transaction_t*     tx,
+  const cardano_utxo_list_t* resolved_inputs,
+  cardano_redeemer_t*        redeemer,
+  cardano_plutus_data_t**    purpose);
 
 /**
  * \brief Builds the complete Plutus V1 ScriptContext of a redeemer as Plutus data.

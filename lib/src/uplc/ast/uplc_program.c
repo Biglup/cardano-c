@@ -296,10 +296,9 @@ cardano_uplc_program_apply_data_params(
   size_t                        count,
   cardano_uplc_program_t**      out)
 {
-  cardano_uplc_program_t* current   = NULL;
-  cardano_uplc_program_t* applied   = NULL;
-  cardano_error_t         apply_res = CARDANO_SUCCESS;
-  size_t                  i         = 0U;
+  cardano_uplc_program_t* current = NULL;
+  cardano_uplc_program_t* applied = NULL;
+  size_t                  i       = 0U;
 
   if ((arena == NULL) || (program == NULL) || (program->term == NULL) || (out == NULL))
   {
@@ -325,6 +324,8 @@ cardano_uplc_program_apply_data_params(
 
   for (i = 0U; i < count; ++i)
   {
+    cardano_error_t apply_res;
+
     if (params[i] == NULL)
     {
       return CARDANO_ERROR_POINTER_IS_NULL;

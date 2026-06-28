@@ -1493,6 +1493,8 @@ TEST(cardano_uplc_program, holdsVersionAndTerm)
   program.term          = term;
 
   EXPECT_EQ(program.version_major, 1U);
+  EXPECT_EQ(program.version_minor, 0U);
+  EXPECT_EQ(program.version_patch, 0U);
   EXPECT_EQ(program.term, term);
   EXPECT_EQ(program.term->kind, CARDANO_UPLC_TERM_ERROR);
 

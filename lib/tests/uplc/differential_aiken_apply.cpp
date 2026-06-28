@@ -152,7 +152,7 @@ buffer_to_hex(const cardano_buffer_t* buffer)
   size_t      hex_size = cardano_buffer_get_hex_size(buffer);
   std::string hex(hex_size, '\0');
 
-  EXPECT_EQ(cardano_buffer_to_hex(buffer, &hex[0], hex_size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_buffer_to_hex(buffer, hex.data(), hex_size), CARDANO_SUCCESS);
 
   // The buffer hex includes a NUL terminator in its size; drop the trailing NUL.
   if (!hex.empty() && hex.back() == '\0')
@@ -191,7 +191,7 @@ list_to_array_hex(cardano_plutus_list_t* list)
 
   size_t      hex_size = cardano_cbor_writer_get_hex_size(writer);
   std::string hex(hex_size, '\0');
-  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, &hex[0], hex_size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex.data(), hex_size), CARDANO_SUCCESS);
 
   if (!hex.empty() && hex.back() == '\0')
   {

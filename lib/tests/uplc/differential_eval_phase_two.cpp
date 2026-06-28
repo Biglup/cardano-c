@@ -37,6 +37,7 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -266,15 +267,10 @@ build_utxo_list(const char* inputs_hex, const char* outputs_hex)
 const RedeemerUnits*
 find_units(const std::vector<RedeemerUnits>& v, int tag, uint64_t index)
 {
-  for (const RedeemerUnits& ru: v)
-  {
-    if ((ru.tag == tag) && (ru.index == index))
-    {
-      return &ru;
-    }
-  }
+  const auto it = std::find_if(v.begin(), v.end(), [tag, index](const RedeemerUnits& ru)
+                               { return (ru.tag == tag) && (ru.index == index); });
 
-  return nullptr;
+  return (it != v.end()) ? &(*it) : nullptr;
 }
 
 } // namespace
