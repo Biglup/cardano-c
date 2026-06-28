@@ -2724,7 +2724,7 @@ body_find_first_set_bit(
         ++bit;
       }
 
-      result = (int64_t)((i * 8U) + bit);
+      result = ((int64_t)i * 8) + (int64_t)bit;
     }
   }
 

@@ -207,10 +207,6 @@ write_type_tags(cardano_uplc_flat_writer_t* writer, const cardano_uplc_type_t* t
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
     case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
-    {
-      result = CARDANO_ERROR_INVALID_ARGUMENT;
-      break;
-    }
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
@@ -380,10 +376,6 @@ write_value(
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
     case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
-    {
-      result = CARDANO_ERROR_INVALID_ARGUMENT;
-      break;
-    }
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
@@ -476,10 +468,6 @@ constant_type(
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
     case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
-    {
-      result = CARDANO_ERROR_INVALID_ARGUMENT;
-      break;
-    }
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
