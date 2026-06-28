@@ -1,0 +1,9 @@
+# Keep vendored third-party code and the test sources out of the coverage
+# accumulation. They are built with the same coverage flags as the library, so
+# without this CTest tries to read their sources while gathering results, which
+# fails on some of the secp256k1 headers and aborts the coverage run.
+
+LIST(APPEND CTEST_CUSTOM_COVERAGE_EXCLUDE
+  ".*/lib/external/.*"
+  ".*/lib/tests/.*"
+)
