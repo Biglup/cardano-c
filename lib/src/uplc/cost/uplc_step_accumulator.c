@@ -36,6 +36,7 @@
 /**
  * \brief The default slippage threshold: flush after this many steps.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t CARDANO_UPLC_DEFAULT_SLIPPAGE = 200U;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -68,7 +69,9 @@ sat_mul_count(int64_t cost, uint64_t count)
     }
     else
     {
-      result = (int64_t)((uint64_t)cost * count);
+      uint64_t product = (uint64_t)cost * count;
+
+      result = (int64_t)product;
     }
   }
   else
@@ -81,7 +84,9 @@ sat_mul_count(int64_t cost, uint64_t count)
     }
     else
     {
-      result = -(int64_t)(magnitude * count);
+      uint64_t product = magnitude * count;
+
+      result = -(int64_t)product;
     }
   }
 
@@ -138,7 +143,7 @@ cardano_uplc_step_accumulator_init(
   acc->pending   = 0U;
   acc->slippage  = CARDANO_UPLC_DEFAULT_SLIPPAGE;
 
-  memset(acc->counts, 0, sizeof(acc->counts));
+  (void)memset(acc->counts, 0, sizeof(acc->counts));
 
   return CARDANO_SUCCESS;
 }

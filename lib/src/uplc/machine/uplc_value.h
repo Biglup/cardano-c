@@ -81,6 +81,7 @@ struct cardano_uplc_value_t
     cardano_uplc_value_kind_t kind;
     int64_t                   ex_mem;
 
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         const cardano_uplc_constant_t* constant;
@@ -111,6 +112,8 @@ struct cardano_uplc_value_t
             const cardano_uplc_value_t* const* fields;
             size_t                             field_count;
         } constr;
+
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } as;
 };
 

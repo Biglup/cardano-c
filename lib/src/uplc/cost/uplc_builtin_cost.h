@@ -49,6 +49,7 @@ typedef struct cardano_uplc_builtin_cost_t
     cardano_uplc_builtin_cost_arity_t arity;
 
     /** \brief The cpu costing function for the builtin. */
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         /** \brief Active when arity is ONE. */
@@ -61,9 +62,11 @@ typedef struct cardano_uplc_builtin_cost_t
         cardano_uplc_four_arg_cost_t four;
         /** \brief Active when arity is SIX. */
         cardano_uplc_six_arg_cost_t six;
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } cpu;
 
     /** \brief The mem costing function for the builtin. */
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         /** \brief Active when arity is ONE. */
@@ -76,6 +79,7 @@ typedef struct cardano_uplc_builtin_cost_t
         cardano_uplc_four_arg_cost_t four;
         /** \brief Active when arity is SIX. */
         cardano_uplc_six_arg_cost_t six;
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } mem;
 } cardano_uplc_builtin_cost_t;
 

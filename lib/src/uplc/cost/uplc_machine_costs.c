@@ -31,21 +31,25 @@
 /**
  * \brief Memory cost shared by startup.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STARTUP_MEM = 100;
 
 /**
  * \brief CPU cost of startup.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STARTUP_CPU = 100;
 
 /**
  * \brief Memory cost of a normal machine step.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STEP_MEM = 100;
 
 /**
  * \brief CPU cost of a normal machine step.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STEP_CPU = 16000;
 
 /**
@@ -54,6 +58,7 @@ static const int64_t CARDANO_UPLC_STEP_CPU = 16000;
  * Applied to constr and case under V1/V2 so any program reaching them is driven
  * out of budget.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_UNAVAILABLE_STEP_COST = 30000000000;
 
 /* DEFINITIONS ***************************************************************/

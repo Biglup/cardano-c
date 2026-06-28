@@ -40,16 +40,19 @@
 /**
  * \brief The memory units charged per Plutus-data node.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_DATA_NODE_COST = 4;
 
 /**
  * \brief The number of 64-bit words an integer occupies for one memory unit.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_DATA_INTEGER_WORD_BITS = 64;
 
 /**
  * \brief The byte-string chunk size: one memory unit per this many bytes.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_DATA_BYTE_STRING_CHUNK = 8;
 
 /**
@@ -548,6 +551,7 @@ compute_ex_mem(const cardano_uplc_data_t* data)
 
   while (count > 0U)
   {
+    // cppcheck-suppress misra-c2012-13.3; Reason: local post-increment with no aliasing
     walk_frame_t frame = stack[--count];
 
     if ((frame.node == NULL) || (frame.node->ex_mem != CARDANO_UPLC_DATA_UNCOMPUTED))
@@ -557,6 +561,7 @@ compute_ex_mem(const cardano_uplc_data_t* data)
 
     if (frame.expanded)
     {
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       ((cardano_uplc_data_t*)((void*)frame.node))->ex_mem = CARDANO_UPLC_DATA_NODE_COST + children_ex_mem(frame.node);
 
       continue;
@@ -611,6 +616,7 @@ compute_node_count(const cardano_uplc_data_t* data)
 
   while (count > 0U)
   {
+    // cppcheck-suppress misra-c2012-13.3; Reason: local post-increment with no aliasing
     walk_frame_t frame = stack[--count];
 
     if ((frame.node == NULL) || (frame.node->node_count != CARDANO_UPLC_DATA_UNCOMPUTED))
@@ -620,6 +626,7 @@ compute_node_count(const cardano_uplc_data_t* data)
 
     if (frame.expanded)
     {
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       ((cardano_uplc_data_t*)((void*)frame.node))->node_count = 1 + children_node_count(frame.node);
 
       continue;
@@ -1058,6 +1065,7 @@ to_cbor(const cardano_uplc_data_t* data, cardano_cbor_writer_t* writer)
 
   while ((result == CARDANO_SUCCESS) && (count > 0U))
   {
+    // cppcheck-suppress misra-c2012-13.3; Reason: local post-increment with no aliasing
     walk_frame_t frame = stack[--count];
 
     if (frame.node == NULL)
@@ -1127,31 +1135,37 @@ static const uint64_t PRV_CBOR_BREAK = 0xFFU;
 /**
  * \brief The CBOR tag selecting the constructor general form.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_GENERAL_FORM_TAG = 102U;
 
 /**
  * \brief The first CBOR tag of the compact constructor range (alternative 0).
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_COMPACT_TAG_LO = 121U;
 
 /**
  * \brief The last CBOR tag of the compact constructor range (alternative 6).
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_COMPACT_TAG_HI = 127U;
 
 /**
  * \brief The first CBOR tag of the ranged constructor form (alternative 7).
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_RANGED_TAG_LO = 1280U;
 
 /**
  * \brief The last CBOR tag of the ranged constructor form (alternative 127).
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_RANGED_TAG_HI = 1400U;
 
 /**
  * \brief The alternative the first ranged-form tag maps to.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_CONSTR_RANGED_OFFSET = 7U;
 
 /**
@@ -1453,10 +1467,11 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
  */
 static cardano_error_t
 parse_array(
-  cardano_uplc_arena_t*              arena,
-  cursor_t*                          cursor,
-  byte_t                             info,
-  uint32_t                           depth,
+  cardano_uplc_arena_t* arena,
+  cursor_t*             cursor,
+  byte_t                info,
+  uint32_t              depth,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_data_t* const** out_items,
   size_t*                            out_count)
 {
@@ -1494,6 +1509,7 @@ parse_array(
   }
 
   for (;;)
+  // cppcheck-suppress misra-c2012-15.4; Reason: multiple loop exits keep the control flow flat
   {
     cardano_uplc_data_t* item = NULL;
 
@@ -1520,6 +1536,7 @@ parse_array(
       /* Definite array still has items to read. */
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_data_node(arena, cursor, depth + 1U, &item);
 
     if (result != CARDANO_SUCCESS)
@@ -1616,6 +1633,7 @@ parse_map(
   }
 
   for (;;)
+  // cppcheck-suppress misra-c2012-15.4; Reason: multiple loop exits keep the control flow flat
   {
     cardano_uplc_data_t* key   = NULL;
     cardano_uplc_data_t* value = NULL;
@@ -1643,10 +1661,12 @@ parse_map(
       /* Definite map still has pairs to read. */
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_data_node(arena, cursor, depth + 1U, &key);
 
     if (result == CARDANO_SUCCESS)
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_data_node(arena, cursor, depth + 1U, &value);
     }
 
@@ -1849,6 +1869,7 @@ parse_tagged(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, uint32_
 
       if (result == CARDANO_SUCCESS)
       {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_array(arena, cursor, inner_info, depth, &fields, &count);
       }
     }
@@ -1865,6 +1886,7 @@ parse_tagged(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, uint32_
 
       if (result == CARDANO_SUCCESS)
       {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_array(arena, cursor, inner_info, depth, &fields, &count);
       }
     }
@@ -1881,6 +1903,7 @@ parse_tagged(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, uint32_
 
       if (result == CARDANO_SUCCESS)
       {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_array(arena, cursor, inner_info, depth, &fields, &count);
       }
     }
@@ -1977,6 +2000,7 @@ parse_data_node(cardano_uplc_arena_t* arena, cursor_t* cursor, uint32_t depth, c
       const cardano_uplc_data_t* const* items = NULL;
       size_t                            count = 0U;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_array(arena, cursor, info, depth, &items, &count);
 
       if (result != CARDANO_SUCCESS)
@@ -1992,6 +2016,7 @@ parse_data_node(cardano_uplc_arena_t* arena, cursor_t* cursor, uint32_t depth, c
       size_t                          count      = 0U;
       bool                            indefinite = false;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_map(arena, cursor, info, depth, &entries, &count, &indefinite);
 
       if (result != CARDANO_SUCCESS)
@@ -2003,6 +2028,7 @@ parse_data_node(cardano_uplc_arena_t* arena, cursor_t* cursor, uint32_t depth, c
     }
     case PRV_CBOR_MAJOR_TAG:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       return parse_tagged(arena, cursor, info, depth, out);
     }
     default:
@@ -2051,6 +2077,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
       const cardano_uplc_data_t**   nodes       = NULL;
       size_t                        i           = 0U;
 
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       result = cardano_plutus_data_to_constr((cardano_plutus_data_t*)((const void*)data), &constr);
 
       if (result == CARDANO_SUCCESS)
@@ -2095,6 +2122,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
 
         if (result == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = from_plutus_data(arena, element, depth + 1U, &node);
         }
 
@@ -2123,6 +2151,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
       size_t                    count   = 0U;
       size_t                    i       = 0U;
 
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       result = cardano_plutus_data_to_map((cardano_plutus_data_t*)((const void*)data), &map);
 
       if (result == CARDANO_SUCCESS)
@@ -2176,11 +2205,13 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
 
         if (result == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = from_plutus_data(arena, key, depth + 1U, &key_node);
         }
 
         if (result == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = from_plutus_data(arena, value, depth + 1U, &val_node);
         }
 
@@ -2213,6 +2244,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
       size_t                      count = 0U;
       size_t                      i     = 0U;
 
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       result = cardano_plutus_data_to_list((cardano_plutus_data_t*)((const void*)data), &list);
 
       if (result != CARDANO_SUCCESS)
@@ -2243,6 +2275,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
 
         if (result == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = from_plutus_data(arena, element, depth + 1U, &node);
         }
 
@@ -2283,6 +2316,7 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
     {
       cardano_buffer_t* bytes = NULL;
 
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       result = cardano_plutus_data_to_bounded_bytes((cardano_plutus_data_t*)((const void*)data), &bytes);
 
       if (result != CARDANO_SUCCESS)
@@ -2346,6 +2380,7 @@ to_plutus_data(const cardano_uplc_data_t* data, uint32_t depth, cardano_plutus_d
       {
         cardano_plutus_data_t* element = NULL;
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = to_plutus_data(data->as.constr.fields[i], depth + 1U, &element);
 
         if (result == CARDANO_SUCCESS)
@@ -2394,10 +2429,12 @@ to_plutus_data(const cardano_uplc_data_t* data, uint32_t depth, cardano_plutus_d
         cardano_plutus_data_t* key   = NULL;
         cardano_plutus_data_t* value = NULL;
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = to_plutus_data(data->as.map.entries[i].key, depth + 1U, &key);
 
         if (result == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = to_plutus_data(data->as.map.entries[i].value, depth + 1U, &value);
         }
 
@@ -2438,6 +2475,7 @@ to_plutus_data(const cardano_uplc_data_t* data, uint32_t depth, cardano_plutus_d
       {
         cardano_plutus_data_t* element = NULL;
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = to_plutus_data(data->as.list.items[i], depth + 1U, &element);
 
         if (result == CARDANO_SUCCESS)
@@ -2737,6 +2775,7 @@ cardano_uplc_data_integer_materialize(
   const cardano_uplc_data_t* data,
   const cardano_bigint_t**   out)
 {
+  // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
   cardano_uplc_data_t* mutable_node = (cardano_uplc_data_t*)((const void*)data);
   cardano_bigint_t*    built        = NULL;
   cardano_error_t      result       = CARDANO_SUCCESS;
@@ -2785,6 +2824,7 @@ cardano_uplc_data_equals(const cardano_uplc_data_t* lhs, const cardano_uplc_data
 
   while (equal && (count > 0U))
   {
+    // cppcheck-suppress misra-c2012-13.3; Reason: local post-increment with no aliasing
     equals_pair_t pair = stack[--count];
 
     const cardano_uplc_data_t* a = pair.lhs;
@@ -2878,6 +2918,10 @@ cardano_uplc_data_equals(const cardano_uplc_data_t* lhs, const cardano_uplc_data
         else if (a->as.bytes.size > 0U)
         {
           equal = memcmp(a->as.bytes.data, b->as.bytes.data, a->as.bytes.size) == 0;
+        }
+        else
+        {
+          /* Equal empty byte strings: nothing to compare. */
         }
 
         break;

@@ -63,6 +63,7 @@
  * \brief Number of distinct byte values, the modulus for the wrapping
  *        \c consByteString and the exclusive upper bound for a byte literal.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_BUILTIN_BYTE_MODULUS = 256;
 
 /**
@@ -82,66 +83,79 @@ static const int64_t CARDANO_UPLC_BUILTIN_INT_TO_BS_MAX = 8192;
 /**
  * \brief Output length, in bytes, of a Blake2b-224 digest.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_BLAKE2B_224_SIZE = 28U;
 
 /**
  * \brief Output length, in bytes, of a Blake2b-256 digest.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_BLAKE2B_256_SIZE = 32U;
 
 /**
  * \brief Length, in bytes, of an Ed25519 public key.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_ED25519_KEY_SIZE = 32U;
 
 /**
  * \brief Length, in bytes, of an Ed25519 signature.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_ED25519_SIG_SIZE = 64U;
 
 /**
  * \brief Length, in bytes, of a compressed secp256k1 ECDSA public key.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_ECDSA_KEY_SIZE = 33U;
 
 /**
  * \brief Length, in bytes, of the pre-hashed message an ECDSA verify consumes.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_ECDSA_MSG_SIZE = 32U;
 
 /**
  * \brief Length, in bytes, of a compact secp256k1 ECDSA signature.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_ECDSA_SIG_SIZE = 64U;
 
 /**
  * \brief Length, in bytes, of an x-only BIP340 Schnorr public key.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_SCHNORR_KEY_SIZE = 32U;
 
 /**
  * \brief Length, in bytes, of a BIP340 Schnorr signature.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_SCHNORR_SIG_SIZE = 64U;
 
 /**
  * \brief Output length, in bytes, of a SHA3-256 or Keccak-256 digest.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_SHA3_256_SIZE = 32U;
 
 /**
  * \brief Output length, in bytes, of a RIPEMD-160 digest.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t CARDANO_UPLC_BUILTIN_RIPEMD_160_SIZE = 20U;
 
 /**
  * \brief Domain-separation pad byte selecting FIPS-202 SHA-3 in \c sha3_final_pad.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t CARDANO_UPLC_BUILTIN_SHA3_PAD = 0x06U;
 
 /**
  * \brief Domain-separation pad byte selecting the original Keccak in \c sha3_final_pad.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t CARDANO_UPLC_BUILTIN_KECCAK_PAD = 0x01U;
 
 /**
@@ -168,6 +182,7 @@ static const size_t CARDANO_UPLC_BLS_DST_MAX = 255U;
  * A scalar argument to \c scalarMul is reduced modulo this period before the
  * multiplication.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const byte_t CARDANO_UPLC_BLS_SCALAR_PERIOD[CARDANO_UPLC_BLS_SCALAR_SIZE] = {
   0x73U,
   0xedU,
@@ -842,15 +857,18 @@ type_equals(const cardano_uplc_type_t* a, const cardano_uplc_type_t* b)
     case CARDANO_UPLC_TYPE_LIST:
     case CARDANO_UPLC_TYPE_ARRAY:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       return type_equals(a->fst, b->fst);
     }
     case CARDANO_UPLC_TYPE_PAIR:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       if (!type_equals(a->fst, b->fst))
       {
         return false;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       return type_equals(a->snd, b->snd);
     }
     case CARDANO_UPLC_TYPE_INTEGER:
@@ -918,11 +936,13 @@ constant_has_type(const cardano_uplc_type_t* type, const cardano_uplc_constant_t
         return false;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       if (!constant_has_type(type->fst, constant->as.pair.fst))
       {
         return false;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       return constant_has_type(type->snd, constant->as.pair.snd);
     }
     case CARDANO_UPLC_TYPE_INTEGER:
@@ -1091,8 +1111,9 @@ cardano_uplc_builtin_as_data(const cardano_uplc_value_t* value, const cardano_up
 
 bool
 cardano_uplc_builtin_as_list(
-  const cardano_uplc_value_t*            value,
-  const cardano_uplc_type_t**            element_type,
+  const cardano_uplc_value_t* value,
+  const cardano_uplc_type_t** element_type,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_constant_t* const** items,
   size_t*                                count)
 {
@@ -1294,7 +1315,7 @@ body_int_div(
       return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
     }
 
-    if (!((a.small == INT64_MIN) && (b.small == -1)))
+    if (!((a.small == (int64_t)INT64_MIN) && (b.small == -1)))
     {
       int64_t q = a.small / b.small;
       int64_t r = a.small % b.small;
@@ -1395,7 +1416,7 @@ body_int_compare(
 
   if (a.is_small && b.is_small)
   {
-    cmp = (a.small < b.small) ? -1 : ((a.small > b.small) ? 1 : 0);
+    cmp = (a.small < b.small) ? (int32_t)-1 : ((a.small > b.small) ? (int32_t)1 : (int32_t)0);
   }
   else
   {
@@ -1635,12 +1656,13 @@ body_append_byte_string(
 
   if (lhs.size > 0U)
   {
-    memcpy(scratch, lhs.data, lhs.size);
+    (void)memcpy(scratch, lhs.data, lhs.size);
   }
 
   if (rhs.size > 0U)
   {
-    memcpy(scratch + lhs.size, rhs.data, rhs.size);
+    // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+    (void)memcpy(scratch + lhs.size, rhs.data, rhs.size);
   }
 
   *host_error = result_bytes_take(arena, scratch, total, out_result);
@@ -1757,7 +1779,8 @@ body_cons_byte_string(
 
   if (tail.size > 0U)
   {
-    memcpy(scratch + 1U, tail.data, tail.size);
+    // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+    (void)memcpy(scratch + 1U, tail.data, tail.size);
   }
 
   *host_error = result_bytes_take(arena, scratch, tail.size + 1U, out_result);
@@ -1843,6 +1866,7 @@ body_slice_byte_string(
     take = available;
   }
 
+  // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
   *host_error = result_bytes_from(arena, (bytes.data != NULL) ? (bytes.data + skip) : NULL, take, out_result);
 
   return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
@@ -2135,11 +2159,11 @@ body_complement_byte_string(
  * \param[out] bit_offset The intra-byte bit offset from the low bit (0..7).
  */
 static void
-resolve_bit(uint64_t bit_index, size_t length, size_t* byte_pos, unsigned* bit_offset)
+resolve_bit(uint64_t bit_index, size_t length, size_t* byte_pos, unsigned int* bit_offset)
 {
   uint64_t from_end = bit_index / 8U;
 
-  *bit_offset = (unsigned)(bit_index % 8U);
+  *bit_offset = (unsigned int)(bit_index % 8U);
   *byte_pos   = (length - 1U) - (size_t)from_end;
 }
 
@@ -2166,7 +2190,7 @@ body_read_bit(
   const cardano_bigint_t*  bit_index  = NULL;
   uint64_t                 index      = 0U;
   size_t                   byte_pos   = 0U;
-  unsigned                 bit_offset = 0U;
+  unsigned int             bit_offset = 0U;
   bool                     value      = false;
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) || !as_integer_big(arena, args[1], &bit_index))
@@ -2245,7 +2269,7 @@ body_write_bits(
       return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
     }
 
-    memcpy(scratch, bytes.data, bytes.size);
+    (void)memcpy(scratch, bytes.data, bytes.size);
   }
 
   for (i = 0U; i < count; ++i)
@@ -2253,7 +2277,7 @@ body_write_bits(
     const cardano_uplc_constant_t* item       = items[i];
     uint64_t                       index      = 0U;
     size_t                         byte_pos   = 0U;
-    unsigned                       bit_offset = 0U;
+    unsigned int                   bit_offset = 0U;
     byte_t                         mask       = 0;
 
     if ((item == NULL) || (item->kind != CARDANO_UPLC_TYPE_INTEGER))
@@ -2393,7 +2417,7 @@ body_replicate_byte(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  memset(scratch, byte, (size_t)size);
+  (void)memset(scratch, byte, (size_t)size);
 
   *host_error = result_bytes_take(arena, scratch, (size_t)size, out_result);
 
@@ -2479,7 +2503,7 @@ body_shift_byte_string(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  memset(scratch, 0, size);
+  (void)memset(scratch, 0, size);
 
   for (dst_bit = 0U; dst_bit < bits; ++dst_bit)
   {
@@ -2502,10 +2526,10 @@ body_shift_byte_string(
 
     if (in_range)
     {
-      size_t   src_byte = (size_t)(src_bit / 8U);
-      unsigned src_off  = (unsigned)(7U - (src_bit % 8U));
-      size_t   dst_byte = (size_t)(dst_bit / 8U);
-      unsigned dst_off  = (unsigned)(7U - (dst_bit % 8U));
+      size_t       src_byte = (size_t)(src_bit / 8U);
+      unsigned int src_off  = (unsigned int)(7U - (src_bit % 8U));
+      size_t       dst_byte = (size_t)(dst_bit / 8U);
+      unsigned int dst_off  = (unsigned int)(7U - (dst_bit % 8U));
 
       if (((data[src_byte] >> src_off) & 1U) == 1U)
       {
@@ -2609,15 +2633,15 @@ body_rotate_byte_string(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  memset(scratch, 0, size);
+  (void)memset(scratch, 0, size);
 
   for (dst_bit = 0U; dst_bit < bits; ++dst_bit)
   {
-    uint64_t src_bit  = (dst_bit + rot) % bits;
-    size_t   src_byte = (size_t)(src_bit / 8U);
-    unsigned src_off  = (unsigned)(7U - (src_bit % 8U));
-    size_t   dst_byte = (size_t)(dst_bit / 8U);
-    unsigned dst_off  = (unsigned)(7U - (dst_bit % 8U));
+    uint64_t     src_bit  = (dst_bit + rot) % bits;
+    size_t       src_byte = (size_t)(src_bit / 8U);
+    unsigned int src_off  = (unsigned int)(7U - (src_bit % 8U));
+    size_t       dst_byte = (size_t)(dst_bit / 8U);
+    unsigned int dst_off  = (unsigned int)(7U - (dst_bit % 8U));
 
     if (((data[src_byte] >> src_off) & 1U) == 1U)
     {
@@ -2665,9 +2689,9 @@ body_count_set_bits(
   {
     byte_t b = data[i];
 
-    while (b != 0)
+    while (b != 0U)
     {
-      total += (int64_t)(b & 1U);
+      total += (int64_t)b & (int64_t)1;
       b     = (byte_t)(b >> 1);
     }
   }
@@ -2715,9 +2739,9 @@ body_find_first_set_bit(
   {
     byte_t b = data[size - 1U - i];
 
-    if (b != 0)
+    if (b != 0U)
     {
-      unsigned bit = 0U;
+      unsigned int bit = 0U;
 
       while (((b >> bit) & 1U) == 0U)
       {
@@ -2821,7 +2845,7 @@ body_integer_to_byte_string(
       return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
     }
 
-    memset(scratch, 0, (size_t)width);
+    (void)memset(scratch, 0, (size_t)width);
     *host_error = result_bytes_take(arena, scratch, (size_t)width, out_result);
 
     return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
@@ -2850,15 +2874,16 @@ body_integer_to_byte_string(
   {
     size_t lead = 0U;
 
-    while ((lead < (value_bytes - 1U)) && (raw[lead] == 0))
+    while ((lead < (value_bytes - 1U)) && (raw[lead] == 0U))
     {
       ++lead;
     }
 
     {
-      size_t  significant = value_bytes - lead;
-      byte_t* msb         = raw + lead;
-      size_t  width_sz    = (size_t)width;
+      size_t significant = value_bytes - lead;
+      // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+      byte_t* msb      = raw + lead;
+      size_t  width_sz = (size_t)width;
 
       if ((width_sz != 0U) && (value_bytes > (width_sz + lead)))
       {
@@ -2879,11 +2904,12 @@ body_integer_to_byte_string(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      memset(scratch, 0, out_len);
+      (void)memset(scratch, 0, out_len);
 
       if (big_endian)
       {
-        memcpy(scratch + (out_len - significant), msb, significant);
+        // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+        (void)memcpy(scratch + (out_len - significant), msb, significant);
       }
       else
       {
@@ -3139,12 +3165,13 @@ body_append_string(
 
   if (lhs.size > 0U)
   {
-    memcpy(scratch, lhs.data, lhs.size);
+    (void)memcpy(scratch, lhs.data, lhs.size);
   }
 
   if (rhs.size > 0U)
   {
-    memcpy(scratch + lhs.size, rhs.data, rhs.size);
+    // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+    (void)memcpy(scratch + lhs.size, rhs.data, rhs.size);
   }
 
   *host_error = result_string_from(arena, scratch, total, out_result);
@@ -3483,6 +3510,8 @@ body_tail_list(
   *host_error = cardano_uplc_constant_new_list(
     arena,
     element_type,
+    // cppcheck-suppress misra-c2012-12.1; Reason: operator precedence is explicit and intentional
+    // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
     (count > 1U) ? (items + 1) : NULL,
     count - 1U,
     &constant);
@@ -3726,7 +3755,8 @@ collect_data_nodes(
   const cardano_uplc_type_t*            element_type,
   const cardano_uplc_constant_t* const* items,
   size_t                                count,
-  const cardano_uplc_data_t* const**    out_nodes)
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
+  const cardano_uplc_data_t* const** out_nodes)
 {
   const cardano_uplc_data_t** nodes = NULL;
   size_t                      i     = 0U;
@@ -3967,6 +3997,7 @@ body_i_data(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
+  // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
   *host_error = cardano_uplc_data_new_integer(arena, (cardano_bigint_t*)((const void*)integer), &data);
 
   if (*host_error != CARDANO_SUCCESS)
@@ -4364,6 +4395,7 @@ body_un_i_data(
 
     if (*host_error == CARDANO_SUCCESS)
     {
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       *host_error = cardano_uplc_constant_new_integer(arena, (cardano_bigint_t*)((const void*)integer), &constant);
     }
 
@@ -4707,7 +4739,7 @@ body_sha2_256(
   cardano_error_t*                   host_error)
 {
   cardano_uplc_byte_view_t input = { NULL, 0U };
-  byte_t                   digest[crypto_hash_sha256_BYTES];
+  byte_t                   digest[32];
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &input))
   {
@@ -4745,7 +4777,7 @@ body_blake2b(
   cardano_error_t*                   host_error)
 {
   cardano_uplc_byte_view_t input = { NULL, 0U };
-  byte_t                   digest[crypto_generichash_BYTES];
+  byte_t                   digest[32];
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &input))
   {
@@ -5890,8 +5922,9 @@ body_bls_final_verify(
  */
 static bool
 as_array(
-  const cardano_uplc_value_t*            value,
-  const cardano_uplc_type_t**            element_type,
+  const cardano_uplc_value_t* value,
+  const cardano_uplc_type_t** element_type,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_constant_t* const** items,
   size_t*                                count)
 {
@@ -5935,6 +5968,7 @@ static const size_t PRV_VALUE_KEY_MAX = 32U;
 /**
  * \brief The bit width of the signed quantity bound: amounts fit in 128 bits.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t PRV_VALUE_AMOUNT_BITS = 128U;
 
 /**
@@ -5950,28 +5984,28 @@ static const size_t PRV_VALUE_AMOUNT_BITS = 128U;
 static cardano_error_t
 value_elem_type(struct cardano_uplc_arena_t* arena, const cardano_uplc_type_t** out)
 {
-  const cardano_uplc_type_t* bytestring = NULL;
-  const cardano_uplc_type_t* integer    = NULL;
-  const cardano_uplc_type_t* token_pair = NULL;
-  const cardano_uplc_type_t* token_list = NULL;
-  cardano_uplc_type_t*       policy     = NULL;
-  cardano_error_t            error      = CARDANO_SUCCESS;
+  cardano_uplc_type_t* bytestring = NULL;
+  cardano_uplc_type_t* integer    = NULL;
+  cardano_uplc_type_t* token_pair = NULL;
+  cardano_uplc_type_t* token_list = NULL;
+  cardano_uplc_type_t* policy     = NULL;
+  cardano_error_t      error      = CARDANO_SUCCESS;
 
-  error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, (cardano_uplc_type_t**)((void*)&bytestring));
+  error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, (cardano_uplc_type_t**)((void*)&integer));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
   }
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, (cardano_uplc_type_t**)((void*)&token_pair));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token_pair);
   }
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, (cardano_uplc_type_t**)((void*)&token_list));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, &token_list);
   }
 
   if (error == CARDANO_SUCCESS)
@@ -6022,8 +6056,9 @@ as_value_constant(const cardano_uplc_value_t* value, const cardano_uplc_constant
  */
 static bool
 value_entry(
-  const cardano_uplc_constant_t*         entry,
-  cardano_uplc_byte_view_t*              policy,
+  const cardano_uplc_constant_t* entry,
+  cardano_uplc_byte_view_t*      policy,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_constant_t* const** tokens,
   size_t*                                token_count)
 {
@@ -6230,29 +6265,29 @@ make_policy_entry(
   size_t                                count,
   const cardano_uplc_constant_t**       out)
 {
-  cardano_uplc_constant_t*   policy_const = NULL;
-  const cardano_uplc_type_t* token_pair   = NULL;
-  const cardano_uplc_type_t* bytestring   = NULL;
-  const cardano_uplc_type_t* integer      = NULL;
-  cardano_uplc_constant_t*   list_const   = NULL;
-  cardano_uplc_constant_t*   pair_const   = NULL;
-  cardano_error_t            error        = CARDANO_SUCCESS;
+  cardano_uplc_constant_t* policy_const = NULL;
+  cardano_uplc_type_t*     token_pair   = NULL;
+  cardano_uplc_type_t*     bytestring   = NULL;
+  cardano_uplc_type_t*     integer      = NULL;
+  cardano_uplc_constant_t* list_const   = NULL;
+  cardano_uplc_constant_t* pair_const   = NULL;
+  cardano_error_t          error        = CARDANO_SUCCESS;
 
   error = cardano_uplc_int_constant_new_byte_string_copy(arena, policy.data, policy.size, &policy_const);
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, (cardano_uplc_type_t**)((void*)&bytestring));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
   }
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, (cardano_uplc_type_t**)((void*)&integer));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
   }
 
   if (error == CARDANO_SUCCESS)
   {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, (cardano_uplc_type_t**)((void*)&token_pair));
+    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token_pair);
   }
 
   if (error == CARDANO_SUCCESS)
@@ -6820,9 +6855,10 @@ merge_tokens(
   size_t                                n1,
   const cardano_uplc_constant_t* const* t2,
   size_t                                n2,
-  const cardano_uplc_constant_t***      out,
-  size_t*                               out_count,
-  cardano_error_t*                      host_error)
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
+  const cardano_uplc_constant_t*** out,
+  size_t*                          out_count,
+  cardano_error_t*                 host_error)
 {
   const cardano_uplc_constant_t** merged = alloc_const_array(arena, n1 + n2);
   size_t                          count  = 0U;
@@ -7517,7 +7553,7 @@ body_un_value_data(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if (cardano_plutus_data_to_map((cardano_plutus_data_t*)((const void*)data), &outer) != CARDANO_SUCCESS)
+  if (cardano_plutus_data_to_map(data, &outer) != CARDANO_SUCCESS)
   {
     cardano_plutus_data_unref(&data);
 
@@ -7750,6 +7786,8 @@ body_drop_list(
   *host_error = cardano_uplc_constant_new_list(
     arena,
     element_type,
+    // cppcheck-suppress misra-c2012-12.1; Reason: operator precedence is explicit and intentional
+    // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
     (start < count) ? (items + start) : NULL,
     count - start,
     &constant);

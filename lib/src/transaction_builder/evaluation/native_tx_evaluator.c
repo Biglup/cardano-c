@@ -76,6 +76,7 @@
 /**
  * \brief The arena block size used for one redeemer evaluation.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t PRV_ARENA_BLOCK_SIZE = 4096U;
 
 /**
@@ -89,11 +90,13 @@ static const size_t PRV_ARENA_BLOCK_SIZE = 4096U;
  * exceed the budget fails). The spent budget reported per redeemer is the actual
  * charge, never this ceiling.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t PRV_MAX_CPU = (int64_t)100000000000;
 
 /**
  * \brief The memory ceiling for the whole transaction, shared across redeemers.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t PRV_MAX_MEM = (int64_t)100000000;
 
 /* STRUCTURES ****************************************************************/
@@ -859,19 +862,19 @@ build_script_context(
  */
 static cardano_error_t
 apply_arguments(
-  cardano_uplc_arena_t*          arena,
-  script_version_t               version,
-  const cardano_uplc_program_t*  program,
-  cardano_redeemer_t*            redeemer,
-  cardano_plutus_data_t*         datum,
-  cardano_plutus_data_t*         script_context,
-  const cardano_uplc_program_t** out)
+  cardano_uplc_arena_t*         arena,
+  script_version_t              version,
+  const cardano_uplc_program_t* program,
+  cardano_redeemer_t*           redeemer,
+  cardano_plutus_data_t*        datum,
+  cardano_plutus_data_t*        script_context,
+  cardano_uplc_program_t**      out)
 {
   cardano_error_t result = CARDANO_SUCCESS;
 
   if (version == PRV_SCRIPT_V3)
   {
-    result = cardano_uplc_program_apply_data(arena, program, script_context, (cardano_uplc_program_t**)out);
+    result = cardano_uplc_program_apply_data(arena, program, script_context, out);
   }
   else
   {
@@ -895,7 +898,7 @@ apply_arguments(
     args[count] = script_context;
     ++count;
 
-    result = cardano_uplc_program_apply_data_params(arena, program, args, count, (cardano_uplc_program_t**)out);
+    result = cardano_uplc_program_apply_data_params(arena, program, args, count, out);
 
     cardano_plutus_data_unref(&redeemer_data);
   }
@@ -934,7 +937,7 @@ eval_redeemer(
   cardano_plutus_data_t*        script_context = NULL;
   cardano_uplc_arena_t*         arena          = NULL;
   const cardano_uplc_program_t* program        = NULL;
-  const cardano_uplc_program_t* applied        = NULL;
+  cardano_uplc_program_t*       applied        = NULL;
   cardano_ex_units_t*           ex_units       = NULL;
   script_version_t              version        = PRV_SCRIPT_V3;
   cardano_uplc_eval_result_t    eval_result;

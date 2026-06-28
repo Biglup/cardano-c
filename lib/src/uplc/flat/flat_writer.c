@@ -37,6 +37,7 @@ static const uint8_t FLAT_BITS_PER_BYTE = 8U;
 /**
  * \brief Mask selecting the most significant bit of a byte, written first.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_MSB_MASK = 0x80U;
 
 /**
@@ -47,6 +48,7 @@ static const uint8_t FLAT_WORD_GROUP_BITS = 7U;
 /**
  * \brief Mask selecting the 7 payload bits of a word continuation group.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_WORD_PAYLOAD_MASK = 0x7FU;
 
 /**
@@ -57,11 +59,13 @@ static const uint8_t FLAT_WORD_CONTINUATION = 0x80U;
 /**
  * \brief Largest length a single flat bytestring block can carry.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t FLAT_BYTES_MAX_BLOCK = 255U;
 
 /**
  * \brief Initial capacity requested for the writer's backing buffer.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t FLAT_WRITER_INITIAL_CAPACITY = 64U;
 
 /* STATIC FUNCTIONS *********************************************************/

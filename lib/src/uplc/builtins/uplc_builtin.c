@@ -50,6 +50,7 @@
  *
  * The number of value arguments each builtin saturates on before its body runs.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t BUILTIN_ARITY[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_ADD_INTEGER]                        = 2U,
   [CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER]                   = 2U,
@@ -162,6 +163,7 @@ static const uint8_t BUILTIN_ARITY[CARDANO_UPLC_BUILTIN_COUNT] = {
  * force (dropList, lengthOfArray, listToArray, indexArray); the value/coin and
  * multi-scalar-mul builtins are monomorphic and take none.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t BUILTIN_FORCE_COUNT[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_ADD_INTEGER]                        = 0U,
   [CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER]                   = 0U,
@@ -273,6 +275,7 @@ static const uint8_t BUILTIN_FORCE_COUNT[CARDANO_UPLC_BUILTIN_COUNT] = {
  * Stored as the integer value of \ref cardano_uplc_lang_version_t. The builtins
  * introduced after PlutusV3 are labelled V4 here.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t BUILTIN_FIRST_VERSION[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_ADD_INTEGER]                        = (uint8_t)CARDANO_UPLC_LANG_VERSION_V1,
   [CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER]                   = (uint8_t)CARDANO_UPLC_LANG_VERSION_V1,

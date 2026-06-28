@@ -79,6 +79,7 @@ typedef struct cardano_uplc_constant_t
 {
     cardano_uplc_type_kind_t kind;
 
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         /**
@@ -129,6 +130,8 @@ typedef struct cardano_uplc_constant_t
             const struct cardano_uplc_constant_t* fst;
             const struct cardano_uplc_constant_t* snd;
         } pair;
+
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } as;
 } cardano_uplc_constant_t;
 

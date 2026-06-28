@@ -74,7 +74,7 @@ copy_bytes(
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    memcpy(copy, data, size);
+    (void)memcpy(copy, data, size);
 
     *out_data = copy;
     *out_size = size;
@@ -124,7 +124,7 @@ cardano_uplc_int_bigint_fits_int64(const cardano_bigint_t* value, int64_t* out)
   {
     const int64_t candidate = cardano_bigint_to_int(value);
 
-    if (candidate == INT64_MIN)
+    if (candidate == (int64_t)INT64_MIN)
     {
       *out = candidate;
 
@@ -153,6 +153,7 @@ cardano_uplc_constant_int_materialize(
   const cardano_uplc_constant_t* constant,
   const cardano_bigint_t**       out)
 {
+  // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
   cardano_uplc_constant_t* mutable_constant = (cardano_uplc_constant_t*)((void*)constant);
   cardano_bigint_t*        built            = NULL;
   cardano_error_t          error            = CARDANO_SUCCESS;

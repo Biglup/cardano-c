@@ -380,6 +380,8 @@ run_compute_state(
 
         return PRV_STEP_CONTINUE;
       }
+
+      break;
     }
 
     case CARDANO_UPLC_TERM_CASE:
@@ -439,9 +441,10 @@ run_compute_state(
  */
 static cardano_error_t
 extend_builtin_args(
-  cardano_uplc_arena_t*               arena,
-  const cardano_uplc_value_t*         builtin,
-  const cardano_uplc_value_t*         arg,
+  cardano_uplc_arena_t*       arena,
+  const cardano_uplc_value_t* builtin,
+  const cardano_uplc_value_t* arg,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_value_t* const** out)
 {
   const cardano_uplc_value_t** args  = NULL;
@@ -1211,6 +1214,8 @@ run_return_state(
 
         return PRV_STEP_CONTINUE;
       }
+
+      break;
     }
 
     case CARDANO_UPLC_FRAME_CASES:
@@ -1330,12 +1335,15 @@ with_env(
 
         if (cardano_uplc_env_lookup(env, term->as.var_index - lam_cnt, &bound) == CARDANO_SUCCESS)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           return discharge_value(arena, depth + (size_t)1, bound, out);
         }
 
         *out = term;
         return CARDANO_SUCCESS;
       }
+
+      break;
     }
 
     case CARDANO_UPLC_TERM_LAMBDA:
@@ -1343,6 +1351,7 @@ with_env(
       const cardano_uplc_term_t* body   = NULL;
       cardano_uplc_term_t*       result = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt + (uint64_t)1, env, term->as.unary, &body);
 
       if (error != CARDANO_SUCCESS)
@@ -1367,6 +1376,7 @@ with_env(
       const cardano_uplc_term_t* body   = NULL;
       cardano_uplc_term_t*       result = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.unary, &body);
 
       if (error != CARDANO_SUCCESS)
@@ -1391,6 +1401,7 @@ with_env(
       const cardano_uplc_term_t* body   = NULL;
       cardano_uplc_term_t*       result = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.unary, &body);
 
       if (error != CARDANO_SUCCESS)
@@ -1416,6 +1427,7 @@ with_env(
       const cardano_uplc_term_t* argument = NULL;
       cardano_uplc_term_t*       result   = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.apply.function, &function);
 
       if (error != CARDANO_SUCCESS)
@@ -1423,6 +1435,7 @@ with_env(
         return error;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.apply.argument, &argument);
 
       if (error != CARDANO_SUCCESS)
@@ -1463,6 +1476,7 @@ with_env(
 
         for (i = (size_t)0; i < term->as.constr.field_count; ++i)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.constr.fields[i], &fields[i]);
 
           if (error != CARDANO_SUCCESS)
@@ -1490,6 +1504,7 @@ with_env(
       const cardano_uplc_term_t** branches  = NULL;
       cardano_uplc_term_t*        result    = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.cases.scrutinee, &scrutinee);
 
       if (error != CARDANO_SUCCESS)
@@ -1513,6 +1528,7 @@ with_env(
 
         for (i = (size_t)0; i < term->as.cases.branch_count; ++i)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.cases.branches[i], &branches[i]);
 
           if (error != CARDANO_SUCCESS)
@@ -1605,6 +1621,7 @@ discharge_value(
         return error;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       return with_env(arena, depth + (size_t)1, (uint64_t)0, value->as.delay.env, delay, out);
     }
 
@@ -1613,6 +1630,7 @@ discharge_value(
       const cardano_uplc_term_t* discharged_body = NULL;
       cardano_uplc_term_t*       result          = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       error = with_env(arena, depth + (size_t)1, (uint64_t)1, value->as.lambda.env, value->as.lambda.body, &discharged_body);
 
       if (error != CARDANO_SUCCESS)
@@ -1666,6 +1684,7 @@ discharge_value(
         const cardano_uplc_term_t* arg_term = NULL;
         cardano_uplc_term_t*       apply    = NULL;
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         error = discharge_value(arena, depth + (size_t)1, value->as.builtin.args[i], &arg_term);
 
         if (error != CARDANO_SUCCESS)
@@ -1709,6 +1728,7 @@ discharge_value(
 
         for (i = (size_t)0; i < value->as.constr.field_count; ++i)
         {
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           error = discharge_value(arena, depth + (size_t)1, value->as.constr.fields[i], &fields[i]);
 
           if (error != CARDANO_SUCCESS)

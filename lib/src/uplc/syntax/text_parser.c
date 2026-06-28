@@ -51,6 +51,7 @@ static const uint32_t PARSER_MAX_DEPTH = 4096U;
 /**
  * \brief Numeric base used when parsing decimal integer literals.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int32_t PARSER_DECIMAL_BASE = 10;
 
 /**
@@ -61,6 +62,7 @@ static const size_t PARSER_HEX_DIGITS_PER_BYTE = 2U;
 /**
  * \brief Highest Unicode code point a numeric string escape may denote.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint32_t PARSER_MAX_CODE_POINT = 0x10FFFFU;
 
 /* STRUCTURES ****************************************************************/
@@ -251,6 +253,34 @@ expect_char(parser_t* parser, const char expected)
 }
 
 /**
+ * \brief Compares two byte spans of equal known length for equality.
+ *
+ * A length-bounded byte compare that never reads past \p length and does not
+ * treat either span as a NUL-terminated C string.
+ *
+ * \param[in] a The first byte span.
+ * \param[in] b The second byte span.
+ * \param[in] length The number of bytes to compare.
+ *
+ * \return \c true if the spans are byte-for-byte equal, else \c false.
+ */
+static bool
+bytes_equal(const char* a, const char* b, const size_t length)
+{
+  size_t i = 0U;
+
+  for (i = 0U; i < length; ++i)
+  {
+    if (a[i] != b[i])
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * \brief Consumes an expected keyword followed by a non-identifier boundary.
  *
  * Skips leading trivia, matches \p word exactly, and requires the byte after the
@@ -281,7 +311,7 @@ match_keyword(parser_t* parser, const char* word)
 
   at = &parser->text[start];
 
-  if (memcmp(at, word, length) != 0)
+  if (!bytes_equal(at, word, length))
   {
     return false;
   }
@@ -358,7 +388,7 @@ read_u64(parser_t* parser, uint64_t* value)
 
   while ((parser->pos < parser->len) && is_digit(parser->text[parser->pos]))
   {
-    const uint64_t digit = (uint64_t)(parser->text[parser->pos] - '0');
+    const uint64_t digit = (uint64_t)parser->text[parser->pos] - (uint64_t)'0';
 
     if (acc > ((UINT64_MAX - digit) / 10U))
     {
@@ -436,7 +466,7 @@ read_bigint(parser_t* parser, cardano_bigint_t** out)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  memcpy(terminated, &parser->text[start], length);
+  (void)memcpy(terminated, &parser->text[start], length);
   terminated[length] = '\0';
 
   result = cardano_bigint_from_string(terminated, length, PARSER_DECIMAL_BASE, out);
@@ -470,15 +500,15 @@ hex_value(const char c)
 
   if ((c >= '0') && (c <= '9'))
   {
-    value = (byte_t)(c - '0');
+    value = (byte_t)((byte_t)c - (byte_t)'0');
   }
   else if ((c >= 'a') && (c <= 'f'))
   {
-    value = (byte_t)((c - 'a') + 10);
+    value = (byte_t)(((byte_t)c - (byte_t)'a') + (byte_t)10U);
   }
   else
   {
-    value = (byte_t)((c - 'A') + 10);
+    value = (byte_t)(((byte_t)c - (byte_t)'A') + (byte_t)10U);
   }
 
   return value;
@@ -721,7 +751,7 @@ read_code_point(parser_t* parser, const uint32_t base, uint32_t* code_point)
     }
     else if (((base == 8U) && is_octal(c)) || ((base == 10U) && is_digit(c)))
     {
-      val = (uint32_t)(c - '0');
+      val = (uint32_t)c - (uint32_t)'0';
     }
     else
     {
@@ -781,7 +811,7 @@ match_named_escape(parser_t* parser, uint32_t* code_point)
   {
     const size_t name_len = strlen(table[i].name);
 
-    if (((parser->pos + name_len) <= parser->len) && (memcmp(&parser->text[parser->pos], table[i].name, name_len) == 0) && (name_len > best_len))
+    if (((parser->pos + name_len) <= parser->len) && bytes_equal(&parser->text[parser->pos], table[i].name, name_len) && (name_len > best_len))
     {
       best     = i;
       best_len = name_len;
@@ -1145,7 +1175,7 @@ resolve_name_index(const parser_t* parser, const char* text, const size_t length
   {
     const binder_t* binder = &parser->scope[i - 1U];
 
-    if ((binder->length == length) && (memcmp(binder->text, text, length) == 0))
+    if ((binder->length == length) && bytes_equal(binder->text, text, length))
     {
       *index = (uint64_t)(parser->scope_count - (i - 1U));
 
@@ -1286,7 +1316,7 @@ resolve_builtin(const char* text, const size_t length, cardano_uplc_builtin_t* b
   {
     const char* name = names[i];
 
-    if ((name != NULL) && (strlen(name) == length) && (memcmp(name, text, length) == 0))
+    if ((name != NULL) && (strlen(name) == length) && bytes_equal(name, text, length))
     {
       *builtin = (cardano_uplc_builtin_t)i;
 
@@ -1363,6 +1393,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
         }
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_data(parser, depth + 1U, &element);
 
       if (result != CARDANO_SUCCESS)
@@ -1445,6 +1476,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
         return CARDANO_ERROR_DECODING;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_data(parser, depth + 1U, &key);
 
       if (result != CARDANO_SUCCESS)
@@ -1462,6 +1494,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
         return CARDANO_ERROR_DECODING;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_data(parser, depth + 1U, &value);
 
       if (result != CARDANO_SUCCESS)
@@ -1539,6 +1572,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
         }
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_data(parser, depth + 1U, &element);
 
       if (result != CARDANO_SUCCESS)
@@ -1646,6 +1680,7 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
     {
       const cardano_uplc_type_t* element = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_type(parser, depth + 1U, &element);
 
       if (result != CARDANO_SUCCESS)
@@ -1674,6 +1709,7 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
     {
       const cardano_uplc_type_t* element = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_type(parser, depth + 1U, &element);
 
       if (result != CARDANO_SUCCESS)
@@ -1703,6 +1739,7 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
       const cardano_uplc_type_t* fst = NULL;
       const cardano_uplc_type_t* snd = NULL;
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_type(parser, depth + 1U, &fst);
 
       if (result != CARDANO_SUCCESS)
@@ -1710,6 +1747,7 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
         return result;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_type(parser, depth + 1U, &snd);
 
       if (result != CARDANO_SUCCESS)
@@ -1803,35 +1841,35 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
 static cardano_error_t
 value_element_type(cardano_uplc_arena_t* arena, const cardano_uplc_type_t** out)
 {
-  const cardano_uplc_type_t* bytestring  = NULL;
-  const cardano_uplc_type_t* integer     = NULL;
-  const cardano_uplc_type_t* token_pair  = NULL;
-  const cardano_uplc_type_t* token_list  = NULL;
-  cardano_uplc_type_t*       policy_pair = NULL;
-  cardano_error_t            result      = CARDANO_SUCCESS;
+  cardano_uplc_type_t* bytestring  = NULL;
+  cardano_uplc_type_t* integer     = NULL;
+  cardano_uplc_type_t* token_pair  = NULL;
+  cardano_uplc_type_t* token_list  = NULL;
+  cardano_uplc_type_t* policy_pair = NULL;
+  cardano_error_t      result      = CARDANO_SUCCESS;
 
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, (cardano_uplc_type_t**)((void*)&bytestring));
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, (cardano_uplc_type_t**)((void*)&integer));
+  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, (cardano_uplc_type_t**)((void*)&token_pair));
+  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, (cardano_uplc_type_t**)((void*)&token_list));
+  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token_pair);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, &token_list);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -2225,6 +2263,7 @@ normalize_value(
     }
 
     for (j = 0U; (j < tlist->as.list.count) && (error == CARDANO_SUCCESS); ++j)
+    // cppcheck-suppress misra-c2012-15.4; Reason: multiple loop exits keep the control flow flat
     {
       const cardano_uplc_constant_t* tok    = tlist->as.list.items[j];
       bytes_view_t                   name   = { tok->as.pair.fst->as.bytes.data, tok->as.pair.fst->as.bytes.size };
@@ -2458,6 +2497,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
           }
         }
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_value(parser, type->fst, depth + 1U, &element);
 
         if (result != CARDANO_SUCCESS)
@@ -2516,6 +2556,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
         return CARDANO_ERROR_DECODING;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_value(parser, type->fst, depth + 1U, &fst);
 
       if (result != CARDANO_SUCCESS)
@@ -2528,6 +2569,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
         return CARDANO_ERROR_DECODING;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_value(parser, type->snd, depth + 1U, &snd);
 
       if (result != CARDANO_SUCCESS)
@@ -2589,7 +2631,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
     case CARDANO_UPLC_TYPE_VALUE:
     {
       const cardano_uplc_type_t*     element_type = NULL;
-      const cardano_uplc_type_t*     list_type    = NULL;
+      cardano_uplc_type_t*           list_type    = NULL;
       const cardano_uplc_constant_t* list_const   = NULL;
 
       result = value_element_type(parser->arena, &element_type);
@@ -2599,13 +2641,14 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
         return result;
       }
 
-      result = cardano_uplc_type_new(parser->arena, CARDANO_UPLC_TYPE_LIST, element_type, NULL, (cardano_uplc_type_t**)((void*)&list_type));
+      result = cardano_uplc_type_new(parser->arena, CARDANO_UPLC_TYPE_LIST, element_type, NULL, &list_type);
 
       if (result != CARDANO_SUCCESS)
       {
         return result;
       }
 
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = parse_value(parser, list_type, depth + 1U, &list_const);
 
       if (result != CARDANO_SUCCESS)
@@ -2700,6 +2743,7 @@ parse_constant(parser_t* parser, const uint32_t depth, const cardano_uplc_consta
  *         error.
  */
 static cardano_error_t
+// cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
 parse_term_run(parser_t* parser, const uint32_t depth, const char terminator, const cardano_uplc_term_t* const** items, size_t* count)
 {
   const cardano_uplc_term_t** array    = NULL;
@@ -2711,7 +2755,8 @@ parse_term_run(parser_t* parser, const uint32_t depth, const char terminator, co
   while (peek_char(parser) != terminator)
   {
     const cardano_uplc_term_t* element = NULL;
-    cardano_error_t            result  = parse_term(parser, depth + 1U, &element);
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+    cardano_error_t result = parse_term(parser, depth + 1U, &element);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2827,6 +2872,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
       return result;
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term(parser, depth + 1U, &body);
     scope_pop(parser);
 
@@ -2841,6 +2887,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
   {
     const cardano_uplc_term_t* body = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term(parser, depth + 1U, &body);
 
     if (result != CARDANO_SUCCESS)
@@ -2854,6 +2901,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
   {
     const cardano_uplc_term_t* body = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term(parser, depth + 1U, &body);
 
     if (result != CARDANO_SUCCESS)
@@ -2907,6 +2955,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
       return result;
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term_run(parser, depth, ')', &fields, &count);
 
     if (result != CARDANO_SUCCESS)
@@ -2927,6 +2976,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
       return CARDANO_ERROR_DECODING;
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term(parser, depth + 1U, &scrutinee);
 
     if (result != CARDANO_SUCCESS)
@@ -2934,6 +2984,7 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
       return result;
     }
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term_run(parser, depth, ')', &branches, &count);
 
     if (result != CARDANO_SUCCESS)
@@ -2980,9 +3031,10 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
 static cardano_error_t
 parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** out)
 {
-  const cardano_uplc_term_t* accumulator    = NULL;
-  cardano_error_t            result         = parse_term(parser, depth + 1U, &accumulator);
-  size_t                     argument_count = 0U;
+  const cardano_uplc_term_t* accumulator = NULL;
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+  cardano_error_t result         = parse_term(parser, depth + 1U, &accumulator);
+  size_t          argument_count = 0U;
 
   if (result != CARDANO_SUCCESS)
   {
@@ -2996,6 +3048,7 @@ parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** 
     const cardano_uplc_term_t* argument = NULL;
     cardano_uplc_term_t*       applied  = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = parse_term(parser, depth + 1U, &argument);
 
     if (result != CARDANO_SUCCESS)
@@ -3066,6 +3119,7 @@ parse_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** o
   {
     parser->pos += 1U;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     return parse_apply(parser, depth, out);
   }
 
@@ -3073,6 +3127,7 @@ parse_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** o
   {
     parser->pos += 1U;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     return parse_paren_term(parser, depth, out);
   }
 

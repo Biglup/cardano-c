@@ -53,6 +53,7 @@ typedef struct cardano_uplc_const_or_two_arg_cost_t
     cardano_uplc_diag_model_kind_t kind;
 
     /** \brief The nested off-diagonal model. */
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         /** \brief Active when kind is LINEAR_IN_X_AND_Y. */
@@ -61,6 +62,7 @@ typedef struct cardano_uplc_const_or_two_arg_cost_t
         cardano_uplc_linear_cost_t multiplied_sizes;
         /** \brief Active when kind is QUADRATIC. */
         cardano_uplc_two_var_quadratic_cost_t quadratic;
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } model;
 } cardano_uplc_const_or_two_arg_cost_t;
 

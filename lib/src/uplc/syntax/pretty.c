@@ -64,6 +64,7 @@ static const uint32_t PRETTY_MAX_DEPTH = 2000U;
 /**
  * \brief Numeric base used when rendering big integers.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int32_t PRETTY_DECIMAL_BASE = 10;
 
 /**
@@ -73,6 +74,7 @@ static const int32_t PRETTY_DECIMAL_BASE = 10;
  * The names are the textual UPLC surface form of each builtin, indexed by the
  * builtin tag (see uplc_builtin.h).
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const char* const BUILTIN_NAME[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_ADD_INTEGER]                        = "addInteger",
   [CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER]                   = "subtractInteger",
@@ -448,6 +450,7 @@ print_type(writer_t* writer, const cardano_uplc_type_t* type)
     case CARDANO_UPLC_TYPE_LIST:
     {
       write_str(writer, "(list ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_type(writer, type->fst);
       write_char(writer, ')');
       break;
@@ -455,6 +458,7 @@ print_type(writer_t* writer, const cardano_uplc_type_t* type)
     case CARDANO_UPLC_TYPE_ARRAY:
     {
       write_str(writer, "(array ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_type(writer, type->fst);
       write_char(writer, ')');
       break;
@@ -462,8 +466,10 @@ print_type(writer_t* writer, const cardano_uplc_type_t* type)
     case CARDANO_UPLC_TYPE_PAIR:
     {
       write_str(writer, "(pair ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_type(writer, type->fst);
       write_char(writer, ' ');
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_type(writer, type->snd);
       write_char(writer, ')');
       break;
@@ -552,6 +558,7 @@ print_data(writer_t* writer, const cardano_uplc_data_t* data, const uint32_t dep
           write_str(writer, ", ");
         }
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         print_data(writer, data->as.constr.fields[i], depth + 1U);
       }
 
@@ -570,8 +577,10 @@ print_data(writer_t* writer, const cardano_uplc_data_t* data, const uint32_t dep
         }
 
         write_char(writer, '(');
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         print_data(writer, data->as.map.entries[i].key, depth + 1U);
         write_str(writer, ", ");
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         print_data(writer, data->as.map.entries[i].value, depth + 1U);
         write_char(writer, ')');
       }
@@ -590,6 +599,7 @@ print_data(writer_t* writer, const cardano_uplc_data_t* data, const uint32_t dep
           write_str(writer, ", ");
         }
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         print_data(writer, data->as.list.items[i], depth + 1U);
       }
 
@@ -787,6 +797,7 @@ print_value(writer_t* writer, const cardano_uplc_constant_t* constant, const uin
           write_str(writer, ", ");
         }
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         print_value(writer, constant->as.list.items[i], depth + 1U);
       }
 
@@ -796,8 +807,10 @@ print_value(writer_t* writer, const cardano_uplc_constant_t* constant, const uin
     case CARDANO_UPLC_TYPE_PAIR:
     {
       write_char(writer, '(');
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_value(writer, constant->as.pair.fst, depth + 1U);
       write_str(writer, ", ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_value(writer, constant->as.pair.snd, depth + 1U);
       write_char(writer, ')');
       break;
@@ -889,8 +902,10 @@ print_constant_type(writer_t* writer, const cardano_uplc_constant_t* constant)
     case CARDANO_UPLC_TYPE_PAIR:
     {
       write_str(writer, "(pair ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_constant_type(writer, constant->as.pair.fst);
       write_char(writer, ' ');
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       print_constant_type(writer, constant->as.pair.snd);
       write_char(writer, ')');
       break;
@@ -1053,6 +1068,7 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
     case CARDANO_UPLC_TERM_DELAY:
     {
       write_str(writer, "(delay ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.unary, depth + 1U, binders);
       write_char(writer, ')');
       break;
@@ -1062,6 +1078,7 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
       write_str(writer, "(lam ");
       write_binder(writer, "v", binders);
       write_char(writer, ' ');
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.unary, depth + 1U, binders + 1U);
       write_char(writer, ')');
       break;
@@ -1069,8 +1086,10 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
     case CARDANO_UPLC_TERM_APPLY:
     {
       write_str(writer, "[ ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.apply.function, depth + 1U, binders);
       write_char(writer, ' ');
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.apply.argument, depth + 1U, binders);
       write_str(writer, " ]");
       break;
@@ -1085,6 +1104,7 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
     case CARDANO_UPLC_TERM_FORCE:
     {
       write_str(writer, "(force ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.unary, depth + 1U, binders);
       write_char(writer, ')');
       break;
@@ -1106,6 +1126,10 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
       {
         writer->status = CARDANO_ERROR_INVALID_ARGUMENT;
       }
+      else
+      {
+        /* status already records a prior error; leave it untouched */
+      }
 
       write_char(writer, ')');
       break;
@@ -1120,6 +1144,7 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
       for (i = 0U; i < term->as.constr.field_count; ++i)
       {
         write_char(writer, ' ');
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         (void)print_term(writer, term->as.constr.fields[i], depth + 1U, binders);
       }
 
@@ -1131,11 +1156,13 @@ print_term(writer_t* writer, const cardano_uplc_term_t* term, const uint32_t dep
       size_t i = 0U;
 
       write_str(writer, "(case ");
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       (void)print_term(writer, term->as.cases.scrutinee, depth + 1U, binders);
 
       for (i = 0U; i < term->as.cases.branch_count; ++i)
       {
         write_char(writer, ' ');
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         (void)print_term(writer, term->as.cases.branches[i], depth + 1U, binders);
       }
 

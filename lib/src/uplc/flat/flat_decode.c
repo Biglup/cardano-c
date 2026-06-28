@@ -42,22 +42,35 @@
  * enum places \c data at 7 and the BLS kinds at 8..10, while the flat tags place
  * \c apply at 7, \c data at 8 and the BLS tags at 9..11.
  */
-static const uint8_t FLAT_TYPE_TAG_INTEGER       = 0U;
-static const uint8_t FLAT_TYPE_TAG_BYTE_STRING   = 1U;
-static const uint8_t FLAT_TYPE_TAG_STRING        = 2U;
-static const uint8_t FLAT_TYPE_TAG_UNIT          = 3U;
-static const uint8_t FLAT_TYPE_TAG_BOOL          = 4U;
-static const uint8_t FLAT_TYPE_TAG_LIST          = 5U;
-static const uint8_t FLAT_TYPE_TAG_PAIR          = 6U;
-static const uint8_t FLAT_TYPE_TAG_APPLY         = 7U;
-static const uint8_t FLAT_TYPE_TAG_DATA          = 8U;
-static const uint8_t FLAT_TYPE_TAG_BLS_G1        = 9U;
-static const uint8_t FLAT_TYPE_TAG_BLS_G2        = 10U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_INTEGER = 0U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_BYTE_STRING = 1U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_STRING = 2U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_UNIT = 3U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_BOOL = 4U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_LIST = 5U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_PAIR = 6U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_APPLY = 7U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_DATA = 8U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_BLS_G1 = 9U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_BLS_G2 = 10U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_BLS_ML_RESULT = 11U;
 
 /**
  * \brief Number of bits in a single const-type tag.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_BITS = 4U;
 
 /**
@@ -66,25 +79,37 @@ static const uint8_t FLAT_TYPE_TAG_BITS = 4U;
  * These are the 4-bit tags read for each term form, fixed by the protocol. They
  * mirror \ref cardano_uplc_term_kind_t one for one.
  */
-static const uint8_t FLAT_TERM_TAG_VAR      = 0U;
-static const uint8_t FLAT_TERM_TAG_DELAY    = 1U;
-static const uint8_t FLAT_TERM_TAG_LAMBDA   = 2U;
-static const uint8_t FLAT_TERM_TAG_APPLY    = 3U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_VAR = 0U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_DELAY = 1U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_LAMBDA = 2U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_APPLY = 3U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TERM_TAG_CONSTANT = 4U;
-static const uint8_t FLAT_TERM_TAG_FORCE    = 5U;
-static const uint8_t FLAT_TERM_TAG_ERROR    = 6U;
-static const uint8_t FLAT_TERM_TAG_BUILTIN  = 7U;
-static const uint8_t FLAT_TERM_TAG_CONSTR   = 8U;
-static const uint8_t FLAT_TERM_TAG_CASE     = 9U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_FORCE = 5U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_ERROR = 6U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_BUILTIN = 7U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_CONSTR = 8U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TERM_TAG_CASE = 9U;
 
 /**
  * \brief Number of bits in a single term tag.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TERM_TAG_BITS = 4U;
 
 /**
  * \brief Number of bits in a builtin tag.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_BUILTIN_TAG_BITS = 7U;
 
 /**
@@ -368,6 +393,7 @@ parse_type(
         const cardano_uplc_type_t* element = NULL;
         cardano_uplc_type_t*       built   = NULL;
 
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_type(arena, tags, tag_count, index, depth + 1U, &element);
 
         if (result != CARDANO_SUCCESS)
@@ -406,6 +432,7 @@ parse_type(
           const cardano_uplc_type_t* snd   = NULL;
           cardano_uplc_type_t*       built = NULL;
 
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = parse_type(arena, tags, tag_count, index, depth + 1U, &fst);
 
           if (result != CARDANO_SUCCESS)
@@ -413,6 +440,7 @@ parse_type(
             return result;
           }
 
+          // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
           result = parse_type(arena, tags, tag_count, index, depth + 1U, &snd);
 
           if (result != CARDANO_SUCCESS)
@@ -813,6 +841,7 @@ read_list(
   {
     cardano_uplc_constant_t* element = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_value(arena, reader, element_type, depth + 1U, &element);
 
     if (result != CARDANO_SUCCESS)
@@ -879,15 +908,17 @@ read_pair(
   const size_t                depth,
   cardano_uplc_constant_t**   constant)
 {
-  cardano_uplc_constant_t* fst    = NULL;
-  cardano_uplc_constant_t* snd    = NULL;
-  cardano_error_t          result = read_value(arena, reader, type->fst, depth + 1U, &fst);
+  cardano_uplc_constant_t* fst = NULL;
+  cardano_uplc_constant_t* snd = NULL;
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+  cardano_error_t result = read_value(arena, reader, type->fst, depth + 1U, &fst);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
   result = read_value(arena, reader, type->snd, depth + 1U, &snd);
 
   if (result != CARDANO_SUCCESS)
@@ -968,11 +999,13 @@ read_value(
     }
     case CARDANO_UPLC_TYPE_LIST:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = read_list(arena, reader, type->fst, depth, constant);
       break;
     }
     case CARDANO_UPLC_TYPE_PAIR:
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = read_pair(arena, reader, type, depth, constant);
       break;
     }
@@ -1033,9 +1066,10 @@ read_term(
  */
 static cardano_error_t
 read_term_list(
-  cardano_uplc_arena_t*        arena,
-  cardano_uplc_flat_reader_t*  reader,
-  const size_t                 depth,
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  const size_t                depth,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_term_t*** items,
   size_t*                      count)
 {
@@ -1056,6 +1090,7 @@ read_term_list(
   {
     const cardano_uplc_term_t* element = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_term(arena, reader, depth + 1U, &element);
 
     if (result != CARDANO_SUCCESS)
@@ -1175,6 +1210,7 @@ read_constr(
     return result;
   }
 
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
   result = read_term_list(arena, reader, depth, &fields, &field_count);
 
   if (result != CARDANO_SUCCESS)
@@ -1217,13 +1253,15 @@ read_case(
   const cardano_uplc_term_t** branches     = NULL;
   size_t                      branch_count = 0U;
   cardano_uplc_term_t*        built        = NULL;
-  cardano_error_t             result       = read_term(arena, reader, depth + 1U, &scrutinee);
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+  cardano_error_t result = read_term(arena, reader, depth + 1U, &scrutinee);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
   result = read_term_list(arena, reader, depth, &branches, &branch_count);
 
   if (result != CARDANO_SUCCESS)
@@ -1305,6 +1343,7 @@ read_term(
     const cardano_uplc_term_t* body  = NULL;
     cardano_uplc_term_t*       built = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_term(arena, reader, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
@@ -1322,6 +1361,7 @@ read_term(
     const cardano_uplc_term_t* body  = NULL;
     cardano_uplc_term_t*       built = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_term(arena, reader, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
@@ -1340,10 +1380,12 @@ read_term(
     const cardano_uplc_term_t* argument = NULL;
     cardano_uplc_term_t*       built    = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_term(arena, reader, depth + 1U, &function);
 
     if (result == CARDANO_SUCCESS)
     {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
       result = read_term(arena, reader, depth + 1U, &argument);
     }
 
@@ -1379,6 +1421,7 @@ read_term(
     const cardano_uplc_term_t* body  = NULL;
     cardano_uplc_term_t*       built = NULL;
 
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_term(arena, reader, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
@@ -1408,10 +1451,12 @@ read_term(
   }
   else if (tag == FLAT_TERM_TAG_CONSTR)
   {
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_constr(arena, reader, depth, term);
   }
   else if (tag == FLAT_TERM_TAG_CASE)
   {
+    // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
     result = read_case(arena, reader, depth, term);
   }
   else
