@@ -843,7 +843,7 @@ alternative_to_tag(uint64_t alternative)
 
   if (alternative <= 127U)
   {
-    return (1280U - 7U) + alternative;
+    return ((uint64_t)1280U - (uint64_t)7U) + alternative;
   }
 
   return 102U;

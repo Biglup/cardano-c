@@ -212,11 +212,11 @@ skip_trivia(parser_t* parser)
     {
       parser->pos += 1U;
     }
-    else if ((c == '-') && ((parser->pos + 1U) < parser->len) && (parser->text[parser->pos + 1U] == '-'))
+    else if (((int)c == (int)'-') && ((parser->pos + 1U) < parser->len) && ((int)parser->text[parser->pos + 1U] == (int)'-'))
     {
       parser->pos += 2U;
 
-      while ((parser->pos < parser->len) && (parser->text[parser->pos] != '\n'))
+      while ((parser->pos < parser->len) && ((int)parser->text[parser->pos] != (int)'\n'))
       {
         parser->pos += 1U;
       }
@@ -242,7 +242,7 @@ expect_char(parser_t* parser, const char expected)
 {
   skip_trivia(parser);
 
-  if (peek_char(parser) != expected)
+  if ((int)peek_char(parser) != (int)expected)
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -435,14 +435,14 @@ read_bigint(parser_t* parser, cardano_bigint_t** out)
 
   skip_trivia(parser);
 
-  if (peek_char(parser) == '+')
+  if ((int)peek_char(parser) == (int)'+')
   {
     parser->pos += 1U;
   }
 
   start = parser->pos;
 
-  if (peek_char(parser) == '-')
+  if ((int)peek_char(parser) == (int)'-')
   {
     parser->pos += 1U;
   }
@@ -537,7 +537,7 @@ read_hex_bytes(parser_t* parser, cardano_buffer_t** out)
 
   skip_trivia(parser);
 
-  if (peek_char(parser) != '#')
+  if ((int)peek_char(parser) != (int)'#')
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -611,7 +611,7 @@ read_0x_bytes(parser_t* parser, cardano_buffer_t** out)
     return CARDANO_ERROR_DECODING;
   }
 
-  if ((parser->text[parser->pos] != '0') || (parser->text[parser->pos + 1U] != 'x'))
+  if (((int)parser->text[parser->pos] != (int)'0') || ((int)parser->text[parser->pos + 1U] != (int)'x'))
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -849,7 +849,7 @@ skip_string_gap(parser_t* parser)
     parser->pos += 1U;
   }
 
-  if ((parser->pos >= parser->len) || (parser->text[parser->pos] != '\\'))
+  if ((parser->pos >= parser->len) || ((int)parser->text[parser->pos] != (int)'\\'))
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -886,7 +886,7 @@ read_string(parser_t* parser, cardano_buffer_t** out)
 
   skip_trivia(parser);
 
-  if (peek_char(parser) != '"')
+  if ((int)peek_char(parser) != (int)'"')
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -1379,7 +1379,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
 
     skip_trivia(parser);
 
-    while (peek_char(parser) != ']')
+    while ((int)peek_char(parser) != (int)']')
     {
       cardano_plutus_data_t* element = NULL;
 
@@ -1454,7 +1454,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
 
     skip_trivia(parser);
 
-    while (peek_char(parser) != ']')
+    while ((int)peek_char(parser) != (int)']')
     {
       cardano_plutus_data_t* key   = NULL;
       cardano_plutus_data_t* value = NULL;
@@ -1558,7 +1558,7 @@ parse_data(parser_t* parser, const uint32_t depth, cardano_plutus_data_t** out)
 
     skip_trivia(parser);
 
-    while (peek_char(parser) != ']')
+    while ((int)peek_char(parser) != (int)']')
     {
       cardano_plutus_data_t* element = NULL;
 
@@ -1672,7 +1672,7 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
 
   skip_trivia(parser);
 
-  if (peek_char(parser) == '(')
+  if ((int)peek_char(parser) == (int)'(')
   {
     parser->pos += 1U;
 
@@ -2485,7 +2485,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
 
       skip_trivia(parser);
 
-      while (peek_char(parser) != ']')
+      while ((int)peek_char(parser) != (int)']')
       {
         const cardano_uplc_constant_t* element = NULL;
 
@@ -2752,7 +2752,7 @@ parse_term_run(parser_t* parser, const uint32_t depth, const char terminator, co
 
   skip_trivia(parser);
 
-  while (peek_char(parser) != terminator)
+  while ((int)peek_char(parser) != (int)terminator)
   {
     const cardano_uplc_term_t* element = NULL;
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
@@ -3043,7 +3043,7 @@ parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** 
 
   skip_trivia(parser);
 
-  while (peek_char(parser) != ']')
+  while ((int)peek_char(parser) != (int)']')
   {
     const cardano_uplc_term_t* argument = NULL;
     cardano_uplc_term_t*       applied  = NULL;
