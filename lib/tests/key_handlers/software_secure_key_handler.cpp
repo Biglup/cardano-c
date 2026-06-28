@@ -347,6 +347,49 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeBip32SecureKeyHa
   cardano_bip32_public_key_unref(&extended_account_0_pub_key);
 }
 
+TEST(cardano_software_secure_key_handler_deserialize, copiesHandlerNameWithoutOverReadingTheLiteral)
+{
+  // Arrange
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
+
+  cardano_error_t error = cardano_software_secure_key_handler_new(
+    entropy_bytes,
+    strlen(ENTROPY_BYTES) / 2,
+    (const byte_t*)&PASSWORD[0],
+    strlen(PASSWORD),
+    &get_passphrase,
+    &key_handler);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_buffer_t* buffer = NULL;
+  error                    = cardano_secure_key_handler_serialize(key_handler, &buffer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_secure_key_handler_t* deserialized_key_handler = nullptr;
+  error                                                  = cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), &get_passphrase, &deserialized_key_handler);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  const char* name = cardano_secure_key_handler_get_name(deserialized_key_handler);
+  EXPECT_STREQ(name, "BIP32 Software Secure Key Handler");
+
+  const size_t name_len = strlen(name);
+
+  for (size_t i = name_len + 1U; i < 256U; ++i)
+  {
+    EXPECT_EQ(name[i], '\0') << "leaked non-zero byte at name[" << i << "]";
+  }
+
+  // Cleanup
+  cardano_buffer_unref(&buffer);
+  cardano_secure_key_handler_unref(&key_handler);
+  cardano_secure_key_handler_unref(&deserialized_key_handler);
+}
+
 TEST(cardano_secure_key_handler_bip32_get_extended_account_public_key, returnsErrorIfInvalidPassword)
 {
   // Arrange
@@ -924,6 +967,7 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfMemoryAllocationFail
   cardano_secure_key_handler_unref(&key_handler);
   cardano_set_allocators(malloc, realloc, free);
 }
+
 
 TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfPrivateKeyIsNull)
 {

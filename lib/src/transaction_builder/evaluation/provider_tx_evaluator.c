@@ -82,7 +82,8 @@ cardano_tx_evaluator_from_provider(
   cardano_provider_ref(provider);
   impl.context = (cardano_object_t*)((void*)provider);
 
-  cardano_safe_memcpy(impl.name, 256U, "Provider transaction evaluator", 256U);
+  static const char* evaluator_name = "Provider transaction evaluator";
+  cardano_safe_memcpy(impl.name, sizeof(impl.name), evaluator_name, cardano_safe_strlen(evaluator_name, sizeof(impl.name)));
 
   impl.evaluate = evaluate;
 

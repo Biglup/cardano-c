@@ -1113,7 +1113,8 @@ cardano_software_secure_key_handler_deserialize(
   {
     case CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519:
     {
-      cardano_safe_memcpy(impl.name, 256, "Ed25519 Software Secure Key Handler", 256);
+      static const char* ed25519_handler_name = "Ed25519 Software Secure Key Handler";
+      cardano_safe_memcpy(impl.name, sizeof(impl.name), ed25519_handler_name, cardano_safe_strlen(ed25519_handler_name, sizeof(impl.name)));
       impl.bip32_get_extended_account_public_key = NULL;
       impl.bip32_sign_transaction                = NULL;
       impl.ed25519_get_public_key                = ed25519_get_public_key;
@@ -1130,7 +1131,8 @@ cardano_software_secure_key_handler_deserialize(
     }
     case CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32:
     {
-      cardano_safe_memcpy(impl.name, 256, "BIP32 Software Secure Key Handler", 256);
+      static const char* bip32_handler_name = "BIP32 Software Secure Key Handler";
+      cardano_safe_memcpy(impl.name, sizeof(impl.name), bip32_handler_name, cardano_safe_strlen(bip32_handler_name, sizeof(impl.name)));
 
       impl.bip32_get_extended_account_public_key = bip32_get_extended_account_public_key;
       impl.bip32_sign_transaction                = bip32_sign_transaction;
