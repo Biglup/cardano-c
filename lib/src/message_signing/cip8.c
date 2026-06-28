@@ -186,8 +186,7 @@ cip8_build_protected_headers(
  * \code{.cbor}
  * {
  *   1:  -8,
- *   4:  <key_hash_bytes>,
- *   "keyHash": <key_hash_bytes>
+ *   "address": <key_hash_bytes>
  * }
  * \endcode
  *
@@ -211,10 +210,6 @@ cip8_build_protected_headers(
  * \retval CARDANO_ERROR_CBOR_ENCODING        A CBOR encoding error occurred.
  *
  * \note The protected header is immutable by COSE design.
- * \note The key hash is intentionally duplicated: once in the COSE `kid` label
- *       (label 4), and once under the CIP-8 semantic field `"keyHash"`. This is
- *       required so that Cardano-specific verifiers can recover the signing
- *       key context safely.
  */
 static cardano_error_t
 cip8_build_protected_headers_for_key_hash(
@@ -241,7 +236,7 @@ cip8_build_protected_headers_for_key_hash(
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  result = cardano_cbor_writer_write_start_map(writer, 3);
+  result = cardano_cbor_writer_write_start_map(writer, 2);
   if (result != CARDANO_SUCCESS)
   {
     cardano_cbor_writer_unref(&writer);
@@ -262,23 +257,9 @@ cip8_build_protected_headers_for_key_hash(
     return result;
   }
 
-  result = cardano_cbor_writer_write_uint(writer, COSE_HEADER_KID_LABEL);
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_cbor_writer_unref(&writer);
-    return result;
-  }
+  static const char ADDRESS_LABEL[] = "address";
 
-  result = cardano_cbor_writer_write_bytestring(writer, key_hash_bytes, key_hash_size);
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_cbor_writer_unref(&writer);
-    return result;
-  }
-
-  static const char KEY_HASH_LABEL[] = "keyHash";
-
-  result = cardano_cbor_writer_write_textstring(writer, KEY_HASH_LABEL, sizeof(KEY_HASH_LABEL) - 1U);
+  result = cardano_cbor_writer_write_textstring(writer, ADDRESS_LABEL, sizeof(ADDRESS_LABEL) - 1U);
   if (result != CARDANO_SUCCESS)
   {
     cardano_cbor_writer_unref(&writer);
