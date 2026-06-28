@@ -412,7 +412,7 @@ compute_signature_with_extended_key(
   assert(extended_scalar != NULL);
   assert(cardano_buffer_get_size(private_key->key_material) == (SCALAR_SIZE * 2U));
 
-  byte_t public_key[32U];
+  byte_t public_key[32U]      = { 0 };
   byte_t hash_output[64U]     = { 0 };
   byte_t nonce[32U]           = { 0 };
   byte_t hram[64U]            = { 0 };
@@ -421,70 +421,104 @@ compute_signature_with_extended_key(
   byte_t s[32U]               = { 0 };
   byte_t signature_bytes[64U] = { 0 };
 
+  cardano_error_t result            = CARDANO_SUCCESS;
+  size_t          digest_input_size = 0U;
+  byte_t*         digest_input      = NULL;
+  byte_t*         hram_input        = NULL;
+
   if (crypto_scalarmult_ed25519_base_noclamp(public_key, extended_scalar) != 0)
   {
-    return CARDANO_ERROR_GENERIC;
+    result = CARDANO_ERROR_GENERIC;
   }
 
-  size_t  digest_input_size = IV_SIZE + message_length;
-  byte_t* digest_input      = (byte_t*)_cardano_malloc(digest_input_size);
-
-  if (!digest_input)
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    digest_input_size = IV_SIZE + message_length;
+    digest_input      = (byte_t*)_cardano_malloc(digest_input_size);
+
+    if (digest_input == NULL)
+    {
+      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
-  cardano_safe_memcpy(digest_input, digest_input_size, &extended_scalar[SCALAR_SIZE], IV_SIZE);
-  cardano_safe_memcpy(&digest_input[IV_SIZE], digest_input_size - IV_SIZE, message, message_length);
-
-  if (crypto_hash_sha512(hash_output, digest_input, digest_input_size) != 0)
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_GENERIC;
+    cardano_safe_memcpy(digest_input, digest_input_size, &extended_scalar[SCALAR_SIZE], IV_SIZE);
+    cardano_safe_memcpy(&digest_input[IV_SIZE], digest_input_size - IV_SIZE, message, message_length);
+
+    if (crypto_hash_sha512(hash_output, digest_input, digest_input_size) != 0)
+    {
+      result = CARDANO_ERROR_GENERIC;
+    }
   }
 
-  sodium_memzero(digest_input, digest_input_size);
-  _cardano_free(digest_input);
-
-  crypto_core_ed25519_scalar_reduce(nonce, hash_output);
-
-  if (crypto_scalarmult_ed25519_base_noclamp(r, nonce) != 0)
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_GENERIC;
+    sodium_memzero(digest_input, digest_input_size);
+    _cardano_free(digest_input);
+    digest_input = NULL;
+
+    crypto_core_ed25519_scalar_reduce(nonce, hash_output);
+
+    if (crypto_scalarmult_ed25519_base_noclamp(r, nonce) != 0)
+    {
+      result = CARDANO_ERROR_GENERIC;
+    }
   }
 
-  digest_input_size  = sizeof(r) + sizeof(public_key) + message_length;
-  byte_t* hram_input = (byte_t*)_cardano_malloc(digest_input_size);
-
-  if (!hram_input)
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    digest_input_size = sizeof(r) + sizeof(public_key) + message_length;
+    hram_input        = (byte_t*)_cardano_malloc(digest_input_size);
+
+    if (hram_input == NULL)
+    {
+      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
-  cardano_safe_memcpy(hram_input, digest_input_size, r, sizeof(r));
-  cardano_safe_memcpy(&hram_input[sizeof(r)], digest_input_size - sizeof(r), public_key, sizeof(public_key));
-  cardano_safe_memcpy(
-    &hram_input[sizeof(r) + sizeof(public_key)],
-    digest_input_size - sizeof(r) - sizeof(public_key),
-    message,
-    message_length);
-
-  if (crypto_hash_sha512(hram, hram_input, digest_input_size) != 0)
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_GENERIC;
+    cardano_safe_memcpy(hram_input, digest_input_size, r, sizeof(r));
+    cardano_safe_memcpy(&hram_input[sizeof(r)], digest_input_size - sizeof(r), public_key, sizeof(public_key));
+    cardano_safe_memcpy(
+      &hram_input[sizeof(r) + sizeof(public_key)],
+      digest_input_size - sizeof(r) - sizeof(public_key),
+      message,
+      message_length);
+
+    if (crypto_hash_sha512(hram, hram_input, digest_input_size) != 0)
+    {
+      result = CARDANO_ERROR_GENERIC;
+    }
   }
 
-  sodium_memzero(hram_input, digest_input_size);
-  _cardano_free(hram_input);
+  if (result == CARDANO_SUCCESS)
+  {
+    sodium_memzero(hram_input, digest_input_size);
+    _cardano_free(hram_input);
+    hram_input = NULL;
 
-  crypto_core_ed25519_scalar_reduce(hram_reduced, hram);
+    crypto_core_ed25519_scalar_reduce(hram_reduced, hram);
 
-  crypto_core_ed25519_scalar_mul(s, hram_reduced, extended_scalar);
-  crypto_core_ed25519_scalar_add(s, s, nonce);
+    crypto_core_ed25519_scalar_mul(s, hram_reduced, extended_scalar);
+    crypto_core_ed25519_scalar_add(s, s, nonce);
 
-  cardano_safe_memcpy(signature_bytes, sizeof(signature_bytes), r, sizeof(r));
-  cardano_safe_memcpy(&signature_bytes[sizeof(r)], sizeof(signature_bytes) - sizeof(r), s, sizeof(s));
+    cardano_safe_memcpy(signature_bytes, sizeof(signature_bytes), r, sizeof(r));
+    cardano_safe_memcpy(&signature_bytes[sizeof(r)], sizeof(signature_bytes) - sizeof(r), s, sizeof(s));
 
-  return cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), signature);
+    result = cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), signature);
+  }
+
+  sodium_memzero(hash_output, sizeof(hash_output));
+  sodium_memzero(nonce, sizeof(nonce));
+  sodium_memzero(hram, sizeof(hram));
+  sodium_memzero(hram_reduced, sizeof(hram_reduced));
+  sodium_memzero(s, sizeof(s));
+  sodium_memzero(signature_bytes, sizeof(signature_bytes));
+
+  return result;
 }
 
 /**
