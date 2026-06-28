@@ -5808,6 +5808,61 @@ TEST(cardano_tx_builder_vote, keyHashVotersOccupyARedeemerIndexSlot)
   cardano_voter_unref(&drep_script_voter);
 }
 
+TEST(cardano_tx_builder_vote, oneVoterVotingOnSeveralActionsUsesASingleRedeemerSlot)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_plutus_data_t*         redeemer = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  static const char* GOV_ACTION_A      = "825820000000000000000000000000000000000000000000000000000000000000000003";
+  static const char* GOV_ACTION_B      = "825820000000000000000000000000000000000000000000000000000000000000000004";
+  static const char* DREP_SCRIPT_VOTER = "8203581cbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+  cardano_governance_action_id_t* action_a  = nullptr;
+  cardano_governance_action_id_t* action_b  = nullptr;
+  cardano_voting_procedure_t*     procedure = nullptr;
+  cardano_voter_t*                voter     = nullptr;
+
+  cardano_cbor_reader_t* ra = cardano_cbor_reader_from_hex(GOV_ACTION_A, strlen(GOV_ACTION_A));
+  cardano_cbor_reader_t* rb = cardano_cbor_reader_from_hex(GOV_ACTION_B, strlen(GOV_ACTION_B));
+  cardano_cbor_reader_t* rp = cardano_cbor_reader_from_hex(CBOR_YES_WITH_ANCHOR, strlen(CBOR_YES_WITH_ANCHOR));
+  cardano_cbor_reader_t* rv = cardano_cbor_reader_from_hex(DREP_SCRIPT_VOTER, strlen(DREP_SCRIPT_VOTER));
+
+  ASSERT_EQ(cardano_governance_action_id_from_cbor(ra, &action_a), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_governance_action_id_from_cbor(rb, &action_b), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_voting_procedure_from_cbor(rp, &procedure), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_voter_from_cbor(rv, &voter), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_vote(tx_builder, voter, action_a, procedure, redeemer);
+  cardano_tx_builder_vote(tx_builder, voter, action_b, procedure, redeemer);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map), 1U);
+
+  cardano_redeemer_t* value = nullptr;
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->votes_to_redeemer_map, 0, &value), CARDANO_SUCCESS);
+  ASSERT_NE(value, (cardano_redeemer_t*)nullptr);
+  EXPECT_EQ(cardano_redeemer_get_index(value), 0U);
+  cardano_redeemer_unref(&value);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_governance_action_id_unref(&action_a);
+  cardano_governance_action_id_unref(&action_b);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_voter_unref(&voter);
+  cardano_cbor_reader_unref(&ra);
+  cardano_cbor_reader_unref(&rb);
+  cardano_cbor_reader_unref(&rp);
+  cardano_cbor_reader_unref(&rv);
+}
+
 TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange
