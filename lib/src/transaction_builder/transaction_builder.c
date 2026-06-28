@@ -28,6 +28,7 @@
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
+#include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/witness_set/redeemer.h>
 
@@ -965,6 +966,21 @@ cardano_tx_builder_new(
   }
 
   result = cardano_blake2b_hash_to_redeemer_map_new(&builder->votes_to_redeemer_map);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_unref(&builder);
+    return NULL;
+  }
+
+  cardano_costmdls_t*         cost_models    = cardano_protocol_parameters_get_cost_models(builder->params);
+  cardano_protocol_version_t* version        = cardano_protocol_parameters_get_protocol_version(builder->params);
+  const uint64_t              protocol_major = cardano_protocol_version_get_major(version);
+
+  result = cardano_tx_evaluator_new_native(&builder->slot_config, cost_models, protocol_major, &builder->tx_evaluator);
+
+  cardano_costmdls_unref(&cost_models);
+  cardano_protocol_version_unref(&version);
 
   if (result != CARDANO_SUCCESS)
   {
