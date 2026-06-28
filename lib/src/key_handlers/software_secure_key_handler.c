@@ -880,7 +880,14 @@ cardano_software_secure_key_handler_new(
 
   impl.context = (cardano_object_t*)((void*)context);
 
-  return cardano_secure_key_handler_new(impl, secure_key_handler);
+  result = cardano_secure_key_handler_new(impl, secure_key_handler);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_deallocate(context);
+  }
+
+  return result;
 }
 
 cardano_error_t
@@ -948,7 +955,14 @@ cardano_software_secure_key_handler_ed25519_new(
 
   impl.context = (cardano_object_t*)((void*)context);
 
-  return cardano_secure_key_handler_new(impl, secure_key_handler);
+  result = cardano_secure_key_handler_new(impl, secure_key_handler);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_deallocate(context);
+  }
+
+  return result;
 }
 
 cardano_error_t

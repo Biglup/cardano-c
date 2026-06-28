@@ -968,6 +968,43 @@ TEST(cardano_software_secure_key_handler_new, returnsErrorIfMemoryAllocationFail
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_software_secure_key_handler_new, doesNotLeakWhenAnyAllocationFails)
+{
+  // Arrange
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
+
+  for (int limit = 0; limit < 24; ++limit)
+  {
+    cardano_secure_key_handler_t* key_handler = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t error = cardano_software_secure_key_handler_new(
+      entropy_bytes,
+      strlen(ENTROPY_BYTES) / 2,
+      (const byte_t*)&PASSWORD[0],
+      strlen(PASSWORD),
+      &get_passphrase,
+      &key_handler);
+
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      EXPECT_THAT(key_handler, testing::Not((cardano_secure_key_handler_t*)nullptr));
+      cardano_secure_key_handler_unref(&key_handler);
+    }
+    else
+    {
+      EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(key_handler, (cardano_secure_key_handler_t*)nullptr);
+    }
+  }
+}
 
 TEST(cardano_software_secure_key_handler_ed25519_new, returnsErrorIfPrivateKeyIsNull)
 {
