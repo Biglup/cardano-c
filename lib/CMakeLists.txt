@@ -71,6 +71,103 @@ ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
   TARGET_COMPILE_OPTIONS(gmp-mini PRIVATE /W0)
 ENDIF()
 
+# ----------------------------------------------------------------------------
+# Add SHA-3 / Keccak (tiny_sha3)
+# ----------------------------------------------------------------------------
+INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/sha3)
+FILE(GLOB SHA3_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external/sha3/*.c)
+FILE(GLOB SHA3_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/sha3/*.h)
+
+ADD_LIBRARY(sha3 OBJECT ${SHA3_SOURCES})
+SET_TARGET_PROPERTIES(sha3 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Suppress warnings for tiny_sha3
+SET_TARGET_PROPERTIES(sha3 PROPERTIES C_CLANG_TIDY "")
+SET_TARGET_PROPERTIES(sha3 PROPERTIES CXX_CLANG_TIDY "")
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
+  TARGET_COMPILE_OPTIONS(sha3 PRIVATE -w)
+ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  TARGET_COMPILE_OPTIONS(sha3 PRIVATE /W0)
+ENDIF()
+
+# ----------------------------------------------------------------------------
+# Add RIPEMD-160
+# ----------------------------------------------------------------------------
+INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/ripemd160)
+FILE(GLOB RIPEMD160_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external/ripemd160/*.c)
+FILE(GLOB RIPEMD160_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/ripemd160/*.h)
+
+ADD_LIBRARY(ripemd160 OBJECT ${RIPEMD160_SOURCES})
+SET_TARGET_PROPERTIES(ripemd160 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Suppress warnings for RIPEMD-160
+SET_TARGET_PROPERTIES(ripemd160 PROPERTIES C_CLANG_TIDY "")
+SET_TARGET_PROPERTIES(ripemd160 PROPERTIES CXX_CLANG_TIDY "")
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
+  TARGET_COMPILE_OPTIONS(ripemd160 PRIVATE -w)
+ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  TARGET_COMPILE_OPTIONS(ripemd160 PRIVATE /W0)
+ENDIF()
+
+# ----------------------------------------------------------------------------
+# Add secp256k1 (ECDSA-verify + schnorrsig + extrakeys only)
+#
+# Built without autotools and without codegen: this release is configured purely
+# by compile defines and ships the precomputed ecmult tables checked in, so the
+# main translation unit plus the two table files compile directly.
+# ----------------------------------------------------------------------------
+INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/secp256k1/include)
+
+SET(SECP256K1_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/secp256k1/src/secp256k1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/secp256k1/src/precomputed_ecmult.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/secp256k1/src/precomputed_ecmult_gen.c
+)
+
+ADD_LIBRARY(secp256k1 OBJECT ${SECP256K1_SOURCES})
+SET_TARGET_PROPERTIES(secp256k1 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+TARGET_COMPILE_DEFINITIONS(secp256k1 PRIVATE
+        ENABLE_MODULE_EXTRAKEYS=1
+        ENABLE_MODULE_SCHNORRSIG=1
+        ECMULT_WINDOW_SIZE=8
+        SECP256K1_STATIC
+)
+
+# Suppress warnings for secp256k1
+SET_TARGET_PROPERTIES(secp256k1 PROPERTIES C_CLANG_TIDY "")
+SET_TARGET_PROPERTIES(secp256k1 PROPERTIES CXX_CLANG_TIDY "")
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
+  TARGET_COMPILE_OPTIONS(secp256k1 PRIVATE -w)
+ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  TARGET_COMPILE_OPTIONS(secp256k1 PRIVATE /W0)
+ENDIF()
+
+# ----------------------------------------------------------------------------
+# Add blst (BLS12-381) as the portable, no-assembly build.
+#
+# Only src/server.c is a compilation unit; it #includes the implementation .c
+# files it needs. __BLST_NO_ASM__ selects the reference C field arithmetic and
+# __BLST_PORTABLE__ disables the runtime-dispatched SHA-256 assembly kernels,
+# so there is no assembly anywhere and the target builds on WASM and the
+# armv6/armv7 cross builds. See lib/external/blst/VERSION.txt.
+# ----------------------------------------------------------------------------
+INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/bindings)
+
+ADD_LIBRARY(blst OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/src/server.c)
+SET_TARGET_PROPERTIES(blst PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+TARGET_COMPILE_DEFINITIONS(blst PRIVATE __BLST_NO_ASM__ __BLST_PORTABLE__)
+
+# Suppress warnings for blst
+SET_TARGET_PROPERTIES(blst PROPERTIES C_CLANG_TIDY "")
+SET_TARGET_PROPERTIES(blst PROPERTIES CXX_CLANG_TIDY "")
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
+  TARGET_COMPILE_OPTIONS(blst PRIVATE -w)
+ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  TARGET_COMPILE_OPTIONS(blst PRIVATE /W0)
+ENDIF()
+
 IF(UNIX AND NOT EMSCRIPTEN)
   FIND_LIBRARY(MATH_LIBRARY m REQUIRED)
 ELSE()
@@ -117,6 +214,18 @@ IF(CMAKE_COMPILER_IS_GNUC)
           "${CMAKE_C_FLAGS} -std=c99 -pedantic-errors -Wall -Wextra -Werror -Wswitch-enum -DHAVE_CONFIG_H")
 ENDIF()
 
+# Link-time optimization for release builds. Compiling the library sources as a
+# whole lets the hot interpreter paths inline the arena allocator, the bit
+# reader and the value constructors across translation units, which a per-file
+# build cannot do. Applied per configuration so only Release is affected, and
+# guarded so toolchains without it fall back to a normal build.
+INCLUDE(CheckIPOSupported)
+CHECK_IPO_SUPPORTED(RESULT CARDANO_IPO_SUPPORTED OUTPUT CARDANO_IPO_OUTPUT)
+
+IF(CARDANO_DISABLE_IPO)
+  SET(CARDANO_IPO_SUPPORTED FALSE)
+ENDIF()
+
 # ----------------------------------------------------------------------------
 # Build the library for native or for Emscripten
 # ----------------------------------------------------------------------------
@@ -125,6 +234,10 @@ IF(NOT EMSCRIPTEN)
           ${SOURCE_FILES}
           $<TARGET_OBJECTS:gmp-mini>
           $<TARGET_OBJECTS:libsodium>
+          $<TARGET_OBJECTS:sha3>
+          $<TARGET_OBJECTS:ripemd160>
+          $<TARGET_OBJECTS:secp256k1>
+          $<TARGET_OBJECTS:blst>
   )
 
   IF(WIN32)
@@ -133,6 +246,10 @@ IF(NOT EMSCRIPTEN)
 
   TARGET_LINK_LIBRARIES(${LIB_OUTPUT_NAME} ${MATH_LIBRARY})
 
+  IF(CARDANO_IPO_SUPPORTED)
+    SET_TARGET_PROPERTIES(${LIB_OUTPUT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+  ENDIF()
+
   # Build static library if enabled
   IF(BUILD_STATIC_LIBS AND BUILD_SHARED_LIBS)
     SET(STATIC_LIB ${PROJECT_NAME}-static)
@@ -140,6 +257,10 @@ IF(NOT EMSCRIPTEN)
             ${SOURCE_FILES}
             $<TARGET_OBJECTS:gmp-mini>
             $<TARGET_OBJECTS:libsodium>
+            $<TARGET_OBJECTS:sha3>
+            $<TARGET_OBJECTS:ripemd160>
+            $<TARGET_OBJECTS:secp256k1>
+            $<TARGET_OBJECTS:blst>
     )
 
     TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME}-static
@@ -156,6 +277,10 @@ IF(NOT EMSCRIPTEN)
       SET_TARGET_PROPERTIES(${STATIC_LIB} PROPERTIES
               OUTPUT_NAME ${LIB_OUTPUT_NAME}
       )
+    ENDIF()
+
+    IF(CARDANO_IPO_SUPPORTED)
+      SET_TARGET_PROPERTIES(${STATIC_LIB} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     ENDIF()
 
     LIST(APPEND CMAKE_TARGETS ${STATIC_LIB})
@@ -175,12 +300,20 @@ ELSE()
   TARGET_LINK_LIBRARIES(${LIB_OUTPUT_NAME}
           PRIVATE $<TARGET_OBJECTS:gmp-mini>
           PRIVATE $<TARGET_OBJECTS:libsodium>
+          PRIVATE $<TARGET_OBJECTS:sha3>
+          PRIVATE $<TARGET_OBJECTS:ripemd160>
+          PRIVATE $<TARGET_OBJECTS:secp256k1>
+          PRIVATE $<TARGET_OBJECTS:blst>
   )
 
   IF(CMAKE_BUILD_TYPE STREQUAL "Release")
-    SET(EMS_BUILD_FLAGS "-O3")
+    SET(EMS_BUILD_FLAGS "-Oz")
   ELSEIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     SET(EMS_BUILD_FLAGS "-g")
+  ENDIF()
+
+  IF(EMS_BUILD_FLAGS)
+    TARGET_COMPILE_OPTIONS(${LIB_OUTPUT_NAME} PRIVATE ${EMS_BUILD_FLAGS})
   ENDIF()
 
   SET_TARGET_PROPERTIES(${LIB_OUTPUT_NAME} PROPERTIES
