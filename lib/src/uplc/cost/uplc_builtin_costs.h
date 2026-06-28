@@ -26,9 +26,9 @@
 
 #include "uplc_builtin_cost.h"
 
-#include <cardano/typedefs.h>
 #include "../builtins/uplc_builtin.h"
 #include "../machine/uplc_budget.h"
+#include <cardano/typedefs.h>
 
 /* FORWARD DECLARATIONS ******************************************************/
 
@@ -52,8 +52,8 @@ extern "C" {
  */
 typedef struct cardano_uplc_builtin_costs_t
 {
-  /** \brief The per-builtin costing functions, indexed by builtin tag. */
-  cardano_uplc_builtin_cost_t entries[CARDANO_UPLC_BUILTIN_COUNT];
+    /** \brief The per-builtin costing functions, indexed by builtin tag. */
+    cardano_uplc_builtin_cost_t entries[CARDANO_UPLC_BUILTIN_COUNT];
 } cardano_uplc_builtin_costs_t;
 
 /**

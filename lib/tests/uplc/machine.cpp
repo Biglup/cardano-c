@@ -21,18 +21,18 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/common/bigint.h>
-#include <cardano/error.h>
+#include "../../src/uplc/ast/uplc_term.h"
 #include "../../src/uplc/builtins/uplc_builtin.h"
 #include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
+#include <cardano/common/bigint.h>
+#include <cardano/error.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/ast/uplc_int.h"
 #include "../../src/uplc/machine/uplc_env.h"
 #include "../../src/uplc/machine/uplc_frame.h"
 #include "../../src/uplc/machine/uplc_state_kind.h"
 #include "../../src/uplc/machine/uplc_value.h"
-#include "../../src/uplc/ast/uplc_int.h"
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -132,11 +132,11 @@ TEST(cardano_uplc_env_extend, consesAValueAtTheHead)
 TEST(cardano_uplc_env_extend, sharesTheTailWithoutCopying)
 {
   // Arrange
-  cardano_uplc_arena_t*       arena = new_arena();
-  const cardano_uplc_value_t* first = new_unit_value(arena);
+  cardano_uplc_arena_t*       arena  = new_arena();
+  const cardano_uplc_value_t* first  = new_unit_value(arena);
   const cardano_uplc_value_t* second = new_unit_value(arena);
-  const cardano_uplc_env_t*   tail  = nullptr;
-  const cardano_uplc_env_t*   head  = nullptr;
+  const cardano_uplc_env_t*   tail   = nullptr;
+  const cardano_uplc_env_t*   head   = nullptr;
 
   EXPECT_EQ(cardano_uplc_env_extend(arena, nullptr, first, &tail), CARDANO_SUCCESS);
 
@@ -919,13 +919,13 @@ TEST(cardano_uplc_frame_new_force, failsOnArenaAllocationFailure)
 TEST(cardano_uplc_frame_new_constr, setsAllFieldsAndChainsContext)
 {
   // Arrange
-  cardano_uplc_arena_t*       arena    = new_arena();
-  const cardano_uplc_term_t*  pending  = new_error_term(arena);
-  const cardano_uplc_value_t* done     = new_unit_value(arena);
-  const cardano_uplc_value_t* held     = new_unit_value(arena);
-  const cardano_uplc_env_t*   env      = nullptr;
-  cardano_uplc_frame_t*       inner    = nullptr;
-  cardano_uplc_frame_t*       frame    = nullptr;
+  cardano_uplc_arena_t*       arena   = new_arena();
+  const cardano_uplc_term_t*  pending = new_error_term(arena);
+  const cardano_uplc_value_t* done    = new_unit_value(arena);
+  const cardano_uplc_value_t* held    = new_unit_value(arena);
+  const cardano_uplc_env_t*   env     = nullptr;
+  cardano_uplc_frame_t*       inner   = nullptr;
+  cardano_uplc_frame_t*       frame   = nullptr;
   const cardano_uplc_term_t*  fields[1];
   const cardano_uplc_value_t* resolved[1];
 

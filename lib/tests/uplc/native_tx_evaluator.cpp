@@ -21,6 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_program.h"
+#include "../../src/uplc/ast/uplc_term.h"
 #include <cardano/address/address.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/assets/asset_name.h>
@@ -41,8 +43,6 @@
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_body/transaction_output_list.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
-#include "../../src/uplc/ast/uplc_program.h"
-#include "../../src/uplc/ast/uplc_term.h"
 #include <cardano/witness_set/plutus_v3_script_set.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
@@ -166,8 +166,8 @@ unit_data()
 static cardano_transaction_t*
 build_spend_tx(cardano_plutus_v3_script_t* script, bool with_inline_datum, cardano_utxo_list_t** out_utxos)
 {
-  cardano_blake2b_hash_t* hash    = cardano_plutus_v3_script_get_hash(script);
-  cardano_address_t*      addr    = script_address(hash);
+  cardano_blake2b_hash_t*      hash  = cardano_plutus_v3_script_get_hash(script);
+  cardano_address_t*           addr  = script_address(hash);
   cardano_transaction_input_t* input = make_input(0x00U, 0U);
 
   cardano_transaction_input_set_t* inputs = nullptr;
@@ -207,8 +207,8 @@ build_spend_tx(cardano_plutus_v3_script_t* script, bool with_inline_datum, carda
   cardano_transaction_t* tx = nullptr;
   EXPECT_EQ(cardano_transaction_new(body, witness_set, nullptr, &tx), CARDANO_SUCCESS);
 
-  cardano_transaction_input_t* resolved_input = make_input(0x00U, 0U);
-  cardano_transaction_output_t* resolved_out  = nullptr;
+  cardano_transaction_input_t*  resolved_input = make_input(0x00U, 0U);
+  cardano_transaction_output_t* resolved_out   = nullptr;
   EXPECT_EQ(cardano_transaction_output_new(addr, 5000000U, &resolved_out), CARDANO_SUCCESS);
 
   if (with_inline_datum)
@@ -401,8 +401,8 @@ TEST(cardano_tx_evaluator_native, evaluatesAMintAndSpendAcrossTwoRedeemers)
   cardano_transaction_body_t* body = nullptr;
   EXPECT_EQ(cardano_transaction_body_new(inputs, outputs, 200000U, nullptr, &body), CARDANO_SUCCESS);
 
-  byte_t name_bytes[3] = { 0x41U, 0x42U, 0x43U };
-  cardano_asset_name_t* asset = nullptr;
+  byte_t                name_bytes[3] = { 0x41U, 0x42U, 0x43U };
+  cardano_asset_name_t* asset         = nullptr;
   EXPECT_EQ(cardano_asset_name_from_bytes(name_bytes, sizeof(name_bytes), &asset), CARDANO_SUCCESS);
 
   cardano_multi_asset_t* mint = nullptr;
@@ -551,8 +551,8 @@ TEST(cardano_tx_evaluator_native, perRedeemerUnitsAreTheActualSpendNotTheSharedC
   cardano_transaction_body_t* body = nullptr;
   EXPECT_EQ(cardano_transaction_body_new(inputs, outputs, 200000U, nullptr, &body), CARDANO_SUCCESS);
 
-  byte_t name_bytes[3] = { 0x41U, 0x42U, 0x43U };
-  cardano_asset_name_t* asset = nullptr;
+  byte_t                name_bytes[3] = { 0x41U, 0x42U, 0x43U };
+  cardano_asset_name_t* asset         = nullptr;
   EXPECT_EQ(cardano_asset_name_from_bytes(name_bytes, sizeof(name_bytes), &asset), CARDANO_SUCCESS);
 
   cardano_multi_asset_t* mint = nullptr;

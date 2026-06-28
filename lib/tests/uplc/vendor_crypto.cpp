@@ -21,8 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
-extern "C"
-{
+extern "C" {
 #include <ripemd160.h>
 #include <sha3.h>
 }

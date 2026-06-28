@@ -44,10 +44,10 @@ extern "C" {
  */
 typedef struct cardano_uplc_cost_model_t
 {
-  /** \brief The per-step machine costs. */
-  cardano_uplc_machine_costs_t machine;
-  /** \brief The per-builtin costing functions. */
-  cardano_uplc_builtin_costs_t builtins;
+    /** \brief The per-step machine costs. */
+    cardano_uplc_machine_costs_t machine;
+    /** \brief The per-builtin costing functions. */
+    cardano_uplc_builtin_costs_t builtins;
 } cardano_uplc_cost_model_t;
 
 /**

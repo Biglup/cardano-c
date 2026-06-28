@@ -264,7 +264,7 @@ cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const s
       if (charge <= (arena->byte_ceiling - arena->bytes_used))
       {
         arena->bytes_used += charge;
-        block->offset = aligned_offset + size;
+        block->offset     = aligned_offset + size;
 
         return block->payload + aligned_offset;
       }

@@ -24,11 +24,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../arena/uplc_arena.h"
+#include "uplc_type_kind.h"
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
-#include "uplc_type_kind.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -47,9 +47,9 @@ extern "C" {
  */
 typedef struct cardano_uplc_type_t
 {
-  cardano_uplc_type_kind_t   kind;
-  const struct cardano_uplc_type_t* fst;
-  const struct cardano_uplc_type_t* snd;
+    cardano_uplc_type_kind_t          kind;
+    const struct cardano_uplc_type_t* fst;
+    const struct cardano_uplc_type_t* snd;
 } cardano_uplc_type_t;
 
 /**

@@ -21,12 +21,12 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/data/uplc_data.h"
@@ -1283,9 +1283,9 @@ TEST(cardano_uplc_constant_new_array, allowsEmptyArrayAndRejectsBadArgs)
 
 TEST(cardano_uplc_type_new, buildsAnArrayType)
 {
-  cardano_uplc_arena_t* arena   = new_arena();
-  cardano_uplc_type_t*  int_ty  = nullptr;
-  cardano_uplc_type_t*  arr_ty  = nullptr;
+  cardano_uplc_arena_t* arena  = new_arena();
+  cardano_uplc_type_t*  int_ty = nullptr;
+  cardano_uplc_type_t*  arr_ty = nullptr;
 
   EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_ty), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_ARRAY, int_ty, nullptr, &arr_ty), CARDANO_SUCCESS);
@@ -1481,8 +1481,8 @@ TEST(cardano_uplc_type_new, failsOnArenaAllocationFailure)
 
 TEST(cardano_uplc_program, holdsVersionAndTerm)
 {
-  cardano_uplc_arena_t*  arena = new_arena();
-  cardano_uplc_term_t*   term  = nullptr;
+  cardano_uplc_arena_t*  arena   = new_arena();
+  cardano_uplc_term_t*   term    = nullptr;
   cardano_uplc_program_t program = { 0U, 0U, 0U, nullptr };
 
   EXPECT_EQ(cardano_uplc_term_new_error(arena, &term), CARDANO_SUCCESS);
@@ -1561,7 +1561,7 @@ TEST(cardano_uplc_program_apply_data, failsOnNullArgs)
 
   EXPECT_EQ(cardano_uplc_term_new_error(arena, &term), CARDANO_SUCCESS);
 
-  cardano_uplc_program_t* program        = new_program_with(arena, term, 1U, 0U, 0U);
+  cardano_uplc_program_t* program         = new_program_with(arena, term, 1U, 0U, 0U);
   cardano_uplc_program_t  program_no_term = { 1U, 0U, 0U, nullptr };
 
   EXPECT_EQ(cardano_uplc_program_apply_data(nullptr, program, param, &applied), CARDANO_ERROR_POINTER_IS_NULL);

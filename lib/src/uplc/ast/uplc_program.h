@@ -24,13 +24,13 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../arena/uplc_arena.h"
+#include "uplc_term.h"
 #include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
-#include "uplc_term.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -43,10 +43,10 @@ extern "C" {
  */
 typedef struct cardano_uplc_program_t
 {
-  uint32_t                   version_major;
-  uint32_t                   version_minor;
-  uint32_t                   version_patch;
-  const cardano_uplc_term_t* term;
+    uint32_t                   version_major;
+    uint32_t                   version_minor;
+    uint32_t                   version_patch;
+    const cardano_uplc_term_t* term;
 } cardano_uplc_program_t;
 
 /**

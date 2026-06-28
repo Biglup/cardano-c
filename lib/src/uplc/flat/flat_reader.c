@@ -126,7 +126,7 @@ cardano_uplc_flat_reader_bit(cardano_uplc_flat_reader_t* reader, uint8_t* value)
 
   if (reader->bit_pos == (FLAT_BITS_PER_BYTE - 1U))
   {
-    reader->bit_pos = 0U;
+    reader->bit_pos  = 0U;
     reader->byte_pos += 1U;
   }
   else
@@ -174,7 +174,7 @@ cardano_uplc_flat_reader_bits8(cardano_uplc_flat_reader_t* reader, const uint8_t
 
     if (reader->bit_pos == FLAT_BITS_PER_BYTE)
     {
-      reader->bit_pos = 0U;
+      reader->bit_pos  = 0U;
       reader->byte_pos += 1U;
     }
   }
@@ -192,7 +192,7 @@ cardano_uplc_flat_reader_bits8(cardano_uplc_flat_reader_t* reader, const uint8_t
     result = (uint8_t)(((uint32_t)high << from_second) | low);
 
     reader->byte_pos += 1U;
-    reader->bit_pos = from_second;
+    reader->bit_pos  = from_second;
   }
 
   *value = result;
@@ -242,7 +242,7 @@ cardano_uplc_flat_reader_word(cardano_uplc_flat_reader_t* reader, size_t* value)
       }
 
       result |= (payload << shift);
-      shift += FLAT_WORD_GROUP_BITS;
+      shift  += FLAT_WORD_GROUP_BITS;
     }
 
     more = (group & FLAT_WORD_CONTINUATION_MASK) != 0U;
@@ -332,7 +332,7 @@ cardano_uplc_flat_reader_big_word(cardano_uplc_flat_reader_t* reader, cardano_bi
     }
 
     shift += FLAT_WORD_GROUP_BITS;
-    more = (group & FLAT_WORD_CONTINUATION_MASK) != 0U;
+    more  = (group & FLAT_WORD_CONTINUATION_MASK) != 0U;
   }
 
   *value = result;

@@ -42,20 +42,20 @@ extern "C" {
  */
 typedef struct cardano_uplc_two_var_quadratic_cost_t
 {
-  /** \brief The lower bound on the result. */
-  int64_t minimum;
-  /** \brief The constant term. */
-  int64_t coeff_00;
-  /** \brief The coefficient of x. */
-  int64_t coeff_10;
-  /** \brief The coefficient of y. */
-  int64_t coeff_01;
-  /** \brief The coefficient of x*x. */
-  int64_t coeff_20;
-  /** \brief The coefficient of x*y. */
-  int64_t coeff_11;
-  /** \brief The coefficient of y*y. */
-  int64_t coeff_02;
+    /** \brief The lower bound on the result. */
+    int64_t minimum;
+    /** \brief The constant term. */
+    int64_t coeff_00;
+    /** \brief The coefficient of x. */
+    int64_t coeff_10;
+    /** \brief The coefficient of y. */
+    int64_t coeff_01;
+    /** \brief The coefficient of x*x. */
+    int64_t coeff_20;
+    /** \brief The coefficient of x*y. */
+    int64_t coeff_11;
+    /** \brief The coefficient of y*y. */
+    int64_t coeff_02;
 } cardano_uplc_two_var_quadratic_cost_t;
 
 /**

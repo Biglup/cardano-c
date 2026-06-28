@@ -22,10 +22,10 @@
 /* INCLUDES ******************************************************************/
 
 #include "uplc_ex_mem.h"
-#include "uplc_cost_sat.h"
-#include "../machine/uplc_value.h"
-#include "../data/uplc_data.h"
 #include "../ast/uplc_int.h"
+#include "../data/uplc_data.h"
+#include "../machine/uplc_value.h"
+#include "uplc_cost_sat.h"
 
 #include <cardano/common/bigint.h>
 

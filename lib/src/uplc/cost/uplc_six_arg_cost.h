@@ -43,14 +43,15 @@ extern "C" {
  */
 typedef struct cardano_uplc_six_arg_cost_t
 {
-  /** \brief Selects the active union member. */
-  cardano_uplc_six_arg_kind_t kind;
-  /** \brief The variant parameters. */
-  union
-  {
-    /** \brief Active for CONSTANT. */
-    int64_t constant;
-  } params;
+    /** \brief Selects the active union member. */
+    cardano_uplc_six_arg_kind_t kind;
+
+    /** \brief The variant parameters. */
+    union
+    {
+        /** \brief Active for CONSTANT. */
+        int64_t constant;
+    } params;
 } cardano_uplc_six_arg_cost_t;
 
 /**

@@ -102,7 +102,7 @@ cardano_uplc_builtin_semantics_for_language_and_protocol(
     case CARDANO_UPLC_LANG_VERSION_V4:
     {
       result = (protocol_major >= CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION) ? CARDANO_UPLC_SEMANTICS_E
-                                                                           : CARDANO_UPLC_SEMANTICS_C;
+                                                                            : CARDANO_UPLC_SEMANTICS_C;
       break;
     }
     default:

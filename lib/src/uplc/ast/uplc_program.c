@@ -24,8 +24,8 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
 
-#include "uplc_program.h"
 #include "uplc_constant.h"
+#include "uplc_program.h"
 #include "uplc_term.h"
 
 #include "../arena/uplc_arena.h"

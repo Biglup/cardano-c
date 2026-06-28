@@ -24,8 +24,8 @@
 #include "text_parser.h"
 
 #include "../../allocators.h"
-#include "../builtins/bls.h"
 #include "../ast/uplc_int.h"
+#include "../builtins/bls.h"
 
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
@@ -74,8 +74,8 @@ static const uint32_t PARSER_MAX_CODE_POINT = 0x10FFFFU;
  */
 typedef struct binder_t
 {
-  const char* text;
-  size_t      length;
+    const char* text;
+    size_t      length;
 } binder_t;
 
 /**
@@ -87,15 +87,15 @@ typedef struct binder_t
  */
 typedef struct parser_t
 {
-  cardano_uplc_arena_t* arena;
-  const char*           text;
-  size_t                len;
-  size_t                pos;
-  binder_t*         scope;
-  size_t                scope_count;
-  size_t                scope_capacity;
-  uint64_t              version_major;
-  uint64_t              version_minor;
+    cardano_uplc_arena_t* arena;
+    const char*           text;
+    size_t                len;
+    size_t                pos;
+    binder_t*             scope;
+    size_t                scope_count;
+    size_t                scope_capacity;
+    uint64_t              version_major;
+    uint64_t              version_minor;
 } parser_t;
 
 /* STATIC FUNCTION DECLARATIONS *********************************************/
@@ -365,7 +365,7 @@ read_u64(parser_t* parser, uint64_t* value)
       return CARDANO_ERROR_DECODING;
     }
 
-    acc = (acc * 10U) + digit;
+    acc         = (acc * 10U) + digit;
     parser->pos += 1U;
   }
 
@@ -397,11 +397,11 @@ read_u64(parser_t* parser, uint64_t* value)
 static cardano_error_t
 read_bigint(parser_t* parser, cardano_bigint_t** out)
 {
-  size_t          start    = 0U;
-  size_t          digits   = 0U;
-  size_t          length   = 0U;
+  size_t          start      = 0U;
+  size_t          digits     = 0U;
+  size_t          length     = 0U;
   char*           terminated = NULL;
-  cardano_error_t result   = CARDANO_SUCCESS;
+  cardano_error_t result     = CARDANO_SUCCESS;
 
   skip_trivia(parser);
 
@@ -420,7 +420,7 @@ read_bigint(parser_t* parser, cardano_bigint_t** out)
   while ((parser->pos < parser->len) && is_digit(parser->text[parser->pos]))
   {
     parser->pos += 1U;
-    digits += 1U;
+    digits      += 1U;
   }
 
   if (digits == 0U)
@@ -513,7 +513,7 @@ read_hex_bytes(parser_t* parser, cardano_buffer_t** out)
   }
 
   parser->pos += 1U;
-  start = parser->pos;
+  start       = parser->pos;
 
   while ((parser->pos < parser->len) && is_hex(parser->text[parser->pos]))
   {
@@ -587,7 +587,7 @@ read_0x_bytes(parser_t* parser, cardano_buffer_t** out)
   }
 
   parser->pos += 2U;
-  start = parser->pos;
+  start       = parser->pos;
 
   while ((parser->pos < parser->len) && is_hex(parser->text[parser->pos]))
   {
@@ -712,8 +712,8 @@ read_code_point(parser_t* parser, const uint32_t base, uint32_t* code_point)
 
   while (parser->pos < parser->len)
   {
-    const char     c   = parser->text[parser->pos];
-    uint32_t       val = 0U;
+    const char c   = parser->text[parser->pos];
+    uint32_t   val = 0U;
 
     if ((base == 16U) && is_hex(c))
     {
@@ -737,9 +737,9 @@ read_code_point(parser_t* parser, const uint32_t base, uint32_t* code_point)
       return CARDANO_ERROR_DECODING;
     }
 
-    acc = (acc * base) + val;
+    acc         = (acc * base) + val;
     parser->pos += 1U;
-    digits += 1U;
+    digits      += 1U;
   }
 
   if (digits == 0U)
@@ -770,16 +770,10 @@ match_named_escape(parser_t* parser, uint32_t* code_point)
 {
   static const struct
   {
-    const char* name;
-    uint32_t    value;
+      const char* name;
+      uint32_t    value;
   } table[] = {
-    { "NUL", 0U }, { "SOH", 1U }, { "STX", 2U }, { "ETX", 3U }, { "EOT", 4U },
-    { "ENQ", 5U }, { "ACK", 6U }, { "DLE", 16U }, { "DC1", 17U }, { "DC2", 18U },
-    { "DC3", 19U }, { "DC4", 20U }, { "NAK", 21U }, { "SYN", 22U }, { "ETB", 23U },
-    { "CAN", 24U }, { "SUB", 26U }, { "ESC", 27U }, { "DEL", 127U }, { "BEL", 7U },
-    { "BS", 8U }, { "HT", 9U }, { "LF", 10U }, { "VT", 11U }, { "FF", 12U },
-    { "CR", 13U }, { "SO", 14U }, { "SI", 15U }, { "EM", 25U }, { "FS", 28U },
-    { "GS", 29U }, { "RS", 30U }, { "US", 31U }, { "SP", 32U }
+    { "NUL", 0U }, { "SOH", 1U }, { "STX", 2U }, { "ETX", 3U }, { "EOT", 4U }, { "ENQ", 5U }, { "ACK", 6U }, { "DLE", 16U }, { "DC1", 17U }, { "DC2", 18U }, { "DC3", 19U }, { "DC4", 20U }, { "NAK", 21U }, { "SYN", 22U }, { "ETB", 23U }, { "CAN", 24U }, { "SUB", 26U }, { "ESC", 27U }, { "DEL", 127U }, { "BEL", 7U }, { "BS", 8U }, { "HT", 9U }, { "LF", 10U }, { "VT", 11U }, { "FF", 12U }, { "CR", 13U }, { "SO", 14U }, { "SI", 15U }, { "EM", 25U }, { "FS", 28U }, { "GS", 29U }, { "RS", 30U }, { "US", 31U }, { "SP", 32U }
   };
 
   const size_t count    = sizeof(table) / sizeof(table[0]);
@@ -791,9 +785,7 @@ match_named_escape(parser_t* parser, uint32_t* code_point)
   {
     const size_t name_len = strlen(table[i].name);
 
-    if (((parser->pos + name_len) <= parser->len) &&
-        (memcmp(&parser->text[parser->pos], table[i].name, name_len) == 0) &&
-        (name_len > best_len))
+    if (((parser->pos + name_len) <= parser->len) && (memcmp(&parser->text[parser->pos], table[i].name, name_len) == 0) && (name_len > best_len))
     {
       best     = i;
       best_len = name_len;
@@ -884,10 +876,10 @@ read_string(parser_t* parser, cardano_buffer_t** out)
 
   while (true)
   {
-    char            c          = '\0';
-    bool            have_byte  = false;
-    byte_t          emitted    = 0U;
-    cardano_error_t result     = CARDANO_SUCCESS;
+    char            c         = '\0';
+    bool            have_byte = false;
+    byte_t          emitted   = 0U;
+    cardano_error_t result    = CARDANO_SUCCESS;
 
     if (parser->pos >= parser->len)
     {
@@ -896,7 +888,7 @@ read_string(parser_t* parser, cardano_buffer_t** out)
       return CARDANO_ERROR_DECODING;
     }
 
-    c = parser->text[parser->pos];
+    c           = parser->text[parser->pos];
     parser->pos += 1U;
 
     if (c == '"')
@@ -924,23 +916,87 @@ read_string(parser_t* parser, cardano_buffer_t** out)
 
       switch (esc)
       {
-        case 'n':  { emitted = (byte_t)'\n'; have_byte = true; parser->pos += 1U; break; }
-        case 'r':  { emitted = (byte_t)'\r'; have_byte = true; parser->pos += 1U; break; }
-        case 't':  { emitted = (byte_t)'\t'; have_byte = true; parser->pos += 1U; break; }
-        case 'v':  { emitted = (byte_t)'\v'; have_byte = true; parser->pos += 1U; break; }
-        case 'f':  { emitted = (byte_t)'\f'; have_byte = true; parser->pos += 1U; break; }
-        case 'a':  { emitted = (byte_t)0x07U; have_byte = true; parser->pos += 1U; break; }
-        case 'b':  { emitted = (byte_t)0x08U; have_byte = true; parser->pos += 1U; break; }
-        case '"':  { emitted = (byte_t)'"';  have_byte = true; parser->pos += 1U; break; }
-        case '\'': { emitted = (byte_t)'\''; have_byte = true; parser->pos += 1U; break; }
-        case '\\': { emitted = (byte_t)'\\'; have_byte = true; parser->pos += 1U; break; }
-        case '&':  { parser->pos += 1U; break; }
+        case 'n':
+        {
+          emitted     = (byte_t)'\n';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 'r':
+        {
+          emitted     = (byte_t)'\r';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 't':
+        {
+          emitted     = (byte_t)'\t';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 'v':
+        {
+          emitted     = (byte_t)'\v';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 'f':
+        {
+          emitted     = (byte_t)'\f';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 'a':
+        {
+          emitted     = (byte_t)0x07U;
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case 'b':
+        {
+          emitted     = (byte_t)0x08U;
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case '"':
+        {
+          emitted     = (byte_t)'"';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case '\'':
+        {
+          emitted     = (byte_t)'\'';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case '\\':
+        {
+          emitted     = (byte_t)'\\';
+          have_byte   = true;
+          parser->pos += 1U;
+          break;
+        }
+        case '&':
+        {
+          parser->pos += 1U;
+          break;
+        }
         case 'x':
         {
           uint32_t code_point = 0U;
 
           parser->pos += 1U;
-          result = read_code_point(parser, 16U, &code_point);
+          result      = read_code_point(parser, 16U, &code_point);
 
           if (result == CARDANO_SUCCESS)
           {
@@ -953,7 +1009,7 @@ read_string(parser_t* parser, cardano_buffer_t** out)
           uint32_t code_point = 0U;
 
           parser->pos += 1U;
-          result = read_code_point(parser, 8U, &code_point);
+          result      = read_code_point(parser, 8U, &code_point);
 
           if (result == CARDANO_SUCCESS)
           {
@@ -1029,8 +1085,8 @@ scope_push(parser_t* parser, const char* text, const size_t length)
 {
   if (parser->scope_count == parser->scope_capacity)
   {
-    const size_t  next = (parser->scope_capacity == 0U) ? 8U : (parser->scope_capacity * 2U);
-    binder_t* grown = (binder_t*)_cardano_realloc(parser->scope, next * sizeof(binder_t));
+    const size_t next  = (parser->scope_capacity == 0U) ? 8U : (parser->scope_capacity * 2U);
+    binder_t*    grown = (binder_t*)_cardano_realloc(parser->scope, next * sizeof(binder_t));
 
     if (grown == NULL)
     {
@@ -1043,7 +1099,7 @@ scope_push(parser_t* parser, const char* text, const size_t length)
 
   parser->scope[parser->scope_count].text   = text;
   parser->scope[parser->scope_count].length = length;
-  parser->scope_count += 1U;
+  parser->scope_count                       += 1U;
 
   return CARDANO_SUCCESS;
 }
@@ -1865,8 +1921,8 @@ value_amount_in_range(const cardano_bigint_t* amount)
  */
 typedef struct bytes_view_t
 {
-  const byte_t* data;
-  size_t        size;
+    const byte_t* data;
+    size_t        size;
 } bytes_view_t;
 
 /**
@@ -1905,8 +1961,8 @@ value_compare_buffers(bytes_view_t a, bytes_view_t b)
  */
 typedef struct token_acc_t
 {
-  bytes_view_t  name;
-  cardano_bigint_t* amount;
+    bytes_view_t      name;
+    cardano_bigint_t* amount;
 } token_acc_t;
 
 /**
@@ -1914,10 +1970,10 @@ typedef struct token_acc_t
  */
 typedef struct policy_acc_t
 {
-  bytes_view_t policy;
-  token_acc_t* tokens;
-  size_t           token_count;
-  size_t           token_capacity;
+    bytes_view_t policy;
+    token_acc_t* tokens;
+    size_t       token_count;
+    size_t       token_capacity;
 } policy_acc_t;
 
 /**
@@ -1967,11 +2023,11 @@ value_acc_free(policy_acc_t* policies, size_t count)
  */
 static cardano_error_t
 value_acc_insert(
-  policy_acc_t**      policies,
+  policy_acc_t**          policies,
   size_t*                 count,
   size_t*                 capacity,
-  bytes_view_t        policy,
-  bytes_view_t        name,
+  bytes_view_t            policy,
+  bytes_view_t            name,
   const cardano_bigint_t* amount)
 {
   size_t pi = 0U;
@@ -1986,7 +2042,7 @@ value_acc_insert(
   {
     if (*count == *capacity)
     {
-      size_t            next  = (*capacity == 0U) ? 4U : (*capacity * 2U);
+      size_t        next  = (*capacity == 0U) ? 4U : (*capacity * 2U);
       policy_acc_t* grown = (policy_acc_t*)_cardano_realloc(*policies, next * sizeof(policy_acc_t));
 
       if (grown == NULL)
@@ -2004,7 +2060,7 @@ value_acc_insert(
       while (k > pi)
       {
         (*policies)[k] = (*policies)[k - 1U];
-        k -= 1U;
+        k              -= 1U;
       }
     }
 
@@ -2012,7 +2068,7 @@ value_acc_insert(
     (*policies)[pi].tokens         = NULL;
     (*policies)[pi].token_count    = 0U;
     (*policies)[pi].token_capacity = 0U;
-    *count += 1U;
+    *count                         += 1U;
   }
 
   {
@@ -2041,7 +2097,7 @@ value_acc_insert(
 
     if (entry->token_count == entry->token_capacity)
     {
-      size_t           next  = (entry->token_capacity == 0U) ? 4U : (entry->token_capacity * 2U);
+      size_t       next  = (entry->token_capacity == 0U) ? 4U : (entry->token_capacity * 2U);
       token_acc_t* grown = (token_acc_t*)_cardano_realloc(entry->tokens, next * sizeof(token_acc_t));
 
       if (grown == NULL)
@@ -2059,7 +2115,7 @@ value_acc_insert(
       while (k > ti)
       {
         entry->tokens[k] = entry->tokens[k - 1U];
-        k -= 1U;
+        k                -= 1U;
       }
     }
 
@@ -2073,7 +2129,7 @@ value_acc_insert(
 
       entry->tokens[ti].name   = name;
       entry->tokens[ti].amount = clone;
-      entry->token_count += 1U;
+      entry->token_count       += 1U;
     }
   }
 
@@ -2093,7 +2149,7 @@ value_acc_insert(
 static cardano_error_t
 value_make_token(
   cardano_uplc_arena_t*           arena,
-  bytes_view_t                name,
+  bytes_view_t                    name,
   const cardano_bigint_t*         amount,
   const cardano_uplc_constant_t** out)
 {
@@ -2150,19 +2206,19 @@ normalize_value(
   const cardano_uplc_constant_t* raw,
   cardano_uplc_constant_t**      out)
 {
-  policy_acc_t*               policies     = NULL;
-  size_t                          count        = 0U;
-  size_t                          capacity     = 0U;
-  const cardano_uplc_constant_t** entries      = NULL;
-  size_t                          out_count    = 0U;
-  size_t                          i            = 0U;
-  cardano_error_t                 error        = CARDANO_SUCCESS;
-  const cardano_uplc_type_t*      token_pair   = element_type->snd->fst;
+  policy_acc_t*                   policies   = NULL;
+  size_t                          count      = 0U;
+  size_t                          capacity   = 0U;
+  const cardano_uplc_constant_t** entries    = NULL;
+  size_t                          out_count  = 0U;
+  size_t                          i          = 0U;
+  cardano_error_t                 error      = CARDANO_SUCCESS;
+  const cardano_uplc_type_t*      token_pair = element_type->snd->fst;
 
   for (i = 0U; (i < raw->as.list.count) && (error == CARDANO_SUCCESS); ++i)
   {
     const cardano_uplc_constant_t* entry  = raw->as.list.items[i];
-    bytes_view_t               policy  = { entry->as.pair.fst->as.bytes.data, entry->as.pair.fst->as.bytes.size };
+    bytes_view_t                   policy = { entry->as.pair.fst->as.bytes.data, entry->as.pair.fst->as.bytes.size };
     const cardano_uplc_constant_t* tlist  = entry->as.pair.snd;
     size_t                         j      = 0U;
 
@@ -2175,7 +2231,7 @@ normalize_value(
     for (j = 0U; (j < tlist->as.list.count) && (error == CARDANO_SUCCESS); ++j)
     {
       const cardano_uplc_constant_t* tok    = tlist->as.list.items[j];
-      bytes_view_t               name   = { tok->as.pair.fst->as.bytes.data, tok->as.pair.fst->as.bytes.size };
+      bytes_view_t                   name   = { tok->as.pair.fst->as.bytes.data, tok->as.pair.fst->as.bytes.size };
       const cardano_bigint_t*        amount = NULL;
 
       if (cardano_uplc_constant_int_materialize(arena, tok->as.pair.snd, &amount) != CARDANO_SUCCESS)
@@ -2206,9 +2262,9 @@ normalize_value(
 
   for (i = 0U; (i < count) && (error == CARDANO_SUCCESS); ++i)
   {
-    const cardano_uplc_constant_t** tokens     = NULL;
-    size_t                          tout       = 0U;
-    size_t                          j          = 0U;
+    const cardano_uplc_constant_t** tokens       = NULL;
+    size_t                          tout         = 0U;
+    size_t                          j            = 0U;
     cardano_uplc_constant_t*        policy_const = NULL;
     cardano_uplc_constant_t*        token_list   = NULL;
     cardano_uplc_constant_t*        pair_const   = NULL;
@@ -2256,7 +2312,7 @@ normalize_value(
     if (error == CARDANO_SUCCESS)
     {
       entries[out_count] = pair_const;
-      out_count += 1U;
+      out_count          += 1U;
     }
   }
 
@@ -2434,7 +2490,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
         }
 
         items[count] = element;
-        count += 1U;
+        count        += 1U;
 
         skip_trivia(parser);
       }
@@ -2687,7 +2743,7 @@ parse_term_run(parser_t* parser, const uint32_t depth, const char terminator, co
     }
 
     array[used] = element;
-    used += 1U;
+    used        += 1U;
 
     skip_trivia(parser);
   }
@@ -2757,9 +2813,9 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
   }
   else if (match_keyword(parser, "lam"))
   {
-    const char*                name    = NULL;
-    size_t                     length  = 0U;
-    const cardano_uplc_term_t* body    = NULL;
+    const char*                name   = NULL;
+    size_t                     length = 0U;
+    const cardano_uplc_term_t* body   = NULL;
 
     result = read_ident(parser, &name, &length);
 
@@ -2928,8 +2984,8 @@ parse_paren_term(parser_t* parser, const uint32_t depth, const cardano_uplc_term
 static cardano_error_t
 parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** out)
 {
-  const cardano_uplc_term_t* accumulator = NULL;
-  cardano_error_t            result       = parse_term(parser, depth + 1U, &accumulator);
+  const cardano_uplc_term_t* accumulator    = NULL;
+  cardano_error_t            result         = parse_term(parser, depth + 1U, &accumulator);
   size_t                     argument_count = 0U;
 
   if (result != CARDANO_SUCCESS)
@@ -2958,7 +3014,7 @@ parse_apply(parser_t* parser, const uint32_t depth, const cardano_uplc_term_t** 
       return result;
     }
 
-    accumulator = applied;
+    accumulator    = applied;
     argument_count += 1U;
 
     skip_trivia(parser);
@@ -3069,7 +3125,7 @@ cardano_uplc_parse_program(
   const cardano_uplc_program_t** program,
   size_t*                        error_offset)
 {
-  parser_t               parser = { NULL, NULL, 0U, 0U, NULL, 0U, 0U, 0U, 0U };
+  parser_t                   parser = { NULL, NULL, 0U, 0U, NULL, 0U, 0U, 0U, 0U };
   cardano_uplc_program_t*    result = NULL;
   const cardano_uplc_term_t* term   = NULL;
   uint64_t                   major  = 0U;

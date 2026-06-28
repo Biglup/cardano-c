@@ -24,10 +24,10 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_program.h"
 #include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../ast/uplc_program.h"
 
 /* DECLARATIONS **************************************************************/
 

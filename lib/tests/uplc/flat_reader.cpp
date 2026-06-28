@@ -49,7 +49,7 @@ make_reader(const byte_t* buffer, const size_t size)
 static std::string
 bigint_to_decimal(const cardano_bigint_t* value)
 {
-  size_t      size   = cardano_bigint_get_string_size(value, 10);
+  size_t      size = cardano_bigint_get_string_size(value, 10);
   std::string buffer(size, '\0');
   EXPECT_EQ(cardano_bigint_to_string(value, &buffer[0], size, 10), CARDANO_SUCCESS);
   buffer.resize(strlen(buffer.c_str()));
@@ -535,9 +535,9 @@ TEST(cardano_uplc_flat_reader_bytes, readsEmptyBytestring)
 {
   // Arrange
   // 0x01 filler aligns to byte 1, then 0x00 is the terminating zero-length block.
-  const byte_t               data[]  = { 0x01U, 0x00U };
-  cardano_uplc_flat_reader_t reader  = make_reader(data, sizeof(data));
-  cardano_buffer_t*          out     = nullptr;
+  const byte_t               data[] = { 0x01U, 0x00U };
+  cardano_uplc_flat_reader_t reader = make_reader(data, sizeof(data));
+  cardano_buffer_t*          out    = nullptr;
 
   // Act
   cardano_error_t error = cardano_uplc_flat_reader_bytes(&reader, &out);
@@ -1025,9 +1025,7 @@ TEST(cardano_uplc_flat_reader_integer, roundTripsAcrossWidthAndSignBoundaries)
   // Arrange
   // Encode value v with the inverse zig-zag (u = v >= 0 ? 2v : -2v - 1), feed the
   // 7-bit little-endian groups back through integer, and expect v.
-  const int64_t values[] = { 0, 1, -1, 2, -2, 127, -128,
-                             4294967295LL, -4294967296LL,
-                             9223372036854775807LL };
+  const int64_t values[] = { 0, 1, -1, 2, -2, 127, -128, 4294967295LL, -4294967296LL, 9223372036854775807LL };
 
   // Act + Assert
   for (size_t i = 0U; i < (sizeof(values) / sizeof(values[0])); ++i)
@@ -1039,7 +1037,7 @@ TEST(cardano_uplc_flat_reader_integer, roundTripsAcrossWidthAndSignBoundaries)
     do
     {
       byte_t group = (byte_t)(u & 0x7FU);
-      u >>= 7U;
+      u            >>= 7U;
 
       if (u != 0U)
       {
@@ -1047,7 +1045,8 @@ TEST(cardano_uplc_flat_reader_integer, roundTripsAcrossWidthAndSignBoundaries)
       }
 
       data.push_back(group);
-    } while (u != 0U);
+    }
+    while (u != 0U);
 
     cardano_uplc_flat_reader_t reader = make_reader(data.data(), data.size());
     cardano_bigint_t*          out    = nullptr;

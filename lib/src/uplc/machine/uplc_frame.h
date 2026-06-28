@@ -28,10 +28,10 @@
 #include "uplc_frame_kind.h"
 #include "uplc_value.h"
 
-#include <cardano/error.h>
-#include <cardano/typedefs.h>
 #include "../arena/uplc_arena.h"
 #include "../ast/uplc_term.h"
+#include <cardano/error.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -51,53 +51,53 @@ typedef struct cardano_uplc_frame_t cardano_uplc_frame_t;
  */
 struct cardano_uplc_frame_t
 {
-  cardano_uplc_frame_kind_t kind;
+    cardano_uplc_frame_kind_t kind;
 
-  union
-  {
-    struct
+    union
     {
-      const cardano_uplc_value_t* value;
-      const cardano_uplc_frame_t* ctx;
-    } await_arg;
+        struct
+        {
+            const cardano_uplc_value_t* value;
+            const cardano_uplc_frame_t* ctx;
+        } await_arg;
 
-    struct
-    {
-      const cardano_uplc_env_t*   env;
-      const cardano_uplc_term_t*  term;
-      const cardano_uplc_frame_t* ctx;
-    } await_fun_term;
+        struct
+        {
+            const cardano_uplc_env_t*   env;
+            const cardano_uplc_term_t*  term;
+            const cardano_uplc_frame_t* ctx;
+        } await_fun_term;
 
-    struct
-    {
-      const cardano_uplc_value_t* value;
-      const cardano_uplc_frame_t* ctx;
-    } await_fun_value;
+        struct
+        {
+            const cardano_uplc_value_t* value;
+            const cardano_uplc_frame_t* ctx;
+        } await_fun_value;
 
-    struct
-    {
-      const cardano_uplc_frame_t* ctx;
-    } force;
+        struct
+        {
+            const cardano_uplc_frame_t* ctx;
+        } force;
 
-    struct
-    {
-      const cardano_uplc_env_t*          env;
-      uint64_t                           tag;
-      const cardano_uplc_term_t* const*  fields;
-      size_t                             field_count;
-      const cardano_uplc_value_t* const* resolved;
-      size_t                             resolved_count;
-      const cardano_uplc_frame_t*        ctx;
-    } constr;
+        struct
+        {
+            const cardano_uplc_env_t*          env;
+            uint64_t                           tag;
+            const cardano_uplc_term_t* const*  fields;
+            size_t                             field_count;
+            const cardano_uplc_value_t* const* resolved;
+            size_t                             resolved_count;
+            const cardano_uplc_frame_t*        ctx;
+        } constr;
 
-    struct
-    {
-      const cardano_uplc_env_t*         env;
-      const cardano_uplc_term_t* const* branches;
-      size_t                            branch_count;
-      const cardano_uplc_frame_t*       ctx;
-    } cases;
-  } as;
+        struct
+        {
+            const cardano_uplc_env_t*         env;
+            const cardano_uplc_term_t* const* branches;
+            size_t                            branch_count;
+            const cardano_uplc_frame_t*       ctx;
+        } cases;
+    } as;
 };
 
 /**

@@ -21,14 +21,14 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/uplc/uplc_apply_params.h>
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/data/uplc_data.h"
@@ -359,7 +359,7 @@ TEST(cardano_uplc_apply_params_to_script, multipleParamsApplyLeftToRight)
 TEST(cardano_uplc_apply_params_to_script, differentParamsProduceDifferentOutput)
 {
   // Arrange
-  cardano_buffer_t*      script = build_identity_script();
+  cardano_buffer_t*      script   = build_identity_script();
   cardano_plutus_list_t* params_a = new_list();
   cardano_plutus_list_t* params_b = new_list();
   list_append_int(params_a, 1);

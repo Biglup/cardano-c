@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../machine/uplc_budget.h"
 #include "uplc_cost_model_version.h"
 #include "uplc_step_kind.h"
-#include "../machine/uplc_budget.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -43,26 +43,26 @@ extern "C" {
  */
 typedef struct cardano_uplc_machine_costs_t
 {
-  /** \brief Charged once before the evaluation loop starts. */
-  cardano_uplc_budget_t startup;
-  /** \brief Cost of one constant step. */
-  cardano_uplc_budget_t constant;
-  /** \brief Cost of one variable step. */
-  cardano_uplc_budget_t var_step;
-  /** \brief Cost of one lambda step. */
-  cardano_uplc_budget_t lambda;
-  /** \brief Cost of one apply step. */
-  cardano_uplc_budget_t apply;
-  /** \brief Cost of one delay step. */
-  cardano_uplc_budget_t delay;
-  /** \brief Cost of one force step. */
-  cardano_uplc_budget_t force;
-  /** \brief Cost of one builtin step. */
-  cardano_uplc_budget_t builtin;
-  /** \brief Cost of one constr step (sentinel under V1/V2). */
-  cardano_uplc_budget_t constr;
-  /** \brief Cost of one case step (sentinel under V1/V2). */
-  cardano_uplc_budget_t case_step;
+    /** \brief Charged once before the evaluation loop starts. */
+    cardano_uplc_budget_t startup;
+    /** \brief Cost of one constant step. */
+    cardano_uplc_budget_t constant;
+    /** \brief Cost of one variable step. */
+    cardano_uplc_budget_t var_step;
+    /** \brief Cost of one lambda step. */
+    cardano_uplc_budget_t lambda;
+    /** \brief Cost of one apply step. */
+    cardano_uplc_budget_t apply;
+    /** \brief Cost of one delay step. */
+    cardano_uplc_budget_t delay;
+    /** \brief Cost of one force step. */
+    cardano_uplc_budget_t force;
+    /** \brief Cost of one builtin step. */
+    cardano_uplc_budget_t builtin;
+    /** \brief Cost of one constr step (sentinel under V1/V2). */
+    cardano_uplc_budget_t constr;
+    /** \brief Cost of one case step (sentinel under V1/V2). */
+    cardano_uplc_budget_t case_step;
 } cardano_uplc_machine_costs_t;
 
 /**

@@ -21,9 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/uplc/uplc_apply_params.h>
 #include "../ast/uplc_program.h"
 #include "../ast/uplc_term.h"
+#include <cardano/uplc/uplc_apply_params.h>
 
 #include "../arena/uplc_arena.h"
 
@@ -48,9 +48,9 @@
  */
 static cardano_error_t
 apply_param_list(
-  cardano_uplc_arena_t*         arena,
-  const cardano_plutus_list_t*  params,
-  const cardano_uplc_program_t* program,
+  cardano_uplc_arena_t*          arena,
+  const cardano_plutus_list_t*   params,
+  const cardano_uplc_program_t*  program,
   const cardano_uplc_program_t** out)
 {
   const cardano_uplc_program_t* current = program;
@@ -101,11 +101,11 @@ cardano_uplc_apply_params_to_script(
 {
   static const size_t kArenaBlockSize = 4096U;
 
-  cardano_uplc_arena_t*         arena    = NULL;
-  const cardano_uplc_program_t* program  = NULL;
-  const cardano_uplc_program_t* applied  = NULL;
-  cardano_buffer_t*             encoded  = NULL;
-  cardano_error_t               result   = CARDANO_SUCCESS;
+  cardano_uplc_arena_t*         arena   = NULL;
+  const cardano_uplc_program_t* program = NULL;
+  const cardano_uplc_program_t* applied = NULL;
+  cardano_buffer_t*             encoded = NULL;
+  cardano_error_t               result  = CARDANO_SUCCESS;
 
   if ((out_script == NULL) || ((script_bytes == NULL) && (script_size != 0U)))
   {

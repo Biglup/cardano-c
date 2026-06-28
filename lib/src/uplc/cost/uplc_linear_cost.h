@@ -41,10 +41,10 @@ extern "C" {
  */
 typedef struct cardano_uplc_linear_cost_t
 {
-  /** \brief The constant term added to the slope contribution. */
-  int64_t intercept;
-  /** \brief The coefficient multiplying the size argument. */
-  int64_t slope;
+    /** \brief The constant term added to the slope contribution. */
+    int64_t intercept;
+    /** \brief The coefficient multiplying the size argument. */
+    int64_t slope;
 } cardano_uplc_linear_cost_t;
 
 /**

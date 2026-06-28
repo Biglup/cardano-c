@@ -26,17 +26,17 @@
 
 #include "../cost/uplc_builtin_costs.h"
 #include "../cost/uplc_step_accumulator.h"
-#include "uplc_builtin_semantics.h"
+#include "../data/uplc_data.h"
 #include "../machine/uplc_value.h"
 #include "uplc_builtin_outcome.h"
+#include "uplc_builtin_semantics.h"
 #include "uplc_byte_view.h"
-#include "../data/uplc_data.h"
 
+#include "../arena/uplc_arena.h"
+#include "uplc_builtin.h"
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
-#include "uplc_builtin.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -202,10 +202,10 @@ cardano_uplc_builtin_as_data(const cardano_uplc_value_t* value, const cardano_up
  */
 bool
 cardano_uplc_builtin_as_list(
-  const cardano_uplc_value_t*                   value,
-  const cardano_uplc_type_t**                   element_type,
-  const cardano_uplc_constant_t* const**        items,
-  size_t*                                       count);
+  const cardano_uplc_value_t*            value,
+  const cardano_uplc_type_t**            element_type,
+  const cardano_uplc_constant_t* const** items,
+  size_t*                                count);
 
 /**
  * \brief Reads the pair payload of a constant value.

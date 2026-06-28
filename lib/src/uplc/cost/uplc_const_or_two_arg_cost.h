@@ -47,20 +47,21 @@ extern "C" {
  */
 typedef struct cardano_uplc_const_or_two_arg_cost_t
 {
-  /** \brief The flat cost charged on the constant side of the diagonal. */
-  int64_t constant;
-  /** \brief Selects which member of \c model is active. */
-  cardano_uplc_diag_model_kind_t kind;
-  /** \brief The nested off-diagonal model. */
-  union
-  {
-    /** \brief Active when kind is LINEAR_IN_X_AND_Y. */
-    cardano_uplc_two_var_linear_cost_t linear_in_x_and_y;
-    /** \brief Active when kind is MULTIPLIED_SIZES. */
-    cardano_uplc_linear_cost_t multiplied_sizes;
-    /** \brief Active when kind is QUADRATIC. */
-    cardano_uplc_two_var_quadratic_cost_t quadratic;
-  } model;
+    /** \brief The flat cost charged on the constant side of the diagonal. */
+    int64_t constant;
+    /** \brief Selects which member of \c model is active. */
+    cardano_uplc_diag_model_kind_t kind;
+
+    /** \brief The nested off-diagonal model. */
+    union
+    {
+        /** \brief Active when kind is LINEAR_IN_X_AND_Y. */
+        cardano_uplc_two_var_linear_cost_t linear_in_x_and_y;
+        /** \brief Active when kind is MULTIPLIED_SIZES. */
+        cardano_uplc_linear_cost_t multiplied_sizes;
+        /** \brief Active when kind is QUADRATIC. */
+        cardano_uplc_two_var_quadratic_cost_t quadratic;
+    } model;
 } cardano_uplc_const_or_two_arg_cost_t;
 
 /**

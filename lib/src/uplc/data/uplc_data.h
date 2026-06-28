@@ -68,45 +68,45 @@ extern "C" {
  */
 typedef struct cardano_uplc_data_t
 {
-  cardano_uplc_data_kind_t kind;
-  int64_t                  ex_mem;
-  int64_t                  node_count;
+    cardano_uplc_data_kind_t kind;
+    int64_t                  ex_mem;
+    int64_t                  node_count;
 
-  union
-  {
-    struct
+    union
     {
-      uint64_t                          tag;
-      const struct cardano_uplc_data_t* const* fields;
-      size_t                            count;
-    } constr;
+        struct
+        {
+            uint64_t                                 tag;
+            const struct cardano_uplc_data_t* const* fields;
+            size_t                                   count;
+        } constr;
 
-    struct
-    {
-      const cardano_uplc_data_pair_t* entries;
-      size_t                          count;
-      bool                            indefinite;
-    } map;
+        struct
+        {
+            const cardano_uplc_data_pair_t* entries;
+            size_t                          count;
+            bool                            indefinite;
+        } map;
 
-    struct
-    {
-      const struct cardano_uplc_data_t* const* items;
-      size_t                            count;
-    } list;
+        struct
+        {
+            const struct cardano_uplc_data_t* const* items;
+            size_t                                   count;
+        } list;
 
-    struct
-    {
-      int64_t           small;
-      cardano_bigint_t* big;
-      bool              is_small;
-    } integer;
+        struct
+        {
+            int64_t           small;
+            cardano_bigint_t* big;
+            bool              is_small;
+        } integer;
 
-    struct
-    {
-      const byte_t* data;
-      size_t        size;
-    } bytes;
-  } as;
+        struct
+        {
+            const byte_t* data;
+            size_t        size;
+        } bytes;
+    } as;
 } cardano_uplc_data_t;
 
 /**
@@ -127,11 +127,11 @@ typedef struct cardano_uplc_data_t
  */
 cardano_error_t
 cardano_uplc_data_new_constr(
-  cardano_uplc_arena_t*                    arena,
-  uint64_t                                 tag,
-  const cardano_uplc_data_t* const*        fields,
-  size_t                                   count,
-  cardano_uplc_data_t**                    out);
+  cardano_uplc_arena_t*             arena,
+  uint64_t                          tag,
+  const cardano_uplc_data_t* const* fields,
+  size_t                            count,
+  cardano_uplc_data_t**             out);
 
 /**
  * \brief Builds an arena map data node from an arena-allocated entry array.

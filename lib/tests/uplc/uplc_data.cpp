@@ -38,7 +38,8 @@
 
 /* HELPERS *******************************************************************/
 
-namespace {
+namespace
+{
 
 cardano_uplc_arena_t*
 make_arena()
@@ -124,22 +125,22 @@ plutus_canonical_hex(cardano_plutus_data_t* data)
 }
 
 const char* kCorpus[] = {
-  "182a",                                       /* Integer 42 */
-  "3863",                                       /* Integer -100 */
-  "00",                                         /* Integer 0 */
-  "1bffffffffffffffff",                         /* Integer 2^64-1 (uint64 max) */
-  "c249010000000000000000",                     /* Integer 2^64 (bignum tag 2) */
-  "c349010000000000000000",                     /* negative bignum (tag 3) */
-  "4401020304",                                 /* Bytes 01020304 */
-  "40",                                         /* empty Bytes */
-  "9f0102ff",                                   /* List [1, 2] (indefinite) */
-  "80",                                         /* empty List (definite) */
-  "a10102",                                     /* Map {1: 2} (definite) */
-  "d8799f0102ff",                               /* Constr 0 [1, 2] (tag 121) */
-  "d87a9f43abcdefff",                           /* Constr 1 [bytes] (tag 122) */
-  "d9050080",                                   /* Constr 7 [] (tag 1280) */
-  "d8668218ff9f01ff",                           /* Constr 255 [1] general form (tag 102) */
-  "d8799f0102d8799f0304ffff",                   /* nested Constr */
+  "182a",                     /* Integer 42 */
+  "3863",                     /* Integer -100 */
+  "00",                       /* Integer 0 */
+  "1bffffffffffffffff",       /* Integer 2^64-1 (uint64 max) */
+  "c249010000000000000000",   /* Integer 2^64 (bignum tag 2) */
+  "c349010000000000000000",   /* negative bignum (tag 3) */
+  "4401020304",               /* Bytes 01020304 */
+  "40",                       /* empty Bytes */
+  "9f0102ff",                 /* List [1, 2] (indefinite) */
+  "80",                       /* empty List (definite) */
+  "a10102",                   /* Map {1: 2} (definite) */
+  "d8799f0102ff",             /* Constr 0 [1, 2] (tag 121) */
+  "d87a9f43abcdefff",         /* Constr 1 [bytes] (tag 122) */
+  "d9050080",                 /* Constr 7 [] (tag 1280) */
+  "d8668218ff9f01ff",         /* Constr 255 [1] general form (tag 102) */
+  "d8799f0102d8799f0304ffff", /* nested Constr */
 };
 
 } // namespace
@@ -148,7 +149,7 @@ const char* kCorpus[] = {
 
 TEST(cardano_uplc_data_from_cbor_bytes, parsesEveryCorpusVectorStructurallyLikeTheLibrary)
 {
-  for (const char* hex : kCorpus)
+  for (const char* hex: kCorpus)
   {
     cardano_uplc_arena_t* arena = make_arena();
     std::vector<uint8_t>  bytes = from_hex(hex);
@@ -157,8 +158,8 @@ TEST(cardano_uplc_data_from_cbor_bytes, parsesEveryCorpusVectorStructurallyLikeT
     ASSERT_EQ(cardano_uplc_data_from_cbor_bytes(arena, bytes.data(), bytes.size(), &node), CARDANO_SUCCESS) << hex;
     ASSERT_NE(node, nullptr) << hex;
 
-    cardano_plutus_data_t* library_node      = nullptr;
-    cardano_plutus_data_t* arena_as_library  = nullptr;
+    cardano_plutus_data_t* library_node     = nullptr;
+    cardano_plutus_data_t* arena_as_library = nullptr;
     ASSERT_EQ(cardano_uplc_data_to_plutus_data(node, &arena_as_library), CARDANO_SUCCESS) << hex;
 
     library_node = plutus_from_hex(hex);
@@ -174,7 +175,7 @@ TEST(cardano_uplc_data_from_cbor_bytes, parsesEveryCorpusVectorStructurallyLikeT
 
 TEST(cardano_uplc_data_to_cbor, producesTheSameCanonicalBytesAsTheLibrary)
 {
-  for (const char* hex : kCorpus)
+  for (const char* hex: kCorpus)
   {
     cardano_uplc_arena_t* arena = make_arena();
     std::vector<uint8_t>  bytes = from_hex(hex);
@@ -195,7 +196,7 @@ TEST(cardano_uplc_data_to_cbor, producesTheSameCanonicalBytesAsTheLibrary)
 
 TEST(cardano_uplc_data_round_trip, libraryToArenaToLibraryIsExact)
 {
-  for (const char* hex : kCorpus)
+  for (const char* hex: kCorpus)
   {
     cardano_uplc_arena_t*  arena   = make_arena();
     cardano_plutus_data_t* library = plutus_from_hex(hex);
@@ -268,7 +269,7 @@ TEST(cardano_uplc_data_from_cbor_bytes, negativeIntegerBeyondInt64MatchesLibrary
     "3b0000000000000000", /* -1 */
   };
 
-  for (const char* hex : kNegatives)
+  for (const char* hex: kNegatives)
   {
     cardano_uplc_arena_t* arena = make_arena();
     std::vector<uint8_t>  bytes = from_hex(hex);
@@ -349,30 +350,31 @@ TEST(cardano_uplc_data_node_count, countsEveryNodeOnce)
 
 /* DIRECT PARSER EDGE CASES ***************************************************/
 
-namespace {
+namespace
+{
 
 const char* kEdgeCorpus[] = {
-  "00",                                 /* integer 0 */
-  "1b7fffffffffffffff",                 /* INT64_MAX (inline boundary) */
-  "1b8000000000000000",                 /* INT64_MAX + 1 (spills to bignum) */
-  "1bffffffffffffffff",                 /* UINT64_MAX (spills to bignum) */
-  "c249010000000000000000",             /* 2^64 positive bignum (tag 2) */
-  "c349010000000000000000",             /* negative bignum (tag 3) */
-  "3bffffffffffffffff",                 /* large negative integer */
-  "40",                                 /* empty byte string */
-  "4401020304",                         /* definite byte string */
-  "80",                                 /* empty definite list */
-  "8403040506",                         /* definite list [3,4,5,6] */
-  "9f0102ff",                           /* indefinite list [1,2] */
-  "9fff",                               /* empty indefinite list */
-  "a201020304",                         /* definite map {1:2,3:4} */
-  "a0",                                 /* empty definite map */
-  "bf0102ff",                           /* indefinite map {1:2} */
-  "bfff",                               /* empty indefinite map */
-  "d8799f0102d87a9f43abcdefffff",       /* nested constr with bytes field */
-  "d8799fa101029f0203ffff",             /* constr holding map and list */
-  "d9050080",                           /* ranged constr tag 1280 (alt 7), empty */
-  "d8668218ff9f01ff",                   /* general form constr alt 255 */
+  "00",                           /* integer 0 */
+  "1b7fffffffffffffff",           /* INT64_MAX (inline boundary) */
+  "1b8000000000000000",           /* INT64_MAX + 1 (spills to bignum) */
+  "1bffffffffffffffff",           /* UINT64_MAX (spills to bignum) */
+  "c249010000000000000000",       /* 2^64 positive bignum (tag 2) */
+  "c349010000000000000000",       /* negative bignum (tag 3) */
+  "3bffffffffffffffff",           /* large negative integer */
+  "40",                           /* empty byte string */
+  "4401020304",                   /* definite byte string */
+  "80",                           /* empty definite list */
+  "8403040506",                   /* definite list [3,4,5,6] */
+  "9f0102ff",                     /* indefinite list [1,2] */
+  "9fff",                         /* empty indefinite list */
+  "a201020304",                   /* definite map {1:2,3:4} */
+  "a0",                           /* empty definite map */
+  "bf0102ff",                     /* indefinite map {1:2} */
+  "bfff",                         /* empty indefinite map */
+  "d8799f0102d87a9f43abcdefffff", /* nested constr with bytes field */
+  "d8799fa101029f0203ffff",       /* constr holding map and list */
+  "d9050080",                     /* ranged constr tag 1280 (alt 7), empty */
+  "d8668218ff9f01ff",             /* general form constr alt 255 */
 };
 
 void
@@ -402,7 +404,7 @@ expect_parse_matches_library(const std::string& hex)
 
 TEST(cardano_uplc_data_direct_parser, matchesLibraryAcrossEdgeConstructs)
 {
-  for (const char* hex : kEdgeCorpus)
+  for (const char* hex: kEdgeCorpus)
   {
     expect_parse_matches_library(hex);
   }
@@ -412,7 +414,7 @@ TEST(cardano_uplc_data_direct_parser, parsesChunkedIndefiniteByteStringStructura
 {
   /* Build a 200-byte string; the canonical serializer emits it as a chunked
    * indefinite byte string with 64-byte chunks, exercising the concatenation path. */
-  std::vector<uint8_t>   payload(200U);
+  std::vector<uint8_t> payload(200U);
   for (size_t i = 0U; i < payload.size(); ++i)
   {
     payload[i] = static_cast<uint8_t>(i & 0xFFU);
@@ -454,17 +456,17 @@ TEST(cardano_uplc_data_direct_parser, rejectsMalformedCbor)
   cardano_uplc_data_t*  node  = nullptr;
 
   const char* malformed[] = {
-    "18",         /* truncated 1-byte argument */
-    "1b00000000", /* truncated 8-byte argument */
-    "9f0102",     /* unterminated indefinite list */
-    "bf0102",     /* unterminated indefinite map */
+    "18",           /* truncated 1-byte argument */
+    "1b00000000",   /* truncated 8-byte argument */
+    "9f0102",       /* unterminated indefinite list */
+    "bf0102",       /* unterminated indefinite map */
     "5f4401020304", /* unterminated indefinite byte string */
-    "d81e80",     /* unknown tag 30 */
-    "44010203",   /* byte string shorter than declared length */
-    "e0",         /* simple value (unsupported major type) */
+    "d81e80",       /* unknown tag 30 */
+    "44010203",     /* byte string shorter than declared length */
+    "e0",           /* simple value (unsupported major type) */
   };
 
-  for (const char* hex : malformed)
+  for (const char* hex: malformed)
   {
     std::vector<uint8_t> bytes = from_hex(hex);
     node                       = nullptr;
@@ -491,7 +493,8 @@ TEST(cardano_uplc_data_direct_parser, emptyByteStringRoundTrips)
 
 /* DEGENERATE DEPTH STACK SAFETY ********************************************/
 
-namespace {
+namespace
+{
 
 const cardano_uplc_data_t*
 build_constr_chain(cardano_uplc_arena_t* arena, size_t depth)

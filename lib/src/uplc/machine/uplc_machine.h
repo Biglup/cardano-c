@@ -24,18 +24,18 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/error.h>
-#include <cardano/export.h>
-#include <cardano/typedefs.h>
 #include "../arena/uplc_arena.h"
+#include "../ast/uplc_program.h"
+#include "../ast/uplc_term.h"
 #include "../builtins/uplc_builtin_semantics.h"
-#include "uplc_budget.h"
 #include "../cost/uplc_cost_model.h"
+#include "uplc_budget.h"
 #include "uplc_eval_result.h"
 #include "uplc_eval_status.h"
 #include "uplc_machine_version.h"
-#include "../ast/uplc_program.h"
-#include "../ast/uplc_term.h"
+#include <cardano/error.h>
+#include <cardano/export.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 

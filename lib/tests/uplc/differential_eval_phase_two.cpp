@@ -61,16 +61,16 @@
 // Mirrors SlotConfig in aiken-c-ffi/include/aiken_ffi.h (field order matters).
 struct AikenSlotConfig
 {
-  uint32_t slot_length;
-  uint64_t zero_slot;
-  uint64_t zero_time;
+    uint32_t slot_length;
+    uint64_t zero_slot;
+    uint64_t zero_time;
 };
 
 // Mirrors InitialBudget in aiken-c-ffi/include/aiken_ffi.h (mem first).
 struct AikenInitialBudget
 {
-  int64_t mem;
-  int64_t cpu;
+    int64_t mem;
+    int64_t cpu;
 };
 
 typedef const char* (*aiken_eval_fn)(
@@ -91,15 +91,15 @@ typedef void (*aiken_drop_fn)(const char* pointer);
  */
 struct EvalVector
 {
-  const char* name;
-  const char* tx_hex;
-  const char* inputs_hex;
-  const char* outputs_hex;
-  const char* cost_mdls_hex;
-  uint64_t    zero_time;
-  uint64_t    zero_slot;
-  uint32_t    slot_length;
-  size_t      expected_redeemers;
+    const char* name;
+    const char* tx_hex;
+    const char* inputs_hex;
+    const char* outputs_hex;
+    const char* cost_mdls_hex;
+    uint64_t    zero_time;
+    uint64_t    zero_slot;
+    uint32_t    slot_length;
+    size_t      expected_redeemers;
 };
 
 /* CORPUS ********************************************************************/
@@ -112,17 +112,18 @@ struct EvalVector
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 /**
  * \brief A pairing of one redeemer key to its computed ex-units.
  */
 struct RedeemerUnits
 {
-  int      tag;
-  uint64_t index;
-  uint64_t mem;
-  uint64_t cpu;
+    int      tag;
+    uint64_t index;
+    uint64_t mem;
+    uint64_t cpu;
 };
 
 /**
@@ -190,7 +191,7 @@ build_utxo_list(const char* inputs_hex, const char* outputs_hex)
 {
   cardano_cbor_reader_t*             in_reader  = cardano_cbor_reader_from_hex(inputs_hex, strlen(inputs_hex));
   cardano_cbor_reader_t*             out_reader = cardano_cbor_reader_from_hex(outputs_hex, strlen(outputs_hex));
-  cardano_transaction_output_list_t* outputs   = nullptr;
+  cardano_transaction_output_list_t* outputs    = nullptr;
   cardano_utxo_list_t*               utxos      = nullptr;
 
   if ((in_reader == nullptr) || (out_reader == nullptr))
@@ -265,7 +266,7 @@ build_utxo_list(const char* inputs_hex, const char* outputs_hex)
 const RedeemerUnits*
 find_units(const std::vector<RedeemerUnits>& v, int tag, uint64_t index)
 {
-  for (const RedeemerUnits& ru : v)
+  for (const RedeemerUnits& ru: v)
   {
     if ((ru.tag == tag) && (ru.index == index))
     {
@@ -298,11 +299,11 @@ TEST(differential_eval_phase_two, matchesAikenExUnitsByteForByte)
   ASSERT_NE(eval, nullptr) << "dlsym eval_phase_two failed";
   ASSERT_NE(drop, nullptr) << "dlsym drop_char_pointer failed";
 
-  int total      = 0;
-  int matched     = 0;
+  int                      total   = 0;
+  int                      matched = 0;
   std::vector<std::string> mismatches;
 
-  for (const EvalVector& v : kEvalVectors)
+  for (const EvalVector& v: kEvalVectors)
   {
     // Large ceiling so neither side is budget-limited; we compare the COMPUTED
     // spent units, not the ceiling.
@@ -335,7 +336,7 @@ TEST(differential_eval_phase_two, matchesAikenExUnitsByteForByte)
       size_t            pos = json_str.find(key);
       if (pos != std::string::npos)
       {
-        pos += key.size();
+        pos        += key.size();
         size_t end = json_str.find('"', pos);
         aiken_cbor = json_str.substr(pos, end - pos);
       }
@@ -369,7 +370,7 @@ TEST(differential_eval_phase_two, matchesAikenExUnitsByteForByte)
     cardano_tx_evaluator_t* evaluator = nullptr;
     ASSERT_EQ(cardano_tx_evaluator_new_native(&our_slot, costmdls, 9U, &evaluator), CARDANO_SUCCESS) << v.name;
 
-    cardano_redeemer_list_t* ours = nullptr;
+    cardano_redeemer_list_t* ours     = nullptr;
     cardano_error_t          eval_err = cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &ours);
 
     if (eval_err != CARDANO_SUCCESS)
@@ -401,7 +402,7 @@ TEST(differential_eval_phase_two, matchesAikenExUnitsByteForByte)
       EXPECT_EQ(aiken_units.size(), v.expected_redeemers) << v.name << ": aiken redeemer count";
       EXPECT_EQ(our_units.size(), aiken_units.size()) << v.name << ": redeemer count mismatch";
 
-      for (const RedeemerUnits& a : aiken_units)
+      for (const RedeemerUnits& a: aiken_units)
       {
         ++total;
         const RedeemerUnits* o = find_units(our_units, a.tag, a.index);
@@ -442,7 +443,7 @@ TEST(differential_eval_phase_two, matchesAikenExUnitsByteForByte)
 
   std::printf("[eval-diff] redeemers=%d byte_identical=%d mismatches=%zu\n", total, matched, mismatches.size());
 
-  for (const std::string& m : mismatches)
+  for (const std::string& m: mismatches)
   {
     std::printf("[eval-diff] MISMATCH: %s\n", m.c_str());
   }

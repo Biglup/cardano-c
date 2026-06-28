@@ -21,19 +21,19 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/ast/uplc_int.h"
+#include "../../src/uplc/data/uplc_data.h"
 #include "../../src/uplc/flat/flat_decode.h"
 #include "../../src/uplc/syntax/pretty.h"
 #include "../../src/uplc/syntax/text_parser.h"
-#include "../../src/uplc/data/uplc_data.h"
-#include "../../src/uplc/ast/uplc_int.h"
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -45,7 +45,8 @@
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 cardano_uplc_arena_t*
 make_arena()
@@ -151,69 +152,71 @@ terms_equal(const cardano_uplc_term_t* a, const cardano_uplc_term_t* b)
 // MSB-first bit writer mirroring the flat reader, used to build cross-check streams.
 class BitWriter
 {
-public:
-  void
-  bit(uint8_t value)
-  {
-    if (bit_pos_ == 0U)
-    {
-      bytes_.push_back(0U);
-    }
-    if (value != 0U)
-    {
-      bytes_.back() |= static_cast<uint8_t>(0x80U >> bit_pos_);
-    }
-    bit_pos_ = static_cast<uint8_t>((bit_pos_ + 1U) % 8U);
-  }
+  public:
 
-  void
-  bits(uint8_t value, uint8_t count)
-  {
-    for (uint8_t i = 0U; i < count; ++i)
+    void
+    bit(uint8_t value)
     {
-      const uint8_t shift = static_cast<uint8_t>(count - 1U - i);
-      bit(static_cast<uint8_t>((value >> shift) & 1U));
-    }
-  }
-
-  void
-  word(uint64_t value)
-  {
-    while (true)
-    {
-      uint8_t group = static_cast<uint8_t>(value & 0x7FU);
-      value >>= 7U;
+      if (bit_pos_ == 0U)
+      {
+        bytes_.push_back(0U);
+      }
       if (value != 0U)
       {
-        group |= 0x80U;
+        bytes_.back() |= static_cast<uint8_t>(0x80U >> bit_pos_);
       }
-      bits(group, 8U);
-      if (value == 0U)
-      {
-        break;
-      }
+      bit_pos_ = static_cast<uint8_t>((bit_pos_ + 1U) % 8U);
     }
-  }
 
-  void
-  filler()
-  {
-    while (bit_pos_ != 7U)
+    void
+    bits(uint8_t value, uint8_t count)
     {
-      bit(0U);
+      for (uint8_t i = 0U; i < count; ++i)
+      {
+        const uint8_t shift = static_cast<uint8_t>(count - 1U - i);
+        bit(static_cast<uint8_t>((value >> shift) & 1U));
+      }
     }
-    bit(1U);
-  }
 
-  const std::vector<uint8_t>&
-  bytes() const
-  {
-    return bytes_;
-  }
+    void
+    word(uint64_t value)
+    {
+      while (true)
+      {
+        uint8_t group = static_cast<uint8_t>(value & 0x7FU);
+        value         >>= 7U;
+        if (value != 0U)
+        {
+          group |= 0x80U;
+        }
+        bits(group, 8U);
+        if (value == 0U)
+        {
+          break;
+        }
+      }
+    }
 
-private:
-  std::vector<uint8_t> bytes_;
-  uint8_t              bit_pos_ = 0U;
+    void
+    filler()
+    {
+      while (bit_pos_ != 7U)
+      {
+        bit(0U);
+      }
+      bit(1U);
+    }
+
+    const std::vector<uint8_t>&
+    bytes() const
+    {
+      return bytes_;
+    }
+
+  private:
+
+    std::vector<uint8_t> bytes_;
+    uint8_t              bit_pos_ = 0U;
 };
 
 cardano_error_t
@@ -560,9 +563,9 @@ TEST(cardano_uplc_parse_program, rejectsConstrAndCaseBelowVersion110)
 TEST(cardano_uplc_parse_program, acceptsConstrAndCaseAtVersion110)
 {
   // The same forms parse under version 1.1.0.
-  cardano_uplc_arena_t*         arena   = make_arena();
-  const cardano_uplc_program_t* constr  = nullptr;
-  const cardano_uplc_program_t* cased   = nullptr;
+  cardano_uplc_arena_t*         arena  = make_arena();
+  const cardano_uplc_program_t* constr = nullptr;
+  const cardano_uplc_program_t* cased  = nullptr;
 
   // Act / Assert
   EXPECT_EQ(parse("(program 1.1.0 (constr 0 ))", arena, &constr), CARDANO_SUCCESS);
@@ -1044,7 +1047,7 @@ TEST(cardano_uplc_parse_program, freeVariableEvaluatesToScriptFailure)
 
   const cardano_uplc_budget_t initial = { 100000000, 100000000 };
   cardano_uplc_eval_result_t  eval    = {};
-  cardano_error_t             host    =
+  cardano_error_t             host =
     cardano_uplc_evaluate(arena, program, CARDANO_UPLC_MACHINE_VERSION_V3, initial, &eval);
 
   // Assert: the host ran the script and the script outcome is an error term.
@@ -1210,7 +1213,7 @@ TEST(cardano_uplc_parse_program, reportsErrorOffset)
 TEST(cardano_uplc_parse_program, boundsDeepNesting)
 {
   // Arrange: build a force-nest deeper than the recursion bound.
-  std::string text = "(program 1.0.0 ";
+  std::string  text  = "(program 1.0.0 ";
   const size_t depth = 5000U;
   for (size_t i = 0U; i < depth; ++i)
   {
@@ -1237,7 +1240,8 @@ TEST(cardano_uplc_parse_program, boundsDeepNesting)
 
 /* REAL CORPUS FILES *****************************************************/
 
-namespace {
+namespace
+{
 
 std::string
 read_file(const std::string& path)
@@ -1285,7 +1289,7 @@ TEST(cardano_uplc_parse_program, parsesRealCorpusFiles)
 
   size_t parsed = 0U;
 
-  for (const std::string& rel : files)
+  for (const std::string& rel: files)
   {
     std::string text = read_file(corpus_root() + rel);
     if (text.empty())
@@ -1380,7 +1384,7 @@ TEST(cardano_uplc_parse_program, handlesAllocationFailureMidParse)
 TEST(cardano_uplc_parse_program, handlesScopeStackGrowthFailure)
 {
   // Arrange: many binders force the scope stack to grow via realloc.
-  std::string text = "(program 1.0.0 ";
+  std::string  text    = "(program 1.0.0 ";
   const size_t binders = 64U;
   for (size_t i = 0U; i < binders; ++i)
   {

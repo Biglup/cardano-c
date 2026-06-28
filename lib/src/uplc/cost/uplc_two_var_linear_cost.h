@@ -42,12 +42,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_two_var_linear_cost_t
 {
-  /** \brief The constant term. */
-  int64_t intercept;
-  /** \brief The coefficient of the first variable. */
-  int64_t slope1;
-  /** \brief The coefficient of the second variable. */
-  int64_t slope2;
+    /** \brief The constant term. */
+    int64_t intercept;
+    /** \brief The coefficient of the first variable. */
+    int64_t slope1;
+    /** \brief The coefficient of the second variable. */
+    int64_t slope2;
 } cardano_uplc_two_var_linear_cost_t;
 
 /**

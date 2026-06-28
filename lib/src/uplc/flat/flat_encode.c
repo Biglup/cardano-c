@@ -21,15 +21,15 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/cbor/cbor_writer.h>
 #include "flat_encode.h"
 #include "../ast/uplc_program.h"
 #include "../ast/uplc_term.h"
+#include <cardano/cbor/cbor_writer.h>
 
-#include "../builtins/bls.h"
-#include "flat_writer.h"
-#include "../data/uplc_data.h"
 #include "../ast/uplc_int.h"
+#include "../builtins/bls.h"
+#include "../data/uplc_data.h"
+#include "flat_writer.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -549,9 +549,9 @@ write_constant(cardano_uplc_flat_writer_t* writer, const cardano_uplc_constant_t
  */
 static cardano_error_t
 write_term_list(
-  cardano_uplc_flat_writer_t*              writer,
-  const cardano_uplc_term_t* const*        items,
-  const size_t                             count)
+  cardano_uplc_flat_writer_t*       writer,
+  const cardano_uplc_term_t* const* items,
+  const size_t                      count)
 {
   cardano_error_t result = CARDANO_SUCCESS;
 

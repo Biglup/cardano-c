@@ -47,22 +47,23 @@ extern "C" {
  */
 typedef struct cardano_uplc_three_arg_cost_t
 {
-  /** \brief Selects the active union member. */
-  cardano_uplc_three_arg_kind_t kind;
-  /** \brief The variant parameters. */
-  union
-  {
-    /** \brief Active for CONSTANT. */
-    int64_t constant;
-    /** \brief Active for ADDED_SIZES, LINEAR_IN_X, LINEAR_IN_Y, LINEAR_IN_Z, LITERAL_IN_Y_OR_LINEAR_IN_Z, LINEAR_IN_MAX_YZ. */
-    cardano_uplc_linear_cost_t linear;
-    /** \brief Active for QUADRATIC_IN_Z. */
-    cardano_uplc_quadratic_cost_t quadratic_in_z;
-    /** \brief Active for EXP_MOD. */
-    cardano_uplc_exp_mod_cost_t exp_mod;
-    /** \brief Active for LINEAR_IN_Y_AND_Z. */
-    cardano_uplc_two_var_linear_cost_t linear_in_y_and_z;
-  } params;
+    /** \brief Selects the active union member. */
+    cardano_uplc_three_arg_kind_t kind;
+
+    /** \brief The variant parameters. */
+    union
+    {
+        /** \brief Active for CONSTANT. */
+        int64_t constant;
+        /** \brief Active for ADDED_SIZES, LINEAR_IN_X, LINEAR_IN_Y, LINEAR_IN_Z, LITERAL_IN_Y_OR_LINEAR_IN_Z, LINEAR_IN_MAX_YZ. */
+        cardano_uplc_linear_cost_t linear;
+        /** \brief Active for QUADRATIC_IN_Z. */
+        cardano_uplc_quadratic_cost_t quadratic_in_z;
+        /** \brief Active for EXP_MOD. */
+        cardano_uplc_exp_mod_cost_t exp_mod;
+        /** \brief Active for LINEAR_IN_Y_AND_Z. */
+        cardano_uplc_two_var_linear_cost_t linear_in_y_and_z;
+    } params;
 } cardano_uplc_three_arg_cost_t;
 
 /**

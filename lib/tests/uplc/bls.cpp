@@ -21,9 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/builtins/bls.h"
@@ -39,26 +39,159 @@
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 /* The BLS12-381 G1 generator in compressed serialization (48 bytes). */
 constexpr std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> G1_GENERATOR_COMPRESSED = {
-  0x97, 0xf1, 0xd3, 0xa7, 0x31, 0x97, 0xd7, 0x94, 0x26, 0x95, 0x63, 0x8c,
-  0x4f, 0xa9, 0xac, 0x0f, 0xc3, 0x68, 0x8c, 0x4f, 0x97, 0x74, 0xb9, 0x05,
-  0xa1, 0x4e, 0x3a, 0x3f, 0x17, 0x1b, 0xac, 0x58, 0x6c, 0x55, 0xe8, 0x3f,
-  0xf9, 0x7a, 0x1a, 0xef, 0xfb, 0x3a, 0xf0, 0x0a, 0xdb, 0x22, 0xc6, 0xbb
+  0x97,
+  0xf1,
+  0xd3,
+  0xa7,
+  0x31,
+  0x97,
+  0xd7,
+  0x94,
+  0x26,
+  0x95,
+  0x63,
+  0x8c,
+  0x4f,
+  0xa9,
+  0xac,
+  0x0f,
+  0xc3,
+  0x68,
+  0x8c,
+  0x4f,
+  0x97,
+  0x74,
+  0xb9,
+  0x05,
+  0xa1,
+  0x4e,
+  0x3a,
+  0x3f,
+  0x17,
+  0x1b,
+  0xac,
+  0x58,
+  0x6c,
+  0x55,
+  0xe8,
+  0x3f,
+  0xf9,
+  0x7a,
+  0x1a,
+  0xef,
+  0xfb,
+  0x3a,
+  0xf0,
+  0x0a,
+  0xdb,
+  0x22,
+  0xc6,
+  0xbb
 };
 
 /* The BLS12-381 G2 generator in compressed serialization (96 bytes). */
 constexpr std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> G2_GENERATOR_COMPRESSED = {
-  0x93, 0xe0, 0x2b, 0x60, 0x52, 0x71, 0x9f, 0x60, 0x7d, 0xac, 0xd3, 0xa0,
-  0x88, 0x27, 0x4f, 0x65, 0x59, 0x6b, 0xd0, 0xd0, 0x99, 0x20, 0xb6, 0x1a,
-  0xb5, 0xda, 0x61, 0xbb, 0xdc, 0x7f, 0x50, 0x49, 0x33, 0x4c, 0xf1, 0x12,
-  0x13, 0x94, 0x5d, 0x57, 0xe5, 0xac, 0x7d, 0x05, 0x5d, 0x04, 0x2b, 0x7e,
-  0x02, 0x4a, 0xa2, 0xb2, 0xf0, 0x8f, 0x0a, 0x91, 0x26, 0x08, 0x05, 0x27,
-  0x2d, 0xc5, 0x10, 0x51, 0xc6, 0xe4, 0x7a, 0xd4, 0xfa, 0x40, 0x3b, 0x02,
-  0xb4, 0x51, 0x0b, 0x64, 0x7a, 0xe3, 0xd1, 0x77, 0x0b, 0xac, 0x03, 0x26,
-  0xa8, 0x05, 0xbb, 0xef, 0xd4, 0x80, 0x56, 0xc8, 0xc1, 0x21, 0xbd, 0xb8
+  0x93,
+  0xe0,
+  0x2b,
+  0x60,
+  0x52,
+  0x71,
+  0x9f,
+  0x60,
+  0x7d,
+  0xac,
+  0xd3,
+  0xa0,
+  0x88,
+  0x27,
+  0x4f,
+  0x65,
+  0x59,
+  0x6b,
+  0xd0,
+  0xd0,
+  0x99,
+  0x20,
+  0xb6,
+  0x1a,
+  0xb5,
+  0xda,
+  0x61,
+  0xbb,
+  0xdc,
+  0x7f,
+  0x50,
+  0x49,
+  0x33,
+  0x4c,
+  0xf1,
+  0x12,
+  0x13,
+  0x94,
+  0x5d,
+  0x57,
+  0xe5,
+  0xac,
+  0x7d,
+  0x05,
+  0x5d,
+  0x04,
+  0x2b,
+  0x7e,
+  0x02,
+  0x4a,
+  0xa2,
+  0xb2,
+  0xf0,
+  0x8f,
+  0x0a,
+  0x91,
+  0x26,
+  0x08,
+  0x05,
+  0x27,
+  0x2d,
+  0xc5,
+  0x10,
+  0x51,
+  0xc6,
+  0xe4,
+  0x7a,
+  0xd4,
+  0xfa,
+  0x40,
+  0x3b,
+  0x02,
+  0xb4,
+  0x51,
+  0x0b,
+  0x64,
+  0x7a,
+  0xe3,
+  0xd1,
+  0x77,
+  0x0b,
+  0xac,
+  0x03,
+  0x26,
+  0xa8,
+  0x05,
+  0xbb,
+  0xef,
+  0xd4,
+  0x80,
+  0x56,
+  0xc8,
+  0xc1,
+  0x21,
+  0xbd,
+  0xb8
 };
 
 cardano_uplc_arena_t*
@@ -263,7 +396,7 @@ TEST(cardano_uplc_int_bls_g1_from_compressed, rejectsBadEncoding)
   // Arrange: 48 bytes that are not a valid compressed point.
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> garbage{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> garbage {};
   garbage.fill(0xFFU);
 
   // Act / Assert
@@ -346,7 +479,7 @@ TEST(cardano_uplc_int_bls_g2_from_compressed, rejectsBadEncoding)
   // Arrange
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> garbage{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> garbage {};
   garbage.fill(0xFFU);
 
   // Act / Assert
@@ -385,7 +518,7 @@ TEST(cardano_uplc_int_bls_g1_compress, failsOnNullArgs)
   // Arrange
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g1_from_compressed(arena, G1_GENERATOR_COMPRESSED.data(), G1_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 
@@ -402,7 +535,7 @@ TEST(cardano_uplc_int_bls_g1_compress, rejectsAWrongKindConstant)
   // Arrange: a G2 constant passed to the G1 compressor.
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g2_from_compressed(arena, G2_GENERATOR_COMPRESSED.data(), G2_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 
@@ -418,7 +551,7 @@ TEST(cardano_uplc_int_bls_g1_compress, roundTripsTheGenerator)
   // Arrange
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g1_from_compressed(arena, G1_GENERATOR_COMPRESSED.data(), G1_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 
@@ -440,7 +573,7 @@ TEST(cardano_uplc_int_bls_g2_compress, failsOnNullArgs)
   // Arrange
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g2_from_compressed(arena, G2_GENERATOR_COMPRESSED.data(), G2_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 
@@ -457,7 +590,7 @@ TEST(cardano_uplc_int_bls_g2_compress, rejectsAWrongKindConstant)
   // Arrange: a G1 constant passed to the G2 compressor.
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g1_from_compressed(arena, G1_GENERATOR_COMPRESSED.data(), G1_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 
@@ -473,7 +606,7 @@ TEST(cardano_uplc_int_bls_g2_compress, roundTripsTheGenerator)
   // Arrange
   cardano_uplc_arena_t*                                    arena    = new_arena();
   cardano_uplc_constant_t*                                 constant = nullptr;
-  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out{};
+  std::array<uint8_t, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE> out {};
 
   ASSERT_EQ(cardano_uplc_int_bls_g2_from_compressed(arena, G2_GENERATOR_COMPRESSED.data(), G2_GENERATOR_COMPRESSED.size(), &constant), CARDANO_SUCCESS);
 

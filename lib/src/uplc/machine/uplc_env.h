@@ -26,9 +26,9 @@
 
 #include "uplc_value.h"
 
+#include "../arena/uplc_arena.h"
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -47,10 +47,10 @@ extern "C" {
  */
 struct cardano_uplc_env_t
 {
-  /** \brief The value bound at this de Bruijn level. */
-  const cardano_uplc_value_t* value;
-  /** \brief The enclosing environment, or NULL at the empty environment. */
-  const cardano_uplc_env_t* next;
+    /** \brief The value bound at this de Bruijn level. */
+    const cardano_uplc_value_t* value;
+    /** \brief The enclosing environment, or NULL at the empty environment. */
+    const cardano_uplc_env_t* next;
 };
 
 /**

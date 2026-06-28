@@ -39,12 +39,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_subtracted_sizes_cost_t
 {
-  /** \brief The constant term. */
-  int64_t intercept;
-  /** \brief The coefficient of the floored difference. */
-  int64_t slope;
-  /** \brief The lower bound applied to x - y before scaling. */
-  int64_t minimum;
+    /** \brief The constant term. */
+    int64_t intercept;
+    /** \brief The coefficient of the floored difference. */
+    int64_t slope;
+    /** \brief The lower bound applied to x - y before scaling. */
+    int64_t minimum;
 } cardano_uplc_subtracted_sizes_cost_t;
 
 #ifdef __cplusplus

@@ -35,17 +35,19 @@
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
-template <size_t N>
+template<size_t N>
 std::array<uint8_t, N>
 from_hex(const char* hex)
 {
-  std::array<uint8_t, N> out{};
+  std::array<uint8_t, N> out {};
 
   for (size_t i = 0U; i < N; ++i)
   {
-    auto nibble = [](char c) -> uint8_t {
+    auto nibble = [](char c) -> uint8_t
+    {
       if ((c >= '0') && (c <= '9'))
       {
         return static_cast<uint8_t>(c - '0');
@@ -101,11 +103,11 @@ constexpr const char* SCHNORR1_SIG_HEX =
 TEST(vendor_secp256k1, ecdsa_verify_accepts_valid_signature)
 {
   // Arrange
-  secp256k1_context* ctx     = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-  auto               pub_in  = from_hex<33>(ECDSA_PUBKEY_HEX);
-  auto               msg     = from_hex<32>(ECDSA_MSG_HEX);
-  auto               sig_in  = from_hex<64>(ECDSA_SIG_HEX);
-  secp256k1_pubkey   pubkey;
+  secp256k1_context*        ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+  auto                      pub_in = from_hex<33>(ECDSA_PUBKEY_HEX);
+  auto                      msg    = from_hex<32>(ECDSA_MSG_HEX);
+  auto                      sig_in = from_hex<64>(ECDSA_SIG_HEX);
+  secp256k1_pubkey          pubkey;
   secp256k1_ecdsa_signature sig;
 
   ASSERT_NE(ctx, nullptr);
@@ -124,11 +126,11 @@ TEST(vendor_secp256k1, ecdsa_verify_accepts_valid_signature)
 TEST(vendor_secp256k1, ecdsa_verify_rejects_tampered_signature)
 {
   // Arrange
-  secp256k1_context* ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-  auto               pub_in = from_hex<33>(ECDSA_PUBKEY_HEX);
-  auto               msg    = from_hex<32>(ECDSA_MSG_HEX);
-  auto               sig_in = from_hex<64>(ECDSA_SIG_HEX);
-  secp256k1_pubkey   pubkey;
+  secp256k1_context*        ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+  auto                      pub_in = from_hex<33>(ECDSA_PUBKEY_HEX);
+  auto                      msg    = from_hex<32>(ECDSA_MSG_HEX);
+  auto                      sig_in = from_hex<64>(ECDSA_SIG_HEX);
+  secp256k1_pubkey          pubkey;
   secp256k1_ecdsa_signature sig;
 
   ASSERT_NE(ctx, nullptr);
@@ -149,10 +151,10 @@ TEST(vendor_secp256k1, ecdsa_verify_rejects_tampered_signature)
 TEST(vendor_secp256k1, schnorr_verify_accepts_bip340_vector_0)
 {
   // Arrange
-  secp256k1_context*    ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-  auto                  pub_in = from_hex<32>(SCHNORR0_PUBKEY_HEX);
-  auto                  msg    = from_hex<32>(SCHNORR0_MSG_HEX);
-  auto                  sig    = from_hex<64>(SCHNORR0_SIG_HEX);
+  secp256k1_context*     ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+  auto                   pub_in = from_hex<32>(SCHNORR0_PUBKEY_HEX);
+  auto                   msg    = from_hex<32>(SCHNORR0_MSG_HEX);
+  auto                   sig    = from_hex<64>(SCHNORR0_SIG_HEX);
   secp256k1_xonly_pubkey pubkey;
 
   ASSERT_NE(ctx, nullptr);
@@ -170,10 +172,10 @@ TEST(vendor_secp256k1, schnorr_verify_accepts_bip340_vector_0)
 TEST(vendor_secp256k1, schnorr_verify_accepts_bip340_vector_1)
 {
   // Arrange
-  secp256k1_context*    ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-  auto                  pub_in = from_hex<32>(SCHNORR1_PUBKEY_HEX);
-  auto                  msg    = from_hex<32>(SCHNORR1_MSG_HEX);
-  auto                  sig    = from_hex<64>(SCHNORR1_SIG_HEX);
+  secp256k1_context*     ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+  auto                   pub_in = from_hex<32>(SCHNORR1_PUBKEY_HEX);
+  auto                   msg    = from_hex<32>(SCHNORR1_MSG_HEX);
+  auto                   sig    = from_hex<64>(SCHNORR1_SIG_HEX);
   secp256k1_xonly_pubkey pubkey;
 
   ASSERT_NE(ctx, nullptr);
@@ -191,10 +193,10 @@ TEST(vendor_secp256k1, schnorr_verify_accepts_bip340_vector_1)
 TEST(vendor_secp256k1, schnorr_verify_rejects_tampered_signature)
 {
   // Arrange
-  secp256k1_context*    ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-  auto                  pub_in = from_hex<32>(SCHNORR0_PUBKEY_HEX);
-  auto                  msg    = from_hex<32>(SCHNORR0_MSG_HEX);
-  auto                  sig    = from_hex<64>(SCHNORR0_SIG_HEX);
+  secp256k1_context*     ctx    = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+  auto                   pub_in = from_hex<32>(SCHNORR0_PUBKEY_HEX);
+  auto                   msg    = from_hex<32>(SCHNORR0_MSG_HEX);
+  auto                   sig    = from_hex<64>(SCHNORR0_SIG_HEX);
   secp256k1_xonly_pubkey pubkey;
 
   ASSERT_NE(ctx, nullptr);

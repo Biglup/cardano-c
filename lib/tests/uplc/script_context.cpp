@@ -95,7 +95,7 @@ static const char* kUtxoCbor =
 static cardano_transaction_t*
 decode_tx(const char* hex)
 {
-  std::string            clean;
+  std::string clean;
   for (const char* p = hex; *p != '\0'; ++p)
   {
     if ((*p != ' '))
@@ -565,7 +565,7 @@ TEST(uplc_script_context, v3_tx_info_field_shapes)
   ASSERT_EQ(cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
 
   // The fee (field 3) is a bare integer in V3, not a value map.
-  cardano_plutus_data_t* fee = constr_field(tx_info, 3);
+  cardano_plutus_data_t*     fee  = constr_field(tx_info, 3);
   cardano_plutus_data_kind_t kind = CARDANO_PLUTUS_DATA_KIND_CONSTR;
   EXPECT_EQ(cardano_plutus_data_get_kind(fee, &kind), CARDANO_SUCCESS);
   EXPECT_EQ(kind, CARDANO_PLUTUS_DATA_KIND_INTEGER);
@@ -693,7 +693,7 @@ TEST(uplc_script_context, v3_mint_script_info)
   // single minting policy, a 28-byte bytestring (not the empty ada policy).
   cardano_plutus_data_t* tx_info = NULL;
   ASSERT_EQ(cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
-  cardano_plutus_data_t* mint = constr_field(tx_info, 4);
+  cardano_plutus_data_t* mint     = constr_field(tx_info, 4);
   cardano_plutus_map_t*  mint_map = NULL;
   ASSERT_EQ(cardano_plutus_data_to_map(mint, &mint_map), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_plutus_map_get_length(mint_map), 1U);
@@ -917,7 +917,7 @@ TEST(uplc_script_context, v1_pool_registration_dcert_is_constr_3)
   EXPECT_EQ(constr_alt(cert), 3U);
   ASSERT_EQ(constr_len(cert), 2U);
 
-  cardano_plutus_data_t* pool_id = constr_field(cert, 0);
+  cardano_plutus_data_t* pool_id  = constr_field(cert, 0);
   cardano_plutus_data_t* pool_vrf = constr_field(cert, 1);
   EXPECT_EQ(data_kind(pool_id), CARDANO_PLUTUS_DATA_KIND_BYTES);
   EXPECT_EQ(data_kind(pool_vrf), CARDANO_PLUTUS_DATA_KIND_BYTES);
