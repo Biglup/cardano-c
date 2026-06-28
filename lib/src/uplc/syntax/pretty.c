@@ -34,6 +34,8 @@
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
 
+#include <src/string_safe.h>
+
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -229,7 +231,7 @@ write_text(writer_t* writer, const char* text, const size_t length)
 static void
 write_str(writer_t* writer, const char* text)
 {
-  write_text(writer, text, strlen(text));
+  write_text(writer, text, cardano_safe_strlen(text, 256U));
 }
 
 /**

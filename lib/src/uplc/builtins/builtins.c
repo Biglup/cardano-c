@@ -54,6 +54,8 @@
 #include <secp256k1_extrakeys.h>
 #include <secp256k1_schnorrsig.h>
 
+#include <src/string_safe.h>
+
 #include <stddef.h>
 #include <string.h>
 
@@ -1656,13 +1658,13 @@ body_append_byte_string(
 
   if (lhs.size > 0U)
   {
-    (void)memcpy(scratch, lhs.data, lhs.size);
+    cardano_safe_memcpy(scratch, total, lhs.data, lhs.size);
   }
 
   if (rhs.size > 0U)
   {
     // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
-    (void)memcpy(scratch + lhs.size, rhs.data, rhs.size);
+    cardano_safe_memcpy(scratch + lhs.size, rhs.size, rhs.data, rhs.size);
   }
 
   *host_error = result_bytes_take(arena, scratch, total, out_result);
@@ -1780,7 +1782,7 @@ body_cons_byte_string(
   if (tail.size > 0U)
   {
     // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
-    (void)memcpy(scratch + 1U, tail.data, tail.size);
+    cardano_safe_memcpy(scratch + 1U, tail.size, tail.data, tail.size);
   }
 
   *host_error = result_bytes_take(arena, scratch, tail.size + 1U, out_result);
@@ -2269,7 +2271,7 @@ body_write_bits(
       return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
     }
 
-    (void)memcpy(scratch, bytes.data, bytes.size);
+    cardano_safe_memcpy(scratch, bytes.size, bytes.data, bytes.size);
   }
 
   for (i = 0U; i < count; ++i)
@@ -2909,7 +2911,7 @@ body_integer_to_byte_string(
       if (big_endian)
       {
         // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
-        (void)memcpy(scratch + (out_len - significant), msb, significant);
+        cardano_safe_memcpy(scratch + (out_len - significant), significant, msb, significant);
       }
       else
       {
@@ -3165,13 +3167,13 @@ body_append_string(
 
   if (lhs.size > 0U)
   {
-    (void)memcpy(scratch, lhs.data, lhs.size);
+    cardano_safe_memcpy(scratch, total, lhs.data, lhs.size);
   }
 
   if (rhs.size > 0U)
   {
     // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
-    (void)memcpy(scratch + lhs.size, rhs.data, rhs.size);
+    cardano_safe_memcpy(scratch + lhs.size, rhs.size, rhs.data, rhs.size);
   }
 
   *host_error = result_string_from(arena, scratch, total, out_result);

@@ -617,7 +617,6 @@ apply_evaluate(
       const cardano_uplc_value_t*        value       = NULL;
       size_t                             arity       = (size_t)0;
       size_t                             force_count = (size_t)0;
-      step_outcome_t                     outcome;
 
       if ((cardano_uplc_builtin_arity(function->as.builtin.func, &arity) != CARDANO_SUCCESS) || (cardano_uplc_builtin_force_count(function->as.builtin.func, &force_count) != CARDANO_SUCCESS))
       {
@@ -633,7 +632,7 @@ apply_evaluate(
           return PRV_STEP_SCRIPT_ERROR;
         }
 
-        outcome = try_call_builtin(
+        step_outcome_t outcome = try_call_builtin(
           machine,
           function->as.builtin.func,
           function->as.builtin.forces,
