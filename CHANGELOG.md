@@ -1,5 +1,12 @@
-Next (V1.2.1)
+Next (V1.2.3)
 ---------------------
+
+NV1.2.2
+---------------------
+
+- Added a native, in-process Untyped Plutus Core (UPLC) virtual machine: flat decoding and encoding, the CEK evaluation machine, the full V1 through V4 builtin set, ledger cost-model and execution-budget accounting, and phase-2 script-context construction.
+- Added `cardano_tx_evaluator_new_native`, a transaction evaluator backed by the in-process VM. The transaction builder now defaults to it, so transactions that interact with Plutus scripts are evaluated locally without a provider round-trip; an evaluator set with `cardano_tx_builder_set_tx_evaluator` still takes precedence.
+- Added `cardano_uplc_apply_params_to_script` to apply parameters to a parameterized Plutus script.
 
 V1.2.0
 ---------------------

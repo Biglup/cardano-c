@@ -90,6 +90,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     api/transaction/index
     api/transaction_body/index
     api/transaction_builder/index
+    api/uplc/index
     api/voting_procedures/index
     api/witness_set/index
     api/message_signing/index

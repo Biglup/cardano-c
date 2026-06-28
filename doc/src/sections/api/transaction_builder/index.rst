@@ -16,5 +16,6 @@ The Transaction Builder is a utility designed to simplify the process of creatin
     ./tx_evaluator
     ./tx_evaluator_impl
     ./provider_tx_evaluator
+    ./native_tx_evaluator
     ./script_data_hash
     ./input_to_redeemer_map
