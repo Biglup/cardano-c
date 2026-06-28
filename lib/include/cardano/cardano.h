@@ -203,6 +203,7 @@
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector_impl.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
+#include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator_impl.h>
@@ -210,6 +211,7 @@
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 #include <cardano/typedefs.h>
+#include <cardano/uplc/uplc_apply_params.h>
 #include <cardano/voting_procedures/governance_action_id_list.h>
 #include <cardano/voting_procedures/vote.h>
 #include <cardano/voting_procedures/voter.h>
