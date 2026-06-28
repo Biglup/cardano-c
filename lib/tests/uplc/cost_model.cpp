@@ -36,8 +36,8 @@
 #include "../../src/uplc/cost/uplc_step_accumulator.h"
 #include "../../src/uplc/cost/uplc_three_arg_cost.h"
 #include "../../src/uplc/cost/uplc_two_arg_cost.h"
-#include "../../src/uplc/machine/uplc_value.h"
 #include "../../src/uplc/data/uplc_data.h"
+#include "../../src/uplc/machine/uplc_value.h"
 
 #include <cardano/common/bigint.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
@@ -70,8 +70,8 @@ static const cardano_uplc_step_kind_t ALL_KINDS[CARDANO_UPLC_STEP_KIND_COUNT] = 
 // the reference batched total sum(count_k * cost_k) for cpu and mem.
 static void
 check_sequence_matches_reference(
-  cardano_uplc_cost_model_version_t              version,
-  const std::vector<cardano_uplc_step_kind_t>&   sequence)
+  cardano_uplc_cost_model_version_t            version,
+  const std::vector<cardano_uplc_step_kind_t>& sequence)
 {
   cardano_uplc_machine_costs_t    costs = cardano_uplc_machine_costs_default(version);
   cardano_uplc_step_accumulator_t acc;
@@ -94,8 +94,8 @@ check_sequence_matches_reference(
   for (size_t i = 0U; i < CARDANO_UPLC_STEP_KIND_COUNT; ++i)
   {
     cardano_uplc_budget_t cost = cardano_uplc_machine_costs_get(&costs, ALL_KINDS[i]);
-    expected_cpu += cost.cpu * static_cast<int64_t>(counts[i]);
-    expected_mem += cost.mem * static_cast<int64_t>(counts[i]);
+    expected_cpu               += cost.cpu * static_cast<int64_t>(counts[i]);
+    expected_mem               += cost.mem * static_cast<int64_t>(counts[i]);
   }
 
   cardano_uplc_budget_t spent = cardano_uplc_step_accumulator_spent(&acc);
@@ -381,8 +381,8 @@ TEST(cardano_uplc_cost_model, exhaustion_remaining_and_predicate)
   cardano_uplc_budget_t spend = { 1000, 50 };
   ASSERT_EQ(cardano_uplc_step_accumulator_charge(&acc, spend), CARDANO_SUCCESS);
 
-  cardano_uplc_budget_t initial_ok    = { 1000, 50 };
-  cardano_uplc_budget_t initial_over  = { 2000, 100 };
+  cardano_uplc_budget_t initial_ok      = { 1000, 50 };
+  cardano_uplc_budget_t initial_over    = { 2000, 100 };
   cardano_uplc_budget_t initial_low_cpu = { 999, 50 };
   cardano_uplc_budget_t initial_low_mem = { 1000, 49 };
 
@@ -450,7 +450,7 @@ TEST(cardano_uplc_cost_model, null_pointer_paths)
   cardano_uplc_step_accumulator_t acc;
   ASSERT_EQ(cardano_uplc_step_accumulator_init(&acc, &costs), CARDANO_SUCCESS);
 
-  cardano_uplc_budget_t delta = { 1, 1 };
+  cardano_uplc_budget_t delta   = { 1, 1 };
   cardano_uplc_budget_t initial = { 10, 10 };
 
   EXPECT_EQ(cardano_uplc_step_accumulator_init(nullptr, &costs), CARDANO_ERROR_POINTER_IS_NULL);
@@ -537,7 +537,7 @@ TEST(cardano_uplc_one_arg_cost, constant)
 TEST(cardano_uplc_one_arg_cost, linear)
 {
   cardano_uplc_one_arg_cost_t fn;
-  fn.kind                   = CARDANO_UPLC_ONE_ARG_LINEAR;
+  fn.kind                    = CARDANO_UPLC_ONE_ARG_LINEAR;
   fn.params.linear.intercept = 10;
   fn.params.linear.slope     = 3;
 
@@ -611,7 +611,7 @@ TEST(cardano_uplc_two_arg_cost, linear_in_y)
 
 TEST(cardano_uplc_two_arg_cost, linear_in_x_and_y)
 {
-  cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_IN_X_AND_Y);
+  cardano_uplc_two_arg_cost_t fn        = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_IN_X_AND_Y);
   fn.params.linear_in_x_and_y.intercept = 618401;
   fn.params.linear_in_x_and_y.slope1    = 1998;
   fn.params.linear_in_x_and_y.slope2    = 28258;
@@ -622,11 +622,11 @@ TEST(cardano_uplc_two_arg_cost, linear_in_x_and_y)
 
 TEST(cardano_uplc_two_arg_cost, with_interaction)
 {
-  cardano_uplc_two_arg_cost_t fn   = make_two(CARDANO_UPLC_TWO_ARG_WITH_INTERACTION);
-  fn.params.with_interaction.c00   = 1000;
-  fn.params.with_interaction.c10   = 172116;
-  fn.params.with_interaction.c01   = 183150;
-  fn.params.with_interaction.c11   = 6;
+  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_WITH_INTERACTION);
+  fn.params.with_interaction.c00 = 1000;
+  fn.params.with_interaction.c10 = 172116;
+  fn.params.with_interaction.c01 = 183150;
+  fn.params.with_interaction.c11 = 6;
 
   // 1000 + 172116*2 + 183150*3 + 6*2*3 = 1000 + 344232 + 549450 + 36 = 894718
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 2, 3), 894718);
@@ -644,10 +644,10 @@ TEST(cardano_uplc_two_arg_cost, added_sizes)
 
 TEST(cardano_uplc_two_arg_cost, subtracted_sizes_above_minimum)
 {
-  cardano_uplc_two_arg_cost_t fn          = make_two(CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES);
-  fn.params.subtracted_sizes.intercept    = 0;
-  fn.params.subtracted_sizes.slope        = 1;
-  fn.params.subtracted_sizes.minimum      = 0;
+  cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES);
+  fn.params.subtracted_sizes.intercept = 0;
+  fn.params.subtracted_sizes.slope     = 1;
+  fn.params.subtracted_sizes.minimum   = 0;
 
   // max(0, 10-5)=5, 0 + 1*5 = 5
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 10, 5), 5);
@@ -655,10 +655,10 @@ TEST(cardano_uplc_two_arg_cost, subtracted_sizes_above_minimum)
 
 TEST(cardano_uplc_two_arg_cost, subtracted_sizes_floored_by_minimum)
 {
-  cardano_uplc_two_arg_cost_t fn          = make_two(CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES);
-  fn.params.subtracted_sizes.intercept    = 0;
-  fn.params.subtracted_sizes.slope        = 1;
-  fn.params.subtracted_sizes.minimum      = 1;
+  cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES);
+  fn.params.subtracted_sizes.intercept = 0;
+  fn.params.subtracted_sizes.slope     = 1;
+  fn.params.subtracted_sizes.minimum   = 1;
 
   // max(1, 5-10)=1, 0 + 1*1 = 1
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 5, 10), 1);
@@ -698,10 +698,10 @@ TEST(cardano_uplc_two_arg_cost, max_size)
 
 TEST(cardano_uplc_two_arg_cost, linear_on_diagonal)
 {
-  cardano_uplc_two_arg_cost_t fn             = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_ON_DIAGONAL);
-  fn.params.linear_on_diagonal.constant      = 24548;
-  fn.params.linear_on_diagonal.intercept     = 29498;
-  fn.params.linear_on_diagonal.slope         = 38;
+  cardano_uplc_two_arg_cost_t fn         = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_ON_DIAGONAL);
+  fn.params.linear_on_diagonal.constant  = 24548;
+  fn.params.linear_on_diagonal.intercept = 29498;
+  fn.params.linear_on_diagonal.slope     = 38;
 
   // x==y: 29498 + 38*5 = 29688
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 5, 5), 29688);
@@ -711,9 +711,9 @@ TEST(cardano_uplc_two_arg_cost, linear_on_diagonal)
 
 TEST(cardano_uplc_two_arg_cost, const_above_diagonal_linear_model)
 {
-  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL);
-  fn.params.const_diagonal.constant                  = 213283;
-  fn.params.const_diagonal.kind                      = CARDANO_UPLC_DIAG_MODEL_LINEAR_IN_X_AND_Y;
+  cardano_uplc_two_arg_cost_t fn                             = make_two(CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL);
+  fn.params.const_diagonal.constant                          = 213283;
+  fn.params.const_diagonal.kind                              = CARDANO_UPLC_DIAG_MODEL_LINEAR_IN_X_AND_Y;
   fn.params.const_diagonal.model.linear_in_x_and_y.intercept = 618401;
   fn.params.const_diagonal.model.linear_in_x_and_y.slope1    = 1998;
   fn.params.const_diagonal.model.linear_in_x_and_y.slope2    = 28258;
@@ -726,9 +726,9 @@ TEST(cardano_uplc_two_arg_cost, const_above_diagonal_linear_model)
 
 TEST(cardano_uplc_two_arg_cost, const_below_diagonal_multiplied_model)
 {
-  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_CONST_BELOW_DIAGONAL);
-  fn.params.const_diagonal.constant                = 196500;
-  fn.params.const_diagonal.kind                    = CARDANO_UPLC_DIAG_MODEL_MULTIPLIED_SIZES;
+  cardano_uplc_two_arg_cost_t fn                            = make_two(CARDANO_UPLC_TWO_ARG_CONST_BELOW_DIAGONAL);
+  fn.params.const_diagonal.constant                         = 196500;
+  fn.params.const_diagonal.kind                             = CARDANO_UPLC_DIAG_MODEL_MULTIPLIED_SIZES;
   fn.params.const_diagonal.model.multiplied_sizes.intercept = 453240;
   fn.params.const_diagonal.model.multiplied_sizes.slope     = 220;
 
@@ -740,10 +740,10 @@ TEST(cardano_uplc_two_arg_cost, const_below_diagonal_multiplied_model)
 
 TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_quadratic_model)
 {
-  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
-  fn.params.const_diagonal.constant            = 0;
-  fn.params.const_diagonal.kind                = CARDANO_UPLC_DIAG_MODEL_QUADRATIC;
-  fn.params.const_diagonal.model.quadratic.minimum = 0;
+  cardano_uplc_two_arg_cost_t fn                    = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+  fn.params.const_diagonal.constant                 = 0;
+  fn.params.const_diagonal.kind                     = CARDANO_UPLC_DIAG_MODEL_QUADRATIC;
+  fn.params.const_diagonal.model.quadratic.minimum  = 0;
   fn.params.const_diagonal.model.quadratic.coeff_00 = 1;
   fn.params.const_diagonal.model.quadratic.coeff_10 = 2;
   fn.params.const_diagonal.model.quadratic.coeff_01 = 3;
@@ -770,7 +770,7 @@ TEST(cardano_uplc_two_arg_cost, quadratic_in_y)
 
 TEST(cardano_uplc_two_arg_cost, quadratic_in_x_and_y_floored)
 {
-  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_QUADRATIC_IN_X_AND_Y);
+  cardano_uplc_two_arg_cost_t fn          = make_two(CARDANO_UPLC_TWO_ARG_QUADRATIC_IN_X_AND_Y);
   fn.params.quadratic_in_x_and_y.minimum  = 1000000;
   fn.params.quadratic_in_x_and_y.coeff_00 = 1;
   fn.params.quadratic_in_x_and_y.coeff_10 = 2;
@@ -785,15 +785,15 @@ TEST(cardano_uplc_two_arg_cost, quadratic_in_x_and_y_floored)
 
 TEST(cardano_uplc_two_arg_cost, const_above_diagonal_into_quadratic)
 {
-  cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC);
-  fn.params.const_above_into_quadratic.constant            = 85848;
-  fn.params.const_above_into_quadratic.quadratic.minimum   = 85848;
-  fn.params.const_above_into_quadratic.quadratic.coeff_00  = 123203;
-  fn.params.const_above_into_quadratic.quadratic.coeff_10  = 1716;
-  fn.params.const_above_into_quadratic.quadratic.coeff_01  = 7305;
-  fn.params.const_above_into_quadratic.quadratic.coeff_20  = 57;
-  fn.params.const_above_into_quadratic.quadratic.coeff_11  = 549;
-  fn.params.const_above_into_quadratic.quadratic.coeff_02  = -900;
+  cardano_uplc_two_arg_cost_t fn                          = make_two(CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC);
+  fn.params.const_above_into_quadratic.constant           = 85848;
+  fn.params.const_above_into_quadratic.quadratic.minimum  = 85848;
+  fn.params.const_above_into_quadratic.quadratic.coeff_00 = 123203;
+  fn.params.const_above_into_quadratic.quadratic.coeff_10 = 1716;
+  fn.params.const_above_into_quadratic.quadratic.coeff_01 = 7305;
+  fn.params.const_above_into_quadratic.quadratic.coeff_20 = 57;
+  fn.params.const_above_into_quadratic.quadratic.coeff_11 = 549;
+  fn.params.const_above_into_quadratic.quadratic.coeff_02 = -900;
 
   // x<y: constant
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 3, 5), 85848);
@@ -886,10 +886,10 @@ TEST(cardano_uplc_three_arg_cost, linear_in_z)
 
 TEST(cardano_uplc_three_arg_cost, quadratic_in_z)
 {
-  cardano_uplc_three_arg_cost_t fn   = make_three(CARDANO_UPLC_THREE_ARG_QUADRATIC_IN_Z);
-  fn.params.quadratic_in_z.coeff_0   = 1293828;
-  fn.params.quadratic_in_z.coeff_1   = 28716;
-  fn.params.quadratic_in_z.coeff_2   = 63;
+  cardano_uplc_three_arg_cost_t fn = make_three(CARDANO_UPLC_THREE_ARG_QUADRATIC_IN_Z);
+  fn.params.quadratic_in_z.coeff_0 = 1293828;
+  fn.params.quadratic_in_z.coeff_1 = 28716;
+  fn.params.quadratic_in_z.coeff_2 = 63;
 
   // z=3: 1293828 + 28716*3 + 63*9 = 1293828 + 86148 + 567 = 1380543
   EXPECT_EQ(cardano_uplc_three_arg_cost_eval(&fn, 99, 99, 3), 1380543);
@@ -944,10 +944,10 @@ TEST(cardano_uplc_three_arg_cost, linear_in_max_yz)
 
 TEST(cardano_uplc_three_arg_cost, linear_in_y_and_z)
 {
-  cardano_uplc_three_arg_cost_t fn        = make_three(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Y_AND_Z);
-  fn.params.linear_in_y_and_z.intercept   = 100181;
-  fn.params.linear_in_y_and_z.slope1      = 726;
-  fn.params.linear_in_y_and_z.slope2      = 719;
+  cardano_uplc_three_arg_cost_t fn      = make_three(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Y_AND_Z);
+  fn.params.linear_in_y_and_z.intercept = 100181;
+  fn.params.linear_in_y_and_z.slope1    = 726;
+  fn.params.linear_in_y_and_z.slope2    = 719;
 
   // 100181 + 726*2 + 719*3 = 100181 + 1452 + 2157 = 103790
   EXPECT_EQ(cardano_uplc_three_arg_cost_eval(&fn, 99, 2, 3), 103790);
@@ -983,7 +983,7 @@ TEST(cardano_uplc_four_arg_cost, linear_in_u)
 {
   cardano_uplc_four_arg_cost_t fn;
   memset(&fn, 0, sizeof(fn));
-  fn.kind                        = CARDANO_UPLC_FOUR_ARG_LINEAR_IN_U;
+  fn.kind                         = CARDANO_UPLC_FOUR_ARG_LINEAR_IN_U;
   fn.params.linear_in_u.intercept = 356924;
   fn.params.linear_in_u.slope     = 18413;
 
@@ -1034,8 +1034,8 @@ new_int_const(cardano_uplc_arena_t* arena, const char* decimal)
 static const cardano_uplc_constant_t*
 new_bytes_const(cardano_uplc_arena_t* arena, size_t len)
 {
-  std::vector<uint8_t> bytes(len, 0xABU);
-  cardano_buffer_t*    buffer   = cardano_buffer_new_from(bytes.data(), len);
+  std::vector<uint8_t>     bytes(len, 0xABU);
+  cardano_buffer_t*        buffer   = cardano_buffer_new_from(bytes.data(), len);
   cardano_uplc_constant_t* constant = nullptr;
   EXPECT_EQ(cardano_uplc_constant_new_byte_string(arena, buffer, &constant), CARDANO_SUCCESS);
   cardano_buffer_unref(&buffer);
@@ -1413,58 +1413,654 @@ TEST(cardano_uplc_value_ex_mem, null_is_zero)
 // The mainnet 2024-09-29 V1 flat parameter vector that must reproduce
 // cardano_uplc_builtin_costs_v1, transcribed from aiken cost_model.rs.
 static const int64_t V1_DEFAULT_PARAMS[] = {
-  100788, 420, 1, 1, 1000, 173, 0, 1, 1000, 59957, 4, 1, 11183, 32, 201305, 8356, 4,
-  16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 100, 100,
-  16000, 100, 94375, 32, 132994, 32, 61462, 4, 72010, 178, 0, 1, 22151, 32, 91189, 769,
-  4, 2, 85848, 228465, 122, 0, 1, 1, 1000, 42921, 4, 2, 24548, 29498, 38, 1, 898148,
-  27279, 1, 51775, 558, 1, 39184, 1000, 60594, 1, 141895, 32, 83150, 32, 15299, 32,
-  76049, 1, 13169, 4, 22100, 10, 28999, 74, 1, 28999, 74, 1, 43285, 552, 1, 44749, 541,
-  1, 33852, 32, 68246, 32, 72362, 32, 7243, 32, 7391, 32, 11546, 32, 85848, 228465, 122,
-  0, 1, 1, 90434, 519, 0, 1, 74433, 32, 85848, 228465, 122, 0, 1, 1, 85848, 228465, 122,
-  0, 1, 1, 270652, 22588, 4, 1457325, 64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420,
-  1, 1, 81663, 32, 59498, 32, 20142, 32, 24588, 32, 20744, 32, 25933, 32, 24623, 32,
-  53384111, 14333, 10
+  100788,
+  420,
+  1,
+  1,
+  1000,
+  173,
+  0,
+  1,
+  1000,
+  59957,
+  4,
+  1,
+  11183,
+  32,
+  201305,
+  8356,
+  4,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  100,
+  100,
+  16000,
+  100,
+  94375,
+  32,
+  132994,
+  32,
+  61462,
+  4,
+  72010,
+  178,
+  0,
+  1,
+  22151,
+  32,
+  91189,
+  769,
+  4,
+  2,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  1000,
+  42921,
+  4,
+  2,
+  24548,
+  29498,
+  38,
+  1,
+  898148,
+  27279,
+  1,
+  51775,
+  558,
+  1,
+  39184,
+  1000,
+  60594,
+  1,
+  141895,
+  32,
+  83150,
+  32,
+  15299,
+  32,
+  76049,
+  1,
+  13169,
+  4,
+  22100,
+  10,
+  28999,
+  74,
+  1,
+  28999,
+  74,
+  1,
+  43285,
+  552,
+  1,
+  44749,
+  541,
+  1,
+  33852,
+  32,
+  68246,
+  32,
+  72362,
+  32,
+  7243,
+  32,
+  7391,
+  32,
+  11546,
+  32,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  90434,
+  519,
+  0,
+  1,
+  74433,
+  32,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  270652,
+  22588,
+  4,
+  1457325,
+  64566,
+  4,
+  20467,
+  1,
+  4,
+  0,
+  141992,
+  32,
+  100788,
+  420,
+  1,
+  1,
+  81663,
+  32,
+  59498,
+  32,
+  20142,
+  32,
+  24588,
+  32,
+  20744,
+  32,
+  25933,
+  32,
+  24623,
+  32,
+  53384111,
+  14333,
+  10
 };
 
 // The mainnet 2024-09-29 V2 flat parameter vector that must reproduce
 // cardano_uplc_builtin_costs_v2.
 static const int64_t V2_DEFAULT_PARAMS[] = {
-  100788, 420, 1, 1, 1000, 173, 0, 1, 1000, 59957, 4, 1, 11183, 32, 201305, 8356, 4,
-  16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 100, 100,
-  16000, 100, 94375, 32, 132994, 32, 61462, 4, 72010, 178, 0, 1, 22151, 32, 91189, 769,
-  4, 2, 85848, 228465, 122, 0, 1, 1, 1000, 42921, 4, 2, 24548, 29498, 38, 1, 898148,
-  27279, 1, 51775, 558, 1, 39184, 1000, 60594, 1, 141895, 32, 83150, 32, 15299, 32,
-  76049, 1, 13169, 4, 22100, 10, 28999, 74, 1, 28999, 74, 1, 43285, 552, 1, 44749, 541,
-  1, 33852, 32, 68246, 32, 72362, 32, 7243, 32, 7391, 32, 11546, 32, 85848, 228465, 122,
-  0, 1, 1, 90434, 519, 0, 1, 74433, 32, 85848, 228465, 122, 0, 1, 1, 85848, 228465, 122,
-  0, 1, 1, 955506, 213312, 0, 2, 270652, 22588, 4, 1457325, 64566, 4, 20467, 1, 4, 0,
-  141992, 32, 100788, 420, 1, 1, 81663, 32, 59498, 32, 20142, 32, 24588, 32, 20744, 32,
-  25933, 32, 24623, 32, 43053543, 10, 53384111, 14333, 10, 43574283, 26308, 10
+  100788,
+  420,
+  1,
+  1,
+  1000,
+  173,
+  0,
+  1,
+  1000,
+  59957,
+  4,
+  1,
+  11183,
+  32,
+  201305,
+  8356,
+  4,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  100,
+  100,
+  16000,
+  100,
+  94375,
+  32,
+  132994,
+  32,
+  61462,
+  4,
+  72010,
+  178,
+  0,
+  1,
+  22151,
+  32,
+  91189,
+  769,
+  4,
+  2,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  1000,
+  42921,
+  4,
+  2,
+  24548,
+  29498,
+  38,
+  1,
+  898148,
+  27279,
+  1,
+  51775,
+  558,
+  1,
+  39184,
+  1000,
+  60594,
+  1,
+  141895,
+  32,
+  83150,
+  32,
+  15299,
+  32,
+  76049,
+  1,
+  13169,
+  4,
+  22100,
+  10,
+  28999,
+  74,
+  1,
+  28999,
+  74,
+  1,
+  43285,
+  552,
+  1,
+  44749,
+  541,
+  1,
+  33852,
+  32,
+  68246,
+  32,
+  72362,
+  32,
+  7243,
+  32,
+  7391,
+  32,
+  11546,
+  32,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  90434,
+  519,
+  0,
+  1,
+  74433,
+  32,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  85848,
+  228465,
+  122,
+  0,
+  1,
+  1,
+  955506,
+  213312,
+  0,
+  2,
+  270652,
+  22588,
+  4,
+  1457325,
+  64566,
+  4,
+  20467,
+  1,
+  4,
+  0,
+  141992,
+  32,
+  100788,
+  420,
+  1,
+  1,
+  81663,
+  32,
+  59498,
+  32,
+  20142,
+  32,
+  24588,
+  32,
+  20744,
+  32,
+  25933,
+  32,
+  24623,
+  32,
+  43053543,
+  10,
+  53384111,
+  14333,
+  10,
+  43574283,
+  26308,
+  10
 };
 
 // The preprod 2024-11-22 V3 flat parameter vector that must reproduce
 // cardano_uplc_builtin_costs_v3.
 static const int64_t V3_DEFAULT_PARAMS[] = {
-  100788, 420, 1, 1, 1000, 173, 0, 1, 1000, 59957, 4, 1, 11183, 32, 201305, 8356, 4,
-  16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 16000, 100, 100, 100,
-  16000, 100, 94375, 32, 132994, 32, 61462, 4, 72010, 178, 0, 1, 22151, 32, 91189, 769,
-  4, 2, 85848, 123203, 7305, -900, 1716, 549, 57, 85848, 0, 1, 1, 1000, 42921, 4, 2,
-  24548, 29498, 38, 1, 898148, 27279, 1, 51775, 558, 1, 39184, 1000, 60594, 1, 141895,
-  32, 83150, 32, 15299, 32, 76049, 1, 13169, 4, 22100, 10, 28999, 74, 1, 28999, 74, 1,
-  43285, 552, 1, 44749, 541, 1, 33852, 32, 68246, 32, 72362, 32, 7243, 32, 7391, 32,
-  11546, 32, 85848, 123203, 7305, -900, 1716, 549, 57, 85848, 0, 1, 90434, 519, 0, 1,
-  74433, 32, 85848, 123203, 7305, -900, 1716, 549, 57, 85848, 0, 1, 1, 85848, 123203,
-  7305, -900, 1716, 549, 57, 85848, 0, 1, 955506, 213312, 0, 2, 270652, 22588, 4,
-  1457325, 64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420, 1, 1, 81663, 32, 59498, 32,
-  20142, 32, 24588, 32, 20744, 32, 25933, 32, 24623, 32, 43053543, 10, 53384111, 14333,
-  10, 43574283, 26308, 10, 16000, 100, 16000, 100, 962335, 18, 2780678, 6, 442008, 1,
-  52538055, 3756, 18, 267929, 18, 76433006, 8868, 18, 52948122, 18, 1995836, 36, 3227919,
-  12, 901022, 1, 166917843, 4307, 36, 284546, 36, 158221314, 26549, 36, 74698472, 36,
-  333849714, 1, 254006273, 72, 2174038, 72, 2261318, 64571, 4, 207616, 8310, 4, 1293828,
-  28716, 63, 0, 1, 1006041, 43623, 251, 0, 1, 100181, 726, 719, 0, 1, 100181, 726, 719,
-  0, 1, 100181, 726, 719, 0, 1, 107878, 680, 0, 1, 95336, 1, 281145, 18848, 0, 1, 180194,
-  159, 1, 1, 158519, 8942, 0, 1, 159378, 8813, 0, 1, 107490, 3298, 1, 106057, 655, 1,
-  1964219, 24520, 3
+  100788,
+  420,
+  1,
+  1,
+  1000,
+  173,
+  0,
+  1,
+  1000,
+  59957,
+  4,
+  1,
+  11183,
+  32,
+  201305,
+  8356,
+  4,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  16000,
+  100,
+  100,
+  100,
+  16000,
+  100,
+  94375,
+  32,
+  132994,
+  32,
+  61462,
+  4,
+  72010,
+  178,
+  0,
+  1,
+  22151,
+  32,
+  91189,
+  769,
+  4,
+  2,
+  85848,
+  123203,
+  7305,
+  -900,
+  1716,
+  549,
+  57,
+  85848,
+  0,
+  1,
+  1,
+  1000,
+  42921,
+  4,
+  2,
+  24548,
+  29498,
+  38,
+  1,
+  898148,
+  27279,
+  1,
+  51775,
+  558,
+  1,
+  39184,
+  1000,
+  60594,
+  1,
+  141895,
+  32,
+  83150,
+  32,
+  15299,
+  32,
+  76049,
+  1,
+  13169,
+  4,
+  22100,
+  10,
+  28999,
+  74,
+  1,
+  28999,
+  74,
+  1,
+  43285,
+  552,
+  1,
+  44749,
+  541,
+  1,
+  33852,
+  32,
+  68246,
+  32,
+  72362,
+  32,
+  7243,
+  32,
+  7391,
+  32,
+  11546,
+  32,
+  85848,
+  123203,
+  7305,
+  -900,
+  1716,
+  549,
+  57,
+  85848,
+  0,
+  1,
+  90434,
+  519,
+  0,
+  1,
+  74433,
+  32,
+  85848,
+  123203,
+  7305,
+  -900,
+  1716,
+  549,
+  57,
+  85848,
+  0,
+  1,
+  1,
+  85848,
+  123203,
+  7305,
+  -900,
+  1716,
+  549,
+  57,
+  85848,
+  0,
+  1,
+  955506,
+  213312,
+  0,
+  2,
+  270652,
+  22588,
+  4,
+  1457325,
+  64566,
+  4,
+  20467,
+  1,
+  4,
+  0,
+  141992,
+  32,
+  100788,
+  420,
+  1,
+  1,
+  81663,
+  32,
+  59498,
+  32,
+  20142,
+  32,
+  24588,
+  32,
+  20744,
+  32,
+  25933,
+  32,
+  24623,
+  32,
+  43053543,
+  10,
+  53384111,
+  14333,
+  10,
+  43574283,
+  26308,
+  10,
+  16000,
+  100,
+  16000,
+  100,
+  962335,
+  18,
+  2780678,
+  6,
+  442008,
+  1,
+  52538055,
+  3756,
+  18,
+  267929,
+  18,
+  76433006,
+  8868,
+  18,
+  52948122,
+  18,
+  1995836,
+  36,
+  3227919,
+  12,
+  901022,
+  1,
+  166917843,
+  4307,
+  36,
+  284546,
+  36,
+  158221314,
+  26549,
+  36,
+  74698472,
+  36,
+  333849714,
+  1,
+  254006273,
+  72,
+  2174038,
+  72,
+  2261318,
+  64571,
+  4,
+  207616,
+  8310,
+  4,
+  1293828,
+  28716,
+  63,
+  0,
+  1,
+  1006041,
+  43623,
+  251,
+  0,
+  1,
+  100181,
+  726,
+  719,
+  0,
+  1,
+  100181,
+  726,
+  719,
+  0,
+  1,
+  100181,
+  726,
+  719,
+  0,
+  1,
+  107878,
+  680,
+  0,
+  1,
+  95336,
+  1,
+  281145,
+  18848,
+  0,
+  1,
+  180194,
+  159,
+  1,
+  1,
+  158519,
+  8942,
+  0,
+  1,
+  159378,
+  8813,
+  0,
+  1,
+  107490,
+  3298,
+  1,
+  106057,
+  655,
+  1,
+  1964219,
+  24520,
+  3
 };
 
 // Builds a constant integer value in an arena, for builtin-cost dispatch tests.
@@ -1509,7 +2105,7 @@ make_bytes_value(cardano_uplc_arena_t* arena, size_t length)
 
 TEST(cardano_uplc_cost_model_from_params, v1_round_trip_reproduces_default)
 {
-  cardano_uplc_cost_model_t model;
+  cardano_uplc_cost_model_t    model;
   cardano_uplc_builtin_costs_t expected = cardano_uplc_builtin_costs_v1();
 
   ASSERT_EQ(
@@ -1525,7 +2121,7 @@ TEST(cardano_uplc_cost_model_from_params, v1_round_trip_reproduces_default)
 
 TEST(cardano_uplc_cost_model_from_params, v2_round_trip_reproduces_default)
 {
-  cardano_uplc_cost_model_t model;
+  cardano_uplc_cost_model_t    model;
   cardano_uplc_builtin_costs_t expected = cardano_uplc_builtin_costs_v2();
 
   ASSERT_EQ(
@@ -1541,7 +2137,7 @@ TEST(cardano_uplc_cost_model_from_params, v2_round_trip_reproduces_default)
 
 TEST(cardano_uplc_cost_model_from_params, v3_round_trip_reproduces_default)
 {
-  cardano_uplc_cost_model_t model;
+  cardano_uplc_cost_model_t    model;
   cardano_uplc_builtin_costs_t expected = cardano_uplc_builtin_costs_v3();
 
   ASSERT_EQ(
@@ -1791,8 +2387,8 @@ TEST(cardano_uplc_builtin_cost, null_costs_is_zero_budget)
 
 TEST(cardano_uplc_builtin_cost, out_of_range_builtin_is_zero_budget)
 {
-  cardano_uplc_builtin_costs_t costs = cardano_uplc_builtin_costs_v3();
-  cardano_uplc_budget_t budget = cardano_uplc_builtin_cost(&costs, (cardano_uplc_builtin_t)CARDANO_UPLC_BUILTIN_COUNT, nullptr, 0U, false);
+  cardano_uplc_builtin_costs_t costs  = cardano_uplc_builtin_costs_v3();
+  cardano_uplc_budget_t        budget = cardano_uplc_builtin_cost(&costs, (cardano_uplc_builtin_t)CARDANO_UPLC_BUILTIN_COUNT, nullptr, 0U, false);
   EXPECT_EQ(budget.cpu, 0);
   EXPECT_EQ(budget.mem, 0);
 }

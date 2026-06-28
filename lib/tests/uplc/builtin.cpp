@@ -21,8 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/error.h>
 #include "../../src/uplc/builtins/uplc_builtin.h"
+#include <cardano/error.h>
 
 #include <gmock/gmock.h>
 
@@ -56,10 +56,10 @@ is_valid_version(const cardano_uplc_lang_version_t version)
  */
 struct expected_builtin_metadata
 {
-  cardano_uplc_builtin_t      tag;
-  size_t                      arity;
-  size_t                      force_count;
-  cardano_uplc_lang_version_t first_version;
+    cardano_uplc_builtin_t      tag;
+    size_t                      arity;
+    size_t                      force_count;
+    cardano_uplc_lang_version_t first_version;
 };
 
 static const cardano_uplc_lang_version_t V1 = CARDANO_UPLC_LANG_VERSION_V1;

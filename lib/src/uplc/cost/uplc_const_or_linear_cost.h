@@ -40,12 +40,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_const_or_linear_cost_t
 {
-  /** \brief The flat cost charged off the diagonal. */
-  int64_t constant;
-  /** \brief The constant term of the on-diagonal linear cost. */
-  int64_t intercept;
-  /** \brief The slope of the on-diagonal linear cost. */
-  int64_t slope;
+    /** \brief The flat cost charged off the diagonal. */
+    int64_t constant;
+    /** \brief The constant term of the on-diagonal linear cost. */
+    int64_t intercept;
+    /** \brief The slope of the on-diagonal linear cost. */
+    int64_t slope;
 } cardano_uplc_const_or_linear_cost_t;
 
 #ifdef __cplusplus

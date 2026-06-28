@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "../arena/uplc_arena.h"
+#include "../ast/uplc_int.h"
 #include "../builtins/builtins.h"
 #include "../builtins/uplc_builtin.h"
 #include "../builtins/uplc_builtin_semantics.h"
@@ -29,7 +30,6 @@
 #include "../cost/uplc_cost_model.h"
 #include "../cost/uplc_machine_costs.h"
 #include "../cost/uplc_step_accumulator.h"
-#include "../ast/uplc_int.h"
 
 #include "uplc_env.h"
 #include "uplc_frame.h"
@@ -78,11 +78,11 @@ typedef enum
  */
 typedef struct
 {
-  cardano_uplc_state_kind_t   kind;
-  const cardano_uplc_frame_t* ctx;
-  const cardano_uplc_env_t*   env;
-  const cardano_uplc_term_t*  term;
-  const cardano_uplc_value_t* value;
+    cardano_uplc_state_kind_t   kind;
+    const cardano_uplc_frame_t* ctx;
+    const cardano_uplc_env_t*   env;
+    const cardano_uplc_term_t*  term;
+    const cardano_uplc_value_t* value;
 } state_t;
 
 /**
@@ -97,11 +97,11 @@ typedef struct
  */
 typedef struct
 {
-  cardano_uplc_arena_t*            arena;
-  cardano_uplc_step_accumulator_t  acc;
-  cardano_uplc_budget_t            initial;
-  cardano_uplc_cost_model_t        cost_model;
-  cardano_uplc_builtin_semantics_t semantics;
+    cardano_uplc_arena_t*            arena;
+    cardano_uplc_step_accumulator_t  acc;
+    cardano_uplc_budget_t            initial;
+    cardano_uplc_cost_model_t        cost_model;
+    cardano_uplc_builtin_semantics_t semantics;
 } machine_t;
 
 /**
@@ -136,11 +136,11 @@ charge_step(machine_t* machine, cardano_uplc_step_kind_t kind)
  */
 static step_outcome_t
 run_compute_state(
-  machine_t*              machine,
+  machine_t*                  machine,
   const cardano_uplc_frame_t* ctx,
   const cardano_uplc_env_t*   env,
   const cardano_uplc_term_t*  term,
-  state_t*                next,
+  state_t*                    next,
   cardano_error_t*            host_error)
 {
   *host_error = CARDANO_SUCCESS;
@@ -499,7 +499,7 @@ extend_builtin_args(
  */
 static step_outcome_t
 try_call_builtin(
-  machine_t*                     machine,
+  machine_t*                         machine,
   cardano_uplc_builtin_t             func,
   size_t                             forces,
   const cardano_uplc_value_t* const* args,
@@ -578,11 +578,11 @@ try_call_builtin(
  */
 static step_outcome_t
 apply_evaluate(
-  machine_t*              machine,
+  machine_t*                  machine,
   const cardano_uplc_frame_t* ctx,
   const cardano_uplc_value_t* function,
   const cardano_uplc_value_t* arg,
-  state_t*                next,
+  state_t*                    next,
   cardano_error_t*            host_error)
 {
   *host_error = CARDANO_SUCCESS;
@@ -610,14 +610,13 @@ apply_evaluate(
 
     case CARDANO_UPLC_VALUE_BUILTIN:
     {
-      const cardano_uplc_value_t* const* args  = NULL;
-      const cardano_uplc_value_t*        value = NULL;
-      size_t                             arity = (size_t)0;
+      const cardano_uplc_value_t* const* args        = NULL;
+      const cardano_uplc_value_t*        value       = NULL;
+      size_t                             arity       = (size_t)0;
       size_t                             force_count = (size_t)0;
-      step_outcome_t                 outcome;
+      step_outcome_t                     outcome;
 
-      if ((cardano_uplc_builtin_arity(function->as.builtin.func, &arity) != CARDANO_SUCCESS) ||
-          (cardano_uplc_builtin_force_count(function->as.builtin.func, &force_count) != CARDANO_SUCCESS))
+      if ((cardano_uplc_builtin_arity(function->as.builtin.func, &arity) != CARDANO_SUCCESS) || (cardano_uplc_builtin_force_count(function->as.builtin.func, &force_count) != CARDANO_SUCCESS))
       {
         return PRV_STEP_SCRIPT_ERROR;
       }
@@ -684,10 +683,10 @@ apply_evaluate(
  */
 static step_outcome_t
 force_evaluate(
-  machine_t*              machine,
+  machine_t*                  machine,
   const cardano_uplc_frame_t* ctx,
   const cardano_uplc_value_t* value,
-  state_t*                next,
+  state_t*                    next,
   cardano_error_t*            host_error)
 {
   *host_error = CARDANO_SUCCESS;
@@ -709,10 +708,9 @@ force_evaluate(
       const cardano_uplc_value_t* resolved    = NULL;
       size_t                      arity       = (size_t)0;
       size_t                      force_count = (size_t)0;
-      step_outcome_t          outcome;
+      step_outcome_t              outcome;
 
-      if ((cardano_uplc_builtin_arity(value->as.builtin.func, &arity) != CARDANO_SUCCESS) ||
-          (cardano_uplc_builtin_force_count(value->as.builtin.func, &force_count) != CARDANO_SUCCESS))
+      if ((cardano_uplc_builtin_arity(value->as.builtin.func, &arity) != CARDANO_SUCCESS) || (cardano_uplc_builtin_force_count(value->as.builtin.func, &force_count) != CARDANO_SUCCESS))
       {
         return PRV_STEP_SCRIPT_ERROR;
       }
@@ -774,7 +772,7 @@ force_evaluate(
  */
 static cardano_error_t
 transfer_arg_stack(
-  machine_t*                     machine,
+  machine_t*                         machine,
   const cardano_uplc_value_t* const* fields,
   size_t                             field_count,
   const cardano_uplc_frame_t*        ctx,
@@ -848,7 +846,7 @@ constant_to_index(const cardano_bigint_t* integer, size_t* out)
  */
 static cardano_error_t
 constant_value(
-  machine_t*                 machine,
+  machine_t*                     machine,
   const cardano_uplc_constant_t* constant,
   const cardano_uplc_value_t**   out)
 {
@@ -885,10 +883,10 @@ constant_value(
  */
 static step_outcome_t
 case_on_constant(
-  machine_t*                 machine,
+  machine_t*                     machine,
   const cardano_uplc_frame_t*    frame,
   const cardano_uplc_constant_t* constant,
-  state_t*                   next,
+  state_t*                       next,
   cardano_error_t*               host_error)
 {
   const cardano_uplc_frame_t* branch_ctx = frame->as.cases.ctx;
@@ -958,7 +956,7 @@ case_on_constant(
     {
       if (constant->as.list.count > (size_t)0)
       {
-        const cardano_uplc_value_t* fields[2]    = { NULL, NULL };
+        const cardano_uplc_value_t* fields[2]     = { NULL, NULL };
         cardano_uplc_constant_t*    tail_constant = NULL;
 
         if (frame->as.cases.branch_count < (size_t)1)
@@ -1088,10 +1086,10 @@ case_on_constant(
  */
 static step_outcome_t
 run_return_state(
-  machine_t*              machine,
+  machine_t*                  machine,
   const cardano_uplc_frame_t* ctx,
   const cardano_uplc_value_t* value,
-  state_t*                next,
+  state_t*                    next,
   cardano_error_t*            host_error)
 {
   *host_error = CARDANO_SUCCESS;
@@ -1853,9 +1851,9 @@ cardano_uplc_int_evaluate_with_costs(
   cardano_uplc_budget_t            initial_budget,
   cardano_uplc_eval_result_t*      out)
 {
-  machine_t         machine;
+  machine_t             machine;
   cardano_uplc_frame_t* no_frame = NULL;
-  state_t           state;
+  state_t               state;
   cardano_error_t       error       = CARDANO_SUCCESS;
   bool                  running     = true;
   bool                  failed      = false;
@@ -1909,8 +1907,8 @@ cardano_uplc_int_evaluate_with_costs(
 
   while (running)
   {
-    state_t        next;
-    step_outcome_t outcome = PRV_STEP_DONE;
+    state_t               next;
+    step_outcome_t        outcome      = PRV_STEP_DONE;
     cardano_uplc_budget_t spent_before = machine.acc.spent;
 
     next.kind = CARDANO_UPLC_STATE_COMPUTE;
@@ -1942,8 +1940,7 @@ cardano_uplc_int_evaluate_with_costs(
       return error;
     }
 
-    if (((machine.acc.spent.cpu != spent_before.cpu) || (machine.acc.spent.mem != spent_before.mem)) &&
-        cardano_uplc_step_accumulator_is_exhausted(&machine.acc, machine.initial))
+    if (((machine.acc.spent.cpu != spent_before.cpu) || (machine.acc.spent.mem != spent_before.mem)) && cardano_uplc_step_accumulator_is_exhausted(&machine.acc, machine.initial))
     {
       out->status = CARDANO_UPLC_EVAL_OUT_OF_BUDGET;
       out->spent  = cardano_uplc_step_accumulator_spent(&machine.acc);

@@ -37,14 +37,14 @@ extern "C" {
  */
 typedef struct cardano_uplc_with_interaction_cost_t
 {
-  /** \brief The constant term. */
-  int64_t c00;
-  /** \brief The coefficient of x. */
-  int64_t c10;
-  /** \brief The coefficient of y. */
-  int64_t c01;
-  /** \brief The coefficient of the x*y interaction term. */
-  int64_t c11;
+    /** \brief The constant term. */
+    int64_t c00;
+    /** \brief The coefficient of x. */
+    int64_t c10;
+    /** \brief The coefficient of y. */
+    int64_t c01;
+    /** \brief The coefficient of the x*y interaction term. */
+    int64_t c11;
 } cardano_uplc_with_interaction_cost_t;
 
 #ifdef __cplusplus

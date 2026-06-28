@@ -24,9 +24,9 @@
 #include "pretty.h"
 
 #include "../../allocators.h"
+#include "../ast/uplc_int.h"
 #include "../builtins/bls.h"
 #include "../data/uplc_data.h"
-#include "../ast/uplc_int.h"
 
 #include <cardano/common/bigint.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
@@ -188,8 +188,8 @@ static const char* const BUILTIN_NAME[CARDANO_UPLC_BUILTIN_COUNT] = {
  */
 typedef struct
 {
-  cardano_buffer_t* buffer;
-  cardano_error_t   status;
+    cardano_buffer_t* buffer;
+    cardano_error_t   status;
 } writer_t;
 
 /* STATIC FUNCTION DECLARATIONS *********************************************/
@@ -1161,7 +1161,7 @@ cardano_error_t
 cardano_uplc_pretty_print_term(const cardano_uplc_term_t* term, cardano_buffer_t** out)
 {
   writer_t writer = { NULL, CARDANO_SUCCESS };
-  byte_t       nul    = 0U;
+  byte_t   nul    = 0U;
 
   if ((term == NULL) || (out == NULL))
   {
@@ -1197,7 +1197,7 @@ cardano_error_t
 cardano_uplc_pretty_print_program(const cardano_uplc_program_t* program, cardano_buffer_t** out)
 {
   writer_t writer = { NULL, CARDANO_SUCCESS };
-  byte_t       nul    = 0U;
+  byte_t   nul    = 0U;
 
   if ((program == NULL) || (out == NULL) || (program->term == NULL))
   {

@@ -22,12 +22,12 @@
 /* INCLUDES ******************************************************************/
 
 #include "uplc_builtin_costs.h"
+#include "../ast/uplc_int.h"
+#include "../builtins/uplc_builtin.h"
+#include "../data/uplc_data.h"
+#include "../machine/uplc_value.h"
 #include "uplc_builtin_cost.h"
 #include "uplc_ex_mem.h"
-#include "../builtins/uplc_builtin.h"
-#include "../machine/uplc_value.h"
-#include "../data/uplc_data.h"
-#include "../ast/uplc_int.h"
 
 #include <cardano/common/bigint.h>
 
@@ -200,7 +200,7 @@ one_quadratic(int64_t c0, int64_t c1, int64_t c2)
 {
   cardano_uplc_one_arg_cost_t fn;
   memset(&fn, 0, sizeof(fn));
-  fn.kind                    = CARDANO_UPLC_ONE_ARG_QUADRATIC;
+  fn.kind                     = CARDANO_UPLC_ONE_ARG_QUADRATIC;
   fn.params.quadratic.coeff_0 = c0;
   fn.params.quadratic.coeff_1 = c1;
   fn.params.quadratic.coeff_2 = c2;
@@ -222,11 +222,11 @@ two_with_interaction(int64_t c00, int64_t c10, int64_t c01, int64_t c11)
 {
   cardano_uplc_two_arg_cost_t fn;
   memset(&fn, 0, sizeof(fn));
-  fn.kind                            = CARDANO_UPLC_TWO_ARG_WITH_INTERACTION;
-  fn.params.with_interaction.c00     = c00;
-  fn.params.with_interaction.c10     = c10;
-  fn.params.with_interaction.c01     = c01;
-  fn.params.with_interaction.c11     = c11;
+  fn.kind                        = CARDANO_UPLC_TWO_ARG_WITH_INTERACTION;
+  fn.params.with_interaction.c00 = c00;
+  fn.params.with_interaction.c10 = c10;
+  fn.params.with_interaction.c01 = c01;
+  fn.params.with_interaction.c11 = c11;
   return fn;
 }
 
@@ -249,12 +249,12 @@ two_const_above_linear(int64_t constant, int64_t intercept, int64_t slope_x, int
 {
   cardano_uplc_two_arg_cost_t fn;
   memset(&fn, 0, sizeof(fn));
-  fn.kind                                                  = CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL;
-  fn.params.const_diagonal.constant                        = constant;
-  fn.params.const_diagonal.kind                            = CARDANO_UPLC_DIAG_MODEL_LINEAR_IN_X_AND_Y;
+  fn.kind                                                    = CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL;
+  fn.params.const_diagonal.constant                          = constant;
+  fn.params.const_diagonal.kind                              = CARDANO_UPLC_DIAG_MODEL_LINEAR_IN_X_AND_Y;
   fn.params.const_diagonal.model.linear_in_x_and_y.intercept = intercept;
-  fn.params.const_diagonal.model.linear_in_x_and_y.slope1   = slope_x;
-  fn.params.const_diagonal.model.linear_in_x_and_y.slope2   = slope_y;
+  fn.params.const_diagonal.model.linear_in_x_and_y.slope1    = slope_x;
+  fn.params.const_diagonal.model.linear_in_x_and_y.slope2    = slope_y;
   return fn;
 }
 
@@ -424,7 +424,7 @@ three_exp_mod(int64_t coeff_00, int64_t coeff_11, int64_t coeff_12)
 {
   cardano_uplc_three_arg_cost_t fn;
   memset(&fn, 0, sizeof(fn));
-  fn.kind                   = CARDANO_UPLC_THREE_ARG_EXP_MOD;
+  fn.kind                    = CARDANO_UPLC_THREE_ARG_EXP_MOD;
   fn.params.exp_mod.coeff_00 = coeff_00;
   fn.params.exp_mod.coeff_11 = coeff_11;
   fn.params.exp_mod.coeff_12 = coeff_12;
@@ -620,12 +620,12 @@ fill_v1_v2_core(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_INTEGER] = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 43285, 552), two_const(1));
 
   c->entries[CARDANO_UPLC_BUILTIN_APPEND_BYTE_STRING]           = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 1000, 173), two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 0, 1));
-  c->entries[CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING]            = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 72010, 178), two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 0, 1));
-  c->entries[CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING]          = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 20467, 1), three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 4, 0));
-  c->entries[CARDANO_UPLC_BUILTIN_LENGTH_OF_BYTE_STRING]      = entry_one(one_const(22100), one_const(10));
-  c->entries[CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING]          = entry_two(two_const(13169), two_const(4));
-  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING]         = entry_two(two_on_diagonal(24548, 29498, 38), two_const(1));
-  c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING]      = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 28999, 74), two_const(1));
+  c->entries[CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING]             = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 72010, 178), two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 0, 1));
+  c->entries[CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING]            = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 20467, 1), three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 4, 0));
+  c->entries[CARDANO_UPLC_BUILTIN_LENGTH_OF_BYTE_STRING]        = entry_one(one_const(22100), one_const(10));
+  c->entries[CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING]            = entry_two(two_const(13169), two_const(4));
+  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING]           = entry_two(two_on_diagonal(24548, 29498, 38), two_const(1));
+  c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING]        = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 28999, 74), two_const(1));
   c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_BYTE_STRING] = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 28999, 74), two_const(1));
 
   c->entries[CARDANO_UPLC_BUILTIN_SHA2_256]                 = entry_one(one_linear(270652, 22588), one_const(4));
@@ -638,30 +638,30 @@ fill_v1_v2_core(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_ENCODE_UTF8]   = entry_one(one_linear(1000, 42921), one_linear(4, 2));
   c->entries[CARDANO_UPLC_BUILTIN_DECODE_UTF8]   = entry_one(one_linear(91189, 769), one_linear(4, 2));
 
-  c->entries[CARDANO_UPLC_BUILTIN_IF_THEN_ELSE]   = entry_three(three_const(76049), three_const(1));
-  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_UNIT]    = entry_two(two_const(61462), two_const(4));
-  c->entries[CARDANO_UPLC_BUILTIN_TRACE]          = entry_two(two_const(59498), two_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_FST_PAIR]       = entry_one(one_const(141895), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_SND_PAIR]       = entry_one(one_const(141992), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST]    = entry_three(three_const(132994), three_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_MK_CONS]        = entry_two(two_const(72362), two_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_HEAD_LIST]      = entry_one(one_const(83150), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_TAIL_LIST]      = entry_one(one_const(81663), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_NULL_LIST]      = entry_one(one_const(74433), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA]    = entry_six(six_const(94375), six_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_CONSTR_DATA]    = entry_two(two_const(22151), two_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_MAP_DATA]       = entry_one(one_const(68246), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_LIST_DATA]      = entry_one(one_const(33852), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_I_DATA]         = entry_one(one_const(15299), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_B_DATA]         = entry_one(one_const(11183), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_CONSTR_DATA] = entry_one(one_const(24588), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_MAP_DATA]    = entry_one(one_const(24623), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_LIST_DATA]   = entry_one(one_const(25933), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_I_DATA]      = entry_one(one_const(20744), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_B_DATA]      = entry_one(one_const(20142), one_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_DATA]    = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 898148, 27279), two_const(1));
-  c->entries[CARDANO_UPLC_BUILTIN_MK_PAIR_DATA]   = entry_two(two_const(11546), two_const(32));
-  c->entries[CARDANO_UPLC_BUILTIN_MK_NIL_DATA]    = entry_one(one_const(7243), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_IF_THEN_ELSE]     = entry_three(three_const(76049), three_const(1));
+  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_UNIT]      = entry_two(two_const(61462), two_const(4));
+  c->entries[CARDANO_UPLC_BUILTIN_TRACE]            = entry_two(two_const(59498), two_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_FST_PAIR]         = entry_one(one_const(141895), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_SND_PAIR]         = entry_one(one_const(141992), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST]      = entry_three(three_const(132994), three_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_MK_CONS]          = entry_two(two_const(72362), two_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_HEAD_LIST]        = entry_one(one_const(83150), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_TAIL_LIST]        = entry_one(one_const(81663), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_NULL_LIST]        = entry_one(one_const(74433), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA]      = entry_six(six_const(94375), six_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_CONSTR_DATA]      = entry_two(two_const(22151), two_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_MAP_DATA]         = entry_one(one_const(68246), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_LIST_DATA]        = entry_one(one_const(33852), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_I_DATA]           = entry_one(one_const(15299), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_B_DATA]           = entry_one(one_const(11183), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_CONSTR_DATA]   = entry_one(one_const(24588), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_MAP_DATA]      = entry_one(one_const(24623), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_LIST_DATA]     = entry_one(one_const(25933), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_I_DATA]        = entry_one(one_const(20744), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_B_DATA]        = entry_one(one_const(20142), one_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_DATA]      = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 898148, 27279), two_const(1));
+  c->entries[CARDANO_UPLC_BUILTIN_MK_PAIR_DATA]     = entry_two(two_const(11546), two_const(32));
+  c->entries[CARDANO_UPLC_BUILTIN_MK_NIL_DATA]      = entry_one(one_const(7243), one_const(32));
   c->entries[CARDANO_UPLC_BUILTIN_MK_NIL_PAIR_DATA] = entry_one(one_const(7391), one_const(32));
 }
 
@@ -739,7 +739,7 @@ cardano_uplc_builtin_costs_v2(void)
   fill_all_unavail(&c);
   fill_v1_v2_core(&c);
 
-  c.entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA]                    = entry_one(one_linear(955506, 213312), one_linear(0, 2));
+  c.entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA]                     = entry_one(one_linear(955506, 213312), one_linear(0, 2));
   c.entries[CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE]   = entry_three(three_const(43053543), three_const(10));
   c.entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE] = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Y, 43574283, 26308), three_const(10));
 
@@ -759,7 +759,7 @@ cardano_uplc_builtin_costs_v3(void)
   c.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER] = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
   c.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER]       = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
 
-  c.entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA]                    = entry_one(one_linear(955506, 213312), one_linear(0, 2));
+  c.entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA]                     = entry_one(one_linear(955506, 213312), one_linear(0, 2));
   c.entries[CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE]   = entry_three(three_const(43053543), three_const(10));
   c.entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE] = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Y, 43574283, 26308), three_const(10));
 
@@ -836,7 +836,7 @@ floor_log2(size_t n)
 
   while (n > 1U)
   {
-    n >>= 1U;
+    n   >>= 1U;
     log += 1;
   }
 

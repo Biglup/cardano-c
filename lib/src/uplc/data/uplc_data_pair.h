@@ -43,8 +43,8 @@ extern "C" {
  */
 typedef struct cardano_uplc_data_pair_t
 {
-  const struct cardano_uplc_data_t* key;
-  const struct cardano_uplc_data_t* value;
+    const struct cardano_uplc_data_t* key;
+    const struct cardano_uplc_data_t* value;
 } cardano_uplc_data_pair_t;
 
 #ifdef __cplusplus

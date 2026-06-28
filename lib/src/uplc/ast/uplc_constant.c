@@ -40,7 +40,7 @@ cardano_uplc_constant_new_integer(
   cardano_bigint_t*         value,
   cardano_uplc_constant_t** constant)
 {
-  cardano_uplc_constant_t* result      = NULL;
+  cardano_uplc_constant_t* result       = NULL;
   cardano_error_t          register_res = CARDANO_SUCCESS;
 
   if ((arena == NULL) || (value == NULL) || (constant == NULL))

@@ -26,11 +26,11 @@
 
 #include "uplc_value_kind.h"
 
+#include "../arena/uplc_arena.h"
+#include "../ast/uplc_term.h"
+#include "../builtins/uplc_builtin.h"
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
-#include "../builtins/uplc_builtin.h"
-#include "../ast/uplc_term.h"
 
 /* FORWARD DECLARATIONS ******************************************************/
 
@@ -78,40 +78,40 @@ extern "C" {
  */
 struct cardano_uplc_value_t
 {
-  cardano_uplc_value_kind_t kind;
-  int64_t                   ex_mem;
+    cardano_uplc_value_kind_t kind;
+    int64_t                   ex_mem;
 
-  union
-  {
-    const cardano_uplc_constant_t* constant;
-
-    struct
+    union
     {
-      const cardano_uplc_term_t* body;
-      const cardano_uplc_env_t*  env;
-    } delay;
+        const cardano_uplc_constant_t* constant;
 
-    struct
-    {
-      const cardano_uplc_term_t* body;
-      const cardano_uplc_env_t*  env;
-    } lambda;
+        struct
+        {
+            const cardano_uplc_term_t* body;
+            const cardano_uplc_env_t*  env;
+        } delay;
 
-    struct
-    {
-      cardano_uplc_builtin_t             func;
-      size_t                             forces;
-      const cardano_uplc_value_t* const* args;
-      size_t                             arg_count;
-    } builtin;
+        struct
+        {
+            const cardano_uplc_term_t* body;
+            const cardano_uplc_env_t*  env;
+        } lambda;
 
-    struct
-    {
-      uint64_t                           tag;
-      const cardano_uplc_value_t* const* fields;
-      size_t                             field_count;
-    } constr;
-  } as;
+        struct
+        {
+            cardano_uplc_builtin_t             func;
+            size_t                             forces;
+            const cardano_uplc_value_t* const* args;
+            size_t                             arg_count;
+        } builtin;
+
+        struct
+        {
+            uint64_t                           tag;
+            const cardano_uplc_value_t* const* fields;
+            size_t                             field_count;
+        } constr;
+    } as;
 };
 
 /**

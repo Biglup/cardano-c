@@ -40,12 +40,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_exp_mod_cost_t
 {
-  /** \brief The constant term. */
-  int64_t coeff_00;
-  /** \brief The coefficient of the y*z term. */
-  int64_t coeff_11;
-  /** \brief The coefficient of the y*z*z term. */
-  int64_t coeff_12;
+    /** \brief The constant term. */
+    int64_t coeff_00;
+    /** \brief The coefficient of the y*z term. */
+    int64_t coeff_11;
+    /** \brief The coefficient of the y*z*z term. */
+    int64_t coeff_12;
 } cardano_uplc_exp_mod_cost_t;
 
 #ifdef __cplusplus

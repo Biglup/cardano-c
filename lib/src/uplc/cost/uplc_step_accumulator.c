@@ -22,10 +22,10 @@
 /* INCLUDES ******************************************************************/
 
 #include "uplc_step_accumulator.h"
+#include "../machine/uplc_budget.h"
 #include "uplc_cost_sat.h"
 #include "uplc_machine_costs.h"
 #include "uplc_step_kind.h"
-#include "../machine/uplc_budget.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -132,11 +132,11 @@ cardano_uplc_step_accumulator_init(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  acc->costs      = *costs;
-  acc->spent.cpu  = 0;
-  acc->spent.mem  = 0;
-  acc->pending    = 0U;
-  acc->slippage   = CARDANO_UPLC_DEFAULT_SLIPPAGE;
+  acc->costs     = *costs;
+  acc->spent.cpu = 0;
+  acc->spent.mem = 0;
+  acc->pending   = 0U;
+  acc->slippage  = CARDANO_UPLC_DEFAULT_SLIPPAGE;
 
   memset(acc->counts, 0, sizeof(acc->counts));
 

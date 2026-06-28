@@ -21,22 +21,23 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
-#include "../../src/uplc/flat/flat_decode.h"
 #include "../../src/uplc/ast/uplc_int.h"
+#include "../../src/uplc/flat/flat_decode.h"
 
 #include <gmock/gmock.h>
 #include <string>
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 cardano_uplc_arena_t*
 new_arena()
@@ -106,7 +107,7 @@ int_const_decimal(cardano_uplc_arena_t* arena, const cardano_uplc_constant_t* co
   const cardano_bigint_t* big = nullptr;
   EXPECT_EQ(cardano_uplc_constant_int_materialize(arena, constant, &big), CARDANO_SUCCESS);
 
-  size_t size = cardano_bigint_get_string_size(big, 10);
+  size_t      size = cardano_bigint_get_string_size(big, 10);
   std::string out(size, '\0');
   EXPECT_EQ(cardano_bigint_to_string(big, &out[0], size, 10), CARDANO_SUCCESS);
 

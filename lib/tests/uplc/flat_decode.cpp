@@ -27,10 +27,10 @@
 #include <cardano/plutus_data/plutus_data.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/ast/uplc_int.h"
+#include "../../src/uplc/data/uplc_data.h"
 #include "../../src/uplc/flat/flat_decode.h"
 #include "../../src/uplc/flat/flat_reader.h"
-#include "../../src/uplc/data/uplc_data.h"
-#include "../../src/uplc/ast/uplc_int.h"
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
@@ -43,7 +43,8 @@
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 /**
  * MSB-first bit writer that mirrors the flat reader's bit ordering, used to build
@@ -51,131 +52,133 @@ namespace {
  */
 class BitWriter
 {
-public:
-  void
-  bit(uint8_t value)
-  {
-    if (bit_pos_ == 0U)
+  public:
+
+    void
+    bit(uint8_t value)
     {
-      bytes_.push_back(0U);
+      if (bit_pos_ == 0U)
+      {
+        bytes_.push_back(0U);
+      }
+
+      if (value != 0U)
+      {
+        bytes_.back() |= static_cast<uint8_t>(0x80U >> bit_pos_);
+      }
+
+      bit_pos_ = static_cast<uint8_t>((bit_pos_ + 1U) % 8U);
     }
 
-    if (value != 0U)
+    void
+    bits(uint8_t value, uint8_t count)
     {
-      bytes_.back() |= static_cast<uint8_t>(0x80U >> bit_pos_);
+      for (uint8_t i = 0U; i < count; ++i)
+      {
+        const uint8_t shift = static_cast<uint8_t>(count - 1U - i);
+        bit(static_cast<uint8_t>((value >> shift) & 1U));
+      }
     }
 
-    bit_pos_ = static_cast<uint8_t>((bit_pos_ + 1U) % 8U);
-  }
-
-  void
-  bits(uint8_t value, uint8_t count)
-  {
-    for (uint8_t i = 0U; i < count; ++i)
+    // Appends one const-type tag: a 1 continuation bit then the 4-bit tag.
+    void
+    type_tag(uint8_t tag)
     {
-      const uint8_t shift = static_cast<uint8_t>(count - 1U - i);
-      bit(static_cast<uint8_t>((value >> shift) & 1U));
+      bit(1U);
+      bits(tag, 4U);
     }
-  }
 
-  // Appends one const-type tag: a 1 continuation bit then the 4-bit tag.
-  void
-  type_tag(uint8_t tag)
-  {
-    bit(1U);
-    bits(tag, 4U);
-  }
-
-  // Terminates the const-type list.
-  void
-  end_type_list()
-  {
-    bit(0U);
-  }
-
-  // Aligns to the next byte with a filler run: 0 bits then a terminating 1 bit
-  // that lands on the final bit of the byte.
-  void
-  filler()
-  {
-    while (bit_pos_ != 7U)
+    // Terminates the const-type list.
+    void
+    end_type_list()
     {
       bit(0U);
     }
 
-    bit(1U);
-  }
-
-  // Encodes a flat bytestring: filler, then 255-capped length-prefixed blocks
-  // terminated by a zero-length block. Assumes the writer is mid-byte.
-  void
-  byte_string(const std::vector<uint8_t>& data)
-  {
-    filler();
-
-    size_t offset = 0U;
-
-    while (offset < data.size())
+    // Aligns to the next byte with a filler run: 0 bits then a terminating 1 bit
+    // that lands on the final bit of the byte.
+    void
+    filler()
     {
-      const size_t remaining = data.size() - offset;
-      const size_t chunk      = (remaining > 255U) ? 255U : remaining;
-
-      bytes_.push_back(static_cast<uint8_t>(chunk));
-
-      for (size_t i = 0U; i < chunk; ++i)
+      while (bit_pos_ != 7U)
       {
-        bytes_.push_back(data[offset + i]);
+        bit(0U);
       }
 
-      offset += chunk;
+      bit(1U);
     }
 
-    bytes_.push_back(0U);
-  }
-
-  // Encodes a non-negative magnitude as a flat word (7-bit little-endian groups).
-  void
-  word(uint64_t value)
-  {
-    while (true)
+    // Encodes a flat bytestring: filler, then 255-capped length-prefixed blocks
+    // terminated by a zero-length block. Assumes the writer is mid-byte.
+    void
+    byte_string(const std::vector<uint8_t>& data)
     {
-      uint8_t group = static_cast<uint8_t>(value & 0x7FU);
-      value >>= 7U;
+      filler();
 
-      if (value != 0U)
+      size_t offset = 0U;
+
+      while (offset < data.size())
       {
-        group |= 0x80U;
+        const size_t remaining = data.size() - offset;
+        const size_t chunk     = (remaining > 255U) ? 255U : remaining;
+
+        bytes_.push_back(static_cast<uint8_t>(chunk));
+
+        for (size_t i = 0U; i < chunk; ++i)
+        {
+          bytes_.push_back(data[offset + i]);
+        }
+
+        offset += chunk;
       }
 
-      bits(group, 8U);
+      bytes_.push_back(0U);
+    }
 
-      if (value == 0U)
+    // Encodes a non-negative magnitude as a flat word (7-bit little-endian groups).
+    void
+    word(uint64_t value)
+    {
+      while (true)
       {
-        break;
+        uint8_t group = static_cast<uint8_t>(value & 0x7FU);
+        value         >>= 7U;
+
+        if (value != 0U)
+        {
+          group |= 0x80U;
+        }
+
+        bits(group, 8U);
+
+        if (value == 0U)
+        {
+          break;
+        }
       }
     }
-  }
 
-  // Encodes a signed integer constant value: zigzag then word.
-  void
-  integer(int64_t value)
-  {
-    uint64_t zigzag = (value >= 0)
-      ? (static_cast<uint64_t>(value) << 1U)
-      : (((~static_cast<uint64_t>(value)) << 1U) | 1U);
+    // Encodes a signed integer constant value: zigzag then word.
+    void
+    integer(int64_t value)
+    {
+      uint64_t zigzag = (value >= 0)
+        ? (static_cast<uint64_t>(value) << 1U)
+        : (((~static_cast<uint64_t>(value)) << 1U) | 1U);
 
-    word(zigzag);
-  }
+      word(zigzag);
+    }
 
-  const std::vector<uint8_t>&
-  bytes() const
-  {
-    return bytes_;
-  }
+    const std::vector<uint8_t>&
+    bytes() const
+    {
+      return bytes_;
+    }
 
-private:
-  std::vector<uint8_t> bytes_;
-  uint8_t              bit_pos_ = 0U;
+  private:
+
+    std::vector<uint8_t> bytes_;
+    uint8_t              bit_pos_ = 0U;
 };
 
 cardano_uplc_arena_t*
@@ -389,7 +392,7 @@ TEST(cardano_uplc_flat_decode_constant, decodesEmptyByteString)
 TEST(cardano_uplc_flat_decode_constant, decodesString)
 {
   // Arrange
-  const std::string          text  = "h\xC3\xA9llo"; // "h", U+00E9, "llo"
+  const std::string          text = "h\xC3\xA9llo"; // "h", U+00E9, "llo"
   const std::vector<uint8_t> bytes(text.begin(), text.end());
 
   BitWriter w;
@@ -1231,10 +1234,7 @@ TEST(cardano_uplc_flat_decode_constant, decodesBlsG1CompressedPoint)
   // Arrange: a BLS G1 type tag (9) followed by the compressed G1 generator (48
   // bytes) decodes to a G1 constant.
   const std::vector<uint8_t> g1_generator = {
-    0x97, 0xf1, 0xd3, 0xa7, 0x31, 0x97, 0xd7, 0x94, 0x26, 0x95, 0x63, 0x8c,
-    0x4f, 0xa9, 0xac, 0x0f, 0xc3, 0x68, 0x8c, 0x4f, 0x97, 0x74, 0xb9, 0x05,
-    0xa1, 0x4e, 0x3a, 0x3f, 0x17, 0x1b, 0xac, 0x58, 0x6c, 0x55, 0xe8, 0x3f,
-    0xf9, 0x7a, 0x1a, 0xef, 0xfb, 0x3a, 0xf0, 0x0a, 0xdb, 0x22, 0xc6, 0xbb
+    0x97, 0xf1, 0xd3, 0xa7, 0x31, 0x97, 0xd7, 0x94, 0x26, 0x95, 0x63, 0x8c, 0x4f, 0xa9, 0xac, 0x0f, 0xc3, 0x68, 0x8c, 0x4f, 0x97, 0x74, 0xb9, 0x05, 0xa1, 0x4e, 0x3a, 0x3f, 0x17, 0x1b, 0xac, 0x58, 0x6c, 0x55, 0xe8, 0x3f, 0xf9, 0x7a, 0x1a, 0xef, 0xfb, 0x3a, 0xf0, 0x0a, 0xdb, 0x22, 0xc6, 0xbb
   };
 
   BitWriter w;
@@ -1285,14 +1285,7 @@ TEST(cardano_uplc_flat_decode_constant, decodesBlsG2CompressedPoint)
   // Arrange: a BLS G2 type tag (10) followed by the compressed G2 generator (96
   // bytes) decodes to a G2 constant.
   const std::vector<uint8_t> g2_generator = {
-    0x93, 0xe0, 0x2b, 0x60, 0x52, 0x71, 0x9f, 0x60, 0x7d, 0xac, 0xd3, 0xa0,
-    0x88, 0x27, 0x4f, 0x65, 0x59, 0x6b, 0xd0, 0xd0, 0x99, 0x20, 0xb6, 0x1a,
-    0xb5, 0xda, 0x61, 0xbb, 0xdc, 0x7f, 0x50, 0x49, 0x33, 0x4c, 0xf1, 0x12,
-    0x13, 0x94, 0x5d, 0x57, 0xe5, 0xac, 0x7d, 0x05, 0x5d, 0x04, 0x2b, 0x7e,
-    0x02, 0x4a, 0xa2, 0xb2, 0xf0, 0x8f, 0x0a, 0x91, 0x26, 0x08, 0x05, 0x27,
-    0x2d, 0xc5, 0x10, 0x51, 0xc6, 0xe4, 0x7a, 0xd4, 0xfa, 0x40, 0x3b, 0x02,
-    0xb4, 0x51, 0x0b, 0x64, 0x7a, 0xe3, 0xd1, 0x77, 0x0b, 0xac, 0x03, 0x26,
-    0xa8, 0x05, 0xbb, 0xef, 0xd4, 0x80, 0x56, 0xc8, 0xc1, 0x21, 0xbd, 0xb8
+    0x93, 0xe0, 0x2b, 0x60, 0x52, 0x71, 0x9f, 0x60, 0x7d, 0xac, 0xd3, 0xa0, 0x88, 0x27, 0x4f, 0x65, 0x59, 0x6b, 0xd0, 0xd0, 0x99, 0x20, 0xb6, 0x1a, 0xb5, 0xda, 0x61, 0xbb, 0xdc, 0x7f, 0x50, 0x49, 0x33, 0x4c, 0xf1, 0x12, 0x13, 0x94, 0x5d, 0x57, 0xe5, 0xac, 0x7d, 0x05, 0x5d, 0x04, 0x2b, 0x7e, 0x02, 0x4a, 0xa2, 0xb2, 0xf0, 0x8f, 0x0a, 0x91, 0x26, 0x08, 0x05, 0x27, 0x2d, 0xc5, 0x10, 0x51, 0xc6, 0xe4, 0x7a, 0xd4, 0xfa, 0x40, 0x3b, 0x02, 0xb4, 0x51, 0x0b, 0x64, 0x7a, 0xe3, 0xd1, 0x77, 0x0b, 0xac, 0x03, 0x26, 0xa8, 0x05, 0xbb, 0xef, 0xd4, 0x80, 0x56, 0xc8, 0xc1, 0x21, 0xbd, 0xb8
   };
 
   BitWriter w;
@@ -1989,8 +1982,8 @@ TEST(cardano_uplc_flat_decode_program, rejectsFillerRunningPastEnd)
   w.bits(6U, 4U);
 
   std::vector<uint8_t> bytes = w.bytes();
-  bytes.back() &= 0xF0U; // clear the four trailing bits in the term byte
-  bytes.push_back(0x00U); // a full zero byte with no terminating filler one bit
+  bytes.back()               &= 0xF0U; // clear the four trailing bits in the term byte
+  bytes.push_back(0x00U);              // a full zero byte with no terminating filler one bit
 
   cardano_uplc_arena_t*         arena   = make_arena();
   const cardano_uplc_program_t* program = nullptr;
@@ -2057,7 +2050,7 @@ TEST(cardano_uplc_flat_decode_program, rejectsMissingFiller)
   w.bits(6U, 4U);
 
   std::vector<uint8_t> bytes = w.bytes();
-  bytes.back() &= 0xF0U;
+  bytes.back()               &= 0xF0U;
 
   cardano_uplc_arena_t*         arena   = make_arena();
   const cardano_uplc_program_t* program = nullptr;
@@ -2211,8 +2204,8 @@ TEST(cardano_uplc_program_from_script_bytes, decodesCorrectVersionWhenFlatLooksL
   w.filler();
 
   const std::vector<uint8_t> flat = w.bytes();
-  ASSERT_EQ(flat.size(), 6U);  // 0x45 + 5 bytes => the inner buffer is a complete bytestring
-  ASSERT_EQ(flat[0], 0x45U);   // first flat byte is a cbor type-2 header for 5 bytes
+  ASSERT_EQ(flat.size(), 6U); // 0x45 + 5 bytes => the inner buffer is a complete bytestring
+  ASSERT_EQ(flat[0], 0x45U);  // first flat byte is a cbor type-2 header for 5 bytes
 
   const std::vector<uint8_t> script = cbor_wrap(flat);
 

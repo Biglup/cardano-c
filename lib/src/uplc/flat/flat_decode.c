@@ -23,9 +23,9 @@
 
 #include "flat_decode.h"
 
+#include "../ast/uplc_int.h"
 #include "../builtins/bls.h"
 #include "../data/uplc_data.h"
-#include "../ast/uplc_int.h"
 
 #include <cardano/cbor/cbor_reader.h>
 
@@ -42,18 +42,18 @@
  * enum places \c data at 7 and the BLS kinds at 8..10, while the flat tags place
  * \c apply at 7, \c data at 8 and the BLS tags at 9..11.
  */
-static const uint8_t FLAT_TYPE_TAG_INTEGER        = 0U;
-static const uint8_t FLAT_TYPE_TAG_BYTE_STRING    = 1U;
-static const uint8_t FLAT_TYPE_TAG_STRING         = 2U;
-static const uint8_t FLAT_TYPE_TAG_UNIT           = 3U;
-static const uint8_t FLAT_TYPE_TAG_BOOL           = 4U;
-static const uint8_t FLAT_TYPE_TAG_LIST           = 5U;
-static const uint8_t FLAT_TYPE_TAG_PAIR           = 6U;
-static const uint8_t FLAT_TYPE_TAG_APPLY          = 7U;
-static const uint8_t FLAT_TYPE_TAG_DATA           = 8U;
-static const uint8_t FLAT_TYPE_TAG_BLS_G1         = 9U;
-static const uint8_t FLAT_TYPE_TAG_BLS_G2         = 10U;
-static const uint8_t FLAT_TYPE_TAG_BLS_ML_RESULT  = 11U;
+static const uint8_t FLAT_TYPE_TAG_INTEGER       = 0U;
+static const uint8_t FLAT_TYPE_TAG_BYTE_STRING   = 1U;
+static const uint8_t FLAT_TYPE_TAG_STRING        = 2U;
+static const uint8_t FLAT_TYPE_TAG_UNIT          = 3U;
+static const uint8_t FLAT_TYPE_TAG_BOOL          = 4U;
+static const uint8_t FLAT_TYPE_TAG_LIST          = 5U;
+static const uint8_t FLAT_TYPE_TAG_PAIR          = 6U;
+static const uint8_t FLAT_TYPE_TAG_APPLY         = 7U;
+static const uint8_t FLAT_TYPE_TAG_DATA          = 8U;
+static const uint8_t FLAT_TYPE_TAG_BLS_G1        = 9U;
+static const uint8_t FLAT_TYPE_TAG_BLS_G2        = 10U;
+static const uint8_t FLAT_TYPE_TAG_BLS_ML_RESULT = 11U;
 
 /**
  * \brief Number of bits in a single const-type tag.
@@ -328,12 +328,12 @@ leaf_kind(const uint8_t tag, cardano_uplc_type_kind_t* kind)
  */
 static cardano_error_t
 parse_type(
-  cardano_uplc_arena_t*        arena,
-  const uint8_t*               tags,
-  const size_t                 tag_count,
-  size_t*                      index,
-  const size_t                 depth,
-  const cardano_uplc_type_t**  type)
+  cardano_uplc_arena_t*       arena,
+  const uint8_t*              tags,
+  const size_t                tag_count,
+  size_t*                     index,
+  const size_t                depth,
+  const cardano_uplc_type_t** type)
 {
   uint8_t                  tag    = 0U;
   cardano_error_t          result = CARDANO_SUCCESS;
@@ -349,7 +349,7 @@ parse_type(
     return CARDANO_ERROR_DECODING;
   }
 
-  tag = tags[*index];
+  tag    = tags[*index];
   *index += 1U;
 
   if (tag == FLAT_TYPE_TAG_APPLY)
@@ -361,7 +361,7 @@ parse_type(
 
     {
       const uint8_t applied = tags[*index];
-      *index += 1U;
+      *index                += 1U;
 
       if (applied == FLAT_TYPE_TAG_LIST)
       {
@@ -485,7 +485,7 @@ read_type(
   size_t          tag_count = 0U;
   size_t          index     = 0U;
   cardano_error_t result    = CARDANO_SUCCESS;
-  uint8_t         more       = 0U;
+  uint8_t         more      = 0U;
 
   result = cardano_uplc_flat_reader_bit(reader, &more);
 
@@ -511,7 +511,7 @@ read_type(
     }
 
     tags[tag_count] = tag;
-    tag_count += 1U;
+    tag_count       += 1U;
 
     result = cardano_uplc_flat_reader_bit(reader, &more);
 
@@ -843,7 +843,7 @@ read_list(
     }
 
     items[count] = element;
-    count += 1U;
+    count        += 1U;
 
     result = cardano_uplc_flat_reader_bit(reader, &more);
 
@@ -1090,7 +1090,7 @@ read_term_list(
     }
 
     list[length] = element;
-    length += 1U;
+    length       += 1U;
 
     result = cardano_uplc_flat_reader_bit(reader, &more);
 

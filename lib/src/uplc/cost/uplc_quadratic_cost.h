@@ -39,12 +39,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_quadratic_cost_t
 {
-  /** \brief The constant term. */
-  int64_t coeff_0;
-  /** \brief The linear coefficient. */
-  int64_t coeff_1;
-  /** \brief The quadratic coefficient. */
-  int64_t coeff_2;
+    /** \brief The constant term. */
+    int64_t coeff_0;
+    /** \brief The linear coefficient. */
+    int64_t coeff_1;
+    /** \brief The quadratic coefficient. */
+    int64_t coeff_2;
 } cardano_uplc_quadratic_cost_t;
 
 /**

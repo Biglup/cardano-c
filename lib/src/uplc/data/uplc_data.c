@@ -100,8 +100,8 @@ unref_bigint(void* object)
  */
 typedef struct equals_pair_t
 {
-  const cardano_uplc_data_t* lhs;
-  const cardano_uplc_data_t* rhs;
+    const cardano_uplc_data_t* lhs;
+    const cardano_uplc_data_t* rhs;
 } equals_pair_t;
 
 /**
@@ -116,8 +116,8 @@ typedef struct equals_pair_t
 static bool
 stack_reserve(void** stack, size_t* capacity, size_t element_size)
 {
-  size_t next   = (*capacity == 0U) ? 64U : (*capacity * 2U);
-  void*  grown  = _cardano_realloc(*stack, next * element_size);
+  size_t next  = (*capacity == 0U) ? 64U : (*capacity * 2U);
+  void*  grown = _cardano_realloc(*stack, next * element_size);
 
   if (grown == NULL)
   {
@@ -143,7 +143,7 @@ stack_reserve(void** stack, size_t* capacity, size_t element_size)
  */
 static bool
 equals_push(
-  equals_pair_t**        stack,
+  equals_pair_t**            stack,
   size_t*                    capacity,
   size_t*                    count,
   const cardano_uplc_data_t* lhs,
@@ -166,8 +166,8 @@ equals_push(
  */
 typedef struct walk_frame_t
 {
-  const cardano_uplc_data_t* node;
-  bool                       expanded;
+    const cardano_uplc_data_t* node;
+    bool                       expanded;
 } walk_frame_t;
 
 /**
@@ -183,7 +183,7 @@ typedef struct walk_frame_t
  */
 static bool
 walk_push(
-  walk_frame_t**         stack,
+  walk_frame_t**             stack,
   size_t*                    capacity,
   size_t*                    count,
   const cardano_uplc_data_t* node,
@@ -325,7 +325,7 @@ byte_string_ex_mem(size_t length)
 static bool
 push_children(
   const cardano_uplc_data_t* data,
-  walk_frame_t**         stack,
+  walk_frame_t**             stack,
   size_t*                    capacity,
   size_t*                    count)
 {
@@ -349,8 +349,7 @@ push_children(
     {
       for (i = 0U; i < data->as.map.count; ++i)
       {
-        if (!walk_push(stack, capacity, count, data->as.map.entries[i].key, false) ||
-            !walk_push(stack, capacity, count, data->as.map.entries[i].value, false))
+        if (!walk_push(stack, capacity, count, data->as.map.entries[i].key, false) || !walk_push(stack, capacity, count, data->as.map.entries[i].value, false))
         {
           return false;
         }
@@ -529,8 +528,8 @@ static int64_t
 compute_ex_mem(const cardano_uplc_data_t* data)
 {
   walk_frame_t* stack    = NULL;
-  size_t            capacity = 0U;
-  size_t            count    = 0U;
+  size_t        capacity = 0U;
+  size_t        count    = 0U;
 
   if (data == NULL)
   {
@@ -563,8 +562,7 @@ compute_ex_mem(const cardano_uplc_data_t* data)
       continue;
     }
 
-    if (!walk_push(&stack, &capacity, &count, frame.node, true) ||
-        !push_children(frame.node, &stack, &capacity, &count))
+    if (!walk_push(&stack, &capacity, &count, frame.node, true) || !push_children(frame.node, &stack, &capacity, &count))
     {
       _cardano_free(stack);
 
@@ -593,8 +591,8 @@ static int64_t
 compute_node_count(const cardano_uplc_data_t* data)
 {
   walk_frame_t* stack    = NULL;
-  size_t            capacity = 0U;
-  size_t            count    = 0U;
+  size_t        capacity = 0U;
+  size_t        count    = 0U;
 
   if (data == NULL)
   {
@@ -627,8 +625,7 @@ compute_node_count(const cardano_uplc_data_t* data)
       continue;
     }
 
-    if (!walk_push(&stack, &capacity, &count, frame.node, true) ||
-        !push_children(frame.node, &stack, &capacity, &count))
+    if (!walk_push(&stack, &capacity, &count, frame.node, true) || !push_children(frame.node, &stack, &capacity, &count))
     {
       _cardano_free(stack);
 
@@ -864,7 +861,7 @@ static cardano_error_t
 to_cbor_open(
   const cardano_uplc_data_t* data,
   cardano_cbor_writer_t*     writer,
-  walk_frame_t**         stack,
+  walk_frame_t**             stack,
   size_t*                    capacity,
   size_t*                    count)
 {
@@ -927,8 +924,7 @@ to_cbor_open(
 
       for (i = data->as.map.count; (result == CARDANO_SUCCESS) && (i > 0U); --i)
       {
-        if (!walk_push(stack, capacity, count, data->as.map.entries[i - 1U].value, false) ||
-            !walk_push(stack, capacity, count, data->as.map.entries[i - 1U].key, false))
+        if (!walk_push(stack, capacity, count, data->as.map.entries[i - 1U].value, false) || !walk_push(stack, capacity, count, data->as.map.entries[i - 1U].key, false))
         {
           return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
         }
@@ -1045,10 +1041,10 @@ to_cbor_close(const cardano_uplc_data_t* data, cardano_cbor_writer_t* writer)
 static cardano_error_t
 to_cbor(const cardano_uplc_data_t* data, cardano_cbor_writer_t* writer)
 {
-  walk_frame_t* stack    = NULL;
-  size_t            capacity = 0U;
-  size_t            count    = 0U;
-  cardano_error_t   result   = CARDANO_SUCCESS;
+  walk_frame_t*   stack    = NULL;
+  size_t          capacity = 0U;
+  size_t          count    = 0U;
+  cardano_error_t result   = CARDANO_SUCCESS;
 
   if (data == NULL)
   {
@@ -1167,9 +1163,9 @@ static const uint64_t PRV_CONSTR_RANGED_OFFSET = 7U;
  */
 typedef struct cursor_t
 {
-  const byte_t* buf;
-  size_t        size;
-  size_t        offset;
+    const byte_t* buf;
+    size_t        size;
+    size_t        offset;
 } cursor_t;
 
 /**
@@ -1274,7 +1270,7 @@ read_argument(cursor_t* cursor, byte_t info, uint64_t* out)
   }
 
   cursor->offset += width;
-  *out = value;
+  *out           = value;
 
   return CARDANO_SUCCESS;
 }
@@ -1351,7 +1347,7 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
       return CARDANO_ERROR_DECODING;
     }
 
-    data = &cursor->buf[cursor->offset];
+    data           = &cursor->buf[cursor->offset];
     cursor->offset += (size_t)length;
 
     return cardano_uplc_data_new_bytes(arena, data, (size_t)length, out);
@@ -1433,7 +1429,7 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
       if (chunk_len > 0U)
       {
         (void)memcpy(&scratch[total], &cursor->buf[cursor->offset], (size_t)chunk_len);
-        total += (size_t)chunk_len;
+        total          += (size_t)chunk_len;
         cursor->offset += (size_t)chunk_len;
       }
     }
@@ -1458,7 +1454,7 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
 static cardano_error_t
 parse_array(
   cardano_uplc_arena_t*              arena,
-  cursor_t*                      cursor,
+  cursor_t*                          cursor,
   byte_t                             info,
   uint32_t                           depth,
   const cardano_uplc_data_t* const** out_items,
@@ -1577,7 +1573,7 @@ parse_array(
 static cardano_error_t
 parse_map(
   cardano_uplc_arena_t*            arena,
-  cursor_t*                    cursor,
+  cursor_t*                        cursor,
   byte_t                           info,
   uint32_t                         depth,
   const cardano_uplc_data_pair_t** out_entries,
@@ -2166,10 +2162,10 @@ from_plutus_data(cardano_uplc_arena_t* arena, const cardano_plutus_data_t* data,
 
       for (i = 0U; i < count; ++i)
       {
-        cardano_plutus_data_t* key       = NULL;
-        cardano_plutus_data_t* value     = NULL;
-        cardano_uplc_data_t*   key_node  = NULL;
-        cardano_uplc_data_t*   val_node  = NULL;
+        cardano_plutus_data_t* key      = NULL;
+        cardano_plutus_data_t* value    = NULL;
+        cardano_uplc_data_t*   key_node = NULL;
+        cardano_uplc_data_t*   val_node = NULL;
 
         result = cardano_plutus_list_get(keys, i, &key);
 
@@ -2567,10 +2563,10 @@ cardano_uplc_data_new_map(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  node->kind                = CARDANO_UPLC_DATA_KIND_MAP;
-  node->as.map.entries      = entries;
-  node->as.map.count        = count;
-  node->as.map.indefinite   = indefinite;
+  node->kind              = CARDANO_UPLC_DATA_KIND_MAP;
+  node->as.map.entries    = entries;
+  node->as.map.count      = count;
+  node->as.map.indefinite = indefinite;
 
   *out = node;
 
@@ -2603,9 +2599,9 @@ cardano_uplc_data_new_list(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  node->kind           = CARDANO_UPLC_DATA_KIND_LIST;
-  node->as.list.items  = items;
-  node->as.list.count  = count;
+  node->kind          = CARDANO_UPLC_DATA_KIND_LIST;
+  node->as.list.items = items;
+  node->as.list.count = count;
 
   *out = node;
 
@@ -2778,9 +2774,9 @@ bool
 cardano_uplc_data_equals(const cardano_uplc_data_t* lhs, const cardano_uplc_data_t* rhs)
 {
   equals_pair_t* stack    = NULL;
-  size_t             capacity = 0U;
-  size_t             count    = 0U;
-  bool               equal    = true;
+  size_t         capacity = 0U;
+  size_t         count    = 0U;
+  bool           equal    = true;
 
   if (!equals_push(&stack, &capacity, &count, lhs, rhs))
   {
@@ -2840,8 +2836,7 @@ cardano_uplc_data_equals(const cardano_uplc_data_t* lhs, const cardano_uplc_data
 
         for (i = 0U; equal && (i < a->as.map.count); ++i)
         {
-          if (!equals_push(&stack, &capacity, &count, a->as.map.entries[i].key, b->as.map.entries[i].key) ||
-              !equals_push(&stack, &capacity, &count, a->as.map.entries[i].value, b->as.map.entries[i].value))
+          if (!equals_push(&stack, &capacity, &count, a->as.map.entries[i].key, b->as.map.entries[i].key) || !equals_push(&stack, &capacity, &count, a->as.map.entries[i].value, b->as.map.entries[i].value))
           {
             equal = false;
           }
@@ -2920,7 +2915,7 @@ cardano_uplc_data_from_cbor_bytes(
   size_t                size,
   cardano_uplc_data_t** out)
 {
-  cursor_t    cursor = { NULL, 0U, 0U };
+  cursor_t        cursor = { NULL, 0U, 0U };
   cardano_error_t result = CARDANO_SUCCESS;
 
   if ((arena == NULL) || (out == NULL))

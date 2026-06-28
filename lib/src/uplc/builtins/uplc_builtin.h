@@ -24,10 +24,10 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_lang_version.h"
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/typedefs.h>
-#include "../ast/uplc_lang_version.h"
 
 /* DECLARATIONS **************************************************************/
 
@@ -65,19 +65,19 @@ typedef enum
   CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_INTEGER = 9,
 
   /* ByteString functions (V1) */
-  CARDANO_UPLC_BUILTIN_APPEND_BYTE_STRING            = 10,
-  CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING              = 11,
-  CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING             = 12,
-  CARDANO_UPLC_BUILTIN_LENGTH_OF_BYTE_STRING         = 13,
-  CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING             = 14,
-  CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING            = 15,
-  CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING         = 16,
-  CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_BYTE_STRING  = 17,
+  CARDANO_UPLC_BUILTIN_APPEND_BYTE_STRING           = 10,
+  CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING             = 11,
+  CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING            = 12,
+  CARDANO_UPLC_BUILTIN_LENGTH_OF_BYTE_STRING        = 13,
+  CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING            = 14,
+  CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING           = 15,
+  CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING        = 16,
+  CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_BYTE_STRING = 17,
 
   /* Cryptography and hash functions (V1) */
-  CARDANO_UPLC_BUILTIN_SHA2_256                = 18,
-  CARDANO_UPLC_BUILTIN_SHA3_256                = 19,
-  CARDANO_UPLC_BUILTIN_BLAKE2B_256             = 20,
+  CARDANO_UPLC_BUILTIN_SHA2_256                 = 18,
+  CARDANO_UPLC_BUILTIN_SHA3_256                 = 19,
+  CARDANO_UPLC_BUILTIN_BLAKE2B_256              = 20,
   CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE = 21,
 
   /* String functions (V1) */
@@ -181,19 +181,19 @@ typedef enum
   CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER = 87,
 
   /* Post-V3 ("V4") builtins, tags 88..100. */
-  CARDANO_UPLC_BUILTIN_DROP_LIST                   = 88,
-  CARDANO_UPLC_BUILTIN_LENGTH_OF_ARRAY             = 89,
-  CARDANO_UPLC_BUILTIN_LIST_TO_ARRAY               = 90,
-  CARDANO_UPLC_BUILTIN_INDEX_ARRAY                 = 91,
+  CARDANO_UPLC_BUILTIN_DROP_LIST                     = 88,
+  CARDANO_UPLC_BUILTIN_LENGTH_OF_ARRAY               = 89,
+  CARDANO_UPLC_BUILTIN_LIST_TO_ARRAY                 = 90,
+  CARDANO_UPLC_BUILTIN_INDEX_ARRAY                   = 91,
   CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL = 92,
   CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL = 93,
-  CARDANO_UPLC_BUILTIN_INSERT_COIN                 = 94,
-  CARDANO_UPLC_BUILTIN_LOOKUP_COIN                 = 95,
-  CARDANO_UPLC_BUILTIN_UNION_VALUE                 = 96,
-  CARDANO_UPLC_BUILTIN_VALUE_CONTAINS              = 97,
-  CARDANO_UPLC_BUILTIN_VALUE_DATA                  = 98,
-  CARDANO_UPLC_BUILTIN_UN_VALUE_DATA               = 99,
-  CARDANO_UPLC_BUILTIN_SCALE_VALUE                 = 100
+  CARDANO_UPLC_BUILTIN_INSERT_COIN                   = 94,
+  CARDANO_UPLC_BUILTIN_LOOKUP_COIN                   = 95,
+  CARDANO_UPLC_BUILTIN_UNION_VALUE                   = 96,
+  CARDANO_UPLC_BUILTIN_VALUE_CONTAINS                = 97,
+  CARDANO_UPLC_BUILTIN_VALUE_DATA                    = 98,
+  CARDANO_UPLC_BUILTIN_UN_VALUE_DATA                 = 99,
+  CARDANO_UPLC_BUILTIN_SCALE_VALUE                   = 100
 } cardano_uplc_builtin_t;
 
 /**

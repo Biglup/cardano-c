@@ -50,38 +50,40 @@ extern "C" {
  */
 typedef struct cardano_uplc_two_arg_cost_t
 {
-  /** \brief Selects the active union member. */
-  cardano_uplc_two_arg_kind_t kind;
-  /** \brief The variant parameters. */
-  union
-  {
-    /** \brief Active for CONSTANT. */
-    int64_t constant;
-    /** \brief Active for LINEAR_IN_X, LINEAR_IN_Y, ADDED_SIZES, MULTIPLIED_SIZES, MIN_SIZE, MAX_SIZE, DROP_LIST. */
-    cardano_uplc_linear_cost_t linear;
-    /** \brief Active for LINEAR_IN_X_AND_Y. */
-    cardano_uplc_two_var_linear_cost_t linear_in_x_and_y;
-    /** \brief Active for WITH_INTERACTION. */
-    cardano_uplc_with_interaction_cost_t with_interaction;
-    /** \brief Active for SUBTRACTED_SIZES. */
-    cardano_uplc_subtracted_sizes_cost_t subtracted_sizes;
-    /** \brief Active for LINEAR_ON_DIAGONAL. */
-    cardano_uplc_const_or_linear_cost_t linear_on_diagonal;
-    /** \brief Active for CONST_ABOVE_DIAGONAL, ABOVE_AND_BELOW_DIAGONAL, CONST_BELOW_DIAGONAL. */
-    cardano_uplc_const_or_two_arg_cost_t const_diagonal;
-    /** \brief Active for QUADRATIC_IN_Y. */
-    cardano_uplc_quadratic_cost_t quadratic_in_y;
-    /** \brief Active for QUADRATIC_IN_X_AND_Y. */
-    cardano_uplc_two_var_quadratic_cost_t quadratic_in_x_and_y;
-    /** \brief Active for CONST_ABOVE_DIAGONAL_INTO_QUADRATIC. */
-    struct
+    /** \brief Selects the active union member. */
+    cardano_uplc_two_arg_kind_t kind;
+
+    /** \brief The variant parameters. */
+    union
     {
-      /** \brief The flat cost charged when x < y. */
-      int64_t constant;
-      /** \brief The quadratic evaluated when x >= y. */
-      cardano_uplc_two_var_quadratic_cost_t quadratic;
-    } const_above_into_quadratic;
-  } params;
+        /** \brief Active for CONSTANT. */
+        int64_t constant;
+        /** \brief Active for LINEAR_IN_X, LINEAR_IN_Y, ADDED_SIZES, MULTIPLIED_SIZES, MIN_SIZE, MAX_SIZE, DROP_LIST. */
+        cardano_uplc_linear_cost_t linear;
+        /** \brief Active for LINEAR_IN_X_AND_Y. */
+        cardano_uplc_two_var_linear_cost_t linear_in_x_and_y;
+        /** \brief Active for WITH_INTERACTION. */
+        cardano_uplc_with_interaction_cost_t with_interaction;
+        /** \brief Active for SUBTRACTED_SIZES. */
+        cardano_uplc_subtracted_sizes_cost_t subtracted_sizes;
+        /** \brief Active for LINEAR_ON_DIAGONAL. */
+        cardano_uplc_const_or_linear_cost_t linear_on_diagonal;
+        /** \brief Active for CONST_ABOVE_DIAGONAL, ABOVE_AND_BELOW_DIAGONAL, CONST_BELOW_DIAGONAL. */
+        cardano_uplc_const_or_two_arg_cost_t const_diagonal;
+        /** \brief Active for QUADRATIC_IN_Y. */
+        cardano_uplc_quadratic_cost_t quadratic_in_y;
+        /** \brief Active for QUADRATIC_IN_X_AND_Y. */
+        cardano_uplc_two_var_quadratic_cost_t quadratic_in_x_and_y;
+
+        /** \brief Active for CONST_ABOVE_DIAGONAL_INTO_QUADRATIC. */
+        struct
+        {
+            /** \brief The flat cost charged when x < y. */
+            int64_t constant;
+            /** \brief The quadratic evaluated when x >= y. */
+            cardano_uplc_two_var_quadratic_cost_t quadratic;
+        } const_above_into_quadratic;
+    } params;
 } cardano_uplc_two_arg_cost_t;
 
 /**

@@ -21,12 +21,12 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/builtins/uplc_builtin.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
-#include "../../src/uplc/builtins/uplc_builtin.h"
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/builtins/builtins.h"
@@ -194,9 +194,9 @@ evaluate_program(const char* source)
     CARDANO_SUCCESS)
     << "failed to parse at offset " << offset;
 
-  const cardano_uplc_budget_t      initial = { 100000000000LL, 100000000000LL };
-  cardano_uplc_eval_result_t       result  = {};
-  const cardano_error_t            host    =
+  const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
+  cardano_uplc_eval_result_t  result  = {};
+  const cardano_error_t       host =
     cardano_uplc_evaluate(arena, program, CARDANO_UPLC_MACHINE_VERSION_V3, initial, &result);
 
   EXPECT_EQ(host, CARDANO_SUCCESS);
@@ -273,11 +273,11 @@ TEST(cardano_uplc_builtin_as_unit, acceptsTheUnitConstant)
 
 TEST(cardano_uplc_builtin_as_list, returnsTheElementTypeAndItems)
 {
-  cardano_uplc_arena_t*                  arena   = new_arena();
-  const cardano_uplc_value_t*            value   = unit_list_value(arena);
-  const cardano_uplc_type_t*             element = nullptr;
-  const cardano_uplc_constant_t* const*  items   = nullptr;
-  size_t                                 count   = 99U;
+  cardano_uplc_arena_t*                 arena   = new_arena();
+  const cardano_uplc_value_t*           value   = unit_list_value(arena);
+  const cardano_uplc_type_t*            element = nullptr;
+  const cardano_uplc_constant_t* const* items   = nullptr;
+  size_t                                count   = 99U;
 
   EXPECT_TRUE(cardano_uplc_builtin_as_list(value, &element, &items, &count));
   ASSERT_NE(element, nullptr);
@@ -654,15 +654,11 @@ TEST(cardano_uplc_builtin_body, blsG1MultiScalarMulMatchesScalarMulAndIsIdentity
 
   std::string g1_point = "0x97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb";
   std::string msm =
-    std::string("(program 1.0.0 [ [ (builtin bls12_381_G1_equal) ")
-    + "[ [ (builtin bls12_381_G1_multiScalarMul) (con (list integer) [3]) ] (con (list bls12_381_G1_element) [" + g1_point + "]) ] ] "
-    + "[ [ (builtin bls12_381_G1_scalarMul) (con integer 3) ] " + std::string(kG) + " ] ])";
+    std::string("(program 1.0.0 [ [ (builtin bls12_381_G1_equal) ") + "[ [ (builtin bls12_381_G1_multiScalarMul) (con (list integer) [3]) ] (con (list bls12_381_G1_element) [" + g1_point + "]) ] ] " + "[ [ (builtin bls12_381_G1_scalarMul) (con integer 3) ] " + std::string(kG) + " ] ])";
   EXPECT_EQ(eval_ok(msm.c_str()), "(con bool True)");
 
   std::string empty =
-    std::string("(program 1.0.0 [ [ (builtin bls12_381_G1_equal) ")
-    + "[ [ (builtin bls12_381_G1_multiScalarMul) (con (list integer) []) ] (con (list bls12_381_G1_element) []) ] ] "
-    + "(con bls12_381_G1_element 0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000) ])";
+    std::string("(program 1.0.0 [ [ (builtin bls12_381_G1_equal) ") + "[ [ (builtin bls12_381_G1_multiScalarMul) (con (list integer) []) ] (con (list bls12_381_G1_element) []) ] ] " + "(con bls12_381_G1_element 0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000) ])";
   EXPECT_EQ(eval_ok(empty.c_str()), "(con bool True)");
 }
 
@@ -674,9 +670,7 @@ TEST(cardano_uplc_builtin_body, blsG2MultiScalarMulMatchesScalarMul)
   std::string g2_point =
     "0x93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8";
   std::string msm =
-    std::string("(program 1.0.0 [ [ (builtin bls12_381_G2_equal) ")
-    + "[ [ (builtin bls12_381_G2_multiScalarMul) (con (list integer) [5]) ] (con (list bls12_381_G2_element) [" + g2_point + "]) ] ] "
-    + "[ [ (builtin bls12_381_G2_scalarMul) (con integer 5) ] " + std::string(kG) + " ] ])";
+    std::string("(program 1.0.0 [ [ (builtin bls12_381_G2_equal) ") + "[ [ (builtin bls12_381_G2_multiScalarMul) (con (list integer) [5]) ] (con (list bls12_381_G2_element) [" + g2_point + "]) ] ] " + "[ [ (builtin bls12_381_G2_scalarMul) (con integer 5) ] " + std::string(kG) + " ] ])";
   EXPECT_EQ(eval_ok(msm.c_str()), "(con bool True)");
 }
 

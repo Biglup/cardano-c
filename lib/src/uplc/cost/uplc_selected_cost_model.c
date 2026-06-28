@@ -22,9 +22,9 @@
 /* INCLUDES ******************************************************************/
 
 #include "uplc_selected_cost_model.h"
-#include "uplc_cost_model.h"
 #include "../ast/uplc_lang_version.h"
 #include "../builtins/uplc_builtin_semantics.h"
+#include "uplc_cost_model.h"
 
 #include <stddef.h>
 #include <stdint.h>

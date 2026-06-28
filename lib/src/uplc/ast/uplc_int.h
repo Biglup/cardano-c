@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "uplc_term.h"
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
-#include "uplc_term.h"
 
 #include "../arena/uplc_arena.h"
 

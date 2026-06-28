@@ -91,9 +91,9 @@ cardano_uplc_frame_new_await_arg(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind                = CARDANO_UPLC_FRAME_AWAIT_ARG;
-  result->as.await_arg.value  = value;
-  result->as.await_arg.ctx    = ctx;
+  result->kind               = CARDANO_UPLC_FRAME_AWAIT_ARG;
+  result->as.await_arg.value = value;
+  result->as.await_arg.ctx   = ctx;
 
   *out = result;
 
@@ -122,10 +122,10 @@ cardano_uplc_frame_new_await_fun_term(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind                     = CARDANO_UPLC_FRAME_AWAIT_FUN_TERM;
-  result->as.await_fun_term.env    = env;
-  result->as.await_fun_term.term   = term;
-  result->as.await_fun_term.ctx    = ctx;
+  result->kind                   = CARDANO_UPLC_FRAME_AWAIT_FUN_TERM;
+  result->as.await_fun_term.env  = env;
+  result->as.await_fun_term.term = term;
+  result->as.await_fun_term.ctx  = ctx;
 
   *out = result;
 
@@ -153,9 +153,9 @@ cardano_uplc_frame_new_await_fun_value(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind                      = CARDANO_UPLC_FRAME_AWAIT_FUN_VALUE;
-  result->as.await_fun_value.value  = value;
-  result->as.await_fun_value.ctx    = ctx;
+  result->kind                     = CARDANO_UPLC_FRAME_AWAIT_FUN_VALUE;
+  result->as.await_fun_value.value = value;
+  result->as.await_fun_value.ctx   = ctx;
 
   *out = result;
 
@@ -182,8 +182,8 @@ cardano_uplc_frame_new_force(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind          = CARDANO_UPLC_FRAME_FORCE;
-  result->as.force.ctx  = ctx;
+  result->kind         = CARDANO_UPLC_FRAME_FORCE;
+  result->as.force.ctx = ctx;
 
   *out = result;
 
@@ -221,14 +221,14 @@ cardano_uplc_frame_new_constr(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind                       = CARDANO_UPLC_FRAME_CONSTR;
-  result->as.constr.env              = env;
-  result->as.constr.tag              = tag;
-  result->as.constr.fields           = fields;
-  result->as.constr.field_count      = field_count;
-  result->as.constr.resolved         = resolved;
-  result->as.constr.resolved_count   = resolved_count;
-  result->as.constr.ctx              = ctx;
+  result->kind                     = CARDANO_UPLC_FRAME_CONSTR;
+  result->as.constr.env            = env;
+  result->as.constr.tag            = tag;
+  result->as.constr.fields         = fields;
+  result->as.constr.field_count    = field_count;
+  result->as.constr.resolved       = resolved;
+  result->as.constr.resolved_count = resolved_count;
+  result->as.constr.ctx            = ctx;
 
   *out = result;
 
@@ -263,11 +263,11 @@ cardano_uplc_frame_new_cases(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->kind                   = CARDANO_UPLC_FRAME_CASES;
-  result->as.cases.env           = env;
-  result->as.cases.branches      = branches;
-  result->as.cases.branch_count  = branch_count;
-  result->as.cases.ctx           = ctx;
+  result->kind                  = CARDANO_UPLC_FRAME_CASES;
+  result->as.cases.env          = env;
+  result->as.cases.branches     = branches;
+  result->as.cases.branch_count = branch_count;
+  result->as.cases.ctx          = ctx;
 
   *out = result;
 

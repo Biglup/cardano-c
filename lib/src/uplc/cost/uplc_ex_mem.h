@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_constant.h"
 #include <cardano/common/bigint.h>
 #include <cardano/typedefs.h>
-#include "../ast/uplc_constant.h"
 
 /* FORWARD DECLARATIONS ******************************************************/
 

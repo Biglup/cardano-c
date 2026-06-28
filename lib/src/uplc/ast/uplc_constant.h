@@ -24,16 +24,16 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../arena/uplc_arena.h"
+#include "../builtins/uplc_builtin.h"
+#include "uplc_type.h"
+#include "uplc_type_kind.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/typedefs.h>
-#include "../arena/uplc_arena.h"
-#include "../builtins/uplc_builtin.h"
-#include "uplc_type.h"
-#include "uplc_type_kind.h"
 
 /* FORWARD DECLARATIONS ******************************************************/
 
@@ -77,59 +77,59 @@ extern "C" {
  */
 typedef struct cardano_uplc_constant_t
 {
-  cardano_uplc_type_kind_t kind;
+    cardano_uplc_type_kind_t kind;
 
-  union
-  {
-    /**
-     * \brief An arbitrary-precision integer stored inline when it fits an \c int64_t.
-     *
-     * Most UPLC integers are tiny, so the machine keeps them as a flat \c int64_t
-     * with no heap allocation; \c big is reserved for the rare value whose magnitude
-     * exceeds the signed 64-bit range. When \c is_small is \c true the value is
-     * exactly \c small and \c big is either NULL or a lazily materialized,
-     * arena-owned copy of \c small built on demand by the builtins that need a
-     * \ref cardano_bigint_t (a read-through cache, never the source of truth). When
-     * \c is_small is \c false the value lives in \c big and \c small is unused. The
-     * fast arithmetic path operates on \c small directly and falls back to \c big
-     * only on overflow.
-     */
-    struct
+    union
     {
-      int64_t           small;
-      cardano_bigint_t* big;
-      bool              is_small;
-    } integer;
+        /**
+         * \brief An arbitrary-precision integer stored inline when it fits an \c int64_t.
+         *
+         * Most UPLC integers are tiny, so the machine keeps them as a flat \c int64_t
+         * with no heap allocation; \c big is reserved for the rare value whose magnitude
+         * exceeds the signed 64-bit range. When \c is_small is \c true the value is
+         * exactly \c small and \c big is either NULL or a lazily materialized,
+         * arena-owned copy of \c small built on demand by the builtins that need a
+         * \ref cardano_bigint_t (a read-through cache, never the source of truth). When
+         * \c is_small is \c false the value lives in \c big and \c small is unused. The
+         * fast arithmetic path operates on \c small directly and falls back to \c big
+         * only on overflow.
+         */
+        struct
+        {
+            int64_t           small;
+            cardano_bigint_t* big;
+            bool              is_small;
+        } integer;
 
-    struct
-    {
-      const byte_t* data;
-      size_t        size;
-    } bytes;
+        struct
+        {
+            const byte_t* data;
+            size_t        size;
+        } bytes;
 
-    struct
-    {
-      const byte_t* data;
-      size_t        size;
-    } string;
+        struct
+        {
+            const byte_t* data;
+            size_t        size;
+        } string;
 
-    bool                             boolean;
-    const struct cardano_uplc_data_t* data;
-    const void*                      bls;
+        bool                              boolean;
+        const struct cardano_uplc_data_t* data;
+        const void*                       bls;
 
-    struct
-    {
-      const cardano_uplc_type_t*                   element_type;
-      const struct cardano_uplc_constant_t* const* items;
-      size_t                                       count;
-    } list; /* also the active arm for CARDANO_UPLC_TYPE_ARRAY and CARDANO_UPLC_TYPE_VALUE */
+        struct
+        {
+            const cardano_uplc_type_t*                   element_type;
+            const struct cardano_uplc_constant_t* const* items;
+            size_t                                       count;
+        } list; /* also the active arm for CARDANO_UPLC_TYPE_ARRAY and CARDANO_UPLC_TYPE_VALUE */
 
-    struct
-    {
-      const struct cardano_uplc_constant_t* fst;
-      const struct cardano_uplc_constant_t* snd;
-    } pair;
-  } as;
+        struct
+        {
+            const struct cardano_uplc_constant_t* fst;
+            const struct cardano_uplc_constant_t* snd;
+        } pair;
+    } as;
 } cardano_uplc_constant_t;
 
 /**
@@ -329,11 +329,11 @@ cardano_uplc_constant_new_bls(
  */
 cardano_error_t
 cardano_uplc_constant_new_list(
-  struct cardano_uplc_arena_t*                 arena,
-  const cardano_uplc_type_t*                   element_type,
-  const cardano_uplc_constant_t* const*        items,
-  size_t                                       count,
-  cardano_uplc_constant_t**                    constant);
+  struct cardano_uplc_arena_t*          arena,
+  const cardano_uplc_type_t*            element_type,
+  const cardano_uplc_constant_t* const* items,
+  size_t                                count,
+  cardano_uplc_constant_t**             constant);
 
 /**
  * \brief Builds a typed array constant from an arena-allocated item array.
@@ -360,11 +360,11 @@ cardano_uplc_constant_new_list(
  */
 cardano_error_t
 cardano_uplc_constant_new_array(
-  struct cardano_uplc_arena_t*                 arena,
-  const cardano_uplc_type_t*                   element_type,
-  const cardano_uplc_constant_t* const*        items,
-  size_t                                       count,
-  cardano_uplc_constant_t**                    constant);
+  struct cardano_uplc_arena_t*          arena,
+  const cardano_uplc_type_t*            element_type,
+  const cardano_uplc_constant_t* const* items,
+  size_t                                count,
+  cardano_uplc_constant_t**             constant);
 
 /**
  * \brief Builds a multi-asset value constant from a normalized policy list.
@@ -392,11 +392,11 @@ cardano_uplc_constant_new_array(
  */
 cardano_error_t
 cardano_uplc_constant_new_value(
-  struct cardano_uplc_arena_t*                 arena,
-  const cardano_uplc_type_t*                   element_type,
-  const cardano_uplc_constant_t* const*        items,
-  size_t                                       count,
-  cardano_uplc_constant_t**                    constant);
+  struct cardano_uplc_arena_t*          arena,
+  const cardano_uplc_type_t*            element_type,
+  const cardano_uplc_constant_t* const* items,
+  size_t                                count,
+  cardano_uplc_constant_t**             constant);
 
 /**
  * \brief Builds a typed pair constant from two arena-allocated components.

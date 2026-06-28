@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../machine/uplc_budget.h"
 #include "uplc_machine_costs.h"
 #include "uplc_step_kind.h"
-#include "../machine/uplc_budget.h"
 
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
@@ -55,16 +55,16 @@ extern "C" {
  */
 typedef struct cardano_uplc_step_accumulator_t
 {
-  /** \brief The per-step cost table used when flushing. */
-  cardano_uplc_machine_costs_t costs;
-  /** \brief Total budget charged so far (startup + flushed steps + explicit). */
-  cardano_uplc_budget_t spent;
-  /** \brief Pending occurrence count for each step kind, indexed by kind. */
-  uint64_t counts[CARDANO_UPLC_STEP_KIND_COUNT];
-  /** \brief Total pending step count across all kinds, the flush trigger. */
-  uint64_t pending;
-  /** \brief Flush threshold: flush when \c pending reaches this value. */
-  uint64_t slippage;
+    /** \brief The per-step cost table used when flushing. */
+    cardano_uplc_machine_costs_t costs;
+    /** \brief Total budget charged so far (startup + flushed steps + explicit). */
+    cardano_uplc_budget_t spent;
+    /** \brief Pending occurrence count for each step kind, indexed by kind. */
+    uint64_t counts[CARDANO_UPLC_STEP_KIND_COUNT];
+    /** \brief Total pending step count across all kinds, the flush trigger. */
+    uint64_t pending;
+    /** \brief Flush threshold: flush when \c pending reaches this value. */
+    uint64_t slippage;
 } cardano_uplc_step_accumulator_t;
 
 /**

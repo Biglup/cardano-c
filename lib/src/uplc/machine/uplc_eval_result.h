@@ -24,10 +24,10 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/typedefs.h>
+#include "../ast/uplc_term.h"
 #include "uplc_budget.h"
 #include "uplc_eval_status.h"
-#include "../ast/uplc_term.h"
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -47,12 +47,12 @@ extern "C" {
  */
 typedef struct cardano_uplc_eval_result_t
 {
-  /** \brief The script outcome. */
-  cardano_uplc_eval_status_t status;
-  /** \brief The budget consumed by the evaluation. */
-  cardano_uplc_budget_t spent;
-  /** \brief The discharged result term on success, NULL otherwise. */
-  const cardano_uplc_term_t* result;
+    /** \brief The script outcome. */
+    cardano_uplc_eval_status_t status;
+    /** \brief The budget consumed by the evaluation. */
+    cardano_uplc_budget_t spent;
+    /** \brief The discharged result term on success, NULL otherwise. */
+    const cardano_uplc_term_t* result;
 } cardano_uplc_eval_result_t;
 
 #ifdef __cplusplus

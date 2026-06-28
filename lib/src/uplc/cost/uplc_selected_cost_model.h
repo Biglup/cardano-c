@@ -24,10 +24,10 @@
 
 /* INCLUDES ******************************************************************/
 
-#include "uplc_cost_model.h"
-#include "uplc_cost_model_version.h"
 #include "../ast/uplc_lang_version.h"
 #include "../builtins/uplc_builtin_semantics.h"
+#include "uplc_cost_model.h"
+#include "uplc_cost_model_version.h"
 
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
@@ -51,10 +51,10 @@ extern "C" {
  */
 typedef struct cardano_uplc_selected_cost_model_t
 {
-  /** \brief The structured cost model built for the language version. */
-  cardano_uplc_cost_model_t model;
-  /** \brief The builtin semantics variant for the language and protocol. */
-  cardano_uplc_builtin_semantics_t semantics;
+    /** \brief The structured cost model built for the language version. */
+    cardano_uplc_cost_model_t model;
+    /** \brief The builtin semantics variant for the language and protocol. */
+    cardano_uplc_builtin_semantics_t semantics;
 } cardano_uplc_selected_cost_model_t;
 
 /**
@@ -100,11 +100,11 @@ cardano_uplc_cost_model_version_for_language(cardano_uplc_lang_version_t lang_ve
  */
 cardano_error_t
 cardano_uplc_select_cost_model(
-  cardano_uplc_lang_version_t          lang_version,
-  uint64_t                             protocol_major,
-  const int64_t*                       params,
-  size_t                               count,
-  cardano_uplc_selected_cost_model_t*  out);
+  cardano_uplc_lang_version_t         lang_version,
+  uint64_t                            protocol_major,
+  const int64_t*                      params,
+  size_t                              count,
+  cardano_uplc_selected_cost_model_t* out);
 
 #ifdef __cplusplus
 }

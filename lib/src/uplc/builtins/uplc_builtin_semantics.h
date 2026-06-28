@@ -24,8 +24,8 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/typedefs.h>
 #include "../ast/uplc_lang_version.h"
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 

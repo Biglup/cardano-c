@@ -24,9 +24,9 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_term.h"
 #include <cardano/error.h>
 #include <cardano/typedefs.h>
-#include "../ast/uplc_term.h"
 
 #include "../arena/uplc_arena.h"
 

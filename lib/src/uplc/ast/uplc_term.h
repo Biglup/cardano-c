@@ -24,13 +24,13 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/error.h>
-#include <cardano/export.h>
-#include <cardano/typedefs.h>
 #include "../arena/uplc_arena.h"
 #include "../builtins/uplc_builtin.h"
 #include "uplc_constant.h"
 #include "uplc_term_kind.h"
+#include <cardano/error.h>
+#include <cardano/export.h>
+#include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -48,35 +48,35 @@ extern "C" {
  */
 typedef struct cardano_uplc_term_t
 {
-  cardano_uplc_term_kind_t kind;
+    cardano_uplc_term_kind_t kind;
 
-  union
-  {
-    uint64_t                       var_index;
-    const struct cardano_uplc_term_t* unary;
-    const cardano_uplc_constant_t* constant;
-    cardano_uplc_builtin_t         builtin;
-
-    struct
+    union
     {
-      const struct cardano_uplc_term_t* function;
-      const struct cardano_uplc_term_t* argument;
-    } apply;
+        uint64_t                          var_index;
+        const struct cardano_uplc_term_t* unary;
+        const cardano_uplc_constant_t*    constant;
+        cardano_uplc_builtin_t            builtin;
 
-    struct
-    {
-      uint64_t                                 tag;
-      const struct cardano_uplc_term_t* const* fields;
-      size_t                                   field_count;
-    } constr;
+        struct
+        {
+            const struct cardano_uplc_term_t* function;
+            const struct cardano_uplc_term_t* argument;
+        } apply;
 
-    struct
-    {
-      const struct cardano_uplc_term_t*        scrutinee;
-      const struct cardano_uplc_term_t* const* branches;
-      size_t                                   branch_count;
-    } cases;
-  } as;
+        struct
+        {
+            uint64_t                                 tag;
+            const struct cardano_uplc_term_t* const* fields;
+            size_t                                   field_count;
+        } constr;
+
+        struct
+        {
+            const struct cardano_uplc_term_t*        scrutinee;
+            const struct cardano_uplc_term_t* const* branches;
+            size_t                                   branch_count;
+        } cases;
+    } as;
 } cardano_uplc_term_t;
 
 /**
@@ -241,11 +241,11 @@ cardano_uplc_term_new_builtin(
  */
 cardano_error_t
 cardano_uplc_term_new_constr(
-  struct cardano_uplc_arena_t*             arena,
-  uint64_t                                 tag,
-  const cardano_uplc_term_t* const*        fields,
-  size_t                                   field_count,
-  cardano_uplc_term_t**                    term);
+  struct cardano_uplc_arena_t*      arena,
+  uint64_t                          tag,
+  const cardano_uplc_term_t* const* fields,
+  size_t                            field_count,
+  cardano_uplc_term_t**             term);
 
 /**
  * \brief Builds a case term from a scrutinee and a branch array.
@@ -267,11 +267,11 @@ cardano_uplc_term_new_constr(
  */
 cardano_error_t
 cardano_uplc_term_new_case(
-  struct cardano_uplc_arena_t*             arena,
-  const cardano_uplc_term_t*               scrutinee,
-  const cardano_uplc_term_t* const*        branches,
-  size_t                                   branch_count,
-  cardano_uplc_term_t**                    term);
+  struct cardano_uplc_arena_t*      arena,
+  const cardano_uplc_term_t*        scrutinee,
+  const cardano_uplc_term_t* const* branches,
+  size_t                            branch_count,
+  cardano_uplc_term_t**             term);
 
 #ifdef __cplusplus
 }

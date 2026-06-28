@@ -42,8 +42,8 @@ extern "C" {
  */
 typedef struct cardano_uplc_byte_view_t
 {
-  const byte_t* data;
-  size_t        size;
+    const byte_t* data;
+    size_t        size;
 } cardano_uplc_byte_view_t;
 
 #ifdef __cplusplus

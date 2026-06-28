@@ -21,14 +21,17 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../uplc/ast/uplc_term.h"
+#include "../../uplc/cost/uplc_selected_cost_model.h"
+#include "../../uplc/machine/uplc_machine.h"
 #include <cardano/address/address.h>
 #include <cardano/address/address_type.h>
 #include <cardano/address/base_address.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/address/pointer_address.h>
 #include <cardano/assets/multi_asset.h>
-#include <cardano/cbor/cbor_writer.h>
 #include <cardano/assets/policy_id_list.h>
+#include <cardano/cbor/cbor_writer.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/credential_type.h>
 #include <cardano/common/datum.h>
@@ -53,9 +56,6 @@
 #include <cardano/transaction_body/transaction_input_set.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
-#include "../../uplc/machine/uplc_machine.h"
-#include "../../uplc/cost/uplc_selected_cost_model.h"
-#include "../../uplc/ast/uplc_term.h"
 #include <cardano/witness_set/plutus_data_set.h>
 #include <cardano/witness_set/plutus_v1_script_set.h>
 #include <cardano/witness_set/plutus_v2_script_set.h>
@@ -65,8 +65,8 @@
 #include "../../allocators.h"
 #include "../../string_safe.h"
 #include "../../uplc/arena/uplc_arena.h"
-#include <cardano/uplc/uplc_apply_params.h>
 #include "../../uplc/tx/script_context.h"
+#include <cardano/uplc/uplc_apply_params.h>
 
 #include <stddef.h>
 #include <string.h>
@@ -221,11 +221,11 @@ payment_credential(cardano_address_t* address)
  */
 static cardano_error_t
 find_script_by_hash(
-  cardano_witness_set_t*       witness_set,
-  cardano_utxo_list_t*         resolved_inputs,
+  cardano_witness_set_t*        witness_set,
+  cardano_utxo_list_t*          resolved_inputs,
   const cardano_blake2b_hash_t* script_hash,
-  cardano_buffer_t**           out_bytes,
-  script_version_t*        out_version)
+  cardano_buffer_t**            out_bytes,
+  script_version_t*             out_version)
 {
   cardano_error_t result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
 
@@ -532,9 +532,9 @@ resolve_script_hash(
   cardano_blake2b_hash_t** out_hash,
   cardano_plutus_data_t**  out_datum)
 {
-  cardano_transaction_body_t* body  = cardano_transaction_get_body(tx);
-  const cardano_redeemer_tag_t tag   = cardano_redeemer_get_tag(redeemer);
-  const uint64_t               index = cardano_redeemer_get_index(redeemer);
+  cardano_transaction_body_t*  body   = cardano_transaction_get_body(tx);
+  const cardano_redeemer_tag_t tag    = cardano_redeemer_get_tag(redeemer);
+  const uint64_t               index  = cardano_redeemer_get_index(redeemer);
   cardano_error_t              result = CARDANO_SUCCESS;
 
   *out_hash  = NULL;
@@ -745,8 +745,8 @@ uplc_lang_version(script_version_t version)
  */
 static cardano_error_t
 select_cost_model(
-  native_context_t*               ctx,
-  script_version_t                version,
+  native_context_t*                   ctx,
+  script_version_t                    version,
   cardano_uplc_selected_cost_model_t* out)
 {
   cardano_cost_model_t* cost_model = NULL;
@@ -813,7 +813,7 @@ select_cost_model(
  */
 static cardano_error_t
 build_script_context(
-  script_version_t         version,
+  script_version_t             version,
   cardano_transaction_t*       tx,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_slot_config_t* slot_config,
@@ -859,12 +859,12 @@ build_script_context(
  */
 static cardano_error_t
 apply_arguments(
-  cardano_uplc_arena_t*         arena,
-  script_version_t          version,
-  const cardano_uplc_program_t* program,
-  cardano_redeemer_t*           redeemer,
-  cardano_plutus_data_t*        datum,
-  cardano_plutus_data_t*        script_context,
+  cardano_uplc_arena_t*          arena,
+  script_version_t               version,
+  const cardano_uplc_program_t*  program,
+  cardano_redeemer_t*            redeemer,
+  cardano_plutus_data_t*         datum,
+  cardano_plutus_data_t*         script_context,
   const cardano_uplc_program_t** out)
 {
   cardano_error_t result = CARDANO_SUCCESS;
@@ -919,7 +919,7 @@ apply_arguments(
  */
 static cardano_error_t
 eval_redeemer(
-  native_context_t*  ctx,
+  native_context_t*      ctx,
   cardano_transaction_t* tx,
   cardano_witness_set_t* witness_set,
   cardano_utxo_list_t*   resolved_inputs,
@@ -936,7 +936,7 @@ eval_redeemer(
   const cardano_uplc_program_t* program        = NULL;
   const cardano_uplc_program_t* applied        = NULL;
   cardano_ex_units_t*           ex_units       = NULL;
-  script_version_t          version        = PRV_SCRIPT_V3;
+  script_version_t              version        = PRV_SCRIPT_V3;
   cardano_uplc_eval_result_t    eval_result;
   cardano_error_t               result = CARDANO_SUCCESS;
 
@@ -952,8 +952,7 @@ eval_redeemer(
 
   if (result == CARDANO_SUCCESS)
   {
-    if ((datum == NULL) && ((version == PRV_SCRIPT_V1) || (version == PRV_SCRIPT_V2)) &&
-        (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_SPEND))
+    if ((datum == NULL) && ((version == PRV_SCRIPT_V1) || (version == PRV_SCRIPT_V2)) && (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_SPEND))
     {
       result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
     }
@@ -1046,12 +1045,12 @@ evaluate_transaction(
   cardano_utxo_list_t*         additional_utxos,
   cardano_redeemer_list_t**    redeemers)
 {
-  native_context_t*    ctx         = NULL;
+  native_context_t*        ctx         = NULL;
   cardano_witness_set_t*   witness_set = NULL;
   cardano_redeemer_list_t* in_list     = NULL;
   cardano_redeemer_list_t* out_list    = NULL;
   cardano_uplc_budget_t    remaining;
-  cardano_error_t          result      = CARDANO_SUCCESS;
+  cardano_error_t          result = CARDANO_SUCCESS;
 
   if ((impl == NULL) || (tx == NULL) || (redeemers == NULL))
   {
@@ -1128,7 +1127,7 @@ cardano_tx_evaluator_new_native(
   cardano_tx_evaluator_t**     tx_evaluator)
 {
   cardano_tx_evaluator_impl_t impl = { { 0 }, { 0 }, NULL, NULL };
-  native_context_t*       ctx  = NULL;
+  native_context_t*           ctx  = NULL;
   cardano_error_t             result;
 
   if ((slot_config == NULL) || (tx_evaluator == NULL))

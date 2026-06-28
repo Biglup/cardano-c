@@ -22,9 +22,9 @@
 /* INCLUDES ******************************************************************/
 
 #include "uplc_cost_model.h"
+#include "../builtins/uplc_builtin.h"
 #include "uplc_builtin_costs.h"
 #include "uplc_machine_costs.h"
-#include "../builtins/uplc_builtin.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -180,12 +180,12 @@ set_v12_div(
   size_t                       mem_min,
   size_t                       mem_s)
 {
-  e->cpu.two.params.const_diagonal.constant                  = p[cpu_c];
+  e->cpu.two.params.const_diagonal.constant                         = p[cpu_c];
   e->cpu.two.params.const_diagonal.model.multiplied_sizes.intercept = p[cpu_i];
   e->cpu.two.params.const_diagonal.model.multiplied_sizes.slope     = p[cpu_s];
-  e->mem.two.params.subtracted_sizes.intercept               = p[mem_i];
-  e->mem.two.params.subtracted_sizes.minimum                 = p[mem_min];
-  e->mem.two.params.subtracted_sizes.slope                   = p[mem_s];
+  e->mem.two.params.subtracted_sizes.intercept                      = p[mem_i];
+  e->mem.two.params.subtracted_sizes.minimum                        = p[mem_min];
+  e->mem.two.params.subtracted_sizes.slope                          = p[mem_s];
 }
 
 /**
@@ -213,8 +213,8 @@ from_params_v1(cardano_uplc_cost_model_t* out, const int64_t* p)
   set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_B_DATA], p, 12U, 13U);
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_BLAKE2B_256], p, 14U, 15U, 16U);
 
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant = p[33];
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant = p[34];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant   = p[33];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant   = p[34];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].cpu.three.params.constant = p[35];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].mem.three.params.constant = p[36];
   set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_UNIT], p, 37U, 38U);
@@ -327,8 +327,8 @@ from_params_v2(cardano_uplc_cost_model_t* out, const int64_t* p)
   set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_B_DATA], p, 12U, 13U);
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_BLAKE2B_256], p, 14U, 15U, 16U);
 
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant = p[33];
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant = p[34];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant   = p[33];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant   = p[34];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].cpu.three.params.constant = p[35];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].mem.three.params.constant = p[36];
   set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_UNIT], p, 37U, 38U);
@@ -476,8 +476,8 @@ from_params_v3(cardano_uplc_cost_model_t* out, const int64_t* p)
   set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_B_DATA], p, 12U, 13U);
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_BLAKE2B_256], p, 14U, 15U, 16U);
 
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant = p[33];
-  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant = p[34];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].cpu.six.params.constant   = p[33];
+  b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_DATA].mem.six.params.constant   = p[34];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].cpu.three.params.constant = p[35];
   b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_LIST].mem.three.params.constant = p[36];
   set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_CHOOSE_UNIT], p, 37U, 38U);

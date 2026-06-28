@@ -21,10 +21,10 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
+#include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/buffer.h>
 #include <cardano/error.h>
-#include "../../src/uplc/machine/uplc_machine.h"
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/syntax/pretty.h"
@@ -41,7 +41,8 @@
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 namespace fs = std::filesystem;
 
@@ -63,7 +64,7 @@ const int64_t BUDGET_MEM = INT64_MAX;
 // The expected outcome class derived from the .uplc.expected / budget text.
 enum class Outcome
 {
-  PARSE_ERROR,       // the input is expected to fail parsing
+  PARSE_ERROR,        // the input is expected to fail parsing
   EVALUATION_FAILURE, // evaluation is expected to fail (error term / out of budget)
   SUCCESS             // a result term and an exact budget are expected
 };
@@ -80,7 +81,7 @@ corpus_root()
 std::string
 read_file(const std::string& path)
 {
-  std::ifstream    stream(path, std::ios::binary);
+  std::ifstream      stream(path, std::ios::binary);
   std::ostringstream buffer;
   buffer << stream.rdbuf();
   return buffer.str();
@@ -177,11 +178,11 @@ is_script_failure(cardano_uplc_eval_status_t status)
 
 struct Counts
 {
-  size_t total              = 0U;
-  size_t passed             = 0U;
-  size_t skipped_builtin    = 0U;
-  size_t skipped_unsupported = 0U;
-  size_t failed             = 0U;
+    size_t total               = 0U;
+    size_t passed              = 0U;
+    size_t skipped_builtin     = 0U;
+    size_t skipped_unsupported = 0U;
+    size_t failed              = 0U;
 };
 
 void
@@ -198,10 +199,10 @@ run_case(const fs::path& input_path, Counts& counts)
   const cardano_uplc_budget_t initial = { BUDGET_CPU, BUDGET_MEM };
   const Outcome               outcome = classify(expected, budget);
 
-  cardano_uplc_arena_t*         arena       = make_arena();
-  const cardano_uplc_program_t* program     = nullptr;
+  cardano_uplc_arena_t*         arena        = make_arena();
+  const cardano_uplc_program_t* program      = nullptr;
   size_t                        parse_offset = 0U;
-  const cardano_error_t parse_error =
+  const cardano_error_t         parse_error =
     cardano_uplc_parse_program(arena, input_text.c_str(), input_text.size(), &program, &parse_offset);
 
   bool case_passed = false;
@@ -281,8 +282,8 @@ run_case(const fs::path& input_path, Counts& counts)
       EXPECT_TRUE(term_ok) << "result term mismatch\n  expected: " << expected_render
                            << "\n  actual:   " << actual_render;
 
-      int64_t    want_cpu = 0;
-      int64_t    want_mem = 0;
+      int64_t    want_cpu      = 0;
+      int64_t    want_mem      = 0;
       const bool budget_parsed = parse_budget(budget, &want_cpu, &want_mem);
       EXPECT_TRUE(budget_parsed) << "could not parse the expected budget: " << budget;
 
@@ -329,7 +330,7 @@ TEST(cardano_uplc_conformance, fullCorpusIsGreenOnResultAndBudgetWithZeroSkips)
   ASSERT_TRUE(fs::exists(root)) << "corpus directory not found: " << root;
 
   std::vector<fs::path> inputs;
-  for (const fs::directory_entry& entry : fs::recursive_directory_iterator(root))
+  for (const fs::directory_entry& entry: fs::recursive_directory_iterator(root))
   {
     if (!entry.is_regular_file())
     {
@@ -342,7 +343,7 @@ TEST(cardano_uplc_conformance, fullCorpusIsGreenOnResultAndBudgetWithZeroSkips)
       continue;
     }
 
-    const bool is_uplc     = (name.compare(name.size() - 5U, 5U, ".uplc") == 0);
+    const bool is_uplc = (name.compare(name.size() - 5U, 5U, ".uplc") == 0);
     if (!is_uplc)
     {
       continue;
@@ -357,7 +358,7 @@ TEST(cardano_uplc_conformance, fullCorpusIsGreenOnResultAndBudgetWithZeroSkips)
   Counts counts;
   counts.total = inputs.size();
 
-  for (const fs::path& input : inputs)
+  for (const fs::path& input: inputs)
   {
     run_case(input, counts);
   }

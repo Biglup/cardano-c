@@ -42,10 +42,10 @@ extern "C" {
  */
 typedef struct cardano_uplc_budget_t
 {
-  /** \brief CPU units. */
-  int64_t cpu;
-  /** \brief Memory units. */
-  int64_t mem;
+    /** \brief CPU units. */
+    int64_t cpu;
+    /** \brief Memory units. */
+    int64_t mem;
 } cardano_uplc_budget_t;
 
 #ifdef __cplusplus

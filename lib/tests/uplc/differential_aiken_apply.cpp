@@ -74,7 +74,8 @@ static const char* kScriptFiles[] = {
 
 /* STATIC HELPERS ************************************************************/
 
-namespace {
+namespace
+{
 
 /**
  * \brief Resolves the in-repo flat corpus directory from this source location.
@@ -168,9 +169,9 @@ buffer_to_hex(const cardano_buffer_t* buffer)
  */
 struct ParamSet
 {
-  std::string            name;
-  cardano_plutus_list_t* list;     // owned, may be empty
-  std::string            array_hex; // CBOR hex of a PlutusData array of the same params
+    std::string            name;
+    cardano_plutus_list_t* list;      // owned, may be empty
+    std::string            array_hex; // CBOR hex of a PlutusData array of the same params
 };
 
 /**
@@ -313,7 +314,7 @@ build_param_sets()
 void
 free_param_sets(std::vector<ParamSet>& sets)
 {
-  for (ParamSet& ps : sets)
+  for (ParamSet& ps: sets)
   {
     cardano_plutus_list_unref(&ps.list);
   }
@@ -343,13 +344,13 @@ TEST(differential_aiken_apply, matchesAikenByteForByte)
 
   std::vector<ParamSet> param_sets = build_param_sets();
 
-  int total    = 0;
-  int matched   = 0;
+  int total      = 0;
+  int matched    = 0;
   int both_error = 0;
 
   std::vector<std::string> mismatches;
 
-  for (const char* file : kScriptFiles)
+  for (const char* file: kScriptFiles)
   {
     std::string                path = flat_dir() + "/" + file;
     std::vector<unsigned char> flat;
@@ -365,7 +366,7 @@ TEST(differential_aiken_apply, matchesAikenByteForByte)
 
     std::string script_hex = buffer_to_hex(wrapped);
 
-    for (const ParamSet& ps : param_sets)
+    for (const ParamSet& ps: param_sets)
     {
       ++total;
 
@@ -375,7 +376,7 @@ TEST(differential_aiken_apply, matchesAikenByteForByte)
       std::string json_str(json);
       drop(json);
 
-      bool        aiken_ok      = json_str.find("\"SUCCESS\"") != std::string::npos;
+      bool        aiken_ok = json_str.find("\"SUCCESS\"") != std::string::npos;
       std::string aiken_compiled;
 
       if (aiken_ok)
@@ -384,7 +385,7 @@ TEST(differential_aiken_apply, matchesAikenByteForByte)
         size_t            pos = json_str.find(key);
         if (pos != std::string::npos)
         {
-          pos += key.size();
+          pos            += key.size();
           size_t end     = json_str.find('"', pos);
           aiken_compiled = json_str.substr(pos, end - pos);
         }
@@ -458,7 +459,7 @@ TEST(differential_aiken_apply, matchesAikenByteForByte)
     both_error,
     mismatches.size());
 
-  for (const std::string& m : mismatches)
+  for (const std::string& m: mismatches)
   {
     std::printf("[aiken-diff] MISMATCH: %s\n", m.c_str());
   }

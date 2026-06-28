@@ -21,6 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../../src/uplc/ast/uplc_term.h"
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
@@ -28,7 +29,6 @@
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
-#include "../../src/uplc/ast/uplc_term.h"
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/syntax/pretty.h"
@@ -252,8 +252,8 @@ TEST(cardano_uplc_pretty_print_term, rendersUnitConstant)
 TEST(cardano_uplc_pretty_print_term, rendersListConstant)
 {
   // Arrange
-  cardano_uplc_arena_t* arena   = new_arena();
-  cardano_uplc_type_t*  int_ty  = nullptr;
+  cardano_uplc_arena_t* arena  = new_arena();
+  cardano_uplc_type_t*  int_ty = nullptr;
   EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_ty), CARDANO_SUCCESS);
 
   const cardano_uplc_constant_t* items[2] = { const_integer(arena, 1), const_integer(arena, 2) };
@@ -273,7 +273,7 @@ TEST(cardano_uplc_pretty_print_term, rendersListConstant)
 TEST(cardano_uplc_pretty_print_term, rendersEmptyListConstant)
 {
   // Arrange
-  cardano_uplc_arena_t* arena  = new_arena();
+  cardano_uplc_arena_t* arena   = new_arena();
   cardano_uplc_type_t*  bool_ty = nullptr;
   EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BOOL, nullptr, nullptr, &bool_ty), CARDANO_SUCCESS);
 
@@ -624,8 +624,8 @@ TEST(cardano_uplc_pretty_print_term, rendersBuiltinNames)
 
   struct
   {
-    cardano_uplc_builtin_t builtin;
-    const char*            expected;
+      cardano_uplc_builtin_t builtin;
+      const char*            expected;
   } cases[] = {
     { CARDANO_UPLC_BUILTIN_ADD_INTEGER, "(builtin addInteger)" },
     { CARDANO_UPLC_BUILTIN_IF_THEN_ELSE, "(builtin ifThenElse)" },
@@ -636,7 +636,7 @@ TEST(cardano_uplc_pretty_print_term, rendersBuiltinNames)
     { CARDANO_UPLC_BUILTIN_SCALE_VALUE, "(builtin scaleValue)" }
   };
 
-  for (const auto& test_case : cases)
+  for (const auto& test_case: cases)
   {
     cardano_uplc_term_t* term = nullptr;
     EXPECT_EQ(cardano_uplc_term_new_builtin(arena, test_case.builtin, &term), CARDANO_SUCCESS);

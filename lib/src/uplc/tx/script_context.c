@@ -39,9 +39,9 @@
 #include <cardano/certs/auth_committee_hot_cert.h>
 #include <cardano/certs/certificate.h>
 #include <cardano/certs/certificate_set.h>
-#include <cardano/certs/register_drep_cert.h>
 #include <cardano/certs/pool_registration_cert.h>
 #include <cardano/certs/pool_retirement_cert.h>
+#include <cardano/certs/register_drep_cert.h>
 #include <cardano/certs/registration_cert.h>
 #include <cardano/certs/resign_committee_cold_cert.h>
 #include <cardano/certs/stake_delegation_cert.h>
@@ -55,19 +55,33 @@
 #include <cardano/certs/update_drep_cert.h>
 #include <cardano/certs/vote_delegation_cert.h>
 #include <cardano/certs/vote_registration_delegation_cert.h>
-#include <cardano/common/drep.h>
-#include <cardano/common/governance_action_id.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/datum.h>
+#include <cardano/common/drep.h>
+#include <cardano/common/governance_action_id.h>
+#include <cardano/common/protocol_version.h>
+#include <cardano/common/unit_interval.h>
+#include <cardano/common/utxo.h>
 #include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_set.h>
 #include <cardano/crypto/blake2b_hash_size.h>
-#include <cardano/common/utxo.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
-#include <cardano/scripts/script.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
+#include <cardano/pool_params/pool_params.h>
+#include <cardano/proposal_procedures/committee_members_map.h>
+#include <cardano/proposal_procedures/constitution.h>
+#include <cardano/proposal_procedures/credential_set.h>
+#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
+#include <cardano/proposal_procedures/new_constitution_action.h>
+#include <cardano/proposal_procedures/no_confidence_action.h>
+#include <cardano/proposal_procedures/parameter_change_action.h>
+#include <cardano/proposal_procedures/proposal_procedure.h>
+#include <cardano/proposal_procedures/proposal_procedure_set.h>
+#include <cardano/proposal_procedures/treasury_withdrawals_action.h>
+#include <cardano/proposal_procedures/update_committee_action.h>
+#include <cardano/scripts/script.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_input_set.h>
@@ -80,20 +94,6 @@
 #include <cardano/voting_procedures/voter_list.h>
 #include <cardano/voting_procedures/voting_procedure.h>
 #include <cardano/voting_procedures/voting_procedures.h>
-#include <cardano/proposal_procedures/constitution.h>
-#include <cardano/proposal_procedures/credential_set.h>
-#include <cardano/proposal_procedures/committee_members_map.h>
-#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
-#include <cardano/proposal_procedures/new_constitution_action.h>
-#include <cardano/proposal_procedures/no_confidence_action.h>
-#include <cardano/proposal_procedures/parameter_change_action.h>
-#include <cardano/proposal_procedures/proposal_procedure.h>
-#include <cardano/proposal_procedures/proposal_procedure_set.h>
-#include <cardano/proposal_procedures/treasury_withdrawals_action.h>
-#include <cardano/proposal_procedures/update_committee_action.h>
-#include <cardano/common/protocol_version.h>
-#include <cardano/common/unit_interval.h>
-#include <cardano/pool_params/pool_params.h>
 #include <cardano/witness_set/plutus_data_set.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
@@ -461,10 +461,10 @@ encode_address(const cardano_address_t* address, cardano_plutus_data_t** out)
     return CARDANO_ERROR_INVALID_ADDRESS_TYPE;
   }
 
-  cardano_plutus_list_t* fields  = NULL;
-  cardano_error_t        result  = cardano_plutus_list_new(&fields);
-  cardano_plutus_data_t* pay     = NULL;
-  cardano_plutus_data_t* stake   = NULL;
+  cardano_plutus_list_t* fields = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&fields);
+  cardano_plutus_data_t* pay    = NULL;
+  cardano_plutus_data_t* stake  = NULL;
 
   if (result == CARDANO_SUCCESS)
   {
@@ -583,11 +583,11 @@ value_add_multiasset(cardano_plutus_map_t* value_map, cardano_multi_asset_t* mul
 
   for (size_t i = 0U; (i < policy_count) && (result == CARDANO_SUCCESS); ++i)
   {
-    cardano_blake2b_hash_t*    policy_id = NULL;
-    cardano_asset_name_map_t*  assets    = NULL;
-    cardano_plutus_map_t*      inner     = NULL;
-    cardano_plutus_data_t*     policy_pd = NULL;
-    cardano_plutus_data_t*     inner_pd  = NULL;
+    cardano_blake2b_hash_t*   policy_id = NULL;
+    cardano_asset_name_map_t* assets    = NULL;
+    cardano_plutus_map_t*     inner     = NULL;
+    cardano_plutus_data_t*    policy_pd = NULL;
+    cardano_plutus_data_t*    inner_pd  = NULL;
 
     result = cardano_policy_id_list_get(policies, i, &policy_id);
 
@@ -948,7 +948,6 @@ encode_output(cardano_transaction_output_t* output, const bool is_v2, cardano_pl
   cardano_plutus_data_t* ref_pd  = NULL;
   cardano_error_t        result  = cardano_plutus_list_new(&fields);
 
-
   if (result == CARDANO_SUCCESS)
   {
     result = encode_address(address, &addr_pd);
@@ -1118,10 +1117,10 @@ tx_in_info(
     return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
-  cardano_plutus_list_t* fields  = NULL;
-  cardano_plutus_data_t* ref_pd  = NULL;
-  cardano_plutus_data_t* out_pd  = NULL;
-  cardano_error_t        result  = cardano_plutus_list_new(&fields);
+  cardano_plutus_list_t* fields = NULL;
+  cardano_plutus_data_t* ref_pd = NULL;
+  cardano_plutus_data_t* out_pd = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&fields);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -1297,9 +1296,9 @@ encode_withdrawals(cardano_withdrawal_map_t* withdrawals, const bool is_v2, card
 {
   const size_t count = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
 
-  cardano_plutus_list_t* list      = NULL;
-  cardano_plutus_map_t*  map       = NULL;
-  cardano_error_t        result    = CARDANO_SUCCESS;
+  cardano_plutus_list_t* list   = NULL;
+  cardano_plutus_map_t*  map    = NULL;
+  cardano_error_t        result = CARDANO_SUCCESS;
 
   if (is_v2)
   {
@@ -1460,8 +1459,8 @@ interval_bound(const uint64_t* slot, const bool is_lower, const cardano_slot_con
 
   if (slot != NULL)
   {
-    cardano_plutus_data_t* time     = NULL;
-    uint64_t               posix    = 0U;
+    cardano_plutus_data_t* time  = NULL;
+    uint64_t               posix = 0U;
 
     result = slot_to_posix(*slot, slot_config, &posix);
 
@@ -1668,7 +1667,7 @@ encode_certificate(cardano_certificate_t* certificate, cardano_plutus_data_t** o
   {
     case CARDANO_CERT_TYPE_STAKE_REGISTRATION:
     {
-      cardano_stake_registration_cert_t* cert    = NULL;
+      cardano_stake_registration_cert_t* cert       = NULL;
       cardano_credential_t*              credential = NULL;
       cardano_plutus_data_t*             cred_pd    = NULL;
       cardano_plutus_data_t*             wrapped    = NULL;
@@ -1976,10 +1975,10 @@ encode_certificates(cardano_certificate_set_t* certificates, cardano_plutus_data
  */
 static cardano_error_t
 redeemers_map_v2(
-  cardano_transaction_t*  tx,
-  cardano_utxo_list_t*    resolved_inputs,
+  cardano_transaction_t*   tx,
+  cardano_utxo_list_t*     resolved_inputs,
   cardano_redeemer_list_t* redeemers,
-  cardano_plutus_data_t** out)
+  cardano_plutus_data_t**  out)
 {
   cardano_plutus_map_t* map    = NULL;
   cardano_error_t       result = cardano_plutus_map_new(&map);
@@ -2037,9 +2036,9 @@ build_tx_info(
   }
 
   cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
-  cardano_witness_set_t*      witness_set  = cardano_transaction_get_witness_set(tx);
-  cardano_plutus_list_t*      fields       = NULL;
-  cardano_error_t             result       = cardano_plutus_list_new(&fields);
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_plutus_list_t*      fields      = NULL;
+  cardano_error_t             result      = cardano_plutus_list_new(&fields);
 
   cardano_transaction_input_set_t*   inputs     = NULL;
   cardano_transaction_input_set_t*   ref_inputs = NULL;
@@ -2214,7 +2213,6 @@ build_tx_info(
   {
     result = encode_constr(CONSTR_0, fields, out);
   }
-
 
   cardano_transaction_body_unref(&body);
   cardano_witness_set_unref(&witness_set);
@@ -2754,10 +2752,10 @@ constr_two(const uint64_t alternative, cardano_plutus_data_t* first, cardano_plu
  */
 static cardano_error_t
 constr_three(
-  const uint64_t         alternative,
-  cardano_plutus_data_t* first,
-  cardano_plutus_data_t* second,
-  cardano_plutus_data_t* third,
+  const uint64_t          alternative,
+  cardano_plutus_data_t*  first,
+  cardano_plutus_data_t*  second,
+  cardano_plutus_data_t*  third,
   cardano_plutus_data_t** out)
 {
   cardano_plutus_list_t* fields = NULL;
@@ -2864,9 +2862,9 @@ cert_v3_delegation(cardano_credential_t* credential, cardano_plutus_data_t* dele
  */
 static cardano_error_t
 cert_v3_reg_delegation(
-  cardano_credential_t*  credential,
-  cardano_plutus_data_t* delegatee,
-  const uint64_t         deposit,
+  cardano_credential_t*   credential,
+  cardano_plutus_data_t*  delegatee,
+  const uint64_t          deposit,
   cardano_plutus_data_t** out)
 {
   cardano_plutus_data_t* cred_pd    = NULL;
@@ -3092,9 +3090,9 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
     case CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION:
     {
       cardano_stake_registration_delegation_cert_t* cert       = NULL;
-      cardano_credential_t*                          credential = NULL;
-      cardano_blake2b_hash_t*                        pool       = NULL;
-      cardano_plutus_data_t*                         delegatee  = NULL;
+      cardano_credential_t*                         credential = NULL;
+      cardano_blake2b_hash_t*                       pool       = NULL;
+      cardano_plutus_data_t*                        delegatee  = NULL;
 
       result = cardano_certificate_to_stake_registration_delegation(certificate, &cert);
 
@@ -3120,10 +3118,10 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
     case CARDANO_CERT_TYPE_VOTE_REGISTRATION_DELEGATION:
     {
       cardano_vote_registration_delegation_cert_t* cert       = NULL;
-      cardano_credential_t*                         credential = NULL;
-      cardano_drep_t*                               drep       = NULL;
-      cardano_plutus_data_t*                        drep_pd    = NULL;
-      cardano_plutus_data_t*                        delegatee  = NULL;
+      cardano_credential_t*                        credential = NULL;
+      cardano_drep_t*                              drep       = NULL;
+      cardano_plutus_data_t*                       drep_pd    = NULL;
+      cardano_plutus_data_t*                       delegatee  = NULL;
 
       result = cardano_certificate_to_vote_registration_delegation(certificate, &cert);
 
@@ -3288,12 +3286,12 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
     }
     case CARDANO_CERT_TYPE_POOL_REGISTRATION:
     {
-      cardano_pool_registration_cert_t* cert     = NULL;
-      cardano_pool_params_t*            params   = NULL;
+      cardano_pool_registration_cert_t* cert          = NULL;
+      cardano_pool_params_t*            params        = NULL;
       cardano_blake2b_hash_t*           operator_hash = NULL;
-      cardano_blake2b_hash_t*           vrf      = NULL;
-      cardano_plutus_data_t*            op_pd    = NULL;
-      cardano_plutus_data_t*            vrf_pd   = NULL;
+      cardano_blake2b_hash_t*           vrf           = NULL;
+      cardano_plutus_data_t*            op_pd         = NULL;
+      cardano_plutus_data_t*            vrf_pd        = NULL;
 
       result = cardano_certificate_to_pool_registration(certificate, &cert);
 
@@ -3661,7 +3659,7 @@ encode_vote(const cardano_vote_t vote, cardano_plutus_data_t** out)
 static cardano_error_t
 encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** out)
 {
-  cardano_plutus_map_t* outer = NULL;
+  cardano_plutus_map_t* outer  = NULL;
   cardano_error_t       result = cardano_plutus_map_new(&outer);
 
   cardano_voter_list_t* voters = NULL;
@@ -3675,11 +3673,11 @@ encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** ou
 
   for (size_t i = 0U; (i < voter_count) && (result == CARDANO_SUCCESS); ++i)
   {
-    cardano_voter_t*                       voter    = NULL;
-    cardano_governance_action_id_list_t*   ids      = NULL;
-    cardano_plutus_data_t*                 voter_pd = NULL;
-    cardano_plutus_map_t*                  inner    = NULL;
-    cardano_plutus_data_t*                 inner_pd = NULL;
+    cardano_voter_t*                     voter    = NULL;
+    cardano_governance_action_id_list_t* ids      = NULL;
+    cardano_plutus_data_t*               voter_pd = NULL;
+    cardano_plutus_map_t*                inner    = NULL;
+    cardano_plutus_data_t*               inner_pd = NULL;
 
     result = cardano_voter_list_get(voters, i, &voter);
 
@@ -3822,13 +3820,13 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     case CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE:
     {
       cardano_parameter_change_action_t* action     = NULL;
-      cardano_governance_action_id_t*    prev        = NULL;
-      cardano_blake2b_hash_t*            guardrail   = NULL;
-      cardano_plutus_map_t*              empty_map   = NULL;
-      cardano_plutus_data_t*             prev_pd     = NULL;
-      cardano_plutus_data_t*             params_pd   = NULL;
-      cardano_plutus_data_t*             guard_pd    = NULL;
-      cardano_plutus_data_t*             guard_hash  = NULL;
+      cardano_governance_action_id_t*    prev       = NULL;
+      cardano_blake2b_hash_t*            guardrail  = NULL;
+      cardano_plutus_map_t*              empty_map  = NULL;
+      cardano_plutus_data_t*             prev_pd    = NULL;
+      cardano_plutus_data_t*             params_pd  = NULL;
+      cardano_plutus_data_t*             guard_pd   = NULL;
+      cardano_plutus_data_t*             guard_hash = NULL;
 
       result = cardano_proposal_procedure_to_parameter_change_action(proposal, &action);
 
@@ -3930,7 +3928,7 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS:
     {
-      cardano_treasury_withdrawals_action_t* action     = NULL;
+      cardano_treasury_withdrawals_action_t* action      = NULL;
       cardano_withdrawal_map_t*              withdrawals = NULL;
       cardano_blake2b_hash_t*                guardrail   = NULL;
       cardano_plutus_data_t*                 with_pd     = NULL;
@@ -4001,7 +3999,7 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     }
     case CARDANO_GOVERNANCE_ACTION_TYPE_UPDATE_COMMITTEE:
     {
-      cardano_update_committee_action_t* action    = NULL;
+      cardano_update_committee_action_t* action     = NULL;
       cardano_governance_action_id_t*    prev       = NULL;
       cardano_credential_set_t*          removed    = NULL;
       cardano_committee_members_map_t*   added      = NULL;
@@ -4154,13 +4152,13 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     case CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION:
     {
       cardano_new_constitution_action_t* action       = NULL;
-      cardano_governance_action_id_t*    prev          = NULL;
-      cardano_constitution_t*            constitution  = NULL;
-      cardano_blake2b_hash_t*            script_hash   = NULL;
-      cardano_plutus_data_t*             prev_pd       = NULL;
-      cardano_plutus_data_t*             guard_pd      = NULL;
-      cardano_plutus_data_t*             guard_hash    = NULL;
-      cardano_plutus_data_t*             constr_pd     = NULL;
+      cardano_governance_action_id_t*    prev         = NULL;
+      cardano_constitution_t*            constitution = NULL;
+      cardano_blake2b_hash_t*            script_hash  = NULL;
+      cardano_plutus_data_t*             prev_pd      = NULL;
+      cardano_plutus_data_t*             guard_pd     = NULL;
+      cardano_plutus_data_t*             guard_hash   = NULL;
+      cardano_plutus_data_t*             constr_pd    = NULL;
 
       result = cardano_proposal_procedure_to_constitution_action(proposal, &action);
 
@@ -4432,9 +4430,9 @@ cardano_uplc_int_build_script_purpose_v1v2(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_transaction_body_t* body  = cardano_transaction_get_body(tx);
-  const cardano_redeemer_tag_t tag   = cardano_redeemer_get_tag(redeemer);
-  const uint64_t               index = cardano_redeemer_get_index(redeemer);
+  cardano_transaction_body_t*  body   = cardano_transaction_get_body(tx);
+  const cardano_redeemer_tag_t tag    = cardano_redeemer_get_tag(redeemer);
+  const uint64_t               index  = cardano_redeemer_get_index(redeemer);
   cardano_error_t              result = CARDANO_SUCCESS;
 
   switch (tag)
@@ -4621,10 +4619,10 @@ build_script_context(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_plutus_list_t* fields     = NULL;
-  cardano_plutus_data_t* tx_info    = NULL;
-  cardano_plutus_data_t* purpose    = NULL;
-  cardano_error_t        result     = cardano_plutus_list_new(&fields);
+  cardano_plutus_list_t* fields  = NULL;
+  cardano_plutus_data_t* tx_info = NULL;
+  cardano_plutus_data_t* purpose = NULL;
+  cardano_error_t        result  = cardano_plutus_list_new(&fields);
 
   if (result == CARDANO_SUCCESS)
   {

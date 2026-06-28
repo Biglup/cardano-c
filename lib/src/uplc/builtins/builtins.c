@@ -25,8 +25,8 @@
 
 #include "../../allocators.h"
 #include "../arena/uplc_arena.h"
-#include "bls.h"
 #include "../ast/uplc_int.h"
+#include "bls.h"
 
 #include <blst.h>
 
@@ -169,10 +169,38 @@ static const size_t CARDANO_UPLC_BLS_DST_MAX = 255U;
  * multiplication.
  */
 static const byte_t CARDANO_UPLC_BLS_SCALAR_PERIOD[CARDANO_UPLC_BLS_SCALAR_SIZE] = {
-  0x73U, 0xedU, 0xa7U, 0x53U, 0x29U, 0x9dU, 0x7dU, 0x48U,
-  0x33U, 0x39U, 0xd8U, 0x08U, 0x09U, 0xa1U, 0xd8U, 0x05U,
-  0x53U, 0xbdU, 0xa4U, 0x02U, 0xffU, 0xfeU, 0x5bU, 0xfeU,
-  0xffU, 0xffU, 0xffU, 0xffU, 0x00U, 0x00U, 0x00U, 0x01U
+  0x73U,
+  0xedU,
+  0xa7U,
+  0x53U,
+  0x29U,
+  0x9dU,
+  0x7dU,
+  0x48U,
+  0x33U,
+  0x39U,
+  0xd8U,
+  0x08U,
+  0x09U,
+  0xa1U,
+  0xd8U,
+  0x05U,
+  0x53U,
+  0xbdU,
+  0xa4U,
+  0x02U,
+  0xffU,
+  0xfeU,
+  0x5bU,
+  0xfeU,
+  0xffU,
+  0xffU,
+  0xffU,
+  0xffU,
+  0x00U,
+  0x00U,
+  0x00U,
+  0x01U
 };
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -338,9 +366,9 @@ result_integer_from_int(
  */
 typedef struct int_view_t
 {
-  bool                    is_small;
-  int64_t                 small;
-  const cardano_uplc_constant_t* constant;
+    bool                           is_small;
+    int64_t                        small;
+    const cardano_uplc_constant_t* constant;
 } int_view_t;
 
 /**
@@ -656,7 +684,6 @@ floor_div_mod(
     }
   }
 }
-
 
 /**
  * \brief Validates that a byte range is well-formed UTF-8.
@@ -1156,8 +1183,8 @@ body_int_arith(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  int_view_t          a      = { false, 0, NULL };
-  int_view_t          b      = { false, 0, NULL };
+  int_view_t              a      = { false, 0, NULL };
+  int_view_t              b      = { false, 0, NULL };
   const cardano_bigint_t* lhs    = NULL;
   const cardano_bigint_t* rhs    = NULL;
   cardano_bigint_t*       result = NULL;
@@ -1246,8 +1273,8 @@ body_int_div(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  int_view_t          a         = { false, 0, NULL };
-  int_view_t          b         = { false, 0, NULL };
+  int_view_t              a         = { false, 0, NULL };
+  int_view_t              b         = { false, 0, NULL };
   const cardano_bigint_t* lhs       = NULL;
   const cardano_bigint_t* rhs       = NULL;
   cardano_bigint_t*       quotient  = NULL;
@@ -1354,8 +1381,8 @@ body_int_compare(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  int_view_t          a     = { false, 0, NULL };
-  int_view_t          b     = { false, 0, NULL };
+  int_view_t              a     = { false, 0, NULL };
+  int_view_t              b     = { false, 0, NULL };
   const cardano_bigint_t* lhs   = NULL;
   const cardano_bigint_t* rhs   = NULL;
   int32_t                 cmp   = 0;
@@ -1426,9 +1453,7 @@ body_exp_mod_integer(
   const cardano_bigint_t* modulus  = NULL;
   cardano_bigint_t*       result   = NULL;
 
-  if (!as_integer_big(arena, args[0], &base) ||
-      !as_integer_big(arena, args[1], &exponent) ||
-      !as_integer_big(arena, args[2], &modulus))
+  if (!as_integer_big(arena, args[0], &base) || !as_integer_big(arena, args[1], &exponent) || !as_integer_big(arena, args[2], &modulus))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -1803,9 +1828,7 @@ body_slice_byte_string(
   size_t                   take      = 0U;
   size_t                   available = 0U;
 
-  if (!as_integer_big(arena, args[0], &start_arg) ||
-      !as_integer_big(arena, args[1], &len_arg) ||
-      !cardano_uplc_builtin_as_byte_string(args[2], &bytes))
+  if (!as_integer_big(arena, args[0], &start_arg) || !as_integer_big(arena, args[1], &len_arg) || !cardano_uplc_builtin_as_byte_string(args[2], &bytes))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -1991,9 +2014,7 @@ body_logical_byte_string(
   byte_t*                  scratch    = NULL;
   size_t                   i          = 0U;
 
-  if (!cardano_uplc_builtin_as_bool(args[0], &should_pad) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &lhs) ||
-      !cardano_uplc_builtin_as_byte_string(args[2], &rhs))
+  if (!cardano_uplc_builtin_as_bool(args[0], &should_pad) || !cardano_uplc_builtin_as_byte_string(args[1], &lhs) || !cardano_uplc_builtin_as_byte_string(args[2], &rhs))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -2202,15 +2223,13 @@ body_write_bits(
 {
   cardano_uplc_byte_view_t              bytes   = { NULL, 0U };
   const cardano_uplc_type_t*            element = NULL;
-  const cardano_uplc_constant_t* const* items  = NULL;
+  const cardano_uplc_constant_t* const* items   = NULL;
   size_t                                count   = 0U;
   bool                                  set_bit = false;
   byte_t*                               scratch = NULL;
   size_t                                i       = 0U;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) ||
-      !cardano_uplc_builtin_as_list(args[1], &element, &items, &count) ||
-      !cardano_uplc_builtin_as_bool(args[2], &set_bit))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) || !cardano_uplc_builtin_as_list(args[1], &element, &items, &count) || !cardano_uplc_builtin_as_bool(args[2], &set_bit))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -2548,9 +2567,9 @@ body_rotate_byte_string(
   bits = (uint64_t)size * 8U;
 
   {
-    cardano_bigint_t* modulus   = NULL;
-    cardano_bigint_t* reduced   = NULL;
-    cardano_bigint_t* quotient  = NULL;
+    cardano_bigint_t* modulus  = NULL;
+    cardano_bigint_t* reduced  = NULL;
+    cardano_bigint_t* quotient = NULL;
 
     *host_error = cardano_bigint_from_unsigned_int(bits, &modulus);
 
@@ -2649,7 +2668,7 @@ body_count_set_bits(
     while (b != 0)
     {
       total += (int64_t)(b & 1U);
-      b      = (byte_t)(b >> 1);
+      b     = (byte_t)(b >> 1);
     }
   }
 
@@ -2737,19 +2756,17 @@ body_integer_to_byte_string(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  bool                    big_endian = false;
-  const cardano_bigint_t* width_arg  = NULL;
-  const cardano_bigint_t* value      = NULL;
-  uint64_t                width      = 0U;
+  bool                    big_endian  = false;
+  const cardano_bigint_t* width_arg   = NULL;
+  const cardano_bigint_t* value       = NULL;
+  uint64_t                width       = 0U;
   size_t                  value_bytes = 0U;
   byte_t*                 raw         = NULL;
   byte_t*                 scratch     = NULL;
   size_t                  out_len     = 0U;
   cardano_error_t         conv        = CARDANO_SUCCESS;
 
-  if (!cardano_uplc_builtin_as_bool(args[0], &big_endian) ||
-      !as_integer_big(arena, args[1], &width_arg) ||
-      !as_integer_big(arena, args[2], &value))
+  if (!cardano_uplc_builtin_as_bool(args[0], &big_endian) || !as_integer_big(arena, args[1], &width_arg) || !as_integer_big(arena, args[2], &value))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -3251,9 +3268,9 @@ body_pair_component(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  const cardano_uplc_constant_t* fst       = NULL;
-  const cardano_uplc_constant_t* snd       = NULL;
-  cardano_uplc_value_t*          result    = NULL;
+  const cardano_uplc_constant_t* fst    = NULL;
+  const cardano_uplc_constant_t* snd    = NULL;
+  cardano_uplc_value_t*          result = NULL;
 
   if (!cardano_uplc_builtin_as_pair(args[0], &fst, &snd))
   {
@@ -3858,9 +3875,7 @@ body_map_data(
     const cardano_uplc_data_t*     key   = NULL;
     const cardano_uplc_data_t*     value = NULL;
 
-    if ((entry == NULL) || (entry->kind != CARDANO_UPLC_TYPE_PAIR) ||
-        !constant_as_data_node(entry->as.pair.fst, &key) ||
-        !constant_as_data_node(entry->as.pair.snd, &value))
+    if ((entry == NULL) || (entry->kind != CARDANO_UPLC_TYPE_PAIR) || !constant_as_data_node(entry->as.pair.fst, &key) || !constant_as_data_node(entry->as.pair.snd, &value))
     {
       return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
     }
@@ -4850,9 +4865,7 @@ body_verify_ed25519(
   cardano_error_t               sig_error = CARDANO_SUCCESS;
   bool                          valid     = false;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) || !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) || !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -4933,42 +4946,27 @@ body_verify_ecdsa(
   secp256k1_ecdsa_signature signature;
   bool                      valid = false;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) || !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) || !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if ((key_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_KEY_SIZE) ||
-      (msg_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_MSG_SIZE) ||
-      (sig_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_SIG_SIZE))
+  if ((key_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_KEY_SIZE) || (msg_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_MSG_SIZE) || (sig_bytes.size != CARDANO_UPLC_BUILTIN_ECDSA_SIG_SIZE))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if (secp256k1_ec_pubkey_parse(
-        secp256k1_context_static,
-        &pubkey,
-        key_bytes.data,
-        key_bytes.size) != 1)
+  if (secp256k1_ec_pubkey_parse(secp256k1_context_static, &pubkey, key_bytes.data, key_bytes.size) != 1)
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if (secp256k1_ecdsa_signature_parse_compact(
-        secp256k1_context_static,
-        &signature,
-        sig_bytes.data) != 1)
+  if (secp256k1_ecdsa_signature_parse_compact(secp256k1_context_static, &signature, sig_bytes.data) != 1)
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  valid = (secp256k1_ecdsa_verify(
-             secp256k1_context_static,
-             &signature,
-             msg_bytes.data,
-             &pubkey) == 1);
+  valid = (secp256k1_ecdsa_verify(secp256k1_context_static, &signature, msg_bytes.data, &pubkey) == 1);
 
   *host_error = result_bool(arena, valid, out_result);
 
@@ -5001,28 +4999,22 @@ body_verify_schnorr(
   cardano_uplc_byte_view_t msg_bytes = { NULL, 0U };
   cardano_uplc_byte_view_t sig_bytes = { NULL, 0U };
   secp256k1_xonly_pubkey   pubkey;
-  const unsigned char*     msg_data = NULL;
-  size_t                   msg_size = 0U;
+  const unsigned char*     msg_data  = NULL;
+  size_t                   msg_size  = 0U;
   const unsigned char      msg_empty = 0U;
-  bool                     valid    = false;
+  bool                     valid     = false;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) ||
-      !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &key_bytes) || !cardano_uplc_builtin_as_byte_string(args[1], &msg_bytes) || !cardano_uplc_builtin_as_byte_string(args[2], &sig_bytes))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if ((key_bytes.size != CARDANO_UPLC_BUILTIN_SCHNORR_KEY_SIZE) ||
-      (sig_bytes.size != CARDANO_UPLC_BUILTIN_SCHNORR_SIG_SIZE))
+  if ((key_bytes.size != CARDANO_UPLC_BUILTIN_SCHNORR_KEY_SIZE) || (sig_bytes.size != CARDANO_UPLC_BUILTIN_SCHNORR_SIG_SIZE))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if (secp256k1_xonly_pubkey_parse(
-        secp256k1_context_static,
-        &pubkey,
-        key_bytes.data) != 1)
+  if (secp256k1_xonly_pubkey_parse(secp256k1_context_static, &pubkey, key_bytes.data) != 1)
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -5030,12 +5022,7 @@ body_verify_schnorr(
   msg_size = msg_bytes.size;
   msg_data = (msg_size == 0U) ? &msg_empty : msg_bytes.data;
 
-  valid = (secp256k1_schnorrsig_verify(
-             secp256k1_context_static,
-             sig_bytes.data,
-             msg_data,
-             msg_size,
-             &pubkey) == 1);
+  valid = (secp256k1_schnorrsig_verify(secp256k1_context_static, sig_bytes.data, msg_data, msg_size, &pubkey) == 1);
 
   *host_error = result_bool(arena, valid, out_result);
 
@@ -6044,8 +6031,7 @@ value_entry(
     return false;
   }
 
-  if ((entry->as.pair.fst == NULL) || (entry->as.pair.fst->kind != CARDANO_UPLC_TYPE_BYTE_STRING) ||
-      (entry->as.pair.snd == NULL) || (entry->as.pair.snd->kind != CARDANO_UPLC_TYPE_LIST))
+  if ((entry->as.pair.fst == NULL) || (entry->as.pair.fst->kind != CARDANO_UPLC_TYPE_BYTE_STRING) || (entry->as.pair.snd == NULL) || (entry->as.pair.snd->kind != CARDANO_UPLC_TYPE_LIST))
   {
     return false;
   }
@@ -6083,8 +6069,7 @@ value_token(
     return false;
   }
 
-  if ((token->as.pair.fst == NULL) || (token->as.pair.fst->kind != CARDANO_UPLC_TYPE_BYTE_STRING) ||
-      (token->as.pair.snd == NULL) || (token->as.pair.snd->kind != CARDANO_UPLC_TYPE_INTEGER))
+  if ((token->as.pair.fst == NULL) || (token->as.pair.fst->kind != CARDANO_UPLC_TYPE_BYTE_STRING) || (token->as.pair.snd == NULL) || (token->as.pair.snd->kind != CARDANO_UPLC_TYPE_INTEGER))
   {
     return false;
   }
@@ -6244,13 +6229,13 @@ make_policy_entry(
   size_t                                count,
   const cardano_uplc_constant_t**       out)
 {
-  cardano_uplc_constant_t*   policy_const  = NULL;
-  const cardano_uplc_type_t* token_pair    = NULL;
-  const cardano_uplc_type_t* bytestring    = NULL;
-  const cardano_uplc_type_t* integer       = NULL;
-  cardano_uplc_constant_t*   list_const    = NULL;
-  cardano_uplc_constant_t*   pair_const    = NULL;
-  cardano_error_t            error         = CARDANO_SUCCESS;
+  cardano_uplc_constant_t*   policy_const = NULL;
+  const cardano_uplc_type_t* token_pair   = NULL;
+  const cardano_uplc_type_t* bytestring   = NULL;
+  const cardano_uplc_type_t* integer      = NULL;
+  cardano_uplc_constant_t*   list_const   = NULL;
+  cardano_uplc_constant_t*   pair_const   = NULL;
+  cardano_error_t            error        = CARDANO_SUCCESS;
 
   error = cardano_uplc_int_constant_new_byte_string_copy(arena, policy.data, policy.size, &policy_const);
 
@@ -6372,20 +6357,17 @@ body_insert_coin(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  cardano_uplc_byte_view_t        ccy        = { NULL, 0U };
-  cardano_uplc_byte_view_t        tok        = { NULL, 0U };
-  const cardano_bigint_t*         amount     = NULL;
-  const cardano_uplc_constant_t*  value      = NULL;
-  const cardano_uplc_constant_t** entries    = NULL;
-  size_t                          out_count  = 0U;
-  size_t                          i          = 0U;
-  bool                            is_zero    = false;
-  bool                            found_ccy  = false;
+  cardano_uplc_byte_view_t        ccy       = { NULL, 0U };
+  cardano_uplc_byte_view_t        tok       = { NULL, 0U };
+  const cardano_bigint_t*         amount    = NULL;
+  const cardano_uplc_constant_t*  value     = NULL;
+  const cardano_uplc_constant_t** entries   = NULL;
+  size_t                          out_count = 0U;
+  size_t                          i         = 0U;
+  bool                            is_zero   = false;
+  bool                            found_ccy = false;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &ccy) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &tok) ||
-      !as_integer_big(arena, args[2], &amount) ||
-      !as_value_constant(args[3], &value))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &ccy) || !cardano_uplc_builtin_as_byte_string(args[1], &tok) || !as_integer_big(arena, args[2], &amount) || !as_value_constant(args[3], &value))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -6435,7 +6417,7 @@ body_insert_coin(
     if (cmp < 0)
     {
       entries[out_count] = value->as.list.items[i];
-      out_count += 1U;
+      out_count          += 1U;
     }
     else if (cmp == 0)
     {
@@ -6456,8 +6438,8 @@ body_insert_coin(
       for (j = 0U; j < tcount; ++j)
       {
         cardano_uplc_byte_view_t name = { NULL, 0U };
-        const cardano_bigint_t* amt  = NULL;
-        int                     tcmp = 0;
+        const cardano_bigint_t*  amt  = NULL;
+        int                      tcmp = 0;
 
         if (!value_token(arena, tokens[j], &name, &amt))
         {
@@ -6469,7 +6451,7 @@ body_insert_coin(
         if (tcmp < 0)
         {
           new_tokens[tout] = tokens[j];
-          tout += 1U;
+          tout             += 1U;
         }
         else if (tcmp == 0)
         {
@@ -6507,7 +6489,7 @@ body_insert_coin(
           }
 
           new_tokens[tout] = tokens[j];
-          tout += 1U;
+          tout             += 1U;
         }
       }
 
@@ -6569,7 +6551,7 @@ body_insert_coin(
       }
 
       entries[out_count] = value->as.list.items[i];
-      out_count += 1U;
+      out_count          += 1U;
     }
   }
 
@@ -6619,15 +6601,13 @@ body_lookup_coin(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  cardano_uplc_byte_view_t       ccy    = { NULL, 0U };
-  cardano_uplc_byte_view_t       tok    = { NULL, 0U };
-  const cardano_uplc_constant_t* value  = NULL;
-  const cardano_bigint_t*        found  = NULL;
-  size_t                         i      = 0U;
+  cardano_uplc_byte_view_t       ccy   = { NULL, 0U };
+  cardano_uplc_byte_view_t       tok   = { NULL, 0U };
+  const cardano_uplc_constant_t* value = NULL;
+  const cardano_bigint_t*        found = NULL;
+  size_t                         i     = 0U;
 
-  if (!cardano_uplc_builtin_as_byte_string(args[0], &ccy) ||
-      !cardano_uplc_builtin_as_byte_string(args[1], &tok) ||
-      !as_value_constant(args[2], &value))
+  if (!cardano_uplc_builtin_as_byte_string(args[0], &ccy) || !cardano_uplc_builtin_as_byte_string(args[1], &tok) || !as_value_constant(args[2], &value))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -6653,7 +6633,7 @@ body_lookup_coin(
       for (j = 0U; (j < tcount) && (found == NULL); ++j)
       {
         cardano_uplc_byte_view_t name = { NULL, 0U };
-        const cardano_bigint_t* amt  = NULL;
+        const cardano_bigint_t*  amt  = NULL;
 
         if (!value_token(arena, tokens[j], &name, &amt))
         {
@@ -6765,8 +6745,8 @@ body_scale_value(
     for (j = 0U; j < tcount; ++j)
     {
       cardano_uplc_byte_view_t name    = { NULL, 0U };
-      const cardano_bigint_t* amt     = NULL;
-      cardano_bigint_t*       product = NULL;
+      const cardano_bigint_t*  amt     = NULL;
+      cardano_bigint_t*        product = NULL;
 
       if (!value_token(arena, tokens[j], &name, &amt))
       {
@@ -6858,10 +6838,10 @@ merge_tokens(
   while ((i < n1) && (j < n2))
   {
     cardano_uplc_byte_view_t name1 = { NULL, 0U };
-    const cardano_bigint_t* amt1  = NULL;
+    const cardano_bigint_t*  amt1  = NULL;
     cardano_uplc_byte_view_t name2 = { NULL, 0U };
-    const cardano_bigint_t* amt2  = NULL;
-    int                     cmp   = 0;
+    const cardano_bigint_t*  amt2  = NULL;
+    int                      cmp   = 0;
 
     if (!value_token(arena, t1[i], &name1, &amt1) || !value_token(arena, t2[j], &name2, &amt2))
     {
@@ -6873,14 +6853,14 @@ merge_tokens(
     if (cmp < 0)
     {
       merged[count] = t1[i];
-      count += 1U;
-      i += 1U;
+      count         += 1U;
+      i             += 1U;
     }
     else if (cmp > 0)
     {
       merged[count] = t2[j];
-      count += 1U;
-      j += 1U;
+      count         += 1U;
+      j             += 1U;
     }
     else
     {
@@ -6925,15 +6905,15 @@ merge_tokens(
   while (i < n1)
   {
     merged[count] = t1[i];
-    count += 1U;
-    i += 1U;
+    count         += 1U;
+    i             += 1U;
   }
 
   while (j < n2)
   {
     merged[count] = t2[j];
-    count += 1U;
-    j += 1U;
+    count         += 1U;
+    j             += 1U;
   }
 
   *out       = merged;
@@ -6985,13 +6965,13 @@ body_union_value(
 
   while ((i < a->as.list.count) && (j < b->as.list.count))
   {
-    cardano_uplc_byte_view_t              pa     = { NULL, 0U };
-    const cardano_uplc_constant_t* const* ta     = NULL;
-    size_t                                na     = 0U;
-    cardano_uplc_byte_view_t              pb     = { NULL, 0U };
-    const cardano_uplc_constant_t* const* tb     = NULL;
-    size_t                                nb     = 0U;
-    int                                   cmp    = 0;
+    cardano_uplc_byte_view_t              pa  = { NULL, 0U };
+    const cardano_uplc_constant_t* const* ta  = NULL;
+    size_t                                na  = 0U;
+    cardano_uplc_byte_view_t              pb  = { NULL, 0U };
+    const cardano_uplc_constant_t* const* tb  = NULL;
+    size_t                                nb  = 0U;
+    int                                   cmp = 0;
 
     if (!value_entry(a->as.list.items[i], &pa, &ta, &na) || !value_entry(b->as.list.items[j], &pb, &tb, &nb))
     {
@@ -7003,14 +6983,14 @@ body_union_value(
     if (cmp < 0)
     {
       entries[out_count] = a->as.list.items[i];
-      out_count += 1U;
-      i += 1U;
+      out_count          += 1U;
+      i                  += 1U;
     }
     else if (cmp > 0)
     {
       entries[out_count] = b->as.list.items[j];
-      out_count += 1U;
-      j += 1U;
+      out_count          += 1U;
+      j                  += 1U;
     }
     else
     {
@@ -7042,15 +7022,15 @@ body_union_value(
   while (i < a->as.list.count)
   {
     entries[out_count] = a->as.list.items[i];
-    out_count += 1U;
-    i += 1U;
+    out_count          += 1U;
+    i                  += 1U;
   }
 
   while (j < b->as.list.count)
   {
     entries[out_count] = b->as.list.items[j];
-    out_count += 1U;
-    j += 1U;
+    out_count          += 1U;
+    j                  += 1U;
   }
 
   return value_result(arena, entries, out_count, out_result, host_error);
@@ -7086,7 +7066,7 @@ value_has_negative(struct cardano_uplc_arena_t* arena, const cardano_uplc_consta
     for (j = 0U; j < tcount; ++j)
     {
       cardano_uplc_byte_view_t name = { NULL, 0U };
-      const cardano_bigint_t* amt  = NULL;
+      const cardano_bigint_t*  amt  = NULL;
 
       if (!value_token(arena, tokens[j], &name, &amt))
       {
@@ -7143,7 +7123,7 @@ value_lookup(
       for (j = 0U; j < tcount; ++j)
       {
         cardano_uplc_byte_view_t name = { NULL, 0U };
-        const cardano_bigint_t* amt  = NULL;
+        const cardano_bigint_t*  amt  = NULL;
 
         if (!value_token(arena, tokens[j], &name, &amt))
         {
@@ -7218,8 +7198,8 @@ body_value_contains(
     for (j = 0U; (j < tcount) && contains; ++j)
     {
       cardano_uplc_byte_view_t name      = { NULL, 0U };
-      const cardano_bigint_t* needed    = NULL;
-      const cardano_bigint_t* available = NULL;
+      const cardano_bigint_t*  needed    = NULL;
+      const cardano_bigint_t*  available = NULL;
 
       if (!value_token(arena, tokens[j], &name, &needed))
       {
@@ -7300,10 +7280,10 @@ body_value_data(
     for (j = 0U; j < tcount; ++j)
     {
       cardano_uplc_byte_view_t name     = { NULL, 0U };
-      const cardano_bigint_t* amt      = NULL;
-      cardano_plutus_data_t*  tok_data = NULL;
-      cardano_plutus_data_t*  amt_data = NULL;
-      cardano_bigint_t*       amt_copy = NULL;
+      const cardano_bigint_t*  amt      = NULL;
+      cardano_plutus_data_t*   tok_data = NULL;
+      cardano_plutus_data_t*   amt_data = NULL;
+      cardano_bigint_t*        amt_copy = NULL;
 
       if (!value_token(arena, tokens[j], &name, &amt))
       {
@@ -7452,10 +7432,7 @@ decode_token(
       prev_view.size = cardano_buffer_get_size(prev);
     }
 
-    if ((name_view.size <= PRV_VALUE_KEY_MAX) &&
-        ((prev == NULL) || (compare_buffers(prev_view, name_view) < 0)) &&
-        !cardano_bigint_is_zero(amount) &&
-        amount_in_range(amount))
+    if ((name_view.size <= PRV_VALUE_KEY_MAX) && ((prev == NULL) || (compare_buffers(prev_view, name_view) < 0)) && !cardano_bigint_is_zero(amount) && amount_in_range(amount))
     {
       cardano_buffer_t* name_copy = cardano_buffer_new_from(name_view.data, name_view.size);
 
@@ -7593,8 +7570,7 @@ body_un_value_data(
       break;
     }
 
-    if ((cardano_plutus_data_get_kind(key_data, &key_kind) != CARDANO_SUCCESS) || (key_kind != CARDANO_PLUTUS_DATA_KIND_BYTES) ||
-        (cardano_plutus_data_to_bounded_bytes(key_data, &policy) != CARDANO_SUCCESS))
+    if ((cardano_plutus_data_get_kind(key_data, &key_kind) != CARDANO_SUCCESS) || (key_kind != CARDANO_PLUTUS_DATA_KIND_BYTES) || (cardano_plutus_data_to_bounded_bytes(key_data, &policy) != CARDANO_SUCCESS))
     {
       failed = true;
     }
@@ -7617,8 +7593,7 @@ body_un_value_data(
 
     if (!failed)
     {
-      if ((cardano_plutus_data_get_kind(val_data, &val_kind) != CARDANO_SUCCESS) || (val_kind != CARDANO_PLUTUS_DATA_KIND_MAP) ||
-          (cardano_plutus_data_to_map(val_data, &inner) != CARDANO_SUCCESS))
+      if ((cardano_plutus_data_get_kind(val_data, &val_kind) != CARDANO_SUCCESS) || (val_kind != CARDANO_PLUTUS_DATA_KIND_MAP) || (cardano_plutus_data_to_map(val_data, &inner) != CARDANO_SUCCESS))
       {
         failed = true;
       }
@@ -7897,10 +7872,10 @@ body_index_array(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  const cardano_uplc_constant_t* const* items = NULL;
-  size_t                                count = 0U;
-  const cardano_bigint_t*               idx   = NULL;
-  int64_t                               i     = 0;
+  const cardano_uplc_constant_t* const* items  = NULL;
+  size_t                                count  = 0U;
+  const cardano_bigint_t*               idx    = NULL;
+  int64_t                               i      = 0;
   cardano_uplc_value_t*                 result = NULL;
 
   if (!as_array(args[0], NULL, &items, &count) || !as_integer_big(arena, args[1], &idx))
@@ -7963,16 +7938,16 @@ body_bls_multi_scalar_mul(
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
 {
-  const cardano_uplc_constant_t* const* scalars     = NULL;
-  const cardano_uplc_constant_t* const* points      = NULL;
+  const cardano_uplc_constant_t* const* scalars      = NULL;
+  const cardano_uplc_constant_t* const* points       = NULL;
   size_t                                scalar_count = 0U;
   size_t                                point_count  = 0U;
   size_t                                n            = 0U;
   size_t                                i            = 0U;
   byte_t                                scalar_be[CARDANO_UPLC_BLS_SCALAR_SIZE];
-  blst_scalar                          blst_scalar_value;
-  blst_p1                              acc1;
-  blst_p2                              acc2;
+  blst_scalar                           blst_scalar_value;
+  blst_p1                               acc1;
+  blst_p2                               acc2;
 
   if (!cardano_uplc_builtin_as_list(args[0], NULL, &scalars, &scalar_count) || !cardano_uplc_builtin_as_list(args[1], NULL, &points, &point_count))
   {
