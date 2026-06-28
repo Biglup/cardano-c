@@ -355,6 +355,8 @@ TEST(cardano_compute_script_data_hash, doesntCrashOnMemoryAllocError)
     cardano_blake2b_hash_t* data_hash = NULL;
     result                            = cardano_compute_script_data_hash(costmdls, redeemers, datums, &data_hash);
 
+    cardano_set_allocators(malloc, realloc, free);
+
     EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
     cardano_blake2b_hash_unref(&data_hash);
   }

@@ -901,6 +901,7 @@ TEST(_cardano_large_fist_get_amount, returnsZeroIfMemoryallocationFails)
 
   // Act
   int64_t amount = _cardano_large_fist_get_amount(value, asset_id);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(amount, 0);

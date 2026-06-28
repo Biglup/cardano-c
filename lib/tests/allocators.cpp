@@ -37,4 +37,6 @@ TEST(cardano_set_allocators, cbor_set_allocators)
 
   // Act
   cardano_set_allocators(custom_malloc, custom_realloc, custom_free);
+
+  cardano_set_allocators(malloc, realloc, free);
 }

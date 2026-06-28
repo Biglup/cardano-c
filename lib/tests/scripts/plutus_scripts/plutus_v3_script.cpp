@@ -130,6 +130,8 @@ TEST(cardano_plutus_v3_script_new, returnsErrorIfMemoryAllocationFails)
   // Act
   cardano_error_t error = cardano_plutus_v3_script_new_bytes(bytes.data(), bytes.size(), &script);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
@@ -145,6 +147,8 @@ TEST(cardano_plutus_v3_script_new, returnsErrorIfMemoryAllocationFails2)
 
   // Act
   cardano_error_t error = cardano_plutus_v3_script_new_bytes(bytes.data(), bytes.size(), &script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -222,6 +226,8 @@ TEST(cardano_plutus_v3_script_new_bytes_from_hex, returnsErrorIfMemoryAllocation
   // Act
   cardano_error_t error = cardano_plutus_v3_script_new_bytes_from_hex(PLUTUS_V3_SCRIPT, strlen(PLUTUS_V3_SCRIPT), &script);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
@@ -236,6 +242,8 @@ TEST(cardano_plutus_v3_script_new_bytes_from_hex, returnsErrorIfMemoryAllocation
 
   // Act
   cardano_error_t error = cardano_plutus_v3_script_new_bytes_from_hex(PLUTUS_V3_SCRIPT, strlen(PLUTUS_V3_SCRIPT), &script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -306,6 +314,8 @@ TEST(cardano_plutus_v3_script_from_cbor, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_plutus_v3_script_from_cbor(reader, &script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -446,6 +456,8 @@ TEST(cardano_plutus_v3_script_get_hash, returnsNullIfMemoryAllocationFails)
 
   // Act
   cardano_blake2b_hash_t* hash = cardano_plutus_v3_script_get_hash(script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);

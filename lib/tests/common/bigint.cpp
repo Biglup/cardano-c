@@ -415,6 +415,7 @@ TEST(cardano_bigint_clone, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   result = cardano_bigint_clone(lhs, &rhs);
+  cardano_set_allocators(malloc, realloc, free);
 
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
