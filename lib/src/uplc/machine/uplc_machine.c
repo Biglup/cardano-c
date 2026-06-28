@@ -959,7 +959,7 @@ case_on_constant(
     {
       if (constant->as.list.count > (size_t)0)
       {
-        const cardano_uplc_value_t* fields[2]     = { NULL, NULL };
+        const cardano_uplc_value_t* fields[2];
         cardano_uplc_constant_t*    tail_constant = NULL;
 
         if (frame->as.cases.branch_count < (size_t)1)
@@ -1017,7 +1017,7 @@ case_on_constant(
 
     case CARDANO_UPLC_TYPE_PAIR:
     {
-      const cardano_uplc_value_t* fields[2] = { NULL, NULL };
+      const cardano_uplc_value_t* fields[2];
 
       if (frame->as.cases.branch_count != (size_t)1)
       {
