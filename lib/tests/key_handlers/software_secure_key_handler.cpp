@@ -1485,6 +1485,7 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, returnsErrorO
 
     error = cardano_secure_key_handler_ed25519_sign_transaction(key_handler, transaction, &vkey_witness_set);
 
+    cardano_set_allocators(malloc, realloc, free);
     EXPECT_NE(error, CARDANO_SUCCESS);
   }
 
@@ -1542,6 +1543,7 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnM
 
     error = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, &path[0], 4, &vkey_witness_set);
 
+    cardano_set_allocators(malloc, realloc, free);
     EXPECT_NE(error, CARDANO_SUCCESS);
   }
 

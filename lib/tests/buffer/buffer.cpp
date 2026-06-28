@@ -90,6 +90,7 @@ TEST(cardano_buffer_new_from, returnsNullIfGivenNull)
 
   // Act
   buffer = cardano_buffer_new_from(nullptr, 8);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(buffer, nullptr);

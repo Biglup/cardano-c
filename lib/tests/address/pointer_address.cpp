@@ -108,6 +108,8 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfMemoryAllocationFail
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pointer_address, nullptr);
@@ -137,6 +139,8 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfMemoryAllocationEven
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pointer_address, nullptr);
@@ -165,6 +169,8 @@ TEST(cardano_pointer_address_from_credentials, returnErrorIfEventualMemoryAlloca
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, payment, Cip19TestVectors::stakePointer, &pointer_address);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -235,6 +241,8 @@ TEST(cardano_pointer_address_from_address, returnsErrorIfMemoryAllocationFails)
   // Act
   cardano_error_t result = cardano_pointer_address_from_address(address, &pointer_address);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(pointer_address, nullptr);
@@ -285,6 +293,8 @@ TEST(cardano_pointer_address_to_address, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_address_t* address = cardano_pointer_address_to_address(pointer_address);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(address, nullptr);
@@ -483,6 +493,8 @@ TEST(cardano_pointer_address_from_bech32, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_pointer_address_from_bech32(Cip19TestVectors::pointerKey.c_str(), Cip19TestVectors::pointerKey.size(), &pointer_address);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);

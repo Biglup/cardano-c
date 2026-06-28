@@ -149,6 +149,8 @@ TEST(cardano_script_new_native, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_script_new_native(native_script, &script);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
@@ -226,6 +228,8 @@ TEST(cardano_script_new_plutus_v1, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   result = cardano_script_new_plutus_v1(plutus_script, &script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -305,6 +309,8 @@ TEST(cardano_script_new_plutus_v2, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_script_new_plutus_v2(plutus_script, &script);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(script, nullptr);
@@ -382,6 +388,8 @@ TEST(cardano_script_new_plutus_v3, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   result = cardano_script_new_plutus_v3(plutus_script, &script);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);

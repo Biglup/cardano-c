@@ -423,6 +423,8 @@ TEST(cardano_witness_set_from_cbor, returnsErrorIfMemoryAllocationFails)
 
   ASSERT_EQ(result, CARDANO_ERROR_DECODING);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Cleanup
   cardano_cbor_reader_unref(&reader);
   cardano_set_allocators(malloc, realloc, free);

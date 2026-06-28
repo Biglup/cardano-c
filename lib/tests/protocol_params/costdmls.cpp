@@ -115,6 +115,7 @@ TEST(cardano_costmdls_new, returnsErrorIfAllocationFails)
 
   // Act
   cardano_error_t error = cardano_costmdls_new(&costmdls);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);

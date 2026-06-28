@@ -1853,6 +1853,7 @@ TEST(cardano_cbor_reader_get_remainder_bytes, returnErrorIfMemoryAllocationFails
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   cardano_error_t result = cardano_cbor_reader_get_remainder_bytes(reader, &buffer);
+  cardano_set_allocators(malloc, realloc, free);
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   cardano_cbor_reader_unref(&reader);

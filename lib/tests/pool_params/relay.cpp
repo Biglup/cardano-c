@@ -123,6 +123,8 @@ TEST(cardano_relay_new_single_host_addr, returnsErrorIfMemoryAllocationFails)
 
   result = cardano_relay_new_single_host_addr(single_host_addr, &relay);
 
+  cardano_set_allocators(malloc, realloc, free);
+
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   ASSERT_EQ(relay, nullptr);
@@ -206,6 +208,8 @@ TEST(cardano_relay_new_single_host_name, returnsErrorIfMemoryAllocationFails)
 
   // Act
   result = cardano_relay_new_single_host_name(single_host_name, &relay);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -314,6 +318,8 @@ TEST(cardano_relay_new_multi_host_name, returnsErrorIfMemoryAllocationFails)
 
   // Act
   result = cardano_relay_new_multi_host_name(multi_host_name, &relay);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -885,6 +891,8 @@ TEST(cardano_relay_from_cbor, returnsErrorWhenMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_relay_from_cbor(reader, &relay);
+
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);

@@ -225,6 +225,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_bip32_private_key_from_bytes(BIP32_PRIVATE_KEY, BIP32_PRIVATE_KEY_SIZE, &private_key);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -244,6 +245,7 @@ TEST(cardano_bip32_private_key_from_bytes, returnsNullIfMemoryEventualAllocation
 
   // Act
   cardano_error_t error = cardano_bip32_private_key_from_bytes(BIP32_PRIVATE_KEY, BIP32_PRIVATE_KEY_SIZE, &private_key);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -294,6 +296,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfMemoryAllocationFails)
 
   // Act
   cardano_error_t error = cardano_bip32_private_key_from_hex(BIP32_PRIVATE_KEY_HEX, BIP32_PRIVATE_KEY_SIZE * 2, &private_key);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -313,6 +316,7 @@ TEST(cardano_bip32_private_key_from_hex, returnsNullIfMemoryEventualAllocationFa
 
   // Act
   cardano_error_t error = cardano_bip32_private_key_from_hex(BIP32_PRIVATE_KEY_HEX, BIP32_PRIVATE_KEY_SIZE * 2, &private_key);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);

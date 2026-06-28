@@ -105,6 +105,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -133,6 +134,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -161,6 +163,7 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocati
 
   // Act
   cardano_error_t result = cardano_byron_address_from_credentials(hash, Cip19TestVectors::byronAttributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -230,6 +233,7 @@ TEST(cardano_byron_address_from_address, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_byron_address_from_address(address, &byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -386,6 +390,7 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_byron_address_from_base58(Cip19TestVectors::byronMainnetYoroi.c_str(), Cip19TestVectors::byronMainnetYoroi.size(), &byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -777,6 +782,7 @@ TEST(cardano_byron_address_to_address, returnErrorIfMemoryAllocationFails)
 
   // Act
   address = cardano_byron_address_to_address(byron_address);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(address, nullptr);
@@ -896,6 +902,7 @@ TEST(cardano_byron_address_get_root, returnsErrorIfMemoryAllocationFails)
 
   // Act
   cardano_error_t result = cardano_byron_address_get_root(byron_address, &root);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);

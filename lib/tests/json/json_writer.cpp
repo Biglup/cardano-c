@@ -947,6 +947,7 @@ TEST(cardano_json_writer_write_bigint, retursErrorIfMemoryAllocationFails)
   cardano_json_writer_write_bigint(writer, bigint);
 
   cardano_error_t result = cardano_json_writer_encode(writer, buffer, 128);
+  cardano_set_allocators(malloc, realloc, free);
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 

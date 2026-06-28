@@ -171,6 +171,7 @@ TEST(cardano_cost_model_new, returnsErrorIfAllocationFails)
 
   // Act
   cardano_error_t error = cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, &costs[0], costs.size(), &cost_model);
+  cardano_set_allocators(malloc, realloc, free);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
