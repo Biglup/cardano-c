@@ -511,6 +511,20 @@ compute_signature_with_extended_key(
     result = cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), signature);
   }
 
+  if (digest_input != NULL)
+  {
+    sodium_memzero(digest_input, digest_input_size);
+    _cardano_free(digest_input);
+    digest_input = NULL;
+  }
+
+  if (hram_input != NULL)
+  {
+    sodium_memzero(hram_input, digest_input_size);
+    _cardano_free(hram_input);
+    hram_input = NULL;
+  }
+
   sodium_memzero(hash_output, sizeof(hash_output));
   sodium_memzero(nonce, sizeof(nonce));
   sodium_memzero(hram, sizeof(hram));
