@@ -48,8 +48,8 @@ extern "C" {
  * Only \c lam introduces a term-level binder; \c delay and \c force do not bind.
  *
  * Application is written \c [ f x y ... ] and is left-associative n-ary, so
- * \c [ f x y ] builds \c ((f x) y). Constants follow the \c (con <type> <value>)
- * form for integer, bytestring (\c #hex), string, bool (\c True / \c False),
+ * \c [ f x y ] builds \c ((f x) y). Constants follow the \c (con \<type\> \<value\>)
+ * form for integer, bytestring (\c \#hex), string, bool (\c True / \c False),
  * unit (\c ()), \c (list T), \c (pair A B) and \c data (with the textual
  * \c Constr / \c Map / \c List / \c I / \c B data syntax). The \c constr and
  * \c case forms are parsed only when the program version is 1.1.0 or later; under

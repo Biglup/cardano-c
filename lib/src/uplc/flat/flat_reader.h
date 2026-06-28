@@ -40,7 +40,7 @@ extern "C" {
  *
  * Flat is a big-endian bit stream: within each byte the most significant bit is
  * consumed first. The reader tracks the current byte and how many bits of that
- * byte have already been consumed. It does not own \ref buffer; the caller keeps
+ * byte have already been consumed. It does not own \c buffer; the caller keeps
  * the backing bytes alive for the reader's lifetime.
  */
 typedef struct cardano_uplc_flat_reader_t
@@ -155,7 +155,7 @@ cardano_uplc_flat_reader_bytes(cardano_uplc_flat_reader_t* reader, cardano_buffe
 /**
  * \brief Reads a natural number of unbounded width as 7-bit little-endian groups.
  *
- * The same continuation scheme as \ref cardano_uplc_flat_reader_word: each byte
+ * The same continuation scheme as \ref cardano_uplc_flat_reader_word. Each byte
  * contributes its low 7 bits, least significant group first, and the high bit
  * signals that another group follows. Unlike \ref cardano_uplc_flat_reader_word the
  * magnitude is accumulated into a \ref cardano_bigint_t, so there is no width
