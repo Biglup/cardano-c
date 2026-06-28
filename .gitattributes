@@ -3,4 +3,11 @@ lib/tests/*/*.cpp linguist-vendored
 lib/tests/* linguist-vendored
 lib/tests/*.cpp linguist-vendored
 
+# Vendored third-party crypto, kept out of language stats and collapsed in diffs.
+lib/external/** linguist-vendored
+
+# Generated test data and fuzz corpus, not reviewed line by line.
+lib/tests/uplc/vectors/** linguist-generated
+fuzz/corpus/** linguist-generated
+
 * text=auto
