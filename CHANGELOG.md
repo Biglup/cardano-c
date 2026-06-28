@@ -1,7 +1,7 @@
 Next (V1.2.3)
 ---------------------
 
-NV1.2.2
+V1.2.2
 ---------------------
 
 - Added a native, in-process Untyped Plutus Core (UPLC) virtual machine: flat decoding and encoding, the CEK evaluation machine, the full V1 through V4 builtin set, ledger cost-model and execution-budget accounting, and phase-2 script-context construction.
