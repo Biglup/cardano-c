@@ -64,12 +64,6 @@ parse(const std::string& text, cardano_uplc_arena_t* arena, const cardano_uplc_p
 }
 
 int64_t
-big_to_i64(const cardano_bigint_t* value)
-{
-  return cardano_bigint_to_int(value);
-}
-
-int64_t
 int_const_i64(const cardano_uplc_constant_t* constant)
 {
   if (cardano_uplc_constant_int_is_small(constant))
