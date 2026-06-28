@@ -684,6 +684,43 @@ TEST(cardano_ed25519_private_key_sign, canGenerateAValidSignatureFromAnExtendedK
   cardano_ed25519_public_key_unref(&public_key);
 }
 
+TEST(cardano_ed25519_private_key_sign, extendedKeySignatureVerifiesAndIsDeterministic)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+  cardano_error_t                error       = cardano_ed25519_private_key_from_extended_hex(PRIVATE_EXTENDED_PRIVATE_HEX, PRIVATE_EXTENDED_PRIVATE_KEY_SIZE * 2, &private_key);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_ed25519_public_key_t* public_key = nullptr;
+  error                                    = cardano_ed25519_private_key_get_public_key(private_key, &public_key);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  const byte_t* message      = &MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES[0];
+  const size_t  message_size = sizeof(MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES);
+
+  // Act
+  cardano_ed25519_signature_t* signature_a = nullptr;
+  cardano_ed25519_signature_t* signature_b = nullptr;
+
+  ASSERT_EQ(cardano_ed25519_private_key_sign(private_key, message, message_size, &signature_a), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_ed25519_private_key_sign(private_key, message, message_size, &signature_b), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_TRUE(cardano_ed25519_public_verify(public_key, signature_a, message, message_size));
+
+  char hex_a[129] = { 0 };
+  char hex_b[129] = { 0 };
+  EXPECT_EQ(cardano_ed25519_signature_to_hex(signature_a, hex_a, 129), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_signature_to_hex(signature_b, hex_b, 129), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex_a, hex_b);
+
+  // Cleanup
+  cardano_ed25519_signature_unref(&signature_a);
+  cardano_ed25519_signature_unref(&signature_b);
+  cardano_ed25519_private_key_unref(&private_key);
+  cardano_ed25519_public_key_unref(&public_key);
+}
+
 TEST(cardano_ed25519_private_key_sign, canGenerateAValidSignatureFromANonExtendedKey)
 {
   // Arrange
@@ -759,6 +796,7 @@ TEST(cardano_ed25519_private_key_sign, returnsNullIfMemoryEventualAllocationFail
   cardano_set_allocators(malloc, realloc, free);
   cardano_ed25519_private_key_unref(&private_key);
 }
+
 
 TEST(cardano_ed25519_private_key_sign, returnsNullIfMemoryAllocationFailsNormalKey)
 {
