@@ -113,13 +113,11 @@ fund_script_address(
   console_info("Funding script address: %s", cardano_address_get_string(script_address));
 
   cardano_utxo_list_t*    utxo_list    = get_unspent_utxos(provider, funding_address);
-  cardano_tx_evaluator_t* tx_evaluator = get_tx_evaluator(provider);
   cardano_tx_builder_t*   tx_builder   = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
   cardano_datum_t*        datum        = create_void_datum();
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
-  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_change_address(tx_builder, funding_address);
   cardano_tx_builder_set_invalid_after_ex(tx_builder, invalid_after);
@@ -146,7 +144,6 @@ fund_script_address(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
   cardano_datum_unref(&datum);
-  cardano_tx_evaluator_unref(&tx_evaluator);
 
   console_info("Script address funded successfully.");
 
@@ -195,13 +192,11 @@ main(void)
   cardano_utxo_t*         reference_utxo   = cardano_resolve_input(provider, "77c33469c6f21be375880f294da85fec13df50821f6c6591eab9eff723e68e66", 64, 0);
   cardano_utxo_list_t*    script_utxo_list = get_unspent_utxos(provider, script_address);
   cardano_utxo_list_t*    utxo_list        = get_unspent_utxos(provider, payment_address);
-  cardano_tx_evaluator_t* tx_evaluator     = get_tx_evaluator(provider);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
   const uint64_t invalid_after = cardano_utils_get_time() + SECONDS_IN_TWO_HOURS;
 
-  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
   cardano_tx_builder_set_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_collateral_utxos(tx_builder, utxo_list);
   cardano_tx_builder_set_collateral_change_address(tx_builder, payment_address);
@@ -244,7 +239,6 @@ main(void)
   cardano_utxo_unref(&script_utxo);
   cardano_utxo_unref(&reference_utxo);
   cardano_plutus_data_unref(&redeemer);
-  cardano_tx_evaluator_unref(&tx_evaluator);
 
   return EXIT_SUCCESS;
 }
