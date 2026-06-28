@@ -372,7 +372,7 @@ to_hex(cardano_plutus_data_t* data)
 
   const size_t n = cardano_cbor_writer_get_hex_size(writer);
   std::string  s(n, '\0');
-  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, &s[0], n), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, s.data(), n), CARDANO_SUCCESS);
 
   cardano_cbor_writer_unref(&writer);
 

@@ -109,7 +109,7 @@ int_const_decimal(cardano_uplc_arena_t* arena, const cardano_uplc_constant_t* co
 
   size_t      size = cardano_bigint_get_string_size(big, 10);
   std::string out(size, '\0');
-  EXPECT_EQ(cardano_bigint_to_string(big, &out[0], size, 10), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_string(big, out.data(), size, 10), CARDANO_SUCCESS);
 
   if (!out.empty() && (out.back() == '\0'))
   {

@@ -1446,10 +1446,11 @@ with_env(
     {
       const cardano_uplc_term_t** fields = NULL;
       cardano_uplc_term_t*        result = NULL;
-      size_t                      i      = (size_t)0;
 
       if (term->as.constr.field_count > (size_t)0)
       {
+        size_t i;
+
         fields = (const cardano_uplc_term_t**)cardano_uplc_arena_alloc(
           arena,
           sizeof(const cardano_uplc_term_t*) * term->as.constr.field_count,
@@ -1488,7 +1489,6 @@ with_env(
       const cardano_uplc_term_t*  scrutinee = NULL;
       const cardano_uplc_term_t** branches  = NULL;
       cardano_uplc_term_t*        result    = NULL;
-      size_t                      i         = (size_t)0;
 
       error = with_env(arena, depth + (size_t)1, lam_cnt, env, term->as.cases.scrutinee, &scrutinee);
 
@@ -1499,6 +1499,8 @@ with_env(
 
       if (term->as.cases.branch_count > (size_t)0)
       {
+        size_t i;
+
         branches = (const cardano_uplc_term_t**)cardano_uplc_arena_alloc(
           arena,
           sizeof(const cardano_uplc_term_t*) * term->as.cases.branch_count,
@@ -1690,10 +1692,11 @@ discharge_value(
     {
       const cardano_uplc_term_t** fields = NULL;
       cardano_uplc_term_t*        result = NULL;
-      size_t                      i      = (size_t)0;
 
       if (value->as.constr.field_count > (size_t)0)
       {
+        size_t i;
+
         fields = (const cardano_uplc_term_t**)cardano_uplc_arena_alloc(
           arena,
           sizeof(const cardano_uplc_term_t*) * value->as.constr.field_count,

@@ -1329,7 +1329,7 @@ static cardano_error_t
 parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_uplc_data_t** out)
 {
   uint64_t        length = 0U;
-  cardano_error_t result = CARDANO_SUCCESS;
+  cardano_error_t result;
 
   if (info != (byte_t)PRV_CBOR_INFO_INDEFINITE)
   {
@@ -1465,7 +1465,7 @@ parse_array(
   size_t                      count      = 0U;
   bool                        indefinite = (info == (byte_t)PRV_CBOR_INFO_INDEFINITE);
   uint64_t                    length     = 0U;
-  cardano_error_t             result     = CARDANO_SUCCESS;
+  cardano_error_t             result;
 
   if (!indefinite)
   {
@@ -1585,7 +1585,7 @@ parse_map(
   size_t                    count      = 0U;
   bool                      indefinite = (info == (byte_t)PRV_CBOR_INFO_INDEFINITE);
   uint64_t                  length     = 0U;
-  cardano_error_t           result     = CARDANO_SUCCESS;
+  cardano_error_t           result;
 
   *out_indefinite = indefinite;
 
