@@ -1,0 +1,67 @@
+Upstream:  supranational/blst
+Origin:    https://github.com/supranational/blst
+Tag:       v0.3.14
+Commit:    8c7db7fe8d2ce6e76dc398ebd4d475c0ec564355
+License:   Apache-2.0 (see LICENSE in this directory)
+
+Provides BLS12-381 G1/G2 group arithmetic, pairings, hash-to-curve and
+serialization for the Plutus bls12_381_* builtins (added in a later task).
+This task only vendors and wires the library plus a smoke test; the builtin
+bodies are implemented separately.
+
+Build configuration: portable, no-assembly build
+  The library is compiled as a single translation unit, src/server.c, which
+  #includes the implementation .c files it needs:
+    keygen.c hash_to_field.c e1.c map_to_g1.c e2.c map_to_g2.c fp12_tower.c
+    pairing.c aggregate.c exp.c sqrt.c recip.c bulk_addition.c multi_scalar.c
+    consts.c vect.c exports.c rb_tree.c cpuid.c
+  (pentaroot.c is included only under BLST_FR_PENTAROOT, which is never
+  defined here.)
+
+  Two compile defines are set on the isolated CMake OBJECT target
+  (see lib/CMakeLists.txt):
+    __BLST_NO_ASM__   - select the portable reference C field arithmetic in
+                        src/no_asm.h instead of any assembly. With this define
+                        there is no assembly anywhere, so the library builds on
+                        WASM/Emscripten and the armv6/armv7 cross builds.
+    __BLST_PORTABLE__ - also disable the runtime-dispatched SHA-256 assembly
+                        kernels (blst_sha256_block_data_order_shaext /
+                        blst_sha256_block_armv8 in src/sha256.h), falling back
+                        to the pure-C blst_sha256_block_data_order. Without this
+                        define, on an x86_64 host built with -msha or on Apple
+                        Silicon (which defines __ARM_FEATURE_CRYPTO) the header
+                        would reference an assembly SHA-256 symbol that the
+                        no-asm build does not provide, and the link would fail.
+
+Local change to the vendored source (recorded per the vendoring rules):
+  src/vect.h - the limb-size selection block is reordered so that the
+    __BLST_NO_ASM__/__wasm64__ branch (32-bit limbs, the path no_asm.h is
+    written for) is tested before the __x86_64__/__aarch64__ branch (64-bit
+    limbs). Upstream only ships the no-assembly path for architectures other
+    than x86_64/aarch64, so on those two it would otherwise pick 64-bit limbs
+    and fail to compile no_asm.h (which defines its 64-bit double-limb llimb_t
+    only for the 32-bit-limb case). Reordering lets the portable build compile
+    on x86_64 and aarch64 too. No copyright or license text was altered.
+
+Removed from the upstream tree to keep this lean (no copyright text altered):
+  - src/asm/        - all .pl assembly generators (not used in the no-asm build).
+  - build/          - assembly.S and the per-platform object/refresh tooling
+                      (only used by the assembly build).
+  - bindings/blst_t.hpp, bindings/blst.hpp, bindings/blst.swg - C++/SWIG glue.
+  - All language bindings: bindings/{go,rust,python,node.js,java,c#,emscripten}
+    and bindings/vectors.
+  - src/client_min_pk.c, src/client_min_sig.c - alternative amalgamation units
+    (server.c is the unit we compile; these are not #included by it).
+  - build.sh, build.bat, go.mod, README.md, SECURITY.md, the logo image.
+
+Vendored files:
+  LICENSE                 - upstream Apache-2.0 license, copied verbatim.
+  bindings/blst.h         - public C API.
+  bindings/blst_aux.h     - auxiliary public C API.
+  src/server.c            - the single translation unit compiled; it #includes
+                            the implementation .c files listed above.
+  src/*.c                 - the implementation units server.c #includes.
+  src/*.h                 - the internal headers they need (vect.h, no_asm.h,
+                            consts.h, point.h, fields.h, ec_ops.h, ec_mult.h,
+                            errors.h, bytes.h, sha256.h and the *-addchain.h
+                            tables).

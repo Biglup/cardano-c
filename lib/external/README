@@ -1,0 +1,71 @@
+Third-party libraries vendored into cardano-c
+=============================================
+
+Each dependency below is vendored under lib/external/<name>/, compiled as an
+isolated CMake OBJECT library with warnings and clang-tidy disabled for that
+target only, and folded into libcardano-c. The upstream license text is kept
+verbatim in each directory; copyright notices are never altered. All listed
+licenses are compatible with the project's Apache-2.0 license.
+
+libsodium
+  Use:      SHA-256, SHA-512, Blake2b, Ed25519, HMAC, constant-time compare.
+  License:  ISC (see libsodium/LICENSE).
+  Origin:   https://github.com/jedisct1/libsodium
+
+gmp (mini-gmp)
+  Use:      arbitrary-precision integers backing cardano_bigint_t.
+  License:  LGPL/GPL dual (see gmp/README and the headers).
+  Origin:   https://gmplib.org (mini-gmp subset)
+
+sha3
+  Use:      SHA3-256 and Keccak-256 (shared Keccak-f permutation, differing
+            domain pad byte).
+  Version:  tiny_sha3 @ dcbb3192047c2a721f5f851db591871d428036a9
+  License:  MIT (see sha3/LICENSE).
+  Origin:   https://github.com/mjosaarinen/tiny_sha3
+  Details:  sha3/VERSION.txt
+
+ripemd160
+  Use:      RIPEMD-160 (20-byte digest).
+  Version:  trezor-firmware crypto/ripemd160.c @
+            fb471a96f226737ec1c22bbf88078f5b36a572bc
+            (Litzenberger 2008, public-domain changes by Wuille 2012)
+  License:  Public domain (see ripemd160/LICENSE).
+  Origin:   https://github.com/trezor/trezor-firmware
+  Details:  ripemd160/VERSION.txt
+
+secp256k1
+  Use:      secp256k1 ECDSA-verify and Schnorr (BIP340) verify backing the
+            verifyEcdsaSecp256k1Signature and verifySchnorrSecp256k1Signature
+            builtins. Only the verify path plus the extrakeys and schnorrsig
+            modules are compiled; recovery, ECDH, ellswift and musig are
+            dropped.
+  Version:  bitcoin-core/secp256k1 v0.6.0 @
+            0cdc758a56360bf58a851fe91085a327ec97685a
+  License:  MIT (see secp256k1/COPYING).
+  Origin:   https://github.com/bitcoin-core/secp256k1
+  Details:  secp256k1/VERSION.txt
+  Build:    No autotools and no codegen. Configured by compile defines on the
+            OBJECT target (ENABLE_MODULE_EXTRAKEYS, ENABLE_MODULE_SCHNORRSIG,
+            ECMULT_WINDOW_SIZE=8, SECP256K1_STATIC); the checked-in precomputed
+            tables are compiled as-is. The small window keeps the verify table
+            at 8 KiB instead of 1 MiB, since secp verify is a cold path.
+
+blst
+  Use:      BLS12-381 G1/G2 arithmetic, pairings, hash-to-curve and
+            serialization backing the bls12_381_* Plutus builtins.
+  Version:  supranational/blst v0.3.14 @
+            8c7db7fe8d2ce6e76dc398ebd4d475c0ec564355
+  License:  Apache-2.0 (see blst/LICENSE).
+  Origin:   https://github.com/supranational/blst
+  Details:  blst/VERSION.txt
+  Build:    Portable no-assembly build. Only src/server.c is a compilation
+            unit; it includes the implementation .c files it needs. The
+            OBJECT target sets __BLST_NO_ASM__ (reference C field arithmetic
+            in no_asm.h) and __BLST_PORTABLE__ (pure-C SHA-256, no runtime
+            asm dispatch), so there is no assembly and the target builds on
+            WASM and the armv6/armv7 cross builds. src/vect.h was reordered so
+            the no-asm 32-bit-limb path is also taken on x86_64/aarch64; no
+            copyright text was altered. The asm/ and build/ trees, the C++ and
+            language bindings, and the alternative client_min_* amalgamation
+            units are dropped.

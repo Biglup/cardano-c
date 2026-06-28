@@ -1,0 +1,18 @@
+Upstream:  ripemd160.c / ripemd160.h
+Origin:    https://github.com/trezor/trezor-firmware (crypto/ripemd160.c, crypto/ripemd160.h)
+Lineage:   Written in 2008 by Dwayne C. Litzenberger; public-domain changes by
+           Pieter Wuille (2012), via https://github.com/sipa/Coin25519
+Commit:    fb471a96f226737ec1c22bbf88078f5b36a572bc (trezor-firmware, path crypto/ripemd160.c)
+License:   Public domain (see LICENSE in this directory and the notice at the
+           top of ripemd160.c, both preserved verbatim).
+
+Provides:  ripemd160_init / ripemd160_process / ripemd160_done and the
+           one-shot ripemd160(), producing a 20-byte RIPEMD-160 digest.
+
+Removed / changed to keep this self-contained (no algorithm or copyright text
+altered):
+  - Dropped #include "memzero.h" (a trezor-firmware internal header) and
+    replaced it with a local "#define memzero(p, n) memset((p), 0, (n))" so
+    the pair of files compiles with no external dependency beyond libc.
+  - Nothing else from the upstream files was removed; the source is already a
+    single self-contained translation unit plus its header.

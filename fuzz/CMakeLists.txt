@@ -30,8 +30,9 @@ FOREACH(FUZZ_SOURCE ${FUZZ_SOURCES})
     # Define executable target for the fuzzer
     ADD_EXECUTABLE(${FUZZ_TARGET_NAME} ${FUZZ_SOURCE})
     MESSAGE(STATUS "Fuzz source: ${FUZZ_TARGET_NAME}")
-    # Include directories
-    TARGET_INCLUDE_DIRECTORIES(${FUZZ_TARGET_NAME} PRIVATE ${CARDANO_C_INCLUDE_DIR})
+    # Include directories. lib/src exposes the module-internal uplc headers
+    # (arena.h, flat_reader.h, flat_decode.h) the uplc flat fuzzer drives directly.
+    TARGET_INCLUDE_DIRECTORIES(${FUZZ_TARGET_NAME} PRIVATE ${CARDANO_C_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/lib/src)
 
     # Set compiler to Clang explicitly
     SET (CMAKE_C_COMPILER "clang")

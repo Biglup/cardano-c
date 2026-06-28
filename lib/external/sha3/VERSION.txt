@@ -1,0 +1,26 @@
+Upstream:  tiny_sha3 (Markku-Juhani O. Saarinen)
+Origin:    https://github.com/mjosaarinen/tiny_sha3
+Commit:    dcbb3192047c2a721f5f851db591871d428036a9
+License:   MIT (see LICENSE in this directory)
+
+Vendored files:
+  sha3.c, sha3.h   - the Keccak-f[1600] permutation and the OpenSSL-style
+                     init/update/final sponge API.
+  LICENSE          - upstream MIT license, copied verbatim.
+
+Provides both digests required by Plutus, which share the Keccak-f permutation
+and the 136-byte rate for a 256-bit output and differ only in the domain pad
+byte appended at finalization:
+  - SHA3-256 : pad byte 0x06 (FIPS-202), via sha3_final().
+  - Keccak-256 (Ethereum-style) : pad byte 0x01, via sha3_final_pad().
+
+Removed from the upstream sources to keep this lean:
+  - main.c, Makefile, README.md (test driver and build glue, not vendored).
+  - The SHAKE128/SHAKE256 extensible-output functions (shake_xof, shake_out)
+    and their convenience macros from sha3.h/sha3.c - not needed by Plutus.
+
+Added (cardano-c local change, no upstream copyright text altered):
+  - sha3_final_pad(md, c, pad): the upstream sha3_final body parameterized by
+    the pad byte so both SHA3-256 (0x06) and Keccak-256 (0x01) are produced
+    from the same vendored permutation. The original sha3_final is kept and
+    now delegates to sha3_final_pad(md, c, 0x06), preserving its behaviour.

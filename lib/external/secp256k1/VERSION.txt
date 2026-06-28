@@ -1,0 +1,65 @@
+Upstream:  bitcoin-core/secp256k1
+Origin:    https://github.com/bitcoin-core/secp256k1
+Tag:       v0.6.0
+Commit:    0cdc758a56360bf58a851fe91085a327ec97685a
+License:   MIT (see COPYING in this directory)
+
+Provides the secp256k1 ECDSA-verify and Schnorr (BIP340) verify primitives for
+the Plutus builtins verifyEcdsaSecp256k1Signature and
+verifySchnorrSecp256k1Signature. Only the verify path of the core library plus
+the extrakeys and schnorrsig modules are compiled.
+
+Build configuration (no autotools, no code generation):
+  This release configures purely through preprocessor defines; it does not
+  generate a libsecp256k1-config.h and does not need HAVE_CONFIG_H. The build
+  defines are set on the isolated CMake OBJECT target (see lib/CMakeLists.txt):
+    ENABLE_MODULE_EXTRAKEYS=1   - x-only public keys (schnorr dependency)
+    ENABLE_MODULE_SCHNORRSIG=1  - BIP340 Schnorr signatures
+    ECMULT_WINDOW_SIZE=8        - small ecmult window: the verify table is 8 KiB
+                                  (vs 1 MiB at the upstream default of 15); secp
+                                  verify is a rarely-used cold path, so the lean
+                                  binary is worth the small verify slowdown
+    SECP256K1_STATIC            - consume the API as a static library (no DLL
+                                  import/export decoration on Windows)
+  The recovery, ECDH, ellswift and musig modules are intentionally not defined
+  and therefore not compiled. Wide multiplication, field and scalar backends are
+  auto-selected by src/util.h with a portable C fallback; no assembly is forced.
+
+Precomputed tables:
+  src/precomputed_ecmult.c and src/precomputed_ecmult_gen.c are the generated
+  tables that ship checked in with this release. They are compiled as-is, so no
+  precompute/codegen step (precompute_ecmult.c / precompute_ecmult_gen.c) and no
+  autotools run is required. Those two generator programs are not vendored.
+
+Vendored files:
+  COPYING                          - upstream MIT license, copied verbatim.
+  include/secp256k1.h              - core public API.
+  include/secp256k1_preallocated.h - included by secp256k1.c.
+  include/secp256k1_extrakeys.h    - x-only pubkey public API.
+  include/secp256k1_schnorrsig.h   - BIP340 public API.
+  src/secp256k1.c                  - the single core translation unit; it pulls
+                                     in the enabled module impls by ENABLE_MODULE_*.
+  src/precomputed_ecmult.c         - checked-in ecmult table.
+  src/precomputed_ecmult_gen.c     - checked-in ecmult-gen table.
+  src/*.h                          - the internal headers secp256k1.c includes
+                                     (field/group/scalar/ecmult/ecdsa/eckey/hash/
+                                     modinv/int128/scratch/hsort/assumptions/
+                                     checkmem/selftest/util and the precomputed
+                                     table headers).
+  src/modules/extrakeys/main_impl.h
+  src/modules/schnorrsig/main_impl.h
+
+Removed from the upstream tree to keep this lean (no copyright text altered):
+  - Unused modules: src/modules/{ecdh,recovery,ellswift,musig} and their public
+    headers include/secp256k1_{ecdh,recovery,ellswift,musig}.h.
+  - Tests and benchmarks: src/tests.c, src/tests_exhaustive.c, src/ctime_tests.c,
+    src/bench*.c, src/bench.h, the wycheproof test vectors and the per-module
+    tests_impl.h / tests_exhaustive_impl.h / bench_impl.h.
+  - Test-only internal headers: src/testrand*.h, src/testutil.h, and the
+    exhaustive-test scalar backend src/scalar_low.h / src/scalar_low_impl.h
+    (only included under EXHAUSTIVE_TEST_ORDER, which is never defined here).
+  - The table generators src/precompute_ecmult.c and src/precompute_ecmult_gen.c
+    (the checked-in tables above are used instead).
+  - Build tooling: configure.ac, Makefile.am, autogen.sh, CMakeLists.txt,
+    cmake/, src/CMakeLists.txt, the asm sources under src/asm, the examples/ and
+    contrib/ trees, CI and documentation files.
