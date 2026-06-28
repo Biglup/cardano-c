@@ -3564,9 +3564,6 @@ cardano_tx_builder_vote(
     return;
   }
 
-  cardano_credential_t* credential = cardano_voter_get_credential(voter);
-  cardano_credential_unref(&credential);
-
   cardano_blake2b_hash_t* id_hash = NULL;
   result                          = compute_voting_procedures_sortable_id(voter, action_id, &id_hash);
 
@@ -3593,35 +3590,15 @@ cardano_tx_builder_vote(
   }
   else
   {
-    // We still want to add an entry in the votes_to_redeemer_map with a NULL redeemer
-    // so it can compute the indices correctly.
-    cardano_credential_type_t cred_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
-    result                              = cardano_credential_get_type(credential, &cred_type);
+    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, id_hash, NULL);
 
-    if (result != CARDANO_SUCCESS)
+    if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
     {
       cardano_blake2b_hash_unref(&id_hash);
-      cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
+      cardano_tx_builder_set_last_error(builder, "Failed to add vote redeemer placeholder.");
       builder->last_error = result;
 
       return;
-    }
-
-    // For votes due to a quirk in the node, script credentials are processed first than pub key
-    // hash credentials regardless of the canonical sorting, so we need to skip them when computing
-    // the redeemer index.
-    if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
-    {
-      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, id_hash, NULL);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_blake2b_hash_unref(&id_hash);
-        cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
-        builder->last_error = result;
-
-        return;
-      }
     }
 
     cardano_blake2b_hash_unref(&id_hash);
