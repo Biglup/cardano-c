@@ -72,6 +72,7 @@ typedef struct cardano_uplc_data_t
     int64_t                  ex_mem;
     int64_t                  node_count;
 
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         struct
@@ -106,6 +107,8 @@ typedef struct cardano_uplc_data_t
             const byte_t* data;
             size_t        size;
         } bytes;
+
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } as;
 } cardano_uplc_data_t;
 

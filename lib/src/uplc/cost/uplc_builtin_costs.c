@@ -48,6 +48,7 @@ static const int64_t CARDANO_UPLC_UNAVAILABLE_BUILTIN_COST = 30000000000;
  * The width literal of \c integerToByteString and \c replicateByte is converted
  * to a size of \c 0 when zero else \c ((n - 1) / 8) + 1.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_COST_SIZE_CHUNK = 8;
 
 /**
@@ -55,6 +56,7 @@ static const int64_t CARDANO_UPLC_COST_SIZE_CHUNK = 8;
  *
  * This is the maximum output length of \c integerToByteString.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_COST_SIZE_MAX = 8192;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -70,7 +72,7 @@ static cardano_uplc_one_arg_cost_t
 one_const(int64_t c)
 {
   cardano_uplc_one_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind            = CARDANO_UPLC_ONE_ARG_CONSTANT;
   fn.params.constant = c;
   return fn;
@@ -88,7 +90,7 @@ static cardano_uplc_one_arg_cost_t
 one_linear(int64_t intercept, int64_t slope)
 {
   cardano_uplc_one_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                    = CARDANO_UPLC_ONE_ARG_LINEAR;
   fn.params.linear.intercept = intercept;
   fn.params.linear.slope     = slope;
@@ -106,7 +108,7 @@ static cardano_uplc_two_arg_cost_t
 two_const(int64_t c)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind            = CARDANO_UPLC_TWO_ARG_CONSTANT;
   fn.params.constant = c;
   return fn;
@@ -128,7 +130,7 @@ static cardano_uplc_two_arg_cost_t
 two_linear(cardano_uplc_two_arg_kind_t kind, int64_t intercept, int64_t slope)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                    = kind;
   fn.params.linear.intercept = intercept;
   fn.params.linear.slope     = slope;
@@ -148,7 +150,7 @@ static cardano_uplc_two_arg_cost_t
 two_subtracted(int64_t intercept, int64_t slope, int64_t minimum)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                              = CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES;
   fn.params.subtracted_sizes.intercept = intercept;
   fn.params.subtracted_sizes.slope     = slope;
@@ -169,7 +171,7 @@ static cardano_uplc_two_arg_cost_t
 two_on_diagonal(int64_t constant, int64_t intercept, int64_t slope)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                                = CARDANO_UPLC_TWO_ARG_LINEAR_ON_DIAGONAL;
   fn.params.linear_on_diagonal.constant  = constant;
   fn.params.linear_on_diagonal.intercept = intercept;
@@ -199,7 +201,7 @@ static cardano_uplc_one_arg_cost_t
 one_quadratic(int64_t c0, int64_t c1, int64_t c2)
 {
   cardano_uplc_one_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                     = CARDANO_UPLC_ONE_ARG_QUADRATIC;
   fn.params.quadratic.coeff_0 = c0;
   fn.params.quadratic.coeff_1 = c1;
@@ -221,7 +223,7 @@ static cardano_uplc_two_arg_cost_t
 two_with_interaction(int64_t c00, int64_t c10, int64_t c01, int64_t c11)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                        = CARDANO_UPLC_TWO_ARG_WITH_INTERACTION;
   fn.params.with_interaction.c00 = c00;
   fn.params.with_interaction.c10 = c10;
@@ -248,7 +250,7 @@ static cardano_uplc_two_arg_cost_t
 two_const_above_linear(int64_t constant, int64_t intercept, int64_t slope_x, int64_t slope_y)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                                                    = CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL;
   fn.params.const_diagonal.constant                          = constant;
   fn.params.const_diagonal.kind                              = CARDANO_UPLC_DIAG_MODEL_LINEAR_IN_X_AND_Y;
@@ -262,7 +264,7 @@ static cardano_uplc_two_arg_cost_t
 two_const_above_mult(int64_t constant, int64_t intercept, int64_t slope)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                                                   = CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL;
   fn.params.const_diagonal.constant                         = constant;
   fn.params.const_diagonal.kind                             = CARDANO_UPLC_DIAG_MODEL_MULTIPLIED_SIZES;
@@ -297,7 +299,7 @@ two_const_above_quad(
   int64_t c02)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                                                 = CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC;
   fn.params.const_above_into_quadratic.constant           = constant;
   fn.params.const_above_into_quadratic.quadratic.minimum  = minimum;
@@ -323,7 +325,7 @@ static cardano_uplc_two_arg_cost_t
 two_quadratic_in_y(int64_t c0, int64_t c1, int64_t c2)
 {
   cardano_uplc_two_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                          = CARDANO_UPLC_TWO_ARG_QUADRATIC_IN_Y;
   fn.params.quadratic_in_y.coeff_0 = c0;
   fn.params.quadratic_in_y.coeff_1 = c1;
@@ -342,7 +344,7 @@ static cardano_uplc_three_arg_cost_t
 three_const(int64_t c)
 {
   cardano_uplc_three_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind            = CARDANO_UPLC_THREE_ARG_CONSTANT;
   fn.params.constant = c;
   return fn;
@@ -361,7 +363,7 @@ static cardano_uplc_three_arg_cost_t
 three_linear(cardano_uplc_three_arg_kind_t kind, int64_t intercept, int64_t slope)
 {
   cardano_uplc_three_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                    = kind;
   fn.params.linear.intercept = intercept;
   fn.params.linear.slope     = slope;
@@ -381,7 +383,7 @@ static cardano_uplc_three_arg_cost_t
 three_quadratic_in_z(int64_t c0, int64_t c1, int64_t c2)
 {
   cardano_uplc_three_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                          = CARDANO_UPLC_THREE_ARG_QUADRATIC_IN_Z;
   fn.params.quadratic_in_z.coeff_0 = c0;
   fn.params.quadratic_in_z.coeff_1 = c1;
@@ -402,7 +404,7 @@ static cardano_uplc_three_arg_cost_t
 three_linear_yz(int64_t intercept, int64_t slope1, int64_t slope2)
 {
   cardano_uplc_three_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                               = CARDANO_UPLC_THREE_ARG_LINEAR_IN_Y_AND_Z;
   fn.params.linear_in_y_and_z.intercept = intercept;
   fn.params.linear_in_y_and_z.slope1    = slope1;
@@ -423,7 +425,7 @@ static cardano_uplc_three_arg_cost_t
 three_exp_mod(int64_t coeff_00, int64_t coeff_11, int64_t coeff_12)
 {
   cardano_uplc_three_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind                    = CARDANO_UPLC_THREE_ARG_EXP_MOD;
   fn.params.exp_mod.coeff_00 = coeff_00;
   fn.params.exp_mod.coeff_11 = coeff_11;
@@ -442,7 +444,7 @@ static cardano_uplc_six_arg_cost_t
 six_const(int64_t c)
 {
   cardano_uplc_six_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind            = CARDANO_UPLC_SIX_ARG_CONSTANT;
   fn.params.constant = c;
   return fn;
@@ -459,7 +461,7 @@ static cardano_uplc_four_arg_cost_t
 four_const(int64_t c)
 {
   cardano_uplc_four_arg_cost_t fn;
-  memset(&fn, 0, sizeof(fn));
+  (void)memset(&fn, 0, sizeof(fn));
   fn.kind            = CARDANO_UPLC_FOUR_ARG_CONSTANT;
   fn.params.constant = c;
   return fn;
@@ -477,7 +479,7 @@ static cardano_uplc_builtin_cost_t
 entry_one(cardano_uplc_one_arg_cost_t cpu, cardano_uplc_one_arg_cost_t mem)
 {
   cardano_uplc_builtin_cost_t e;
-  memset(&e, 0, sizeof(e));
+  (void)memset(&e, 0, sizeof(e));
   e.arity   = CARDANO_UPLC_BUILTIN_COST_ARITY_ONE;
   e.cpu.one = cpu;
   e.mem.one = mem;
@@ -496,7 +498,7 @@ static cardano_uplc_builtin_cost_t
 entry_two(cardano_uplc_two_arg_cost_t cpu, cardano_uplc_two_arg_cost_t mem)
 {
   cardano_uplc_builtin_cost_t e;
-  memset(&e, 0, sizeof(e));
+  (void)memset(&e, 0, sizeof(e));
   e.arity   = CARDANO_UPLC_BUILTIN_COST_ARITY_TWO;
   e.cpu.two = cpu;
   e.mem.two = mem;
@@ -515,7 +517,7 @@ static cardano_uplc_builtin_cost_t
 entry_three(cardano_uplc_three_arg_cost_t cpu, cardano_uplc_three_arg_cost_t mem)
 {
   cardano_uplc_builtin_cost_t e;
-  memset(&e, 0, sizeof(e));
+  (void)memset(&e, 0, sizeof(e));
   e.arity     = CARDANO_UPLC_BUILTIN_COST_ARITY_THREE;
   e.cpu.three = cpu;
   e.mem.three = mem;
@@ -534,7 +536,7 @@ static cardano_uplc_builtin_cost_t
 entry_four(cardano_uplc_four_arg_cost_t cpu, cardano_uplc_four_arg_cost_t mem)
 {
   cardano_uplc_builtin_cost_t e;
-  memset(&e, 0, sizeof(e));
+  (void)memset(&e, 0, sizeof(e));
   e.arity    = CARDANO_UPLC_BUILTIN_COST_ARITY_FOUR;
   e.cpu.four = cpu;
   e.mem.four = mem;
@@ -553,7 +555,7 @@ static cardano_uplc_builtin_cost_t
 entry_six(cardano_uplc_six_arg_cost_t cpu, cardano_uplc_six_arg_cost_t mem)
 {
   cardano_uplc_builtin_cost_t e;
-  memset(&e, 0, sizeof(e));
+  (void)memset(&e, 0, sizeof(e));
   e.arity   = CARDANO_UPLC_BUILTIN_COST_ARITY_SIX;
   e.cpu.six = cpu;
   e.mem.six = mem;
@@ -679,7 +681,7 @@ fill_all_unavail(cardano_uplc_builtin_costs_t* c)
   size_t  i = 0U;
   int64_t s = CARDANO_UPLC_UNAVAILABLE_BUILTIN_COST;
 
-  memset(c, 0, sizeof(*c));
+  (void)memset(c, 0, sizeof(*c));
 
   for (i = 0U; i < (size_t)CARDANO_UPLC_BUILTIN_COUNT; ++i)
   {
@@ -836,6 +838,7 @@ floor_log2(size_t n)
 
   while (n > 1U)
   {
+    // cppcheck-suppress misra-c2012-17.8; Reason: parameter reused as a local iteration cursor
     n   >>= 1U;
     log += 1;
   }
@@ -1039,7 +1042,7 @@ value_abs_integer_saturating(const cardano_uplc_value_t* value)
   {
     const int64_t raw = cardano_uplc_constant_int_small(value->as.constant);
 
-    if (raw == INT64_MIN)
+    if (raw == (int64_t)INT64_MIN)
     {
       return INT64_MAX;
     }
@@ -1057,7 +1060,7 @@ value_abs_integer_saturating(const cardano_uplc_value_t* value)
   {
     const int64_t raw = cardano_bigint_to_int(integer);
 
-    if (raw == INT64_MIN)
+    if (raw == (int64_t)INT64_MIN)
     {
       return INT64_MAX;
     }
@@ -1086,6 +1089,7 @@ cost_as_size(int64_t width)
 
   if (width > CARDANO_UPLC_COST_SIZE_MAX)
   {
+    // cppcheck-suppress misra-c2012-17.8; Reason: parameter reused as a local iteration cursor
     width = CARDANO_UPLC_COST_SIZE_MAX;
   }
 
@@ -1102,7 +1106,7 @@ cost_as_size(int64_t width)
 static int64_t
 abs_i64(int64_t v)
 {
-  if (v == INT64_MIN)
+  if (v == (int64_t)INT64_MIN)
   {
     return INT64_MAX;
   }
@@ -1201,6 +1205,7 @@ arg_ex_mem(const cardano_uplc_value_t* value, bool costs_strings_by_utf8_bytes)
 
     if ((k != NULL) && (k->kind == CARDANO_UPLC_TYPE_INTEGER) && k->as.integer.is_small)
     {
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       ((cardano_uplc_value_t*)((void*)value))->ex_mem = 1;
 
       return 1;
@@ -1210,6 +1215,7 @@ arg_ex_mem(const cardano_uplc_value_t* value, bool costs_strings_by_utf8_bytes)
     {
       int64_t total = cardano_uplc_byte_string_ex_mem(k->as.bytes.size);
 
+      // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
       ((cardano_uplc_value_t*)((void*)value))->ex_mem = total;
 
       return total;

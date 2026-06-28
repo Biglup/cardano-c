@@ -37,6 +37,7 @@ static const uint8_t FLAT_BITS_PER_BYTE = 8U;
 /**
  * \brief Mask selecting the most significant bit of a byte, read first.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_MSB_MASK = 0x80U;
 
 /**
@@ -57,6 +58,7 @@ static const uint8_t FLAT_WORD_CONTINUATION_MASK = 0x80U;
 /**
  * \brief Initial capacity requested for the bytestring accumulator.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t FLAT_BYTES_INITIAL_CAPACITY = 64U;
 
 /* STATIC FUNCTIONS *********************************************************/

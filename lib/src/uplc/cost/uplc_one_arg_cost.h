@@ -48,6 +48,7 @@ typedef struct cardano_uplc_one_arg_cost_t
     cardano_uplc_one_arg_kind_t kind;
 
     /** \brief The variant parameters. */
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         /** \brief Active when kind is CONSTANT. */
@@ -56,6 +57,7 @@ typedef struct cardano_uplc_one_arg_cost_t
         cardano_uplc_linear_cost_t linear;
         /** \brief Active when kind is QUADRATIC. */
         cardano_uplc_quadratic_cost_t quadratic;
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } params;
 } cardano_uplc_one_arg_cost_t;
 

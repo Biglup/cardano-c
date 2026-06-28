@@ -37,16 +37,19 @@
 /**
  * \brief The number of 64-bit words an integer occupies for one memory unit.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_INTEGER_WORD_BITS = 64;
 
 /**
  * \brief The byte-string chunk size: one memory unit per this many bytes.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_BYTE_STRING_CHUNK = 8;
 
 /**
  * \brief The utf-8 string chunk size: one memory unit per this many bytes.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STRING_UTF8_CHUNK = 4;
 
 /**
@@ -54,6 +57,7 @@ static const int64_t CARDANO_UPLC_STRING_UTF8_CHUNK = 4;
  *
  * Equal to the 144-byte element size divided by 8.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_BLS_G1_EX_MEM = 18;
 
 /**
@@ -61,6 +65,7 @@ static const int64_t CARDANO_UPLC_BLS_G1_EX_MEM = 18;
  *
  * Equal to the 288-byte element size divided by 8.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_BLS_G2_EX_MEM = 36;
 
 /**
@@ -68,6 +73,7 @@ static const int64_t CARDANO_UPLC_BLS_G2_EX_MEM = 36;
  *
  * Equal to the 576-byte result size divided by 8.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_BLS_ML_RESULT_EX_MEM = 72;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -246,6 +252,7 @@ cardano_uplc_constant_ex_mem(
 
       for (i = 0U; i < constant->as.list.count; ++i)
       {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         total = sat_add(total, cardano_uplc_constant_ex_mem(constant->as.list.items[i], costs_strings_by_utf8_bytes));
       }
       break;
@@ -258,7 +265,9 @@ cardano_uplc_constant_ex_mem(
     case CARDANO_UPLC_TYPE_PAIR:
     {
       total = sat_add(
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         cardano_uplc_constant_ex_mem(constant->as.pair.fst, costs_strings_by_utf8_bytes),
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         cardano_uplc_constant_ex_mem(constant->as.pair.snd, costs_strings_by_utf8_bytes));
       break;
     }
@@ -329,6 +338,7 @@ cardano_uplc_value_ex_mem(
     }
   }
 
+  // cppcheck-suppress misra-c2012-11.8; Reason: interfacing a non-const-correct API
   ((cardano_uplc_value_t*)((void*)value))->ex_mem = total;
 
   return total;

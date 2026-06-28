@@ -33,6 +33,7 @@
  *
  * At and above this version V1/V2 select semantics B.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t CARDANO_UPLC_CHANG_PROTOCOL_VERSION = 9U;
 
 /**
@@ -40,6 +41,7 @@ static const uint64_t CARDANO_UPLC_CHANG_PROTOCOL_VERSION = 9U;
  *
  * At and above this version V1/V2 select semantics D and V3 selects E.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION = 11U;
 
 /* DEFINITIONS ***************************************************************/

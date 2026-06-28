@@ -35,6 +35,7 @@
  * \brief Default block payload size, used when the caller passes 0 to
  *        \ref cardano_uplc_arena_new.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t ARENA_DEFAULT_BLOCK_SIZE = (size_t)64U * 1024U;
 
 /**
@@ -48,11 +49,13 @@ static const size_t ARENA_DEFAULT_BLOCK_SIZE = (size_t)64U * 1024U;
  * the ceiling, allocation fails and creation refuses with
  * \ref CARDANO_ERROR_ILLEGAL_STATE at the call sites that surface it.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t ARENA_BYTE_CEILING = (size_t)512U * 1024U * 1024U;
 
 /**
  * \brief Natural maximum alignment used when the caller passes align 0.
  */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t ARENA_MAX_ALIGN = sizeof(long double) > sizeof(void*) ? sizeof(long double) : sizeof(void*);
 
 /* STRUCTURES ****************************************************************/
@@ -127,9 +130,11 @@ is_power_of_two(const size_t value)
 static void
 compute_aligned_offset(const byte_t* base, const size_t offset, const size_t align, size_t* result)
 {
-  const uintptr_t mask    = (uintptr_t)align - 1U;
+  const uintptr_t mask = (uintptr_t)align - 1U;
+  // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
   const uintptr_t address = (uintptr_t)base + (uintptr_t)offset;
 
+  // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
   *result = (size_t)(((address + mask) & ~mask) - (uintptr_t)base);
 }
 
@@ -188,9 +193,10 @@ grow_arena(cardano_uplc_arena_t* arena, const size_t min_capacity)
 
   block->capacity = capacity;
   block->offset   = 0U;
-  block->payload  = (byte_t*)block + sizeof(cardano_uplc_arena_block_t);
-  block->next     = arena->blocks;
-  arena->blocks   = block;
+  // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+  block->payload = (byte_t*)block + sizeof(cardano_uplc_arena_block_t);
+  block->next    = arena->blocks;
+  arena->blocks  = block;
 
   return block;
 }
@@ -252,9 +258,11 @@ cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const s
 
   if (block != NULL)
   {
-    const uintptr_t mask    = (uintptr_t)effective_align - 1U;
+    const uintptr_t mask = (uintptr_t)effective_align - 1U;
+    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
     const uintptr_t address = (uintptr_t)block->payload + (uintptr_t)block->offset;
 
+    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
     aligned_offset = (size_t)(((address + mask) & ~mask) - (uintptr_t)block->payload);
 
     if ((aligned_offset <= block->capacity) && (size <= (block->capacity - aligned_offset)))
@@ -266,6 +274,7 @@ cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const s
         arena->bytes_used += charge;
         block->offset     = aligned_offset + size;
 
+        // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
         return block->payload + aligned_offset;
       }
 
@@ -301,6 +310,7 @@ cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const s
 
   block->offset = end;
 
+  // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
   return block->payload + aligned_offset;
 }
 

@@ -53,6 +53,7 @@ struct cardano_uplc_frame_t
 {
     cardano_uplc_frame_kind_t kind;
 
+    // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     union
     {
         struct
@@ -97,6 +98,8 @@ struct cardano_uplc_frame_t
             size_t                            branch_count;
             const cardano_uplc_frame_t*       ctx;
         } cases;
+
+        // cppcheck-suppress misra-c2012-19.2; Reason: tagged union is the VM value and cost-shape representation
     } as;
 };
 

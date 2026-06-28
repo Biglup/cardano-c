@@ -66,7 +66,7 @@ apply_param_list(
   {
     cardano_plutus_data_t*  param   = NULL;
     cardano_uplc_program_t* applied = NULL;
-    cardano_error_t         get_res = cardano_plutus_list_get((cardano_plutus_list_t*)params, i, &param);
+    cardano_error_t         get_res = cardano_plutus_list_get(params, i, &param);
 
     if (get_res != CARDANO_SUCCESS)
     {

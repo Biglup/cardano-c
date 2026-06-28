@@ -202,8 +202,9 @@ cardano_uplc_builtin_as_data(const cardano_uplc_value_t* value, const cardano_up
  */
 bool
 cardano_uplc_builtin_as_list(
-  const cardano_uplc_value_t*            value,
-  const cardano_uplc_type_t**            element_type,
+  const cardano_uplc_value_t* value,
+  const cardano_uplc_type_t** element_type,
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_constant_t* const** items,
   size_t*                                count);
 
