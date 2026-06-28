@@ -42,16 +42,16 @@ extern "C" {
  * \c .uplc.expected files use, produced for diagnostics and round-trip checks
  * rather than for the consensus-critical comparison, which is done structurally
  * on the de Bruijn AST. Application is rendered as \c [ f x ], constants as
- * \c (con <type> <value>), and the other term forms with their \c (lam ...),
+ * \c (con \<type\> \<value\>), and the other term forms with their \c (lam ...),
  * \c (delay ...), \c (force ...), \c (error), \c (builtin name), \c (constr ...)
  * and \c (case ...) heads. The result is one compact line with single-space
  * separators and is NUL-terminated.
  *
  * Because the AST carries de Bruijn indices and no binder names, a lambda binder
- * is printed as \c v-<level>, where \c level counts binders from the outermost
+ * is printed as \c v-\<level\>, where \c level counts binders from the outermost
  * (zero-based), and a variable prints the same name as the binder it resolves to.
  * A variable whose index escapes the binders in scope (a free variable) is
- * printed as \c free-<index> so rendering never fails on a malformed term.
+ * printed as \c free-\<index\> so rendering never fails on a malformed term.
  *
  * \param[in] term The term to render. Must not be NULL.
  * \param[out] out On success, a newly allocated buffer holding the rendered,
@@ -74,7 +74,7 @@ cardano_uplc_pretty_print_term(
  * \brief Renders an Untyped Plutus Core program to the textual surface syntax.
  *
  * Wraps the term rendering of \ref cardano_uplc_pretty_print_term in
- * \c (program major.minor.patch <term>), the form the conformance
+ * \c (program major.minor.patch \<term\>), the form the conformance
  * \c .uplc.expected files use.
  *
  * \param[in] program The program to render. Must not be NULL and must carry a

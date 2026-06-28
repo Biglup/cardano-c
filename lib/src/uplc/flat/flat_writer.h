@@ -38,10 +38,10 @@ extern "C" {
 /**
  * \brief MSB-first bit writer over the flat serialization used for Plutus scripts.
  *
- * The exact inverse of \ref cardano_uplc_flat_reader_t: bits are laid down most
- * significant first within each byte. Whole bytes are accumulated in \ref buffer
- * as they fill, while \ref current and \ref used hold the partial trailing byte
- * that has not yet been flushed. The writer owns \ref buffer; the caller releases
+ * The exact inverse of \ref cardano_uplc_flat_reader_t. Bits are laid down most
+ * significant first within each byte. Whole bytes are accumulated in \c buffer
+ * as they fill, while \c current and \c used hold the partial trailing byte
+ * that has not yet been flushed. The writer owns \c buffer; the caller releases
  * the finished bytes with \ref cardano_uplc_flat_writer_finish.
  */
 typedef struct cardano_uplc_flat_writer_t
@@ -91,7 +91,7 @@ cardano_uplc_flat_writer_bit(cardano_uplc_flat_writer_t* writer, uint8_t value);
 /**
  * \brief Writes the low \p count bits (0..8) of \p value, most significant first.
  *
- * The inverse of \ref cardano_uplc_flat_reader_bits8: bit <tt>count - 1</tt> of
+ * The inverse of \ref cardano_uplc_flat_reader_bits8. Bit <tt>count - 1</tt> of
  * \p value is written first and bit 0 last. A \p count of 0 writes nothing.
  *
  * \param[in,out] writer The writer to append to.
@@ -109,7 +109,7 @@ cardano_uplc_flat_writer_bits8(cardano_uplc_flat_writer_t* writer, uint8_t value
 /**
  * \brief Writes a natural number as 7-bit little-endian continuation groups.
  *
- * The inverse of \ref cardano_uplc_flat_reader_word: the low 7 bits are emitted
+ * The inverse of \ref cardano_uplc_flat_reader_word. The low 7 bits are emitted
  * first, each group carrying a high continuation bit while more groups remain and
  * a clear high bit on the final group.
  *
@@ -143,7 +143,7 @@ cardano_uplc_flat_writer_big_word(cardano_uplc_flat_writer_t* writer, const card
 /**
  * \brief Writes a signed arbitrary-precision integer (zig-zag then big word).
  *
- * The inverse of \ref cardano_uplc_flat_reader_integer: the zig-zag transform maps
+ * The inverse of \ref cardano_uplc_flat_reader_integer. The zig-zag transform maps
  * a non-negative \c n to <tt>2n</tt> and a negative \c n to <tt>-2n - 1</tt>, and
  * the resulting non-negative magnitude is written with
  * \ref cardano_uplc_flat_writer_big_word.
@@ -161,7 +161,7 @@ cardano_uplc_flat_writer_integer(cardano_uplc_flat_writer_t* writer, const carda
 /**
  * \brief Writes filler that pads to a byte boundary with a terminating one bit.
  *
- * The inverse of \ref cardano_uplc_flat_reader_filler: zero bits are written until
+ * The inverse of \ref cardano_uplc_flat_reader_filler. Zero bits are written until
  * one more bit would land on a byte boundary, then a single one bit closes the
  * run. An already byte-aligned cursor emits a whole <tt>0x01</tt> byte.
  *
@@ -177,7 +177,7 @@ cardano_uplc_flat_writer_filler(cardano_uplc_flat_writer_t* writer);
 /**
  * \brief Writes a flat bytestring: byte-align, then length-prefixed blocks.
  *
- * The inverse of \ref cardano_uplc_flat_reader_bytes: a \ref cardano_uplc_flat_writer_filler
+ * The inverse of \ref cardano_uplc_flat_reader_bytes. A \ref cardano_uplc_flat_writer_filler
  * byte-aligns the stream, then the data is emitted in blocks each prefixed by a
  * one-byte length in 1..255, and a terminating zero-length block ends the sequence.
  *

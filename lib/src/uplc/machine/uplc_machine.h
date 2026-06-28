@@ -104,7 +104,7 @@ cardano_uplc_evaluate(
 /**
  * \brief Evaluates a decoded UPLC program with a caller-provided cost model.
  *
- * The cost-model-aware counterpart of the public \ref cardano_uplc_evaluate: it
+ * The cost-model-aware counterpart of the public \ref cardano_uplc_evaluate. It
  * takes a structured \p cost_model and a builtin \p semantics variant directly
  * rather than deriving the per-version defaults, so a caller can charge the real
  * ledger cost model the transaction was submitted under. The step loop reads

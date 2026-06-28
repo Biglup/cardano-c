@@ -93,7 +93,7 @@ cardano_uplc_program_from_script_bytes(
 /**
  * \brief Flat-encodes a program into a newly allocated byte buffer.
  *
- * The exact inverse of \ref cardano_uplc_flat_decode_program: the three version
+ * The exact inverse of \ref cardano_uplc_flat_decode_program. The three version
  * words are written, then the term, then a byte-aligning filler. The output is the
  * canonical flat byte stream, so a program obtained by decoding flat bytes encodes
  * back to those same bytes, and the result is a fixed point under a second
