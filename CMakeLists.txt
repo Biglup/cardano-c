@@ -95,6 +95,11 @@ IF (TESTING_ENABLED)
     INCLUDE (CTest)
     ENABLE_TESTING ()
 
+    CONFIGURE_FILE (
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CTestCustom.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake"
+        @ONLY)
+
     FIND_PROGRAM (CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
     SET (MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full")
 ENDIF ()
