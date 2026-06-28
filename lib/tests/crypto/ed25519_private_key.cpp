@@ -797,6 +797,44 @@ TEST(cardano_ed25519_private_key_sign, returnsNullIfMemoryEventualAllocationFail
   cardano_ed25519_private_key_unref(&private_key);
 }
 
+TEST(cardano_ed25519_private_key_sign, extendedKeyAllocationFailureExitsAreCleanAndRecoverable)
+{
+  // Arrange
+  cardano_ed25519_private_key_t* private_key = nullptr;
+  cardano_error_t                error       = cardano_ed25519_private_key_from_extended_hex(PRIVATE_EXTENDED_PRIVATE_HEX, PRIVATE_EXTENDED_PRIVATE_KEY_SIZE * 2, &private_key);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  for (int i = 0; i < 4; ++i)
+  {
+    cardano_ed25519_signature_t* signature = nullptr;
+
+    reset_allocators_run_count();
+    cardano_set_allocators(fail_right_away_malloc, realloc, free);
+    error = cardano_ed25519_private_key_sign(private_key, &MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES[0], sizeof(MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES), &signature);
+    cardano_set_allocators(malloc, realloc, free);
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
+
+    reset_allocators_run_count();
+    cardano_set_allocators(fail_after_one_malloc, realloc, free);
+    error = cardano_ed25519_private_key_sign(private_key, &MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES[0], sizeof(MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES), &signature);
+    cardano_set_allocators(malloc, realloc, free);
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(signature, (cardano_ed25519_signature_t*)nullptr);
+  }
+
+  cardano_ed25519_signature_t* signature = nullptr;
+  error                                  = cardano_ed25519_private_key_sign(private_key, &MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES[0], sizeof(MESSAGE_VECTOR_PRIVATE_EXTENDED_BYTES), &signature);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  char signature_hex[129] = { 0 };
+  EXPECT_EQ(cardano_ed25519_signature_to_hex(signature, signature_hex, 129), CARDANO_SUCCESS);
+  EXPECT_STREQ(signature_hex, SIGNATURE_VECTOR_PRIVATE_EXTENDED);
+
+  // Cleanup
+  cardano_ed25519_signature_unref(&signature);
+  cardano_ed25519_private_key_unref(&private_key);
+}
 
 TEST(cardano_ed25519_private_key_sign, returnsNullIfMemoryAllocationFailsNormalKey)
 {
