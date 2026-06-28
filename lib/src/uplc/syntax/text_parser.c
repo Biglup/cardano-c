@@ -719,11 +719,7 @@ read_code_point(parser_t* parser, const uint32_t base, uint32_t* code_point)
     {
       val = (uint32_t)hex_value(c);
     }
-    else if ((base == 8U) && is_octal(c))
-    {
-      val = (uint32_t)(c - '0');
-    }
-    else if ((base == 10U) && is_digit(c))
+    else if (((base == 8U) && is_octal(c)) || ((base == 10U) && is_digit(c)))
     {
       val = (uint32_t)(c - '0');
     }

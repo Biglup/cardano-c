@@ -4341,8 +4341,8 @@ script_info_v3(
   cardano_utxo_list_t*    resolved_inputs,
   cardano_redeemer_t*     redeemer,
   cardano_plutus_data_t*  datum,
-  const bool              with_datum,
-  cardano_plutus_data_t** out);
+  bool                    with_datum,
+  cardano_plutus_data_t** script_info);
 
 /**
  * \brief Encodes the redeemers of a V3 transaction as a map of ScriptPurpose -> redeemer data.

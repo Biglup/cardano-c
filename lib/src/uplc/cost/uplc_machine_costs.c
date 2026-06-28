@@ -88,9 +88,6 @@ cardano_uplc_machine_costs_default(cardano_uplc_cost_model_version_t version)
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
-    {
-      break;
-    }
     default:
     {
       break;

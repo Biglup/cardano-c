@@ -547,7 +547,7 @@ read_value(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
   const cardano_uplc_type_t*  type,
-  const size_t                depth,
+  size_t                      depth,
   cardano_uplc_constant_t**   constant);
 
 /**
@@ -994,10 +994,6 @@ read_value(
     case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
-    {
-      result = CARDANO_ERROR_DECODING;
-      break;
-    }
     default:
     {
       result = CARDANO_ERROR_DECODING;

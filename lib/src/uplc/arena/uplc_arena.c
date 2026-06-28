@@ -35,7 +35,7 @@
  * \brief Default block payload size, used when the caller passes 0 to
  *        \ref cardano_uplc_arena_new.
  */
-static const size_t ARENA_DEFAULT_BLOCK_SIZE = 64U * 1024U;
+static const size_t ARENA_DEFAULT_BLOCK_SIZE = (size_t)64U * 1024U;
 
 /**
  * \brief Upper bound on the total payload bytes the arena will serve.
