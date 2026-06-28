@@ -715,16 +715,13 @@ add_proposing_redeemer(
 }
 
 /**
- * @brief Computes a deterministic, sortable hash ID for a voter and governance action pair.
+ * @brief Computes a deterministic, sortable hash ID for a voter.
  *
- * This function creates a unique identifier by concatenating the voter's type and credential hash
- * with the governance action's transaction ID and index.
+ * This function creates an identifier by concatenating the voter's type and credential hash.
  *
- * This ID can be used to uniquely identify a voting procedure and to establish a canonical
- * sorting order.
+ * This ID can be used to establish a canonical sorting order for a voter's redeemer.
  *
  * @param[in] voter A pointer to the `cardano_voter_t` object.
- * @param[in] action_id A pointer to the `cardano_governance_action_id_t` object.
  * @param[out] id On success, this will be populated with a pointer to a newly allocated
  * `cardano_blake2b_hash_t` object representing the unique ID.
  *
@@ -735,9 +732,9 @@ add_proposing_redeemer(
  * and must release it by calling `cardano_blake2b_hash_unref`.
  */
 static cardano_error_t
-compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_governance_action_id_t* action_id, cardano_blake2b_hash_t** id)
+compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_blake2b_hash_t** id)
 {
-  if ((id == NULL) || (voter == NULL) || (action_id == NULL))
+  if ((id == NULL) || (voter == NULL))
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
@@ -760,20 +757,7 @@ compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_governance
     return result;
   }
 
-  const size_t   gov_id_size      = cardano_governance_action_id_get_hash_bytes_size(action_id);
-  const uint8_t* gov_id_bytes     = cardano_governance_action_id_get_hash_bytes(action_id);
-  uint64_t       gov_action_index = 0;
-
-  result = cardano_governance_action_id_get_index(action_id, &gov_action_index);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_blake2b_hash_unref(&hash);
-    cardano_credential_unref(&credential);
-    return result;
-  }
-
-  const size_t total_size = sizeof(voter_type) + hash_size + gov_id_size + sizeof(gov_action_index);
+  const size_t total_size = sizeof(voter_type) + hash_size;
   byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
 
   if (id_bytes == NULL)
@@ -789,12 +773,6 @@ compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_governance
   cursor += sizeof(voter_type);
 
   cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
-  cursor += hash_size;
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, gov_id_bytes, gov_id_size);
-  cursor += gov_id_size;
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, &gov_action_index, sizeof(gov_action_index));
 
   cardano_blake2b_hash_unref(&hash);
   cardano_credential_unref(&credential);
@@ -3565,7 +3543,7 @@ cardano_tx_builder_vote(
   }
 
   cardano_blake2b_hash_t* id_hash = NULL;
-  result                          = compute_voting_procedures_sortable_id(voter, action_id, &id_hash);
+  result                          = compute_voting_procedures_sortable_id(voter, &id_hash);
 
   if (result != CARDANO_SUCCESS)
   {
