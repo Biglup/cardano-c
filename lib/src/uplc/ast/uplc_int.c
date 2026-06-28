@@ -26,6 +26,8 @@
 #include "../arena/uplc_arena.h"
 #include "../data/uplc_data.h"
 
+#include <src/string_safe.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -74,7 +76,7 @@ copy_bytes(
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    (void)memcpy(copy, data, size);
+    cardano_safe_memcpy(copy, size, data, size);
 
     *out_data = copy;
     *out_size = size;

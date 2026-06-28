@@ -34,6 +34,8 @@
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
 
+#include <src/string_safe.h>
+
 #include <string.h>
 
 /* CONSTANTS *****************************************************************/
@@ -296,7 +298,7 @@ bytes_equal(const char* a, const char* b, const size_t length)
 static bool
 match_keyword(parser_t* parser, const char* word)
 {
-  size_t      length = strlen(word);
+  size_t      length = cardano_safe_strlen(word, 256U);
   size_t      start  = 0U;
   const char* at     = NULL;
 
@@ -466,7 +468,7 @@ read_bigint(parser_t* parser, cardano_bigint_t** out)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  (void)memcpy(terminated, &parser->text[start], length);
+  cardano_safe_memcpy(terminated, length + 1U, &parser->text[start], length);
   terminated[length] = '\0';
 
   result = cardano_bigint_from_string(terminated, length, PARSER_DECIMAL_BASE, out);
@@ -809,7 +811,7 @@ match_named_escape(parser_t* parser, uint32_t* code_point)
 
   for (i = 0U; i < count; ++i)
   {
-    const size_t name_len = strlen(table[i].name);
+    const size_t name_len = cardano_safe_strlen(table[i].name, 256U);
 
     if (((parser->pos + name_len) <= parser->len) && bytes_equal(&parser->text[parser->pos], table[i].name, name_len) && (name_len > best_len))
     {
@@ -1316,7 +1318,7 @@ resolve_builtin(const char* text, const size_t length, cardano_uplc_builtin_t* b
   {
     const char* name = names[i];
 
-    if ((name != NULL) && (strlen(name) == length) && bytes_equal(name, text, length))
+    if ((name != NULL) && (cardano_safe_strlen(name, length + 1U) == length) && bytes_equal(name, text, length))
     {
       *builtin = (cardano_uplc_builtin_t)i;
 

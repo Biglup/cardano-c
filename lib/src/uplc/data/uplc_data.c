@@ -31,6 +31,8 @@
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
 
+#include <src/string_safe.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -1433,7 +1435,7 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
 
         if (total > 0U)
         {
-          (void)memcpy(grown, scratch, total);
+          cardano_safe_memcpy(grown, new_capacity, scratch, total);
         }
 
         scratch  = grown;
@@ -1442,7 +1444,7 @@ parse_bytes(cardano_uplc_arena_t* arena, cursor_t* cursor, byte_t info, cardano_
 
       if (chunk_len > 0U)
       {
-        (void)memcpy(&scratch[total], &cursor->buf[cursor->offset], (size_t)chunk_len);
+        cardano_safe_memcpy(&scratch[total], capacity - total, &cursor->buf[cursor->offset], (size_t)chunk_len);
         total          += (size_t)chunk_len;
         cursor->offset += (size_t)chunk_len;
       }
@@ -1556,7 +1558,7 @@ parse_array(
 
       if (count > 0U)
       {
-        (void)memcpy(grown, items, sizeof(*grown) * count);
+        cardano_safe_memcpy(grown, sizeof(*grown) * new_capacity, items, sizeof(*grown) * count);
       }
 
       items    = grown;
@@ -1687,7 +1689,7 @@ parse_map(
 
       if (count > 0U)
       {
-        (void)memcpy(grown, entries, sizeof(*grown) * count);
+        cardano_safe_memcpy(grown, sizeof(*grown) * new_capacity, entries, sizeof(*grown) * count);
       }
 
       entries  = grown;
@@ -1986,7 +1988,7 @@ parse_data_node(cardano_uplc_arena_t* arena, cursor_t* cursor, uint32_t depth, c
         uint64_t bits = (uint64_t)(-1) - value;
         int64_t  decoded;
 
-        (void)memcpy(&decoded, &bits, sizeof(decoded));
+        cardano_safe_memcpy(&decoded, sizeof(decoded), &bits, sizeof(decoded));
 
         return cardano_uplc_data_new_integer_small(arena, decoded, out);
       }
@@ -2757,7 +2759,7 @@ cardano_uplc_data_new_bytes(
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    (void)memcpy(copy, bytes, size);
+    cardano_safe_memcpy(copy, size, bytes, size);
   }
 
   node->kind          = CARDANO_UPLC_DATA_KIND_BYTES;
