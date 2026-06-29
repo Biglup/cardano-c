@@ -125,6 +125,9 @@ cardano_uplc_evaluate(
  * \param[in] cost_model The full cost model to charge against. Must not be NULL.
  * \param[in] semantics The builtin semantics variant driving the version-dependent
  *            builtin behaviours.
+ * \param[in] language The Plutus language of the program, used to gate builtins.
+ * \param[in] protocol_major The major protocol version the program is evaluated
+ *            under, used together with \p language to gate builtins.
  * \param[in] initial_budget The CPU and memory ceiling for the evaluation.
  * \param[out] out On a \ref CARDANO_SUCCESS return, the script outcome, spent
  *             budget and result term.
@@ -138,6 +141,8 @@ cardano_uplc_int_evaluate_with_costs(
   const cardano_uplc_program_t*    program,
   const cardano_uplc_cost_model_t* cost_model,
   cardano_uplc_builtin_semantics_t semantics,
+  cardano_uplc_lang_version_t      language,
+  uint64_t                         protocol_major,
   cardano_uplc_budget_t            initial_budget,
   cardano_uplc_eval_result_t*      out);
 

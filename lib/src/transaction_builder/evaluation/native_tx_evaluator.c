@@ -1452,7 +1452,7 @@ eval_redeemer(
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_uplc_int_evaluate_with_costs(arena, applied, &selected.model, selected.semantics, *remaining, &eval_result);
+      result = cardano_uplc_int_evaluate_with_costs(arena, applied, &selected.model, selected.semantics, uplc_lang_version(version), ctx->protocol_major, *remaining, &eval_result);
     }
   }
 

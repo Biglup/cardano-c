@@ -102,6 +102,8 @@ typedef struct
     cardano_uplc_budget_t            initial;
     cardano_uplc_cost_model_t        cost_model;
     cardano_uplc_builtin_semantics_t semantics;
+    cardano_uplc_lang_version_t      language;
+    uint64_t                         protocol_major;
 } machine_t;
 
 /**
@@ -518,6 +520,11 @@ try_call_builtin(
 
   if ((arg_count == arity) && (forces == force_count))
   {
+    if (!cardano_uplc_builtin_available(func, machine->language, machine->protocol_major))
+    {
+      return PRV_STEP_UNSUPPORTED_BUILTIN;
+    }
+
     const cardano_uplc_value_t*        result  = NULL;
     cardano_uplc_int_builtin_outcome_t outcome = cardano_uplc_int_builtin_run(
       machine->arena,
@@ -1870,6 +1877,8 @@ cardano_uplc_int_evaluate_with_costs(
   const cardano_uplc_program_t*    program,
   const cardano_uplc_cost_model_t* cost_model,
   cardano_uplc_builtin_semantics_t semantics,
+  cardano_uplc_lang_version_t      language,
+  uint64_t                         protocol_major,
   cardano_uplc_budget_t            initial_budget,
   cardano_uplc_eval_result_t*      out)
 {
@@ -1886,10 +1895,12 @@ cardano_uplc_int_evaluate_with_costs(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  machine.arena      = arena;
-  machine.initial    = initial_budget;
-  machine.cost_model = *cost_model;
-  machine.semantics  = semantics;
+  machine.arena          = arena;
+  machine.initial        = initial_budget;
+  machine.cost_model     = *cost_model;
+  machine.semantics      = semantics;
+  machine.language       = language;
+  machine.protocol_major = protocol_major;
 
   error = cardano_uplc_step_accumulator_init(&machine.acc, &machine.cost_model.machine);
 
@@ -2055,5 +2066,8 @@ cardano_uplc_evaluate(
   cardano_uplc_cost_model_t        cost_model = cost_model_for_version(version);
   cardano_uplc_builtin_semantics_t semantics  = cardano_uplc_builtin_semantics_for_language(lang_version(version));
 
-  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, initial_budget, out);
+  // This generic entry point does not carry a protocol version; gate by language
+  // only by assuming the newest protocol, where every builtin of the language is
+  // available. The transaction evaluator threads the real protocol version below.
+  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, lang_version(version), 11U, initial_budget, out);
 }
