@@ -174,6 +174,34 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_cbor(
   cardano_cbor_writer_t*                 writer);
 
 /**
+ * \brief An opaque Plutus-data value (forward declaration).
+ */
+typedef struct cardano_plutus_data_t cardano_plutus_data_t;
+
+/**
+ * \brief Encodes a protocol-parameter update as Plutus data (the V3 ChangedParameters value).
+ *
+ * Produces the \c Map of parameter-id to value that the ledger embeds in a V3
+ * \c ParameterChange governance action's \c ChangedParameters field, matching the
+ * ledger's \c ToPlutusData (PParamsUpdate) instance: each set parameter is keyed
+ * by its integer id (the CBOR update key) and encoded by type — scalars as
+ * integers, rationals as gcd-reduced \c [num, den] lists, ex-units as
+ * \c [mem, steps], ex-unit prices as a pair of rationals, the pool/DRep voting
+ * thresholds as rational lists, and the cost models as a map of language id to a
+ * list of cost integers.
+ *
+ * \param[in] protocol_param_update The update to encode. Must not be NULL.
+ * \param[out] plutus_data On success, the newly allocated Plutus-data map. The
+ *             caller owns it and releases it with \ref cardano_plutus_data_unref.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         \p protocol_param_update or \p plutus_data is NULL, or a propagated error.
+ */
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_plutus_data(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  cardano_plutus_data_t**                plutus_data);
+
+/**
  * \brief Serializes a protocol parameter update to CIP-116 JSON.
  *
  * The function writes the full JSON object, including the surrounding braces.
