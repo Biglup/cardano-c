@@ -718,6 +718,8 @@ cardano_uplc_cost_model_from_params(
     }
   }
 
+  const int64_t* effective = params;
+
   if (count < expected)
   {
     size_t i = 0U;
@@ -732,25 +734,25 @@ cardano_uplc_cost_model_from_params(
       padded[i] = INT64_MAX;
     }
 
-    params = padded;
+    effective = padded;
   }
 
   switch (version)
   {
     case CARDANO_UPLC_COST_MODEL_VERSION_V1:
     {
-      from_params_v1(out, params);
+      from_params_v1(out, effective);
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V2:
     {
-      from_params_v2(out, params);
+      from_params_v2(out, effective);
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
     default:
     {
-      from_params_v3(out, params);
+      from_params_v3(out, effective);
       break;
     }
   }

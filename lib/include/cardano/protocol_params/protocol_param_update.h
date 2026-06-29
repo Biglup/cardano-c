@@ -198,8 +198,8 @@ typedef struct cardano_plutus_data_t cardano_plutus_data_t;
  *         \p protocol_param_update or \p plutus_data is NULL, or a propagated error.
  */
 CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_to_plutus_data(
-  const cardano_protocol_param_update_t* protocol_param_update,
-  cardano_plutus_data_t**                plutus_data);
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_plutus_data_t**          plutus_data);
 
 /**
  * \brief Serializes a protocol parameter update to CIP-116 JSON.

@@ -89,14 +89,17 @@ typedef struct cardano_protocol_param_update_t
 static uint64_t
 pp_gcd(uint64_t a, uint64_t b)
 {
-  while (b != 0U)
+  uint64_t x = a;
+  uint64_t y = b;
+
+  while (y != 0U)
   {
-    const uint64_t t = b;
-    b                = a % b;
-    a                = t;
+    const uint64_t t = y;
+    y                = x % y;
+    x                = t;
   }
 
-  return a;
+  return x;
 }
 
 /**
@@ -121,6 +124,15 @@ pp_encode_rational(cardano_unit_interval_t* interval, cardano_plutus_data_t** ou
   const uint64_t den = cardano_unit_interval_get_denominator(interval);
   const uint64_t gcd = pp_gcd(num, den);
 
+  uint64_t reduced_num = num;
+  uint64_t reduced_den = den;
+
+  if (gcd != 0U)
+  {
+    reduced_num = num / gcd;
+    reduced_den = den / gcd;
+  }
+
   cardano_plutus_list_t* list   = NULL;
   cardano_plutus_data_t* num_pd = NULL;
   cardano_plutus_data_t* den_pd = NULL;
@@ -128,12 +140,12 @@ pp_encode_rational(cardano_unit_interval_t* interval, cardano_plutus_data_t** ou
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_integer_from_uint((gcd != 0U) ? (num / gcd) : num, &num_pd);
+    result = cardano_plutus_data_new_integer_from_uint(reduced_num, &num_pd);
   }
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_integer_from_uint((gcd != 0U) ? (den / gcd) : den, &den_pd);
+    result = cardano_plutus_data_new_integer_from_uint(reduced_den, &den_pd);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -480,17 +492,16 @@ pp_encode_cost_models(cardano_costmdls_t* costmdls, cardano_plutus_data_t** out)
 }
 
 /**
- * \brief Inserts a (tag, value) pair into the changed-parameters map and releases the value.
+ * \brief Inserts a (tag, value) pair into the changed-parameters map.
+ *
+ * The map takes its own reference to \p value; the caller retains ownership of the
+ * value it passed in and releases it afterwards.
  */
 static cardano_error_t
-pp_map_push(cardano_plutus_map_t* map, uint64_t tag, cardano_plutus_data_t* value, cardano_error_t result)
+pp_map_push(cardano_plutus_map_t* map, uint64_t tag, cardano_plutus_data_t* value)
 {
   cardano_plutus_data_t* key_pd = NULL;
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_integer_from_uint(tag, &key_pd);
-  }
+  cardano_error_t        result = cardano_plutus_data_new_integer_from_uint(tag, &key_pd);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -498,15 +509,14 @@ pp_map_push(cardano_plutus_map_t* map, uint64_t tag, cardano_plutus_data_t* valu
   }
 
   cardano_plutus_data_unref(&key_pd);
-  cardano_plutus_data_unref(&value);
 
   return result;
 }
 
 cardano_error_t
 cardano_protocol_param_update_to_plutus_data(
-  const cardano_protocol_param_update_t* protocol_param_update,
-  cardano_plutus_data_t**                plutus_data)
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_plutus_data_t**          plutus_data)
 {
   if ((protocol_param_update == NULL) || (plutus_data == NULL))
   {
@@ -516,217 +526,367 @@ cardano_protocol_param_update_to_plutus_data(
   cardano_plutus_map_t* map    = NULL;
   cardano_error_t       result = cardano_plutus_map_new(&map);
 
-  const cardano_protocol_param_update_t* u = protocol_param_update;
+  cardano_protocol_param_update_t* u = protocol_param_update;
 
   // Scalar parameters: tag -> I value.
   if ((result == CARDANO_SUCCESS) && (u->min_fee_a != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->min_fee_a, &v);
-    result                   = pp_map_push(map, 0U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 0U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->min_fee_b != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->min_fee_b, &v);
-    result                   = pp_map_push(map, 1U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 1U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_block_body_size != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_block_body_size, &v);
-    result                   = pp_map_push(map, 2U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 2U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_tx_size != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_tx_size, &v);
-    result                   = pp_map_push(map, 3U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 3U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_block_header_size != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_block_header_size, &v);
-    result                   = pp_map_push(map, 4U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 4U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->key_deposit != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->key_deposit, &v);
-    result                   = pp_map_push(map, 5U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 5U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->pool_deposit != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->pool_deposit, &v);
-    result                   = pp_map_push(map, 6U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 6U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_epoch != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_epoch, &v);
-    result                   = pp_map_push(map, 7U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 7U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->n_opt != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->n_opt, &v);
-    result                   = pp_map_push(map, 8U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 8U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->pool_pledge_influence != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_rational(u->pool_pledge_influence, &v);
-    result                   = pp_map_push(map, 9U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 9U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->expansion_rate != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_rational(u->expansion_rate, &v);
-    result                   = pp_map_push(map, 10U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 10U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->treasury_growth_rate != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_rational(u->treasury_growth_rate, &v);
-    result                   = pp_map_push(map, 11U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 11U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->min_pool_cost != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->min_pool_cost, &v);
-    result                   = pp_map_push(map, 16U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 16U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->ada_per_utxo_byte != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->ada_per_utxo_byte, &v);
-    result                   = pp_map_push(map, 17U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 17U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->cost_models != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_cost_models(u->cost_models, &v);
-    result                   = pp_map_push(map, 18U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 18U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->execution_costs != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_prices(u->execution_costs, &v);
-    result                   = pp_map_push(map, 19U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 19U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_tx_ex_units != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_ex_units(u->max_tx_ex_units, &v);
-    result                   = pp_map_push(map, 20U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 20U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_block_ex_units != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_ex_units(u->max_block_ex_units, &v);
-    result                   = pp_map_push(map, 21U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 21U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_value_size != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_value_size, &v);
-    result                   = pp_map_push(map, 22U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 22U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->collateral_percentage != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->collateral_percentage, &v);
-    result                   = pp_map_push(map, 23U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 23U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->max_collateral_inputs != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->max_collateral_inputs, &v);
-    result                   = pp_map_push(map, 24U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 24U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->pool_voting_thresholds != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_pool_thresholds(u->pool_voting_thresholds, &v);
-    result                   = pp_map_push(map, 25U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 25U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->drep_voting_thresholds != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_drep_thresholds(u->drep_voting_thresholds, &v);
-    result                   = pp_map_push(map, 26U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 26U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->min_committee_size != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->min_committee_size, &v);
-    result                   = pp_map_push(map, 27U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 27U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->committee_term_limit != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->committee_term_limit, &v);
-    result                   = pp_map_push(map, 28U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 28U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->governance_action_validity_period != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->governance_action_validity_period, &v);
-    result                   = pp_map_push(map, 29U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 29U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->governance_action_deposit != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->governance_action_deposit, &v);
-    result                   = pp_map_push(map, 30U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 30U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->drep_deposit != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->drep_deposit, &v);
-    result                   = pp_map_push(map, 31U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 31U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->drep_inactivity_period != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_uint(*u->drep_inactivity_period, &v);
-    result                   = pp_map_push(map, 32U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 32U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if ((result == CARDANO_SUCCESS) && (u->ref_script_cost_per_byte != NULL))
   {
     cardano_plutus_data_t* v = NULL;
     result                   = pp_encode_rational(u->ref_script_cost_per_byte, &v);
-    result                   = pp_map_push(map, 33U, v, result);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 33U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
   }
 
   if (result == CARDANO_SUCCESS)
