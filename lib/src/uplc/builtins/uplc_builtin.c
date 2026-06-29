@@ -451,3 +451,68 @@ cardano_uplc_builtin_first_version(const cardano_uplc_builtin_t builtin, cardano
 
   return CARDANO_SUCCESS;
 }
+
+bool
+cardano_uplc_builtin_available(
+  const cardano_uplc_builtin_t      builtin,
+  const cardano_uplc_lang_version_t language,
+  const uint64_t                    protocol_major)
+{
+  // Introduction protocol-major per (batch, language), from PlutusLedgerApi's
+  // builtinsIntroducedIn. The introduction-ordered builtin enum partitions into
+  // the plutus release batches as contiguous tag ranges. Languages: V1, V2, V3.
+  static const uint64_t INTRO[7][3] = {
+    /* batch1  */ { 5U, 7U, 9U },
+    /* batch2  */ { 11U, 7U, 9U },
+    /* batch3  */ { 11U, 8U, 9U },
+    /* batch4a */ { 11U, 11U, 9U },
+    /* batch4b */ { 11U, 10U, 9U },
+    /* batch5  */ { 11U, 11U, 10U },
+    /* batch6  */ { 11U, 11U, 11U }
+  };
+
+  if (!is_valid_builtin(builtin))
+  {
+    return false;
+  }
+
+  // The experimental post-V3 language is not gated here.
+  if ((size_t)language > (size_t)CARDANO_UPLC_LANG_VERSION_V3)
+  {
+    return true;
+  }
+
+  const size_t tag = (size_t)builtin;
+  size_t       batch;
+
+  if (tag <= 50U)
+  {
+    batch = 0U; // batch1: the original Alonzo builtins
+  }
+  else if (tag == 51U)
+  {
+    batch = 1U; // batch2: serialiseData
+  }
+  else if (tag <= 53U)
+  {
+    batch = 2U; // batch3: secp256k1 signature checks
+  }
+  else if (tag <= 72U)
+  {
+    batch = 3U; // batch4a: BLS, keccak_256, blake2b_224
+  }
+  else if (tag <= 74U)
+  {
+    batch = 4U; // batch4b: integerToByteString, byteStringToInteger
+  }
+  else if (tag <= 86U)
+  {
+    batch = 5U; // batch5: bitwise builtins and ripemd_160
+  }
+  else
+  {
+    batch = 6U; // batch6: expModInteger, array/value family, BLS multi-scalar-mul
+  }
+
+  return protocol_major >= INTRO[batch][(size_t)language];
+}

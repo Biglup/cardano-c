@@ -725,10 +725,10 @@ build_gov_tx(cardano_plutus_v3_script_t* script, cardano_redeemer_tag_t tag, car
  * \brief Evaluates \p tx and asserts the single redeemer succeeded with non-zero ex-units.
  */
 static void
-expect_single_redeemer_ok(cardano_transaction_t* tx, cardano_utxo_list_t* utxos)
+expect_single_redeemer_ok(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, uint64_t protocol_major = 10U)
 {
   cardano_tx_evaluator_t* evaluator = nullptr;
-  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, protocol_major, &evaluator), CARDANO_SUCCESS);
 
   cardano_redeemer_list_t* result = nullptr;
   EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_SUCCESS);
@@ -1132,12 +1132,34 @@ TEST(cardano_tx_evaluator_native, evaluatesAPlutusV2Spend)
 
 TEST(cardano_tx_evaluator_native, evaluatesAScriptThatRunsExpModInteger)
 {
+  // expModInteger is a PlutusV3 batch-6 builtin available from protocol 11.
   cardano_plutus_v3_script_t* script = build_expmod_v3_script();
   cardano_utxo_list_t*        utxos  = nullptr;
   cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
 
-  expect_single_redeemer_ok(tx, utxos);
+  expect_single_redeemer_ok(tx, utxos, 11U);
 
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, rejectsExpModIntegerBeforeItsProtocolVersion)
+{
+  // The same script under protocol 10 must fail: expModInteger is not yet
+  // available, matching the ledger's builtinsIntroducedIn schedule.
+  cardano_plutus_v3_script_t* script = build_expmod_v3_script();
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE);
+
+  cardano_redeemer_list_unref(&result);
+  cardano_tx_evaluator_unref(&evaluator);
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);
   cardano_plutus_v3_script_unref(&script);

@@ -248,6 +248,28 @@ cardano_uplc_builtin_force_count(cardano_uplc_builtin_t builtin, size_t* force_c
 cardano_error_t
 cardano_uplc_builtin_first_version(cardano_uplc_builtin_t builtin, cardano_uplc_lang_version_t* version);
 
+/**
+ * \brief Returns whether a builtin is available in a language at a protocol version.
+ *
+ * Encodes the ledger's \c builtinsIntroducedIn schedule: each builtin becomes
+ * available in a given Plutus language at the protocol major version that
+ * introduced its release batch for that language. A script must not use a builtin
+ * before it is available, which the node enforces; the evaluator uses this to
+ * reject such a use rather than running it.
+ *
+ * \param[in] builtin The builtin tag to query.
+ * \param[in] language The Plutus language of the script using the builtin.
+ * \param[in] protocol_major The major protocol version the transaction is evaluated under.
+ *
+ * \return \c true when the builtin is available, \c false otherwise (including for
+ *         an invalid builtin tag).
+ */
+bool
+cardano_uplc_builtin_available(
+  cardano_uplc_builtin_t      builtin,
+  cardano_uplc_lang_version_t language,
+  uint64_t                    protocol_major);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
