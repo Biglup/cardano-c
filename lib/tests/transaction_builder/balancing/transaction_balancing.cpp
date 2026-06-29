@@ -359,6 +359,82 @@ create_address(const char* address)
   return payment_address;
 }
 
+// Captures the resolved UTxO set handed to the evaluator so a test can assert
+// which UTxOs the balancer forwarded (e.g. the reference inputs).
+static cardano_utxo_list_t* g_recorded_eval_utxos = nullptr;
+
+static cardano_tx_evaluator_impl_t
+cardano_recording_evaluator_impl_new()
+{
+  cardano_tx_evaluator_impl_t impl = { 0 };
+
+  impl.evaluate = [](cardano_tx_evaluator_impl_t*, cardano_transaction_t* tx, cardano_utxo_list_t* utxos, cardano_redeemer_list_t** output) -> cardano_error_t
+  {
+    cardano_utxo_list_unref(&g_recorded_eval_utxos);
+    g_recorded_eval_utxos = utxos;
+    cardano_utxo_list_ref(utxos);
+
+    cardano_witness_set_t* witness = cardano_transaction_get_witness_set(tx);
+    cardano_witness_set_unref(&witness);
+
+    cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness);
+    cardano_redeemer_list_unref(&redeemers);
+
+    cardano_redeemer_list_t* clone = NULL;
+    EXPECT_EQ(cardano_redeemer_list_clone(redeemers, &clone), CARDANO_SUCCESS);
+
+    const size_t redeemers_count = cardano_redeemer_list_get_length(clone);
+
+    cardano_ex_units_t* ex_units = nullptr;
+    EXPECT_EQ(cardano_ex_units_new(1000000000, 5000000000, &ex_units), CARDANO_SUCCESS);
+
+    for (size_t i = 0; i < redeemers_count; i++)
+    {
+      cardano_redeemer_t* redeemer = NULL;
+      EXPECT_EQ(cardano_redeemer_list_get(clone, i, &redeemer), CARDANO_SUCCESS);
+      cardano_redeemer_unref(&redeemer);
+
+      EXPECT_EQ(cardano_redeemer_set_ex_units(redeemer, ex_units), CARDANO_SUCCESS);
+    }
+
+    cardano_ex_units_unref(&ex_units);
+
+    *output = clone;
+
+    return CARDANO_SUCCESS;
+  };
+
+  return impl;
+}
+
+static bool
+utxo_list_contains_input(cardano_utxo_list_t* list, cardano_blake2b_hash_t* id, uint64_t index)
+{
+  const size_t length = cardano_utxo_list_get_length(list);
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+    EXPECT_EQ(cardano_utxo_list_get(list, i, &utxo), CARDANO_SUCCESS);
+
+    cardano_transaction_input_t* input    = cardano_utxo_get_input(utxo);
+    cardano_blake2b_hash_t*      input_id = cardano_transaction_input_get_id(input);
+
+    const bool matches = (cardano_transaction_input_get_index(input) == index) && cardano_blake2b_hash_equals(input_id, id);
+
+    cardano_blake2b_hash_unref(&input_id);
+    cardano_transaction_input_unref(&input);
+    cardano_utxo_unref(&utxo);
+
+    if (matches)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_balance_transaction, canBalanceATransaction)
@@ -644,6 +720,78 @@ TEST(cardano_balance_transaction, canBalanceTxWithScripts)
   EXPECT_TRUE(is_balanced);
 
   // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, forwardsReferenceInputsToTheEvaluator)
+{
+  // A script can live in a reference input (reference scripts) and the script context
+  // resolves reference inputs against the same UTxO pool. Coin selection only yields the
+  // spending inputs, so the balancer must fold the reference inputs into the set it hands
+  // to the evaluator; otherwise the native evaluator fails to resolve them.
+
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  // A reference input whose (id, index) does not appear in the available UTxOs, so it can
+  // only reach the evaluator if the balancer forwards it explicitly.
+  static const char*      REF_INPUT_ID_HEX = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const uint64_t          REF_INPUT_INDEX  = 7;
+  cardano_blake2b_hash_t* ref_input_id     = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(REF_INPUT_ID_HEX, strlen(REF_INPUT_ID_HEX), &ref_input_id), CARDANO_SUCCESS);
+
+  cardano_utxo_t*               base_utxo  = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_transaction_output_t* ref_output = cardano_utxo_get_output(base_utxo);
+
+  cardano_transaction_input_t* ref_input = NULL;
+  EXPECT_EQ(cardano_transaction_input_new(ref_input_id, REF_INPUT_INDEX, &ref_input), CARDANO_SUCCESS);
+
+  cardano_utxo_t* ref_utxo = NULL;
+  EXPECT_EQ(cardano_utxo_new(ref_input, ref_output, &ref_utxo), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_add(reference_inputs, ref_utxo), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_recording_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    resolved_inputs,
+    change_address,
+    evaluator);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(g_recorded_eval_utxos, nullptr);
+  EXPECT_TRUE(utxo_list_contains_input(g_recorded_eval_utxos, ref_input_id, REF_INPUT_INDEX));
+
+  // Cleanup
+  cardano_utxo_list_unref(&g_recorded_eval_utxos);
+  cardano_blake2b_hash_unref(&ref_input_id);
+  cardano_transaction_output_unref(&ref_output);
+  cardano_transaction_input_unref(&ref_input);
+  cardano_utxo_unref(&base_utxo);
+  cardano_utxo_unref(&ref_utxo);
   cardano_transaction_unref(&tx);
   cardano_protocol_parameters_unref(&protocol);
   cardano_utxo_list_unref(&resolved_inputs);

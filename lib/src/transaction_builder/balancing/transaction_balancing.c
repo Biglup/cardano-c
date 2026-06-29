@@ -752,7 +752,29 @@ cardano_balance_transaction(
       }
 
       cardano_redeemer_list_t* redeemers = NULL;
-      result                             = cardano_tx_evaluator_evaluate(evaluator, unbalanced_tx, selection, &redeemers);
+
+      cardano_utxo_list_t* eval_utxos = selection;
+
+      if ((reference_inputs != NULL) && (cardano_utxo_list_get_length(reference_inputs) > 0U))
+      {
+        eval_utxos = cardano_utxo_list_concat(selection, reference_inputs);
+
+        if (eval_utxos == NULL)
+        {
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          cardano_utxo_list_unref(&selection);
+          cardano_utxo_list_unref(&remaining_utxo);
+
+          return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+        }
+      }
+
+      result = cardano_tx_evaluator_evaluate(evaluator, unbalanced_tx, eval_utxos, &redeemers);
+
+      if (eval_utxos != selection)
+      {
+        cardano_utxo_list_unref(&eval_utxos);
+      }
 
       if (result != CARDANO_SUCCESS)
       {
