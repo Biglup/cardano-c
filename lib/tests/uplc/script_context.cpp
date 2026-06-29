@@ -779,6 +779,140 @@ static const char* kTxPoolRetCbor =
   "04581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef921903e80e81581c020202020202"
   "02020202020202020202020202020202020202020202a10581840000d87980821a000f42401a05f5e100f5f6";
 
+/**
+ * \brief A Conway transaction whose certificate set is a script-credentialed
+ *        REGISTRATION (key 7, with deposit) followed by an UNREGISTRATION (key 8).
+ *
+ * The V1/V2 context must translate these to the legacy DCertDelegRegKey /
+ * DCertDelegDeRegKey (deposit dropped), matching the ledger's transTxCertV1V2.
+ */
+static const char* kTxRegDepositCbor =
+  "84a40081825820000000000000000000000000000000000000000000000000000000000000000000018182581d"
+  "61111111111111111111111111111111111111111111111111111111111a000f4240021a00030d400482830782"
+  "01581cabababababababababababababababababababababababababababab1a001e848083088201581cababab"
+  "ababababababababababababababababababababababababab1a001e8480a0f5f6";
+
+TEST(uplc_script_context, v2_conway_registration_dcert_drops_deposit)
+{
+  // transTxCertV1V2: RegDepositTxCert -> DCertDelegRegKey (Constr 0 [StakingHash cred]);
+  // UnRegDepositTxCert -> DCertDelegDeRegKey (Constr 1 [StakingHash cred]).
+  cardano_transaction_t* tx    = decode_tx(kTxRegDepositCbor);
+  cardano_utxo_list_t*   utxos = decode_utxos(kUtxoCbor);
+
+  cardano_plutus_data_t* tx_info = NULL;
+  ASSERT_EQ(cardano_uplc_int_build_tx_info_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* certs = constr_field(tx_info, 5U);
+  ASSERT_EQ(data_kind(certs), CARDANO_PLUTUS_DATA_KIND_LIST);
+
+  cardano_plutus_list_t* list = NULL;
+  ASSERT_EQ(cardano_plutus_data_to_list(certs, &list), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_list_get_length(list), 2U);
+
+  cardano_plutus_data_t* reg   = NULL;
+  cardano_plutus_data_t* unreg = NULL;
+  ASSERT_EQ(cardano_plutus_list_get(list, 0U, &reg), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_list_get(list, 1U, &unreg), CARDANO_SUCCESS);
+
+  EXPECT_EQ(constr_alt(reg), 0U);
+  ASSERT_EQ(constr_len(reg), 1U);
+  EXPECT_EQ(constr_alt(unreg), 1U);
+  ASSERT_EQ(constr_len(unreg), 1U);
+
+  cardano_plutus_data_t* staking_hash = constr_field(reg, 0);
+  EXPECT_EQ(constr_alt(staking_hash), 0U);
+  ASSERT_EQ(constr_len(staking_hash), 1U);
+
+  cardano_plutus_data_t* credential = constr_field(staking_hash, 0);
+  EXPECT_EQ(constr_alt(credential), 1U);
+
+  cardano_plutus_data_unref(&credential);
+  cardano_plutus_data_unref(&staking_hash);
+  cardano_plutus_data_unref(&unreg);
+  cardano_plutus_data_unref(&reg);
+  cardano_plutus_list_unref(&list);
+  cardano_plutus_data_unref(&certs);
+  cardano_plutus_data_unref(&tx_info);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
+/**
+ * \brief A V1/V2 transaction carrying a Conway treasury-donation field, which a
+ *        V1/V2 script context cannot represent (guardConwayFeaturesForPlutusV1V2).
+ */
+static const char* kTxDonationCbor =
+  "84a40081825820000000000000000000000000000000000000000000000000000000000000000000018182581d"
+  "61111111111111111111111111111111111111111111111111111111111a000f4240021a00030d40161a000f42"
+  "40a0f5f6";
+
+TEST(uplc_script_context, v3_conway_registration_dcert_carries_deposit)
+{
+  // transTxCert (post bootstrap): RegDepositTxCert -> TxCertRegStaking cred (Just deposit)
+  // = Constr 0 [cred, Constr 0 [deposit]]; UnRegDepositTxCert -> Constr 1 [cred, Just refund].
+  cardano_transaction_t* tx    = decode_tx(kTxRegDepositCbor);
+  cardano_utxo_list_t*   utxos = decode_utxos(kUtxoCbor);
+
+  cardano_plutus_data_t* tx_info = NULL;
+  ASSERT_EQ(cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* certs = constr_field(tx_info, 5U);
+  ASSERT_EQ(data_kind(certs), CARDANO_PLUTUS_DATA_KIND_LIST);
+
+  cardano_plutus_list_t* list = NULL;
+  ASSERT_EQ(cardano_plutus_data_to_list(certs, &list), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_list_get_length(list), 2U);
+
+  cardano_plutus_data_t* reg   = NULL;
+  cardano_plutus_data_t* unreg = NULL;
+  ASSERT_EQ(cardano_plutus_list_get(list, 0U, &reg), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_list_get(list, 1U, &unreg), CARDANO_SUCCESS);
+
+  EXPECT_EQ(constr_alt(reg), 0U);
+  ASSERT_EQ(constr_len(reg), 2U);
+  EXPECT_EQ(constr_alt(unreg), 1U);
+  ASSERT_EQ(constr_len(unreg), 2U);
+
+  // Field 1 of each is the Maybe deposit/refund: Just x = Constr 0 [x].
+  cardano_plutus_data_t* reg_deposit = constr_field(reg, 1);
+  EXPECT_EQ(constr_alt(reg_deposit), 0U);
+  ASSERT_EQ(constr_len(reg_deposit), 1U);
+
+  cardano_plutus_data_t* deposit_value = constr_field(reg_deposit, 0);
+  EXPECT_EQ(data_kind(deposit_value), CARDANO_PLUTUS_DATA_KIND_INTEGER);
+
+  cardano_plutus_data_t* unreg_refund = constr_field(unreg, 1);
+  EXPECT_EQ(constr_alt(unreg_refund), 0U);
+
+  cardano_plutus_data_unref(&unreg_refund);
+  cardano_plutus_data_unref(&deposit_value);
+  cardano_plutus_data_unref(&reg_deposit);
+  cardano_plutus_data_unref(&unreg);
+  cardano_plutus_data_unref(&reg);
+  cardano_plutus_list_unref(&list);
+  cardano_plutus_data_unref(&certs);
+  cardano_plutus_data_unref(&tx_info);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, v1v2_context_rejects_conway_treasury_fields)
+{
+  cardano_transaction_t* tx    = decode_tx(kTxDonationCbor);
+  cardano_utxo_list_t*   utxos = decode_utxos(kUtxoCbor);
+
+  cardano_plutus_data_t* tx_info_v1 = NULL;
+  cardano_plutus_data_t* tx_info_v2 = NULL;
+
+  EXPECT_NE(cardano_uplc_int_build_tx_info_v1(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info_v1), CARDANO_SUCCESS);
+  EXPECT_NE(cardano_uplc_int_build_tx_info_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info_v2), CARDANO_SUCCESS);
+
+  cardano_plutus_data_unref(&tx_info_v1);
+  cardano_plutus_data_unref(&tx_info_v2);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
 TEST(uplc_script_context, v3_withdrawal_key_is_a_bare_key_credential)
 {
   // C1: V3 txInfoWdrl is Map Credential Lovelace, so the key must be a bare

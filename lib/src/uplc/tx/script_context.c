@@ -1904,10 +1904,72 @@ encode_certificate(cardano_certificate_t* certificate, cardano_plutus_data_t** o
 
       break;
     }
+    case CARDANO_CERT_TYPE_REGISTRATION:
+    {
+      cardano_registration_cert_t* cert       = NULL;
+      cardano_credential_t*        credential = NULL;
+      cardano_plutus_data_t*       cred_pd    = NULL;
+      cardano_plutus_data_t*       wrapped    = NULL;
+
+      result = cardano_certificate_to_registration(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        credential = cardano_registration_cert_get_stake_credential(cert);
+        result     = encode_credential(credential, &cred_pd);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = wrap_constr(CONSTR_0, cred_pd, &wrapped);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = wrap_constr(CONSTR_0, wrapped, out);
+      }
+
+      cardano_registration_cert_unref(&cert);
+      cardano_credential_unref(&credential);
+      cardano_plutus_data_unref(&cred_pd);
+      cardano_plutus_data_unref(&wrapped);
+
+      break;
+    }
+    case CARDANO_CERT_TYPE_UNREGISTRATION:
+    {
+      cardano_unregistration_cert_t* cert       = NULL;
+      cardano_credential_t*          credential = NULL;
+      cardano_plutus_data_t*         cred_pd    = NULL;
+      cardano_plutus_data_t*         wrapped    = NULL;
+
+      result = cardano_certificate_to_unregistration(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        credential = cardano_unregistration_cert_get_credential(cert);
+        result     = encode_credential(credential, &cred_pd);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = wrap_constr(CONSTR_0, cred_pd, &wrapped);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = wrap_constr(CONSTR_1, wrapped, out);
+      }
+
+      cardano_unregistration_cert_unref(&cert);
+      cardano_credential_unref(&credential);
+      cardano_plutus_data_unref(&cred_pd);
+      cardano_plutus_data_unref(&wrapped);
+
+      break;
+    }
     case CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION:
     case CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS:
-    case CARDANO_CERT_TYPE_REGISTRATION:
-    case CARDANO_CERT_TYPE_UNREGISTRATION:
     case CARDANO_CERT_TYPE_VOTE_DELEGATION:
     case CARDANO_CERT_TYPE_STAKE_VOTE_DELEGATION:
     case CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION:
@@ -2020,6 +2082,128 @@ redeemers_map_v2(
 }
 
 /**
+ * \brief Rejects a transaction that carries Conway-only fields a V1/V2 context cannot represent.
+ *
+ * Mirrors the ledger's \c guardConwayFeaturesForPlutusV1V2: a V1 or V2 script
+ * context cannot be built for a transaction with voting procedures, proposal
+ * procedures, a current-treasury value, or a non-zero treasury donation, so such
+ * a transaction is rejected rather than silently mis-encoded.
+ */
+static cardano_error_t
+guard_conway_features_v1v2(cardano_transaction_body_t* body)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  cardano_voting_procedures_t* votes = cardano_transaction_body_get_voting_procedures(body);
+
+  if (votes != NULL)
+  {
+    cardano_voter_list_t* voters = NULL;
+
+    if (cardano_voting_procedures_get_voters(votes, &voters) == CARDANO_SUCCESS)
+    {
+      if (cardano_voter_list_get_length(voters) > 0U)
+      {
+        result = CARDANO_ERROR_INVALID_ARGUMENT;
+      }
+    }
+
+    cardano_voter_list_unref(&voters);
+  }
+
+  cardano_voting_procedures_unref(&votes);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+
+    if ((proposals != NULL) && (cardano_proposal_procedure_set_get_length(proposals) > 0U))
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+
+    cardano_proposal_procedure_set_unref(&proposals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    const uint64_t* treasury = cardano_transaction_body_get_treasury_value(body);
+
+    if (treasury != NULL)
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    const uint64_t* donation = cardano_transaction_body_get_donation(body);
+
+    if ((donation != NULL) && (*donation != 0U))
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Validates the reference inputs of a V1 transaction (which has no reference-input field).
+ *
+ * Mirrors the ledger's V1 \c toPlutusTxInfo, which resolves each reference input
+ * through \c transTxInInfoV1 (and so fails on an output the V1 TxOut cannot
+ * represent — an inline datum or a reference script) and then discards it. Our
+ * V1 output encoder silently drops those fields, so the representability check is
+ * done explicitly here.
+ */
+static cardano_error_t
+validate_v1_reference_inputs(cardano_transaction_input_set_t* ref_inputs, cardano_utxo_list_t* resolved_inputs)
+{
+  const size_t    count  = (ref_inputs != NULL) ? cardano_transaction_input_set_get_length(ref_inputs) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < count); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    result = cardano_transaction_input_set_get(ref_inputs, i, &input);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_t* output = resolve_output(resolved_inputs, input);
+
+      if (output == NULL)
+      {
+        result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+      }
+      else
+      {
+        cardano_script_t*    script = cardano_transaction_output_get_script_ref(output);
+        cardano_datum_t*     datum  = cardano_transaction_output_get_datum(output);
+        cardano_datum_type_t dtype  = CARDANO_DATUM_TYPE_DATA_HASH;
+
+        const bool has_script = (script != NULL);
+        const bool has_inline = (datum != NULL) && (cardano_datum_get_type(datum, &dtype) == CARDANO_SUCCESS) && (dtype == CARDANO_DATUM_TYPE_INLINE_DATA);
+
+        if (has_script || has_inline)
+        {
+          result = CARDANO_ERROR_INVALID_ARGUMENT;
+        }
+
+        cardano_script_unref(&script);
+        cardano_datum_unref(&datum);
+        cardano_transaction_output_unref(&output);
+      }
+    }
+
+    cardano_transaction_input_unref(&input);
+  }
+
+  return result;
+}
+
+/**
  * \brief Encodes the TxInfo of a transaction for V1 or V2.
  */
 static cardano_error_t
@@ -2067,12 +2251,17 @@ build_tx_info(
 
   if (result == CARDANO_SUCCESS)
   {
+    result = guard_conway_features_v1v2(body);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
     inputs     = cardano_transaction_body_get_inputs(body);
     ref_inputs = cardano_transaction_body_get_reference_inputs(body);
 
-    if (!is_v2 && (ref_inputs != NULL) && (cardano_transaction_input_set_get_length(ref_inputs) > 0U))
+    if (!is_v2)
     {
-      result = CARDANO_ERROR_INVALID_ARGUMENT;
+      result = validate_v1_reference_inputs(ref_inputs, resolved_inputs);
     }
   }
 
@@ -2787,53 +2976,75 @@ constr_three(
 }
 
 /**
- * \brief Encodes the Conway StakeRegistration / Reg certificate: Constr 0 [credential, None].
+ * \brief Encodes the Conway StakeRegistration / Reg certificate: Constr 0 [credential, deposit].
+ *
+ * The deposit is \c Just for the Conway registration-with-deposit certificate and
+ * \c Nothing for the legacy (no-deposit) registration, matching the ledger's
+ * \c transTxCert TxCertRegStaking translation (post the Conway bootstrap phase).
  */
 static cardano_error_t
-cert_v3_register(cardano_credential_t* credential, cardano_plutus_data_t** out)
+cert_v3_register(cardano_credential_t* credential, const uint64_t* deposit, cardano_plutus_data_t** out)
 {
-  cardano_plutus_data_t* cred_pd = NULL;
-  cardano_plutus_data_t* none    = NULL;
-  cardano_error_t        result  = encode_credential(credential, &cred_pd);
+  cardano_plutus_data_t* cred_pd    = NULL;
+  cardano_plutus_data_t* deposit_pd = NULL;
+  cardano_plutus_data_t* maybe      = NULL;
+  cardano_error_t        result     = encode_credential(credential, &cred_pd);
 
-  if (result == CARDANO_SUCCESS)
+  if ((result == CARDANO_SUCCESS) && (deposit != NULL))
   {
-    result = encode_maybe(NULL, &none);
+    result = cardano_plutus_data_new_integer_from_uint(*deposit, &deposit_pd);
   }
 
   if (result == CARDANO_SUCCESS)
   {
-    result = constr_two(CONSTR_0, cred_pd, none, out);
+    result = encode_maybe(deposit_pd, &maybe);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = constr_two(CONSTR_0, cred_pd, maybe, out);
   }
 
   cardano_plutus_data_unref(&cred_pd);
-  cardano_plutus_data_unref(&none);
+  cardano_plutus_data_unref(&deposit_pd);
+  cardano_plutus_data_unref(&maybe);
 
   return result;
 }
 
 /**
- * \brief Encodes the Conway StakeDeregistration / UnReg certificate: Constr 1 [credential, None].
+ * \brief Encodes the Conway StakeDeregistration / UnReg certificate: Constr 1 [credential, refund].
+ *
+ * The refund is \c Just for the Conway unregistration-with-refund certificate and
+ * \c Nothing for the legacy (no-deposit) deregistration, matching the ledger's
+ * \c transTxCert TxCertUnRegStaking translation (post the Conway bootstrap phase).
  */
 static cardano_error_t
-cert_v3_unregister(cardano_credential_t* credential, cardano_plutus_data_t** out)
+cert_v3_unregister(cardano_credential_t* credential, const uint64_t* refund, cardano_plutus_data_t** out)
 {
-  cardano_plutus_data_t* cred_pd = NULL;
-  cardano_plutus_data_t* none    = NULL;
-  cardano_error_t        result  = encode_credential(credential, &cred_pd);
+  cardano_plutus_data_t* cred_pd   = NULL;
+  cardano_plutus_data_t* refund_pd = NULL;
+  cardano_plutus_data_t* maybe     = NULL;
+  cardano_error_t        result    = encode_credential(credential, &cred_pd);
 
-  if (result == CARDANO_SUCCESS)
+  if ((result == CARDANO_SUCCESS) && (refund != NULL))
   {
-    result = encode_maybe(NULL, &none);
+    result = cardano_plutus_data_new_integer_from_uint(*refund, &refund_pd);
   }
 
   if (result == CARDANO_SUCCESS)
   {
-    result = constr_two(CONSTR_1, cred_pd, none, out);
+    result = encode_maybe(refund_pd, &maybe);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = constr_two(CONSTR_1, cred_pd, maybe, out);
   }
 
   cardano_plutus_data_unref(&cred_pd);
-  cardano_plutus_data_unref(&none);
+  cardano_plutus_data_unref(&refund_pd);
+  cardano_plutus_data_unref(&maybe);
 
   return result;
 }
@@ -2917,7 +3128,7 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
       if (result == CARDANO_SUCCESS)
       {
         credential = cardano_stake_registration_cert_get_credential(cert);
-        result     = cert_v3_register(credential, out);
+        result     = cert_v3_register(credential, NULL, out);
       }
 
       cardano_stake_registration_cert_unref(&cert);
@@ -2934,8 +3145,9 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
 
       if (result == CARDANO_SUCCESS)
       {
-        credential = cardano_registration_cert_get_stake_credential(cert);
-        result     = cert_v3_register(credential, out);
+        credential             = cardano_registration_cert_get_stake_credential(cert);
+        const uint64_t deposit = cardano_registration_cert_get_deposit(cert);
+        result                 = cert_v3_register(credential, &deposit, out);
       }
 
       cardano_registration_cert_unref(&cert);
@@ -2953,7 +3165,7 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
       if (result == CARDANO_SUCCESS)
       {
         credential = cardano_stake_deregistration_cert_get_credential(cert);
-        result     = cert_v3_unregister(credential, out);
+        result     = cert_v3_unregister(credential, NULL, out);
       }
 
       cardano_stake_deregistration_cert_unref(&cert);
@@ -2970,8 +3182,9 @@ certificate_v3(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
 
       if (result == CARDANO_SUCCESS)
       {
-        credential = cardano_unregistration_cert_get_credential(cert);
-        result     = cert_v3_unregister(credential, out);
+        credential            = cardano_unregistration_cert_get_credential(cert);
+        const uint64_t refund = cardano_unregistration_cert_get_deposit(cert);
+        result                = cert_v3_unregister(credential, &refund, out);
       }
 
       cardano_unregistration_cert_unref(&cert);

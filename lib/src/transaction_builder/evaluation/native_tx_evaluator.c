@@ -29,9 +29,27 @@
 #include <cardano/address/base_address.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/address/pointer_address.h>
+#include <cardano/address/reward_address.h>
 #include <cardano/assets/multi_asset.h>
 #include <cardano/assets/policy_id_list.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/certs/auth_committee_hot_cert.h>
+#include <cardano/certs/cert_type.h>
+#include <cardano/certs/certificate.h>
+#include <cardano/certs/certificate_set.h>
+#include <cardano/certs/register_drep_cert.h>
+#include <cardano/certs/registration_cert.h>
+#include <cardano/certs/resign_committee_cold_cert.h>
+#include <cardano/certs/stake_delegation_cert.h>
+#include <cardano/certs/stake_deregistration_cert.h>
+#include <cardano/certs/stake_registration_delegation_cert.h>
+#include <cardano/certs/stake_vote_delegation_cert.h>
+#include <cardano/certs/stake_vote_registration_delegation_cert.h>
+#include <cardano/certs/unregister_drep_cert.h>
+#include <cardano/certs/unregistration_cert.h>
+#include <cardano/certs/update_drep_cert.h>
+#include <cardano/certs/vote_delegation_cert.h>
+#include <cardano/certs/vote_registration_delegation_cert.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/credential_type.h>
 #include <cardano/common/datum.h>
@@ -39,9 +57,15 @@
 #include <cardano/common/ex_units.h>
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
+#include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/object.h>
+#include <cardano/proposal_procedures/governance_action_type.h>
+#include <cardano/proposal_procedures/parameter_change_action.h>
+#include <cardano/proposal_procedures/proposal_procedure.h>
+#include <cardano/proposal_procedures/proposal_procedure_set.h>
+#include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <cardano/protocol_params/cost_model.h>
 #include <cardano/protocol_params/costmdls.h>
 #include <cardano/scripts/plutus_scripts/plutus_language_version.h>
@@ -56,6 +80,10 @@
 #include <cardano/transaction_body/transaction_input_set.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
+#include <cardano/voting_procedures/voter.h>
+#include <cardano/voting_procedures/voter_list.h>
+#include <cardano/voting_procedures/voter_type.h>
+#include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/plutus_data_set.h>
 #include <cardano/witness_set/plutus_v1_script_set.h>
 #include <cardano/witness_set/plutus_v2_script_set.h>
@@ -513,14 +541,342 @@ resolve_datum(
 }
 
 /**
+ * \brief Extracts the script hash of a script-typed credential.
+ *
+ * A redeemer can only authorize a credential whose payment/stake credential is a
+ * script hash; a key-hash credential (or a NULL one) is rejected. The returned
+ * hash is owned by the caller and released with \ref cardano_blake2b_hash_unref.
+ *
+ * \return \ref CARDANO_SUCCESS with the script hash, or
+ *         \ref CARDANO_ERROR_INVALID_ARGUMENT for a NULL or non-script credential.
+ */
+static cardano_error_t
+script_hash_from_credential(cardano_credential_t* credential, cardano_blake2b_hash_t** out_hash)
+{
+  cardano_credential_type_t cred_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+
+  if (credential == NULL)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (cardano_credential_get_type(credential, &cred_type) != CARDANO_SUCCESS)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (cred_type != CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  *out_hash = cardano_credential_get_hash(credential);
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Returns the credential a certificate authorizes with a script witness.
+ *
+ * Mirrors the ledger's \c getScriptWitnessConwayTxCert: deregistration,
+ * delegation, the registration-and-delegation combinations, the DRep
+ * registration/update/unregistration and the committee hot/cold certificates are
+ * authorized by their (cold) credential; pool, genesis, MIR and bare stake
+ * registration carry no script witness. The Conway registration-with-deposit
+ * certificate is authorized by its stake credential. The returned credential is
+ * owned by the caller and released with \ref cardano_credential_unref.
+ *
+ * \return \ref CARDANO_SUCCESS with the credential, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         for a certificate that takes no script witness, or a propagated error.
+ */
+static cardano_error_t
+certificate_witness_credential(cardano_certificate_t* certificate, cardano_credential_t** out)
+{
+  cardano_cert_type_t type   = CARDANO_CERT_TYPE_STAKE_REGISTRATION;
+  cardano_error_t     result = cardano_cert_get_type(certificate, &type);
+
+  *out = NULL;
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  switch (type)
+  {
+    case CARDANO_CERT_TYPE_STAKE_DEREGISTRATION:
+    {
+      cardano_stake_deregistration_cert_t* cert = NULL;
+      result                                    = cardano_certificate_to_stake_deregistration(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_stake_deregistration_cert_get_credential(cert);
+      }
+
+      cardano_stake_deregistration_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_DELEGATION:
+    {
+      cardano_stake_delegation_cert_t* cert = NULL;
+      result                                = cardano_certificate_to_stake_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_stake_delegation_cert_get_credential(cert);
+      }
+
+      cardano_stake_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_REGISTRATION:
+    {
+      cardano_registration_cert_t* cert = NULL;
+      result                            = cardano_certificate_to_registration(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_registration_cert_get_stake_credential(cert);
+      }
+
+      cardano_registration_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_UNREGISTRATION:
+    {
+      cardano_unregistration_cert_t* cert = NULL;
+      result                              = cardano_certificate_to_unregistration(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_unregistration_cert_get_credential(cert);
+      }
+
+      cardano_unregistration_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_VOTE_DELEGATION:
+    {
+      cardano_vote_delegation_cert_t* cert = NULL;
+      result                               = cardano_certificate_to_vote_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_vote_delegation_cert_get_credential(cert);
+      }
+
+      cardano_vote_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_VOTE_DELEGATION:
+    {
+      cardano_stake_vote_delegation_cert_t* cert = NULL;
+      result                                     = cardano_certificate_to_stake_vote_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_stake_vote_delegation_cert_get_credential(cert);
+      }
+
+      cardano_stake_vote_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION:
+    {
+      cardano_stake_registration_delegation_cert_t* cert = NULL;
+      result                                             = cardano_certificate_to_stake_registration_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_stake_registration_delegation_cert_get_credential(cert);
+      }
+
+      cardano_stake_registration_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_VOTE_REGISTRATION_DELEGATION:
+    {
+      cardano_vote_registration_delegation_cert_t* cert = NULL;
+      result                                            = cardano_certificate_to_vote_registration_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_vote_registration_delegation_cert_get_credential(cert);
+      }
+
+      cardano_vote_registration_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_VOTE_REGISTRATION_DELEGATION:
+    {
+      cardano_stake_vote_registration_delegation_cert_t* cert = NULL;
+      result                                                  = cardano_certificate_to_stake_vote_registration_delegation(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_stake_vote_registration_delegation_cert_get_credential(cert);
+      }
+
+      cardano_stake_vote_registration_delegation_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT:
+    {
+      cardano_auth_committee_hot_cert_t* cert = NULL;
+      result                                  = cardano_certificate_to_auth_committee_hot(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_auth_committee_hot_cert_get_cold_cred(cert, out);
+      }
+
+      cardano_auth_committee_hot_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_RESIGN_COMMITTEE_COLD:
+    {
+      cardano_resign_committee_cold_cert_t* cert = NULL;
+      result                                     = cardano_certificate_to_resign_committee_cold(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_resign_committee_cold_cert_get_credential(cert);
+      }
+
+      cardano_resign_committee_cold_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_DREP_REGISTRATION:
+    {
+      cardano_register_drep_cert_t* cert = NULL;
+      result                             = cardano_certificate_to_register_drep(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_register_drep_cert_get_credential(cert);
+      }
+
+      cardano_register_drep_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_DREP_UNREGISTRATION:
+    {
+      cardano_unregister_drep_cert_t* cert = NULL;
+      result                               = cardano_certificate_to_unregister_drep(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_unregister_drep_cert_get_credential(cert);
+      }
+
+      cardano_unregister_drep_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_UPDATE_DREP:
+    {
+      cardano_update_drep_cert_t* cert = NULL;
+      result                           = cardano_certificate_to_update_drep(certificate, &cert);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out = cardano_update_drep_cert_get_credential(cert);
+      }
+
+      cardano_update_drep_cert_unref(&cert);
+      break;
+    }
+    case CARDANO_CERT_TYPE_STAKE_REGISTRATION:
+    case CARDANO_CERT_TYPE_POOL_REGISTRATION:
+    case CARDANO_CERT_TYPE_POOL_RETIREMENT:
+    case CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION:
+    case CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS:
+    default:
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Returns the guardrail policy script hash a proposal authorizes.
+ *
+ * Mirrors the ledger's \c getProposalScriptHash: only a parameter-change or a
+ * treasury-withdrawals action carries a guardrail policy; any other action, or a
+ * proposal without a policy, takes no script witness. The returned hash is owned
+ * by the caller and released with \ref cardano_blake2b_hash_unref.
+ *
+ * \return \ref CARDANO_SUCCESS with the policy hash, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         when the proposal carries no guardrail policy, or a propagated error.
+ */
+static cardano_error_t
+proposal_policy_hash(cardano_proposal_procedure_t* proposal, cardano_blake2b_hash_t** out_hash)
+{
+  cardano_governance_action_type_t action_type = CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE;
+  cardano_error_t                  result      = cardano_proposal_procedure_get_action_type(proposal, &action_type);
+
+  *out_hash = NULL;
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  switch (action_type)
+  {
+    case CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE:
+    {
+      cardano_parameter_change_action_t* action = NULL;
+      result                                    = cardano_proposal_procedure_to_parameter_change_action(proposal, &action);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out_hash = cardano_parameter_change_action_get_policy_hash(action);
+      }
+
+      cardano_parameter_change_action_unref(&action);
+      break;
+    }
+    case CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS:
+    {
+      cardano_treasury_withdrawals_action_t* action = NULL;
+      result                                        = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal, &action);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *out_hash = cardano_treasury_withdrawals_action_get_policy_hash(action);
+      }
+
+      cardano_treasury_withdrawals_action_unref(&action);
+      break;
+    }
+    default:
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+      break;
+    }
+  }
+
+  if ((result == CARDANO_SUCCESS) && (*out_hash == NULL))
+  {
+    result = CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  return result;
+}
+
+/**
  * \brief Resolves the script hash a redeemer points at, plus the spend datum.
  *
- * The (tag, index) pair selects the concrete item against the sorted inputs
- * (spend) or sorted mint policies (mint), and the script hash is the payment
- * credential script hash (spend) or the policy id (mint). The index ordering is
- * taken from the transaction's own sorted input set and multi-asset key list,
- * which is the consensus-critical mapping. Reward, cert, vote and propose
- * purposes are not resolved here yet (the script-context builders gate them).
+ * The (tag, index) pair selects the concrete item against the transaction's own
+ * sorted inputs (spend), sorted mint policies (mint), withdrawals (reward),
+ * certificates (cert), voters (vote) or proposals (propose). The script hash is
+ * the script credential the item is authorized by; the spend purpose also
+ * resolves the datum. The index ordering mirrors the ledger's per-purpose
+ * ordering, which is the consensus-critical mapping.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
  *         if the index is out of range, \ref CARDANO_ERROR_INVALID_ARGUMENT for a
@@ -611,29 +967,14 @@ resolve_script_hash(
 
         if (result == CARDANO_SUCCESS)
         {
-          cardano_address_t*        address    = cardano_transaction_output_get_address(output);
-          cardano_credential_t*     credential = payment_credential(address);
-          cardano_credential_type_t cred_type  = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+          cardano_address_t*    address    = cardano_transaction_output_get_address(output);
+          cardano_credential_t* credential = payment_credential(address);
 
-          if (credential == NULL)
-          {
-            result = CARDANO_ERROR_INVALID_ARGUMENT;
-          }
-
-          if ((result == CARDANO_SUCCESS) && (cardano_credential_get_type(credential, &cred_type) != CARDANO_SUCCESS))
-          {
-            result = CARDANO_ERROR_INVALID_ARGUMENT;
-          }
-
-          if ((result == CARDANO_SUCCESS) && (cred_type != CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH))
-          {
-            result = CARDANO_ERROR_INVALID_ARGUMENT;
-          }
+          result = script_hash_from_credential(credential, out_hash);
 
           if (result == CARDANO_SUCCESS)
           {
-            *out_hash = cardano_credential_get_hash(credential);
-            result    = resolve_datum(witness_set, output, out_datum);
+            result = resolve_datum(witness_set, output, out_datum);
           }
 
           cardano_credential_unref(&credential);
@@ -647,10 +988,132 @@ resolve_script_hash(
       cardano_transaction_input_set_unref(&inputs);
       break;
     }
-    case CARDANO_REDEEMER_TAG_CERTIFYING:
     case CARDANO_REDEEMER_TAG_REWARD:
+    {
+      cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+
+      if ((withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(withdrawals)))
+      {
+        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_reward_address_t* address = NULL;
+        uint64_t                  coin    = 0U;
+
+        result = cardano_withdrawal_map_get_key_value_at(withdrawals, (size_t)index, &address, &coin);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          cardano_credential_t* credential = cardano_reward_address_get_credential(address);
+
+          result = script_hash_from_credential(credential, out_hash);
+
+          cardano_credential_unref(&credential);
+        }
+
+        cardano_reward_address_unref(&address);
+      }
+
+      cardano_withdrawal_map_unref(&withdrawals);
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_CERTIFYING:
+    {
+      cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+
+      if ((certificates == NULL) || (index >= cardano_certificate_set_get_length(certificates)))
+      {
+        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_certificate_t* certificate = NULL;
+
+        result = cardano_certificate_set_get(certificates, (size_t)index, &certificate);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          cardano_credential_t* credential = NULL;
+
+          result = certificate_witness_credential(certificate, &credential);
+
+          if (result == CARDANO_SUCCESS)
+          {
+            result = script_hash_from_credential(credential, out_hash);
+          }
+
+          cardano_credential_unref(&credential);
+        }
+
+        cardano_certificate_unref(&certificate);
+      }
+
+      cardano_certificate_set_unref(&certificates);
+      break;
+    }
     case CARDANO_REDEEMER_TAG_VOTING:
+    {
+      cardano_voting_procedures_t* voting = cardano_transaction_body_get_voting_procedures(body);
+      cardano_voter_list_t*        voters = NULL;
+
+      result = (voting != NULL) ? cardano_voting_procedures_get_voters(voting, &voters) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+
+      if ((result == CARDANO_SUCCESS) && (index >= cardano_voter_list_get_length(voters)))
+      {
+        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_voter_t* voter = NULL;
+
+        result = cardano_voter_list_get(voters, (size_t)index, &voter);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          cardano_credential_t* credential = cardano_voter_get_credential(voter);
+
+          result = script_hash_from_credential(credential, out_hash);
+
+          cardano_credential_unref(&credential);
+        }
+
+        cardano_voter_unref(&voter);
+      }
+
+      cardano_voter_list_unref(&voters);
+      cardano_voting_procedures_unref(&voting);
+      break;
+    }
     case CARDANO_REDEEMER_TAG_PROPOSING:
+    {
+      cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+
+      if ((proposals == NULL) || (index >= cardano_proposal_procedure_set_get_length(proposals)))
+      {
+        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_proposal_procedure_t* proposal = NULL;
+
+        result = cardano_proposal_procedure_set_get(proposals, (size_t)index, &proposal);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = proposal_policy_hash(proposal, out_hash);
+        }
+
+        cardano_proposal_procedure_unref(&proposal);
+      }
+
+      cardano_proposal_procedure_set_unref(&proposals);
+      break;
+    }
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
