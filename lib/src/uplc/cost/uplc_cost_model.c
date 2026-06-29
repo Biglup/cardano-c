@@ -450,10 +450,12 @@ set_v3_div_cpu(cardano_uplc_builtin_cost_t* e, const int64_t* p, size_t base)
 /**
  * \brief Maps the V3 flat parameter list onto a default V3 cost model.
  *
- * Reads parameters through the count that activates the bitwise tail
- * (\ref CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3). The builtins past that count
- * (exp_mod, the array and value families) carry no parameter at this count and
- * keep the defaults set by \ref cardano_uplc_builtin_costs_v3.
+ * Reads the first \ref CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 parameters, which
+ * cover every builtin through ripemd_160 (the bitwise tail) and the five
+ * exp_mod_integer coefficients that follow it. Later protocol versions append
+ * coefficients for the array and value families; those are not read here and the
+ * corresponding builtins keep the defaults set by \ref cardano_uplc_builtin_costs_v3,
+ * which is sound because they are not enabled for PlutusV3.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V3 parameter array.
@@ -668,6 +670,12 @@ from_params_v3(cardano_uplc_cost_model_t* out, const int64_t* p)
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_COUNT_SET_BITS], p, 288U, 289U, 290U);
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_FIND_FIRST_SET_BIT], p, 291U, 292U, 293U);
   set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_RIPEMD_160], p, 294U, 295U, 296U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00 = p[297];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_11 = p[298];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_12 = p[299];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.intercept = p[300];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.slope     = p[301];
 }
 
 /* DEFINITIONS ***************************************************************/
@@ -679,6 +687,9 @@ cardano_uplc_cost_model_from_params(
   size_t                            count,
   cardano_uplc_cost_model_t*        out)
 {
+  size_t  expected = 0U;
+  int64_t padded[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
+
   if ((params == NULL) || (out == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
@@ -688,37 +699,59 @@ cardano_uplc_cost_model_from_params(
   {
     case CARDANO_UPLC_COST_MODEL_VERSION_V1:
     {
-      if (count != CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1)
-      {
-        return CARDANO_ERROR_INVALID_ARGUMENT;
-      }
-
-      from_params_v1(out, params);
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V2:
     {
-      if (count != CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2)
-      {
-        return CARDANO_ERROR_INVALID_ARGUMENT;
-      }
-
-      from_params_v2(out, params);
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
     {
-      if (count != CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3)
-      {
-        return CARDANO_ERROR_INVALID_ARGUMENT;
-      }
-
-      from_params_v3(out, params);
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3;
       break;
     }
     default:
     {
       return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  if (count < expected)
+  {
+    size_t i = 0U;
+
+    for (i = 0U; i < count; ++i)
+    {
+      padded[i] = params[i];
+    }
+
+    for (i = count; i < expected; ++i)
+    {
+      padded[i] = INT64_MAX;
+    }
+
+    params = padded;
+  }
+
+  switch (version)
+  {
+    case CARDANO_UPLC_COST_MODEL_VERSION_V1:
+    {
+      from_params_v1(out, params);
+      break;
+    }
+    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
+    {
+      from_params_v2(out, params);
+      break;
+    }
+    case CARDANO_UPLC_COST_MODEL_VERSION_V3:
+    default:
+    {
+      from_params_v3(out, params);
+      break;
     }
   }
 

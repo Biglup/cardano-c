@@ -2060,7 +2060,12 @@ static const int64_t V3_DEFAULT_PARAMS[] = {
   1,
   1964219,
   24520,
-  3
+  3,
+  607153,
+  231697,
+  53144,
+  0,
+  1
 };
 
 // Builds a constant integer value in an arena, for builtin-cost dispatch tests.
@@ -2168,19 +2173,65 @@ TEST(cardano_uplc_cost_model_from_params, v3_machine_costs_match_default)
   EXPECT_EQ(std::memcmp(&model.machine, &expected, sizeof(expected)), 0);
 }
 
-TEST(cardano_uplc_cost_model_from_params, wrong_count_is_error)
+TEST(cardano_uplc_cost_model_from_params, short_count_is_tolerated_not_rejected)
 {
   cardano_uplc_cost_model_t model;
 
   EXPECT_EQ(
     cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, 10U, &model),
-    CARDANO_ERROR_INVALID_ARGUMENT);
+    CARDANO_SUCCESS);
   EXPECT_EQ(
     cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, 10U, &model),
-    CARDANO_ERROR_INVALID_ARGUMENT);
+    CARDANO_SUCCESS);
   EXPECT_EQ(
     cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, 10U, &model),
-    CARDANO_ERROR_INVALID_ARGUMENT);
+    CARDANO_SUCCESS);
+}
+
+TEST(cardano_uplc_cost_model_from_params, v3_extra_params_are_ignored)
+{
+  int64_t longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 3U];
+  std::memcpy(longer, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 * sizeof(int64_t));
+  longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3]      = 111;
+  longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 1U] = 222;
+  longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 2U] = 333;
+
+  cardano_uplc_cost_model_t with_extra;
+  cardano_uplc_cost_model_t exact;
+
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, longer, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 3U, &with_extra),
+    CARDANO_SUCCESS);
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &exact),
+    CARDANO_SUCCESS);
+
+  EXPECT_EQ(std::memcmp(&with_extra, &exact, sizeof(exact)), 0);
+}
+
+TEST(cardano_uplc_cost_model_from_params, v3_prices_exp_mod_integer_from_params)
+{
+  int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
+  std::memcpy(params, V3_DEFAULT_PARAMS, sizeof(params));
+  params[297] = 11;
+  params[298] = 22;
+  params[299] = 33;
+  params[300] = 44;
+  params[301] = 55;
+
+  cardano_uplc_cost_model_t model;
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &model),
+    CARDANO_SUCCESS);
+
+  const cardano_uplc_three_arg_cost_t cpu = model.builtins.entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three;
+  const cardano_uplc_three_arg_cost_t mem = model.builtins.entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three;
+
+  EXPECT_EQ(cpu.params.exp_mod.coeff_00, 11);
+  EXPECT_EQ(cpu.params.exp_mod.coeff_11, 22);
+  EXPECT_EQ(cpu.params.exp_mod.coeff_12, 33);
+  EXPECT_EQ(mem.params.linear.intercept, 44);
+  EXPECT_EQ(mem.params.linear.slope, 55);
 }
 
 TEST(cardano_uplc_cost_model_from_params, null_pointers_are_error)
