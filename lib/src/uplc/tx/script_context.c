@@ -4012,10 +4012,9 @@ treasury_withdrawals(cardano_withdrawal_map_t* withdrawals, cardano_plutus_data_
 /**
  * \brief Encodes the governance action of a proposal procedure.
  *
- * The ParameterChange protocol-parameter update is encoded as an empty map: a
- * full \c ProtocolParamUpdate translation is out of scope here and is not
- * exercised by the transactions this builder targets. All other governance
- * actions are encoded fully.
+ * The ParameterChange protocol-parameter update is encoded as its changed-parameters
+ * map via \ref cardano_protocol_param_update_to_plutus_data. All governance actions
+ * are encoded fully.
  */
 static cardano_error_t
 gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
@@ -4034,8 +4033,8 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     {
       cardano_parameter_change_action_t* action     = NULL;
       cardano_governance_action_id_t*    prev       = NULL;
+      cardano_protocol_param_update_t*   update     = NULL;
       cardano_blake2b_hash_t*            guardrail  = NULL;
-      cardano_plutus_map_t*              empty_map  = NULL;
       cardano_plutus_data_t*             prev_pd    = NULL;
       cardano_plutus_data_t*             params_pd  = NULL;
       cardano_plutus_data_t*             guard_pd   = NULL;
@@ -4051,12 +4050,8 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
 
       if (result == CARDANO_SUCCESS)
       {
-        result = cardano_plutus_map_new(&empty_map);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_data_new_map(empty_map, &params_pd);
+        update = cardano_parameter_change_action_get_protocol_param_update(action);
+        result = cardano_protocol_param_update_to_plutus_data(update, &params_pd);
       }
 
       if (result == CARDANO_SUCCESS)
@@ -4081,8 +4076,8 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
 
       cardano_parameter_change_action_unref(&action);
       cardano_governance_action_id_unref(&prev);
+      cardano_protocol_param_update_unref(&update);
       cardano_blake2b_hash_unref(&guardrail);
-      cardano_plutus_map_unref(&empty_map);
       cardano_plutus_data_unref(&prev_pd);
       cardano_plutus_data_unref(&params_pd);
       cardano_plutus_data_unref(&guard_pd);

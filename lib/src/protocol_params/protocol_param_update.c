@@ -24,6 +24,12 @@
 #include <cardano/object.h>
 #include <cardano/protocol_params/protocol_param_update.h>
 
+#include <cardano/plutus_data/plutus_data.h>
+#include <cardano/plutus_data/plutus_list.h>
+#include <cardano/plutus_data/plutus_map.h>
+#include <cardano/protocol_params/cost_model.h>
+#include <cardano/scripts/plutus_scripts/plutus_language_version.h>
+
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
 
@@ -74,6 +80,664 @@ typedef struct cardano_protocol_param_update_t
     uint64_t*                         drep_inactivity_period;
     cardano_unit_interval_t*          ref_script_cost_per_byte;
 } cardano_protocol_param_update_t;
+
+/* PLUTUS-DATA ENCODING ******************************************************/
+
+/**
+ * \brief Greatest common divisor of two unsigned integers (Euclid).
+ */
+static uint64_t
+pp_gcd(uint64_t a, uint64_t b)
+{
+  while (b != 0U)
+  {
+    const uint64_t t = b;
+    b                = a % b;
+    a                = t;
+  }
+
+  return a;
+}
+
+/**
+ * \brief Encodes an unsigned integer as a plutus-data integer.
+ */
+static cardano_error_t
+pp_encode_uint(uint64_t value, cardano_plutus_data_t** out)
+{
+  return cardano_plutus_data_new_integer_from_uint(value, out);
+}
+
+/**
+ * \brief Encodes a unit interval as a gcd-reduced rational: List [I num, I den].
+ *
+ * Matches the ledger's \c ToPlutusData Rational (List [num, den]) over the reduced
+ * fraction, the same normalization Aiken applies via \c WithArrayRational.
+ */
+static cardano_error_t
+pp_encode_rational(cardano_unit_interval_t* interval, cardano_plutus_data_t** out)
+{
+  const uint64_t num = cardano_unit_interval_get_numerator(interval);
+  const uint64_t den = cardano_unit_interval_get_denominator(interval);
+  const uint64_t gcd = pp_gcd(num, den);
+
+  cardano_plutus_list_t* list   = NULL;
+  cardano_plutus_data_t* num_pd = NULL;
+  cardano_plutus_data_t* den_pd = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint((gcd != 0U) ? (num / gcd) : num, &num_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint((gcd != 0U) ? (den / gcd) : den, &den_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, num_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, den_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+  cardano_plutus_data_unref(&num_pd);
+  cardano_plutus_data_unref(&den_pd);
+
+  return result;
+}
+
+/**
+ * \brief Encodes ExUnits as List [I mem, I steps].
+ */
+static cardano_error_t
+pp_encode_ex_units(cardano_ex_units_t* ex_units, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list    = NULL;
+  cardano_plutus_data_t* mem_pd  = NULL;
+  cardano_plutus_data_t* step_pd = NULL;
+  cardano_error_t        result  = cardano_plutus_list_new(&list);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(cardano_ex_units_get_memory(ex_units), &mem_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(cardano_ex_units_get_cpu_steps(ex_units), &step_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, mem_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, step_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+  cardano_plutus_data_unref(&mem_pd);
+  cardano_plutus_data_unref(&step_pd);
+
+  return result;
+}
+
+/**
+ * \brief Encodes ExUnitPrices as List [rational mem, rational steps].
+ */
+static cardano_error_t
+pp_encode_prices(cardano_ex_unit_prices_t* prices, cardano_plutus_data_t** out)
+{
+  cardano_unit_interval_t* mem    = NULL;
+  cardano_unit_interval_t* steps  = NULL;
+  cardano_plutus_list_t*   list   = NULL;
+  cardano_plutus_data_t*   mem_pd = NULL;
+  cardano_plutus_data_t*   stp_pd = NULL;
+  cardano_error_t          result = cardano_ex_unit_prices_get_memory_prices(prices, &mem);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_ex_unit_prices_get_steps_prices(prices, &steps);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_new(&list);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = pp_encode_rational(mem, &mem_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = pp_encode_rational(steps, &stp_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, mem_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, stp_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_unit_interval_unref(&mem);
+  cardano_unit_interval_unref(&steps);
+  cardano_plutus_list_unref(&list);
+  cardano_plutus_data_unref(&mem_pd);
+  cardano_plutus_data_unref(&stp_pd);
+
+  return result;
+}
+
+/**
+ * \brief Appends a unit interval, as a rational, to a plutus list.
+ */
+static cardano_error_t
+pp_append_rational(cardano_plutus_list_t* list, cardano_unit_interval_t* interval)
+{
+  cardano_plutus_data_t* pd     = NULL;
+  cardano_error_t        result = pp_encode_rational(interval, &pd);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(list, pd);
+  }
+
+  cardano_plutus_data_unref(&pd);
+  cardano_unit_interval_unref(&interval);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the pool voting thresholds as List of 5 rationals.
+ */
+static cardano_error_t
+pp_encode_pool_thresholds(cardano_pool_voting_thresholds_t* t, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t*   list   = NULL;
+  cardano_unit_interval_t* v      = NULL;
+  cardano_error_t          result = cardano_plutus_list_new(&list);
+
+  if ((result == CARDANO_SUCCESS) && (cardano_pool_voting_thresholds_get_motion_no_confidence(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_pool_voting_thresholds_get_committee_normal(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_pool_voting_thresholds_get_committee_no_confidence(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_pool_voting_thresholds_get_hard_fork_initiation(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_pool_voting_thresholds_get_security_relevant_param(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the DRep voting thresholds as List of 10 rationals.
+ */
+static cardano_error_t
+pp_encode_drep_thresholds(cardano_drep_voting_thresholds_t* t, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t*   list   = NULL;
+  cardano_unit_interval_t* v      = NULL;
+  cardano_error_t          result = cardano_plutus_list_new(&list);
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_motion_no_confidence(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_committee_normal(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_committee_no_confidence(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_update_constitution(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_hard_fork_initiation(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_pp_network_group(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_pp_economic_group(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_pp_technical_group(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_pp_governance_group(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cardano_drep_voting_thresholds_get_treasury_withdrawal(t, &v) == CARDANO_SUCCESS))
+  {
+    result = pp_append_rational(list, v);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the cost models as a Map of language id to a list of cost integers.
+ *
+ * Matches the ledger's \c ToPlutusData CostModels = toPlutusData (Map Word8 [Integer]).
+ */
+static cardano_error_t
+pp_encode_cost_models(cardano_costmdls_t* costmdls, cardano_plutus_data_t** out)
+{
+  static const cardano_plutus_language_version_t languages[3] = {
+    CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
+    CARDANO_PLUTUS_LANGUAGE_VERSION_V2,
+    CARDANO_PLUTUS_LANGUAGE_VERSION_V3
+  };
+
+  cardano_plutus_map_t* map    = NULL;
+  cardano_error_t       result = cardano_plutus_map_new(&map);
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < 3U); ++i)
+  {
+    cardano_cost_model_t* model = NULL;
+
+    if (cardano_costmdls_get(costmdls, languages[i], &model) != CARDANO_SUCCESS)
+    {
+      cardano_cost_model_unref(&model);
+      continue;
+    }
+
+    cardano_plutus_list_t* costs   = NULL;
+    cardano_plutus_data_t* key_pd  = NULL;
+    cardano_plutus_data_t* list_pd = NULL;
+
+    result = cardano_plutus_list_new(&costs);
+
+    const size_t count = cardano_cost_model_get_costs_size(model);
+
+    for (size_t j = 0U; (result == CARDANO_SUCCESS) && (j < count); ++j)
+    {
+      int64_t                cost    = 0;
+      cardano_plutus_data_t* cost_pd = NULL;
+
+      result = cardano_cost_model_get_cost(model, j, &cost);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_data_new_integer_from_int(cost, &cost_pd);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_list_add(costs, cost_pd);
+      }
+
+      cardano_plutus_data_unref(&cost_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_integer_from_uint((uint64_t)languages[i], &key_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_list(costs, &list_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_map_insert(map, key_pd, list_pd);
+    }
+
+    cardano_plutus_list_unref(&costs);
+    cardano_plutus_data_unref(&key_pd);
+    cardano_plutus_data_unref(&list_pd);
+    cardano_cost_model_unref(&model);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(map, out);
+  }
+
+  cardano_plutus_map_unref(&map);
+
+  return result;
+}
+
+/**
+ * \brief Inserts a (tag, value) pair into the changed-parameters map and releases the value.
+ */
+static cardano_error_t
+pp_map_push(cardano_plutus_map_t* map, uint64_t tag, cardano_plutus_data_t* value, cardano_error_t result)
+{
+  cardano_plutus_data_t* key_pd = NULL;
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(tag, &key_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_map_insert(map, key_pd, value);
+  }
+
+  cardano_plutus_data_unref(&key_pd);
+  cardano_plutus_data_unref(&value);
+
+  return result;
+}
+
+cardano_error_t
+cardano_protocol_param_update_to_plutus_data(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  cardano_plutus_data_t**                plutus_data)
+{
+  if ((protocol_param_update == NULL) || (plutus_data == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_plutus_map_t* map    = NULL;
+  cardano_error_t       result = cardano_plutus_map_new(&map);
+
+  const cardano_protocol_param_update_t* u = protocol_param_update;
+
+  // Scalar parameters: tag -> I value.
+  if ((result == CARDANO_SUCCESS) && (u->min_fee_a != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->min_fee_a, &v);
+    result                   = pp_map_push(map, 0U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->min_fee_b != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->min_fee_b, &v);
+    result                   = pp_map_push(map, 1U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_block_body_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_block_body_size, &v);
+    result                   = pp_map_push(map, 2U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_tx_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_tx_size, &v);
+    result                   = pp_map_push(map, 3U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_block_header_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_block_header_size, &v);
+    result                   = pp_map_push(map, 4U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->key_deposit != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->key_deposit, &v);
+    result                   = pp_map_push(map, 5U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->pool_deposit != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->pool_deposit, &v);
+    result                   = pp_map_push(map, 6U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_epoch != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_epoch, &v);
+    result                   = pp_map_push(map, 7U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->n_opt != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->n_opt, &v);
+    result                   = pp_map_push(map, 8U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->pool_pledge_influence != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->pool_pledge_influence, &v);
+    result                   = pp_map_push(map, 9U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->expansion_rate != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->expansion_rate, &v);
+    result                   = pp_map_push(map, 10U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->treasury_growth_rate != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->treasury_growth_rate, &v);
+    result                   = pp_map_push(map, 11U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->min_pool_cost != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->min_pool_cost, &v);
+    result                   = pp_map_push(map, 16U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ada_per_utxo_byte != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->ada_per_utxo_byte, &v);
+    result                   = pp_map_push(map, 17U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->cost_models != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_cost_models(u->cost_models, &v);
+    result                   = pp_map_push(map, 18U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->execution_costs != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_prices(u->execution_costs, &v);
+    result                   = pp_map_push(map, 19U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_tx_ex_units != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_ex_units(u->max_tx_ex_units, &v);
+    result                   = pp_map_push(map, 20U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_block_ex_units != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_ex_units(u->max_block_ex_units, &v);
+    result                   = pp_map_push(map, 21U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_value_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_value_size, &v);
+    result                   = pp_map_push(map, 22U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->collateral_percentage != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->collateral_percentage, &v);
+    result                   = pp_map_push(map, 23U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_collateral_inputs != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_collateral_inputs, &v);
+    result                   = pp_map_push(map, 24U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->pool_voting_thresholds != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_pool_thresholds(u->pool_voting_thresholds, &v);
+    result                   = pp_map_push(map, 25U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->drep_voting_thresholds != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_drep_thresholds(u->drep_voting_thresholds, &v);
+    result                   = pp_map_push(map, 26U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->min_committee_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->min_committee_size, &v);
+    result                   = pp_map_push(map, 27U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->committee_term_limit != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->committee_term_limit, &v);
+    result                   = pp_map_push(map, 28U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->governance_action_validity_period != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->governance_action_validity_period, &v);
+    result                   = pp_map_push(map, 29U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->governance_action_deposit != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->governance_action_deposit, &v);
+    result                   = pp_map_push(map, 30U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->drep_deposit != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->drep_deposit, &v);
+    result                   = pp_map_push(map, 31U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->drep_inactivity_period != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->drep_inactivity_period, &v);
+    result                   = pp_map_push(map, 32U, v, result);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ref_script_cost_per_byte != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->ref_script_cost_per_byte, &v);
+    result                   = pp_map_push(map, 33U, v, result);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(map, plutus_data);
+  }
+
+  cardano_plutus_map_unref(&map);
+
+  return result;
+}
 
 /* STATIC DECLARATIONS *******************************************************/
 

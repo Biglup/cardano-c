@@ -24,6 +24,12 @@
 #include <cardano/error.h>
 
 #include <cardano/buffer.h>
+#include <cardano/common/bigint.h>
+#include <cardano/common/ex_units.h>
+#include <cardano/common/unit_interval.h>
+#include <cardano/plutus_data/plutus_data.h>
+#include <cardano/plutus_data/plutus_list.h>
+#include <cardano/plutus_data/plutus_map.h>
 #include <cardano/protocol_params/protocol_param_update.h>
 
 #include "../allocators_helpers.h"
@@ -4826,5 +4832,135 @@ TEST(cardano_protocol_param_update_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
   cardano_error_t error = cardano_protocol_param_update_to_cip116_json(update, nullptr);
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_protocol_param_update_unref(&update);
+}
+
+/* PLUTUS-DATA ENCODING ******************************************************/
+
+// Reads the integer value of a plutus-data integer as int64.
+static int64_t
+pd_to_i64(cardano_plutus_data_t* pd)
+{
+  cardano_bigint_t* big = nullptr;
+  EXPECT_EQ(cardano_plutus_data_to_integer(pd, &big), CARDANO_SUCCESS);
+  const int64_t v = cardano_bigint_to_int(big);
+  cardano_bigint_unref(&big);
+  return v;
+}
+
+// Looks up the value for an integer key (tag) in a plutus-data map.
+static cardano_plutus_data_t*
+pd_map_get_tag(cardano_plutus_data_t* map_pd, uint64_t tag)
+{
+  cardano_plutus_map_t* map = nullptr;
+  EXPECT_EQ(cardano_plutus_data_to_map(map_pd, &map), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* key = nullptr;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_uint(tag, &key), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* value = nullptr;
+  EXPECT_EQ(cardano_plutus_map_get(map, key, &value), CARDANO_SUCCESS);
+
+  cardano_plutus_data_unref(&key);
+  cardano_plutus_map_unref(&map);
+  return value;
+}
+
+// Returns the index-th integer of a plutus-data list.
+static int64_t
+pd_list_i64(cardano_plutus_data_t* list_pd, size_t index)
+{
+  cardano_plutus_list_t* list = nullptr;
+  EXPECT_EQ(cardano_plutus_data_to_list(list_pd, &list), CARDANO_SUCCESS);
+  cardano_plutus_data_t* item = nullptr;
+  EXPECT_EQ(cardano_plutus_list_get(list, index, &item), CARDANO_SUCCESS);
+  const int64_t v = pd_to_i64(item);
+  cardano_plutus_data_unref(&item);
+  cardano_plutus_list_unref(&list);
+  return v;
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesTagsValuesAndReducesRationals)
+{
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+
+  const uint64_t min_fee_a = 44U;
+  ASSERT_EQ(cardano_protocol_param_update_set_min_fee_a(update, &min_fee_a), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* pledge = nullptr;
+  ASSERT_EQ(cardano_unit_interval_new(3U, 10U, &pledge), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_pool_pledge_influence(update, pledge), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* tau = nullptr; // 2/10 must reduce to 1/5
+  ASSERT_EQ(cardano_unit_interval_new(2U, 10U, &tau), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_treasury_growth_rate(update, tau), CARDANO_SUCCESS);
+
+  cardano_ex_units_t* ex = nullptr;
+  ASSERT_EQ(cardano_ex_units_new(1000U, 2000U, &ex), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_max_tx_ex_units(update, ex), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_map_t* map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(pd, &map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(map), 4U);
+  cardano_plutus_map_unref(&map);
+
+  // tag 0: min_fee_a -> I 44
+  cardano_plutus_data_t* fee = pd_map_get_tag(pd, 0U);
+  EXPECT_EQ(pd_to_i64(fee), 44);
+  cardano_plutus_data_unref(&fee);
+
+  // tag 9: pool_pledge_influence -> [3, 10]
+  cardano_plutus_data_t* a0 = pd_map_get_tag(pd, 9U);
+  EXPECT_EQ(pd_list_i64(a0, 0U), 3);
+  EXPECT_EQ(pd_list_i64(a0, 1U), 10);
+  cardano_plutus_data_unref(&a0);
+
+  // tag 11: treasury_growth_rate 2/10 -> reduced [1, 5]
+  cardano_plutus_data_t* reduced = pd_map_get_tag(pd, 11U);
+  EXPECT_EQ(pd_list_i64(reduced, 0U), 1);
+  EXPECT_EQ(pd_list_i64(reduced, 1U), 5);
+  cardano_plutus_data_unref(&reduced);
+
+  // tag 20: max_tx_ex_units -> [mem, steps] = [1000, 2000]
+  cardano_plutus_data_t* units = pd_map_get_tag(pd, 20U);
+  EXPECT_EQ(pd_list_i64(units, 0U), 1000);
+  EXPECT_EQ(pd_list_i64(units, 1U), 2000);
+  cardano_plutus_data_unref(&units);
+
+  cardano_plutus_data_unref(&pd);
+  cardano_ex_units_unref(&ex);
+  cardano_unit_interval_unref(&tau);
+  cardano_unit_interval_unref(&pledge);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesAFullUpdateWithEveryParamType)
+{
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_from_cbor(reader, &update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_map_t* map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(pd, &map), CARDANO_SUCCESS);
+  EXPECT_GT(cardano_plutus_map_get_length(map), 25U);
+  cardano_plutus_map_unref(&map);
+
+  // cost models (tag 18) must be a non-empty map of language id -> cost list.
+  cardano_plutus_data_t* cost_models = pd_map_get_tag(pd, 18U);
+  cardano_plutus_map_t*  cm_map      = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(cost_models, &cm_map), CARDANO_SUCCESS);
+  EXPECT_GT(cardano_plutus_map_get_length(cm_map), 0U);
+
+  cardano_plutus_map_unref(&cm_map);
+  cardano_plutus_data_unref(&cost_models);
+  cardano_plutus_data_unref(&pd);
   cardano_protocol_param_update_unref(&update);
 }
