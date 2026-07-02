@@ -561,14 +561,18 @@ cardano_balance_transaction(
     cardano_utxo_list_t*               remaining_utxo = NULL;
     cardano_transaction_output_list_t* change_outputs = NULL;
 
+    cardano_coin_selection_request_t request = { 0 };
+
+    request.pre_selected_utxo = pre_selected_utxo;
+    request.available_utxo    = available_utxo;
+    request.target            = required_input_value;
+    request.outputs_to_cover  = shallow_cloned_outputs;
+    request.change_address    = change_address;
+    request.protocol_params   = protocol_params;
+
     result = cardano_coin_selector_select(
       coin_selector,
-      pre_selected_utxo,
-      available_utxo,
-      required_input_value,
-      shallow_cloned_outputs,
-      change_address,
-      protocol_params,
+      &request,
       &selection,
       &remaining_utxo,
       &change_outputs);

@@ -275,14 +275,16 @@ _cardano_set_collateral_output(
     cardano_utxo_list_t*               remaining_utxo         = NULL;
     cardano_transaction_output_list_t* selector_change_output = NULL;
 
+    cardano_coin_selection_request_t request = { 0 };
+
+    request.available_utxo  = available_collateral_outputs;
+    request.target          = collateral_value;
+    request.change_address  = change_address;
+    request.protocol_params = protocol_params;
+
     result = cardano_coin_selector_select(
       coin_selector,
-      NULL,
-      available_collateral_outputs,
-      collateral_value,
-      NULL,
-      change_address,
-      protocol_params,
+      &request,
       &selection,
       &remaining_utxo,
       &selector_change_output);
