@@ -37,32 +37,48 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief One cons cell of the de Bruijn environment.
+ * \brief Number of value slots per environment chunk.
  *
- * The environment is a singly linked list of values that grows at the head when
- * a binder is entered, so lookup is by 1-based de Bruijn index: index 1 is the
- * head (the innermost binder), index 2 is its \c next, and so on. Cells are
- * arena-allocated and immutable; extension allocates a new head and shares the
- * existing tail.
+ * Eight slots keep a chunk at 80 bytes while dividing the pointer chase of a
+ * deep de Bruijn lookup by eight relative to a plain cons list. Measured on the
+ * plutus_use_cases corpus, eight outperforms both four and sixteen slots.
+ */
+#define CARDANO_UPLC_ENV_CHUNK_SLOTS 8U
+
+/**
+ * \brief One chunk of the de Bruijn environment.
+ *
+ * The environment is a persistent chunked list: each chunk packs up to
+ * \ref CARDANO_UPLC_ENV_CHUNK_SLOTS bound values, newest last, in front of a
+ * chain of full enclosing chunks. Lookup is by 1-based de Bruijn index: index 1
+ * is the newest slot of the head chunk (the innermost binder) and deeper
+ * indices step through the slots and then hop chunks, so a lookup at depth
+ * \c d chases about \c d / \ref CARDANO_UPLC_ENV_CHUNK_SLOTS pointers rather
+ * than \c d. Chunks are arena-allocated and immutable; extension copies the
+ * head chunk's slots into a fresh chunk (or starts a new chunk when the head
+ * is full) and shares the enclosing chain, so every tail chunk is always full.
  */
 struct cardano_uplc_env_t
 {
-    /** \brief The value bound at this de Bruijn level. */
-    const cardano_uplc_value_t* value;
-    /** \brief The enclosing environment, or NULL at the empty environment. */
+    /** \brief Number of occupied slots, 1 to \ref CARDANO_UPLC_ENV_CHUNK_SLOTS. */
+    size_t count;
+    /** \brief The enclosing chain of full chunks, or NULL at the outermost chunk. */
     const cardano_uplc_env_t* next;
+    /** \brief The bound values, oldest first; \c slots[count - 1] is de Bruijn index 1. */
+    const cardano_uplc_value_t* slots[CARDANO_UPLC_ENV_CHUNK_SLOTS];
 };
 
 /**
  * \brief Extends an environment with a value at a fresh de Bruijn level.
  *
- * Allocates a new cons cell from \p arena whose \c value is \p value and whose
- * \c next is \p env, and returns it through \p out. The new head becomes de
- * Bruijn index 1; the previous head shifts to index 2. \p env may be NULL to
- * extend the empty environment, in which case the result is a one-element
- * environment. The existing tail is shared, not copied.
+ * Allocates a new head chunk from \p arena that binds \p value at de Bruijn
+ * index 1: when \p env has room in its head chunk the existing slots are copied
+ * in front of the enclosing chain, and when it is full (or \p env is NULL) a
+ * fresh one-slot chunk is started with \p env as the enclosing chain. The
+ * enclosing chunks are shared, never copied, so the previous environment value
+ * remains valid and unchanged.
  *
- * \param[in] arena The arena to allocate the cell from. Must not be NULL.
+ * \param[in] arena The arena to allocate the chunk from. Must not be NULL.
  * \param[in] env The environment to extend, or NULL for the empty environment.
  * \param[in] value The value to bind at the new head. Must not be NULL and must
  *            live in \p arena.
