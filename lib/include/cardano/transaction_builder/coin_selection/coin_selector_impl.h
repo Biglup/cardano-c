@@ -32,6 +32,7 @@
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/transaction_output_list.h>
 #include <cardano/transaction_body/value.h>
+#include <cardano/transaction_builder/coin_selection/coin_selection_request.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -48,58 +49,6 @@ extern "C" {
  * It abstracts away the internal details of coin selection.
  */
 typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
-
-/* STRUCTURES ****************************************************************/
-
-/**
- * \brief Describes all inputs to a coin selection.
- *
- * All pointers are borrowed: they must remain valid for the duration of the
- * \ref cardano_coin_selector_select call, and the selector does not take ownership of them.
- *
- * Zero-initialize the structure (<code>= { 0 }</code>) so that unset optional fields default safely.
- * Fields added in future versions will be appended to the end of the structure, with a zero value
- * meaning "default behavior".
- */
-typedef struct cardano_coin_selection_request_t
-{
-    /**
-     * \brief Optional. A set of pre-selected UTXOs that must be included in the final selection.
-     */
-    cardano_utxo_list_t* pre_selected_utxo;
-
-    /**
-     * \brief Required. The list of available UTXOs from which the coin selection will be made.
-     */
-    cardano_utxo_list_t* available_utxo;
-
-    /**
-     * \brief Required. The target value to be covered by the selection. This value is authoritative
-     * for all balance arithmetic: the selection must uphold
-     * <code>sum(selection) = target + sum(change_outputs)</code>.
-     */
-    cardano_value_t* target;
-
-    /**
-     * \brief Optional. The user-specified outputs the target was derived from.
-     *
-     * Selectors may use this list as a shape and weight hint when generating change outputs
-     * (for example, to mimic the distribution of user payments). Selectors must not rely on it
-     * for balance arithmetic; the target is authoritative.
-     */
-    cardano_transaction_output_list_t* outputs_to_cover;
-
-    /**
-     * \brief Required. The address to which change outputs will be sent.
-     */
-    cardano_address_t* change_address;
-
-    /**
-     * \brief Required. The protocol parameters, used to ensure change outputs are min-ADA compliant.
-     */
-    cardano_protocol_parameters_t* protocol_params;
-
-} cardano_coin_selection_request_t;
 
 /* CALLBACKS *****************************************************************/
 
