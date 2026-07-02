@@ -39,6 +39,8 @@
 
 #include <gmock/gmock.h>
 
+#include <vector>
+
 /* STATIC HELPERS ************************************************************/
 
 static int64_t
@@ -110,7 +112,7 @@ TEST(cardano_uplc_machine_budget, holdsSignedValuesThatMayGoNegative)
 
 /* UNIT TESTS - ENVIRONMENT *************************************************/
 
-TEST(cardano_uplc_env_extend, consesAValueAtTheHead)
+TEST(cardano_uplc_env_extend, bindsAValueAtIndexOne)
 {
   // Arrange
   cardano_uplc_arena_t*       arena = new_arena();
@@ -122,31 +124,79 @@ TEST(cardano_uplc_env_extend, consesAValueAtTheHead)
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(env->value, value);
+  EXPECT_EQ(env->count, 1U);
+  EXPECT_EQ(env->slots[0], value);
   EXPECT_EQ(env->next, nullptr);
 
   // Cleanup
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_env_extend, sharesTheTailWithoutCopying)
+TEST(cardano_uplc_env_extend, leavesThePreviousEnvironmentUnchanged)
 {
   // Arrange
   cardano_uplc_arena_t*       arena  = new_arena();
   const cardano_uplc_value_t* first  = new_unit_value(arena);
   const cardano_uplc_value_t* second = new_unit_value(arena);
+  const cardano_uplc_value_t* third  = new_unit_value(arena);
   const cardano_uplc_env_t*   tail   = nullptr;
-  const cardano_uplc_env_t*   head   = nullptr;
+  const cardano_uplc_env_t*   left   = nullptr;
+  const cardano_uplc_env_t*   right  = nullptr;
 
   EXPECT_EQ(cardano_uplc_env_extend(arena, nullptr, first, &tail), CARDANO_SUCCESS);
 
-  // Act
-  cardano_error_t error = cardano_uplc_env_extend(arena, tail, second, &head);
+  // Act: extend the same environment twice; chunks are immutable so the two
+  // heads must not interfere with each other or with the shared tail.
+  EXPECT_EQ(cardano_uplc_env_extend(arena, tail, second, &left), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_env_extend(arena, tail, third, &right), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(head->value, second);
-  EXPECT_EQ(head->next, tail);
+  const cardano_uplc_value_t* out = nullptr;
+
+  EXPECT_EQ(cardano_uplc_env_lookup(tail, 1U, &out), CARDANO_SUCCESS);
+  EXPECT_EQ(out, first);
+
+  EXPECT_EQ(cardano_uplc_env_lookup(left, 1U, &out), CARDANO_SUCCESS);
+  EXPECT_EQ(out, second);
+  EXPECT_EQ(cardano_uplc_env_lookup(left, 2U, &out), CARDANO_SUCCESS);
+  EXPECT_EQ(out, first);
+
+  EXPECT_EQ(cardano_uplc_env_lookup(right, 1U, &out), CARDANO_SUCCESS);
+  EXPECT_EQ(out, third);
+  EXPECT_EQ(cardano_uplc_env_lookup(right, 2U, &out), CARDANO_SUCCESS);
+  EXPECT_EQ(out, first);
+
+  // Cleanup
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_env_lookup, resolvesAcrossChunkBoundaries)
+{
+  // Arrange: bind more values than one chunk holds so lookups hop chunks.
+  cardano_uplc_arena_t*     arena = new_arena();
+  const size_t              total = (size_t)CARDANO_UPLC_ENV_CHUNK_SLOTS * 2U + 3U;
+  const cardano_uplc_env_t* env   = nullptr;
+
+  std::vector<const cardano_uplc_value_t*> values;
+
+  for (size_t i = 0U; i < total; ++i)
+  {
+    const cardano_uplc_value_t* value = new_unit_value(arena);
+    values.push_back(value);
+    EXPECT_EQ(cardano_uplc_env_extend(arena, env, value, &env), CARDANO_SUCCESS);
+  }
+
+  // Act + Assert: index 1 is the newest binding, index total the oldest.
+  for (size_t index = 1U; index <= total; ++index)
+  {
+    const cardano_uplc_value_t* out = nullptr;
+
+    EXPECT_EQ(cardano_uplc_env_lookup(env, index, &out), CARDANO_SUCCESS);
+    EXPECT_EQ(out, values[total - index]);
+  }
+
+  const cardano_uplc_value_t* out = nullptr;
+  EXPECT_EQ(cardano_uplc_env_lookup(env, total + 1U, &out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_uplc_arena_free(&arena);

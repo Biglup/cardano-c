@@ -30,11 +30,11 @@
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * \brief Allocates a zero-initialized environment cell from the arena.
+ * \brief Allocates an environment chunk from the arena.
  *
  * \param[in] arena The arena to allocate from.
  *
- * \return The new cell, or NULL if the arena cannot serve the node.
+ * \return The new chunk, or NULL if the arena cannot serve the node.
  */
 static cardano_uplc_env_t*
 alloc_env(cardano_uplc_arena_t* arena)
@@ -65,8 +65,25 @@ cardano_uplc_env_extend(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  result->value = value;
-  result->next  = env;
+  if ((env == NULL) || (env->count >= CARDANO_UPLC_ENV_CHUNK_SLOTS))
+  {
+    result->count    = (size_t)1;
+    result->next     = env;
+    result->slots[0] = value;
+  }
+  else
+  {
+    size_t i = (size_t)0;
+
+    for (i = (size_t)0; i < env->count; ++i)
+    {
+      result->slots[i] = env->slots[i];
+    }
+
+    result->slots[env->count] = value;
+    result->count             = env->count + (size_t)1;
+    result->next              = env->next;
+  }
 
   *out = result;
 
@@ -92,23 +109,18 @@ cardano_uplc_env_lookup(
     return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
-  while (remaining > 1U)
+  while (current != NULL)
   {
-    if (current == NULL)
+    if (remaining <= (uint64_t)current->count)
     {
-      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+      *out = current->slots[current->count - (size_t)remaining];
+
+      return CARDANO_SUCCESS;
     }
 
-    current = current->next;
-    --remaining;
+    remaining -= (uint64_t)current->count;
+    current   = current->next;
   }
 
-  if (current == NULL)
-  {
-    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
-  }
-
-  *out = current->value;
-
-  return CARDANO_SUCCESS;
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
 }
