@@ -191,6 +191,10 @@ CARDANO_EXPORT const char* cardano_coin_selector_get_name(const cardano_coin_sel
  * \param[in] pre_selected_utxo An optional set of pre-selected UTXOs (can be NULL) to be used as part of the selection.
  * \param[in] available_utxo A list of available UTXOs from which the coin selection will be made.
  * \param[in] target The target value to be satisfied by the coin selection (in lovelace or multi-asset values).
+ * \param[in] outputs_to_cover An optional list of the user-specified outputs the target was derived from (can be NULL).
+ *                             Selectors may use it as a shape and weight hint when generating change outputs
+ *                             (for example, to mimic the distribution of user payments). Selectors must not rely on it
+ *                             for balance arithmetic; the target is authoritative.
  * \param[in] change_address The address to which the change outputs will be sent.
  * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
  * \param[out] selection A pointer to a UTXO list where the selected UTXOs will be stored.
@@ -220,7 +224,7 @@ CARDANO_EXPORT const char* cardano_coin_selector_get_name(const cardano_coin_sel
  *
  * cardano_error_t result = cardano_coin_selector_select(
  *     coin_selector, pre_selected_utxo, available_utxo, target_value,
- *     change_address, protocol_params, &selected_utxo, &remaining_utxo, &change_outputs);
+ *     NULL, change_address, protocol_params, &selected_utxo, &remaining_utxo, &change_outputs);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -242,6 +246,7 @@ CARDANO_EXPORT cardano_error_t cardano_coin_selector_select(
   cardano_utxo_list_t*                pre_selected_utxo,
   cardano_utxo_list_t*                available_utxo,
   cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
   cardano_address_t*                  change_address,
   cardano_protocol_parameters_t*      protocol_params,
   cardano_utxo_list_t**               selection,

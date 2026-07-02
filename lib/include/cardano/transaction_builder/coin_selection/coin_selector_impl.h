@@ -74,6 +74,10 @@ typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
  * \param[in] pre_selected_utxo A list of UTXOs that have already been pre-selected (optional). These UTXOs must be included in the final selection.
  * \param[in] available_utxo A list of available UTXOs to select from.
  * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and/or other tokens to be covered by the selected UTXOs.
+ * \param[in] outputs_to_cover An optional list of the user-specified outputs the target was derived from (can be NULL).
+ *                             Selectors may use it as a shape and weight hint when generating change outputs
+ *                             (for example, to mimic the distribution of user payments). Selectors must not rely on it
+ *                             for balance arithmetic; the target is authoritative.
  * \param[in] change_address The address to which change outputs will be sent.
  * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
  * \param[out] selection A pointer to the list of UTXOs that were selected to meet the target value.
@@ -117,6 +121,7 @@ typedef cardano_error_t (*cardano_coin_select_func_t)(
   cardano_utxo_list_t*                pre_selected_utxo,
   cardano_utxo_list_t*                available_utxo,
   cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
   cardano_address_t*                  change_address,
   cardano_protocol_parameters_t*      protocol_params,
   cardano_utxo_list_t**               selection,

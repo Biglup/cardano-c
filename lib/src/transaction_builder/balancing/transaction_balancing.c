@@ -566,6 +566,7 @@ cardano_balance_transaction(
       pre_selected_utxo,
       available_utxo,
       required_input_value,
+      shallow_cloned_outputs,
       change_address,
       protocol_params,
       &selection,
