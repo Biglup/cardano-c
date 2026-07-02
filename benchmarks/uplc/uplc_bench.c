@@ -265,9 +265,9 @@ bench_file(const char* dir, const char* file_name, bench_result_t* out)
 
   qsort(samples, count, sizeof(uint64_t), cmp_u64);
 
-  uint64_t              min_val = samples[0];
-  uint64_t              max_val = samples[count - 1U];
-  unsigned __int128     sum     = 0U;
+  uint64_t          min_val = samples[0];
+  uint64_t          max_val = samples[count - 1U];
+  unsigned __int128 sum     = 0U;
 
   for (size_t i = 0U; i < count; ++i)
   {
@@ -285,7 +285,7 @@ bench_file(const char* dir, const char* file_name, bench_result_t* out)
   for (size_t i = 0U; i < count; ++i)
   {
     const int64_t diff = (int64_t)samples[i] - (int64_t)mean;
-    variance_sum += (unsigned __int128)((__int128)diff * diff);
+    variance_sum       += (unsigned __int128)((__int128)diff * diff);
   }
 
   const uint64_t stddev = (uint64_t)sqrt((double)(uint64_t)(variance_sum / count));
@@ -441,7 +441,7 @@ main(int argc, char** argv)
   }
   else
   {
-    bench_result_t* results = (bench_result_t*)calloc(file_count, sizeof(bench_result_t));
+    bench_result_t* results      = (bench_result_t*)calloc(file_count, sizeof(bench_result_t));
     size_t          result_count = 0U;
 
     for (size_t i = 0U; i < file_count; ++i)

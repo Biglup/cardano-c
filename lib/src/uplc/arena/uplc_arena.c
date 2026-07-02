@@ -67,11 +67,11 @@ static const size_t ARENA_MAX_ALIGN = sizeof(long double) > sizeof(void*) ? size
  * and the entry point grows past the inlining threshold.
  */
 #if defined(__GNUC__) || defined(__clang__)
-  #define CARDANO_UPLC_ARENA_NOINLINE __attribute__((noinline))
+#define CARDANO_UPLC_ARENA_NOINLINE __attribute__((noinline))
 #elif defined(_MSC_VER)
-  #define CARDANO_UPLC_ARENA_NOINLINE __declspec(noinline)
+#define CARDANO_UPLC_ARENA_NOINLINE __declspec(noinline)
 #else
-  #define CARDANO_UPLC_ARENA_NOINLINE
+#define CARDANO_UPLC_ARENA_NOINLINE
 #endif
 
 /* STRUCTURES ****************************************************************/
