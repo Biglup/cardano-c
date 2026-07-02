@@ -35,6 +35,7 @@
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
+#include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 #include <cardano/transaction_builder/fee.h>
 
 #include <gmock/gmock.h>
@@ -719,6 +720,7 @@ TEST(cardano_coin_selector_properties, largeFirstSatisfiesInputSelectionProperti
       (pre_selected_count > 0U) ? pre_selected_utxo : NULL,
       available_utxo,
       target,
+      NULL,
       change_address,
       protocol_params,
       &selection,
@@ -799,7 +801,7 @@ TEST(cardano_coin_selector_properties, prunesZeroTokenChange)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   ASSERT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_SUCCESS);
 
   ASSERT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1U);
@@ -868,7 +870,7 @@ TEST(cardano_coin_selector_properties, treatsNegativeTargetAssetAsImplicitInput)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   ASSERT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_utxo_list_get_length(selection), 1U);
@@ -932,7 +934,7 @@ TEST(cardano_coin_selector_properties, failsWhenCoinInsufficient)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
@@ -975,7 +977,7 @@ TEST(cardano_coin_selector_properties, failsWhenAssetInsufficient)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
@@ -1008,12 +1010,153 @@ TEST(cardano_coin_selector_properties, failsWhenNoUtxoAvailable)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
   cardano_utxo_list_unref(&available_utxo);
   cardano_address_unref(&change_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_coin_selector_unref(&selector);
+}
+
+TEST(cardano_coin_selector_properties, randomImproveSatisfiesInputSelectionProperties)
+{
+  cardano_address_t*             change_address  = make_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = make_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = make_protocol_parameters();
+  cardano_coin_selector_t*       selector        = NULL;
+
+  ASSERT_EQ(cardano_random_improve_coin_selector_new_with_seed(PROPERTY_SEED, &selector), CARDANO_SUCCESS);
+
+  prop_rng_t rng(PROPERTY_SEED);
+  uint64_t   utxo_ordinal = 1000000U;
+
+  for (size_t iteration = 0U; iteration < ITERATIONS; ++iteration)
+  {
+    const size_t available_count    = rng.next() % 11U;
+    const size_t pre_selected_count = ((rng.next() % 5U) == 0U) ? (1U + (rng.next() % 2U)) : 0U;
+
+    std::vector<gen_value_t>     pool_values;
+    std::vector<cardano_utxo_t*> pool_utxos;
+    std::vector<cardano_utxo_t*> available;
+    std::vector<cardano_utxo_t*> pre_selected;
+
+    cardano_utxo_list_t* available_utxo    = NULL;
+    cardano_utxo_list_t* pre_selected_utxo = NULL;
+
+    ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_utxo_list_new(&pre_selected_utxo), CARDANO_SUCCESS);
+
+    for (size_t i = 0U; i < available_count; ++i)
+    {
+      const gen_value_t value = gen_utxo_value(rng);
+      cardano_utxo_t*   utxo  = build_utxo(++utxo_ordinal, value, wallet_address);
+
+      ASSERT_EQ(cardano_utxo_list_add(available_utxo, utxo), CARDANO_SUCCESS);
+
+      pool_values.push_back(value);
+      pool_utxos.push_back(utxo);
+      available.push_back(utxo);
+    }
+
+    for (size_t i = 0U; i < pre_selected_count; ++i)
+    {
+      const gen_value_t value = gen_utxo_value(rng);
+      cardano_utxo_t*   utxo  = build_utxo(++utxo_ordinal, value, wallet_address);
+
+      ASSERT_EQ(cardano_utxo_list_add(pre_selected_utxo, utxo), CARDANO_SUCCESS);
+
+      pool_values.push_back(value);
+      pool_utxos.push_back(utxo);
+      pre_selected.push_back(utxo);
+    }
+
+    const gen_value_t target_gen = gen_target_value(rng);
+    cardano_value_t*  target     = build_value(target_gen);
+
+    std::ostringstream scenario;
+    scenario << "random-improve seed=" << PROPERTY_SEED << " iteration=" << iteration << " target=" << gen_value_to_string(target_gen) << " pool=[";
+    for (const gen_value_t& value: pool_values)
+    {
+      scenario << gen_value_to_string(value);
+    }
+    scenario << "] pre_selected_count=" << pre_selected_count;
+    SCOPED_TRACE(scenario.str());
+
+    cardano_utxo_list_t*               selection      = NULL;
+    cardano_utxo_list_t*               remaining_utxo = NULL;
+    cardano_transaction_output_list_t* change_outputs = NULL;
+
+    const cardano_error_t result = cardano_coin_selector_select(
+      selector,
+      (pre_selected_count > 0U) ? pre_selected_utxo : NULL,
+      available_utxo,
+      target,
+      NULL,
+      change_address,
+      protocol_params,
+      &selection,
+      &remaining_utxo,
+      &change_outputs);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      assert_input_selection_properties(
+        available,
+        pre_selected,
+        pool_values,
+        pool_utxos,
+        target_gen,
+        selection,
+        remaining_utxo,
+        change_outputs,
+        change_address);
+    }
+    else
+    {
+      // The random-improve selector may legitimately fail on min-ADA grounds in cases where a
+      // single-change selector would succeed, so failure legitimacy is only asserted for the
+      // conditions that must always fail: an empty pool or insufficient coverage.
+      EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      const gen_value_t pool_total = sum_gen_values(pool_values);
+
+      if (!pool_values.empty() && gen_value_geq(pool_total, target_gen))
+      {
+        const gen_value_t leftover = gen_value_subtract(pool_total, target_gen);
+
+        if (!leftover.is_zero())
+        {
+          EXPECT_LT(leftover.coin, (int64_t)(2U * min_ada_for_value(leftover, change_address)))
+            << "random-improve failed with ample ada headroom";
+        }
+      }
+    }
+
+    cardano_utxo_list_unref(&selection);
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_transaction_output_list_unref(&change_outputs);
+    cardano_value_unref(&target);
+    cardano_utxo_list_unref(&available_utxo);
+    cardano_utxo_list_unref(&pre_selected_utxo);
+
+    for (cardano_utxo_t* utxo: pool_utxos)
+    {
+      cardano_utxo_unref(&utxo);
+    }
+
+    if (::testing::Test::HasFailure())
+    {
+      break;
+    }
+  }
+
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
   cardano_protocol_parameters_unref(&protocol_params);
   cardano_coin_selector_unref(&selector);
 }
