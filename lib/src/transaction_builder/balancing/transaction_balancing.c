@@ -280,73 +280,66 @@ set_transaction_inputs(
 }
 
 /**
- * \brief Adds a change output to a transaction body.
+ * \brief Verifies and appends the change outputs produced by the coin selector to a transaction body.
  *
- * This function calculates the necessary padding and adds a change output to the provided transaction body.
- * It ensures that the change value meets the minimum ADA requirement for a UTXO, as specified by the protocol parameters.
+ * This function verifies that every change output returned by the coin selector meets the minimum ADA
+ * requirement specified by the protocol parameters, and appends them to the transaction body's output list.
  *
- * \param[in,out] body           The transaction body to which the change output will be added.
+ * \param[in,out] body            The transaction body to which the change outputs will be added.
  * \param[in]     protocol_params The protocol parameters for computing minimum UTXO requirements.
- * \param[in]     change_value   The value of the change to be added.
- * \param[in]     change_address The address to which the change will be sent.
- * \param[out]    change_padding A pointer to a uint64_t where the computed padding value will be stored.
+ * \param[in]     change_outputs  The list of change outputs produced by the coin selector.
  *
- * \return \ref CARDANO_SUCCESS if the change output was successfully added, or an error code if any issue was encountered.
+ * \return \ref CARDANO_SUCCESS if the change outputs were successfully added, \ref CARDANO_ERROR_BALANCE_INSUFFICIENT
+ *         if a change output is below the min-ADA requirement, or an error code if any issue was encountered.
  */
 static cardano_error_t
-add_change_output(
-  cardano_transaction_body_t*    body,
-  cardano_protocol_parameters_t* protocol_params,
-  cardano_value_t*               change_value,
-  cardano_address_t*             change_address,
-  uint64_t*                      change_padding)
+add_change_outputs(
+  cardano_transaction_body_t*        body,
+  cardano_protocol_parameters_t*     protocol_params,
+  cardano_transaction_output_list_t* change_outputs)
 {
-  cardano_transaction_output_t* change_output = NULL;
-  cardano_error_t               result        = cardano_transaction_output_new(change_address, 0, &change_output);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_transaction_output_set_value(change_output, change_value);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_output_unref(&change_output);
-
-    return result;
-  }
-
-  const uint64_t ada_per_utxo_byte = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
-  uint64_t       min_utxo_value    = 0U;
-  result                           = cardano_compute_min_ada_required(change_output, ada_per_utxo_byte, &min_utxo_value);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_output_unref(&change_output);
-
-    return result;
-  }
-
-  const uint64_t change_coin = cardano_value_get_coin(change_value);
-
-  if (change_coin < min_utxo_value)
-  {
-    *change_padding += min_utxo_value - change_coin;
-
-    cardano_transaction_output_unref(&change_output);
-
-    return CARDANO_ERROR_BALANCE_INSUFFICIENT;
-  }
+  const uint64_t ada_per_utxo_byte  = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
+  const size_t   num_change_outputs = cardano_transaction_output_list_get_length(change_outputs);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
-  result                                     = cardano_transaction_output_list_add(outputs, change_output);
-
-  cardano_transaction_output_unref(&change_output);
   cardano_transaction_output_list_unref(&outputs);
 
-  return result;
+  for (size_t i = 0U; i < num_change_outputs; ++i)
+  {
+    cardano_transaction_output_t* change_output = NULL;
+    cardano_error_t               result        = cardano_transaction_output_list_get(change_outputs, i, &change_output);
+    cardano_transaction_output_unref(&change_output);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    uint64_t min_utxo_value = 0U;
+    result                  = cardano_compute_min_ada_required(change_output, ada_per_utxo_byte, &min_utxo_value);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_value_t* change_value = cardano_transaction_output_get_value(change_output);
+    cardano_value_unref(&change_value);
+
+    if (cardano_value_get_coin(change_value) < (int64_t)min_utxo_value)
+    {
+      return CARDANO_ERROR_BALANCE_INSUFFICIENT;
+    }
+
+    result = cardano_transaction_output_list_add(outputs, change_output);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
 }
 
 /**
@@ -498,9 +491,8 @@ cardano_balance_transaction(
   cardano_transaction_output_list_t* shallow_cloned_outputs = shallow_clone_outputs(original_outputs);
   cardano_transaction_output_list_unref(&original_outputs);
 
-  uint64_t fee            = cardano_transaction_body_get_fee(body);
-  uint64_t change_padding = 0U;
-  uint64_t donation       = 0;
+  uint64_t fee      = cardano_transaction_body_get_fee(body);
+  uint64_t donation = 0;
 
   const uint64_t* donationPtr = cardano_transaction_body_get_donation(body);
   if (donationPtr != NULL)
@@ -540,7 +532,7 @@ cardano_balance_transaction(
 
     result = cardano_value_new(
       ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) -
-        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)change_padding + (int64_t)donation),
+        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)donation),
       mint,
       &implicit_value);
 
@@ -565,21 +557,26 @@ cardano_balance_transaction(
       return result;
     }
 
-    cardano_utxo_list_t* selection      = NULL;
-    cardano_utxo_list_t* remaining_utxo = NULL;
+    cardano_utxo_list_t*               selection      = NULL;
+    cardano_utxo_list_t*               remaining_utxo = NULL;
+    cardano_transaction_output_list_t* change_outputs = NULL;
 
     result = cardano_coin_selector_select(
       coin_selector,
       pre_selected_utxo,
       available_utxo,
       required_input_value,
+      change_address,
+      protocol_params,
       &selection,
-      &remaining_utxo);
+      &remaining_utxo,
+      &change_outputs);
+
+    cardano_value_unref(&required_input_value);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-      cardano_value_unref(&required_input_value);
 
       cardano_transaction_set_last_error(
         unbalanced_tx,
@@ -593,140 +590,32 @@ cardano_balance_transaction(
     if (result != CARDANO_SUCCESS)
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-      cardano_value_unref(&required_input_value);
+      cardano_transaction_output_list_unref(&change_outputs);
       cardano_utxo_list_unref(&selection);
       cardano_utxo_list_unref(&remaining_utxo);
 
       return result;
     }
 
-    cardano_value_t*                 selected_input_value = NULL;
-    cardano_transaction_input_set_t* inputs               = cardano_transaction_body_get_inputs(body);
+    result = add_change_outputs(body, protocol_params, change_outputs);
 
-    cardano_transaction_input_set_unref(&inputs);
-
-    result = coalesce_all_inputs(inputs, selection, &selected_input_value);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-      cardano_value_unref(&required_input_value);
-      cardano_utxo_list_unref(&selection);
-      cardano_utxo_list_unref(&remaining_utxo);
-
-      cardano_transaction_set_last_error(
-        unbalanced_tx,
-        "Failed to coalesce selected transaction inputs for balancing.");
-
-      return result;
-    }
-
-    cardano_value_t* change_value = NULL;
-    result                        = cardano_value_subtract(selected_input_value, required_input_value, &change_value);
-
-    cardano_value_unref(&selected_input_value);
-    cardano_value_unref(&required_input_value);
+    cardano_transaction_output_list_unref(&change_outputs);
 
     if (result != CARDANO_SUCCESS)
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
       cardano_utxo_list_unref(&selection);
       cardano_utxo_list_unref(&remaining_utxo);
-
-      return CARDANO_ERROR_BALANCE_INSUFFICIENT;
-    }
-
-    result = cardano_value_add_coin(change_value, (int64_t)change_padding);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-      cardano_value_unref(&change_value);
-      cardano_utxo_list_unref(&selection);
-      cardano_utxo_list_unref(&remaining_utxo);
-
-      return result;
-    }
-
-    if (!cardano_value_is_zero(change_value))
-    {
-      result = add_change_output(body, protocol_params, change_value, change_address, &change_padding);
 
       if (result == CARDANO_ERROR_BALANCE_INSUFFICIENT)
       {
-        cardano_value_unref(&change_value);
-        cardano_utxo_list_unref(&selection);
-        cardano_utxo_list_unref(&remaining_utxo);
-
-        cardano_transaction_output_list_t* tmp = shallow_clone_outputs(shallow_cloned_outputs);
-        result                                 = cardano_transaction_body_set_outputs(body, tmp);
-        cardano_transaction_output_list_unref(&tmp);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-
-          return result;
-        }
-
-        cardano_transaction_input_set_t* empty_inputs = NULL;
-        result                                        = cardano_transaction_input_set_new(&empty_inputs);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-
-          return result;
-        }
-
-        result = cardano_transaction_body_set_inputs(body, empty_inputs);
-        cardano_transaction_input_set_unref(&empty_inputs);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-
-          return result;
-        }
-
-        result = cardano_transaction_body_set_collateral(body, NULL);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-          return result;
-        }
-
-        result = cardano_transaction_body_set_collateral_return(body, NULL);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-          return result;
-        }
-
-        result = cardano_transaction_body_set_total_collateral(body, NULL);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-          return result;
-        }
-
-        continue;
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Coin selector returned a change output below the min-ADA requirement.");
       }
 
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
-        cardano_value_unref(&change_value);
-        cardano_utxo_list_unref(&selection);
-        cardano_utxo_list_unref(&remaining_utxo);
-        return result;
-      }
+      return result;
     }
-
-    cardano_value_unref(&change_value);
 
     cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(unbalanced_tx);
     cardano_witness_set_unref(&witnesses);

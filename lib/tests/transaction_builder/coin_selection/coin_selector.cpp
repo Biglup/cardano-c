@@ -60,12 +60,15 @@ cardano_coin_selector_impl_new()
   }
 
   impl.select = [](
-                  cardano_coin_selector_impl_t* self,
-                  cardano_utxo_list_t*          pre_selected_utxo,
-                  cardano_utxo_list_t*          available_utxo,
-                  cardano_value_t*              target,
-                  cardano_utxo_list_t**         selection,
-                  cardano_utxo_list_t**         remaining_utxo) -> cardano_error_t
+                  cardano_coin_selector_impl_t*       self,
+                  cardano_utxo_list_t*                pre_selected_utxo,
+                  cardano_utxo_list_t*                available_utxo,
+                  cardano_value_t*                    target,
+                  cardano_address_t*                  change_address,
+                  cardano_protocol_parameters_t*      protocol_params,
+                  cardano_utxo_list_t**               selection,
+                  cardano_utxo_list_t**               remaining_utxo,
+                  cardano_transaction_output_list_t** change_outputs) -> cardano_error_t
   {
     cardano_error_t result = cardano_utxo_list_new(selection);
     CARDANO_UNUSED(result);
@@ -73,9 +76,14 @@ cardano_coin_selector_impl_new()
     result = cardano_utxo_list_new(remaining_utxo);
     CARDANO_UNUSED(result);
 
+    result = cardano_transaction_output_list_new(change_outputs);
+    CARDANO_UNUSED(result);
+
     CARDANO_UNUSED(pre_selected_utxo);
     CARDANO_UNUSED(available_utxo);
     CARDANO_UNUSED(target);
+    CARDANO_UNUSED(change_address);
+    CARDANO_UNUSED(protocol_params);
     CARDANO_UNUSED(self);
 
     return CARDANO_SUCCESS;
@@ -301,15 +309,18 @@ TEST(cardano_coin_selector_get_name, returnsTheNameOfTheCoinSelector)
 TEST(cardano_coin_selector_select, returnsErrorIfGivenANullPtr)
 {
   // Arrange
-  cardano_coin_selector_t* coin_selector     = nullptr;
-  cardano_utxo_list_t*     pre_selected_utxo = nullptr;
-  cardano_utxo_list_t*     available_utxo    = nullptr;
-  cardano_value_t*         target            = nullptr;
-  cardano_utxo_list_t*     selection         = nullptr;
-  cardano_utxo_list_t*     remaining_utxo    = nullptr;
+  cardano_coin_selector_t*           coin_selector     = nullptr;
+  cardano_utxo_list_t*               pre_selected_utxo = nullptr;
+  cardano_utxo_list_t*               available_utxo    = nullptr;
+  cardano_value_t*                   target            = nullptr;
+  cardano_address_t*                 change_address    = nullptr;
+  cardano_protocol_parameters_t*     protocol_params   = nullptr;
+  cardano_utxo_list_t*               selection         = nullptr;
+  cardano_utxo_list_t*               remaining_utxo    = nullptr;
+  cardano_transaction_output_list_t* change_outputs    = nullptr;
 
   // Act
-  cardano_error_t error = cardano_coin_selector_select(coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+  cardano_error_t error = cardano_coin_selector_select(coin_selector, pre_selected_utxo, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -323,14 +334,17 @@ TEST(cardano_coin_selector_select, returnsErrorIfSelectIsNotImplemented)
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_utxo_list_t* pre_selected_utxo = (cardano_utxo_list_t*)"";
-  cardano_utxo_list_t* available_utxo    = (cardano_utxo_list_t*)"";
-  cardano_value_t*     target            = (cardano_value_t*)"";
-  cardano_utxo_list_t* selection         = nullptr;
-  cardano_utxo_list_t* remaining_utxo    = nullptr;
+  cardano_utxo_list_t*               pre_selected_utxo = (cardano_utxo_list_t*)"";
+  cardano_utxo_list_t*               available_utxo    = (cardano_utxo_list_t*)"";
+  cardano_value_t*                   target            = (cardano_value_t*)"";
+  cardano_address_t*                 change_address    = (cardano_address_t*)"";
+  cardano_protocol_parameters_t*     protocol_params   = (cardano_protocol_parameters_t*)"";
+  cardano_utxo_list_t*               selection         = nullptr;
+  cardano_utxo_list_t*               remaining_utxo    = nullptr;
+  cardano_transaction_output_list_t* change_outputs    = nullptr;
 
   // Act
-  error = cardano_coin_selector_select(coin_selector, pre_selected_utxo, available_utxo, target, &selection, &remaining_utxo);
+  error = cardano_coin_selector_select(coin_selector, pre_selected_utxo, available_utxo, target, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
@@ -347,11 +361,12 @@ TEST(cardano_coin_selector_select, returnsSuccessIfSelectIsImplemented)
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_utxo_list_t* selection      = nullptr;
-  cardano_utxo_list_t* remaining_utxo = nullptr;
+  cardano_utxo_list_t*               selection      = nullptr;
+  cardano_utxo_list_t*               remaining_utxo = nullptr;
+  cardano_transaction_output_list_t* change_outputs = nullptr;
 
   // Act
-  error = cardano_coin_selector_select(coin_selector, nullptr, (cardano_utxo_list_t*)"", (cardano_value_t*)"", &selection, &remaining_utxo);
+  error = cardano_coin_selector_select(coin_selector, nullptr, (cardano_utxo_list_t*)"", (cardano_value_t*)"", (cardano_address_t*)"", (cardano_protocol_parameters_t*)"", &selection, &remaining_utxo, &change_outputs);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -359,6 +374,7 @@ TEST(cardano_coin_selector_select, returnsSuccessIfSelectIsImplemented)
   // Cleanup
   cardano_utxo_list_unref(&selection);
   cardano_utxo_list_unref(&remaining_utxo);
+  cardano_transaction_output_list_unref(&change_outputs);
   cardano_coin_selector_unref(&coin_selector);
 }
 

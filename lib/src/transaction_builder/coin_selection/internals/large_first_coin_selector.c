@@ -30,6 +30,7 @@
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 
 #include "../../../string_safe.h"
+#include "./change_builder.h"
 #include "./large_first_helpers.h"
 
 #include <assert.h>
@@ -42,28 +43,38 @@
  *
  * This function selects UTXOs from both the pre-selected UTXO list and available UTXOs to meet a specified target value.
  * The selected UTXOs are stored in the `selection` list, and any remaining UTXOs are stored in the `remaining_utxo` list.
+ * Any excess value is returned as min-ADA compliant change outputs in the `change_outputs` list, upholding the local
+ * balance invariant: sum(selection) = target + sum(change_outputs).
  *
  * \param[in] coin_selector A pointer to the coin selector implementation object.
  * \param[in] pre_selected_utxo A list of pre-selected UTXOs that must be included in the final selection.
  * \param[in] available_utxo A list of available UTXOs to select from.
  * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and assets.
+ * \param[in] change_address The address to which the change outputs will be sent.
+ * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
  * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
  * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected and remain available for future transactions.
+ * \param[out] change_outputs A pointer to the list of change outputs produced by the selection.
  *
  * \return \ref CARDANO_SUCCESS if UTXOs were successfully selected, or an appropriate error code indicating failure.
  */
 static cardano_error_t
 select(
-  cardano_coin_selector_impl_t* coin_selector,
-  cardano_utxo_list_t*          pre_selected_utxo,
-  cardano_utxo_list_t*          available_utxo,
-  cardano_value_t*              target,
-  cardano_utxo_list_t**         selection,
-  cardano_utxo_list_t**         remaining_utxo)
+  cardano_coin_selector_impl_t*       coin_selector,
+  cardano_utxo_list_t*                pre_selected_utxo,
+  cardano_utxo_list_t*                available_utxo,
+  cardano_value_t*                    target,
+  cardano_address_t*                  change_address,
+  cardano_protocol_parameters_t*      protocol_params,
+  cardano_utxo_list_t**               selection,
+  cardano_utxo_list_t**               remaining_utxo,
+  cardano_transaction_output_list_t** change_outputs)
 {
   assert(coin_selector != NULL);
   assert(available_utxo != NULL);
   assert(target != NULL);
+  assert(change_address != NULL);
+  assert(protocol_params != NULL);
 
   CARDANO_UNUSED(coin_selector);
 
@@ -234,6 +245,16 @@ select(
 
   cardano_asset_id_map_unref(&assets);
   cardano_value_unref(&accumulated_value);
+
+  result = _cardano_coin_selector_build_change(target, change_address, protocol_params, *selection, *remaining_utxo, change_outputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(selection);
+    cardano_utxo_list_unref(remaining_utxo);
+
+    return result;
+  }
 
   return CARDANO_SUCCESS;
 }

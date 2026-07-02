@@ -270,17 +270,21 @@ _cardano_set_collateral_output(
 
   while (!is_balanced)
   {
-    cardano_value_t*     collateral_value = cardano_value_new_from_coin((int64_t)collateral_amount + (int64_t)change_padding);
-    cardano_utxo_list_t* selection        = NULL;
-    cardano_utxo_list_t* remaining_utxo   = NULL;
+    cardano_value_t*                   collateral_value       = cardano_value_new_from_coin((int64_t)collateral_amount + (int64_t)change_padding);
+    cardano_utxo_list_t*               selection              = NULL;
+    cardano_utxo_list_t*               remaining_utxo         = NULL;
+    cardano_transaction_output_list_t* selector_change_output = NULL;
 
     result = cardano_coin_selector_select(
       coin_selector,
       NULL,
       available_collateral_outputs,
       collateral_value,
+      change_address,
+      protocol_params,
       &selection,
-      &remaining_utxo);
+      &remaining_utxo,
+      &selector_change_output);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -288,6 +292,8 @@ _cardano_set_collateral_output(
       cardano_coin_selector_unref(&coin_selector);
       return result;
     }
+
+    cardano_transaction_output_list_unref(&selector_change_output);
 
     cardano_value_t* selected_input_value = NULL;
     result                                = _cardano_coalesce_all_utxos(selection, &selected_input_value);

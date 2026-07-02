@@ -112,14 +112,17 @@ cardano_coin_selector_get_name(const cardano_coin_selector_t* coin_selector)
 
 cardano_error_t
 cardano_coin_selector_select(
-  cardano_coin_selector_t* coin_selector,
-  cardano_utxo_list_t*     pre_selected_utxo,
-  cardano_utxo_list_t*     available_utxo,
-  cardano_value_t*         target,
-  cardano_utxo_list_t**    selection,
-  cardano_utxo_list_t**    remaining_utxo)
+  cardano_coin_selector_t*            coin_selector,
+  cardano_utxo_list_t*                pre_selected_utxo,
+  cardano_utxo_list_t*                available_utxo,
+  cardano_value_t*                    target,
+  cardano_address_t*                  change_address,
+  cardano_protocol_parameters_t*      protocol_params,
+  cardano_utxo_list_t**               selection,
+  cardano_utxo_list_t**               remaining_utxo,
+  cardano_transaction_output_list_t** change_outputs)
 {
-  if ((coin_selector == NULL) || (available_utxo == NULL) || (target == NULL) || (selection == NULL) || (remaining_utxo == NULL))
+  if ((coin_selector == NULL) || (available_utxo == NULL) || (target == NULL) || (change_address == NULL) || (protocol_params == NULL) || (selection == NULL) || (remaining_utxo == NULL) || (change_outputs == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -129,7 +132,7 @@ cardano_coin_selector_select(
     return CARDANO_ERROR_NOT_IMPLEMENTED;
   }
 
-  cardano_error_t result = coin_selector->impl.select(&coin_selector->impl, pre_selected_utxo, available_utxo, target, selection, remaining_utxo);
+  cardano_error_t result = coin_selector->impl.select(&coin_selector->impl, pre_selected_utxo, available_utxo, target, change_address, protocol_params, selection, remaining_utxo, change_outputs);
 
   if (result != CARDANO_SUCCESS)
   {
