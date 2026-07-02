@@ -386,6 +386,18 @@ cardano_utxo_list_clone(cardano_utxo_list_t* utxo_list)
     return NULL;
   }
 
+  if (cardano_utxo_list_get_length(utxo_list) == 0U)
+  {
+    cardano_utxo_list_t* empty_list = NULL;
+
+    if (cardano_utxo_list_new(&empty_list) != CARDANO_SUCCESS)
+    {
+      return NULL;
+    }
+
+    return empty_list;
+  }
+
   return cardano_utxo_list_slice(utxo_list, 0, cardano_utxo_list_get_length(utxo_list));
 }
 

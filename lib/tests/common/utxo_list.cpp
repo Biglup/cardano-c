@@ -746,3 +746,22 @@ TEST(cardano_utxo_list_clone, returnsACloneOfTheList)
   cardano_utxo_list_unref(&list);
   cardano_utxo_list_unref(&result);
 }
+
+TEST(cardano_utxo_list_clone, returnsAnEmptyListIfListIsEmpty)
+{
+  // Arrange
+  cardano_utxo_list_t* list = NULL;
+
+  ASSERT_EQ(cardano_utxo_list_new(&list), CARDANO_SUCCESS);
+
+  // Act
+  cardano_utxo_list_t* result = cardano_utxo_list_clone(list);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(cardano_utxo_list_get_length(result), 0);
+
+  // Cleanup
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_list_unref(&result);
+}
