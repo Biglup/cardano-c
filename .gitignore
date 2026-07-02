@@ -98,3 +98,6 @@ default.profraw
 # cppcheck analysis artifacts
 *.ctu-info
 *.dump
+
+build-bench
+build-test

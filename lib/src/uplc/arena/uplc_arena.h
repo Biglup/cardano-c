@@ -146,10 +146,10 @@ cardano_uplc_arena_free(cardano_uplc_arena_t** arena);
 /**
  * \brief Runs all registered unref callbacks and rewinds the arena for reuse.
  *
- * Calls every registered unref callback, clears the unref list, and resets each
- * block to empty while keeping the allocated block memory, so the next
- * generation of allocations reuses the same blocks without further allocation.
- * The arena remains valid; it is not freed.
+ * Calls every registered unref callback, clears the unref list, and moves every
+ * block onto a spare list while keeping the allocated block memory, so the next
+ * generation of allocations reuses the same blocks without touching the backing
+ * allocator. The arena remains valid; it is not freed.
  *
  * \param[in,out] arena The arena to rewind. Does nothing if \p arena is NULL.
  */

@@ -58,6 +58,22 @@ static const size_t ARENA_BYTE_CEILING = (size_t)512U * 1024U * 1024U;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const size_t ARENA_MAX_ALIGN = sizeof(long double) > sizeof(void*) ? sizeof(long double) : sizeof(void*);
 
+/**
+ * \brief Keeps the refill path out of the allocator entry point.
+ *
+ * \ref cardano_uplc_arena_alloc is deliberately a handful of instructions so
+ * link-time optimization can inline it into the interpreter hot loops; without
+ * this marker the compiler folds the single-caller refill body back into it
+ * and the entry point grows past the inlining threshold.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+  #define CARDANO_UPLC_ARENA_NOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+  #define CARDANO_UPLC_ARENA_NOINLINE __declspec(noinline)
+#else
+  #define CARDANO_UPLC_ARENA_NOINLINE
+#endif
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -83,10 +99,14 @@ typedef struct cardano_uplc_arena_unref_node_t
 
 /**
  * \brief Region allocator state.
+ *
+ * \c blocks heads the live list and only its first block is bumped; \c spares
+ * holds the blocks parked by \ref cardano_uplc_arena_reset for reuse.
  */
 struct cardano_uplc_arena_t
 {
     cardano_uplc_arena_block_t*      blocks;
+    cardano_uplc_arena_block_t*      spares;
     cardano_uplc_arena_unref_node_t* unrefs;
     size_t                           block_size;
     size_t                           bytes_used;
@@ -172,6 +192,25 @@ charge_bytes(cardano_uplc_arena_t* arena, const size_t amount)
 static cardano_uplc_arena_block_t*
 grow_arena(cardano_uplc_arena_t* arena, const size_t min_capacity)
 {
+  cardano_uplc_arena_block_t** spare_link = &arena->spares;
+
+  while (*spare_link != NULL)
+  {
+    cardano_uplc_arena_block_t* spare = *spare_link;
+
+    if (spare->capacity >= min_capacity)
+    {
+      *spare_link   = spare->next;
+      spare->offset = 0U;
+      spare->next   = arena->blocks;
+      arena->blocks = spare;
+
+      return spare;
+    }
+
+    spare_link = &spare->next;
+  }
+
   size_t capacity = arena->block_size;
 
   if (capacity < min_capacity)
@@ -225,6 +264,7 @@ cardano_uplc_int_arena_new_with_ceiling(const size_t block_size, const size_t by
   }
 
   result->blocks       = NULL;
+  result->spares       = NULL;
   result->unrefs       = NULL;
   result->bytes_used   = 0U;
   result->block_size   = (block_size == 0U) ? ARENA_DEFAULT_BLOCK_SIZE : block_size;
@@ -235,52 +275,28 @@ cardano_uplc_int_arena_new_with_ceiling(const size_t block_size, const size_t by
   return CARDANO_SUCCESS;
 }
 
-void*
-cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const size_t align)
+/**
+ * \brief Refill path behind \ref cardano_uplc_arena_alloc.
+ *
+ * Serves the requests the head-block bump cannot: an empty arena, a full head
+ * block, or an oversized request. Kept out of line (and marked so) so the
+ * public entry point stays a handful of instructions that link-time
+ * optimization can inline into the interpreter hot loops.
+ *
+ * \param[in] arena The arena to allocate from. Must not be NULL.
+ * \param[in] size The number of bytes to allocate.
+ * \param[in] effective_align The alignment to honor; a power of two.
+ *
+ * \return The allocation, or \c NULL when the ceiling or the backing allocator
+ *         refuses it.
+ */
+static CARDANO_UPLC_ARENA_NOINLINE void*
+alloc_refill(cardano_uplc_arena_t* arena, const size_t size, const size_t effective_align)
 {
-  size_t                      effective_align = (align == 0U) ? ARENA_MAX_ALIGN : align;
-  cardano_uplc_arena_block_t* block           = NULL;
-  size_t                      aligned_offset  = 0U;
-  size_t                      end             = 0U;
-  size_t                      provisional     = 0U;
-
-  if (arena == NULL)
-  {
-    return NULL;
-  }
-
-  if ((align != 0U) && !is_power_of_two(align))
-  {
-    return NULL;
-  }
-
-  block = arena->blocks;
-
-  if (block != NULL)
-  {
-    const uintptr_t mask = (uintptr_t)effective_align - 1U;
-    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
-    const uintptr_t address = (uintptr_t)block->payload + (uintptr_t)block->offset;
-
-    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
-    aligned_offset = (size_t)(((address + mask) & ~mask) - (uintptr_t)block->payload);
-
-    if ((aligned_offset <= block->capacity) && (size <= (block->capacity - aligned_offset)))
-    {
-      size_t charge = (aligned_offset - block->offset) + size;
-
-      if (charge <= (arena->byte_ceiling - arena->bytes_used))
-      {
-        arena->bytes_used += charge;
-        block->offset     = aligned_offset + size;
-
-        // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
-        return block->payload + aligned_offset;
-      }
-
-      return NULL;
-    }
-  }
+  cardano_uplc_arena_block_t* block          = NULL;
+  size_t                      aligned_offset = 0U;
+  size_t                      end            = 0U;
+  size_t                      provisional    = 0U;
 
   if (size > (SIZE_MAX - (effective_align - 1U)))
   {
@@ -312,6 +328,53 @@ cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const s
 
   // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
   return block->payload + aligned_offset;
+}
+
+void*
+cardano_uplc_arena_alloc(cardano_uplc_arena_t* arena, const size_t size, const size_t align)
+{
+  const size_t                effective_align = (align == 0U) ? ARENA_MAX_ALIGN : align;
+  cardano_uplc_arena_block_t* block           = NULL;
+
+  if (arena == NULL)
+  {
+    return NULL;
+  }
+
+  if ((align != 0U) && !is_power_of_two(align))
+  {
+    return NULL;
+  }
+
+  block = arena->blocks;
+
+  if (block != NULL)
+  {
+    const uintptr_t mask = (uintptr_t)effective_align - 1U;
+    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
+    const uintptr_t address = (uintptr_t)block->payload + (uintptr_t)block->offset;
+
+    // cppcheck-suppress misra-c2012-11.4; Reason: integer-pointer conversion for arena alignment bookkeeping
+    const size_t aligned_offset = (size_t)(((address + mask) & ~mask) - (uintptr_t)block->payload);
+
+    if ((aligned_offset <= block->capacity) && (size <= (block->capacity - aligned_offset)))
+    {
+      const size_t charge = (aligned_offset - block->offset) + size;
+
+      if (charge <= (arena->byte_ceiling - arena->bytes_used))
+      {
+        arena->bytes_used += charge;
+        block->offset     = aligned_offset + size;
+
+        // cppcheck-suppress misra-c2012-18.4; Reason: pointer arithmetic over a contiguous arena buffer
+        return block->payload + aligned_offset;
+      }
+
+      return NULL;
+    }
+  }
+
+  return alloc_refill(arena, size, effective_align);
 }
 
 cardano_error_t
@@ -386,6 +449,17 @@ cardano_uplc_arena_free(cardano_uplc_arena_t** arena)
     block = next;
   }
 
+  block = self->spares;
+
+  while (block != NULL)
+  {
+    cardano_uplc_arena_block_t* next = block->next;
+
+    _cardano_free(block);
+
+    block = next;
+  }
+
   _cardano_free(self);
 
   *arena = NULL;
@@ -417,9 +491,15 @@ cardano_uplc_arena_reset(cardano_uplc_arena_t* arena)
 
   while (block != NULL)
   {
+    cardano_uplc_arena_block_t* next = block->next;
+
     block->offset = 0U;
-    block         = block->next;
+    block->next   = arena->spares;
+    arena->spares = block;
+
+    block = next;
   }
 
+  arena->blocks     = NULL;
   arena->bytes_used = 0U;
 }
