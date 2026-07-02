@@ -2,9 +2,11 @@
 # BENCHMARKS_ENABLED is set. The uplc bench drives the module-internal
 # UPLC headers directly (same include arrangement as the fuzz targets).
 
-ADD_EXECUTABLE (uplc-bench uplc/uplc_bench.c)
+FILE (GLOB_RECURSE UPLC_BENCH_SOURCES uplc/*.c)
 
-TARGET_INCLUDE_DIRECTORIES (uplc-bench PRIVATE ${CARDANO_C_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/lib/src)
+ADD_EXECUTABLE (uplc-bench ${UPLC_BENCH_SOURCES})
+
+TARGET_INCLUDE_DIRECTORIES (uplc-bench PRIVATE ${CARDANO_C_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/lib/src ${CMAKE_CURRENT_SOURCE_DIR}/uplc)
 
 # Benchmark harness code is not library code; keep clang-tidy off it.
 SET_TARGET_PROPERTIES (uplc-bench PROPERTIES C_CLANG_TIDY "")
