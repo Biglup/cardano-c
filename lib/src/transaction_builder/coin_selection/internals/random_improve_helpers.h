@@ -34,6 +34,55 @@
 /* DECLARATIONS **************************************************************/
 
 /**
+ * \brief Advances the given SplitMix64 state and returns the next pseudo-random number.
+ *
+ * SplitMix64 is a well-known, statistically strong 64-bit pseudo-random number generator with a
+ * single 64-bit word of state ("Fast Splittable Pseudorandom Number Generators", Steele, Lea and
+ * Flood, OOPSLA 2014; the constants are from Sebastiano Vigna's public domain reference
+ * implementation). It is used by the random improve coin selector because its tiny state makes it
+ * trivial to re-seed deterministically on every selection, which keeps repeated invocations from
+ * the transaction balancing loop reproducible.
+ *
+ * \param[in,out] rng_state The generator state. Updated in place on every call.
+ *
+ * \return The next pseudo-random 64-bit number in the sequence.
+ *
+ * \note This generator is NOT cryptographically secure. It must only be used for input selection
+ *       randomization, never for key material or any security sensitive purpose.
+ */
+uint64_t
+_cardano_random_improve_rng_next(uint64_t* rng_state);
+
+/**
+ * \brief Returns a pseudo-random index in the range [0, bound).
+ *
+ * \param[in,out] rng_state The generator state. Updated in place. See \ref _cardano_random_improve_rng_next.
+ * \param[in]     bound     The exclusive upper bound. Must be greater than zero.
+ *
+ * \return A pseudo-random index in the range [0, bound).
+ *
+ * \note The index is derived by modulo reduction, which introduces a negligible bias for the small
+ *       bounds used during input selection (bounded by the number of UTXOs in a wallet).
+ */
+size_t
+_cardano_random_improve_rng_below(uint64_t* rng_state, size_t bound);
+
+/**
+ * \brief Returns the absolute difference between two quantities.
+ *
+ * This is a port of `distance` from the cardano-coin-selection library. It is used by the
+ * "improve" phase of the selection algorithm to decide whether an additional UTXO moves the
+ * selected quantity closer to its target.
+ *
+ * \param[in] a The first quantity.
+ * \param[in] b The second quantity.
+ *
+ * \return The absolute difference between the two quantities.
+ */
+uint64_t
+_cardano_random_improve_distance(uint64_t a, uint64_t b);
+
+/**
  * \brief Partitions a target quantity into parts proportional to the given weights.
  *
  * This is a port of `partitionNatural` from the cardano-coin-selection library. The result is
