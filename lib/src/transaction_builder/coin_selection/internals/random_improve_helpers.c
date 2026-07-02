@@ -21,6 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/common/bigint.h>
+
 #include "./random_improve_helpers.h"
 
 #include "../../../allocators.h"
@@ -30,87 +32,114 @@
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * \brief Computes (a * b) as a 128-bit quantity split into high and low 64-bit halves.
+ * \brief Computes the quotient and remainder of (a * b) / divisor without overflowing.
  *
- * Portable 64x64 -> 128 multiplication implemented with 32-bit limbs, so that it does not
- * rely on compiler-specific 128-bit integer support.
+ * The product of two 64-bit quantities can exceed the range of a 64-bit integer, so the
+ * intermediate product is computed with \ref cardano_bigint_t.
  *
- * \param[in]  a   The first operand.
- * \param[in]  b   The second operand.
- * \param[out] hi  The high 64 bits of the product.
- * \param[out] lo  The low 64 bits of the product.
- */
-static void
-mul_64x64_128(const uint64_t a, const uint64_t b, uint64_t* hi, uint64_t* lo)
-{
-  const uint64_t a_lo = a & 0xFFFFFFFFULL;
-  const uint64_t a_hi = a >> 32U;
-  const uint64_t b_lo = b & 0xFFFFFFFFULL;
-  const uint64_t b_hi = b >> 32U;
-
-  const uint64_t p0 = a_lo * b_lo;
-  const uint64_t p1 = a_lo * b_hi;
-  const uint64_t p2 = a_hi * b_lo;
-  const uint64_t p3 = a_hi * b_hi;
-
-  const uint64_t carry = ((p0 >> 32U) + (p1 & 0xFFFFFFFFULL) + (p2 & 0xFFFFFFFFULL)) >> 32U;
-
-  *lo = p0 + (p1 << 32U) + (p2 << 32U);
-  *hi = p3 + (p1 >> 32U) + (p2 >> 32U) + carry;
-}
-
-/**
- * \brief Computes the quotient and remainder of a 128-bit dividend by a 64-bit divisor.
- *
- * The dividend is given as high and low 64-bit halves. This implementation performs simple
- * bitwise long division, which is sufficient for the small problem sizes used by the
- * partition function.
- *
- * \param[in]  hi        The high 64 bits of the dividend.
- * \param[in]  lo        The low 64 bits of the dividend.
+ * \param[in]  a         The first factor.
+ * \param[in]  b         The second factor.
  * \param[in]  divisor   The divisor. Must not be zero.
- * \param[out] quotient  The resulting quotient (truncated to 64 bits).
+ * \param[out] quotient  The resulting quotient.
  * \param[out] remainder The resulting remainder.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
  */
-static void
-div_128_by_64(const uint64_t hi, const uint64_t lo, const uint64_t divisor, uint64_t* quotient, uint64_t* remainder)
+static cardano_error_t
+mul_div_mod(
+  const uint64_t a,
+  const uint64_t b,
+  const uint64_t divisor,
+  uint64_t*      quotient,
+  uint64_t*      remainder)
 {
-  uint64_t q = 0U;
-  uint64_t r = 0U;
+  cardano_bigint_t* big_a         = NULL;
+  cardano_bigint_t* big_b         = NULL;
+  cardano_bigint_t* big_divisor   = NULL;
+  cardano_bigint_t* big_product   = NULL;
+  cardano_bigint_t* big_quotient  = NULL;
+  cardano_bigint_t* big_remainder = NULL;
 
-  for (int32_t i = 127; i >= 0; --i)
+  cardano_error_t result = cardano_bigint_from_unsigned_int(a, &big_a);
+
+  if (result == CARDANO_SUCCESS)
   {
-    uint64_t bit = 0U;
-
-    if (i >= 64)
-    {
-      const int32_t shift = i - 64;
-
-      bit = (hi >> (uint32_t)shift) & 1ULL;
-    }
-    else
-    {
-      bit = (lo >> (uint32_t)i) & 1ULL;
-    }
-
-    r = (r << 1U) | bit;
-
-    if (r >= divisor)
-    {
-      r -= divisor;
-
-      if (i < 64)
-      {
-        q |= (1ULL << (uint32_t)i);
-      }
-    }
+    result = cardano_bigint_from_unsigned_int(b, &big_b);
   }
 
-  *quotient  = q;
-  *remainder = r;
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_unsigned_int(divisor, &big_divisor);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_int(0, &big_product);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_int(0, &big_quotient);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_int(0, &big_remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_bigint_multiply(big_a, big_b, big_product);
+    cardano_bigint_divide(big_product, big_divisor, big_quotient);
+    cardano_bigint_mod(big_product, big_divisor, big_remainder);
+
+    *quotient  = cardano_bigint_to_unsigned_int(big_quotient);
+    *remainder = cardano_bigint_to_unsigned_int(big_remainder);
+  }
+
+  cardano_bigint_unref(&big_a);
+  cardano_bigint_unref(&big_b);
+  cardano_bigint_unref(&big_divisor);
+  cardano_bigint_unref(&big_product);
+  cardano_bigint_unref(&big_quotient);
+  cardano_bigint_unref(&big_remainder);
+
+  return result;
 }
 
 /* DEFINITIONS ****************************************************************/
+
+uint64_t
+_cardano_random_improve_rng_next(uint64_t* rng_state)
+{
+  *rng_state += 0x9e3779b97f4a7c15ULL;
+
+  uint64_t z = *rng_state;
+
+  z = (z ^ (z >> 30U)) * 0xbf58476d1ce4e5b9ULL;
+  z = (z ^ (z >> 27U)) * 0x94d049bb133111ebULL;
+
+  return z ^ (z >> 31U);
+}
+
+size_t
+_cardano_random_improve_rng_below(uint64_t* rng_state, const size_t bound)
+{
+  return (size_t)(_cardano_random_improve_rng_next(rng_state) % (uint64_t)bound);
+}
+
+uint64_t
+_cardano_random_improve_distance(const uint64_t a, const uint64_t b)
+{
+  uint64_t result = b - a;
+
+  if (a > b)
+  {
+    result = a - b;
+  }
+
+  return result;
+}
 
 cardano_error_t
 _cardano_random_improve_partition(
@@ -143,17 +172,24 @@ _cardano_random_improve_partition(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  uint64_t assigned = 0U;
+  cardano_error_t result   = CARDANO_SUCCESS;
+  uint64_t        assigned = 0U;
 
-  for (size_t i = 0U; i < size; ++i)
+  for (size_t i = 0U; (i < size) && (result == CARDANO_SUCCESS); ++i)
   {
-    uint64_t hi = 0U;
-    uint64_t lo = 0U;
+    result = mul_div_mod(target, weights[i], total_weight, &parts[i], &remainders[i]);
 
-    mul_64x64_128(target, weights[i], &hi, &lo);
-    div_128_by_64(hi, lo, total_weight, &parts[i], &remainders[i]);
+    if (result == CARDANO_SUCCESS)
+    {
+      assigned += parts[i];
+    }
+  }
 
-    assigned += parts[i];
+  if (result != CARDANO_SUCCESS)
+  {
+    _cardano_free(remainders);
+
+    return result;
   }
 
   uint64_t shortfall = target - assigned;
