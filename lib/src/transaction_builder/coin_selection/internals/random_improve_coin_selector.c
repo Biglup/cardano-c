@@ -410,11 +410,9 @@ distribute_asset_excesses(
   {
     cardano_asset_id_t* asset_id = state->table.ids[a];
 
-    int64_t      selected_total = 0;
-    const size_t input_count    = _cardano_random_improve_collect_input_quantities(state, selection, asset_id, &selected_total);
-
-    const int64_t required = _cardano_random_improve_get_asset_quantity(target, asset_id);
-    const int64_t excess   = selected_total - required;
+    const int64_t selected_total = (int64_t)_cardano_random_improve_selected_quantity(selection, asset_id);
+    const int64_t required       = _cardano_random_improve_get_asset_quantity(target, asset_id);
+    const int64_t excess         = selected_total - required;
 
     if (excess < 0)
     {
@@ -427,6 +425,8 @@ distribute_asset_excesses(
       continue;
     }
 
+    // The user-specified check must run before collecting input quantities: both collectors
+    // share the state's scratch buffer, so only the branch that is taken may fill it.
     const uint64_t user_weight_total = (state->output_count > 0U) ? _cardano_random_improve_collect_user_weights(state, outputs_to_cover, asset_id) : 0U;
 
     if (user_weight_total > 0U)
@@ -435,6 +435,9 @@ distribute_asset_excesses(
     }
     else
     {
+      int64_t      collected_total = 0;
+      const size_t input_count     = _cardano_random_improve_collect_input_quantities(state, selection, asset_id, &collected_total);
+
       result = distribute_non_user_specified_excess(state, a, excess, selected_total, input_count);
     }
   }
