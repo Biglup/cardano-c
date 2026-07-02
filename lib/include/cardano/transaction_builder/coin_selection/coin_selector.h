@@ -55,34 +55,42 @@ extern "C" {
  * - Random Improve: A method where random UTXOs are selected with a focus on minimizing dust.
  * - Custom strategies, as defined by implementers.
  *
- * \remark The caller must manage the life of the \c selected_utxo and \c remaining_utxo lists byt calling
- * \ref cardano_utxo_list_unref when they are no longer needed.
+ * \remark The caller must manage the life of the \c selected_utxo, \c remaining_utxo and \c change_outputs lists
+ * by calling \ref cardano_utxo_list_unref and \ref cardano_transaction_output_list_unref when they are no longer needed.
  *
  * \see CIP-0002: https://cips.cardano.org/cip/CIP-0002
  *
  * Example usage:
  * \code{.c}
- * cardano_coin_selector_t* coin_selector = ...;  // Initialize the coin selector
- * cardano_utxo_list_t* available_utxo = ...;     // Available UTXOs
- * cardano_value_t* target_value = ...;           // The target value to cover
+ * cardano_coin_selector_t* coin_selector = ...;          // Initialize the coin selector
+ * cardano_utxo_list_t* available_utxo = ...;             // Available UTXOs
+ * cardano_value_t* target_value = ...;                   // The target value to cover
+ * cardano_address_t* change_address = ...;               // Address for change outputs
+ * cardano_protocol_parameters_t* protocol_params = ...;  // Protocol parameters
  * cardano_utxo_list_t* selected_utxo = NULL;
  * cardano_utxo_list_t* remaining_utxo = NULL;
+ * cardano_transaction_output_list_t* change_outputs = NULL;
  *
  * cardano_error_t result = cardano_coin_selector_select(
  *     coin_selector,
+ *     NULL,
  *     available_utxo,
  *     target_value,
+ *     change_address,
+ *     protocol_params,
  *     &selected_utxo,
- *     &remaining_utxo);
+ *     &remaining_utxo,
+ *     &change_outputs);
  *
  * if (result == CARDANO_SUCCESS)
  * {
  *   // Coin selection succeeded
  * }
  *
- * // Free the selected and remaining UTXO lists when done
+ * // Free the selected, remaining and change output lists when done
  * cardano_utxo_list_unref(&selected_utxo);
  * cardano_utxo_list_unref(&remaining_utxo);
+ * cardano_transaction_output_list_unref(&change_outputs);
  * \endcode
  */
 typedef struct cardano_coin_selector_t cardano_coin_selector_t;
@@ -164,55 +172,81 @@ CARDANO_EXPORT const char* cardano_coin_selector_get_name(const cardano_coin_sel
  * \brief Selects UTXOs to satisfy the target value using a coin selection strategy.
  *
  * This function performs coin selection using the provided \ref cardano_coin_selector_t object, selecting UTXOs from the
- * available UTXO set to meet the specified target value. It returns the selected UTXOs and any remaining UTXOs that were
- * not chosen in separate output parameters.
+ * available UTXO set to meet the specified target value. It returns the selected UTXOs, any remaining UTXOs that were
+ * not chosen, and the change outputs produced by the selection in separate output parameters.
+ *
+ * The selection is locally balanced. It upholds the invariant:
+ *
+ * \code
+ * sum(selection) = target + sum(change_outputs)
+ * \endcode
+ *
+ * Every change output is guaranteed to be min-ADA compliant as per the protocol parameters. To uphold this guarantee,
+ * the selector may consume more UTXOs from the available pool than strictly required to cover the target value.
+ *
+ * The selector does not attempt fee calculation or global transaction balancing; those remain the responsibility
+ * of the balancer (see \ref cardano_balance_transaction).
  *
  * \param[in] coin_selector A pointer to the \ref cardano_coin_selector_t object, which defines the coin selection strategy.
  * \param[in] pre_selected_utxo An optional set of pre-selected UTXOs (can be NULL) to be used as part of the selection.
  * \param[in] available_utxo A list of available UTXOs from which the coin selection will be made.
  * \param[in] target The target value to be satisfied by the coin selection (in lovelace or multi-asset values).
+ * \param[in] change_address The address to which the change outputs will be sent.
+ * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
  * \param[out] selection A pointer to a UTXO list where the selected UTXOs will be stored.
  *                       The caller is responsible for releasing the memory of this list when done.
  * \param[out] remaining_utxo A pointer to a UTXO list where the remaining, unselected UTXOs will be stored.
  *                            The caller is responsible for releasing the memory of this list when done.
+ * \param[out] change_outputs A pointer to a transaction output list where the change outputs will be stored. The list
+ *                            may be empty if the selection matches the target exactly.
+ *                            The caller is responsible for releasing the memory of this list when done.
  *
  * \return \ref CARDANO_SUCCESS if the coin selection succeeded, or an appropriate error code indicating failure.
  *
- * \note Both `selection` and `remaining_utxo` must be properly freed by the caller after use.
+ * \note `selection`, `remaining_utxo` and `change_outputs` must be properly freed by the caller after use.
  *       The function ensures that UTXOs from the available pool are used optimally to meet the target value,
  *       following the coin selection strategy provided by the \ref cardano_coin_selector_t object.
  *
  * Usage Example:
  * \code{.c}
- * cardano_coin_selector_t* coin_selector = ...; // The coin selection strategy
- * cardano_utxo_list_t* available_utxo = ...;    // List of available UTXOs
- * cardano_value_t* target_value = ...;          // Target value in lovelace or multi-asset format
+ * cardano_coin_selector_t* coin_selector = ...;          // The coin selection strategy
+ * cardano_utxo_list_t* available_utxo = ...;             // List of available UTXOs
+ * cardano_value_t* target_value = ...;                   // Target value in lovelace or multi-asset format
+ * cardano_address_t* change_address = ...;               // Address for change outputs
+ * cardano_protocol_parameters_t* protocol_params = ...;  // Protocol parameters
  * cardano_utxo_list_t* selected_utxo = NULL;
  * cardano_utxo_list_t* remaining_utxo = NULL;
+ * cardano_transaction_output_list_t* change_outputs = NULL;
  *
  * cardano_error_t result = cardano_coin_selector_select(
- *     coin_selector, pre_selected_utxo, available_utxo, target_value, &selected_utxo, &remaining_utxo);
+ *     coin_selector, pre_selected_utxo, available_utxo, target_value,
+ *     change_address, protocol_params, &selected_utxo, &remaining_utxo, &change_outputs);
  *
  * if (result == CARDANO_SUCCESS)
  * {
  *   // Successfully selected UTXOs
  *   // selected_utxo contains the selected UTXOs
  *   // remaining_utxo contains the unselected UTXOs
+ *   // change_outputs contains the min-ADA compliant change outputs
  * }
  *
- * // Clean up UTXO lists after use
+ * // Clean up lists after use
  * cardano_utxo_list_unref(&selected_utxo);
  * cardano_utxo_list_unref(&remaining_utxo);
+ * cardano_transaction_output_list_unref(&change_outputs);
  * \endcode
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_coin_selector_select(
-  cardano_coin_selector_t* coin_selector,
-  cardano_utxo_list_t*     pre_selected_utxo,
-  cardano_utxo_list_t*     available_utxo,
-  cardano_value_t*         target,
-  cardano_utxo_list_t**    selection,
-  cardano_utxo_list_t**    remaining_utxo);
+  cardano_coin_selector_t*            coin_selector,
+  cardano_utxo_list_t*                pre_selected_utxo,
+  cardano_utxo_list_t*                available_utxo,
+  cardano_value_t*                    target,
+  cardano_address_t*                  change_address,
+  cardano_protocol_parameters_t*      protocol_params,
+  cardano_utxo_list_t**               selection,
+  cardano_utxo_list_t**               remaining_utxo,
+  cardano_transaction_output_list_t** change_outputs);
 
 /**
  * \brief Decrements the reference count of a cardano_coin_selector_t object.
