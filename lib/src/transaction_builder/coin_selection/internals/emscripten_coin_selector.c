@@ -130,15 +130,33 @@ extern void* marshal_utxo_list(void* utxo_list_obj);
  */
 extern void* marshall_utxo_list_to_js(void* utxo_list_ptr);
 
+/**
+ * @brief Marshals a C `cardano_transaction_output_list_t` into a JavaScript array of output objects.
+ *
+ * @param[in] output_list_ptr A pointer to a `cardano_transaction_output_list_t` object in WASM memory.
+ * @return A handle to a JavaScript array of transaction output objects.
+ */
+extern void* marshall_transaction_output_list_to_js(void* output_list_ptr);
+
+/**
+ * @brief Marshals a JavaScript array of transaction output objects into a C `cardano_transaction_output_list_t`.
+ *
+ * @param[in] output_list_obj A handle to a JavaScript array, where each element is a transaction output object.
+ * @return A pointer to a newly allocated `cardano_transaction_output_list_t` in WASM memory. Returns `0` on failure.
+ * @note The caller in C is responsible for freeing the returned object via `cardano_object_unref`.
+ */
+extern void* marshal_transaction_output_list(void* output_list_obj);
+
 /* C -> JS ASYNC BRIDGE FUNCTIONS ********************************************/
 
 /**
  * @brief Asynchronously performs coin selection by bridging to a JavaScript implementation.
  *
  * This function acts as the low-level bridge between the C coin selection API and a
- * registered JavaScript coin selector object. It marshals the C input objects (UTXO lists, target value)
- * into JavaScript types, calls the asynchronous `select` method on the JS object, and then
- * marshals the resulting JS selection and remaining UTXO arrays back into C objects.
+ * registered JavaScript coin selector object. It marshals the fields of the C selection
+ * request into JavaScript types, calls the asynchronous `select` method on the JS object,
+ * and then marshals the resulting JS selection, remaining UTXO and change output arrays
+ * back into C objects.
  *
  * @note This function's body is implemented in JavaScript and relies on Emscripten's Asyncify
  * feature to pause C execution while awaiting the result from the JavaScript `Promise`.
@@ -147,13 +165,20 @@ extern void* marshall_utxo_list_to_js(void* utxo_list_ptr);
  * @param[in] pre_selected_utxo A pointer to a C `cardano_utxo_list_t` of UTxOs to force into the selection.
  * @param[in] available_utxo A pointer to a C `cardano_utxo_list_t` of UTxOs available for selection.
  * @param[in] target A pointer to a C `cardano_value_t` representing the total value the selection must cover.
+ * @param[in] outputs_to_cover A pointer to a C `cardano_transaction_output_list_t` with the user-specified
+ * outputs the target was derived from, or `0`. Passed to the JS selector as a shape hint for change generation.
+ * @param[in] change_address_str The change address encoded as a null-terminated bech32 string.
+ * @param[in] coins_per_utxo_byte The protocol parameter used to compute min-ADA requirements for change outputs.
  * @param[out] selection_ptr A pointer to a `cardano_utxo_list_t*` where the pointer to the newly
  * created C list of selected UTxOs will be stored.
  * @param[out] remaining_utxo_ptr A pointer to a `cardano_utxo_list_t*` where the pointer to the newly
  * created C list of remaining (unselected) UTxOs will be stored.
+ * @param[out] change_outputs_ptr A pointer to a `cardano_transaction_output_list_t*` where the pointer to the
+ * newly created C list of change outputs will be stored, or `0` if the JS selector did not produce change
+ * outputs (in which case the C side generates the change).
  * @return A `cardano_error_t` indicating the success or failure of the operation.
  */
-EM_ASYNC_JS(cardano_error_t, cardano_coin_selector_bridge_select, (uint32_t object_id, cardano_utxo_list_t* pre_selected_utxo, cardano_utxo_list_t* available_utxo, cardano_value_t* target, cardano_utxo_list_t** selection_ptr, cardano_utxo_list_t** remaining_utxo_ptr), {
+EM_ASYNC_JS(cardano_error_t, cardano_coin_selector_bridge_select, (uint32_t object_id, cardano_utxo_list_t* pre_selected_utxo, cardano_utxo_list_t* available_utxo, cardano_value_t* target, cardano_transaction_output_list_t* outputs_to_cover, const char* change_address_str, double coins_per_utxo_byte, cardano_utxo_list_t** selection_ptr, cardano_utxo_list_t** remaining_utxo_ptr, cardano_transaction_output_list_t** change_outputs_ptr), {
   const coin_selector = get_coin_selector_from_registry(object_id);
   if (!coin_selector)
   {
@@ -165,11 +190,16 @@ EM_ASYNC_JS(cardano_error_t, cardano_coin_selector_bridge_select, (uint32_t obje
     const preSelectedUtxoArray = marshall_utxo_list_to_js(pre_selected_utxo);
     const availableUtxoArray   = marshall_utxo_list_to_js(available_utxo);
     const targetValue          = marshall_value_to_js(target);
+    const outputsToCoverArray  = outputs_to_cover !== 0 ? marshall_transaction_output_list_to_js(outputs_to_cover) : undefined;
+    const changeAddress        = UTF8ToString(change_address_str);
 
     const result = await coin_selector.select({
       preSelectedUtxo : preSelectedUtxoArray.length > 0 ? preSelectedUtxoArray : undefined,
       availableUtxo : availableUtxoArray,
-      targetValue : targetValue
+      targetValue : targetValue,
+      outputsToCover : outputsToCoverArray,
+      changeAddress : changeAddress,
+      coinsPerUtxoByte : coins_per_utxo_byte
     });
 
     const selectionListPtr = marshal_utxo_list(result.selection);
@@ -184,8 +214,23 @@ EM_ASYNC_JS(cardano_error_t, cardano_coin_selector_bridge_select, (uint32_t obje
       return 4;
     }
 
+    let changeOutputsListPtr = 0;
+
+    if (result.changeOutputs !== undefined)
+    {
+      changeOutputsListPtr = marshal_transaction_output_list(result.changeOutputs);
+
+      if (changeOutputsListPtr === 0)
+      {
+        cardano_utxo_list_unref(selectionListPtr);
+        cardano_utxo_list_unref(remainingListPtr);
+        return 4;
+      }
+    }
+
     HEAPU32[selection_ptr >> 2]      = selectionListPtr;
     HEAPU32[remaining_utxo_ptr >> 2] = remainingListPtr;
+    HEAPU32[change_outputs_ptr >> 2] = changeOutputsListPtr;
 
     return 0;
   }
@@ -201,13 +246,14 @@ EM_ASYNC_JS(cardano_error_t, cardano_coin_selector_bridge_select, (uint32_t obje
 /**
  * \brief Selects UTXOs from the available list and pre-selected UTXOs to meet the target value.
  *
- * This function selects UTXOs from both the pre-selected UTXO list and available UTXOs to meet a specified target value.
- * The selected UTXOs are stored in the `selection` list, and any remaining UTXOs are stored in the `remaining_utxo` list.
- * The UTXO selection itself is delegated to the registered JavaScript coin selector; the change outputs are then built
- * on the C side so that the selection is locally balanced and every change output is min-ADA compliant.
+ * This function delegates the coin selection to the registered JavaScript coin selector, forwarding
+ * the full selection request (including the outputs-to-cover shape hint, the change address and the
+ * relevant protocol parameters). If the JavaScript selector produces change outputs, they are used
+ * as-is; otherwise the change outputs are built on the C side so that the selection is locally
+ * balanced and every change output is min-ADA compliant.
  *
  * \param[in] coin_selector A pointer to the coin selector implementation object.
- * \param[in] request The selection request. The request's outputs_to_cover hint is unused by this selector.
+ * \param[in] request The selection request. All fields are forwarded to the JavaScript selector.
  * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
  * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected and remain available for future transactions.
  * \param[out] change_outputs A pointer to the list of change outputs produced by the selection.
@@ -229,22 +275,43 @@ select(
 
   emscripten_coin_selector_context_t* ctx = (emscripten_coin_selector_context_t*)coin_selector->context;
 
-  cardano_utxo_list_t*           pre_selected_utxo = request->pre_selected_utxo;
-  cardano_utxo_list_t*           available_utxo    = request->available_utxo;
-  cardano_value_t*               target            = request->target;
-  cardano_address_t*             change_address    = request->change_address;
-  cardano_protocol_parameters_t* protocol_params   = request->protocol_params;
+  cardano_utxo_list_t*               pre_selected_utxo = request->pre_selected_utxo;
+  cardano_utxo_list_t*               available_utxo    = request->available_utxo;
+  cardano_value_t*                   target            = request->target;
+  cardano_transaction_output_list_t* outputs_to_cover  = request->outputs_to_cover;
+  cardano_address_t*                 change_address    = request->change_address;
+  cardano_protocol_parameters_t*     protocol_params   = request->protocol_params;
 
   if (!ctx || !available_utxo || !target || !change_address || !protocol_params)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = cardano_coin_selector_bridge_select(ctx->object_id, pre_selected_utxo, available_utxo, target, selection, remaining_utxo);
+  const char*    change_address_str  = cardano_address_get_string(change_address);
+  const uint64_t coins_per_utxo_byte = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
+
+  *change_outputs = NULL;
+
+  cardano_error_t result = cardano_coin_selector_bridge_select(
+    ctx->object_id,
+    pre_selected_utxo,
+    available_utxo,
+    target,
+    outputs_to_cover,
+    change_address_str,
+    (double)coins_per_utxo_byte,
+    selection,
+    remaining_utxo,
+    change_outputs);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
+  }
+
+  if (*change_outputs != NULL)
+  {
+    return CARDANO_SUCCESS;
   }
 
   result = _cardano_coin_selector_build_change(target, change_address, protocol_params, *selection, *remaining_utxo, change_outputs);
