@@ -460,6 +460,31 @@ utxo_list_contains(cardano_utxo_list_t* list, cardano_utxo_t* utxo)
   return false;
 }
 
+static cardano_error_t
+do_select(
+  cardano_coin_selector_t*            selector,
+  cardano_utxo_list_t*                pre_selected_utxo,
+  cardano_utxo_list_t*                available_utxo,
+  cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
+  cardano_address_t*                  change_address,
+  cardano_protocol_parameters_t*      protocol_params,
+  cardano_utxo_list_t**               selection,
+  cardano_utxo_list_t**               remaining_utxo,
+  cardano_transaction_output_list_t** change_outputs)
+{
+  cardano_coin_selection_request_t request = { 0 };
+
+  request.pre_selected_utxo = pre_selected_utxo;
+  request.available_utxo    = available_utxo;
+  request.target            = target;
+  request.outputs_to_cover  = outputs_to_cover;
+  request.change_address    = change_address;
+  request.protocol_params   = protocol_params;
+
+  return cardano_coin_selector_select(selector, &request, selection, remaining_utxo, change_outputs);
+}
+
 /* PROPERTY ASSERTIONS *******************************************************/
 
 /**
@@ -715,7 +740,7 @@ TEST(cardano_coin_selector_properties, largeFirstSatisfiesInputSelectionProperti
     cardano_utxo_list_t*               remaining_utxo = NULL;
     cardano_transaction_output_list_t* change_outputs = NULL;
 
-    const cardano_error_t result = cardano_coin_selector_select(
+    const cardano_error_t result = do_select(
       selector,
       (pre_selected_count > 0U) ? pre_selected_utxo : NULL,
       available_utxo,
@@ -801,7 +826,7 @@ TEST(cardano_coin_selector_properties, prunesZeroTokenChange)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   ASSERT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_SUCCESS);
 
   ASSERT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1U);
@@ -870,7 +895,7 @@ TEST(cardano_coin_selector_properties, treatsNegativeTargetAssetAsImplicitInput)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   ASSERT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_utxo_list_get_length(selection), 1U);
@@ -934,7 +959,7 @@ TEST(cardano_coin_selector_properties, failsWhenCoinInsufficient)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
@@ -977,7 +1002,7 @@ TEST(cardano_coin_selector_properties, failsWhenAssetInsufficient)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
@@ -1010,7 +1035,7 @@ TEST(cardano_coin_selector_properties, failsWhenNoUtxoAvailable)
   cardano_transaction_output_list_t* change_outputs = NULL;
 
   EXPECT_EQ(
-    cardano_coin_selector_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
     CARDANO_ERROR_BALANCE_INSUFFICIENT);
 
   cardano_value_unref(&target);
@@ -1088,7 +1113,7 @@ TEST(cardano_coin_selector_properties, randomImproveSatisfiesInputSelectionPrope
     cardano_utxo_list_t*               remaining_utxo = NULL;
     cardano_transaction_output_list_t* change_outputs = NULL;
 
-    const cardano_error_t result = cardano_coin_selector_select(
+    const cardano_error_t result = do_select(
       selector,
       (pre_selected_count > 0U) ? pre_selected_utxo : NULL,
       available_utxo,

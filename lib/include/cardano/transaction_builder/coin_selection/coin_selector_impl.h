@@ -49,6 +49,58 @@ extern "C" {
  */
 typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
 
+/* STRUCTURES ****************************************************************/
+
+/**
+ * \brief Describes all inputs to a coin selection.
+ *
+ * All pointers are borrowed: they must remain valid for the duration of the
+ * \ref cardano_coin_selector_select call, and the selector does not take ownership of them.
+ *
+ * Zero-initialize the structure (<code>= { 0 }</code>) so that unset optional fields default safely.
+ * Fields added in future versions will be appended to the end of the structure, with a zero value
+ * meaning "default behavior".
+ */
+typedef struct cardano_coin_selection_request_t
+{
+    /**
+     * \brief Optional. A set of pre-selected UTXOs that must be included in the final selection.
+     */
+    cardano_utxo_list_t* pre_selected_utxo;
+
+    /**
+     * \brief Required. The list of available UTXOs from which the coin selection will be made.
+     */
+    cardano_utxo_list_t* available_utxo;
+
+    /**
+     * \brief Required. The target value to be covered by the selection. This value is authoritative
+     * for all balance arithmetic: the selection must uphold
+     * <code>sum(selection) = target + sum(change_outputs)</code>.
+     */
+    cardano_value_t* target;
+
+    /**
+     * \brief Optional. The user-specified outputs the target was derived from.
+     *
+     * Selectors may use this list as a shape and weight hint when generating change outputs
+     * (for example, to mimic the distribution of user payments). Selectors must not rely on it
+     * for balance arithmetic; the target is authoritative.
+     */
+    cardano_transaction_output_list_t* outputs_to_cover;
+
+    /**
+     * \brief Required. The address to which change outputs will be sent.
+     */
+    cardano_address_t* change_address;
+
+    /**
+     * \brief Required. The protocol parameters, used to ensure change outputs are min-ADA compliant.
+     */
+    cardano_protocol_parameters_t* protocol_params;
+
+} cardano_coin_selection_request_t;
+
 /* CALLBACKS *****************************************************************/
 
 /**
@@ -56,10 +108,11 @@ typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
  *
  * The `cardano_coin_select_func_t` typedef defines the signature for a callback function responsible
  * for selecting a set of UTXOs (Unspent Transaction Outputs) from an available list to meet a specific target value,
- * and for producing the change outputs that return any excess value to the `change_address`.
+ * and for producing the change outputs that return any excess value to the change address.
  *
  * This function is expected to:
- * - Use the provided `available_utxo` list and optionally a `pre_selected_utxo` list to select UTXOs that meet the required `target` value.
+ * - Use the request's `available_utxo` list and optionally its `pre_selected_utxo` list to select UTXOs
+ *   that meet the required `target` value.
  * - Store the selected UTXOs in the `selection` list, ensuring the selection covers the target value.
  * - Store any remaining UTXOs that were not selected in the `remaining_utxo` list.
  * - Produce one or more change outputs in the `change_outputs` list such that the selection is locally balanced:
@@ -71,15 +124,8 @@ typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
  * responsibility of the balancer.
  *
  * \param[in] coin_selector A pointer to the \ref cardano_coin_selector_impl_t object implementing the coin selection strategy.
- * \param[in] pre_selected_utxo A list of UTXOs that have already been pre-selected (optional). These UTXOs must be included in the final selection.
- * \param[in] available_utxo A list of available UTXOs to select from.
- * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and/or other tokens to be covered by the selected UTXOs.
- * \param[in] outputs_to_cover An optional list of the user-specified outputs the target was derived from (can be NULL).
- *                             Selectors may use it as a shape and weight hint when generating change outputs
- *                             (for example, to mimic the distribution of user payments). Selectors must not rely on it
- *                             for balance arithmetic; the target is authoritative.
- * \param[in] change_address The address to which change outputs will be sent.
- * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
+ * \param[in] request The selection request. See \ref cardano_coin_selection_request_t. The wrapper guarantees
+ *                    that the request pointer and its required fields are not NULL.
  * \param[out] selection A pointer to the list of UTXOs that were selected to meet the target value.
  * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected and remain available for future transactions.
  * \param[out] change_outputs A pointer to the list of change outputs produced by the selection. The list may be empty
@@ -89,44 +135,13 @@ typedef struct cardano_coin_selector_impl_t cardano_coin_selector_impl_t;
  *
  * \note The caller is responsible for managing the memory of the `selection`, `remaining_utxo` and `change_outputs` lists,
  *       ensuring they are properly freed when no longer needed.
- *
- * Usage Example:
- * \code{.c}
- * cardano_utxo_list_t* pre_selected_utxo = ...;  // Optional pre-selected UTXOs
- * cardano_utxo_list_t* available_utxo = ...;     // Available UTXOs for selection
- * cardano_value_t* target_value = ...;           // The target value to cover
- * cardano_address_t* change_address = ...;       // Address for change outputs
- * cardano_protocol_parameters_t* protocol_params = ...;
- * cardano_utxo_list_t* selected_utxo = NULL;
- * cardano_utxo_list_t* remaining_utxo = NULL;
- * cardano_transaction_output_list_t* change_outputs = NULL;
- *
- * cardano_error_t result = coin_select_function(
- *   coin_selector, pre_selected_utxo, available_utxo, target_value,
- *   change_address, protocol_params, &selected_utxo, &remaining_utxo, &change_outputs);
- *
- * if (result == CARDANO_SUCCESS)
- * {
- *   // UTXOs were successfully selected and change outputs produced
- * }
- *
- * // Free the selected, remaining and change output lists when done
- * cardano_utxo_list_unref(&selected_utxo);
- * cardano_utxo_list_unref(&remaining_utxo);
- * cardano_transaction_output_list_unref(&change_outputs);
- * \endcode
  */
 typedef cardano_error_t (*cardano_coin_select_func_t)(
-  cardano_coin_selector_impl_t*       coin_selector,
-  cardano_utxo_list_t*                pre_selected_utxo,
-  cardano_utxo_list_t*                available_utxo,
-  cardano_value_t*                    target,
-  cardano_transaction_output_list_t*  outputs_to_cover,
-  cardano_address_t*                  change_address,
-  cardano_protocol_parameters_t*      protocol_params,
-  cardano_utxo_list_t**               selection,
-  cardano_utxo_list_t**               remaining_utxo,
-  cardano_transaction_output_list_t** change_outputs);
+  cardano_coin_selector_impl_t*           coin_selector,
+  const cardano_coin_selection_request_t* request,
+  cardano_utxo_list_t**                   selection,
+  cardano_utxo_list_t**                   remaining_utxo,
+  cardano_transaction_output_list_t**     change_outputs);
 
 /* STRUCTURES ****************************************************************/
 

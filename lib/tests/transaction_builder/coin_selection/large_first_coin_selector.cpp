@@ -320,6 +320,31 @@ assert_change_outputs_are_min_ada_compliant(cardano_transaction_output_list_t* c
   }
 };
 
+static cardano_error_t
+do_select(
+  cardano_coin_selector_t*            selector,
+  cardano_utxo_list_t*                pre_selected_utxo,
+  cardano_utxo_list_t*                available_utxo,
+  cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
+  cardano_address_t*                  change_address,
+  cardano_protocol_parameters_t*      protocol_params,
+  cardano_utxo_list_t**               selection,
+  cardano_utxo_list_t**               remaining_utxo,
+  cardano_transaction_output_list_t** change_outputs)
+{
+  cardano_coin_selection_request_t request = { 0 };
+
+  request.pre_selected_utxo = pre_selected_utxo;
+  request.available_utxo    = available_utxo;
+  request.target            = target;
+  request.outputs_to_cover  = outputs_to_cover;
+  request.change_address    = change_address;
+  request.protocol_params   = protocol_params;
+
+  return cardano_coin_selector_select(selector, &request, selection, remaining_utxo, change_outputs);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_large_first_coin_selector_new, createsALargeFirstCoinSelector)
@@ -375,7 +400,7 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirst)
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -476,7 +501,7 @@ TEST(cardano_large_first_coin_selector_select, selectsAtLeastOneInputEvenIfImpli
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -577,7 +602,7 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirstButAlsoIncl
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -676,7 +701,7 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirstAssets)
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -773,7 +798,7 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestFirstAssetsWithP
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -871,7 +896,7 @@ TEST(cardano_large_first_coin_selector_select, selectsTheLargestSameValues)
   cardano_utxo_list_t* available_utxo = new_utxo_list_same_utxo();
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -967,7 +992,7 @@ TEST(cardano_large_first_coin_selector_select, returnsErrorIfGivenNull)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  error = cardano_coin_selector_select(large_first_coin_selector, nullptr, nullptr, nullptr, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  error = do_select(large_first_coin_selector, nullptr, nullptr, nullptr, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -1008,7 +1033,7 @@ TEST(cardano_large_first_coin_selector_select, doesntCrashIfMemoryAllocationFail
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+    error = do_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
     CARDANO_UNUSED(error);
 
     cardano_utxo_list_unref(&remaining_utxo);
@@ -1019,7 +1044,7 @@ TEST(cardano_large_first_coin_selector_select, doesntCrashIfMemoryAllocationFail
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    error = cardano_coin_selector_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+    error = do_select(large_first_coin_selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
     CARDANO_UNUSED(error);
 
     cardano_utxo_list_unref(&remaining_utxo);
@@ -1060,7 +1085,7 @@ TEST(cardano_large_first_coin_selector_select, returnsMinAdaCompliantChangeThatP
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  cardano_error_t error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  cardano_error_t error = do_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1108,7 +1133,7 @@ TEST(cardano_large_first_coin_selector_select, topsUpChangeFromRemainingUtxosToM
   cardano_utxo_list_t* available_utxo = new_utxo_list_diff_vals();
 
   // Act
-  cardano_error_t error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  cardano_error_t error = do_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1153,7 +1178,7 @@ TEST(cardano_large_first_coin_selector_select, returnsEmptyChangeOutputsOnExactM
   cardano_value_t*              target = cardano_transaction_output_get_value(output);
 
   // Act
-  cardano_error_t error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  cardano_error_t error = do_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
@@ -1203,7 +1228,7 @@ TEST(cardano_large_first_coin_selector_select, returnsErrorIfChangeCannotMeetMin
   ASSERT_EQ(cardano_value_new(cardano_value_get_coin(utxo_value) - 50, utxo_assets, &target), CARDANO_SUCCESS);
 
   // Act
-  cardano_error_t error = cardano_coin_selector_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+  cardano_error_t error = do_select(large_first_coin_selector, nullptr, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_BALANCE_INSUFFICIENT);

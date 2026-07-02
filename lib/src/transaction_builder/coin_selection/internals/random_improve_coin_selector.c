@@ -1065,12 +1065,7 @@ make_change(
  * min-ADA compliant change outputs that mimic the shape of the user-specified outputs.
  *
  * \param[in] coin_selector A pointer to the coin selector implementation object.
- * \param[in] pre_selected_utxo A list of pre-selected UTXOs that must be included in the final selection.
- * \param[in] available_utxo A list of available UTXOs to select from.
- * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and assets.
- * \param[in] outputs_to_cover An optional shape and weight hint used to size the change outputs.
- * \param[in] change_address The address to which the change outputs will be sent.
- * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
+ * \param[in] request The selection request. The request's outputs_to_cover hint is used to size the change outputs.
  * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
  * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected.
  * \param[out] change_outputs A pointer to the list of change outputs produced by the selection.
@@ -1079,23 +1074,29 @@ make_change(
  */
 static cardano_error_t
 random_improve_select(
-  cardano_coin_selector_impl_t*       coin_selector,
-  cardano_utxo_list_t*                pre_selected_utxo,
-  cardano_utxo_list_t*                available_utxo,
-  cardano_value_t*                    target,
-  cardano_transaction_output_list_t*  outputs_to_cover,
-  cardano_address_t*                  change_address,
-  cardano_protocol_parameters_t*      protocol_params,
-  cardano_utxo_list_t**               selection,
-  cardano_utxo_list_t**               remaining_utxo,
-  cardano_transaction_output_list_t** change_outputs)
+  cardano_coin_selector_impl_t*           coin_selector,
+  const cardano_coin_selection_request_t* request,
+  cardano_utxo_list_t**                   selection,
+  cardano_utxo_list_t**                   remaining_utxo,
+  cardano_transaction_output_list_t**     change_outputs)
 {
-  if ((coin_selector == NULL) || (available_utxo == NULL) || (target == NULL) || (change_address == NULL) || (protocol_params == NULL) || (selection == NULL) || (remaining_utxo == NULL) || (change_outputs == NULL))
+  if ((coin_selector == NULL) || (request == NULL) || (selection == NULL) || (remaining_utxo == NULL) || (change_outputs == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  // cppcheck-suppress misra-c2012-11.3; Reason: The context is always created as a random_improve_context_t.
+  cardano_utxo_list_t*               pre_selected_utxo = request->pre_selected_utxo;
+  cardano_utxo_list_t*               available_utxo    = request->available_utxo;
+  cardano_value_t*                   target            = request->target;
+  cardano_transaction_output_list_t* outputs_to_cover  = request->outputs_to_cover;
+  cardano_address_t*                 change_address    = request->change_address;
+  cardano_protocol_parameters_t*     protocol_params   = request->protocol_params;
+
+  if ((available_utxo == NULL) || (target == NULL) || (change_address == NULL) || (protocol_params == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   random_improve_context_t* context = (random_improve_context_t*)((void*)coin_selector->context);
 
   if (context == NULL)
