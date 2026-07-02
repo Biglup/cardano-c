@@ -280,6 +280,7 @@ _cardano_set_collateral_output(
       NULL,
       available_collateral_outputs,
       collateral_value,
+      NULL,
       change_address,
       protocol_params,
       &selection,

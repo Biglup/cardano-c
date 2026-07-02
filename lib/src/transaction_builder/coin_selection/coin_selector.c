@@ -116,6 +116,7 @@ cardano_coin_selector_select(
   cardano_utxo_list_t*                pre_selected_utxo,
   cardano_utxo_list_t*                available_utxo,
   cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
   cardano_address_t*                  change_address,
   cardano_protocol_parameters_t*      protocol_params,
   cardano_utxo_list_t**               selection,
@@ -132,7 +133,7 @@ cardano_coin_selector_select(
     return CARDANO_ERROR_NOT_IMPLEMENTED;
   }
 
-  cardano_error_t result = coin_selector->impl.select(&coin_selector->impl, pre_selected_utxo, available_utxo, target, change_address, protocol_params, selection, remaining_utxo, change_outputs);
+  cardano_error_t result = coin_selector->impl.select(&coin_selector->impl, pre_selected_utxo, available_utxo, target, outputs_to_cover, change_address, protocol_params, selection, remaining_utxo, change_outputs);
 
   if (result != CARDANO_SUCCESS)
   {

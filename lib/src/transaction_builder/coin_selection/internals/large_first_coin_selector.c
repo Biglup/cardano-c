@@ -50,6 +50,7 @@
  * \param[in] pre_selected_utxo A list of pre-selected UTXOs that must be included in the final selection.
  * \param[in] available_utxo A list of available UTXOs to select from.
  * \param[in] target A pointer to a \ref cardano_value_t object that defines the target amount of ADA and assets.
+ * \param[in] outputs_to_cover An optional shape hint for change generation (unused by this selector).
  * \param[in] change_address The address to which the change outputs will be sent.
  * \param[in] protocol_params The protocol parameters, used to ensure change outputs are min-ADA compliant.
  * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
@@ -64,6 +65,7 @@ select(
   cardano_utxo_list_t*                pre_selected_utxo,
   cardano_utxo_list_t*                available_utxo,
   cardano_value_t*                    target,
+  cardano_transaction_output_list_t*  outputs_to_cover,
   cardano_address_t*                  change_address,
   cardano_protocol_parameters_t*      protocol_params,
   cardano_utxo_list_t**               selection,
@@ -77,6 +79,7 @@ select(
   assert(protocol_params != NULL);
 
   CARDANO_UNUSED(coin_selector);
+  CARDANO_UNUSED(outputs_to_cover);
 
   cardano_error_t result = cardano_utxo_list_new(selection);
 
