@@ -7,6 +7,7 @@ SET(PROJECT_NAME "cardano-c")
 OPTION (TESTING_ENABLED "Enables unit test build." OFF)
 OPTION (DOXYGEN_ENABLED "Build documentation" OFF)
 OPTION (EXAMPLES_ENABLED "Build examples" OFF)
+OPTION (BENCHMARKS_ENABLED "Build benchmark harnesses" OFF)
 
 # Find external dependencies
 LIST (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -178,6 +179,11 @@ ENDIF ()
 # Build examples
 IF (EXAMPLES_ENABLED)
     ADD_SUBDIRECTORY (examples ${BUILD_DIR}/examples)
+ENDIF ()
+
+# Build benchmark harnesses
+IF (BENCHMARKS_ENABLED)
+    ADD_SUBDIRECTORY (benchmarks ${BUILD_DIR}/benchmarks)
 ENDIF ()
 
 # Packaging.
