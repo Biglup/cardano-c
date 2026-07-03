@@ -56,8 +56,8 @@ The transaction builder balances transactions automatically using a pluggable in
 
 Two selectors are provided out of the box:
 
-- **Round-Robin Random-Improve (the default)** — a port of the multi-asset generalization of [CIP-2 Random-Improve](https://cips.cardano.org/cip/CIP-2) implemented by [cardano-foundation/cardano-coin-selection](https://github.com/cardano-foundation/cardano-coin-selection) (`Cardano.CoinSelection.Balance`), as used by cardano-wallet and specified in [Self Organisation in Coin Selection](https://iohk.io/en/blog/posts/2018/07/03/self-organisation-in-coin-selection/) (Edsko de Vries, IOHK, 2018). It selects UTXOs at random per required asset in round-robin order, improving each toward twice its minimum, which keeps the wallet's UTXO distribution healthy over time (better transaction parallelism and privacy) and produces change outputs that resemble the payments made. It supports an "optimal" and a "minimal" selection strategy (see `cardano_selection_strategy_t`).
-- **Largest-First** — a simple deterministic selector that spends the largest UTXOs first and produces a single change output. Useful when predictability matters more than UTXO health.
+- **Round-Robin Random-Improve (the default)**: a port of the multi-asset generalization of [CIP-2 Random-Improve](https://cips.cardano.org/cip/CIP-2) implemented by [cardano-foundation/cardano-coin-selection](https://github.com/cardano-foundation/cardano-coin-selection) (`Cardano.CoinSelection.Balance`), as used by cardano-wallet and specified in [Self Organisation in Coin Selection](https://iohk.io/en/blog/posts/2018/07/03/self-organisation-in-coin-selection/) (Edsko de Vries, IOHK, 2018). It selects UTXOs at random per required asset in round-robin order, improving each toward twice its minimum, which keeps the wallet's UTXO distribution healthy over time (better transaction parallelism) and produces change outputs that resemble the payments made. It supports an "optimal" and a "minimal" selection strategy (see `cardano_selection_strategy_t`).
+- **Largest-First**: a simple deterministic selector that spends the largest UTXOs first and produces a single change output. Useful when predictability matters more than UTXO health.
 
 Use `cardano_tx_builder_set_coin_selector` to switch selectors, or implement your own with `cardano_coin_selector_new`.
 
@@ -124,8 +124,8 @@ Every object in our library provides functions to increase and decrease its refe
 Upon creation through constructors like `cardano_cbor_writer_new`, an object's reference count is initialized to one.
 This implies that the caller becomes the sole owner of the newly created reference.
 
-When the reference count drops to zero—typically when the `*_unref` function is invoked by the last entity
-holding a reference—the object gets deallocated.
+When the reference count drops to zero-typically when the `*_unref` function is invoked by the last entity
+holding a reference-the object gets deallocated.
 
 Note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
 
