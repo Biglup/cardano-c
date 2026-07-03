@@ -42,6 +42,9 @@ extern "C" {
 #include "../../../src/transaction_builder/coin_selection/internals/value_splitting.h"
 }
 
+#include "../../../src/allocators.h"
+#include "../../allocators_helpers.h"
+
 #include <gmock/gmock.h>
 
 #include <algorithm>
@@ -1504,7 +1507,117 @@ TEST(cardano_coin_selector_properties, randomImproveDistributesUserAssetsProport
   cardano_utxo_list_unref(&available_utxo);
   cardano_utxo_list_unref(&pre_selected_utxo);
   cardano_utxo_unref(&utxo);
+  cardano_coin_selector_unref(&selector);
   cardano_address_unref(&change_address);
   cardano_address_unref(&wallet_address);
   cardano_protocol_parameters_unref(&protocol_params);
+}
+
+/**
+ * Runs the selector repeatedly with the mock allocator failing at progressively later
+ * allocation counts, exercising every allocation-failure path of the selection and change
+ * generation code (including oversized-change splitting). The selection must either succeed
+ * or fail cleanly; it must never crash or leak.
+ */
+static void
+run_allocation_failure_sweep(cardano_coin_selector_t* selector, const int max_allocations)
+{
+  cardano_address_t*             change_address  = make_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = make_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = make_protocol_parameters();
+
+  ASSERT_EQ(cardano_protocol_parameters_set_max_value_size(protocol_params, 150U), CARDANO_SUCCESS);
+
+  gen_value_t rich_value;
+  rich_value.coin = 100000000;
+
+  for (size_t i = 0U; i < ASSET_POOL_SIZE; ++i)
+  {
+    rich_value.assets[i] = (int64_t)(1000U + i);
+  }
+
+  gen_value_t ada_value;
+  ada_value.coin = 50000000;
+
+  cardano_utxo_list_t* pre_selected_utxo = NULL;
+  cardano_utxo_list_t* available_utxo    = NULL;
+
+  ASSERT_EQ(cardano_utxo_list_new(&pre_selected_utxo), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+
+  cardano_utxo_t* rich_utxo = build_utxo(910000U, rich_value, wallet_address);
+  cardano_utxo_t* ada_utxo  = build_utxo(910001U, ada_value, wallet_address);
+
+  ASSERT_EQ(cardano_utxo_list_add(pre_selected_utxo, rich_utxo), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_utxo_list_add(available_utxo, ada_utxo), CARDANO_SUCCESS);
+
+  gen_value_t output_value;
+  output_value.coin      = 2000000;
+  output_value.assets[0] = 5;
+
+  cardano_transaction_output_list_t* outputs_to_cover = NULL;
+  ASSERT_EQ(cardano_transaction_output_list_new(&outputs_to_cover), CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* output = build_output(output_value, wallet_address);
+  ASSERT_EQ(cardano_transaction_output_list_add(outputs_to_cover, output), CARDANO_SUCCESS);
+  cardano_transaction_output_unref(&output);
+
+  cardano_value_t* target = build_value(output_value);
+
+  for (int i = 0; i < max_allocations; ++i)
+  {
+    cardano_utxo_list_t*               selection      = NULL;
+    cardano_utxo_list_t*               remaining_utxo = NULL;
+    cardano_transaction_output_list_t* change_outputs = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t error = do_select(selector, pre_selected_utxo, available_utxo, target, outputs_to_cover, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs);
+    CARDANO_UNUSED(error);
+
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_utxo_list_unref(&selection);
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_transaction_output_list_unref(&change_outputs);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_set_allocators(malloc, realloc, free);
+
+  cardano_value_unref(&target);
+  cardano_transaction_output_list_unref(&outputs_to_cover);
+  cardano_utxo_list_unref(&pre_selected_utxo);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_unref(&rich_utxo);
+  cardano_utxo_unref(&ada_utxo);
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_coin_selector_properties, largeFirstDoesntCrashIfMemoryAllocationFails)
+{
+  cardano_coin_selector_t* selector = NULL;
+
+  ASSERT_EQ(cardano_large_first_coin_selector_new(&selector), CARDANO_SUCCESS);
+
+  run_allocation_failure_sweep(selector, 120);
+
+  cardano_coin_selector_unref(&selector);
+}
+
+TEST(cardano_coin_selector_properties, randomImproveDoesntCrashIfMemoryAllocationFails)
+{
+  cardano_coin_selector_t* selector = NULL;
+
+  ASSERT_EQ(cardano_random_improve_coin_selector_new_with_seed(PROPERTY_SEED, &selector), CARDANO_SUCCESS);
+
+  run_allocation_failure_sweep(selector, 220);
+
+  cardano_coin_selector_unref(&selector);
 }

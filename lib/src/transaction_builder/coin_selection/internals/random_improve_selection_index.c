@@ -312,14 +312,19 @@ _cardano_random_improve_index_init(
     index->pool_selected     = (bool*)_cardano_malloc(pool_size * sizeof(bool));
     index->pool_quantities   = (int64_t*)_cardano_malloc(pool_size * index->processor_count * sizeof(int64_t));
 
+    if (index->pool != NULL)
+    {
+      CARDANO_UNUSED(memset(index->pool, 0, pool_size * sizeof(cardano_utxo_t*)));
+    }
+
+    if (index->pool_selected != NULL)
+    {
+      CARDANO_UNUSED(memset(index->pool_selected, 0, pool_size * sizeof(bool)));
+    }
+
     if ((index->pool == NULL) || (index->pool_asset_counts == NULL) || (index->pool_selected == NULL) || (index->pool_quantities == NULL))
     {
       result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-    else
-    {
-      CARDANO_UNUSED(memset(index->pool, 0, pool_size * sizeof(cardano_utxo_t*)));
-      CARDANO_UNUSED(memset(index->pool_selected, 0, pool_size * sizeof(bool)));
     }
   }
 
@@ -353,9 +358,12 @@ _cardano_random_improve_index_init(
 void
 _cardano_random_improve_index_free(random_improve_selection_index_t* index)
 {
-  for (size_t i = 0U; i < index->pool_size; ++i)
+  if (index->pool != NULL)
   {
-    cardano_utxo_unref(&index->pool[i]);
+    for (size_t i = 0U; i < index->pool_size; ++i)
+    {
+      cardano_utxo_unref(&index->pool[i]);
+    }
   }
 
   for (size_t p = 0U; p < index->processor_count; ++p)
