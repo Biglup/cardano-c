@@ -21,6 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/plutus_data/constr_plutus_data.h>
+#include <cardano/plutus_data/plutus_list.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include <cardano/object.h>
@@ -92,6 +94,7 @@ typedef struct cardano_tx_builder_t
     cardano_blake2b_hash_to_redeemer_map_t* withdrawals_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* mints_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* votes_to_redeemer_map;
+    cardano_deferred_redeemer_list_t*       deferred_redeemers;
 } cardano_tx_builder_t;
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -130,6 +133,7 @@ cardano_tx_builder_deallocate(void* object)
   cardano_blake2b_hash_to_redeemer_map_unref(&builder->withdrawals_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&builder->mints_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&builder->votes_to_redeemer_map);
+  cardano_deferred_redeemer_list_unref(&builder->deferred_redeemers);
 
   _cardano_free(builder);
 }
@@ -893,6 +897,7 @@ cardano_tx_builder_new(
   builder->withdrawals_to_redeemer_map = NULL;
   builder->mints_to_redeemer_map       = NULL;
   builder->votes_to_redeemer_map       = NULL;
+  builder->deferred_redeemers          = NULL;
   builder->tx_evaluator                = NULL;
 
   cardano_protocol_parameters_ref(params);
@@ -966,6 +971,14 @@ cardano_tx_builder_new(
   }
 
   result = cardano_blake2b_hash_to_redeemer_map_new(&builder->votes_to_redeemer_map);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_unref(&builder);
+    return NULL;
+  }
+
+  result = cardano_deferred_redeemer_list_new(&builder->deferred_redeemers);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1895,6 +1908,82 @@ cardano_tx_builder_lock_value_ex(
 
   cardano_tx_builder_lock_value(builder, addr, value, datum);
   cardano_address_unref(&addr);
+}
+
+/**
+ * \brief Creates the placeholder payload used by deferred redeemers until they are resolved.
+ *
+ * The placeholder is an empty constructor (constr 0 []), so the transaction can be sized and
+ * hashed before the first balancing iteration replaces it with the real payload.
+ *
+ * \param[out] data The placeholder plutus data.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+create_placeholder_plutus_data(cardano_plutus_data_t** data)
+{
+  cardano_plutus_list_t* fields = NULL;
+
+  cardano_error_t result = cardano_plutus_list_new(&fields);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_constr_plutus_data_t* constr = NULL;
+
+  result = cardano_constr_plutus_data_new(0U, fields, &constr);
+
+  cardano_plutus_list_unref(&fields);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_plutus_data_new_constr(constr, data);
+
+  cardano_constr_plutus_data_unref(&constr);
+
+  return result;
+}
+
+/**
+ * \brief Registers a deferred callback for the redeemer stored under the given hash in one of
+ * the builder's redeemer maps.
+ *
+ * \param[in,out] builder      The transaction builder.
+ * \param[in]     map          The map holding the redeemer (mint, withdrawal or vote map).
+ * \param[in]     hash         The key of the redeemer in the map.
+ * \param[in]     callback     The deferred redeemer callback.
+ * \param[in]     user_context The opaque pointer forwarded to the callback.
+ */
+static void
+register_deferred_from_map(
+  cardano_tx_builder_t*                   builder,
+  cardano_blake2b_hash_to_redeemer_map_t* map,
+  cardano_blake2b_hash_t*                 hash,
+  const cardano_deferred_redeemer_fn_t    callback,
+  void*                                   user_context)
+{
+  cardano_redeemer_t* redeemer = NULL;
+
+  cardano_error_t result = cardano_blake2b_hash_to_redeemer_map_get(map, hash, &redeemer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+  }
+
+  cardano_redeemer_unref(&redeemer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to register the deferred redeemer.");
+    builder->last_error = result;
+  }
 }
 
 void
@@ -4943,7 +5032,8 @@ cardano_tx_builder_build(
     builder->change_address,
     builder->collateral_utxos,
     builder->collateral_address,
-    builder->tx_evaluator);
+    builder->tx_evaluator,
+    builder->deferred_redeemers);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -5022,4 +5112,175 @@ const char*
 cardano_tx_builder_get_last_error(const cardano_tx_builder_t* tx_builder)
 {
   return cardano_object_get_last_error(&tx_builder->base);
+}
+
+void
+cardano_tx_builder_add_input_deferred(
+  cardano_tx_builder_t*                builder,
+  cardano_utxo_t*                      utxo,
+  const cardano_deferred_redeemer_fn_t callback,
+  void*                                user_context,
+  cardano_plutus_data_t*               datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((utxo == NULL) || (callback == NULL))
+  {
+    cardano_tx_builder_set_last_error(builder, "UTXO and callback are required");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_plutus_data_t* placeholder = NULL;
+
+  cardano_error_t result = create_placeholder_plutus_data(&placeholder);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_add_input(builder, utxo, placeholder, datum);
+
+  cardano_plutus_data_unref(&placeholder);
+
+  if (builder->last_error != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&input);
+
+  cardano_redeemer_t* redeemer = NULL;
+
+  result = cardano_input_to_redeemer_map_get(builder->input_to_redeemer_map, input, &redeemer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+  }
+
+  cardano_redeemer_unref(&redeemer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to register the deferred redeemer.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_mint_token_deferred(
+  cardano_tx_builder_t*                builder,
+  cardano_blake2b_hash_t*              policy_id,
+  cardano_asset_name_t*                name,
+  const int64_t                        amount,
+  const cardano_deferred_redeemer_fn_t callback,
+  void*                                user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((policy_id == NULL) || (callback == NULL))
+  {
+    cardano_tx_builder_set_last_error(builder, "Policy id and callback are required");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_plutus_data_t* placeholder = NULL;
+
+  cardano_error_t result = create_placeholder_plutus_data(&placeholder);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_mint_token(builder, policy_id, name, amount, placeholder);
+
+  cardano_plutus_data_unref(&placeholder);
+
+  if (builder->last_error != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  register_deferred_from_map(builder, builder->mints_to_redeemer_map, policy_id, callback, user_context);
+}
+
+void
+cardano_tx_builder_withdraw_rewards_deferred(
+  cardano_tx_builder_t*                builder,
+  cardano_reward_address_t*            address,
+  const int64_t                        amount,
+  const cardano_deferred_redeemer_fn_t callback,
+  void*                                user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((address == NULL) || (callback == NULL))
+  {
+    cardano_tx_builder_set_last_error(builder, "Reward address and callback are required");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_plutus_data_t* placeholder = NULL;
+
+  cardano_error_t result = create_placeholder_plutus_data(&placeholder);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_withdraw_rewards(builder, address, amount, placeholder);
+
+  cardano_plutus_data_unref(&placeholder);
+
+  if (builder->last_error != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
+  cardano_credential_unref(&credential);
+
+  cardano_blake2b_hash_t* hash = NULL;
+
+  result = compute_credential_sortable_id(credential, &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to compute the withdrawal sortable id.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  register_deferred_from_map(builder, builder->withdrawals_to_redeemer_map, hash, callback, user_context);
+
+  cardano_blake2b_hash_unref(&hash);
 }
