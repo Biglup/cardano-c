@@ -32,6 +32,7 @@
 #include "../../src/transaction_builder/internals/blake2b_hash_to_redeemer_map.h"
 #include <allocators.h>
 #include <cardano/transaction_body/transaction_output.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <gmock/gmock.h>
@@ -64,6 +65,7 @@ typedef struct cardano_tx_builder_t
     cardano_blake2b_hash_to_redeemer_map_t* withdrawals_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* mints_to_redeemer_map;
     cardano_blake2b_hash_to_redeemer_map_t* votes_to_redeemer_map;
+    cardano_deferred_redeemer_list_t*       deferred_redeemers;
 } cardano_tx_builder_t;
 
 /* CONSTANTS *****************************************************************/
@@ -8220,4 +8222,610 @@ TEST(cardano_tx_builder_add_input_with_deferred_redeemer, latchesErrorOnNullArgu
 
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
+}
+
+/**
+ * Deferred redeemer callback that always fails.
+ */
+static cardano_error_t
+failing_deferred_callback(void* user_context, cardano_transaction_t* draft_tx, cardano_utxo_list_t* resolved_inputs, cardano_plutus_data_t** redeemer)
+{
+  CARDANO_UNUSED(user_context);
+  CARDANO_UNUSED(draft_tx);
+  CARDANO_UNUSED(resolved_inputs);
+  CARDANO_UNUSED(redeemer);
+
+  return CARDANO_ERROR_INVALID_ARGUMENT;
+}
+
+/**
+ * Deferred redeemer callback that reports success without producing a payload.
+ */
+static cardano_error_t
+null_payload_deferred_callback(void* user_context, cardano_transaction_t* draft_tx, cardano_utxo_list_t* resolved_inputs, cardano_plutus_data_t** redeemer)
+{
+  CARDANO_UNUSED(user_context);
+  CARDANO_UNUSED(draft_tx);
+  CARDANO_UNUSED(resolved_inputs);
+  CARDANO_UNUSED(redeemer);
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * Deferred redeemer callback that produces the integer 7.
+ */
+static cardano_error_t
+fixed_payload_deferred_callback(void* user_context, cardano_transaction_t* draft_tx, cardano_utxo_list_t* resolved_inputs, cardano_plutus_data_t** redeemer)
+{
+  CARDANO_UNUSED(user_context);
+  CARDANO_UNUSED(draft_tx);
+  CARDANO_UNUSED(resolved_inputs);
+
+  return cardano_plutus_data_new_integer_from_int(7, redeemer);
+}
+
+/**
+ * Builds the placeholder payload used by deferred redeemers before resolution (constr 0 []).
+ * @return The placeholder plutus data.
+ */
+static cardano_plutus_data_t*
+new_placeholder_plutus_data()
+{
+  cardano_plutus_list_t* fields = NULL;
+  EXPECT_EQ(cardano_plutus_list_new(&fields), CARDANO_SUCCESS);
+
+  cardano_constr_plutus_data_t* constr = NULL;
+  EXPECT_EQ(cardano_constr_plutus_data_new(0U, fields, &constr), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* data = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_constr(constr, &data), CARDANO_SUCCESS);
+
+  cardano_constr_plutus_data_unref(&constr);
+  cardano_plutus_list_unref(&fields);
+
+  return data;
+}
+
+/**
+ * Reads the integer payload of a `Constr 0 [index]` redeemer produced by the self-index callback.
+ * @return The index carried by the payload.
+ */
+static int64_t
+read_self_index_payload(cardano_plutus_data_t* payload)
+{
+  cardano_constr_plutus_data_t* constr = NULL;
+  EXPECT_EQ(cardano_plutus_data_to_constr(payload, &constr), CARDANO_SUCCESS);
+  cardano_constr_plutus_data_unref(&constr);
+
+  cardano_plutus_list_t* fields = NULL;
+  EXPECT_EQ(cardano_constr_plutus_data_get_data(constr, &fields), CARDANO_SUCCESS);
+  cardano_plutus_list_unref(&fields);
+
+  EXPECT_EQ(cardano_plutus_list_get_length(fields), 1U);
+
+  cardano_plutus_data_t* field = NULL;
+  EXPECT_EQ(cardano_plutus_list_get(fields, 0U, &field), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&field);
+
+  cardano_bigint_t* value = NULL;
+  EXPECT_EQ(cardano_plutus_data_to_integer(field, &value), CARDANO_SUCCESS);
+
+  const int64_t index = cardano_bigint_to_int(value);
+  cardano_bigint_unref(&value);
+
+  return index;
+}
+
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, propagatesCallbackErrorFromBuild)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = NULL;
+  cardano_tx_evaluator_t*        tx_evaluator   = NULL;
+  cardano_utxo_t*                utxo           = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_plutus_data_t*         datum          = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_address_t*             change_address = nullptr;
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+
+  EXPECT_EQ(cardano_address_from_string("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"), &change_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_from_provider(provider, &tx_evaluator), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
+  cardano_tx_builder_set_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo, failing_deferred_callback, NULL, datum);
+
+  // Act
+  cardano_transaction_t* tx = nullptr;
+
+  cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(tx, nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&change_address);
+  cardano_plutus_data_unref(&datum);
+  cardano_utxo_list_unref(&utxos);
+  cardano_tx_evaluator_unref(&tx_evaluator);
+}
+
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, failsBuildIfCallbackYieldsNoPayload)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = NULL;
+  cardano_tx_evaluator_t*        tx_evaluator   = NULL;
+  cardano_utxo_t*                utxo           = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_plutus_data_t*         datum          = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_address_t*             change_address = nullptr;
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+
+  EXPECT_EQ(cardano_address_from_string("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"), &change_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_from_provider(provider, &tx_evaluator), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
+  cardano_tx_builder_set_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo, null_payload_deferred_callback, NULL, datum);
+
+  // Act
+  cardano_transaction_t* tx = nullptr;
+
+  cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(tx, nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&change_address);
+  cardano_plutus_data_unref(&datum);
+  cardano_utxo_list_unref(&utxos);
+  cardano_tx_evaluator_unref(&tx_evaluator);
+}
+
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, resolvesEachInputToItsOwnCanonicalIndex)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = NULL;
+  cardano_tx_evaluator_t*        tx_evaluator   = NULL;
+  cardano_utxo_t*                utxo_a         = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_utxo_t*                utxo_b         = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_plutus_data_t*         datum          = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_address_t*             change_address = nullptr;
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+
+  EXPECT_EQ(cardano_address_from_string("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"), &change_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_from_provider(provider, &tx_evaluator), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
+  cardano_tx_builder_set_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+
+  // Both inputs register the same self-index callback; each one must resolve to its own
+  // canonical index in the final transaction.
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo_a, build_self_index_redeemer, utxo_a, datum);
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo_b, build_self_index_redeemer, utxo_b, datum);
+
+  // Act
+  cardano_transaction_t* tx = nullptr;
+
+  cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  // Assert
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  ASSERT_EQ(cardano_redeemer_list_get_length(redeemers), 2U);
+
+  cardano_utxo_t* utxos_under_test[] = { utxo_a, utxo_b };
+  uint64_t        canonical_index[]  = { 0U, 0U };
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxos_under_test[i]);
+    cardano_transaction_input_unref(&input);
+
+    cardano_blake2b_hash_t* id = cardano_transaction_input_get_id(input);
+    cardano_blake2b_hash_unref(&id);
+
+    EXPECT_EQ(cardano_transaction_find_input_index(tx, id, cardano_transaction_input_get_index(input), &canonical_index[i]), CARDANO_SUCCESS);
+
+    // The redeemer for this input sits at the rank given by the redeemer index lookup helper.
+    uint64_t rank = 0U;
+    EXPECT_EQ(cardano_transaction_find_redeemer_index(tx, CARDANO_REDEEMER_TAG_SPEND, canonical_index[i], &rank), CARDANO_SUCCESS);
+
+    cardano_redeemer_t* redeemer = NULL;
+    ASSERT_EQ(cardano_redeemer_list_get(redeemers, rank, &redeemer), CARDANO_SUCCESS);
+    cardano_redeemer_unref(&redeemer);
+
+    EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_SPEND);
+    EXPECT_EQ(cardano_redeemer_get_index(redeemer), canonical_index[i]);
+
+    cardano_plutus_data_t* payload = cardano_redeemer_get_data(redeemer);
+    cardano_plutus_data_unref(&payload);
+
+    EXPECT_EQ(read_self_index_payload(payload), (int64_t)canonical_index[i]);
+  }
+
+  EXPECT_NE(canonical_index[0], canonical_index[1]);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_unref(&utxo_a);
+  cardano_utxo_unref(&utxo_b);
+  cardano_address_unref(&change_address);
+  cardano_plutus_data_unref(&datum);
+  cardano_utxo_list_unref(&utxos);
+  cardano_tx_evaluator_unref(&tx_evaluator);
+}
+
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_utxo_t*                utxo   = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_plutus_data_t*         datum  = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that every
+  // intermediate allocation (placeholder, declaration and deferred registration) fails at
+  // least once.
+  for (int i = 0; i < 512; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo, fixed_payload_deferred_callback, NULL, datum);
+
+    const cardano_error_t error = tx_builder->last_error;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+  cardano_plutus_data_unref(&datum);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, registersDeferredRedeemerForThePolicy)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_asset_name_t*          asset_name = NULL;
+  cardano_blake2b_hash_t*        policy_id  = NULL;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, policy_id, asset_name, 4, fixed_payload_deferred_callback, NULL);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&mint);
+
+  int64_t quantity = 0;
+  EXPECT_EQ(cardano_multi_asset_get(mint, policy_id, asset_name, &quantity), CARDANO_SUCCESS);
+  EXPECT_EQ(quantity, 4);
+
+  // The mint redeemer starts out as the placeholder `constr 0 []`...
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get(tx_builder->mints_to_redeemer_map, policy_id, &redeemer), CARDANO_SUCCESS);
+  cardano_redeemer_unref(&redeemer);
+
+  cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
+  cardano_plutus_data_t* payload     = cardano_redeemer_get_data(redeemer);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, placeholder));
+  cardano_plutus_data_unref(&payload);
+
+  // ...and a resolution pass (one balancing iteration) replaces it with the callback payload.
+  cardano_utxo_list_t* resolved_inputs = NULL;
+  EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* expected = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
+
+  payload = cardano_redeemer_get_data(redeemer);
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, expected));
+
+  // Cleanup
+  cardano_plutus_data_unref(&payload);
+  cardano_plutus_data_unref(&expected);
+  cardano_plutus_data_unref(&placeholder);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+}
+
+TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, latchesErrorOnNullArguments)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_asset_name_t*          asset_name = NULL;
+  cardano_blake2b_hash_t*        policy_id  = NULL;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+
+  // Act & Assert
+  cardano_tx_builder_mint_token_with_deferred_redeemer(nullptr, policy_id, asset_name, 4, fixed_payload_deferred_callback, NULL);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, nullptr, asset_name, 4, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, policy_id, asset_name, 4, nullptr, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // A builder already in an error state must not register anything.
+  tx_builder->last_error = CARDANO_ERROR_GENERIC;
+  cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, policy_id, asset_name, 4, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+}
+
+TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_asset_name_t*          asset_name = NULL;
+  cardano_blake2b_hash_t*        policy_id  = NULL;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that every
+  // intermediate allocation (placeholder, declaration and deferred registration) fails at
+  // least once.
+  for (int i = 0; i < 512; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, policy_id, asset_name, 4, fixed_payload_deferred_callback, NULL);
+
+    const cardano_error_t error = tx_builder->last_error;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, registersDeferredRedeemerForTheWithdrawal)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, reward_address, 0, fixed_payload_deferred_callback, NULL);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->withdrawals_to_redeemer_map), 1U);
+
+  // The withdrawal redeemer starts out as the placeholder `constr 0 []`...
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->withdrawals_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
+  cardano_redeemer_unref(&redeemer);
+
+  cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
+  cardano_plutus_data_t* payload     = cardano_redeemer_get_data(redeemer);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, placeholder));
+  cardano_plutus_data_unref(&payload);
+
+  // ...and a resolution pass (one balancing iteration) replaces it with the callback payload.
+  cardano_utxo_list_t* resolved_inputs = NULL;
+  EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* expected = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
+
+  payload = cardano_redeemer_get_data(redeemer);
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, expected));
+
+  // Cleanup
+  cardano_plutus_data_unref(&payload);
+  cardano_plutus_data_unref(&expected);
+  cardano_plutus_data_unref(&placeholder);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, latchesErrorOnNullArguments)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Act & Assert
+  cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(nullptr, reward_address, 0, fixed_payload_deferred_callback, NULL);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, nullptr, 0, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, reward_address, 0, nullptr, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // A failure in the underlying withdrawal declaration must abort the registration.
+  cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, reward_address, -1, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that every
+  // intermediate allocation (placeholder, declaration and deferred registration) fails at
+  // least once.
+  for (int i = 0; i < 512; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, reward_address, 0, fixed_payload_deferred_callback, NULL);
+
+    const cardano_error_t error = tx_builder->last_error;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_set_allocators(malloc, realloc, free);
 }

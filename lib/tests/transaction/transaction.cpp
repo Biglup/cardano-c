@@ -22,10 +22,14 @@
 
 #include <cardano/error.h>
 
+#include <cardano/address/address.h>
+#include <cardano/address/reward_address.h>
 #include <cardano/auxiliary_data/auxiliary_data.h>
 #include <cardano/cbor/cbor_reader.h>
+#include <cardano/crypto/blake2b_hash.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/transaction_body.h>
+#include <cardano/witness_set/redeemer_tag.h>
 #include <cardano/witness_set/witness_set.h>
 
 #include "../json_helpers.h"
@@ -1214,4 +1218,472 @@ TEST(cardano_transaction_to_cip116_json, canConvertToCip116Json)
   cardano_cbor_reader_unref(&reader);
   cardano_json_writer_unref(&json_writer);
   free(json_str);
+}
+
+/* FIND HELPERS **************************************************************/
+
+static const char* KNOWN_INPUT_ID       = "0f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* UNKNOWN_INPUT_ID     = "6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de";
+static const char* OUTPUT_ADDRESS       = "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp";
+static const char* OTHER_ADDRESS        = "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg";
+static const char* MINT_POLICY_FIRST    = "2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740";
+static const char* MINT_POLICY_LAST     = "7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373";
+static const char* UNKNOWN_POLICY       = "00000000000000000000000000000000000000000000000000000000";
+static const char* WITHDRAWAL_ADDRESS   = "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27";
+static const char* OTHER_REWARD_ADDRESS = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
+
+/**
+ * Creates a blake2b hash object from a hex string.
+ * @return A new instance of the hash.
+ */
+static cardano_blake2b_hash_t*
+new_default_hash(const char* hex)
+{
+  cardano_blake2b_hash_t* hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hex, strlen(hex), &hash), CARDANO_SUCCESS);
+
+  return hash;
+}
+
+TEST(cardano_transaction_find_input_index, canFindTheInput)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* id          = new_default_hash(KNOWN_INPUT_ID);
+
+  // Act
+  uint64_t        index  = 99U;
+  cardano_error_t result = cardano_transaction_find_input_index(transaction, id, 0U, &index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 0U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&id);
+}
+
+TEST(cardano_transaction_find_input_index, returnsNotFoundIfNoInputMatches)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* id          = new_default_hash(KNOWN_INPUT_ID);
+  cardano_blake2b_hash_t* unknown_id  = new_default_hash(UNKNOWN_INPUT_ID);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_input_index(transaction, id, 99U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_input_index(transaction, unknown_id, 0U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&id);
+  cardano_blake2b_hash_unref(&unknown_id);
+}
+
+TEST(cardano_transaction_find_input_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* id          = new_default_hash(KNOWN_INPUT_ID);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_input_index(NULL, id, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_input_index(transaction, NULL, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_input_index(transaction, id, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&id);
+}
+
+TEST(cardano_transaction_find_reference_input_index, canFindTheReferenceInput)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* id          = new_default_hash(KNOWN_INPUT_ID);
+
+  // Act
+  uint64_t        index  = 99U;
+  cardano_error_t result = cardano_transaction_find_reference_input_index(transaction, id, 0U, &index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 0U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&id);
+}
+
+TEST(cardano_transaction_find_reference_input_index, returnsNotFoundIfNoMatchOrNoReferenceInputs)
+{
+  // Arrange
+  cardano_transaction_t*  transaction   = new_default_transaction(CBOR);
+  cardano_transaction_t*  no_ref_inputs = new_default_transaction(CBOR2);
+  cardano_blake2b_hash_t* id            = new_default_hash(KNOWN_INPUT_ID);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_reference_input_index(transaction, id, 99U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_reference_input_index(no_ref_inputs, id, 0U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_ref_inputs);
+  cardano_blake2b_hash_unref(&id);
+}
+
+TEST(cardano_transaction_find_reference_input_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* id          = new_default_hash(KNOWN_INPUT_ID);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_reference_input_index(NULL, id, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_reference_input_index(transaction, NULL, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_reference_input_index(transaction, id, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&id);
+}
+
+TEST(cardano_transaction_find_output_index, canFindTheOutput)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+  cardano_address_t*     address     = NULL;
+
+  EXPECT_EQ(cardano_address_from_string(OUTPUT_ADDRESS, strlen(OUTPUT_ADDRESS), &address), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t        index  = 99U;
+  cardano_error_t result = cardano_transaction_find_output_index(transaction, address, 10U, &index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 0U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_transaction_find_output_index, returnsNotFoundIfNoOutputMatches)
+{
+  // Arrange
+  cardano_transaction_t* transaction   = new_default_transaction(CBOR);
+  cardano_address_t*     address       = NULL;
+  cardano_address_t*     other_address = NULL;
+
+  EXPECT_EQ(cardano_address_from_string(OUTPUT_ADDRESS, strlen(OUTPUT_ADDRESS), &address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_address_from_string(OTHER_ADDRESS, strlen(OTHER_ADDRESS), &other_address), CARDANO_SUCCESS);
+
+  // Act & Assert
+
+  // The only output pays exactly 10 lovelace, so a higher minimum must not match.
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_output_index(transaction, address, 11U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_output_index(transaction, other_address, 1U, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&address);
+  cardano_address_unref(&other_address);
+}
+
+TEST(cardano_transaction_find_output_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+  cardano_address_t*     address     = NULL;
+
+  EXPECT_EQ(cardano_address_from_string(OUTPUT_ADDRESS, strlen(OUTPUT_ADDRESS), &address), CARDANO_SUCCESS);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_output_index(NULL, address, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_output_index(transaction, NULL, 0U, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_output_index(transaction, address, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_transaction_find_mint_policy_index, canFindThePolicy)
+{
+  // Arrange
+  cardano_transaction_t*  transaction  = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* first_policy = new_default_hash(MINT_POLICY_FIRST);
+  cardano_blake2b_hash_t* last_policy  = new_default_hash(MINT_POLICY_LAST);
+
+  // Act
+  uint64_t        first_index = 99U;
+  uint64_t        last_index  = 99U;
+  cardano_error_t result      = cardano_transaction_find_mint_policy_index(transaction, first_policy, &first_index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(first_index, 0U);
+
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(transaction, last_policy, &last_index), CARDANO_SUCCESS);
+  EXPECT_EQ(last_index, 2U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&first_policy);
+  cardano_blake2b_hash_unref(&last_policy);
+}
+
+TEST(cardano_transaction_find_mint_policy_index, returnsNotFoundIfNoMatchOrNoMint)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_transaction_t*  no_mint     = new_default_transaction(CBOR2);
+  cardano_blake2b_hash_t* unknown     = new_default_hash(UNKNOWN_POLICY);
+  cardano_blake2b_hash_t* policy      = new_default_hash(MINT_POLICY_FIRST);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(transaction, unknown, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(no_mint, policy, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_mint);
+  cardano_blake2b_hash_unref(&unknown);
+  cardano_blake2b_hash_unref(&policy);
+}
+
+TEST(cardano_transaction_find_mint_policy_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* policy      = new_default_hash(MINT_POLICY_FIRST);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(NULL, policy, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(transaction, NULL, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_mint_policy_index(transaction, policy, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&policy);
+}
+
+TEST(cardano_transaction_find_withdrawal_index, canFindTheWithdrawal)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(CBOR);
+  cardano_reward_address_t* reward_address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(WITHDRAWAL_ADDRESS, strlen(WITHDRAWAL_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t        index  = 99U;
+  cardano_error_t result = cardano_transaction_find_withdrawal_index(transaction, reward_address, &index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 0U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_transaction_find_withdrawal_index, returnsNotFoundIfNoMatchOrNoWithdrawals)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(CBOR);
+  cardano_transaction_t*    no_withdrawals = new_default_transaction(CBOR2);
+  cardano_reward_address_t* other_address  = NULL;
+  cardano_reward_address_t* reward_address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(OTHER_REWARD_ADDRESS, strlen(OTHER_REWARD_ADDRESS), &other_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(WITHDRAWAL_ADDRESS, strlen(WITHDRAWAL_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, other_address, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(no_withdrawals, reward_address, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_withdrawals);
+  cardano_reward_address_unref(&other_address);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_transaction_find_withdrawal_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(CBOR);
+  cardano_reward_address_t* reward_address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(WITHDRAWAL_ADDRESS, strlen(WITHDRAWAL_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(NULL, reward_address, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, NULL, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, reward_address, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_transaction_find_redeemer_index, ranksRedeemersByTagAndPurposeIndex)
+{
+  // Arrange
+
+  // The fixture witness set holds two redeemers: (mint, 0) and (cert, 1).
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+
+  // Act
+  uint64_t        mint_rank = 99U;
+  uint64_t        cert_rank = 99U;
+  cardano_error_t result    = cardano_transaction_find_redeemer_index(transaction, CARDANO_REDEEMER_TAG_MINT, 0U, &mint_rank);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(mint_rank, 0U);
+
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(transaction, CARDANO_REDEEMER_TAG_CERTIFYING, 1U, &cert_rank), CARDANO_SUCCESS);
+  EXPECT_EQ(cert_rank, 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_find_redeemer_index, returnsNotFoundIfNoMatchOrNoRedeemers)
+{
+  // Arrange
+  cardano_transaction_t* transaction  = new_default_transaction(CBOR);
+  cardano_transaction_t* no_redeemers = new_default_transaction(CBOR2);
+
+  // Act & Assert
+  uint64_t rank = 0U;
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(transaction, CARDANO_REDEEMER_TAG_SPEND, 0U, &rank), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(transaction, CARDANO_REDEEMER_TAG_MINT, 5U, &rank), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(no_redeemers, CARDANO_REDEEMER_TAG_MINT, 0U, &rank), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_redeemers);
+}
+
+TEST(cardano_transaction_find_redeemer_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+
+  // Act & Assert
+  uint64_t rank = 0U;
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(NULL, CARDANO_REDEEMER_TAG_MINT, 0U, &rank), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(transaction, CARDANO_REDEEMER_TAG_MINT, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_find_mint_policy_index, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t*  transaction = new_default_transaction(CBOR);
+  cardano_blake2b_hash_t* policy      = new_default_hash(MINT_POLICY_FIRST);
+
+  // Sweep the allocation failure point across the whole call until it succeeds.
+  for (int i = 0; i < 512; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    uint64_t              index  = 0U;
+    const cardano_error_t result = cardano_transaction_find_mint_policy_index(transaction, policy, &index);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_transaction_find_withdrawal_index, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(CBOR);
+  cardano_reward_address_t* reward_address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(WITHDRAWAL_ADDRESS, strlen(WITHDRAWAL_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that both the
+  // target and the per-entry reward address conversions fail at least once. Some failure points
+  // degrade an internal comparison into a non-match, so the sweep only demands a non-success
+  // result while requiring the allocation failure itself to surface at least once.
+  bool saw_memory_failure = false;
+
+  for (int i = 0; i < 512; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    uint64_t              index  = 0U;
+    const cardano_error_t result = cardano_transaction_find_withdrawal_index(transaction, reward_address, &index);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_NE(result, CARDANO_SUCCESS);
+
+    if (result == CARDANO_ERROR_MEMORY_ALLOCATION_FAILED)
+    {
+      saw_memory_failure = true;
+    }
+  }
+
+  EXPECT_TRUE(saw_memory_failure);
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_reward_address_unref(&reward_address);
+  cardano_set_allocators(malloc, realloc, free);
 }
