@@ -201,6 +201,7 @@
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/coin_selection/coin_selection_request.h>
+#include <cardano/transaction_builder/coin_selection/coin_selection_strategy.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector_impl.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
