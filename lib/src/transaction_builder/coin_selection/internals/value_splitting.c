@@ -263,7 +263,8 @@ _cardano_coin_selection_value_is_oversized(
 
   if (writer == NULL)
   {
-    CARDANO_UNUSED(cardano_value_set_coin(value, original_coin));
+    const cardano_error_t rollback_result = cardano_value_set_coin(value, original_coin);
+    CARDANO_UNUSED(rollback_result);
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
