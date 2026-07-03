@@ -29,6 +29,7 @@
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/providers/provider.h>
 #include <cardano/slot_config.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
 #include <cardano/typedefs.h>
@@ -759,6 +760,31 @@ CARDANO_EXPORT void cardano_tx_builder_add_input(
   cardano_plutus_data_t* datum);
 
 /**
+ * \brief Adds a script input whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_tx_builder_add_input, but instead of a literal redeemer the caller
+ * provides a callback that builds the payload from the balanced draft transaction, once the
+ * final canonical input order, the change outputs and the fee are known. This is the mechanism
+ * for redeemers that carry indices of elements of the script context (see
+ * \ref cardano_deferred_redeemer_fn_t and the \ref cardano_transaction_find_input_index family).
+ *
+ * The callback is invoked on every balancing iteration and must be a pure function of its
+ * arguments. The caller must keep `user_context` valid until the transaction is built.
+ *
+ * \param[in] builder      The transaction builder.
+ * \param[in] utxo         The UTXO to spend.
+ * \param[in] callback     The callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ * \param[in] datum        The datum of the UTXO, or NULL when the output holds an inline datum.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_input_deferred(
+  cardano_tx_builder_t*          builder,
+  cardano_utxo_t*                utxo,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  cardano_plutus_data_t*         datum);
+
+/**
  * \brief Adds an output to the transaction.
  *
  * This function appends a specified transaction output to the transaction being built.
@@ -865,6 +891,27 @@ CARDANO_EXPORT void cardano_tx_builder_mint_token(
   cardano_asset_name_t*   name,
   int64_t                 amount,
   cardano_plutus_data_t*  redeemer);
+
+/**
+ * \brief Adds a token minting operation whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_tx_builder_mint_token, but the redeemer payload is built by the
+ * callback from the balanced draft transaction. See \ref cardano_tx_builder_add_input_deferred.
+ *
+ * \param[in] builder      The transaction builder.
+ * \param[in] policy_id    The policy id of the token.
+ * \param[in] name         The asset name of the token.
+ * \param[in] amount       The amount to mint (positive) or burn (negative).
+ * \param[in] callback     The callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_mint_token_deferred(
+  cardano_tx_builder_t*          builder,
+  cardano_blake2b_hash_t*        policy_id,
+  cardano_asset_name_t*          name,
+  int64_t                        amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
 
 /**
  * \brief Adds a token minting operation to the transaction builder using policy ID and asset name in hexadecimal format.
@@ -1091,6 +1138,25 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards(
   cardano_reward_address_t* address,
   int64_t                   amount,
   cardano_plutus_data_t*    redeemer);
+
+/**
+ * \brief Withdraws rewards with a redeemer payload produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_tx_builder_withdraw_rewards, but the redeemer payload is built by the
+ * callback from the balanced draft transaction. See \ref cardano_tx_builder_add_input_deferred.
+ *
+ * \param[in] builder      The transaction builder.
+ * \param[in] address      The reward address to withdraw from.
+ * \param[in] amount       The amount to withdraw.
+ * \param[in] callback     The callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_deferred(
+  cardano_tx_builder_t*          builder,
+  cardano_reward_address_t*      address,
+  int64_t                        amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
 
 /**
  * \brief Withdraws rewards from a specified reward account using a string address in the transaction builder.

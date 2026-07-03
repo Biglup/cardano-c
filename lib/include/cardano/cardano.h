@@ -198,6 +198,7 @@
 #include <cardano/transaction_body/transaction_output_list.h>
 #include <cardano/transaction_body/value.h>
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/coin_selection/coin_selection_request.h>

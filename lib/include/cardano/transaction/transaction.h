@@ -24,6 +24,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/address/address.h>
+#include <cardano/address/reward_address.h>
 #include <cardano/auxiliary_data/auxiliary_data.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
@@ -728,6 +730,125 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_get_unique_signers(
   cardano_transaction_t*       tx,
   cardano_utxo_list_t*         resolved_inputs,
   cardano_blake2b_hash_set_t** unique_signers);
+
+/**
+ * \brief Finds the index of an input in the transaction's canonically ordered input set.
+ *
+ * Transaction inputs appear in the script context in canonical order (sorted lexicographically
+ * by transaction id and output index). This function returns the position that the given input
+ * occupies in that ordering, which is the index spend redeemers and validators use to reference it.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  id          The transaction id of the input's producing transaction.
+ * \param[in]  utxo_index  The output index of the input within its producing transaction.
+ * \param[out] index       The position of the input in the canonical input order.
+ *
+ * \return \ref CARDANO_SUCCESS if the input was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
+ *         transaction does not spend the given input, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_input_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* id,
+  uint64_t                utxo_index,
+  uint64_t*               index);
+
+/**
+ * \brief Finds the index of a reference input in the transaction's canonically ordered
+ * reference input set.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  id          The transaction id of the reference input's producing transaction.
+ * \param[in]  utxo_index  The output index of the reference input within its producing transaction.
+ * \param[out] index       The position of the reference input in the canonical ordering.
+ *
+ * \return \ref CARDANO_SUCCESS if the reference input was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the transaction does not reference the given input, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_reference_input_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* id,
+  uint64_t                utxo_index,
+  uint64_t*               index);
+
+/**
+ * \brief Finds the index of the first output paying at least the given amount of lovelace to the
+ * given address.
+ *
+ * Outputs are indexed in the order they appear in the transaction body, which is the order
+ * validators observe in the script context. This lookup can match balancer-generated change
+ * outputs, which are appended after the user-declared outputs.
+ *
+ * \param[in]  transaction  The transaction to inspect.
+ * \param[in]  address      The address the output must pay to.
+ * \param[in]  min_lovelace The minimum lovelace quantity the output must carry.
+ * \param[out] index        The position of the first matching output.
+ *
+ * \return \ref CARDANO_SUCCESS if a matching output was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if no output matches, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_output_index(
+  cardano_transaction_t* transaction,
+  cardano_address_t*     address,
+  uint64_t               min_lovelace,
+  uint64_t*              index);
+
+/**
+ * \brief Finds the index of a policy in the transaction's canonically ordered mint map.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  policy_id   The policy id to look for.
+ * \param[out] index       The position of the policy in the canonical mint ordering.
+ *
+ * \return \ref CARDANO_SUCCESS if the policy was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
+ *         transaction does not mint or burn under the given policy, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_mint_policy_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* policy_id,
+  uint64_t*               index);
+
+/**
+ * \brief Finds the index of a withdrawal in the transaction's canonically ordered withdrawal map.
+ *
+ * \param[in]  transaction    The transaction to inspect.
+ * \param[in]  reward_address The reward address of the withdrawal.
+ * \param[out] index          The position of the withdrawal in the canonical ordering.
+ *
+ * \return \ref CARDANO_SUCCESS if the withdrawal was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if
+ *         the transaction does not withdraw from the given reward address, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_withdrawal_index(
+  cardano_transaction_t*    transaction,
+  cardano_reward_address_t* reward_address,
+  uint64_t*                 index);
+
+/**
+ * \brief Finds the position of a redeemer in the transaction's canonically ordered redeemer list.
+ *
+ * Redeemers are ordered by tag first and purpose index second, which is the ordering validators
+ * observe in the script context. The purpose index is the redeemer's index within its tag (for
+ * example, the canonical input position for spend redeemers or the policy position for mint
+ * redeemers).
+ *
+ * \param[in]  transaction   The transaction to inspect.
+ * \param[in]  tag           The redeemer tag.
+ * \param[in]  purpose_index The redeemer's index within its tag.
+ * \param[out] index         The position of the redeemer in the canonical redeemer ordering.
+ *
+ * \return \ref CARDANO_SUCCESS if the redeemer was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if no
+ *         redeemer matches, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_redeemer_index(
+  cardano_transaction_t* transaction,
+  cardano_redeemer_tag_t tag,
+  uint64_t               purpose_index,
+  uint64_t*              index);
 
 /**
  * \brief Decrements the reference count of a cardano_transaction_t object.

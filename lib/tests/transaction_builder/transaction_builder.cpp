@@ -25,6 +25,8 @@
 
 #include <cardano/error.h>
 
+#include <cardano/plutus_data/constr_plutus_data.h>
+#include <cardano/plutus_data/plutus_list.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include "../../src/transaction_builder/internals/blake2b_hash_to_redeemer_map.h"
@@ -8046,4 +8048,176 @@ TEST(cardano_tx_builder_propose_info_ex, returnsErrorIfMemoryAllocationFails)
   cardano_protocol_parameters_unref(&params);
 
   cardano_anchor_unref(&anchor);
+}
+
+/**
+ * Deferred redeemer callback used by the tests: returns Constr 0 [own_input_index] derived from
+ * the balanced draft via the canonical index lookup helpers.
+ */
+static cardano_error_t
+build_self_index_redeemer(void* user_context, cardano_transaction_t* draft_tx, cardano_utxo_list_t* resolved_inputs, cardano_plutus_data_t** redeemer)
+{
+  CARDANO_UNUSED(resolved_inputs);
+
+  cardano_utxo_t* own_utxo = (cardano_utxo_t*)user_context;
+
+  cardano_transaction_input_t* input = cardano_utxo_get_input(own_utxo);
+  cardano_transaction_input_unref(&input);
+
+  cardano_blake2b_hash_t* id = cardano_transaction_input_get_id(input);
+  cardano_blake2b_hash_unref(&id);
+
+  uint64_t own_index = 0U;
+
+  cardano_error_t result = cardano_transaction_find_input_index(draft_tx, id, cardano_transaction_input_get_index(input), &own_index);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_plutus_data_t* index_data = NULL;
+
+  result = cardano_plutus_data_new_integer_from_int((int64_t)own_index, &index_data);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_plutus_list_t* fields = NULL;
+  result                        = cardano_plutus_list_new(&fields);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_add(fields, index_data);
+  }
+
+  cardano_constr_plutus_data_t* constr = NULL;
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_constr_plutus_data_new(0U, fields, &constr);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_constr(constr, redeemer);
+  }
+
+  cardano_constr_plutus_data_unref(&constr);
+  cardano_plutus_list_unref(&fields);
+  cardano_plutus_data_unref(&index_data);
+
+  return result;
+}
+
+TEST(cardano_tx_builder_add_input_deferred, resolvesTheRedeemerFromTheFinalTransaction)
+{
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_provider_t*            provider       = NULL;
+  cardano_tx_evaluator_t*        tx_evaluator   = NULL;
+  cardano_utxo_t*                utxo           = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_plutus_data_t*         datum          = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_address_t*             change_address = nullptr;
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+
+  EXPECT_EQ(cardano_address_from_string("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"), &change_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_provider_new(cardano_provider_impl_new(), &provider), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_from_provider(provider, &tx_evaluator), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_tx_evaluator(tx_builder, tx_evaluator);
+  cardano_tx_builder_set_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+
+  cardano_transaction_t* tx = nullptr;
+
+  cardano_tx_builder_add_input_deferred(tx_builder, utxo, build_self_index_redeemer, utxo, datum);
+
+  cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  // The resolved redeemer must be Constr 0 [own_input_index] with the index matching the
+  // canonical position of the script input in the final transaction.
+  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&input);
+
+  cardano_blake2b_hash_t* id = cardano_transaction_input_get_id(input);
+  cardano_blake2b_hash_unref(&id);
+
+  uint64_t expected_index = 0U;
+  EXPECT_EQ(cardano_transaction_find_input_index(tx, id, cardano_transaction_input_get_index(input), &expected_index), CARDANO_SUCCESS);
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  ASSERT_EQ(cardano_redeemer_list_get_length(redeemers), 1U);
+
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_redeemer_list_get(redeemers, 0U, &redeemer), CARDANO_SUCCESS);
+  cardano_redeemer_unref(&redeemer);
+
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), expected_index);
+
+  cardano_plutus_data_t* payload = cardano_redeemer_get_data(redeemer);
+  cardano_plutus_data_unref(&payload);
+
+  cardano_constr_plutus_data_t* constr = NULL;
+  ASSERT_EQ(cardano_plutus_data_to_constr(payload, &constr), CARDANO_SUCCESS);
+  cardano_constr_plutus_data_unref(&constr);
+
+  cardano_plutus_list_t* fields = NULL;
+  ASSERT_EQ(cardano_constr_plutus_data_get_data(constr, &fields), CARDANO_SUCCESS);
+  cardano_plutus_list_unref(&fields);
+
+  ASSERT_EQ(cardano_plutus_list_get_length(fields), 1U);
+
+  cardano_plutus_data_t* field = NULL;
+  ASSERT_EQ(cardano_plutus_list_get(fields, 0U, &field), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&field);
+
+  cardano_bigint_t* value = NULL;
+  ASSERT_EQ(cardano_plutus_data_to_integer(field, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(value), (int64_t)expected_index);
+  cardano_bigint_unref(&value);
+
+  // The redeemer index lookup helper agrees with the witness set ordering.
+  uint64_t redeemer_rank = 0U;
+  EXPECT_EQ(cardano_transaction_find_redeemer_index(tx, CARDANO_REDEEMER_TAG_SPEND, expected_index, &redeemer_rank), CARDANO_SUCCESS);
+  EXPECT_EQ(redeemer_rank, 0U);
+
+  // The output lookup helper can find the change output.
+  uint64_t change_index = 0U;
+  EXPECT_EQ(cardano_transaction_find_output_index(tx, change_address, 1U, &change_index), CARDANO_SUCCESS);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_provider_unref(&provider);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&change_address);
+  cardano_plutus_data_unref(&datum);
+  cardano_utxo_list_unref(&utxos);
+  cardano_tx_evaluator_unref(&tx_evaluator);
+}
+
+TEST(cardano_tx_builder_add_input_deferred, latchesErrorOnNullArguments)
+{
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_input_deferred(nullptr, nullptr, nullptr, nullptr, nullptr);
+  cardano_tx_builder_add_input_deferred(tx_builder, nullptr, nullptr, nullptr, nullptr);
+
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
 }

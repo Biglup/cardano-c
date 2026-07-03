@@ -453,18 +453,19 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
 
 cardano_error_t
 cardano_balance_transaction(
-  cardano_transaction_t*           unbalanced_tx,
-  const size_t                     foreign_signature_count,
-  cardano_protocol_parameters_t*   protocol_params,
-  cardano_utxo_list_t*             reference_inputs,
-  cardano_utxo_list_t*             pre_selected_utxo,
-  cardano_input_to_redeemer_map_t* input_to_redeemer_map,
-  cardano_utxo_list_t*             available_utxo,
-  cardano_coin_selector_t*         coin_selector,
-  cardano_address_t*               change_address,
-  cardano_utxo_list_t*             available_collateral_utxo,
-  cardano_address_t*               collateral_change_address,
-  cardano_tx_evaluator_t*          evaluator)
+  cardano_transaction_t*            unbalanced_tx,
+  const size_t                      foreign_signature_count,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
+  cardano_utxo_list_t*              available_utxo,
+  cardano_coin_selector_t*          coin_selector,
+  cardano_address_t*                change_address,
+  cardano_utxo_list_t*              available_collateral_utxo,
+  cardano_address_t*                collateral_change_address,
+  cardano_tx_evaluator_t*           evaluator,
+  cardano_deferred_redeemer_list_t* deferred_redeemers)
 {
   cardano_error_t result      = CARDANO_SUCCESS;
   bool            is_balanced = false;
@@ -618,6 +619,19 @@ cardano_balance_transaction(
           unbalanced_tx,
           "Coin selector returned a change output below the min-ADA requirement.");
       }
+
+      return result;
+    }
+
+    // Deferred redeemers are resolved once the canonical input order and the change outputs are
+    // final, and before evaluation, so that payloads are priced within the same iteration.
+    result = cardano_deferred_redeemer_list_resolve(deferred_redeemers, unbalanced_tx, selection);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_utxo_list_unref(&selection);
+      cardano_utxo_list_unref(&remaining_utxo);
 
       return result;
     }

@@ -23,6 +23,7 @@
 
 #include <cardano/object.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/witness_set/redeemer.h>
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
@@ -658,4 +659,359 @@ const char*
 cardano_transaction_get_last_error(const cardano_transaction_t* transaction)
 {
   return cardano_object_get_last_error(&transaction->base);
+}
+
+/**
+ * \brief Finds the position of an input matching the given id and index within an input set.
+ *
+ * \param[in]  inputs     The input set to search.
+ * \param[in]  id         The transaction id to match.
+ * \param[in]  utxo_index The output index to match.
+ * \param[out] index      The position of the matching input.
+ *
+ * \return \ref CARDANO_SUCCESS if found, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ */
+static cardano_error_t
+find_in_input_set(
+  cardano_transaction_input_set_t* inputs,
+  cardano_blake2b_hash_t*          id,
+  const uint64_t                   utxo_index,
+  uint64_t*                        index)
+{
+  const size_t length = cardano_transaction_input_set_get_length(inputs);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    cardano_error_t result = cardano_transaction_input_set_get(inputs, i, &input);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_blake2b_hash_t* input_id = cardano_transaction_input_get_id(input);
+
+    const bool matches = cardano_blake2b_hash_equals(input_id, id) && (cardano_transaction_input_get_index(input) == utxo_index);
+
+    cardano_blake2b_hash_unref(&input_id);
+    cardano_transaction_input_unref(&input);
+
+    if (matches)
+    {
+      *index = i;
+
+      return CARDANO_SUCCESS;
+    }
+  }
+
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+}
+
+cardano_error_t
+cardano_transaction_find_input_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* id,
+  const uint64_t          utxo_index,
+  uint64_t*               index)
+{
+  if ((transaction == NULL) || (id == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  if (inputs == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  return find_in_input_set(inputs, id, utxo_index, index);
+}
+
+cardano_error_t
+cardano_transaction_find_reference_input_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* id,
+  const uint64_t          utxo_index,
+  uint64_t*               index)
+{
+  if ((transaction == NULL) || (id == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_reference_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  if (inputs == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  return find_in_input_set(inputs, id, utxo_index, index);
+}
+
+cardano_error_t
+cardano_transaction_find_output_index(
+  cardano_transaction_t* transaction,
+  cardano_address_t*     address,
+  const uint64_t         min_lovelace,
+  uint64_t*              index)
+{
+  if ((transaction == NULL) || (address == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_output_list_unref(&outputs);
+
+  if (outputs == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  const size_t length = cardano_transaction_output_list_get_length(outputs);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+
+    cardano_error_t result = cardano_transaction_output_list_get(outputs, i, &output);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_address_t* output_address = cardano_transaction_output_get_address(output);
+    cardano_value_t*   value          = cardano_transaction_output_get_value(output);
+
+    const bool matches = cardano_address_equals(output_address, address) && (cardano_value_get_coin(value) >= (int64_t)min_lovelace);
+
+    cardano_address_unref(&output_address);
+    cardano_value_unref(&value);
+    cardano_transaction_output_unref(&output);
+
+    if (matches)
+    {
+      *index = i;
+
+      return CARDANO_SUCCESS;
+    }
+  }
+
+  return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+}
+
+cardano_error_t
+cardano_transaction_find_mint_policy_index(
+  cardano_transaction_t*  transaction,
+  cardano_blake2b_hash_t* policy_id,
+  uint64_t*               index)
+{
+  if ((transaction == NULL) || (policy_id == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&mint);
+
+  if (mint == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_policy_id_list_t* policies = NULL;
+
+  cardano_error_t result = cardano_multi_asset_get_keys(mint, &policies);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t length = cardano_policy_id_list_get_length(policies);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_blake2b_hash_t* policy = NULL;
+
+    const cardano_error_t get_result = cardano_policy_id_list_get(policies, i, &policy);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+      break;
+    }
+
+    if (cardano_blake2b_hash_equals(policy, policy_id))
+    {
+      *index = i;
+      result = CARDANO_SUCCESS;
+    }
+
+    cardano_blake2b_hash_unref(&policy);
+  }
+
+  cardano_policy_id_list_unref(&policies);
+
+  return result;
+}
+
+cardano_error_t
+cardano_transaction_find_withdrawal_index(
+  cardano_transaction_t*    transaction,
+  cardano_reward_address_t* reward_address,
+  uint64_t*                 index)
+{
+  if ((transaction == NULL) || (reward_address == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+  cardano_withdrawal_map_unref(&withdrawals);
+
+  if (withdrawals == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_address_t* target = cardano_reward_address_to_address(reward_address);
+
+  if (target == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t length = cardano_withdrawal_map_get_length(withdrawals);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_reward_address_t* key = NULL;
+
+    const cardano_error_t get_result = cardano_withdrawal_map_get_key_at(withdrawals, i, &key);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+      break;
+    }
+
+    cardano_address_t* key_address = cardano_reward_address_to_address(key);
+
+    if (key_address == NULL)
+    {
+      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+    else if (cardano_address_equals(key_address, target))
+    {
+      *index = i;
+      result = CARDANO_SUCCESS;
+    }
+    else
+    {
+      /* Keep searching. */
+    }
+
+    cardano_address_unref(&key_address);
+    cardano_reward_address_unref(&key);
+  }
+
+  cardano_address_unref(&target);
+
+  return result;
+}
+
+cardano_error_t
+cardano_transaction_find_redeemer_index(
+  cardano_transaction_t*       transaction,
+  const cardano_redeemer_tag_t tag,
+  const uint64_t               purpose_index,
+  uint64_t*                    index)
+{
+  if ((transaction == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(transaction);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  if (redeemers == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  const size_t length = cardano_redeemer_list_get_length(redeemers);
+
+  uint64_t rank  = 0U;
+  bool     found = false;
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+
+    cardano_error_t result = cardano_redeemer_list_get(redeemers, i, &redeemer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    const cardano_redeemer_tag_t entry_tag   = cardano_redeemer_get_tag(redeemer);
+    const uint64_t               entry_index = cardano_redeemer_get_index(redeemer);
+
+    cardano_redeemer_unref(&redeemer);
+
+    if ((entry_tag == tag) && (entry_index == purpose_index))
+    {
+      found = true;
+    }
+    else if ((entry_tag < tag) || ((entry_tag == tag) && (entry_index < purpose_index)))
+    {
+      ++rank;
+    }
+    else
+    {
+      /* Entry orders after the requested redeemer. */
+    }
+  }
+
+  if (!found)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *index = rank;
+
+  return CARDANO_SUCCESS;
 }

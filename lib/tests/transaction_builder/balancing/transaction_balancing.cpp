@@ -465,7 +465,8 @@ TEST(cardano_balance_transaction, canBalanceATransaction)
     change_address,
     reference_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -511,7 +512,8 @@ TEST(cardano_balance_transaction, canBalanceATransactionWithRandomImproveSelecto
     change_address,
     reference_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -557,7 +559,8 @@ TEST(cardano_balance_transaction, canBalanceATransaction2)
     change_address,
     reference_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -608,7 +611,8 @@ TEST(cardano_balance_transaction, canBalanceATransactionWithDonations)
     change_address,
     reference_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -660,7 +664,8 @@ TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailure)
       change_address,
       reference_inputs,
       change_address,
-      evaluator);
+      evaluator,
+      nullptr);
 
     EXPECT_NE(result, CARDANO_SUCCESS);
   }
@@ -711,7 +716,8 @@ TEST(cardano_balance_transaction, useSuggestedFeeIfGivenAndEnough)
     change_address,
     reference_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -757,7 +763,8 @@ TEST(cardano_balance_transaction, canBalanceTxWithScripts)
     change_address,
     resolved_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   bool is_balanced = false;
@@ -825,7 +832,8 @@ TEST(cardano_balance_transaction, forwardsReferenceInputsToTheEvaluator)
     change_address,
     resolved_inputs,
     change_address,
-    evaluator);
+    evaluator,
+    nullptr);
 
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);

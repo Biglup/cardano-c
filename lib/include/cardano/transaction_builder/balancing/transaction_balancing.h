@@ -28,6 +28,7 @@
 #include <cardano/protocol_params/protocol_parameters.h>
 #include <cardano/providers/provider.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 
@@ -85,7 +86,7 @@ extern "C" {
  * cardano_address_t* collateral_change_addr = ...;               // Collateral change address
  * cardano_tx_evaluator_t* eval = ...;                            // Evaluator instance
  *
- * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval);
+ * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval, NULL);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -96,18 +97,19 @@ extern "C" {
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_balance_transaction(
-  cardano_transaction_t*           unbalanced_tx,
-  size_t                           foreign_signature_count,
-  cardano_protocol_parameters_t*   protocol_params,
-  cardano_utxo_list_t*             reference_inputs,
-  cardano_utxo_list_t*             pre_selected_utxo,
-  cardano_input_to_redeemer_map_t* input_to_redeemer_map,
-  cardano_utxo_list_t*             available_utxo,
-  cardano_coin_selector_t*         coin_selector,
-  cardano_address_t*               change_address,
-  cardano_utxo_list_t*             available_collateral_utxo,
-  cardano_address_t*               collateral_change_address,
-  cardano_tx_evaluator_t*          evaluator);
+  cardano_transaction_t*            unbalanced_tx,
+  size_t                            foreign_signature_count,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
+  cardano_utxo_list_t*              available_utxo,
+  cardano_coin_selector_t*          coin_selector,
+  cardano_address_t*                change_address,
+  cardano_utxo_list_t*              available_collateral_utxo,
+  cardano_address_t*                collateral_change_address,
+  cardano_tx_evaluator_t*           evaluator,
+  cardano_deferred_redeemer_list_t* deferred_redeemers);
 
 /**
  * \brief Checks whether a Cardano transaction is balanced.
