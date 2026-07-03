@@ -29,6 +29,7 @@
 #include "../../../string_safe.h"
 #include "./random_improve_change_state.h"
 #include "./random_improve_helpers.h"
+#include "./random_improve_selection_index.h"
 #include "./random_improve_utxo_utils.h"
 
 #include <sodium.h>
@@ -46,134 +47,73 @@ typedef struct random_improve_context_t
     cardano_selection_strategy_t strategy;
 } random_improve_context_t;
 
-/**
- * \brief A requirement processed by the round-robin selection loop.
- *
- * The lovelace requirement is represented with a NULL asset id.
- */
-typedef struct selection_processor_t
-{
-    cardano_asset_id_t* asset_id;
-    uint64_t            minimum;
-    bool                active;
-} selection_processor_t;
-
 /* SELECTION PHASE ***********************************************************/
 
 /**
- * \brief Runs a single selection step for the given processor (port of runSelectionStep).
+ * \brief Runs a single selection step for the given requirement (port of runSelectionStep).
  *
- * While the selected quantity is below the minimum, any successful selection is accepted.
- * Once at or above the minimum, a selection is accepted only if it moves the selected quantity
- * strictly closer to twice the minimum; otherwise it is undone.
+ * While the selected quantity is below the minimum, any successful pick is accepted. Once at or
+ * above the minimum, a pick is accepted only if it moves the selected quantity strictly closer
+ * to the improvement target (the minimum times the strategy multiplier); otherwise it is undone.
  *
- * \param[in,out] rng_state The random number generator state.
- * \param[in,out] selection The current selection.
- * \param[in,out] leftover  The pool of unselected UTXOs.
- * \param[in]     processor The requirement being processed.
+ * \param[in,out] index             The selection index.
+ * \param[in,out] rng_state         The random number generator state.
+ * \param[in]     processor_index   The requirement being processed.
+ * \param[in]     target_multiplier The improvement target as a multiple of the minimum
+ *                                  (2 for the optimal strategy, 1 for the minimal one).
  *
- * \return true if the step improved the selection, false if the processor is exhausted.
+ * \return true if the step improved the selection, false if the requirement is exhausted.
  */
 static bool
 run_selection_step(
-  uint64_t*              rng_state,
-  cardano_utxo_list_t*   selection,
-  cardano_utxo_list_t*   leftover,
-  selection_processor_t* processor,
-  const uint64_t         target_multiplier)
+  random_improve_selection_index_t* index,
+  uint64_t*                         rng_state,
+  const size_t                      processor_index,
+  const uint64_t                    target_multiplier)
 {
-  const uint64_t current = _cardano_random_improve_selected_quantity(selection, processor->asset_id);
+  const uint64_t minimum = index->processors[processor_index].minimum;
+  const uint64_t current = index->processors[processor_index].selected_total;
 
-  if (current < processor->minimum)
+  if (current < minimum)
   {
-    return _cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, processor->asset_id);
+    return _cardano_random_improve_index_pick(index, rng_state, processor_index);
   }
 
-  const uint64_t target = processor->minimum * target_multiplier;
+  const uint64_t target = minimum * target_multiplier;
 
-  if (!_cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, processor->asset_id))
+  if (!_cardano_random_improve_index_pick(index, rng_state, processor_index))
   {
     return false;
   }
 
-  const uint64_t updated = _cardano_random_improve_selected_quantity(selection, processor->asset_id);
+  const uint64_t updated = index->processors[processor_index].selected_total;
 
   if (_cardano_random_improve_distance(target, updated) < _cardano_random_improve_distance(target, current))
   {
     return true;
   }
 
-  _cardano_random_improve_undo_last_selection(selection, leftover);
+  _cardano_random_improve_index_undo_last_pick(index);
 
   return false;
 }
 
 /**
- * \brief Builds the round-robin processors for the given target: one per required asset,
- * plus one for lovelace, which is placed last.
+ * \brief Runs the requirements round-robin until none of them can improve the selection.
  *
- * Running the lovelace processor last increases the probability that it can terminate without
- * selecting an additional UTXO, since every asset selection also brings in ada.
+ * Each active requirement performs one selection step per cycle. A requirement that fails to
+ * improve the selection is deactivated; the loop terminates when a full cycle makes no progress.
  *
- * \param[in]  target          The target value to cover.
- * \param[in]  required_assets The table of assets present in the target.
- * \param[out] processors      The resulting processor array, sized `required_assets->size + 1`.
- * \param[out] processor_count The number of processors written.
- */
-static void
-build_selection_processors(
-  cardano_value_t*              target,
-  random_improve_asset_table_t* required_assets,
-  selection_processor_t*        processors,
-  size_t*                       processor_count)
-{
-  size_t count = 0U;
-
-  for (size_t a = 0U; a < required_assets->size; ++a)
-  {
-    const int64_t required = _cardano_random_improve_get_asset_quantity(target, required_assets->ids[a]);
-
-    if (required > 0)
-    {
-      processors[count].asset_id = required_assets->ids[a];
-      processors[count].minimum  = (uint64_t)required;
-      processors[count].active   = true;
-      ++count;
-    }
-  }
-
-  const int64_t target_coin = cardano_value_get_coin(target);
-
-  processors[count].asset_id = NULL;
-  processors[count].minimum  = (target_coin > 0) ? (uint64_t)target_coin : 0U;
-  processors[count].active   = true;
-  ++count;
-
-  *processor_count = count;
-}
-
-/**
- * \brief Runs the processors round-robin until none of them can improve the selection.
- *
- * Each active processor performs one selection step per cycle. A processor that fails to improve
- * the selection is deactivated; the loop terminates when a full cycle makes no progress.
- *
- * \param[in,out] rng_state       The random number generator state.
- * \param[in,out] selection       The current selection.
- * \param[in,out] leftover        The pool of unselected UTXOs.
- * \param[in,out] processors        The processors to run.
- * \param[in]     processor_count   The number of processors.
- * \param[in]     target_multiplier The improvement target as a multiple of each processor's
- *                                  minimum (2 for the optimal strategy, 1 for the minimal one).
+ * \param[in,out] index             The selection index.
+ * \param[in,out] rng_state         The random number generator state.
+ * \param[in]     target_multiplier The improvement target as a multiple of each requirement's
+ *                                  minimum.
  */
 static void
 run_round_robin(
-  uint64_t*              rng_state,
-  cardano_utxo_list_t*   selection,
-  cardano_utxo_list_t*   leftover,
-  selection_processor_t* processors,
-  const size_t           processor_count,
-  const uint64_t         target_multiplier)
+  random_improve_selection_index_t* index,
+  uint64_t*                         rng_state,
+  const uint64_t                    target_multiplier)
 {
   bool progress = true;
 
@@ -181,68 +121,39 @@ run_round_robin(
   {
     progress = false;
 
-    for (size_t p = 0U; p < processor_count; ++p)
+    for (size_t p = 0U; p < index->processor_count; ++p)
     {
-      if (!processors[p].active)
+      if (!index->processors[p].active)
       {
         continue;
       }
 
-      if (run_selection_step(rng_state, selection, leftover, &processors[p], target_multiplier))
+      if (run_selection_step(index, rng_state, p, target_multiplier))
       {
         progress = true;
       }
       else
       {
-        processors[p].active = false;
+        index->processors[p].active = false;
       }
     }
   }
 }
 
 /**
- * \brief Indicates whether the selection covers the minimum quantity of every processor.
- *
- * \param[in] selection       The current selection.
- * \param[in] processors      The processors holding the minimum requirements.
- * \param[in] processor_count The number of processors.
- *
- * \return true if every minimum is covered, false otherwise.
- */
-static bool
-all_minimums_covered(
-  cardano_utxo_list_t*   selection,
-  selection_processor_t* processors,
-  const size_t           processor_count)
-{
-  for (size_t p = 0U; p < processor_count; ++p)
-  {
-    if (_cardano_random_improve_selected_quantity(selection, processors[p].asset_id) < processors[p].minimum)
-    {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
  * \brief Runs the selection phase: covers the target via round-robin random-improve selection.
  *
+ * \param[in,out] index     The selection index, seeded with the pool and the requirements.
  * \param[in,out] rng_state The random number generator state.
- * \param[in]     target    The target value to cover.
- * \param[in,out] selection The selection list, already seeded with any pre-selected UTXOs.
- * \param[in,out] leftover  The pool of unselected UTXOs.
+ * \param[in]     strategy  The selection strategy to use.
  *
  * \return \ref CARDANO_SUCCESS if the target is covered and the selection is not empty, or
  *         \ref CARDANO_ERROR_BALANCE_INSUFFICIENT otherwise.
  */
 static cardano_error_t
 run_selection_phase(
+  random_improve_selection_index_t*  index,
   uint64_t*                          rng_state,
-  cardano_value_t*                   target,
-  cardano_utxo_list_t*               selection,
-  cardano_utxo_list_t*               leftover,
   const cardano_selection_strategy_t strategy)
 {
   uint64_t target_multiplier = 1U;
@@ -252,47 +163,61 @@ run_selection_phase(
     target_multiplier = 2U;
   }
 
-  random_improve_asset_table_t required_assets = { NULL, 0U, 0U };
+  run_round_robin(index, rng_state, target_multiplier);
 
-  cardano_error_t result = _cardano_random_improve_asset_table_add_value_assets(&required_assets, target);
-
-  selection_processor_t* processors = NULL;
-
-  if (result == CARDANO_SUCCESS)
+  for (size_t p = 0U; p < index->processor_count; ++p)
   {
-    processors = (selection_processor_t*)_cardano_malloc((required_assets.size + 1U) * sizeof(selection_processor_t));
-
-    if (processors == NULL)
+    if (index->processors[p].selected_total < index->processors[p].minimum)
     {
-      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      return CARDANO_ERROR_BALANCE_INSUFFICIENT;
     }
   }
 
-  if (result == CARDANO_SUCCESS)
+  // A selection must never be empty: fall back to a single ada pick when nothing was required.
+  if ((index->pre_selected_count == 0U) && (index->pick_count == 0U))
   {
-    size_t processor_count = 0U;
-
-    build_selection_processors(target, &required_assets, processors, &processor_count);
-    run_round_robin(rng_state, selection, leftover, processors, processor_count, target_multiplier);
-
-    if (!all_minimums_covered(selection, processors, processor_count))
+    if (!_cardano_random_improve_index_pick(index, rng_state, index->processor_count - 1U))
     {
-      result = CARDANO_ERROR_BALANCE_INSUFFICIENT;
+      return CARDANO_ERROR_BALANCE_INSUFFICIENT;
     }
   }
 
-  if ((result == CARDANO_SUCCESS) && (cardano_utxo_list_get_length(selection) == 0U))
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Picks one additional ada-bearing UTXO for change construction and appends it to the
+ * materialized selection list.
+ *
+ * \param[in,out] index     The selection index.
+ * \param[in,out] rng_state The random number generator state.
+ * \param[in,out] selection The materialized selection list.
+ *
+ * \return true if a UTXO was picked and appended, false if the pool is exhausted.
+ */
+static bool
+pick_additional_ada(
+  random_improve_selection_index_t* index,
+  uint64_t*                         rng_state,
+  cardano_utxo_list_t*              selection)
+{
+  const size_t coin_processor = index->processor_count - 1U;
+
+  if (!_cardano_random_improve_index_pick(index, rng_state, coin_processor))
   {
-    if (!_cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, NULL))
-    {
-      result = CARDANO_ERROR_BALANCE_INSUFFICIENT;
-    }
+    return false;
   }
 
-  _cardano_free(processors);
-  _cardano_random_improve_asset_table_free(&required_assets);
+  const size_t entry = index->picks[index->pick_count - 1U].pool_index;
 
-  return result;
+  if (cardano_utxo_list_add(selection, index->pool[entry]) != CARDANO_SUCCESS)
+  {
+    _cardano_random_improve_index_undo_last_pick(index);
+
+    return false;
+  }
+
+  return true;
 }
 
 /* CHANGE GENERATION *********************************************************/
@@ -579,9 +504,9 @@ make_change(
  */
 static cardano_error_t
 generate_change_with_retries(
+  random_improve_selection_index_t*   index,
   uint64_t*                           rng_state,
   cardano_utxo_list_t*                selection,
-  cardano_utxo_list_t*                leftover,
   cardano_value_t*                    target,
   cardano_transaction_output_list_t*  outputs_to_cover,
   cardano_address_t*                  change_address,
@@ -609,7 +534,7 @@ generate_change_with_retries(
 
     if (change_result == CARDANO_SUCCESS)
     {
-      if ((change_count >= desired_map_count) || !_cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, NULL))
+      if ((change_count >= desired_map_count) || !pick_additional_ada(index, rng_state, selection))
       {
         done = true;
       }
@@ -620,7 +545,7 @@ generate_change_with_retries(
     }
     else if (change_result == CARDANO_ERROR_BALANCE_INSUFFICIENT)
     {
-      if (!_cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, NULL))
+      if (!pick_additional_ada(index, rng_state, selection))
       {
         result = change_result;
       }
@@ -699,36 +624,45 @@ random_improve_select(
   cardano_address_t*                 change_address    = request->change_address;
   cardano_protocol_parameters_t*     protocol_params   = request->protocol_params;
 
-  cardano_error_t result = cardano_utxo_list_new(selection);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
+  *selection      = NULL;
+  *remaining_utxo = NULL;
   *change_outputs = NULL;
-  *remaining_utxo = cardano_utxo_list_clone(available_utxo);
 
-  if (*remaining_utxo == NULL)
-  {
-    cardano_utxo_list_unref(selection);
+  random_improve_selection_index_t index;
 
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  result = _cardano_random_improve_move_pre_selected(pre_selected_utxo, *selection, *remaining_utxo);
+  cardano_error_t result = _cardano_random_improve_index_init(&index, pre_selected_utxo, available_utxo, target);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = run_selection_phase(&rng_state, target, *selection, *remaining_utxo, context->strategy);
+    result = run_selection_phase(&index, &rng_state, context->strategy);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_utxo_list_new(selection);
+  }
+
+  // Materialize the selection (pre-selected entries first, then every pick in pick order) so
+  // that the change generation can inspect it; further ada picks are appended incrementally.
+  if (result == CARDANO_SUCCESS)
+  {
+    for (size_t i = 0U; (i < index.pre_selected_count) && (result == CARDANO_SUCCESS); ++i)
+    {
+      result = cardano_utxo_list_add(*selection, index.pool[i]);
+    }
+
+    for (size_t i = 0U; (i < index.pick_count) && (result == CARDANO_SUCCESS); ++i)
+    {
+      result = cardano_utxo_list_add(*selection, index.pool[index.picks[i].pool_index]);
+    }
   }
 
   if (result == CARDANO_SUCCESS)
   {
     result = generate_change_with_retries(
+      &index,
       &rng_state,
       *selection,
-      *remaining_utxo,
       target,
       outputs_to_cover,
       change_address,
@@ -736,10 +670,35 @@ random_improve_select(
       change_outputs);
   }
 
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_utxo_list_new(remaining_utxo);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    for (size_t i = 0U; (i < index.pool_size) && (result == CARDANO_SUCCESS); ++i)
+    {
+      if (!index.pool_selected[i])
+      {
+        result = cardano_utxo_list_add(*remaining_utxo, index.pool[i]);
+      }
+    }
+  }
+
+  _cardano_random_improve_index_free(&index);
+
   if (result != CARDANO_SUCCESS)
   {
-    cardano_utxo_list_unref(selection);
-    cardano_utxo_list_unref(remaining_utxo);
+    if (*selection != NULL)
+    {
+      cardano_utxo_list_unref(selection);
+    }
+
+    if (*remaining_utxo != NULL)
+    {
+      cardano_utxo_list_unref(remaining_utxo);
+    }
 
     if (*change_outputs != NULL)
     {
