@@ -499,3 +499,156 @@ TEST(cardano_random_improve_coin_selector_select, repeatedCallsOnTheSameSelector
   cardano_protocol_parameters_unref(&protocol_params);
   cardano_coin_selector_unref(&selector);
 }
+
+/* REFERENCE VECTORS *********************************************************/
+
+// The following vectors are ported from the unit tests of the reference implementation
+// (cardano-foundation/cardano-coin-selection, BalanceSpec.hs).
+
+TEST(_cardano_random_improve_partition, matchesReferenceVectorsForCoinDistribution)
+{
+  // unit_makeChangeForCoin
+  {
+    const uint64_t weights[1] = { 1U };
+    uint64_t       parts[1]   = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_partition(1U, weights, 1U, parts), CARDANO_SUCCESS);
+    EXPECT_EQ(parts[0], 1U);
+  }
+  {
+    const uint64_t weights[3] = { 1U, 2U, 3U };
+    uint64_t       parts[3]   = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_partition(12U, weights, 3U, parts), CARDANO_SUCCESS);
+    EXPECT_EQ(parts[0], 2U);
+    EXPECT_EQ(parts[1], 4U);
+    EXPECT_EQ(parts[2], 6U);
+  }
+  {
+    const uint64_t weights[3] = { 1U, 2U, 3U };
+    uint64_t       parts[3]   = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_partition(5U, weights, 3U, parts), CARDANO_SUCCESS);
+    EXPECT_EQ(parts[0], 1U);
+    EXPECT_EQ(parts[1], 2U);
+    EXPECT_EQ(parts[2], 2U);
+  }
+}
+
+TEST(_cardano_random_improve_partition, matchesReferenceVectorsForUserSpecifiedAssets)
+{
+  // unit_makeChangeForUserSpecifiedAsset
+  {
+    const uint64_t weights[1] = { 1U };
+    uint64_t       parts[1]   = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_partition(3U, weights, 1U, parts), CARDANO_SUCCESS);
+    EXPECT_EQ(parts[0], 3U);
+  }
+  {
+    const uint64_t weights[2] = { 1U, 2U };
+    uint64_t       parts[2]   = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_partition(3U, weights, 2U, parts), CARDANO_SUCCESS);
+    EXPECT_EQ(parts[0], 1U);
+    EXPECT_EQ(parts[1], 2U);
+  }
+}
+
+TEST(_cardano_random_improve_pad_coalesce, matchesReferenceVectorsForNonUserSpecifiedAssets)
+{
+  // unit_makeChangeForNonUserSpecifiedAsset
+  {
+    const uint64_t quantities[2] = { 1U, 1U };
+    uint64_t       result[2]     = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_pad_coalesce(quantities, 2U, 2U, result), CARDANO_SUCCESS);
+    EXPECT_EQ(result[0], 1U);
+    EXPECT_EQ(result[1], 1U);
+  }
+  {
+    const uint64_t quantities[3] = { 1U, 1U, 1U };
+    uint64_t       result[2]     = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_pad_coalesce(quantities, 3U, 2U, result), CARDANO_SUCCESS);
+    EXPECT_EQ(result[0], 1U);
+    EXPECT_EQ(result[1], 2U);
+  }
+  {
+    const uint64_t quantities[1] = { 1U };
+    uint64_t       result[2]     = { 0U };
+
+    ASSERT_EQ(_cardano_random_improve_pad_coalesce(quantities, 1U, 2U, result), CARDANO_SUCCESS);
+    EXPECT_EQ(result[0], 0U);
+    EXPECT_EQ(result[1], 1U);
+  }
+}
+
+/* SELECTION STRATEGY ********************************************************/
+
+TEST(cardano_random_improve_coin_selector_new_with_options, returnsErrorIfGivenNull)
+{
+  EXPECT_EQ(
+    cardano_random_improve_coin_selector_new_with_options(42U, CARDANO_SELECTION_STRATEGY_MINIMAL, nullptr),
+    CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_random_improve_coin_selector_select, minimalStrategySelectsNoMoreInputsThanOptimal)
+{
+  cardano_address_t*             change_address  = new_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = new_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = new_protocol_parameters();
+
+  size_t selected_counts[2] = { 0U, 0U };
+
+  const cardano_selection_strategy_t strategies[2] = {
+    CARDANO_SELECTION_STRATEGY_MINIMAL,
+    CARDANO_SELECTION_STRATEGY_OPTIMAL
+  };
+
+  for (size_t run = 0U; run < 2U; ++run)
+  {
+    cardano_coin_selector_t* selector = NULL;
+
+    ASSERT_EQ(cardano_random_improve_coin_selector_new_with_options(7U, strategies[run], &selector), CARDANO_SUCCESS);
+
+    cardano_utxo_list_t* available_utxo = NULL;
+    ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+
+    for (uint64_t i = 1U; i <= 20U; ++i)
+    {
+      cardano_utxo_t* utxo = new_ada_utxo(i, 5000000, wallet_address);
+
+      ASSERT_EQ(cardano_utxo_list_add(available_utxo, utxo), CARDANO_SUCCESS);
+      cardano_utxo_unref(&utxo);
+    }
+
+    cardano_value_t* target = cardano_value_new_from_coin(18000000);
+
+    cardano_utxo_list_t*               selection      = NULL;
+    cardano_utxo_list_t*               remaining_utxo = NULL;
+    cardano_transaction_output_list_t* change_outputs = NULL;
+
+    ASSERT_EQ(
+      do_select(selector, NULL, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+      CARDANO_SUCCESS);
+
+    selected_counts[run] = cardano_utxo_list_get_length(selection);
+
+    cardano_utxo_list_unref(&selection);
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_transaction_output_list_unref(&change_outputs);
+    cardano_value_unref(&target);
+    cardano_utxo_list_unref(&available_utxo);
+    cardano_coin_selector_unref(&selector);
+  }
+
+  // With 5 ada UTXOs and an 18 ada target, the minimal strategy stops at the minimum (4 inputs,
+  // leaving 2 ada of change) while the optimal strategy improves toward twice the target.
+  EXPECT_EQ(selected_counts[0], 4U);
+  EXPECT_GT(selected_counts[1], selected_counts[0]);
+
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
