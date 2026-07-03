@@ -32,7 +32,14 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char*    ALWAYS_SUCCEEDS_SCRIPT_V2    = "59079201000033232323232323232323232323232332232323232323232222232325335333006300800530070043333573466E1CD55CEA80124000466442466002006004646464646464646464646464646666AE68CDC39AAB9D500C480008CCCCCCCCCCCC88888888888848CCCCCCCCCCCC00403403002C02802402001C01801401000C008CD4060064D5D0A80619A80C00C9ABA1500B33501801A35742A014666AA038EB9406CD5D0A804999AA80E3AE501B35742A01066A0300466AE85401CCCD54070091D69ABA150063232323333573466E1CD55CEA801240004664424660020060046464646666AE68CDC39AAB9D5002480008CC8848CC00400C008CD40B9D69ABA15002302F357426AE8940088C98C80C8CD5CE01981901809AAB9E5001137540026AE854008C8C8C8CCCD5CD19B8735573AA004900011991091980080180119A8173AD35742A004605E6AE84D5D1280111931901919AB9C033032030135573CA00226EA8004D5D09ABA2500223263202E33573805E05C05826AAE7940044DD50009ABA1500533501875C6AE854010CCD540700808004D5D0A801999AA80E3AE200135742A00460446AE84D5D1280111931901519AB9C02B02A028135744A00226AE8940044D5D1280089ABA25001135744A00226AE8940044D5D1280089ABA25001135744A00226AE8940044D55CF280089BAA00135742A00460246AE84D5D1280111931900E19AB9C01D01C01A101B13263201B3357389201035054350001B135573CA00226EA80054049404448C88C008DD6000990009AA80A911999AAB9F0012500A233500930043574200460066AE880080548C8C8CCCD5CD19B8735573AA004900011991091980080180118061ABA150023005357426AE8940088C98C8054CD5CE00B00A80989AAB9E5001137540024646464646666AE68CDC39AAB9D5004480008CCCC888848CCCC00401401000C008C8C8C8CCCD5CD19B8735573AA0049000119910919800801801180A9ABA1500233500F014357426AE8940088C98C8068CD5CE00D80D00C09AAB9E5001137540026AE854010CCD54021D728039ABA150033232323333573466E1D4005200423212223002004357426AAE79400C8CCCD5CD19B875002480088C84888C004010DD71ABA135573CA00846666AE68CDC3A801A400042444006464C6403866AE700740700680640604D55CEA80089BAA00135742A00466A016EB8D5D09ABA2500223263201633573802E02C02826AE8940044D5D1280089AAB9E500113754002266AA002EB9D6889119118011BAB00132001355012223233335573E0044A010466A00E66442466002006004600C6AAE754008C014D55CF280118021ABA200301313574200222440042442446600200800624464646666AE68CDC3A800A40004642446004006600A6AE84D55CF280191999AB9A3370EA0049001109100091931900899AB9C01201100F00E135573AA00226EA80048C8C8CCCD5CD19B875001480188C848888C010014C01CD5D09AAB9E500323333573466E1D400920042321222230020053009357426AAE7940108CCCD5CD19B875003480088C848888C004014C01CD5D09AAB9E500523333573466E1D40112000232122223003005375C6AE84D55CF280311931900899AB9C01201100F00E00D00C135573AA00226EA80048C8C8CCCD5CD19B8735573AA004900011991091980080180118029ABA15002375A6AE84D5D1280111931900699AB9C00E00D00B135573CA00226EA80048C8CCCD5CD19B8735573AA002900011BAE357426AAE7940088C98C802CCD5CE00600580489BAA001232323232323333573466E1D4005200C21222222200323333573466E1D4009200A21222222200423333573466E1D400D2008233221222222233001009008375C6AE854014DD69ABA135744A00A46666AE68CDC3A8022400C4664424444444660040120106EB8D5D0A8039BAE357426AE89401C8CCCD5CD19B875005480108CC8848888888CC018024020C030D5D0A8049BAE357426AE8940248CCCD5CD19B875006480088C848888888C01C020C034D5D09AAB9E500B23333573466E1D401D2000232122222223005008300E357426AAE7940308C98C8050CD5CE00A80A00900880800780700680609AAB9D5004135573CA00626AAE7940084D55CF280089BAA0012323232323333573466E1D400520022333222122333001005004003375A6AE854010DD69ABA15003375A6AE84D5D1280191999AB9A3370EA0049000119091180100198041ABA135573CA00C464C6401A66AE7003803402C0284D55CEA80189ABA25001135573CA00226EA80048C8C8CCCD5CD19B875001480088C8488C00400CDD71ABA135573CA00646666AE68CDC3A8012400046424460040066EB8D5D09AAB9E500423263200A33573801601401000E26AAE7540044DD500089119191999AB9A3370EA00290021091100091999AB9A3370EA00490011190911180180218031ABA135573CA00846666AE68CDC3A801A400042444004464C6401666AE7003002C02402001C4D55CEA80089BAA0012323333573466E1D40052002212200223333573466E1D40092000212200123263200733573801000E00A00826AAE74DD5000891999AB9A3370E6AAE74DD5000A40004008464C6400866AE700140100092612001490103505431001123230010012233003300200200122212200201";
+// Compiled Aiken validator `indexed.withdraw_zero` (Plutus V3, blueprint hash
+// 0b995c3b26e9c3e74f07499f5676d61f157e0739771cf114cb71ea2d). Its withdraw handler
+// expects the redeemer `Constr 0 [[indices...]]` and genuinely enforces the payload
+// on-chain: the list must enumerate ALL transaction inputs (same length as the input
+// list) in STRICTLY ASCENDING order, with every index resolving to an existing input.
+// Its publish handler accepts anything, so the stake registration/deregistration
+// certificates in this example pass with a void redeemer.
+static const char*    WITHDRAW_ZERO_VALIDATOR_V3   = "5901ad01010029800aba2aba1aba0aab9faab9eaab9dab9a4888888966002646465300130053754003300900398048012444b30013370e9002001c4cc8966002600260146ea800e264b30013010001899198008009bac30100022259800800c56600266e1cc8cc004004dd6180918079baa0072259800800c52000899b8048008cc008008c05000501119198008009bac3012300f375401044b30010018a4001133700900119801001180a000a022899199119914c00400a003480050021112cc00400a2946264b300133710004003159800acc004c02cc050dd519803002800c528c52820268cc0040126032007001401114a0809a29410131bad301700240546eb0c050c044dd500498008009bac3012300f3754010444b30010028a6103d87a80008acc004c01c006266e9520003301330140024bd70466002007301500299b8048004005003201e404914a080622646600600660260046eb4c04400500f45900d18059baa0038b2012300c300937540086e1d20008acc004cdc3a400c00713233224a26eb4c034004c034c038004c024dd5002459007200e18041804800980400098019baa0088a4d13656400401";
 static const char*    SERIALIZED_BIP32_KEY_HANDLER = "0a0a0a0a01010000005c97db5e09b3a4919ec75ed1126056241a1e5278731c2e0b01bea0a5f42c22db4131e0a4bbe75633677eb0e60e2ecd3520178f85c7e0d4be77a449087fe9674ee52f946b07c1b56d228c496ec0d36dd44212ba8af0f6eed1a82194dd69f479c603";
 static const uint64_t CONFIRM_TX_TIMEOUT_MS        = 240000U;
 static const uint64_t PAYMENT_CRED_INDEX           = 0U;
@@ -100,6 +107,13 @@ get_passphrase(byte_t* buffer, const size_t buffer_len)
  * balancing iteration with the balanced draft transaction and the final resolved inputs, and uses
  * the produced payload as the withdrawal redeemer.
  *
+ * The Aiken staking validator used by this example genuinely enforces the payload on-chain: the
+ * redeemer list must enumerate ALL transaction inputs (its length must equal the input count) in
+ * STRICTLY ASCENDING order, and every index must resolve to an existing input. `resolved_inputs`
+ * is not in canonical order, so this callback maps each entry to its canonical index and then
+ * sorts the collected indices ascending; because every input is mapped exactly once, the sorted
+ * result is exactly the full enumeration the validator demands.
+ *
  * The callback must be a pure function of its arguments (no captured mutable state, no side
  * effects, no randomness), otherwise the balancing loop may fail to converge.
  *
@@ -119,27 +133,28 @@ build_withdraw_zero_redeemer(
 {
   CARDANO_UNUSED(user_context);
 
-  cardano_plutus_list_t* input_indices = NULL;
-  cardano_error_t        result        = cardano_plutus_list_new(&input_indices);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
   const size_t input_count = cardano_utxo_list_get_length(resolved_inputs);
 
+  uint64_t* canonical_indices = (uint64_t*)malloc(input_count * sizeof(uint64_t));
+
+  if (canonical_indices == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  // Map every resolved input to its canonical position in the draft transaction. Since
+  // `resolved_inputs` covers the whole input set, this yields every canonical index exactly once.
   for (size_t i = 0U; i < input_count; ++i)
   {
     cardano_utxo_t* utxo = NULL;
 
-    result = cardano_utxo_list_get(resolved_inputs, i, &utxo);
+    cardano_error_t get_result = cardano_utxo_list_get(resolved_inputs, i, &utxo);
 
-    if (result != CARDANO_SUCCESS)
+    if (get_result != CARDANO_SUCCESS)
     {
-      cardano_plutus_list_unref(&input_indices);
+      free(canonical_indices);
 
-      return result;
+      return get_result;
     }
 
     cardano_transaction_input_t* input      = cardano_utxo_get_input(utxo);
@@ -148,25 +163,58 @@ build_withdraw_zero_redeemer(
 
     uint64_t canonical_index = 0U;
 
-    result = cardano_transaction_find_input_index(draft_tx, tx_id, utxo_index, &canonical_index);
+    get_result = cardano_transaction_find_input_index(draft_tx, tx_id, utxo_index, &canonical_index);
 
     cardano_blake2b_hash_unref(&tx_id);
     cardano_transaction_input_unref(&input);
     cardano_utxo_unref(&utxo);
 
-    if (result != CARDANO_SUCCESS)
+    if (get_result != CARDANO_SUCCESS)
     {
-      cardano_plutus_list_unref(&input_indices);
+      free(canonical_indices);
 
-      return result;
+      return get_result;
     }
 
+    canonical_indices[i] = canonical_index;
+  }
+
+  // The validator requires the indices in STRICTLY ASCENDING order, but `resolved_inputs` is not
+  // in canonical order, so the collected indices must be sorted before building the plutus list.
+  // A small insertion sort keeps the callback self-contained and pure.
+  for (size_t i = 1U; i < input_count; ++i)
+  {
+    const uint64_t key = canonical_indices[i];
+    size_t         j   = i;
+
+    while ((j > 0U) && (canonical_indices[j - 1U] > key))
+    {
+      canonical_indices[j] = canonical_indices[j - 1U];
+      --j;
+    }
+
+    canonical_indices[j] = key;
+  }
+
+  cardano_plutus_list_t* input_indices = NULL;
+  cardano_error_t        result        = cardano_plutus_list_new(&input_indices);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    free(canonical_indices);
+
+    return result;
+  }
+
+  for (size_t i = 0U; i < input_count; ++i)
+  {
     cardano_plutus_data_t* index_data = NULL;
 
-    result = cardano_plutus_data_new_integer_from_uint(canonical_index, &index_data);
+    result = cardano_plutus_data_new_integer_from_uint(canonical_indices[i], &index_data);
 
     if (result != CARDANO_SUCCESS)
     {
+      free(canonical_indices);
       cardano_plutus_list_unref(&input_indices);
 
       return result;
@@ -177,11 +225,14 @@ build_withdraw_zero_redeemer(
 
     if (result != CARDANO_SUCCESS)
     {
+      free(canonical_indices);
       cardano_plutus_list_unref(&input_indices);
 
       return result;
     }
   }
+
+  free(canonical_indices);
 
   cardano_plutus_data_t* indices_data = NULL;
 
@@ -301,7 +352,8 @@ register_and_delegate(
  * literal redeemer, a callback builds `Constr 0 [spend_input_indices]` once coin selection and
  * balancing have fixed the final canonical input set. This is the "withdraw zero" forwarding
  * pattern trigger: the mere presence of the withdrawal runs the staking validator once for the
- * whole transaction, and its redeemer points it at every input it must validate.
+ * whole transaction, and its redeemer points it at every input it must validate. The validator
+ * rejects the transaction unless the indices enumerate all inputs in strictly ascending order.
  *
  * \param[in] provider A pointer to a \ref cardano_provider_t object used for accessing blockchain state.
  * \param[in] key_handler A pointer to a \ref cardano_secure_key_handler_t object for signing and key management.
@@ -375,7 +427,7 @@ main(void)
   console_info("Deferred Redeemer (Withdraw Zero) Example");
   console_info("libcardano-c:  V-%s\n", cardano_get_lib_version());
 
-  console_info("This example registers a script stake key and then withdraws zero lovelace from it using a deferred redeemer that carries the spend input indices.");
+  console_info("This example registers a script stake key and then withdraws zero lovelace from it using a deferred redeemer that carries the spend input indices. The validator verifies the indices on-chain.");
 
   console_set_foreground_color(CONSOLE_COLOR_GREEN);
   console_write("\nUse passphrase: 'password'\n\n");
@@ -403,24 +455,24 @@ main(void)
     return EXIT_FAILURE;
   }
 
-  cardano_script_t*              always_succeeds_script = create_plutus_v2_script_from_hex(ALWAYS_SUCCEEDS_SCRIPT_V2);
-  cardano_address_t*             script_address         = get_script_address(always_succeeds_script);
-  cardano_reward_address_t*      reward_address         = get_script_stake_address(always_succeeds_script);
-  cardano_secure_key_handler_t*  key_handler            = create_secure_key_handler(SERIALIZED_BIP32_KEY_HANDLER, cardano_utils_safe_strlen(SERIALIZED_BIP32_KEY_HANDLER, 256), get_passphrase);
-  cardano_provider_t*            provider               = create_provider(CARDANO_NETWORK_MAGIC_PREPROD, api_key);
-  cardano_address_t*             payment_address        = create_address_from_derivation_paths(key_handler, ACCOUNT_DERIVATION_PATH, PAYMENT_CRED_INDEX, STAKE_CRED_INDEX);
-  cardano_protocol_parameters_t* protocol_params        = get_protocol_parameters(provider);
-  cardano_utxo_list_t*           utxo_list              = get_unspent_utxos(provider, payment_address);
+  cardano_script_t*              withdraw_zero_script = create_plutus_v3_script_from_hex(WITHDRAW_ZERO_VALIDATOR_V3);
+  cardano_address_t*             script_address       = get_script_address(withdraw_zero_script);
+  cardano_reward_address_t*      reward_address       = get_script_stake_address(withdraw_zero_script);
+  cardano_secure_key_handler_t*  key_handler          = create_secure_key_handler(SERIALIZED_BIP32_KEY_HANDLER, cardano_utils_safe_strlen(SERIALIZED_BIP32_KEY_HANDLER, 256), get_passphrase);
+  cardano_provider_t*            provider             = create_provider(CARDANO_NETWORK_MAGIC_PREPROD, api_key);
+  cardano_address_t*             payment_address      = create_address_from_derivation_paths(key_handler, ACCOUNT_DERIVATION_PATH, PAYMENT_CRED_INDEX, STAKE_CRED_INDEX);
+  cardano_protocol_parameters_t* protocol_params      = get_protocol_parameters(provider);
+  cardano_utxo_list_t*           utxo_list            = get_unspent_utxos(provider, payment_address);
 
   // Registers and delegates the stake key to the pool
-  register_and_delegate(provider, key_handler, protocol_params, always_succeeds_script, payment_address, reward_address, policy_id);
+  register_and_delegate(provider, key_handler, protocol_params, withdraw_zero_script, payment_address, reward_address, policy_id);
 
   // Withdraws zero lovelace from the script reward account with a deferred redeemer carrying the
   // spend input indices, and deregisters the stake key
-  unregister_and_withdraw_rewards(provider, key_handler, protocol_params, always_succeeds_script, payment_address, reward_address);
+  unregister_and_withdraw_rewards(provider, key_handler, protocol_params, withdraw_zero_script, payment_address, reward_address);
 
   // Cleanup
-  cardano_script_unref(&always_succeeds_script);
+  cardano_script_unref(&withdraw_zero_script);
   cardano_address_unref(&script_address);
   cardano_reward_address_unref(&reward_address);
   cardano_provider_unref(&provider);
