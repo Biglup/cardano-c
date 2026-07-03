@@ -27,6 +27,8 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 - Ed25519 Cryptography
 - Transaction Serialization & Deserialization
 - Powerful Transaction Builder
+- Automatic Input Selection (Round-Robin Random-Improve & Largest-First)
+- Native Plutus CEK Machine (evaluate Plutus scripts without an external node)
 - Robust C99 implementation
 - Layered architecture offers both control and convenience
 - Flexible memory management
@@ -46,6 +48,22 @@ Here is a list with all the languages/bindings available.
 | [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
 
 More bindings to come, check https://cometa.dev for the upcoming list
+
+
+## Input Selection
+
+The transaction builder balances transactions automatically using a pluggable input (coin) selection interface. A selector receives a `cardano_coin_selection_request_t` (the pre-selected inputs, the available UTXO pool, the coalesced target value, the outputs to cover as an optional shape hint, the change address and the protocol parameters) and returns the selected inputs, the unspent remainder and a set of min-ADA compliant change outputs that uphold an exact local balance: `sum(selection) = target + sum(change outputs)`. Change outputs whose assets would exceed the protocol's maximum output value size are split automatically.
+
+Two selectors are provided out of the box:
+
+- **Round-Robin Random-Improve (the default)** — a port of the multi-asset generalization of [CIP-2 Random-Improve](https://cips.cardano.org/cip/CIP-2) implemented by [cardano-foundation/cardano-coin-selection](https://github.com/cardano-foundation/cardano-coin-selection) (`Cardano.CoinSelection.Balance`), as used by cardano-wallet and specified in [Self Organisation in Coin Selection](https://iohk.io/en/blog/posts/2018/07/03/self-organisation-in-coin-selection/) (Edsko de Vries, IOHK, 2018). It selects UTXOs at random per required asset in round-robin order, improving each toward twice its minimum, which keeps the wallet's UTXO distribution healthy over time (better transaction parallelism and privacy) and produces change outputs that resemble the payments made. It supports an "optimal" and a "minimal" selection strategy (see `cardano_selection_strategy_t`).
+- **Largest-First** — a simple deterministic selector that spends the largest UTXOs first and produces a single change output. Useful when predictability matters more than UTXO health.
+
+Use `cardano_tx_builder_set_coin_selector` to switch selectors, or implement your own with `cardano_coin_selector_new`.
+
+## Plutus CEK Machine
+
+cardano-c ships a native implementation of the Plutus virtual machine (an untyped Plutus Core CEK evaluator, supporting Plutus V1/V2/V3), so transactions with scripts can be evaluated and their execution units computed locally, without an external node or evaluation service. The evaluator is conformance-tested against the official Plutus test vectors.
 
 ## Basic Example
 

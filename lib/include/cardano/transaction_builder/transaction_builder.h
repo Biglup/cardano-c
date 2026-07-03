@@ -126,7 +126,7 @@ CARDANO_EXPORT cardano_tx_builder_t* cardano_tx_builder_new(
  * related to coin selection configuration or validation are deferred and will be reported only when
  * \ref cardano_tx_builder_build is called.
  *
- * If this function is not called, the default coin selector (large first coin selector) will be used.
+ * If this function is not called, the default coin selector (the Round-Robin Random-Improve selector) will be used.
  *
  * \param[in] builder      A pointer to the \ref cardano_tx_builder_t instance where the coin selector
  *                         is to be set.

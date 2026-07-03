@@ -27,7 +27,7 @@
 #include <cardano/time.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
-#include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
+#include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/witness_set/redeemer.h>
@@ -898,7 +898,7 @@ cardano_tx_builder_new(
   cardano_protocol_parameters_ref(params);
   builder->params = params;
 
-  cardano_error_t result = cardano_large_first_coin_selector_new(&builder->coin_selector);
+  cardano_error_t result = cardano_random_improve_coin_selector_new(&builder->coin_selector);
 
   if (result != CARDANO_SUCCESS)
   {
