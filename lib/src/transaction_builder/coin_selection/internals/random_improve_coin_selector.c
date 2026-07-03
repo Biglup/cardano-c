@@ -41,8 +41,9 @@
  */
 typedef struct random_improve_context_t
 {
-    cardano_object_t base;
-    uint64_t         seed;
+    cardano_object_t             base;
+    uint64_t                     seed;
+    cardano_selection_strategy_t strategy;
 } random_improve_context_t;
 
 /**
@@ -78,7 +79,8 @@ run_selection_step(
   uint64_t*              rng_state,
   cardano_utxo_list_t*   selection,
   cardano_utxo_list_t*   leftover,
-  selection_processor_t* processor)
+  selection_processor_t* processor,
+  const uint64_t         target_multiplier)
 {
   const uint64_t current = _cardano_random_improve_selected_quantity(selection, processor->asset_id);
 
@@ -87,7 +89,7 @@ run_selection_step(
     return _cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, processor->asset_id);
   }
 
-  const uint64_t target = processor->minimum * 2U;
+  const uint64_t target = processor->minimum * target_multiplier;
 
   if (!_cardano_random_improve_select_random_with_priority(rng_state, selection, leftover, processor->asset_id))
   {
@@ -159,8 +161,10 @@ build_selection_processors(
  * \param[in,out] rng_state       The random number generator state.
  * \param[in,out] selection       The current selection.
  * \param[in,out] leftover        The pool of unselected UTXOs.
- * \param[in,out] processors      The processors to run.
- * \param[in]     processor_count The number of processors.
+ * \param[in,out] processors        The processors to run.
+ * \param[in]     processor_count   The number of processors.
+ * \param[in]     target_multiplier The improvement target as a multiple of each processor's
+ *                                  minimum (2 for the optimal strategy, 1 for the minimal one).
  */
 static void
 run_round_robin(
@@ -168,7 +172,8 @@ run_round_robin(
   cardano_utxo_list_t*   selection,
   cardano_utxo_list_t*   leftover,
   selection_processor_t* processors,
-  const size_t           processor_count)
+  const size_t           processor_count,
+  const uint64_t         target_multiplier)
 {
   bool progress = true;
 
@@ -183,7 +188,7 @@ run_round_robin(
         continue;
       }
 
-      if (run_selection_step(rng_state, selection, leftover, &processors[p]))
+      if (run_selection_step(rng_state, selection, leftover, &processors[p], target_multiplier))
       {
         progress = true;
       }
@@ -234,11 +239,19 @@ all_minimums_covered(
  */
 static cardano_error_t
 run_selection_phase(
-  uint64_t*            rng_state,
-  cardano_value_t*     target,
-  cardano_utxo_list_t* selection,
-  cardano_utxo_list_t* leftover)
+  uint64_t*                          rng_state,
+  cardano_value_t*                   target,
+  cardano_utxo_list_t*               selection,
+  cardano_utxo_list_t*               leftover,
+  const cardano_selection_strategy_t strategy)
 {
+  uint64_t target_multiplier = 1U;
+
+  if (strategy == CARDANO_SELECTION_STRATEGY_OPTIMAL)
+  {
+    target_multiplier = 2U;
+  }
+
   random_improve_asset_table_t required_assets = { NULL, 0U, 0U };
 
   cardano_error_t result = _cardano_random_improve_asset_table_add_value_assets(&required_assets, target);
@@ -260,7 +273,7 @@ run_selection_phase(
     size_t processor_count = 0U;
 
     build_selection_processors(target, &required_assets, processors, &processor_count);
-    run_round_robin(rng_state, selection, leftover, processors, processor_count);
+    run_round_robin(rng_state, selection, leftover, processors, processor_count, target_multiplier);
 
     if (!all_minimums_covered(selection, processors, processor_count))
     {
@@ -707,7 +720,7 @@ random_improve_select(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = run_selection_phase(&rng_state, target, *selection, *remaining_utxo);
+    result = run_selection_phase(&rng_state, target, *selection, *remaining_utxo, context->strategy);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -742,9 +755,10 @@ random_improve_select(
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
-cardano_random_improve_coin_selector_new_with_seed(
-  const uint64_t            seed,
-  cardano_coin_selector_t** coin_selector)
+cardano_random_improve_coin_selector_new_with_options(
+  const uint64_t                     seed,
+  const cardano_selection_strategy_t strategy,
+  cardano_coin_selector_t**          coin_selector)
 {
   if (coin_selector == NULL)
   {
@@ -762,6 +776,7 @@ cardano_random_improve_coin_selector_new_with_seed(
   context->base.last_error[0] = '\0';
   context->base.deallocator   = _cardano_free;
   context->seed               = seed;
+  context->strategy           = strategy;
 
   static const char* selector_name = "Random improve coin selector";
 
@@ -783,6 +798,14 @@ cardano_random_improve_coin_selector_new_with_seed(
   }
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_random_improve_coin_selector_new_with_seed(
+  const uint64_t            seed,
+  cardano_coin_selector_t** coin_selector)
+{
+  return cardano_random_improve_coin_selector_new_with_options(seed, CARDANO_SELECTION_STRATEGY_OPTIMAL, coin_selector);
 }
 
 cardano_error_t

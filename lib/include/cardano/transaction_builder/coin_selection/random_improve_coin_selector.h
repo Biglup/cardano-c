@@ -36,6 +36,37 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
+ * \brief Indicates how much of each asset the random improve selector attempts to select,
+ * relative to the minimum amount necessary to cover the target.
+ *
+ * The optimal strategy attempts to select around twice the minimum possible amount of each
+ * asset, making it possible to generate change outputs that are roughly the same sizes and
+ * shapes as the user-specified outputs. This is the recommended default: it helps a wallet's
+ * UTXO distribution evolve over time to resemble the distribution of the payments it makes.
+ *
+ * The minimal strategy selects just enough of each asset to meet the minimum amount, producing
+ * selections with fewer inputs (and therefore smaller, cheaper transactions) at the cost of
+ * change outputs that are much smaller than the user-specified outputs.
+ *
+ * \note Because the selector upholds an exact local balance and acquires additional ada
+ * whenever change construction requires it, a selection that fails with the optimal strategy
+ * will also fail with the minimal strategy; no automatic fallback between strategies is
+ * performed.
+ */
+typedef enum cardano_selection_strategy_t
+{
+  /**
+   * \brief Selects just enough of each asset to meet the minimum amount.
+   */
+  CARDANO_SELECTION_STRATEGY_MINIMAL = 0,
+
+  /**
+   * \brief Attempts to select around twice the minimum amount of each asset.
+   */
+  CARDANO_SELECTION_STRATEGY_OPTIMAL = 1
+} cardano_selection_strategy_t;
+
+/**
  * \brief Creates a new Round-Robin Random-Improve coin selector.
  *
  * This selector is a port of the multi-asset coin selection algorithm used by cardano-wallet
@@ -107,6 +138,36 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_random_improve_coin_selector_new_with_seed(
   uint64_t                  seed,
   cardano_coin_selector_t** coin_selector);
+
+/**
+ * \brief Creates a new Round-Robin Random-Improve coin selector with a deterministic seed and
+ * an explicit selection strategy.
+ *
+ * Behaves like \ref cardano_random_improve_coin_selector_new_with_seed, but additionally allows
+ * the selection strategy to be chosen. See \ref cardano_selection_strategy_t.
+ *
+ * \param[in]  seed          The seed for the internal random number generator.
+ * \param[in]  strategy      The selection strategy to use.
+ * \param[out] coin_selector A pointer to store the address of the newly created coin selector object.
+ *
+ * \returns A \ref cardano_error_t indicating success or failure of the operation.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_coin_selector_t* coin_selector = NULL;
+ * cardano_error_t result = cardano_random_improve_coin_selector_new_with_options(
+ *   42, CARDANO_SELECTION_STRATEGY_MINIMAL, &coin_selector);
+ *
+ * // ... the selector now selects just enough of each asset to cover the target ...
+ *
+ * cardano_coin_selector_unref(&coin_selector);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_random_improve_coin_selector_new_with_options(
+  uint64_t                     seed,
+  cardano_selection_strategy_t strategy,
+  cardano_coin_selector_t**    coin_selector);
 
 #ifdef __cplusplus
 }

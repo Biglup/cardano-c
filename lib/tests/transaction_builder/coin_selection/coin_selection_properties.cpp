@@ -1410,3 +1410,101 @@ TEST(cardano_coin_selector_properties, randomImproveSplitsOversizedChange)
 
   cardano_coin_selector_unref(&selector);
 }
+
+TEST(cardano_coin_selector_properties, randomImproveDistributesUserAssetsProportionally)
+{
+  // Golden vector adapted from unit_makeChange in the reference implementation (scaled to
+  // realistic lovelace amounts, with real min-ADA in place of the mock): a selection of
+  // {9 ada, A:9, B:6} covering outputs [{2 ada, A:1}, {1 ada, A:2, B:3}] must yield change
+  // outputs whose assets are exactly {A:2} and {A:4, B:3}: the excess of A (6) is split 1:2
+  // following the output quantities, and the excess of B (3) follows its single output.
+  cardano_address_t*             change_address  = make_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = make_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = make_protocol_parameters();
+  cardano_coin_selector_t*       selector        = NULL;
+
+  ASSERT_EQ(cardano_random_improve_coin_selector_new_with_seed(PROPERTY_SEED, &selector), CARDANO_SUCCESS);
+
+  gen_value_t input_value;
+  input_value.coin      = 9000000;
+  input_value.assets[3] = 9;
+  input_value.assets[4] = 6;
+
+  cardano_utxo_list_t* pre_selected_utxo = NULL;
+  cardano_utxo_list_t* available_utxo    = NULL;
+
+  ASSERT_EQ(cardano_utxo_list_new(&pre_selected_utxo), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+
+  cardano_utxo_t* utxo = build_utxo(950000U, input_value, wallet_address);
+  ASSERT_EQ(cardano_utxo_list_add(pre_selected_utxo, utxo), CARDANO_SUCCESS);
+
+  gen_value_t output_one;
+  output_one.coin      = 2000000;
+  output_one.assets[3] = 1;
+
+  gen_value_t output_two;
+  output_two.coin      = 1000000;
+  output_two.assets[3] = 2;
+  output_two.assets[4] = 3;
+
+  cardano_transaction_output_list_t* outputs_to_cover = NULL;
+  ASSERT_EQ(cardano_transaction_output_list_new(&outputs_to_cover), CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* out_one = build_output(output_one, wallet_address);
+  cardano_transaction_output_t* out_two = build_output(output_two, wallet_address);
+
+  ASSERT_EQ(cardano_transaction_output_list_add(outputs_to_cover, out_one), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_output_list_add(outputs_to_cover, out_two), CARDANO_SUCCESS);
+
+  cardano_transaction_output_unref(&out_one);
+  cardano_transaction_output_unref(&out_two);
+
+  std::vector<gen_value_t> output_values = { output_one, output_two };
+
+  const gen_value_t target_gen = sum_gen_values(output_values);
+  cardano_value_t*  target     = build_value(target_gen);
+
+  cardano_utxo_list_t*               selection      = NULL;
+  cardano_utxo_list_t*               remaining_utxo = NULL;
+  cardano_transaction_output_list_t* change_outputs = NULL;
+
+  ASSERT_EQ(
+    do_select(selector, pre_selected_utxo, available_utxo, target, outputs_to_cover, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    CARDANO_SUCCESS);
+
+  ASSERT_EQ(cardano_transaction_output_list_get_length(change_outputs), 2U);
+
+  std::vector<gen_value_t> change_values;
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+    ASSERT_EQ(cardano_transaction_output_list_get(change_outputs, i, &output), CARDANO_SUCCESS);
+
+    cardano_value_t* value = cardano_transaction_output_get_value(output);
+
+    change_values.push_back(read_value(value));
+
+    cardano_value_unref(&value);
+    cardano_transaction_output_unref(&output);
+  }
+
+  // The maps are ordered by ascending asset count: {A:2} first, {A:4, B:3} second.
+  EXPECT_EQ(change_values[0].assets[3], 2);
+  EXPECT_EQ(change_values[0].assets[4], 0);
+  EXPECT_EQ(change_values[1].assets[3], 4);
+  EXPECT_EQ(change_values[1].assets[4], 3);
+
+  cardano_utxo_list_unref(&selection);
+  cardano_utxo_list_unref(&remaining_utxo);
+  cardano_transaction_output_list_unref(&change_outputs);
+  cardano_value_unref(&target);
+  cardano_transaction_output_list_unref(&outputs_to_cover);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&pre_selected_utxo);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
