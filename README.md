@@ -65,6 +65,36 @@ Use `cardano_tx_builder_set_coin_selector` to switch selectors, or implement you
 
 cardano-c ships a native implementation of the Plutus virtual machine (an untyped Plutus Core CEK evaluator, supporting Plutus V1/V2/V3), so transactions with scripts can be evaluated and their execution units computed locally, without an external node or evaluation service. The evaluator is conformance-tested against the official Plutus test vectors.
 
+## Deferred Redeemers
+
+Advanced validator patterns ("witness-driven design") put indices of script context elements inside the redeemer, so the on-chain code indexes in O(1) instead of scanning lists. Those indices only exist after balancing: coin selection reshuffles the canonical input order and change outputs are appended. Deferred redeemers solve this by registering a callback instead of a literal payload; the builder invokes it once the final transaction layout is known:
+
+```c
+static cardano_error_t
+build_redeemer(void* ctx, cardano_transaction_t* tx, cardano_utxo_list_t* inputs, cardano_plutus_data_t** redeemer)
+{
+  my_context_t* my_ctx = (my_context_t*)ctx;
+
+  uint64_t own_index    = 0U;
+  uint64_t payout_index = 0U;
+
+  cardano_error_t result = cardano_transaction_find_input_index(tx, my_ctx->utxo_tx_id, my_ctx->utxo_index, &own_index);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_transaction_find_output_index(tx, my_ctx->payout_address, 1000000U, &payout_index);
+  }
+
+  // ... build Constr 0 [own_index, payout_index] into *redeemer ...
+  return result;
+}
+
+cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, script_utxo, build_redeemer, &my_ctx, NULL);
+cardano_tx_builder_build(tx_builder, &transaction);
+```
+
+The callback runs on every balancing iteration (it must be a pure function of its arguments) and receives the balanced draft transaction plus the resolved inputs; the `cardano_transaction_find_*_index` helpers look up canonical positions of inputs, reference inputs, outputs (including change), mint policies, withdrawals and redeemers. Deferred variants exist for spends, mints and withdrawals (`cardano_tx_builder_mint_token_with_deferred_redeemer`, `cardano_tx_builder_withdraw_rewards_with_deferred_redeemer`). See the `deferred_redeemer_*` [examples](examples/) for complete transactions validated by real on-chain scripts.
+
 ## Basic Example
 
 This is a basic cardano-c example, it sends `LOVELACE_TO_SEND` coins to `RECEIVING_ADDRESS`. Check full example at [send lovelace](examples/src/send_lovelace_example.c).
