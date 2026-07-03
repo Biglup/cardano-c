@@ -8112,7 +8112,7 @@ build_self_index_redeemer(void* user_context, cardano_transaction_t* draft_tx, c
   return result;
 }
 
-TEST(cardano_tx_builder_add_input_deferred, resolvesTheRedeemerFromTheFinalTransaction)
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, resolvesTheRedeemerFromTheFinalTransaction)
 {
   cardano_protocol_parameters_t* params         = init_protocol_parameters();
   cardano_provider_t*            provider       = NULL;
@@ -8136,7 +8136,7 @@ TEST(cardano_tx_builder_add_input_deferred, resolvesTheRedeemerFromTheFinalTrans
 
   cardano_transaction_t* tx = nullptr;
 
-  cardano_tx_builder_add_input_deferred(tx_builder, utxo, build_self_index_redeemer, utxo, datum);
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo, build_self_index_redeemer, utxo, datum);
 
   cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
   EXPECT_THAT(result, CARDANO_SUCCESS);
@@ -8208,13 +8208,13 @@ TEST(cardano_tx_builder_add_input_deferred, resolvesTheRedeemerFromTheFinalTrans
   cardano_tx_evaluator_unref(&tx_evaluator);
 }
 
-TEST(cardano_tx_builder_add_input_deferred, latchesErrorOnNullArguments)
+TEST(cardano_tx_builder_add_input_with_deferred_redeemer, latchesErrorOnNullArguments)
 {
   cardano_protocol_parameters_t* params     = init_protocol_parameters();
   cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_tx_builder_add_input_deferred(nullptr, nullptr, nullptr, nullptr, nullptr);
-  cardano_tx_builder_add_input_deferred(tx_builder, nullptr, nullptr, nullptr, nullptr);
+  cardano_tx_builder_add_input_with_deferred_redeemer(nullptr, nullptr, nullptr, nullptr, nullptr);
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, nullptr, nullptr, nullptr, nullptr);
 
   EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
 

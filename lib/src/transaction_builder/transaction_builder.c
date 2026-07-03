@@ -5115,7 +5115,7 @@ cardano_tx_builder_get_last_error(const cardano_tx_builder_t* tx_builder)
 }
 
 void
-cardano_tx_builder_add_input_deferred(
+cardano_tx_builder_add_input_with_deferred_redeemer(
   cardano_tx_builder_t*                builder,
   cardano_utxo_t*                      utxo,
   const cardano_deferred_redeemer_fn_t callback,
@@ -5178,7 +5178,7 @@ cardano_tx_builder_add_input_deferred(
 }
 
 void
-cardano_tx_builder_mint_token_deferred(
+cardano_tx_builder_mint_token_with_deferred_redeemer(
   cardano_tx_builder_t*                builder,
   cardano_blake2b_hash_t*              policy_id,
   cardano_asset_name_t*                name,
@@ -5224,7 +5224,7 @@ cardano_tx_builder_mint_token_deferred(
 }
 
 void
-cardano_tx_builder_withdraw_rewards_deferred(
+cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
   cardano_tx_builder_t*                builder,
   cardano_reward_address_t*            address,
   const int64_t                        amount,

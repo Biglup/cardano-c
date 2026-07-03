@@ -43,7 +43,7 @@ extern "C" {
  *
  * Deferred redeemer callbacks are the mechanism for building redeemers that depend on the final
  * canonical layout of the transaction (input indices, change outputs, the fee), which only exists
- * after balancing. See \ref cardano_tx_builder_add_input_deferred.
+ * after balancing. See \ref cardano_tx_builder_add_input_with_deferred_redeemer.
  *
  * The callback receives the balanced draft transaction (canonical input order, outputs including
  * change, fee) and the final selected inputs as fully resolved UTXOs in canonical order. The
