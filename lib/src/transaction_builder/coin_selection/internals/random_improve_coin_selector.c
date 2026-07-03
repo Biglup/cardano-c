@@ -506,6 +506,11 @@ make_change(
 
   if (result == CARDANO_SUCCESS)
   {
+    result = _cardano_random_improve_split_oversized_maps(&state, cardano_protocol_parameters_get_max_value_size(protocol_params));
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
     const uint64_t ada_per_utxo_byte = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
 
     _cardano_random_improve_order_maps_by_asset_count(&state);

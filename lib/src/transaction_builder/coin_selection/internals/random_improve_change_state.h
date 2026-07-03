@@ -168,6 +168,27 @@ _cardano_random_improve_store_distribution(
   const uint64_t*                parts);
 
 /**
+ * \brief Splits change maps whose assets would exceed the maximum serialized size of a
+ * transaction output value.
+ *
+ * This is a port of `splitBundlesWithExcessiveAssetCounts` from the cardano-coin-selection
+ * library: every oversized map has its assets recursively equipartitioned into halves, and each
+ * half becomes a change map of its own. The output coin weight of a split map is distributed
+ * evenly among its parts. As a result, the number of change maps can exceed the number of
+ * user-specified outputs.
+ *
+ * \param[in,out] state          The change state; its buffers are reallocated when maps split.
+ * \param[in]     max_value_size The protocol maximum serialized size of an output value, in
+ *                               bytes. A value of zero means "no limit" (no splitting occurs).
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+cardano_error_t
+_cardano_random_improve_split_oversized_maps(
+  random_improve_change_state_t* state,
+  uint64_t                       max_value_size);
+
+/**
  * \brief Orders the change maps by ascending asset count (stable), so empty maps come first.
  *
  * This ordering allows the coin assignment step to drop empty maps from the front of the list

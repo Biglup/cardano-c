@@ -27,8 +27,11 @@
 #include <cardano/common/utxo_list.h>
 #include <cardano/transaction_builder/fee.h>
 
+#include "../../../allocators.h"
+
 #include "./change_builder.h"
 #include "./large_first_helpers.h"
+#include "./value_splitting.h"
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -221,6 +224,42 @@ move_largest_lovelace_utxo(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Computes the minimum required ada for a change output holding the given value's assets.
+ *
+ * \param[in]  value             The asset-only value the output would hold.
+ * \param[in]  change_address    The address the output would be sent to.
+ * \param[in]  ada_per_utxo_byte The protocol parameter driving the min-ADA computation.
+ * \param[out] min_ada           The minimum required ada quantity.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+min_ada_for_value(
+  cardano_value_t*   value,
+  cardano_address_t* change_address,
+  const uint64_t     ada_per_utxo_byte,
+  uint64_t*          min_ada)
+{
+  cardano_transaction_output_t* output = NULL;
+
+  cardano_error_t result = cardano_transaction_output_new(change_address, 1, &output);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_transaction_output_set_value(output, value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_compute_min_ada_required(output, ada_per_utxo_byte, min_ada);
+  }
+
+  cardano_transaction_output_unref(&output);
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -289,71 +328,120 @@ _cardano_coin_selector_build_change(
     return CARDANO_SUCCESS;
   }
 
-  cardano_transaction_output_t* change_output = NULL;
-  result                                      = cardano_transaction_output_new(change_address, 0, &change_output);
+  const uint64_t ada_per_utxo_byte = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
+  const uint64_t max_value_size    = cardano_protocol_parameters_get_max_value_size(protocol_params);
 
-  if (result != CARDANO_SUCCESS)
+  cardano_value_part_list_t parts = { NULL, 0U, 0U };
+
+  uint64_t* min_adas      = NULL;
+  uint64_t  total_min_ada = 0U;
+  bool      fundable      = false;
+
+  // Split the change assets into as many outputs as the maximum output value size requires, then
+  // keep consuming additional UTXOs until the change carries enough ada to make every resulting
+  // output min-ADA compliant. Consuming a UTXO can add assets to the change, so the split is
+  // recomputed on every iteration.
+  while ((result == CARDANO_SUCCESS) && !fundable)
   {
-    cardano_value_unref(&change_value);
-    cardano_transaction_output_list_unref(change_outputs);
+    _cardano_coin_selection_value_parts_free(&parts);
+    _cardano_free(min_adas);
+    min_adas = NULL;
 
-    return result;
-  }
-
-  const uint64_t ada_per_utxo_byte     = cardano_protocol_parameters_get_ada_per_utxo_byte(protocol_params);
-  bool           change_is_min_ada_met = false;
-
-  while ((result == CARDANO_SUCCESS) && !change_is_min_ada_met)
-  {
-    result = cardano_transaction_output_set_value(change_output, change_value);
+    result = _cardano_coin_selection_split_value_assets(change_value, max_value_size, &parts);
 
     if (result == CARDANO_SUCCESS)
     {
-      uint64_t min_utxo_value = 0U;
-      result                  = cardano_compute_min_ada_required(change_output, ada_per_utxo_byte, &min_utxo_value);
+      min_adas = (uint64_t*)_cardano_malloc(parts.size * sizeof(uint64_t));
 
-      if (result == CARDANO_SUCCESS)
+      if (min_adas == NULL)
       {
-        if (cardano_value_get_coin(change_value) >= (int64_t)min_utxo_value)
+        result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      total_min_ada = 0U;
+
+      for (size_t i = 0U; (i < parts.size) && (result == CARDANO_SUCCESS); ++i)
+      {
+        result = min_ada_for_value(parts.items[i], change_address, ada_per_utxo_byte, &min_adas[i]);
+
+        if (result == CARDANO_SUCCESS)
         {
-          change_is_min_ada_met = true;
+          total_min_ada += min_adas[i];
         }
-        else
+      }
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      if (cardano_value_get_coin(change_value) >= (int64_t)total_min_ada)
+      {
+        fundable = true;
+      }
+      else
+      {
+        cardano_value_t* moved_value = NULL;
+
+        result = move_largest_lovelace_utxo(selection, remaining_utxo, &moved_value);
+
+        if (result == CARDANO_SUCCESS)
         {
-          cardano_value_t* moved_value = NULL;
-          result                       = move_largest_lovelace_utxo(selection, remaining_utxo, &moved_value);
+          cardano_value_t* new_change_value = NULL;
+
+          result = cardano_value_add(change_value, moved_value, &new_change_value);
+
+          cardano_value_unref(&moved_value);
 
           if (result == CARDANO_SUCCESS)
           {
-            cardano_value_t* new_change_value = NULL;
-            result                            = cardano_value_add(change_value, moved_value, &new_change_value);
-
-            cardano_value_unref(&moved_value);
-
-            if (result == CARDANO_SUCCESS)
-            {
-              cardano_value_unref(&change_value);
-              change_value = new_change_value;
-            }
+            cardano_value_unref(&change_value);
+            change_value = new_change_value;
           }
         }
       }
     }
   }
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_value_unref(&change_value);
-    cardano_transaction_output_unref(&change_output);
-    cardano_transaction_output_list_unref(change_outputs);
+  // Assign the ada: every part receives its min-ADA requirement, and the last part additionally
+  // receives the remainder, so that the parts sum exactly to the change value.
+  const int64_t change_coin = cardano_value_get_coin(change_value);
 
-    return result;
+  for (size_t i = 0U; (i < parts.size) && (result == CARDANO_SUCCESS); ++i)
+  {
+    uint64_t part_coin = min_adas[i];
+
+    if (i == (parts.size - 1U))
+    {
+      part_coin += (uint64_t)change_coin - total_min_ada;
+    }
+
+    result = cardano_value_set_coin(parts.items[i], (int64_t)part_coin);
+
+    cardano_transaction_output_t* change_output = NULL;
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_transaction_output_new(change_address, 0, &change_output);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_transaction_output_set_value(change_output, parts.items[i]);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_transaction_output_list_add(*change_outputs, change_output);
+    }
+
+    cardano_transaction_output_unref(&change_output);
   }
 
-  result = cardano_transaction_output_list_add(*change_outputs, change_output);
-
+  _cardano_coin_selection_value_parts_free(&parts);
+  _cardano_free(min_adas);
   cardano_value_unref(&change_value);
-  cardano_transaction_output_unref(&change_output);
 
   if (result != CARDANO_SUCCESS)
   {

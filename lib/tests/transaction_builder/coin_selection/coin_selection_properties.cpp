@@ -38,6 +38,10 @@
 #include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 #include <cardano/transaction_builder/fee.h>
 
+extern "C" {
+#include "../../../src/transaction_builder/coin_selection/internals/value_splitting.h"
+}
+
 #include <gmock/gmock.h>
 
 #include <algorithm>
@@ -1253,5 +1257,156 @@ TEST(cardano_coin_selector_properties, randomImproveSatisfiesInputSelectionPrope
   cardano_address_unref(&change_address);
   cardano_address_unref(&wallet_address);
   cardano_protocol_parameters_unref(&protocol_params);
+  cardano_coin_selector_unref(&selector);
+}
+
+/**
+ * Runs an oversized-change scenario against the given selector: a wallet whose UTXOs carry
+ * every pool asset, with a maximum output value size low enough that a single change output
+ * cannot hold them all. Asserts that the change is split into multiple min-ADA compliant,
+ * size-compliant outputs that still balance exactly.
+ */
+static void
+run_oversized_change_scenario(cardano_coin_selector_t* selector)
+{
+  cardano_address_t*             change_address  = make_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = make_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = make_protocol_parameters();
+
+  ASSERT_EQ(cardano_protocol_parameters_set_max_value_size(protocol_params, 150U), CARDANO_SUCCESS);
+
+  gen_value_t rich_value;
+  rich_value.coin = 100000000;
+
+  for (size_t i = 0U; i < ASSET_POOL_SIZE; ++i)
+  {
+    rich_value.assets[i] = (int64_t)(1000U + i);
+  }
+
+  gen_value_t ada_value;
+  ada_value.coin = 50000000;
+
+  std::vector<gen_value_t>     pool_values = { rich_value, ada_value };
+  std::vector<cardano_utxo_t*> pool_utxos;
+
+  // The asset-rich UTXO is pre-selected so that its assets are guaranteed to flow into the
+  // change, regardless of the selector's own preferences.
+  cardano_utxo_list_t* available_utxo    = NULL;
+  cardano_utxo_list_t* pre_selected_utxo = NULL;
+
+  ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_utxo_list_new(&pre_selected_utxo), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < pool_values.size(); ++i)
+  {
+    cardano_utxo_t* utxo = build_utxo(900000U + i, pool_values[i], wallet_address);
+
+    ASSERT_EQ(cardano_utxo_list_add((i == 0U) ? pre_selected_utxo : available_utxo, utxo), CARDANO_SUCCESS);
+    pool_utxos.push_back(utxo);
+  }
+
+  gen_value_t target_gen;
+  target_gen.coin = 1000000;
+
+  cardano_value_t* target = build_value(target_gen);
+
+  cardano_utxo_list_t*               selection      = NULL;
+  cardano_utxo_list_t*               remaining_utxo = NULL;
+  cardano_transaction_output_list_t* change_outputs = NULL;
+
+  ASSERT_EQ(
+    do_select(selector, pre_selected_utxo, available_utxo, target, NULL, change_address, protocol_params, &selection, &remaining_utxo, &change_outputs),
+    CARDANO_SUCCESS);
+
+  // The eight pool assets cannot fit in a single 150-byte output value.
+  EXPECT_GT(cardano_transaction_output_list_get_length(change_outputs), 1U);
+
+  std::vector<gen_value_t> change_values;
+
+  for (size_t i = 0U; i < cardano_transaction_output_list_get_length(change_outputs); ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+    ASSERT_EQ(cardano_transaction_output_list_get(change_outputs, i, &output), CARDANO_SUCCESS);
+
+    cardano_value_t* value = cardano_transaction_output_get_value(output);
+
+    change_values.push_back(read_value(value));
+
+    bool is_oversized = true;
+    ASSERT_EQ(_cardano_coin_selection_value_is_oversized(value, 150U, &is_oversized), CARDANO_SUCCESS);
+    EXPECT_FALSE(is_oversized);
+
+    uint64_t min_ada = 0U;
+    ASSERT_EQ(cardano_compute_min_ada_required(output, 4310U, &min_ada), CARDANO_SUCCESS);
+    EXPECT_GE(cardano_value_get_coin(value), (int64_t)min_ada);
+
+    cardano_value_unref(&value);
+    cardano_transaction_output_unref(&output);
+  }
+
+  // Local balance still holds exactly across the split outputs.
+  std::vector<gen_value_t> selected_values;
+
+  for (size_t i = 0U; i < cardano_utxo_list_get_length(selection); ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+    ASSERT_EQ(cardano_utxo_list_get(selection, i, &utxo), CARDANO_SUCCESS);
+    cardano_utxo_unref(&utxo);
+
+    for (size_t j = 0U; j < pool_utxos.size(); ++j)
+    {
+      if (pool_utxos[j] == utxo)
+      {
+        selected_values.push_back(pool_values[j]);
+      }
+    }
+  }
+
+  const gen_value_t selected_total = sum_gen_values(selected_values);
+  const gen_value_t change_total   = sum_gen_values(change_values);
+
+  EXPECT_EQ(selected_total.coin, target_gen.coin + change_total.coin);
+
+  for (size_t i = 0U; i < ASSET_POOL_SIZE; ++i)
+  {
+    EXPECT_EQ(selected_total.assets[i], target_gen.assets[i] + change_total.assets[i]);
+  }
+
+  cardano_utxo_list_unref(&selection);
+  cardano_utxo_list_unref(&remaining_utxo);
+  cardano_transaction_output_list_unref(&change_outputs);
+  cardano_value_unref(&target);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&pre_selected_utxo);
+
+  for (cardano_utxo_t* utxo: pool_utxos)
+  {
+    cardano_utxo_unref(&utxo);
+  }
+
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_coin_selector_properties, largeFirstSplitsOversizedChange)
+{
+  cardano_coin_selector_t* selector = NULL;
+
+  ASSERT_EQ(cardano_large_first_coin_selector_new(&selector), CARDANO_SUCCESS);
+
+  run_oversized_change_scenario(selector);
+
+  cardano_coin_selector_unref(&selector);
+}
+
+TEST(cardano_coin_selector_properties, randomImproveSplitsOversizedChange)
+{
+  cardano_coin_selector_t* selector = NULL;
+
+  ASSERT_EQ(cardano_random_improve_coin_selector_new_with_seed(PROPERTY_SEED, &selector), CARDANO_SUCCESS);
+
+  run_oversized_change_scenario(selector);
+
   cardano_coin_selector_unref(&selector);
 }

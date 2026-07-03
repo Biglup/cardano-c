@@ -31,6 +31,7 @@
 #include "../../../string_safe.h"
 #include "./random_improve_helpers.h"
 #include "./random_improve_utxo_utils.h"
+#include "./value_splitting.h"
 
 #include <string.h>
 
@@ -514,6 +515,227 @@ _cardano_random_improve_store_distribution(
   {
     state->quantities[(asset_index * state->map_count) + m] = parts[m];
   }
+}
+
+/**
+ * \brief Builds an asset-only value from the quantities of a single change map.
+ *
+ * \param[in]  state     The change state.
+ * \param[in]  map_index The change map to materialize.
+ * \param[out] value     The resulting asset-only value (zero coin).
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+build_map_asset_value(random_improve_change_state_t* state, const size_t map_index, cardano_value_t** value)
+{
+  *value = cardano_value_new_zero();
+
+  if (*value == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t a = 0U; (a < state->table.size) && (result == CARDANO_SUCCESS); ++a)
+  {
+    const uint64_t quantity = state->quantities[(a * state->map_count) + map_index];
+
+    if (quantity > 0U)
+    {
+      result = cardano_value_add_asset_with_id(*value, state->table.ids[a], (int64_t)quantity);
+    }
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(value);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Writes the assets of a part value into a column of the given quantity matrix.
+ *
+ * \param[in]     state        The change state (for the asset table).
+ * \param[in]     part         The asset-only value holding the part's assets.
+ * \param[in,out] quantities   The destination matrix, `table.size` rows by `column_count` columns.
+ * \param[in]     column_count The number of columns of the destination matrix.
+ * \param[in]     column       The destination column.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+write_part_to_column(
+  random_improve_change_state_t* state,
+  cardano_value_t*               part,
+  uint64_t*                      quantities,
+  const size_t                   column_count,
+  const size_t                   column)
+{
+  cardano_asset_id_map_t* assets = cardano_value_as_assets_map(part);
+
+  if (assets == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  const size_t asset_count = cardano_asset_id_map_get_length(assets);
+
+  for (size_t i = 0U; (i < asset_count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_asset_id_t* asset_id = NULL;
+
+    result = cardano_asset_id_map_get_key_at(assets, i, &asset_id);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      if (!cardano_asset_id_is_lovelace(asset_id))
+      {
+        int64_t quantity = 0;
+
+        result = cardano_asset_id_map_get(assets, asset_id, &quantity);
+
+        for (size_t a = 0U; (a < state->table.size) && (result == CARDANO_SUCCESS); ++a)
+        {
+          if (_cardano_random_improve_asset_id_equals(state->table.ids[a], asset_id))
+          {
+            quantities[(a * column_count) + column] = (quantity > 0) ? (uint64_t)quantity : 0U;
+          }
+        }
+      }
+
+      cardano_asset_id_unref(&asset_id);
+    }
+  }
+
+  cardano_asset_id_map_unref(&assets);
+
+  return result;
+}
+
+cardano_error_t
+_cardano_random_improve_split_oversized_maps(
+  random_improve_change_state_t* state,
+  const uint64_t                 max_value_size)
+{
+  if ((max_value_size == 0U) || (state->table.size == 0U))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  const size_t original_map_count = state->map_count;
+
+  cardano_value_part_list_t* map_parts = (cardano_value_part_list_t*)_cardano_malloc(original_map_count * sizeof(cardano_value_part_list_t));
+
+  if (map_parts == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  CARDANO_UNUSED(memset(map_parts, 0, original_map_count * sizeof(cardano_value_part_list_t)));
+
+  cardano_error_t result    = CARDANO_SUCCESS;
+  size_t          new_count = 0U;
+
+  for (size_t m = 0U; (m < original_map_count) && (result == CARDANO_SUCCESS); ++m)
+  {
+    cardano_value_t* map_value = NULL;
+
+    result = build_map_asset_value(state, m, &map_value);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = _cardano_coin_selection_split_value_assets(map_value, max_value_size, &map_parts[m]);
+
+      cardano_value_unref(&map_value);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      new_count += map_parts[m].size;
+    }
+  }
+
+  if ((result == CARDANO_SUCCESS) && (new_count > original_map_count))
+  {
+    uint64_t* new_quantities  = (uint64_t*)_cardano_malloc(state->table.size * new_count * sizeof(uint64_t));
+    uint64_t* new_out_weights = (uint64_t*)_cardano_malloc(new_count * sizeof(uint64_t));
+    size_t*   new_map_order   = (size_t*)_cardano_malloc(new_count * sizeof(size_t));
+    uint64_t* new_min_adas    = (uint64_t*)_cardano_malloc(new_count * sizeof(uint64_t));
+
+    if ((new_quantities == NULL) || (new_out_weights == NULL) || (new_map_order == NULL) || (new_min_adas == NULL))
+    {
+      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+    else
+    {
+      CARDANO_UNUSED(memset(new_quantities, 0, state->table.size * new_count * sizeof(uint64_t)));
+
+      size_t column = 0U;
+
+      for (size_t m = 0U; (m < original_map_count) && (result == CARDANO_SUCCESS); ++m)
+      {
+        const size_t   parts  = map_parts[m].size;
+        const uint64_t weight = state->out_weights[m];
+
+        for (size_t p = 0U; (p < parts) && (result == CARDANO_SUCCESS); ++p)
+        {
+          result = write_part_to_column(state, map_parts[m].items[p], new_quantities, new_count, column);
+
+          if (result == CARDANO_SUCCESS)
+          {
+            uint64_t part_weight = weight / (uint64_t)parts;
+
+            if ((uint64_t)p < (weight % (uint64_t)parts))
+            {
+              part_weight += 1U;
+            }
+
+            new_out_weights[column] = part_weight;
+            new_map_order[column]   = column;
+
+            ++column;
+          }
+        }
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        _cardano_free(state->quantities);
+        _cardano_free(state->out_weights);
+        _cardano_free(state->map_order);
+        _cardano_free(state->min_adas);
+
+        state->quantities  = new_quantities;
+        state->out_weights = new_out_weights;
+        state->map_order   = new_map_order;
+        state->min_adas    = new_min_adas;
+        state->map_count   = new_count;
+      }
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      _cardano_free(new_quantities);
+      _cardano_free(new_out_weights);
+      _cardano_free(new_map_order);
+      _cardano_free(new_min_adas);
+    }
+  }
+
+  for (size_t m = 0U; m < original_map_count; ++m)
+  {
+    _cardano_coin_selection_value_parts_free(&map_parts[m]);
+  }
+
+  _cardano_free(map_parts);
+
+  return result;
 }
 
 void
