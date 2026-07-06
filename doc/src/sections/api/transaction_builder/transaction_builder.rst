@@ -109,6 +109,10 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_add_input_with_deferred_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_add_output
 
 ------------
@@ -122,6 +126,10 @@ Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_tx_builder_mint_token
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_mint_token_with_deferred_redeemer
 
 ------------
 
@@ -154,6 +162,10 @@ Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_tx_builder_withdraw_rewards
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_withdraw_rewards_with_deferred_redeemer
 
 ------------
 
