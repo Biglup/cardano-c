@@ -65,6 +65,9 @@ extern "C" {
  * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if the transaction has scripts.
  * \param[in]      collateral_change_address  The address where any remaining collateral change will be sent, if applicable.
  * \param[in]      evaluator                  A transaction evaluator instance for determining the execution cost of scripts.
+ * \param[in]      deferred_redeemers         An optional list of deferred redeemers to resolve on every balancing iteration, once the canonical
+ *                                            input order, change outputs and fee of the draft transaction are known. Each entry's callback produces
+ *                                            the redeemer payload from the balanced draft. Can be NULL if the transaction has no deferred redeemers.
  *
  * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, or an appropriate error code indicating the type of failure.
  *
