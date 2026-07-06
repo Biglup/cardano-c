@@ -73,6 +73,30 @@ Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_find_input_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_reference_input_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_output_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_mint_policy_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_withdrawal_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_redeemer_index
+
+------------
+
 .. doxygenfunction:: cardano_transaction_unref
 
 ------------
