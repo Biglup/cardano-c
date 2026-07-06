@@ -21,8 +21,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/certs/certificate_set.h>
 #include <cardano/object.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/voting_procedures/voter_list.h>
+#include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/redeemer.h>
 
 #include "../allocators.h"
@@ -944,6 +947,172 @@ cardano_transaction_find_withdrawal_index(
   }
 
   cardano_address_unref(&target);
+
+  return result;
+}
+
+/**
+ * \brief Serializes a certificate into a freshly allocated buffer.
+ *
+ * \param[in]  certificate The certificate to serialize.
+ * \param[out] buffer      The serialized bytes. The caller takes ownership.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+certificate_to_cbor_buffer(cardano_certificate_t* certificate, cardano_buffer_t** buffer)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_certificate_to_cbor(certificate, writer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(writer, buffer);
+  }
+
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+}
+
+cardano_error_t
+cardano_transaction_find_certificate_index(
+  cardano_transaction_t* transaction,
+  cardano_certificate_t* certificate,
+  uint64_t*              index)
+{
+  if ((transaction == NULL) || (certificate == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certificates);
+
+  if (certificates == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_buffer_t* target_bytes = NULL;
+
+  cardano_error_t result = certificate_to_cbor_buffer(certificate, &target_bytes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t length = cardano_certificate_set_get_length(certificates);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_certificate_t* entry = NULL;
+
+    const cardano_error_t get_result = cardano_certificate_set_get(certificates, i, &entry);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
+    {
+      cardano_buffer_t* entry_bytes = NULL;
+
+      const cardano_error_t serialize_result = certificate_to_cbor_buffer(entry, &entry_bytes);
+
+      cardano_certificate_unref(&entry);
+
+      if (serialize_result != CARDANO_SUCCESS)
+      {
+        result = serialize_result;
+      }
+      else
+      {
+        if (cardano_buffer_equals(entry_bytes, target_bytes))
+        {
+          *index = i;
+          result = CARDANO_SUCCESS;
+        }
+
+        cardano_buffer_unref(&entry_bytes);
+      }
+    }
+  }
+
+  cardano_buffer_unref(&target_bytes);
+
+  return result;
+}
+
+cardano_error_t
+cardano_transaction_find_vote_index(
+  cardano_transaction_t* transaction,
+  cardano_voter_t*       voter,
+  uint64_t*              index)
+{
+  if ((transaction == NULL) || (voter == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_voting_procedures_t* votes = cardano_transaction_body_get_voting_procedures(body);
+  cardano_voting_procedures_unref(&votes);
+
+  if (votes == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_voter_list_t* voters = NULL;
+
+  cardano_error_t result = cardano_voting_procedures_get_voters(votes, &voters);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t length = cardano_voter_list_get_length(voters);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_voter_t* entry = NULL;
+
+    const cardano_error_t get_result = cardano_voter_list_get(voters, i, &entry);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+      break;
+    }
+
+    if (cardano_voter_equals(entry, voter))
+    {
+      *index = i;
+      result = CARDANO_SUCCESS;
+    }
+
+    cardano_voter_unref(&entry);
+  }
+
+  cardano_voter_list_unref(&voters);
 
   return result;
 }

@@ -26,9 +26,15 @@
 #include <cardano/address/reward_address.h>
 #include <cardano/auxiliary_data/auxiliary_data.h>
 #include <cardano/cbor/cbor_reader.h>
+#include <cardano/certs/certificate.h>
+#include <cardano/certs/certificate_set.h>
+#include <cardano/common/governance_action_id.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/transaction_body.h>
+#include <cardano/voting_procedures/voter.h>
+#include <cardano/voting_procedures/voting_procedure.h>
+#include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/redeemer_tag.h>
 #include <cardano/witness_set/witness_set.h>
 
@@ -1594,6 +1600,222 @@ TEST(cardano_transaction_find_redeemer_index, returnsErrorIfGivenNull)
 
   // Cleanup
   cardano_transaction_unref(&transaction);
+}
+
+/**
+ * Creates a stake registration certificate (not present in any fixture transaction).
+ * \return A new certificate instance.
+ */
+static cardano_certificate_t*
+new_unrelated_certificate()
+{
+  static const char* CERT_CBOR = "82008200581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f";
+
+  cardano_certificate_t* certificate = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(CERT_CBOR, strlen(CERT_CBOR));
+
+  EXPECT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return certificate;
+}
+
+/**
+ * Creates a voter from the given CBOR hex.
+ * \return A new voter instance.
+ */
+static cardano_voter_t*
+new_voter_from_cbor(const char* cbor)
+{
+  cardano_voter_t*       voter  = NULL;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  EXPECT_EQ(cardano_voter_from_cbor(reader, &voter), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return voter;
+}
+
+/**
+ * Attaches votes from the given voters (in the given order) to the transaction.
+ */
+static void
+add_votes(cardano_transaction_t* transaction, cardano_voter_t* first_voter, cardano_voter_t* second_voter)
+{
+  static const char* ACTION_ID_CBOR = "825820000000000000000000000000000000000000000000000000000000000000000003";
+  static const char* VOTE_CBOR      = "8201f6";
+
+  cardano_governance_action_id_t* action_id = NULL;
+  cardano_voting_procedure_t*     procedure = NULL;
+  cardano_voting_procedures_t*    votes     = NULL;
+
+  cardano_cbor_reader_t* action_reader = cardano_cbor_reader_from_hex(ACTION_ID_CBOR, strlen(ACTION_ID_CBOR));
+  cardano_cbor_reader_t* vote_reader   = cardano_cbor_reader_from_hex(VOTE_CBOR, strlen(VOTE_CBOR));
+
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(action_reader, &action_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_from_cbor(vote_reader, &procedure), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedures_new(&votes), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_voting_procedures_insert(votes, first_voter, action_id, procedure), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedures_insert(votes, second_voter, action_id, procedure), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  EXPECT_EQ(cardano_transaction_body_set_voting_procedures(body, votes), CARDANO_SUCCESS);
+
+  cardano_voting_procedures_unref(&votes);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&action_reader);
+  cardano_cbor_reader_unref(&vote_reader);
+}
+
+TEST(cardano_transaction_find_certificate_index, canFindTheCertificate)
+{
+  // Arrange
+
+  // The fixture transaction carries two certificates.
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certs);
+
+  ASSERT_EQ(cardano_certificate_set_get_length(certs), 2U);
+
+  cardano_certificate_t* first = NULL;
+  cardano_certificate_t* last  = NULL;
+
+  ASSERT_EQ(cardano_certificate_set_get(certs, 0U, &first), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_certificate_set_get(certs, 1U, &last), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t        first_index = 99U;
+  uint64_t        last_index  = 99U;
+  cardano_error_t result      = cardano_transaction_find_certificate_index(transaction, first, &first_index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(first_index, 0U);
+
+  EXPECT_EQ(cardano_transaction_find_certificate_index(transaction, last, &last_index), CARDANO_SUCCESS);
+  EXPECT_EQ(last_index, 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_certificate_unref(&first);
+  cardano_certificate_unref(&last);
+}
+
+TEST(cardano_transaction_find_certificate_index, returnsNotFoundIfNoMatchOrNoCertificates)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+  cardano_transaction_t* no_certs    = new_default_transaction(CBOR2);
+  cardano_certificate_t* certificate = new_unrelated_certificate();
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_certificate_index(transaction, certificate, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_certificate_index(no_certs, certificate, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_certs);
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(cardano_transaction_find_certificate_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+  cardano_certificate_t* certificate = new_unrelated_certificate();
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_certificate_index(NULL, certificate, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_certificate_index(transaction, NULL, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_certificate_index(transaction, certificate, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(cardano_transaction_find_vote_index, findsVotersInCanonicalOrder)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR2);
+
+  cardano_voter_t* low_voter  = new_voter_from_cbor("8200581c00000000000000000000000000000000000000000000000000000000");
+  cardano_voter_t* high_voter = new_voter_from_cbor("8202581c01000000000000000000000000000000000000000000000000000000");
+
+  // Insert in reverse canonical order: the container re-sorts voters canonically.
+  add_votes(transaction, high_voter, low_voter);
+
+  // Act
+  uint64_t        low_index  = 99U;
+  uint64_t        high_index = 99U;
+  cardano_error_t result     = cardano_transaction_find_vote_index(transaction, low_voter, &low_index);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(low_index, 0U);
+
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, high_voter, &high_index), CARDANO_SUCCESS);
+  EXPECT_EQ(high_index, 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_voter_unref(&low_voter);
+  cardano_voter_unref(&high_voter);
+}
+
+TEST(cardano_transaction_find_vote_index, returnsNotFoundIfNoMatchOrNoVotes)
+{
+  // Arrange
+  cardano_transaction_t* no_votes    = new_default_transaction(CBOR);
+  cardano_transaction_t* transaction = new_default_transaction(CBOR2);
+
+  cardano_voter_t* voter       = new_voter_from_cbor("8200581c00000000000000000000000000000000000000000000000000000000");
+  cardano_voter_t* other_voter = new_voter_from_cbor("8202581c01000000000000000000000000000000000000000000000000000000");
+  cardano_voter_t* unknown     = new_voter_from_cbor("8204581c02000000000000000000000000000000000000000000000000000000");
+
+  add_votes(transaction, voter, other_voter);
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, unknown, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_transaction_find_vote_index(no_votes, voter, &index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&no_votes);
+  cardano_voter_unref(&voter);
+  cardano_voter_unref(&other_voter);
+  cardano_voter_unref(&unknown);
+}
+
+TEST(cardano_transaction_find_vote_index, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR);
+  cardano_voter_t*       voter       = new_voter_from_cbor("8200581c00000000000000000000000000000000000000000000000000000000");
+
+  // Act & Assert
+  uint64_t index = 0U;
+  EXPECT_EQ(cardano_transaction_find_vote_index(NULL, voter, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, NULL, &index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, voter, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_voter_unref(&voter);
 }
 
 TEST(cardano_transaction_find_mint_policy_index, returnsErrorIfMemoryAllocationFails)

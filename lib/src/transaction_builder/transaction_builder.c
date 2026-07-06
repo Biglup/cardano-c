@@ -5284,3 +5284,152 @@ cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
 
   cardano_blake2b_hash_unref(&hash);
 }
+
+void
+cardano_tx_builder_add_certificate_with_deferred_redeemer(
+  cardano_tx_builder_t*          builder,
+  cardano_certificate_t*         certificate,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((certificate == NULL) || (callback == NULL))
+  {
+    cardano_tx_builder_set_last_error(builder, "Certificate and callback are required");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_plutus_data_t* placeholder = NULL;
+
+  cardano_error_t result = create_placeholder_plutus_data(&placeholder);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_add_certificate(builder, certificate, placeholder);
+
+  cardano_plutus_data_unref(&placeholder);
+
+  if (builder->last_error != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certs);
+
+  const uint64_t cert_index = (uint64_t)(cardano_certificate_set_get_length(certs) - 1U);
+
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_unref(&witnesses);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
+  cardano_redeemer_list_unref(&redeemers);
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t redeemer_count = cardano_redeemer_list_get_length(redeemers);
+
+  for (size_t i = 0U; (i < redeemer_count) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+
+    const cardano_error_t get_result = cardano_redeemer_list_get(redeemers, i, &redeemer);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+      break;
+    }
+
+    const bool matches = (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_CERTIFYING) &&
+      (cardano_redeemer_get_index(redeemer) == cert_index);
+
+    if (matches)
+    {
+      result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+    }
+
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to register the deferred redeemer.");
+    builder->last_error = result;
+  }
+}
+
+void
+cardano_tx_builder_vote_with_deferred_redeemer(
+  cardano_tx_builder_t*           builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote,
+  cardano_deferred_redeemer_fn_t  callback,
+  void*                           user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if ((voter == NULL) || (action_id == NULL) || (vote == NULL) || (callback == NULL))
+  {
+    cardano_tx_builder_set_last_error(builder, "Voter, action id, vote and callback are required");
+    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+
+    return;
+  }
+
+  cardano_plutus_data_t* placeholder = NULL;
+
+  cardano_error_t result = create_placeholder_plutus_data(&placeholder);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  cardano_tx_builder_vote(builder, voter, action_id, vote, placeholder);
+
+  cardano_plutus_data_unref(&placeholder);
+
+  if (builder->last_error != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  cardano_blake2b_hash_t* hash = NULL;
+
+  result = compute_voting_procedures_sortable_id(voter, &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to compute the vote sortable id.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  register_deferred_from_map(builder, builder->votes_to_redeemer_map, hash, callback, user_context);
+
+  cardano_blake2b_hash_unref(&hash);
+}

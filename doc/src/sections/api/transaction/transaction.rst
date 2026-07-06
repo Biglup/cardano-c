@@ -93,6 +93,14 @@ Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_find_certificate_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_vote_index
+
+------------
+
 .. doxygenfunction:: cardano_transaction_find_redeemer_index
 
 ------------
