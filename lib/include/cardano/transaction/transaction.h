@@ -29,10 +29,12 @@
 #include <cardano/auxiliary_data/auxiliary_data.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/certs/certificate.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/typedefs.h>
+#include <cardano/voting_procedures/voter.h>
 #include <cardano/witness_set/witness_set.h>
 
 /* DECLARATIONS **************************************************************/
@@ -826,6 +828,45 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_find_withdrawal_index(
   cardano_transaction_t*    transaction,
   cardano_reward_address_t* reward_address,
   uint64_t*                 index);
+
+/**
+ * \brief Finds the index of a certificate in the transaction's certificate list.
+ *
+ * Certificates are indexed in the order they appear in the transaction body, which is the index
+ * certifying redeemers and validators use to reference them. Certificates are matched by their
+ * serialized representation, so any certificate object with the same contents matches.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  certificate The certificate to look for.
+ * \param[out] index       The position of the certificate in the certificate list.
+ *
+ * \return \ref CARDANO_SUCCESS if the certificate was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the transaction does not carry the given certificate, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_certificate_index(
+  cardano_transaction_t* transaction,
+  cardano_certificate_t* certificate,
+  uint64_t*              index);
+
+/**
+ * \brief Finds the index of a voter in the transaction's canonically ordered voting procedures.
+ *
+ * Voters are ordered canonically in the voting procedures map, and each voter's position in that
+ * ordering is the index voting redeemers and validators use to reference its votes.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  voter       The voter to look for.
+ * \param[out] index       The position of the voter in the canonical voter ordering.
+ *
+ * \return \ref CARDANO_SUCCESS if the voter was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
+ *         transaction does not carry votes from the given voter, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_vote_index(
+  cardano_transaction_t* transaction,
+  cardano_voter_t*       voter,
+  uint64_t*              index);
 
 /**
  * \brief Finds the position of a redeemer in the transaction's canonically ordered redeemer list.

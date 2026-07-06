@@ -1699,6 +1699,29 @@ CARDANO_EXPORT void cardano_tx_builder_vote(
   cardano_plutus_data_t*          redeemer);
 
 /**
+ * \brief Casts a vote whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_tx_builder_vote, but the redeemer payload is built by the given
+ * callback from the balanced draft transaction. See \ref cardano_tx_builder_add_input_with_deferred_redeemer.
+ * The \ref cardano_transaction_find_vote_index function can be used to look up the voter's
+ * canonical position from inside the callback.
+ *
+ * \param[in] builder      The transaction builder.
+ * \param[in] voter        The voter casting the vote.
+ * \param[in] action_id    The governance action being voted on.
+ * \param[in] vote         The voting procedure with the vote choice.
+ * \param[in] callback     The callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_vote_with_deferred_redeemer(
+  cardano_tx_builder_t*           builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote,
+  cardano_deferred_redeemer_fn_t  callback,
+  void*                           user_context);
+
+/**
  * \brief Adds a certificate to the transaction.
  *
  * This function adds a specified certificate to the transaction being constructed. Certificates are used to perform
@@ -1724,6 +1747,29 @@ CARDANO_EXPORT void cardano_tx_builder_add_certificate(
   cardano_tx_builder_t*  builder,
   cardano_certificate_t* certificate,
   cardano_plutus_data_t* redeemer);
+
+/**
+ * \brief Adds a certificate whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_tx_builder_add_certificate, but the redeemer payload is built by the
+ * given callback from the balanced draft transaction. See \ref cardano_tx_builder_add_input_with_deferred_redeemer.
+ * The \ref cardano_transaction_find_certificate_index function can be used to look up the
+ * certificate's position from inside the callback.
+ *
+ * This single entry point covers every script-locked certificate type: build the certificate with
+ * the appropriate constructor (stake registration, delegation, DRep operations, committee
+ * operations, etc.) and add it here instead of through the convenience functions.
+ *
+ * \param[in] builder      The transaction builder.
+ * \param[in] certificate  The certificate to add.
+ * \param[in] callback     The callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_certificate_with_deferred_redeemer(
+  cardano_tx_builder_t*          builder,
+  cardano_certificate_t*         certificate,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
 
 /**
  * \brief Adds a script to the transaction builder.

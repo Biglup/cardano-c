@@ -8829,3 +8829,336 @@ TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, returnsErrorIfM
   cardano_reward_address_unref(&reward_address);
   cardano_set_allocators(malloc, realloc, free);
 }
+
+/**
+ * Creates a stake registration certificate from a fixed CBOR fixture.
+ * \return A new certificate instance.
+ */
+static cardano_certificate_t*
+new_default_certificate()
+{
+  static const char* CERT_CBOR = "82008200581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f";
+
+  cardano_certificate_t* certificate = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(CERT_CBOR, strlen(CERT_CBOR));
+
+  EXPECT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return certificate;
+}
+
+TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, registersDeferredRedeemerForTheCertificate)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_certificate_t*         certificate = new_default_certificate();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, certificate, fixed_payload_deferred_callback, NULL);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certs);
+
+  EXPECT_EQ(cardano_certificate_set_get_length(certs), 1U);
+
+  // The certificate redeemer starts out as the placeholder `constr 0 []`...
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_unref(&witnesses);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
+  cardano_redeemer_list_unref(&redeemers);
+
+  ASSERT_EQ(cardano_redeemer_list_get_length(redeemers), 1U);
+
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_redeemer_list_get(redeemers, 0U, &redeemer), CARDANO_SUCCESS);
+  cardano_redeemer_unref(&redeemer);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_CERTIFYING);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), 0U);
+
+  cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
+  cardano_plutus_data_t* payload     = cardano_redeemer_get_data(redeemer);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, placeholder));
+  cardano_plutus_data_unref(&payload);
+
+  // ...and a resolution pass (one balancing iteration) replaces it with the callback payload.
+  cardano_utxo_list_t* resolved_inputs = NULL;
+  EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* expected = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
+
+  payload = cardano_redeemer_get_data(redeemer);
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, expected));
+
+  // Cleanup
+  cardano_plutus_data_unref(&payload);
+  cardano_plutus_data_unref(&expected);
+  cardano_plutus_data_unref(&placeholder);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, latchesErrorOnNullArguments)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_certificate_t*         certificate = new_default_certificate();
+
+  // Act & Assert
+  cardano_tx_builder_add_certificate_with_deferred_redeemer(nullptr, certificate, fixed_payload_deferred_callback, NULL);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, nullptr, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, certificate, nullptr, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // A builder already in an error state must not register anything.
+  tx_builder->last_error = CARDANO_ERROR_GENERIC;
+  cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, certificate, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_certificate_t*         certificate = new_default_certificate();
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that every
+  // intermediate allocation (placeholder, declaration and deferred registration) fails at
+  // least once.
+  for (int i = 0; i < 512; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, certificate, fixed_payload_deferred_callback, NULL);
+
+    const cardano_error_t error = tx_builder->last_error;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_certificate_unref(&certificate);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_vote_with_deferred_redeemer, registersDeferredRedeemerForTheVote)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_protocol_parameters();
+  cardano_voter_t*                voter     = new_default_voter();
+  cardano_voting_procedure_t*     procedure = new_default_voting_procedure();
+  cardano_governance_action_id_t* action_id = nullptr;
+
+  cardano_cbor_reader_t* gov_action_reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, procedure, fixed_payload_deferred_callback, NULL);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map), 1U);
+
+  // The vote redeemer starts out as the placeholder `constr 0 []`...
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->votes_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
+  cardano_redeemer_unref(&redeemer);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_VOTING);
+
+  cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
+  cardano_plutus_data_t* payload     = cardano_redeemer_get_data(redeemer);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, placeholder));
+  cardano_plutus_data_unref(&payload);
+
+  // ...and a resolution pass (one balancing iteration) replaces it with the callback payload.
+  cardano_utxo_list_t* resolved_inputs = NULL;
+  EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* expected = NULL;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
+
+  payload = cardano_redeemer_get_data(redeemer);
+  EXPECT_TRUE(cardano_plutus_data_equals(payload, expected));
+
+  // Cleanup
+  cardano_plutus_data_unref(&payload);
+  cardano_plutus_data_unref(&expected);
+  cardano_plutus_data_unref(&placeholder);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_voter_unref(&voter);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&gov_action_reader);
+}
+
+TEST(cardano_tx_builder_vote_with_deferred_redeemer, latchesErrorOnNullArguments)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_protocol_parameters();
+  cardano_voter_t*                voter     = new_default_voter();
+  cardano_voting_procedure_t*     procedure = new_default_voting_procedure();
+  cardano_governance_action_id_t* action_id = nullptr;
+
+  cardano_cbor_reader_t* gov_action_reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+
+  // Act & Assert
+  cardano_tx_builder_vote_with_deferred_redeemer(nullptr, voter, action_id, procedure, fixed_payload_deferred_callback, NULL);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, nullptr, action_id, procedure, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, nullptr, procedure, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, nullptr, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, procedure, nullptr, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // A builder already in an error state must not register anything.
+  tx_builder->last_error = CARDANO_ERROR_GENERIC;
+  cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, procedure, fixed_payload_deferred_callback, NULL);
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_voter_unref(&voter);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&gov_action_reader);
+}
+
+TEST(cardano_tx_builder_vote_with_deferred_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_protocol_parameters();
+  cardano_voter_t*                voter     = new_default_voter();
+  cardano_voting_procedure_t*     procedure = new_default_voting_procedure();
+  cardano_governance_action_id_t* action_id = nullptr;
+
+  cardano_cbor_reader_t* gov_action_reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+
+  // Sweep the allocation failure point across the whole call until it succeeds, so that every
+  // intermediate allocation (placeholder, declaration and deferred registration) fails at
+  // least once.
+  for (int i = 0; i < 512; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, procedure, fixed_payload_deferred_callback, NULL);
+
+    const cardano_error_t error = tx_builder->last_error;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_voter_unref(&voter);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&gov_action_reader);
+  cardano_set_allocators(malloc, realloc, free);
+}

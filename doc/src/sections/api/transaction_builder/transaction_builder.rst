@@ -233,7 +233,15 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_vote_with_deferred_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_add_certificate
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_certificate_with_deferred_redeemer
 
 ------------
 

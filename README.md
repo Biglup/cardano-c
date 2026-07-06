@@ -93,7 +93,7 @@ cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, script_utxo, bui
 cardano_tx_builder_build(tx_builder, &transaction);
 ```
 
-The callback runs on every balancing iteration (it must be a pure function of its arguments) and receives the balanced draft transaction plus the resolved inputs; the `cardano_transaction_find_*_index` helpers look up canonical positions of inputs, reference inputs, outputs (including change), mint policies, withdrawals and redeemers. Deferred variants exist for spends, mints and withdrawals (`cardano_tx_builder_mint_token_with_deferred_redeemer`, `cardano_tx_builder_withdraw_rewards_with_deferred_redeemer`). See the `deferred_redeemer_*` [examples](examples/) for complete transactions validated by real on-chain scripts.
+The callback runs on every balancing iteration (it must be a pure function of its arguments) and receives the balanced draft transaction plus the resolved inputs; the `cardano_transaction_find_*_index` helpers look up canonical positions of inputs, reference inputs, outputs (including change), mint policies, withdrawals, certificates, voters and redeemers. Deferred variants exist for every redeemer purpose the builder can attach: spends, mints, withdrawals, certificates and votes (`cardano_tx_builder_mint_token_with_deferred_redeemer`, `cardano_tx_builder_withdraw_rewards_with_deferred_redeemer`, `cardano_tx_builder_add_certificate_with_deferred_redeemer`, `cardano_tx_builder_vote_with_deferred_redeemer`). See the `deferred_redeemer_*` [examples](examples/) for complete transactions validated by real on-chain scripts.
 
 ## Basic Example
 
