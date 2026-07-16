@@ -68,7 +68,12 @@ typedef enum
   /**
    * \brief The script requires that the current slot is less than a specified expiry time.
    */
-  CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER = 5
+  CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER = 5,
+
+  /**
+   * \brief The script requires that a specific credential is present in the transaction guards.
+   */
+  CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD = 6
 } cardano_native_script_type_t;
 
 /**

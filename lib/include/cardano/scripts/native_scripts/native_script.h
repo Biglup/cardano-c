@@ -95,6 +95,15 @@ typedef struct cardano_script_invalid_after_t cardano_script_invalid_after_t;
 typedef struct cardano_script_invalid_before_t cardano_script_invalid_before_t;
 
 /**
+ * \brief This script evaluates to true if the given credential is present in the
+ * transaction guards.
+ *
+ * In other words, this checks that the transaction was authorized by a particular guard,
+ * identified by its key hash or script hash credential.
+ */
+typedef struct cardano_script_require_guard_t cardano_script_require_guard_t;
+
+/**
  * \brief Creates and initializes a new instance of a \ref cardano_native_script_t from a script_all.
  *
  * This function creates and initializes a new instance of a \ref cardano_native_script_t object
@@ -363,6 +372,51 @@ CARDANO_EXPORT cardano_error_t
 cardano_native_script_new_invalid_before(
   cardano_script_invalid_before_t* invalid_before,
   cardano_native_script_t**        native_script);
+
+/**
+ * \brief Creates and initializes a new instance of a native_script from a script_require_guard.
+ *
+ * This function creates and initializes a new instance of a \ref cardano_native_script_t object
+ * from a given \ref cardano_script_require_guard_t object. It essentially converts a script_require_guard
+ * into a native_script. It returns an error code to indicate the success or failure of the operation.
+ *
+ * \param[in] require_guard A constant pointer to the \ref cardano_script_require_guard_t object from which
+ *                          the native_script will be created. The object must not be NULL.
+ * \param[out] native_script On successful initialization, this will point to a newly created
+ *                           \ref cardano_native_script_t object. This object represents a "strong reference"
+ *                           to the native_script, meaning that it is fully initialized and ready for use.
+ *                           The caller is responsible for managing the lifecycle of this object.
+ *                           Specifically, once the native_script is no longer needed, the caller must release it
+ *                           by calling \ref cardano_native_script_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the native_script was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_script_require_guard_t* require_guard = cardano_script_require_guard_new(...);
+ * cardano_native_script_t* native_script = NULL;
+ *
+ * // Attempt to create a new native_script from a script_require_guard
+ * cardano_error_t result = cardano_native_script_new_require_guard(require_guard, &native_script);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the native_script
+ *
+ *   // Once done, ensure to clean up and release the native_script
+ *   cardano_native_script_unref(&native_script);
+ * }
+ *
+ * // Clean up the require_guard object once done
+ * cardano_script_require_guard_unref(&require_guard);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_native_script_new_require_guard(
+  cardano_script_require_guard_t* require_guard,
+  cardano_native_script_t**       native_script);
 
 /**
  * \brief Creates a native_script from a CBOR reader.
@@ -811,6 +865,48 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_native_script_to_invalid_before(
   cardano_native_script_t*          native_script,
   cardano_script_invalid_before_t** invalid_before);
+
+/**
+ * \brief Converts a native_script object to a script_require_guard object.
+ *
+ * This function converts a \ref cardano_native_script_t object to a \ref cardano_script_require_guard_t object.
+ * It essentially creates a script_require_guard object from the given native_script, allowing the conversion
+ * between different types of native scripts. It returns an error code to indicate the success or failure of
+ * the operation.
+ *
+ * \param[in] native_script A constant pointer to the \ref cardano_native_script_t object to be converted.
+ * \param[out] require_guard On successful conversion, this will point to a newly created
+ *                        \ref cardano_script_require_guard_t object. This object represents a "strong reference"
+ *                        to the require_guard, meaning that it is fully initialized and ready for use.
+ *                        The caller is responsible for managing the lifecycle of this object.
+ *                        Specifically, once the require_guard is no longer needed, the caller must release it
+ *                        by calling \ref cardano_script_require_guard_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the conversion was successful, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_native_script_t* native_script = ...; // Assume native_script is a valid native script object
+ * cardano_script_require_guard_t* require_guard = NULL;
+ * cardano_error_t result = cardano_native_script_to_require_guard(native_script, &require_guard);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the require_guard
+ *
+ *   // Once done, ensure to clean up and release the require_guard
+ *   cardano_script_require_guard_unref(&require_guard);
+ * }
+ *
+ * // Clean up the native_script object once done
+ * cardano_native_script_unref(&native_script);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_native_script_to_require_guard(
+  cardano_native_script_t*         native_script,
+  cardano_script_require_guard_t** require_guard);
 
 /**
  * \brief Retrieves the hash associated with a native_script.

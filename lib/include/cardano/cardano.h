@@ -183,6 +183,7 @@
 #include <cardano/scripts/native_scripts/script_invalid_before.h>
 #include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
+#include <cardano/scripts/native_scripts/script_require_guard.h>
 #include <cardano/scripts/plutus_scripts/plutus_language_version.h>
 #include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
