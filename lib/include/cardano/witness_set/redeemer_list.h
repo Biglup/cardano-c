@@ -163,7 +163,8 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_list_to_cip116_json(
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p redeemer or \p writer
- *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL. If any redeemer index is greater than `UINT32_MAX`,
+ *         returns \ref CARDANO_ERROR_INVALID_ARGUMENT, since the wire format encodes the index as a 32-bit unsigned integer.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,

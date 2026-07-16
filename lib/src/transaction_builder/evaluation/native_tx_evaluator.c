@@ -1114,6 +1114,7 @@ resolve_script_hash(
       cardano_proposal_procedure_set_unref(&proposals);
       break;
     }
+    case CARDANO_REDEEMER_TAG_GUARDING:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;

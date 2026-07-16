@@ -4798,6 +4798,7 @@ cardano_uplc_int_build_script_purpose_v1v2(
     }
     case CARDANO_REDEEMER_TAG_VOTING:
     case CARDANO_REDEEMER_TAG_PROPOSING:
+    case CARDANO_REDEEMER_TAG_GUARDING:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
@@ -5431,6 +5432,7 @@ script_info_v3(
 
       break;
     }
+    case CARDANO_REDEEMER_TAG_GUARDING:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;

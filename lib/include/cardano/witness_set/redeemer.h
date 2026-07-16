@@ -54,6 +54,7 @@ typedef struct cardano_redeemer_t cardano_redeemer_t;
  *
  * \param[in] tag The \ref cardano_redeemer_tag_t representing the type of action (e.g., spending, minting, reward) that the redeemer is associated with.
  * \param[in] index The index of the transaction input this redeemer is intended for. The transaction inputs are indexed in the map order by their transaction id.
+ *                  On the wire the index is encoded as a 32-bit unsigned integer, values greater than `UINT32_MAX` are rejected at serialization time.
  * \param[in] data A pointer to a \ref cardano_plutus_data_t object containing the Plutus data associated with this redeemer. This data is required for script execution.
  * \param[in] ex_units A pointer to a \ref cardano_ex_units_t object representing the execution units (computation and memory) allocated for this redeemer.
  *                     This defines how much computational and memory resources are available for the script execution.
@@ -166,7 +167,8 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
  *                    The writer must already be initialized and ready to accept the data.
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p redeemer or \p writer
- *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL. If the redeemer index is greater than `UINT32_MAX`,
+ *         returns \ref CARDANO_ERROR_INVALID_ARGUMENT, since the wire format encodes the index as a 32-bit unsigned integer.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -301,7 +303,8 @@ CARDANO_EXPORT uint64_t cardano_redeemer_get_index(const cardano_redeemer_t* red
  * to the position of the redeemer within a list of redeemers in a Cardano transaction.
  *
  * \param[in,out] redeemer A pointer to an initialized \ref cardano_redeemer_t object to which the index will be set.
- * \param[in] index The new index to be assigned to the redeemer.
+ * \param[in] index The new index to be assigned to the redeemer. On the wire the index is encoded as a 32-bit unsigned
+ *                  integer, values greater than `UINT32_MAX` are rejected at serialization time.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the index was
  *         successfully set, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL

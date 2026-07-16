@@ -506,6 +506,12 @@ cardano_redeemer_list_to_cbor(const cardano_redeemer_list_t* redeemer_list, card
       return result;
     }
 
+    if (cardano_redeemer_get_index(redeemer) > UINT32_MAX)
+    {
+      cardano_cbor_writer_set_last_error(writer, "Redeemer index must fit in a 32-bit unsigned integer.");
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+
     result = cardano_cbor_writer_write_start_array(writer, 2);
 
     if (result != CARDANO_SUCCESS)

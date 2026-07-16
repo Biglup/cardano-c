@@ -177,7 +177,7 @@ cardano_redeemer_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_t** r
     reader,
     &tag,
     CARDANO_REDEEMER_TAG_SPEND,
-    CARDANO_REDEEMER_TAG_PROPOSING);
+    CARDANO_REDEEMER_TAG_GUARDING);
 
   if (read_uint_result != CARDANO_SUCCESS)
   {
@@ -273,6 +273,12 @@ cardano_redeemer_to_cbor(const cardano_redeemer_t* redeemer, cardano_cbor_writer
     return cardano_cbor_writer_write_encoded(writer, cardano_buffer_get_data(redeemer->cbor_cache), cardano_buffer_get_size(redeemer->cbor_cache));
   }
 
+  if (redeemer->index > UINT32_MAX)
+  {
+    cardano_cbor_writer_set_last_error(writer, "Redeemer index must fit in a 32-bit unsigned integer.");
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
     writer,
     REDEEMER_EMBEDDED_GROUP_SIZE);
@@ -352,6 +358,9 @@ cardano_redeemer_to_cip116_json(
       break;
     case CARDANO_REDEEMER_TAG_PROPOSING:
       cardano_json_writer_write_string(writer, "proposing", 9);
+      break;
+    case CARDANO_REDEEMER_TAG_GUARDING:
+      cardano_json_writer_write_string(writer, "guarding", 8);
       break;
     default:
       return CARDANO_ERROR_INVALID_ARGUMENT;
