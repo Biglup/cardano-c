@@ -189,10 +189,226 @@ set_v12_div(
 }
 
 /**
+ * \brief Fills the BLS12-381 builtin block from a contiguous run of 38 params.
+ *
+ * The run is ordered g1_add, g1_compress, g1_equal, g1_hash_to_group, g1_neg,
+ * g1_scalar_mul, g1_uncompress, the same seven for g2, then final_verify,
+ * miller_loop and mul_ml_result; the order is identical in every version's list.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_bls(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD], p, base + 0U, base + 1U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_COMPRESS], p, base + 2U, base + 3U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_EQUAL], p, base + 4U, base + 5U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].cpu.two.params.linear.intercept = p[base + 6U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].cpu.two.params.linear.slope     = p[base + 7U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].mem.two.params.constant         = p[base + 8U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_NEG], p, base + 9U, base + 10U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].cpu.two.params.linear.intercept = p[base + 11U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].cpu.two.params.linear.slope     = p[base + 12U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].mem.two.params.constant         = p[base + 13U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_UNCOMPRESS], p, base + 14U, base + 15U);
+
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_ADD], p, base + 16U, base + 17U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_COMPRESS], p, base + 18U, base + 19U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_EQUAL], p, base + 20U, base + 21U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].cpu.two.params.linear.intercept = p[base + 22U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].cpu.two.params.linear.slope     = p[base + 23U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].mem.two.params.constant         = p[base + 24U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_NEG], p, base + 25U, base + 26U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].cpu.two.params.linear.intercept = p[base + 27U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].cpu.two.params.linear.slope     = p[base + 28U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].mem.two.params.constant         = p[base + 29U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_UNCOMPRESS], p, base + 30U, base + 31U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_FINAL_VERIFY], p, base + 32U, base + 33U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_MILLER_LOOP], p, base + 34U, base + 35U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_MUL_ML_RESULT], p, base + 36U, base + 37U);
+}
+
+/**
+ * \brief Fills keccak_256 and blake2b_224 from a contiguous run of 6 params.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_keccak_blake224(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_KECCAK_256], p, base + 0U, base + 1U, base + 2U);
+  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_BLAKE2B_224], p, base + 3U, base + 4U, base + 5U);
+}
+
+/**
+ * \brief Fills the integer/byte-string conversions from a contiguous run of 10 params.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_int_bytestring_conversions(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_0 = p[base + 0U];
+  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_1 = p[base + 1U];
+  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_2 = p[base + 2U];
+  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].mem.three.params.linear.intercept       = p[base + 3U];
+  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].mem.three.params.linear.slope           = p[base + 4U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_0 = p[base + 5U];
+  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_1 = p[base + 6U];
+  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_2 = p[base + 7U];
+  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.intercept       = p[base + 8U];
+  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.slope           = p[base + 9U];
+}
+
+/**
+ * \brief Fills the bitwise builtin block from a contiguous run of 46 params.
+ *
+ * The run is ordered and/or/xor, complement, read_bit, write_bits, replicate_byte,
+ * shift, rotate, count_set_bits, find_first_set_bit and ripemd_160; the order is
+ * identical in every version's list.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_bitwise(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[base + 0U];
+  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[base + 1U];
+  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[base + 2U];
+  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].mem.three.params.linear.intercept            = p[base + 3U];
+  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].mem.three.params.linear.slope                = p[base + 4U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[base + 5U];
+  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[base + 6U];
+  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[base + 7U];
+  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].mem.three.params.linear.intercept            = p[base + 8U];
+  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].mem.three.params.linear.slope                = p[base + 9U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[base + 10U];
+  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[base + 11U];
+  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[base + 12U];
+  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].mem.three.params.linear.intercept            = p[base + 13U];
+  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].mem.three.params.linear.slope                = p[base + 14U];
+
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_COMPLEMENT_BYTE_STRING], p, base + 15U, base + 16U, base + 17U, base + 18U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_READ_BIT], p, base + 19U, base + 20U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].cpu.three.params.linear.intercept = p[base + 21U];
+  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].cpu.three.params.linear.slope     = p[base + 22U];
+  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].mem.three.params.linear.intercept = p[base + 23U];
+  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].mem.three.params.linear.slope     = p[base + 24U];
+
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_REPLICATE_BYTE], p, base + 25U, base + 26U, base + 27U, base + 28U);
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_SHIFT_BYTE_STRING], p, base + 29U, base + 30U, base + 31U, base + 32U);
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_ROTATE_BYTE_STRING], p, base + 33U, base + 34U, base + 35U, base + 36U);
+  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_COUNT_SET_BITS], p, base + 37U, base + 38U, base + 39U);
+  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_FIND_FIRST_SET_BIT], p, base + 40U, base + 41U, base + 42U);
+  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_RIPEMD_160], p, base + 43U, base + 44U, base + 45U);
+}
+
+/**
+ * \brief Fills exp_mod_integer from a contiguous run of 5 params.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_exp_mod(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00 = p[base + 0U];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_11 = p[base + 1U];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_12 = p[base + 2U];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.intercept = p[base + 3U];
+  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.slope     = p[base + 4U];
+}
+
+/**
+ * \brief Fills the batch-6 builtins from a contiguous run of 48 params.
+ *
+ * The run is ordered drop_list, length_of_array, list_to_array, index_array, the
+ * two multi-scalar multiplications, then the builtin Value family insert_coin,
+ * lookup_coin, union_value, value_contains, value_data, un_value_data and
+ * scale_value; the order is identical in every version's list.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_batch6(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  b->entries[CARDANO_UPLC_BUILTIN_DROP_LIST].cpu.two.params.linear.intercept = p[base + 0U];
+  b->entries[CARDANO_UPLC_BUILTIN_DROP_LIST].cpu.two.params.linear.slope     = p[base + 1U];
+  b->entries[CARDANO_UPLC_BUILTIN_DROP_LIST].mem.two.params.constant         = p[base + 2U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_LENGTH_OF_ARRAY], p, base + 3U, base + 4U);
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_LIST_TO_ARRAY], p, base + 5U, base + 6U, base + 7U, base + 8U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_INDEX_ARRAY], p, base + 9U, base + 10U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL].cpu.two.params.linear.intercept = p[base + 11U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL].cpu.two.params.linear.slope     = p[base + 12U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL].mem.two.params.constant         = p[base + 13U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL].cpu.two.params.linear.intercept = p[base + 14U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL].cpu.two.params.linear.slope     = p[base + 15U];
+  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL].mem.two.params.constant         = p[base + 16U];
+
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_INSERT_COIN], p, base + 17U, base + 18U, base + 19U, base + 20U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_LOOKUP_COIN].cpu.three.params.linear.intercept = p[base + 21U];
+  b->entries[CARDANO_UPLC_BUILTIN_LOOKUP_COIN].cpu.three.params.linear.slope     = p[base + 22U];
+  b->entries[CARDANO_UPLC_BUILTIN_LOOKUP_COIN].mem.three.params.constant         = p[base + 23U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].cpu.two.params.with_interaction.c00 = p[base + 24U];
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].cpu.two.params.with_interaction.c10 = p[base + 25U];
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].cpu.two.params.with_interaction.c01 = p[base + 26U];
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].cpu.two.params.with_interaction.c11 = p[base + 27U];
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].mem.two.params.linear.intercept     = p[base + 28U];
+  b->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE].mem.two.params.linear.slope         = p[base + 29U];
+
+  b->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS].cpu.two.params.const_diagonal.constant                          = p[base + 30U];
+  b->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS].cpu.two.params.const_diagonal.model.linear_in_x_and_y.intercept = p[base + 31U];
+  b->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS].cpu.two.params.const_diagonal.model.linear_in_x_and_y.slope1    = p[base + 32U];
+  b->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS].cpu.two.params.const_diagonal.model.linear_in_x_and_y.slope2    = p[base + 33U];
+  b->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS].mem.two.params.constant                                         = p[base + 34U];
+
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_VALUE_DATA], p, base + 35U, base + 36U, base + 37U, base + 38U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA].cpu.one.params.quadratic.coeff_0 = p[base + 39U];
+  b->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA].cpu.one.params.quadratic.coeff_1 = p[base + 40U];
+  b->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA].cpu.one.params.quadratic.coeff_2 = p[base + 41U];
+  b->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA].mem.one.params.linear.intercept  = p[base + 42U];
+  b->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA].mem.one.params.linear.slope      = p[base + 43U];
+
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE], p, base + 44U, base + 45U, base + 46U, base + 47U);
+}
+
+/**
  * \brief Maps the V1 flat parameter list onto a default V1 cost model.
  *
  * The default shapes come from \ref cardano_uplc_builtin_costs_v1; this
- * overwrites their coefficients.
+ * overwrites their coefficients. Protocol version 11 (van Rossem) unified the
+ * builtin set across the three languages, so the V1 list appends the previously
+ * V2/V3-only builtins, the constr and case machine steps and the batch-6
+ * builtins after the original 166 parameters.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V1 parameter array.
@@ -300,13 +516,34 @@ from_params_v1(cardano_uplc_cost_model_t* out, const int64_t* p)
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE].cpu.three.params.linear.intercept = p[163];
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE].cpu.three.params.linear.slope     = p[164];
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE].mem.three.params.constant         = p[165];
+
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA], p, 166U, 167U, 168U, 169U);
+  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE], p, 170U, 171U);
+
+  b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].cpu.three.params.linear.intercept = p[172];
+  b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].cpu.three.params.linear.slope     = p[173];
+  b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].mem.three.params.constant         = p[174];
+
+  set_budget(&out->machine.constr, p, 175U, 176U);
+  set_budget(&out->machine.case_step, p, 177U, 178U);
+
+  fill_bls(b, p, 179U);
+  fill_keccak_blake224(b, p, 217U);
+  fill_int_bytestring_conversions(b, p, 223U);
+  fill_bitwise(b, p, 233U);
+  fill_exp_mod(b, p, 279U);
+  fill_batch6(b, p, 284U);
 }
 
 /**
  * \brief Maps the V2 flat parameter list onto a default V2 cost model.
  *
  * The default shapes come from \ref cardano_uplc_builtin_costs_v2; this
- * overwrites their coefficients.
+ * overwrites their coefficients. The integer/byte-string conversions were
+ * appended to the V2 list at protocol version 10 (Plomin); protocol version 11
+ * (van Rossem) then unified the builtin set across the three languages,
+ * appending the previously V3-only builtins, the constr and case machine steps
+ * and the batch-6 builtins.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V2 parameter array.
@@ -420,6 +657,17 @@ from_params_v2(cardano_uplc_cost_model_t* out, const int64_t* p)
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].cpu.three.params.linear.intercept = p[172];
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].cpu.three.params.linear.slope     = p[173];
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].mem.three.params.constant         = p[174];
+
+  fill_int_bytestring_conversions(b, p, 175U);
+
+  set_budget(&out->machine.constr, p, 185U, 186U);
+  set_budget(&out->machine.case_step, p, 187U, 188U);
+
+  fill_bls(b, p, 189U);
+  fill_keccak_blake224(b, p, 227U);
+  fill_bitwise(b, p, 233U);
+  fill_exp_mod(b, p, 279U);
+  fill_batch6(b, p, 284U);
 }
 
 /**
@@ -451,11 +699,8 @@ set_v3_div_cpu(cardano_uplc_builtin_cost_t* e, const int64_t* p, size_t base)
  * \brief Maps the V3 flat parameter list onto a default V3 cost model.
  *
  * Reads the first \ref CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 parameters, which
- * cover every builtin through ripemd_160 (the bitwise tail) and the five
- * exp_mod_integer coefficients that follow it. Later protocol versions append
- * coefficients for the array and value families; those are not read here and the
- * corresponding builtins keep the defaults set by \ref cardano_uplc_builtin_costs_v3,
- * which is sound because they are not enabled for PlutusV3.
+ * cover every builtin through the exp_mod_integer coefficients plus the array
+ * and value families appended at protocol version 11 (van Rossem).
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V3 parameter array.
@@ -588,94 +833,12 @@ from_params_v3(cardano_uplc_cost_model_t* out, const int64_t* p)
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].cpu.three.params.linear.slope     = p[191];
   b->entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].mem.three.params.constant         = p[192];
 
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD], p, 197U, 198U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_COMPRESS], p, 199U, 200U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_EQUAL], p, 201U, 202U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].cpu.two.params.linear.intercept = p[203];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].cpu.two.params.linear.slope     = p[204];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP].mem.two.params.constant         = p[205];
-
-  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_NEG], p, 206U, 207U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].cpu.two.params.linear.intercept = p[208];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].cpu.two.params.linear.slope     = p[209];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_SCALAR_MUL].mem.two.params.constant         = p[210];
-
-  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_UNCOMPRESS], p, 211U, 212U);
-
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_ADD], p, 213U, 214U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_COMPRESS], p, 215U, 216U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_EQUAL], p, 217U, 218U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].cpu.two.params.linear.intercept = p[219];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].cpu.two.params.linear.slope     = p[220];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP].mem.two.params.constant         = p[221];
-
-  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_NEG], p, 222U, 223U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].cpu.two.params.linear.intercept = p[224];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].cpu.two.params.linear.slope     = p[225];
-  b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_SCALAR_MUL].mem.two.params.constant         = p[226];
-
-  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_UNCOMPRESS], p, 227U, 228U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_FINAL_VERIFY], p, 229U, 230U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_MILLER_LOOP], p, 231U, 232U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_BLS12_381_MUL_ML_RESULT], p, 233U, 234U);
-
-  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_KECCAK_256], p, 235U, 236U, 237U);
-  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_BLAKE2B_224], p, 238U, 239U, 240U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_0 = p[241];
-  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_1 = p[242];
-  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_2 = p[243];
-  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].mem.three.params.linear.intercept       = p[244];
-  b->entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].mem.three.params.linear.slope           = p[245];
-
-  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_0 = p[246];
-  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_1 = p[247];
-  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].cpu.two.params.quadratic_in_y.coeff_2 = p[248];
-  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.intercept       = p[249];
-  b->entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.slope           = p[250];
-
-  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[251];
-  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[252];
-  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[253];
-  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].mem.three.params.linear.intercept            = p[254];
-  b->entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].mem.three.params.linear.slope                = p[255];
-
-  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[256];
-  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[257];
-  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[258];
-  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].mem.three.params.linear.intercept            = p[259];
-  b->entries[CARDANO_UPLC_BUILTIN_OR_BYTE_STRING].mem.three.params.linear.slope                = p[260];
-
-  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept = p[261];
-  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope1    = p[262];
-  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].cpu.three.params.linear_in_y_and_z.slope2    = p[263];
-  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].mem.three.params.linear.intercept            = p[264];
-  b->entries[CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING].mem.three.params.linear.slope                = p[265];
-
-  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_COMPLEMENT_BYTE_STRING], p, 266U, 267U, 268U, 269U);
-  set_two_const(&b->entries[CARDANO_UPLC_BUILTIN_READ_BIT], p, 270U, 271U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].cpu.three.params.linear.intercept = p[272];
-  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].cpu.three.params.linear.slope     = p[273];
-  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].mem.three.params.linear.intercept = p[274];
-  b->entries[CARDANO_UPLC_BUILTIN_WRITE_BITS].mem.three.params.linear.slope     = p[275];
-
-  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_REPLICATE_BYTE], p, 276U, 277U, 278U, 279U);
-  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_SHIFT_BYTE_STRING], p, 280U, 281U, 282U, 283U);
-  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_ROTATE_BYTE_STRING], p, 284U, 285U, 286U, 287U);
-  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_COUNT_SET_BITS], p, 288U, 289U, 290U);
-  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_FIND_FIRST_SET_BIT], p, 291U, 292U, 293U);
-  set_one_lin_cpu_const_mem(&b->entries[CARDANO_UPLC_BUILTIN_RIPEMD_160], p, 294U, 295U, 296U);
-
-  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00 = p[297];
-  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_11 = p[298];
-  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_12 = p[299];
-  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.intercept = p[300];
-  b->entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].mem.three.params.linear.slope     = p[301];
+  fill_bls(b, p, 197U);
+  fill_keccak_blake224(b, p, 235U);
+  fill_int_bytestring_conversions(b, p, 241U);
+  fill_bitwise(b, p, 251U);
+  fill_exp_mod(b, p, 297U);
+  fill_batch6(b, p, 302U);
 }
 
 /* DEFINITIONS ***************************************************************/
@@ -697,14 +860,11 @@ cardano_uplc_cost_model_from_params(
 
   switch (version)
   {
+    /* V1 and V2 both span 332 parameters since the van Rossem unification. */
     case CARDANO_UPLC_COST_MODEL_VERSION_V1:
-    {
-      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
-      break;
-    }
     case CARDANO_UPLC_COST_MODEL_VERSION_V2:
     {
-      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
