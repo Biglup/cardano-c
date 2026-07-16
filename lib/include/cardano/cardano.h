@@ -194,6 +194,7 @@
 #include <cardano/scripts/script_language.h>
 #include <cardano/slot_config.h>
 #include <cardano/time.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/account_balance_interval.h>
 #include <cardano/transaction_body/account_balance_intervals_map.h>
