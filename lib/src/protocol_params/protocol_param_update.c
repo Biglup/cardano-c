@@ -79,6 +79,10 @@ typedef struct cardano_protocol_param_update_t
     uint64_t*                         drep_deposit;
     uint64_t*                         drep_inactivity_period;
     cardano_unit_interval_t*          ref_script_cost_per_byte;
+    uint64_t*                         max_ref_script_size_per_block;
+    uint64_t*                         max_ref_script_size_per_tx;
+    uint64_t*                         ref_script_cost_stride;
+    cardano_unit_interval_t*          ref_script_cost_multiplier;
 } cardano_protocol_param_update_t;
 
 /* PLUTUS-DATA ENCODING ******************************************************/
@@ -889,6 +893,54 @@ cardano_protocol_param_update_to_plutus_data(
     cardano_plutus_data_unref(&v);
   }
 
+  if ((result == CARDANO_SUCCESS) && (u->max_ref_script_size_per_block != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_ref_script_size_per_block, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 34U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_ref_script_size_per_tx != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_ref_script_size_per_tx, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 35U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ref_script_cost_stride != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->ref_script_cost_stride, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 36U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ref_script_cost_multiplier != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->ref_script_cost_multiplier, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 37U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
   if (result == CARDANO_SUCCESS)
   {
     result = cardano_plutus_data_new_map(map, plutus_data);
@@ -976,6 +1028,10 @@ cardano_protocol_param_update_deallocate(void* object)
   _cardano_free(data->drep_deposit);
   _cardano_free(data->drep_inactivity_period);
   cardano_unit_interval_unref(&data->ref_script_cost_per_byte);
+  _cardano_free(data->max_ref_script_size_per_block);
+  _cardano_free(data->max_ref_script_size_per_tx);
+  _cardano_free(data->ref_script_cost_stride);
+  cardano_unit_interval_unref(&data->ref_script_cost_multiplier);
 
   _cardano_free(object);
 }
@@ -1159,6 +1215,26 @@ get_map_size(const cardano_protocol_param_update_t* update)
     ++map_size;
   }
 
+  if (update->max_ref_script_size_per_block != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->max_ref_script_size_per_tx != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->ref_script_cost_stride != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->ref_script_cost_multiplier != NULL)
+  {
+    ++map_size;
+  }
+
   return map_size;
 }
 
@@ -1248,6 +1324,14 @@ get_field_ptr(cardano_protocol_param_update_t* update, size_t key)
       return (void*)&update->drep_inactivity_period;
     case 33:
       return (void*)&update->ref_script_cost_per_byte;
+    case 34:
+      return (void*)&update->max_ref_script_size_per_block;
+    case 35:
+      return (void*)&update->max_ref_script_size_per_tx;
+    case 36:
+      return (void*)&update->ref_script_cost_stride;
+    case 37:
+      return (void*)&update->ref_script_cost_multiplier;
 
     default:
       return NULL;
@@ -1290,6 +1374,105 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
   }
 
   return cardano_cbor_reader_read_uint(reader, *field);
+}
+
+/**
+ * \brief Reads a 32-bit bounded unsigned integer from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads an unsigned integer from the provided CBOR reader, validates that it fits
+ * in 32 bits and stores the result in the specified field pointer. It is used as a handler
+ * function for parameters whose wire format is a 32-bit unsigned integer.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the value.
+ * \param[out] field_ptr A pointer to the field where the read value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_uint32(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  uint64_t value = 0U;
+
+  cardano_error_t result = cardano_cbor_validate_uint_in_range("protocol_param_update", "parameter", reader, &value, 0U, UINT32_MAX);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  **field = value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Reads a positive 32-bit bounded unsigned integer from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads an unsigned integer from the provided CBOR reader, validates that it is
+ * greater than zero and fits in 32 bits, and stores the result in the specified field pointer.
+ * It is used as a handler function for parameters whose wire format is a positive 32-bit
+ * unsigned integer.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the value.
+ * \param[out] field_ptr A pointer to the field where the read value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_positive_uint32(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  uint64_t value = 0U;
+
+  cardano_error_t result = cardano_cbor_validate_uint_in_range("protocol_param_update", "parameter", reader, &value, 1U, UINT32_MAX);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  **field = value;
+
+  return CARDANO_SUCCESS;
 }
 
 /**
@@ -2047,6 +2230,10 @@ static const param_handler_t param_handlers[] = {
   handle_uint64,
   handle_uint64,
   handle_uint64,
+  handle_unit_interval,
+  handle_uint32,
+  handle_uint32,
+  handle_positive_uint32,
   handle_unit_interval
 };
 
@@ -2104,6 +2291,10 @@ cardano_protocol_param_update_new(cardano_protocol_param_update_t** protocol_par
   (*protocol_param_update)->drep_deposit                      = NULL;
   (*protocol_param_update)->drep_inactivity_period            = NULL;
   (*protocol_param_update)->ref_script_cost_per_byte          = NULL;
+  (*protocol_param_update)->max_ref_script_size_per_block     = NULL;
+  (*protocol_param_update)->max_ref_script_size_per_tx        = NULL;
+  (*protocol_param_update)->ref_script_cost_stride            = NULL;
+  (*protocol_param_update)->ref_script_cost_multiplier        = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -2431,6 +2622,34 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
     return result;
   }
 
+  result = write_uint_if_present(writer, 34U, protocol_param_update->max_ref_script_size_per_block);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 35U, protocol_param_update->max_ref_script_size_per_tx);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 36U, protocol_param_update->ref_script_cost_stride);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_unit_interval_if_present(writer, 37U, protocol_param_update->ref_script_cost_multiplier);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -2697,6 +2916,35 @@ cardano_protocol_param_update_to_cip116_json(
   {
     cardano_json_writer_write_property_name(writer, "ref_script_cost_per_byte", 24);
     cardano_error_t error = cardano_unit_interval_to_cip116_json(update->ref_script_cost_per_byte, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_ref_script_size_per_block != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_ref_script_size_per_block", 29);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_ref_script_size_per_block);
+  }
+
+  if (update->max_ref_script_size_per_tx != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_ref_script_size_per_tx", 26);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_ref_script_size_per_tx);
+  }
+
+  if (update->ref_script_cost_stride != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ref_script_cost_stride", 22);
+    cardano_json_writer_write_uint_as_string(writer, *update->ref_script_cost_stride);
+  }
+
+  if (update->ref_script_cost_multiplier != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ref_script_cost_multiplier", 26);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->ref_script_cost_multiplier, writer);
 
     if (error != CARDANO_SUCCESS)
     {
@@ -3378,6 +3626,87 @@ cardano_protocol_param_update_get_ref_script_cost_per_byte(
 
   cardano_unit_interval_ref(protocol_param_update->ref_script_cost_per_byte);
   *ref_script_cost_per_byte = protocol_param_update->ref_script_cost_per_byte;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_ref_script_size_per_block(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_block)
+{
+  if ((protocol_param_update == NULL) || (max_ref_script_size_per_block == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_block == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *max_ref_script_size_per_block = *protocol_param_update->max_ref_script_size_per_block;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_ref_script_size_per_tx(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_tx)
+{
+  if ((protocol_param_update == NULL) || (max_ref_script_size_per_tx == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_tx == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *max_ref_script_size_per_tx = *protocol_param_update->max_ref_script_size_per_tx;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_ref_script_cost_stride(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_script_cost_stride)
+{
+  if ((protocol_param_update == NULL) || (ref_script_cost_stride == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_script_cost_stride == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *ref_script_cost_stride = *protocol_param_update->ref_script_cost_stride;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_ref_script_cost_multiplier(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        ref_script_cost_multiplier)
+{
+  if ((protocol_param_update == NULL) || (ref_script_cost_multiplier == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_script_cost_multiplier == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_unit_interval_ref(protocol_param_update->ref_script_cost_multiplier);
+  *ref_script_cost_multiplier = protocol_param_update->ref_script_cost_multiplier;
 
   return CARDANO_SUCCESS;
 }
@@ -4422,6 +4751,157 @@ cardano_protocol_param_update_set_ref_script_cost_per_byte(
 
   cardano_unit_interval_ref(ref_script_cost_per_byte);
   protocol_param_update->ref_script_cost_per_byte = (cardano_unit_interval_t*)ref_script_cost_per_byte;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_ref_script_size_per_block(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_block)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((max_ref_script_size_per_block != NULL) && (*max_ref_script_size_per_block > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Max ref script size per block must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_block != NULL)
+  {
+    _cardano_free(protocol_param_update->max_ref_script_size_per_block);
+  }
+
+  if (max_ref_script_size_per_block == NULL)
+  {
+    protocol_param_update->max_ref_script_size_per_block = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->max_ref_script_size_per_block = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->max_ref_script_size_per_block == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->max_ref_script_size_per_block = *max_ref_script_size_per_block;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_ref_script_size_per_tx(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_tx)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((max_ref_script_size_per_tx != NULL) && (*max_ref_script_size_per_tx > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Max ref script size per tx must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_tx != NULL)
+  {
+    _cardano_free(protocol_param_update->max_ref_script_size_per_tx);
+  }
+
+  if (max_ref_script_size_per_tx == NULL)
+  {
+    protocol_param_update->max_ref_script_size_per_tx = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->max_ref_script_size_per_tx = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->max_ref_script_size_per_tx == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->max_ref_script_size_per_tx = *max_ref_script_size_per_tx;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_ref_script_cost_stride(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_script_cost_stride)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((ref_script_cost_stride != NULL) && ((*ref_script_cost_stride == 0U) || (*ref_script_cost_stride > UINT32_MAX)))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Ref script cost stride must be a positive 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->ref_script_cost_stride != NULL)
+  {
+    _cardano_free(protocol_param_update->ref_script_cost_stride);
+  }
+
+  if (ref_script_cost_stride == NULL)
+  {
+    protocol_param_update->ref_script_cost_stride = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->ref_script_cost_stride = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->ref_script_cost_stride == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->ref_script_cost_stride = *ref_script_cost_stride;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_ref_script_cost_multiplier(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         ref_script_cost_multiplier)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_script_cost_multiplier != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->ref_script_cost_multiplier);
+  }
+
+  if (ref_script_cost_multiplier == NULL)
+  {
+    protocol_param_update->ref_script_cost_multiplier = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(ref_script_cost_multiplier);
+  protocol_param_update->ref_script_cost_multiplier = (cardano_unit_interval_t*)ref_script_cost_multiplier;
 
   return CARDANO_SUCCESS;
 }

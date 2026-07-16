@@ -71,6 +71,10 @@ typedef struct cardano_protocol_parameters_t
     uint64_t                          drep_deposit;
     uint64_t                          drep_inactivity_period;
     cardano_unit_interval_t*          ref_script_cost_per_byte;
+    uint64_t                          max_ref_script_size_per_block;
+    uint64_t                          max_ref_script_size_per_tx;
+    uint64_t                          ref_script_cost_stride;
+    cardano_unit_interval_t*          ref_script_cost_multiplier;
 } cardano_protocol_parameters_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -108,6 +112,7 @@ cardano_protocol_parameters_deallocate(void* object)
   cardano_pool_voting_thresholds_unref(&data->pool_voting_thresholds);
   cardano_drep_voting_thresholds_unref(&data->drep_voting_thresholds);
   cardano_unit_interval_unref(&data->ref_script_cost_per_byte);
+  cardano_unit_interval_unref(&data->ref_script_cost_multiplier);
 
   _cardano_free(object);
 }
@@ -363,8 +368,12 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->drep_deposit                      = 0;
   (*protocol_parameters)->drep_inactivity_period            = 0;
   (*protocol_parameters)->ref_script_cost_per_byte          = cardano_get_one_interval();
+  (*protocol_parameters)->max_ref_script_size_per_block     = 0;
+  (*protocol_parameters)->max_ref_script_size_per_tx        = 0;
+  (*protocol_parameters)->ref_script_cost_stride            = 1;
+  (*protocol_parameters)->ref_script_cost_multiplier        = cardano_get_one_interval();
 
-  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL))
+  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->ref_script_cost_multiplier == NULL))
   {
     cardano_protocol_parameters_unref(protocol_parameters);
 
@@ -781,6 +790,55 @@ cardano_protocol_parameters_get_ref_script_cost_per_byte(
 
   cardano_unit_interval_ref(protocol_parameters->ref_script_cost_per_byte);
   return protocol_parameters->ref_script_cost_per_byte;
+}
+
+uint64_t
+cardano_protocol_parameters_get_max_ref_script_size_per_block(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->max_ref_script_size_per_block;
+}
+
+uint64_t
+cardano_protocol_parameters_get_max_ref_script_size_per_tx(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->max_ref_script_size_per_tx;
+}
+
+uint64_t
+cardano_protocol_parameters_get_ref_script_cost_stride(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->ref_script_cost_stride;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_ref_script_cost_multiplier(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->ref_script_cost_multiplier);
+  return protocol_parameters->ref_script_cost_multiplier;
 }
 
 cardano_error_t
@@ -1268,6 +1326,85 @@ cardano_protocol_parameters_set_ref_script_cost_per_byte(
   cardano_unit_interval_ref(ref_script_cost_per_byte);
   cardano_unit_interval_unref(&protocol_parameters->ref_script_cost_per_byte);
   protocol_parameters->ref_script_cost_per_byte = ref_script_cost_per_byte;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_ref_script_size_per_block(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_ref_script_size_per_block)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (max_ref_script_size_per_block > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Max ref script size per block must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->max_ref_script_size_per_block = max_ref_script_size_per_block;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_ref_script_size_per_tx(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_ref_script_size_per_tx)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (max_ref_script_size_per_tx > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Max ref script size per tx must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->max_ref_script_size_per_tx = max_ref_script_size_per_tx;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_ref_script_cost_stride(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_script_cost_stride)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((ref_script_cost_stride == 0U) || (ref_script_cost_stride > UINT32_MAX))
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Ref script cost stride must be a positive 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->ref_script_cost_stride = ref_script_cost_stride;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_ref_script_cost_multiplier(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       ref_script_cost_multiplier)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(ref_script_cost_multiplier);
+  cardano_unit_interval_unref(&protocol_parameters->ref_script_cost_multiplier);
+  protocol_parameters->ref_script_cost_multiplier = ref_script_cost_multiplier;
   return CARDANO_SUCCESS;
 }
 
