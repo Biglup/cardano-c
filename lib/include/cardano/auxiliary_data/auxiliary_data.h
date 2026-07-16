@@ -27,6 +27,7 @@
 #include <cardano/auxiliary_data/plutus_v1_script_list.h>
 #include <cardano/auxiliary_data/plutus_v2_script_list.h>
 #include <cardano/auxiliary_data/plutus_v3_script_list.h>
+#include <cardano/auxiliary_data/plutus_v4_script_list.h>
 #include <cardano/auxiliary_data/transaction_metadata.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
@@ -634,6 +635,87 @@ CARDANO_EXPORT cardano_plutus_v3_script_list_t* cardano_auxiliary_data_get_plutu
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_auxiliary_data_set_plutus_v3_scripts(cardano_auxiliary_data_t* auxiliary_data, cardano_plutus_v3_script_list_t* scripts);
+
+/**
+ * \brief Retrieves the list of plutus v4 scripts from auxiliary data.
+ *
+ * This function extracts and returns a list of plutus v4 scripts from the specified \ref cardano_auxiliary_data_t object.
+ *
+ * \param[in] auxiliary_data A pointer of an initialized \ref cardano_auxiliary_data_t object from which
+ *                           the plutus v4 scripts will be retrieved. This parameter must not be `NULL`.
+ *
+ * \return A pointer to a \ref cardano_plutus_v4_script_list_t object representing the list of plutus v4 scripts. If the auxiliary data
+ *         does not contain any plutus v4 scripts, this function returns `NULL`. The returned list is a new reference,
+ *         and the caller is responsible for managing its lifecycle. Specifically, the caller must release the list by calling
+ *         \ref cardano_plutus_v4_script_list_unref when it is no longer needed.
+ *
+ * \note The returned plutus v4 script list, if present, is a new reference, meaning the caller must manage the memory for this object.
+ *       If the auxiliary data contains no plutus v4 scripts, the function will return `NULL`, and the caller should handle this case appropriately.
+ *
+ * \return Returns \ref CARDANO_SUCCESS if the plutus v4 scripts were successfully retrieved, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_auxiliary_data_t* auxiliary_data = ...; // Assume initialized
+ * cardano_plutus_v4_script_list_t* plutus_v4_scripts = cardano_auxiliary_data_get_plutus_v4_scripts(auxiliary_data);
+ *
+ * if (plutus_v4_scripts != NULL)
+ * {
+ *   // Use the plutus v4 scripts
+ *
+ *   // Ensure to release the plutus v4 script list when done
+ *   cardano_plutus_v4_script_list_unref(&plutus_v4_scripts);
+ * }
+ * else
+ * {
+ *   printf("No plutus v4 scripts found in auxiliary data.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_plutus_v4_script_list_t* cardano_auxiliary_data_get_plutus_v4_scripts(cardano_auxiliary_data_t* auxiliary_data);
+
+/**
+ * \brief Sets the list of plutus v4 scripts in auxiliary data.
+ *
+ * This function assigns a list of plutus v4 scripts to the specified \ref cardano_auxiliary_data_t object.
+ *
+ * \param[in,out] auxiliary_data A pointer to an initialized \ref cardano_auxiliary_data_t object where the plutus v4 scripts will be set.
+ * \param[in] scripts A pointer to a \ref cardano_plutus_v4_script_list_t object representing the list of plutus v4 scripts to be added.
+ *                    This parameter can be `NULL` to unset the plutus v4 scripts in the auxiliary data.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the plutus v4 scripts were
+ *         successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL if any
+ *         required pointers are `NULL`.
+ *
+ * \note If the `scripts` parameter is `NULL`, any existing plutus v4 scripts in the auxiliary data will be removed.
+ *       The caller is responsible for managing the memory for the `scripts` object; this function will increment
+ *       the reference count of the `scripts` object if provided.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_auxiliary_data_t* auxiliary_data = ...; // Assume initialized
+ * cardano_plutus_v4_script_list_t* plutus_v4_scripts = ...; // Assume plutus_v4_scripts is initialized
+ *
+ * cardano_error_t result = cardano_auxiliary_data_set_plutus_v4_scripts(auxiliary_data, plutus_v4_scripts);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Native scripts successfully set in auxiliary data.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set plutus v4 scripts: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * // Clean up resources when done
+ * cardano_plutus_v4_script_list_unref(&plutus_v4_scripts);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_auxiliary_data_set_plutus_v4_scripts(cardano_auxiliary_data_t* auxiliary_data, cardano_plutus_v4_script_list_t* scripts);
 
 /**
  * \brief Retrieves the hash of a auxiliary data.

@@ -21,6 +21,10 @@ Script
 
 ------------
 
+.. doxygenfunction:: cardano_script_new_plutus_v4
+
+------------
+
 .. doxygenfunction:: cardano_script_from_cbor
 
 ------------
@@ -50,6 +54,10 @@ Script
 ------------
 
 .. doxygenfunction:: cardano_script_to_plutus_v3
+
+------------
+
+.. doxygenfunction:: cardano_script_to_plutus_v4
 
 ------------
 

@@ -45,6 +45,7 @@ typedef struct cardano_costmdls_t
     cardano_cost_model_t* plutus_v1_costs;
     cardano_cost_model_t* plutus_v2_costs;
     cardano_cost_model_t* plutus_v3_costs;
+    cardano_cost_model_t* plutus_v4_costs;
 } cardano_costmdls_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -72,6 +73,7 @@ cardano_costmdls_deallocate(void* object)
   cardano_cost_model_unref(&data->plutus_v1_costs);
   cardano_cost_model_unref(&data->plutus_v2_costs);
   cardano_cost_model_unref(&data->plutus_v3_costs);
+  cardano_cost_model_unref(&data->plutus_v4_costs);
 
   _cardano_free(object);
 }
@@ -103,6 +105,11 @@ get_map_size(const cardano_costmdls_t* costmdls)
     ++map_size;
   }
 
+  if (costmdls->plutus_v4_costs != NULL)
+  {
+    ++map_size;
+  }
+
   return map_size;
 }
 
@@ -129,6 +136,7 @@ cardano_costmdls_new(cardano_costmdls_t** costmdls)
   (*costmdls)->plutus_v1_costs    = NULL;
   (*costmdls)->plutus_v2_costs    = NULL;
   (*costmdls)->plutus_v3_costs    = NULL;
+  (*costmdls)->plutus_v4_costs    = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -205,6 +213,10 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
         cardano_cost_model_unref(&costmdls_data->plutus_v3_costs);
         costmdls_data->plutus_v3_costs = model;
         break;
+      case CARDANO_PLUTUS_LANGUAGE_VERSION_V4:
+        cardano_cost_model_unref(&costmdls_data->plutus_v4_costs);
+        costmdls_data->plutus_v4_costs = model;
+        break;
 
       default:
         cardano_costmdls_unref(&costmdls_data);
@@ -270,6 +282,16 @@ cardano_costmdls_to_cbor(const cardano_costmdls_t* costmdls, cardano_cbor_writer
     }
   }
 
+  if (costmdls->plutus_v4_costs != NULL)
+  {
+    const cardano_error_t write_v4_result = cardano_cost_model_to_cbor(costmdls->plutus_v4_costs, writer);
+
+    if (write_v4_result != CARDANO_SUCCESS)
+    {
+      return write_v4_result;
+    }
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -315,6 +337,17 @@ cardano_costmdls_to_cip116_json(
     if (write_v3_result != CARDANO_SUCCESS)
     {
       return write_v3_result;
+    }
+  }
+
+  if (costmdls->plutus_v4_costs != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "plutus_v4", 9);
+    cardano_error_t write_v4_result = cardano_cost_model_to_cip116_json(costmdls->plutus_v4_costs, writer);
+
+    if (write_v4_result != CARDANO_SUCCESS)
+    {
+      return write_v4_result;
     }
   }
 
@@ -366,6 +399,12 @@ cardano_costmdls_insert(
       cardano_cost_model_ref(costmdls->plutus_v3_costs);
       break;
 
+    case CARDANO_PLUTUS_LANGUAGE_VERSION_V4:
+      cardano_cost_model_unref(&costmdls->plutus_v4_costs);
+      costmdls->plutus_v4_costs = cost_model;
+      cardano_cost_model_ref(costmdls->plutus_v4_costs);
+      break;
+
     default:
       return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
   }
@@ -403,6 +442,10 @@ cardano_costmdls_get(
       *cost_model = costmdls->plutus_v3_costs;
       cardano_cost_model_ref(costmdls->plutus_v3_costs);
       break;
+    case CARDANO_PLUTUS_LANGUAGE_VERSION_V4:
+      *cost_model = costmdls->plutus_v4_costs;
+      cardano_cost_model_ref(costmdls->plutus_v4_costs);
+      break;
     default:
       return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
   }
@@ -428,6 +471,8 @@ cardano_costmdls_has(
       return costmdls->plutus_v2_costs != NULL;
     case CARDANO_PLUTUS_LANGUAGE_VERSION_V3:
       return costmdls->plutus_v3_costs != NULL;
+    case CARDANO_PLUTUS_LANGUAGE_VERSION_V4:
+      return costmdls->plutus_v4_costs != NULL;
     default:
       return false;
   }
@@ -475,6 +520,17 @@ cardano_costmdls_get_language_views_encoding(
     {
       cardano_cbor_writer_unref(&writer);
       return write_plutus_v3;
+    }
+  }
+
+  if (costmdls->plutus_v4_costs != NULL)
+  {
+    const cardano_error_t write_plutus_v4 = cardano_cost_model_to_cbor(costmdls->plutus_v4_costs, writer);
+
+    if (write_plutus_v4 != CARDANO_SUCCESS)
+    {
+      cardano_cbor_writer_unref(&writer);
+      return write_plutus_v4;
     }
   }
 

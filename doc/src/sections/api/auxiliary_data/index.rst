@@ -15,4 +15,5 @@ The Auxiliary Data allows anyone to embed metadata into transactions, which is t
     ./plutus_v1_script_list
     ./plutus_v2_script_list
     ./plutus_v3_script_list
+    ./plutus_v4_script_list
     ./transaction_metadata

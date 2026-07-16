@@ -53,6 +53,7 @@
 #include <cardano/auxiliary_data/plutus_v1_script_list.h>
 #include <cardano/auxiliary_data/plutus_v2_script_list.h>
 #include <cardano/auxiliary_data/plutus_v3_script_list.h>
+#include <cardano/auxiliary_data/plutus_v4_script_list.h>
 #include <cardano/auxiliary_data/transaction_metadata.h>
 #include <cardano/bip39.h>
 #include <cardano/buffer.h>
@@ -188,6 +189,7 @@
 #include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v4_script.h>
 #include <cardano/scripts/script.h>
 #include <cardano/scripts/script_language.h>
 #include <cardano/slot_config.h>

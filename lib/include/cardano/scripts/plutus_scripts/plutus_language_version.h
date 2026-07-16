@@ -72,6 +72,15 @@ typedef enum
    */
   CARDANO_PLUTUS_LANGUAGE_VERSION_V3 = 2,
 
+  /**
+   * \brief V4 was introduced in the Dijkstra hard fork.
+   *
+   * The Dijkstra era defines the wire format for V4 scripts and their cost models,
+   * however, V4 is not yet an executable language. V4 scripts can be serialized in
+   * transactions and protocol parameters, but they cannot be used to witness anything.
+   */
+  CARDANO_PLUTUS_LANGUAGE_VERSION_V4 = 3,
+
 } cardano_plutus_language_version_t;
 
 #ifdef __cplusplus

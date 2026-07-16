@@ -27,6 +27,7 @@
 #include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v4_script.h>
 #include <cardano/scripts/script.h>
 #include <cardano/scripts/script_language.h>
 
@@ -53,6 +54,7 @@ typedef struct cardano_script_t
     cardano_plutus_v1_script_t* plutus_v1_script;
     cardano_plutus_v2_script_t* plutus_v2_script;
     cardano_plutus_v3_script_t* plutus_v3_script;
+    cardano_plutus_v4_script_t* plutus_v4_script;
 } cardano_script_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -81,6 +83,7 @@ cardano_script_deallocate(void* object)
   cardano_plutus_v1_script_unref(&data->plutus_v1_script);
   cardano_plutus_v2_script_unref(&data->plutus_v2_script);
   cardano_plutus_v3_script_unref(&data->plutus_v3_script);
+  cardano_plutus_v4_script_unref(&data->plutus_v4_script);
 
   _cardano_free(data);
 }
@@ -108,6 +111,7 @@ cardano_script_new(void)
   data->plutus_v1_script = NULL;
   data->plutus_v2_script = NULL;
   data->plutus_v3_script = NULL;
+  data->plutus_v4_script = NULL;
   data->language         = CARDANO_SCRIPT_LANGUAGE_NATIVE;
 
   return data;
@@ -244,6 +248,38 @@ cardano_script_new_plutus_v3(
 }
 
 cardano_error_t
+cardano_script_new_plutus_v4(
+  cardano_plutus_v4_script_t* plutus_v4_script,
+  cardano_script_t**          script)
+{
+  if (plutus_v4_script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_t* data = cardano_script_new();
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_plutus_v4_script_ref(plutus_v4_script);
+
+  data->plutus_v4_script = plutus_v4_script;
+  data->language         = CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4;
+
+  *script = data;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** script)
 {
   if (reader == NULL)
@@ -272,7 +308,7 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
     reader,
     &language,
     CARDANO_SCRIPT_LANGUAGE_NATIVE,
-    CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
+    CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4);
 
   if (read_uint_result != CARDANO_SUCCESS)
   {
@@ -342,6 +378,21 @@ cardano_script_from_cbor(cardano_cbor_reader_t* reader, cardano_script_t** scrip
 
       break;
     }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+    {
+      cardano_plutus_v4_script_t* plutus_v4_script = NULL;
+      result                                       = cardano_plutus_v4_script_from_cbor(reader, &plutus_v4_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_script_new_plutus_v4(plutus_v4_script, script);
+      cardano_plutus_v4_script_unref(&plutus_v4_script);
+
+      break;
+    }
 
     default:
       result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
@@ -394,6 +445,9 @@ cardano_script_to_cbor(
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       result = cardano_plutus_v3_script_to_cbor(script->plutus_v3_script, writer);
       break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      result = cardano_plutus_v4_script_to_cbor(script->plutus_v4_script, writer);
+      break;
 
     default:
       result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
@@ -424,6 +478,7 @@ cardano_script_to_cip116_json(
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
       cardano_json_writer_write_string(writer, "plutus_script", 13);
       break;
     default:
@@ -447,6 +502,9 @@ cardano_script_to_cip116_json(
       break;
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       result = cardano_plutus_v3_script_to_cip116_json(script->plutus_v3_script, writer);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      result = cardano_plutus_v4_script_to_cip116_json(script->plutus_v4_script, writer);
       break;
     default:
       result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
@@ -590,6 +648,33 @@ cardano_script_to_plutus_v3(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_script_to_plutus_v4(
+  cardano_script_t*            script,
+  cardano_plutus_v4_script_t** plutus_v4)
+{
+  if (script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (plutus_v4 == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script->language != CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4)
+  {
+    return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+  }
+
+  cardano_plutus_v4_script_ref(script->plutus_v4_script);
+
+  *plutus_v4 = script->plutus_v4_script;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_blake2b_hash_t*
 cardano_script_get_hash(const cardano_script_t* script)
 {
@@ -613,6 +698,9 @@ cardano_script_get_hash(const cardano_script_t* script)
       break;
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       hash = cardano_plutus_v3_script_get_hash(script->plutus_v3_script);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      hash = cardano_plutus_v4_script_get_hash(script->plutus_v4_script);
       break;
 
     default:
@@ -659,6 +747,9 @@ cardano_script_equals(const cardano_script_t* lhs, const cardano_script_t* rhs)
       break;
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       result = cardano_plutus_v3_script_equals(lhs->plutus_v3_script, rhs->plutus_v3_script);
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      result = cardano_plutus_v4_script_equals(lhs->plutus_v4_script, rhs->plutus_v4_script);
       break;
 
     default:
