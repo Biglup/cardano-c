@@ -499,7 +499,9 @@ cardano_costmdls_get_language_views_encoding(
       return write_v1_result;
     }
 
-    for (size_t i = 0U; i < 166U; ++i)
+    const size_t v1_costs_size = cardano_cost_model_get_costs_size(costmdls->plutus_v1_costs);
+
+    for (size_t i = 0U; i < v1_costs_size; ++i)
     {
       int64_t cost = 0;
 
