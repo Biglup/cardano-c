@@ -47,6 +47,10 @@ static const char* REDEEMER7_CBOR = "840003d8799f0102030405ff821821182c";
 static const char* REDEEMER8_CBOR = "840001d8799f0102030405ff821821182c";
 static const char* REDEEMER9_CBOR = "840001d8799f0102030405ff821821182c";
 
+static const char* CBOR_GUARDING               = "a282000082d8799f0102030405ff821821182c82060082d8799f0102030405ff8218371842";
+static const char* REDEEMER_GUARDING_CBOR      = "840600d8799f0102030405ff8218371842";
+static const char* REDEEMER_INDEX_ABOVE_UINT32 = "84001b0000000100000000d8799f0102030405ff821821182c";
+
 /**
  * Creates a new default instance of the redeemer.
  * @return A new instance of the redeemer.
@@ -251,6 +255,118 @@ TEST(cardano_redeemer_list_to_cbor, canSerializeRedeemerSetSorted)
   cardano_redeemer_list_unref(&redeemer_list);
   cardano_cbor_writer_unref(&writer);
   free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canSerializeFreshlyBuiltGuardingRedeemerAsMap)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* redeemers[] = { REDEEMER1_CBOR, REDEEMER_GUARDING_CBOR };
+
+  for (size_t i = 0; i < 2; ++i)
+  {
+    cardano_redeemer_t* redeemer = new_default_redeemer(redeemers[i]);
+
+    EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer), CARDANO_SUCCESS);
+
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  // Act
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(CBOR_GUARDING) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, CBOR_GUARDING);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canDeserializeAndReserializeGuardingRedeemer)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR_GUARDING, strlen(CBOR_GUARDING));
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &redeemer_list);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemer_list), 2);
+
+  cardano_redeemer_t* redeemer = nullptr;
+  error                        = cardano_redeemer_list_get(redeemer_list, 1, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_GUARDING);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), 0);
+
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_clear_cbor_cache(redeemer_list);
+
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(CBOR_GUARDING) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, CBOR_GUARDING);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, returnsErrorIfIndexExceedsUint32)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer = new_default_redeemer(REDEEMER_INDEX_ABOVE_UINT32);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer), CARDANO_SUCCESS);
+
+  cardano_redeemer_unref(&redeemer);
+
+  // Act
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_redeemer_list_to_cbor, returnsErrorIfGivenANullPtr)

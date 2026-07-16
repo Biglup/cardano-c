@@ -36,9 +36,11 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* CBOR             = "840000d8799f0102030405ff821821182c";
-static const char* PLUTUS_DATA_CBOR = "d8799f0102030405ff";
-static const char* EX_UNITS         = "821821182C";
+static const char* CBOR                    = "840000d8799f0102030405ff821821182c";
+static const char* CBOR_GUARDING           = "840600d8799f0102030405ff8218371842";
+static const char* CBOR_INDEX_ABOVE_UINT32 = "84001b0000000100000000d8799f0102030405ff821821182c";
+static const char* PLUTUS_DATA_CBOR        = "d8799f0102030405ff";
+static const char* EX_UNITS                = "821821182C";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -308,6 +310,90 @@ TEST(cardano_redeemer_to_cbor, canSerializeFromCache)
   free(hex);
 }
 
+TEST(cardano_redeemer_to_cbor, canSerializeGuardingTag)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer   = cardano_cbor_writer_new();
+  cardano_redeemer_t*    redeemer = NULL;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR_GUARDING, strlen(CBOR_GUARDING));
+  cardano_error_t        result   = cardano_redeemer_from_cbor(reader, &redeemer);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_GUARDING);
+
+  cardano_redeemer_clear_cbor_cache(redeemer);
+
+  // Act
+  result = cardano_redeemer_to_cbor(redeemer, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_GUARDING);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+  free(hex);
+}
+
+TEST(cardano_redeemer_to_cbor, returnsErrorIfIndexExceedsUint32)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer   = cardano_cbor_writer_new();
+  cardano_redeemer_t*    redeemer = new_default_redeemer();
+  EXPECT_NE(redeemer, nullptr);
+
+  EXPECT_EQ(cardano_redeemer_set_index(redeemer, 4294967296U), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_redeemer_to_cbor(redeemer, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_to_cbor, canSerializeIndexAboveUint32FromCache)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer   = cardano_cbor_writer_new();
+  cardano_redeemer_t*    redeemer = NULL;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR_INDEX_ABOVE_UINT32, strlen(CBOR_INDEX_ABOVE_UINT32));
+  cardano_error_t        result   = cardano_redeemer_from_cbor(reader, &redeemer);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), 4294967296U);
+
+  // Act
+  result = cardano_redeemer_to_cbor(redeemer, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_INDEX_ABOVE_UINT32);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+  free(hex);
+}
+
 TEST(cardano_redeemer_to_cbor, returnsErrorIfCertIsNull)
 {
   // Arrange
@@ -458,6 +544,23 @@ TEST(cardano_redeemer_from_cbor, returnsErrorIfInvalidTag)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_redeemer_from_cbor, returnsErrorIfTagAboveGuarding)
+{
+  // Arrange
+  const char*            cbor     = "840700d8799f0102030405ff821821182c";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_redeemer_t*    redeemer = NULL;
+
+  // Act
+  cardano_error_t result = cardano_redeemer_from_cbor(reader, &redeemer);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
@@ -1028,6 +1131,47 @@ TEST(cardano_redeemer_to_cip116_json, canConvertProposingToCip116Json)
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
   const char* expected = R"({"tag":"proposing","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
+  EXPECT_STREQ(json_str, expected);
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_redeemer_unref(&redeemer);
+  free(json_str);
+}
+
+TEST(cardano_redeemer_to_cip116_json, canConvertGuardingToCip116Json)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  byte_t                 bytes[] = { 0x00 };
+  cardano_plutus_data_t* data    = NULL;
+  error                          = cardano_plutus_data_new_bytes(bytes, sizeof(bytes), &data);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // ExUnits
+  cardano_ex_units_t* ex_units = NULL;
+  error                        = cardano_ex_units_new(10, 10, &ex_units);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Redeemer
+  cardano_redeemer_t* redeemer = NULL;
+  error                        = cardano_redeemer_new(CARDANO_REDEEMER_TAG_GUARDING, 0, data, ex_units, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Clean up locals
+  cardano_plutus_data_unref(&data);
+  cardano_ex_units_unref(&ex_units);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_redeemer_to_cip116_json(redeemer, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  const char* expected = R"({"tag":"guarding","index":"0","data":{"tag":"bytes","value":"00"},"ex_units":{"mem":"10","steps":"10"}})";
   EXPECT_STREQ(json_str, expected);
 
   // Cleanup

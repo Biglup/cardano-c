@@ -554,6 +554,7 @@ add_redeemer(
       case CARDANO_REDEEMER_TAG_CERTIFYING:
       case CARDANO_REDEEMER_TAG_PROPOSING:
       case CARDANO_REDEEMER_TAG_SPEND:
+      case CARDANO_REDEEMER_TAG_GUARDING:
       default:
       {
         cardano_tx_builder_set_last_error(builder, "Invalid redeemer tag.");

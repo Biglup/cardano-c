@@ -115,6 +115,18 @@ typedef enum
    * DReps and/or SPOs) in order to be enacted.
    */
   CARDANO_REDEEMER_TAG_PROPOSING = 5,
+
+  /**
+   * \brief Indicates the redeemer is associated with a `Guarding` script.
+   *
+   * The transaction guards field generalizes the required signers field: in addition to key hash
+   * credentials, it can contain script hash credentials. For every script hash guard, the script
+   * with that hash must be included in the transaction, and is executed to authorize it.
+   *
+   * The index of a guarding redeemer is the position of the script hash credential within the
+   * transaction guards set.
+   */
+  CARDANO_REDEEMER_TAG_GUARDING = 6,
 } cardano_redeemer_tag_t;
 
 #ifdef __cplusplus
