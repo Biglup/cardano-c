@@ -18,6 +18,7 @@ The "Common" section of this documentation explores fundamental domain entities 
     ./ex_units
     ./governance_action_id
     ./governance_key_type
+    ./guard_set
     ./network_id
     ./protocol_version
     ./reward_address_list
