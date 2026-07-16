@@ -192,6 +192,7 @@
 #include <cardano/slot_config.h>
 #include <cardano/time.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/direct_deposit_map.h>
 #include <cardano/transaction_body/required_guards_map.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
