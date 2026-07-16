@@ -199,6 +199,7 @@
 #include <cardano/transaction_body/account_balance_intervals_map.h>
 #include <cardano/transaction_body/direct_deposit_map.h>
 #include <cardano/transaction_body/required_guards_map.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_input_set.h>

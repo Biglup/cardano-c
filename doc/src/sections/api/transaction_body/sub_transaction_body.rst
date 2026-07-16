@@ -1,0 +1,196 @@
+Sub Transaction Body
+==========================
+
+.. doxygentypedef:: cardano_sub_transaction_body_t
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_new
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_from_cbor
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_to_cbor
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_inputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_inputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_outputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_outputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_invalid_after
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_invalid_after
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_certificates
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_certificates
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_withdrawals
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_withdrawals
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_aux_data_hash
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_aux_data_hash
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_invalid_before
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_invalid_before
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_mint
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_mint
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_script_data_hash
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_script_data_hash
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_guards
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_guards
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_network_id
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_network_id
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_reference_inputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_reference_inputs
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_voting_procedures
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_voting_procedures
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_proposal_procedures
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_proposal_procedures
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_treasury_value
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_treasury_value
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_donation
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_donation
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_required_top_level_guards
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_required_top_level_guards
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_direct_deposits
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_direct_deposits
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_account_balance_intervals
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_account_balance_intervals
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_hash
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_clear_cbor_cache
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_unref
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_ref
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_refcount
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_set_last_error
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_get_last_error

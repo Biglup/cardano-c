@@ -10,6 +10,7 @@ The transaction body is the core structure of a transaction. It includes the det
     ./account_balance_intervals_map
     ./direct_deposit_map
     ./required_guards_map
+    ./sub_transaction_body
     ./transaction_body
     ./transaction_input
     ./transaction_input_set
