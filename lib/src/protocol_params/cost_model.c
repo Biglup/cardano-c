@@ -152,7 +152,7 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     reader,
     &language_version,
     (uint64_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
-    (uint64_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
+    (uint64_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
 
   if (read_minor_result != CARDANO_SUCCESS)
   {

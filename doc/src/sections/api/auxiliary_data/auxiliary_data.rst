@@ -61,6 +61,14 @@ Auxiliary Data
 
 ------------
 
+.. doxygenfunction:: cardano_auxiliary_data_get_plutus_v4_scripts
+
+------------
+
+.. doxygenfunction:: cardano_auxiliary_data_set_plutus_v4_scripts
+
+------------
+
 .. doxygenfunction:: cardano_auxiliary_data_get_hash
 
 ------------

@@ -22,4 +22,5 @@ This section of the documentation provides an in-depth look at the various scrip
    plutus_v1_script
    plutus_v2_script
    plutus_v3_script
+   plutus_v4_script
 

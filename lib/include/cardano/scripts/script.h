@@ -85,6 +85,15 @@ typedef struct cardano_plutus_v2_script_t cardano_plutus_v2_script_t;
 typedef struct cardano_plutus_v3_script_t cardano_plutus_v3_script_t;
 
 /**
+ * \brief V4 was introduced in the Dijkstra hard fork.
+ *
+ * The Dijkstra era defines the wire format for V4 scripts, however, V4 is not yet
+ * an executable language. V4 scripts can travel in transactions as reference scripts
+ * or auxiliary data scripts, but there is no witness set entry for them.
+ */
+typedef struct cardano_plutus_v4_script_t cardano_plutus_v4_script_t;
+
+/**
  * \brief Creates and initializes a new instance of a script from a native_script.
  *
  * This function creates and initializes a new instance of a \ref cardano_script_t object
@@ -264,6 +273,51 @@ cardano_script_new_plutus_v3(
   cardano_script_t**          script);
 
 /**
+ * \brief Creates and initializes a new instance of a script from a Plutus V4 script.
+ *
+ * This function creates and initializes a new instance of a \ref cardano_script_t object
+ * from a given \ref cardano_plutus_v4_script_t object. It returns an error code to indicate
+ * the success or failure of the operation.
+ *
+ * \param[in] plutus_v4_script A constant pointer to the \ref cardano_plutus_v4_script_t object from which
+ *                             the script will be created. The object must not be NULL.
+ * \param[out] script On successful initialization, this will point to a newly created
+ *             \ref cardano_script_t object. This object represents a "strong reference"
+ *             to the script, meaning that it is fully initialized and ready for use.
+ *             The caller is responsible for managing the lifecycle of this object.
+ *             Specifically, once the script is no longer needed, the caller must release it
+ *             by calling \ref cardano_script_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the script was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_plutus_v4_script_t* plutus_v4_script = cardano_plutus_v4_script_new(...);
+ * cardano_script_t* script = NULL;
+ *
+ * // Attempt to create a new script from a Plutus V4 script
+ * cardano_error_t result = cardano_script_new_plutus_v4(plutus_v4_script, &script);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the script
+ *
+ *   // Once done, ensure to clean up and release the script
+ *   cardano_script_unref(&script);
+ * }
+ *
+ * // Clean up the plutus_v4_script object once done
+ * cardano_plutus_v4_script_unref(&plutus_v4_script);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_script_new_plutus_v4(
+  cardano_plutus_v4_script_t* plutus_v4_script,
+  cardano_script_t**          script);
+
+/**
  * \brief Creates a script from a CBOR reader.
  *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_script_t object.
@@ -359,6 +413,7 @@ CARDANO_EXPORT cardano_error_t cardano_script_to_cbor(
  * - Plutus v1: \ref cardano_plutus_v1_script_to_cip116_json
  * - Plutus v2: \ref cardano_plutus_v2_script_to_cip116_json
  * - Plutus v3: \ref cardano_plutus_v3_script_to_cip116_json
+ * - Plutus v4: \ref cardano_plutus_v4_script_to_cip116_json
  *
  * Keys are emitted in the order: "tag", then "value".
  *
@@ -576,6 +631,46 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_script_to_plutus_v3(
   cardano_script_t*            script,
   cardano_plutus_v3_script_t** plutus_v3);
+
+/**
+ * \brief Converts a script object to a Plutus V4 script object.
+ *
+ * This function converts a \ref cardano_script_t object to a \ref cardano_plutus_v4_script_t object.
+ * It returns an error code to indicate the success or failure of the operation.
+ *
+ * \param[in] script A constant pointer to the \ref cardano_script_t object to be converted.
+ * \param[out] plutus_v4 On successful conversion, this will point to a newly created
+ *                       \ref cardano_plutus_v4_script_t object. This object represents a "strong reference"
+ *                       to the Plutus V4 script, meaning that it is fully initialized and ready for use.
+ *                       The caller is responsible for managing the lifecycle of this object.
+ *                       Specifically, once the Plutus V4 script is no longer needed, the caller must release it
+ *                       by calling \ref cardano_plutus_v4_script_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the conversion was successful, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_script_t* script = ...; // Assume script is a valid script object
+ * cardano_plutus_v4_script_t* plutus_v4 = NULL;
+ * cardano_error_t result = cardano_script_to_plutus_v4(script, &plutus_v4);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the Plutus V4 script
+ *
+ *   // Once done, ensure to clean up and release the Plutus V4 script
+ *   cardano_plutus_v4_script_unref(&plutus_v4);
+ * }
+ *
+ * // Clean up the script object once done
+ * cardano_script_unref(&script);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_script_to_plutus_v4(
+  cardano_script_t*            script,
+  cardano_plutus_v4_script_t** plutus_v4);
 
 /**
  * \brief Retrieves the hash associated with a script.

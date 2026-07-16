@@ -27,6 +27,7 @@
 #include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v4_script.h>
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
@@ -50,6 +51,7 @@ typedef struct cardano_auxiliary_data_t
     cardano_plutus_v1_script_list_t* plutus_v1_scripts;
     cardano_plutus_v2_script_list_t* plutus_v2_scripts;
     cardano_plutus_v3_script_list_t* plutus_v3_scripts;
+    cardano_plutus_v4_script_list_t* plutus_v4_scripts;
     cardano_buffer_t*                cbor_cache;
 } cardano_auxiliary_data_t;
 
@@ -80,6 +82,7 @@ cardano_auxiliary_data_deallocate(void* object)
   cardano_plutus_v1_script_list_unref(&auxiliary_data->plutus_v1_scripts);
   cardano_plutus_v2_script_list_unref(&auxiliary_data->plutus_v2_scripts);
   cardano_plutus_v3_script_list_unref(&auxiliary_data->plutus_v3_scripts);
+  cardano_plutus_v4_script_list_unref(&auxiliary_data->plutus_v4_scripts);
   cardano_buffer_unref(&auxiliary_data->cbor_cache);
 
   _cardano_free(object);
@@ -122,6 +125,11 @@ get_map_size(const cardano_auxiliary_data_t* auxiliary_data)
     ++map_size;
   }
 
+  if (auxiliary_data->plutus_v4_scripts != NULL)
+  {
+    ++map_size;
+  }
+
   return map_size;
 }
 
@@ -150,6 +158,7 @@ cardano_auxiliary_data_new(cardano_auxiliary_data_t** auxiliary_data)
   new_auxiliary_data->plutus_v1_scripts  = NULL;
   new_auxiliary_data->plutus_v2_scripts  = NULL;
   new_auxiliary_data->plutus_v3_scripts  = NULL;
+  new_auxiliary_data->plutus_v4_scripts  = NULL;
   new_auxiliary_data->cbor_cache         = NULL;
 
   *auxiliary_data = new_auxiliary_data;
@@ -368,6 +377,20 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
 
           break;
         }
+        case 5:
+        {
+          result = cardano_plutus_v4_script_list_from_cbor(reader, &new_auxiliary_data->plutus_v4_scripts);
+
+          if (result != CARDANO_SUCCESS)
+          {
+            cardano_auxiliary_data_unref(&new_auxiliary_data);
+            *auxiliary_data = NULL;
+
+            return result;
+          }
+
+          break;
+        }
         default:
         {
           cardano_auxiliary_data_unref(&new_auxiliary_data);
@@ -566,6 +589,23 @@ cardano_auxiliary_data_to_cbor(
     }
   }
 
+  if (auxiliary_data->plutus_v4_scripts != NULL)
+  {
+    result = cardano_cbor_writer_write_uint(writer, 5);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_plutus_v4_script_list_to_cbor(auxiliary_data->plutus_v4_scripts, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -612,12 +652,14 @@ cardano_auxiliary_data_to_cip116_json(
   const cardano_plutus_v1_script_list_t* v1_list = auxiliary_data->plutus_v1_scripts;
   const cardano_plutus_v2_script_list_t* v2_list = auxiliary_data->plutus_v2_scripts;
   const cardano_plutus_v3_script_list_t* v3_list = auxiliary_data->plutus_v3_scripts;
+  const cardano_plutus_v4_script_list_t* v4_list = auxiliary_data->plutus_v4_scripts;
 
   const size_t v1_len = cardano_plutus_v1_script_list_get_length(v1_list);
   const size_t v2_len = cardano_plutus_v2_script_list_get_length(v2_list);
   const size_t v3_len = cardano_plutus_v3_script_list_get_length(v3_list);
+  const size_t v4_len = cardano_plutus_v4_script_list_get_length(v4_list);
 
-  const size_t total_plutus_scripts = v1_len + v2_len + v3_len;
+  const size_t total_plutus_scripts = v1_len + v2_len + v3_len + v4_len;
 
   if (total_plutus_scripts > 0U)
   {
@@ -674,6 +716,25 @@ cardano_auxiliary_data_to_cip116_json(
 
       error = cardano_plutus_v3_script_to_cip116_json(script, writer);
       cardano_plutus_v3_script_unref(&script);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+    }
+
+    for (size_t i = 0U; i < v4_len; ++i)
+    {
+      cardano_plutus_v4_script_t* script = NULL;
+      cardano_error_t             error  = cardano_plutus_v4_script_list_get(v4_list, i, &script);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
+      error = cardano_plutus_v4_script_to_cip116_json(script, writer);
+      cardano_plutus_v4_script_unref(&script);
 
       if (error != CARDANO_SUCCESS)
       {
@@ -880,6 +941,45 @@ cardano_auxiliary_data_set_plutus_v3_scripts(
   cardano_plutus_v3_script_list_ref(scripts);
 
   auxiliary_data->plutus_v3_scripts = scripts;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_plutus_v4_script_list_t*
+cardano_auxiliary_data_get_plutus_v4_scripts(cardano_auxiliary_data_t* auxiliary_data)
+{
+  if (auxiliary_data == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_plutus_v4_script_list_ref(auxiliary_data->plutus_v4_scripts);
+
+  return auxiliary_data->plutus_v4_scripts;
+}
+
+cardano_error_t
+cardano_auxiliary_data_set_plutus_v4_scripts(
+  cardano_auxiliary_data_t*        auxiliary_data,
+  cardano_plutus_v4_script_list_t* scripts)
+{
+  if (auxiliary_data == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (scripts == NULL)
+  {
+    cardano_plutus_v4_script_list_unref(&auxiliary_data->plutus_v4_scripts);
+    auxiliary_data->plutus_v4_scripts = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_plutus_v4_script_list_unref(&auxiliary_data->plutus_v4_scripts);
+  cardano_plutus_v4_script_list_ref(scripts);
+
+  auxiliary_data->plutus_v4_scripts = scripts;
 
   return CARDANO_SUCCESS;
 }
