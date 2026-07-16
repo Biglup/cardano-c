@@ -14,4 +14,5 @@ Each transaction includes an identifier known as TxId, and after completing thes
 .. toctree::
     :maxdepth: 1
 
+    ./sub_transaction
     ./transaction
