@@ -53,26 +53,29 @@ typedef struct cardano_uplc_cost_model_t
 /**
  * \brief The number of flat protocol parameters in the Plutus V1 cost model.
  *
- * The V1 parameter list as ordered by the ledger has this many entries.
+ * The V1 parameter list as ordered by the ledger has this many entries as of
+ * protocol version 11 (van Rossem), which unified the builtin set across the
+ * three languages and appended the batch-6 coefficients.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 ((size_t)166)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 ((size_t)332)
 
 /**
  * \brief The number of flat protocol parameters in the Plutus V2 cost model.
  *
- * The V2 parameter list as ordered by the ledger has this many entries.
+ * The V2 parameter list as ordered by the ledger has this many entries as of
+ * protocol version 11 (van Rossem), which unified the builtin set across the
+ * three languages and appended the batch-6 coefficients.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 ((size_t)175)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 ((size_t)332)
 
 /**
  * \brief The number of flat protocol parameters the Plutus V3 reader consumes.
  *
- * Covers the V3 list through the bitwise-builtin tail (ripemd_160) and the five
- * exp_mod_integer coefficients that follow it. Later protocol versions append
- * further coefficients (the array and value families) that this build does not
- * read; see \ref cardano_uplc_cost_model_from_params.
+ * Covers the V3 list through the exp_mod_integer coefficients and the array and
+ * value families appended at protocol version 11 (van Rossem), ending at
+ * scale_value.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 ((size_t)302)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 ((size_t)350)
 
 /**
  * \brief Builds a full cost model from a flat ordered protocol parameter list.
