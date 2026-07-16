@@ -31,6 +31,7 @@
 #include <cardano/scripts/native_scripts/script_invalid_before.h>
 #include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
+#include <cardano/scripts/native_scripts/script_require_guard.h>
 
 #include <cardano/object.h>
 
@@ -57,6 +58,7 @@ typedef struct cardano_native_script_t
     cardano_script_invalid_before_t* invalid_before;
     cardano_script_n_of_k_t*         n_of_k;
     cardano_script_pubkey_t*         pubkey;
+    cardano_script_require_guard_t*  require_guard;
 
 } cardano_native_script_t;
 
@@ -88,6 +90,7 @@ cardano_native_script_deallocate(void* object)
   cardano_script_invalid_before_unref(&data->invalid_before);
   cardano_script_n_of_k_unref(&data->n_of_k);
   cardano_script_pubkey_unref(&data->pubkey);
+  cardano_script_require_guard_unref(&data->require_guard);
 
   _cardano_free(data);
 }
@@ -118,6 +121,7 @@ cardano_native_script_new(void)
   data->invalid_before = NULL;
   data->n_of_k         = NULL;
   data->pubkey         = NULL;
+  data->require_guard  = NULL;
 
   return data;
 }
@@ -317,6 +321,38 @@ cardano_native_script_new_invalid_before(
 }
 
 cardano_error_t
+cardano_native_script_new_require_guard(
+  cardano_script_require_guard_t* require_guard,
+  cardano_native_script_t**       native_script)
+{
+  if (require_guard == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (native_script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_native_script_t* data = cardano_native_script_new();
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  data->type          = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD;
+  data->require_guard = require_guard;
+
+  cardano_script_require_guard_ref(require_guard);
+
+  *native_script = data;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_script_t** native_script)
 {
   if (reader == NULL)
@@ -358,7 +394,7 @@ cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_sc
     reader_clone,
     &type,
     CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_PUBKEY,
-    CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER);
+    CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD);
 
   cardano_cbor_reader_unref(&reader_clone);
 
@@ -459,6 +495,21 @@ cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_sc
 
       break;
     }
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+    {
+      cardano_script_require_guard_t* require_guard = NULL;
+      result                                        = cardano_script_require_guard_from_cbor(reader, &require_guard);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_native_script_new_require_guard(require_guard, native_script);
+      cardano_script_require_guard_unref(&require_guard);
+
+      break;
+    }
 
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
@@ -505,6 +556,9 @@ cardano_native_script_to_cbor(
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
       result = cardano_script_invalid_before_to_cbor(native_script->invalid_before, writer);
       break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+      result = cardano_script_require_guard_to_cbor(native_script->require_guard, writer);
+      break;
 
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
@@ -545,6 +599,9 @@ cardano_native_script_to_cip116_json(
       break;
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
       result = cardano_script_invalid_before_to_cip116_json(script->invalid_before, writer);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+      result = cardano_script_require_guard_to_cip116_json(script->require_guard, writer);
       break;
     default:
       result = CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
@@ -686,6 +743,21 @@ cardano_native_script_from_json(const char* json, const size_t json_size, cardan
 
     result = cardano_native_script_new_invalid_before(invalid_before, &data);
     cardano_script_invalid_before_unref(&invalid_before);
+  }
+  else if (strcmp(type_string, "guard") == 0)
+  {
+    cardano_script_require_guard_t* require_guard = NULL;
+    result                                        = cardano_script_require_guard_from_json(json, json_size, &require_guard);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_json_object_unref(&json_object);
+      cardano_native_script_unref(&data);
+      return result;
+    }
+
+    result = cardano_native_script_new_require_guard(require_guard, &data);
+    cardano_script_require_guard_unref(&require_guard);
   }
   else
   {
@@ -889,6 +961,33 @@ cardano_native_script_to_invalid_before(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_native_script_to_require_guard(
+  cardano_native_script_t*         native_script,
+  cardano_script_require_guard_t** require_guard)
+{
+  if (native_script == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (require_guard == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (native_script->type != CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD)
+  {
+    return CARDANO_ERROR_INVALID_NATIVE_SCRIPT_TYPE;
+  }
+
+  cardano_script_require_guard_ref(native_script->require_guard);
+
+  *require_guard = native_script->require_guard;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_blake2b_hash_t*
 cardano_native_script_get_hash(
   const cardano_native_script_t* native_script)
@@ -1017,6 +1116,9 @@ cardano_native_script_equals(
       break;
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
       result = cardano_script_invalid_before_equals(lhs->invalid_before, rhs->invalid_before);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+      result = cardano_script_require_guard_equals(lhs->require_guard, rhs->require_guard);
       break;
 
     default:

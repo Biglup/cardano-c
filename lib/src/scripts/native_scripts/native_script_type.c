@@ -50,6 +50,9 @@ cardano_native_script_type_to_string(const cardano_native_script_type_t native_s
     case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER:
       message = "Native Script Type: Invalid After";
       break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+      message = "Native Script Type: Require Guard";
+      break;
     default:
       message = "Native Script Type: Unknown";
       break;

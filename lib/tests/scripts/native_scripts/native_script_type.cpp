@@ -70,6 +70,13 @@ TEST(cardano_native_script_type_to_string, canConvertInvalidAfter)
   ASSERT_STREQ("Native Script Type: Invalid After", message);
 }
 
+TEST(cardano_native_script_type_to_string, canConvertRequireGuard)
+{
+  const char* message = cardano_native_script_type_to_string(CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD);
+
+  ASSERT_STREQ("Native Script Type: Require Guard", message);
+}
+
 TEST(cardano_native_script_type_to_string, canConvertUnknown)
 {
   const char* message = cardano_native_script_type_to_string((cardano_native_script_type_t)100);
