@@ -6,6 +6,7 @@ The transaction body is the core structure of a transaction. It includes the det
 .. toctree::
     :maxdepth: 1
 
+    ./direct_deposit_map
     ./required_guards_map
     ./transaction_body
     ./transaction_input
