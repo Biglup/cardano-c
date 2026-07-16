@@ -1822,6 +1822,241 @@ TEST(cardano_protocol_parameters_set_ref_script_cost_per_byte, setsTheValue)
   cardano_unit_interval_unref(&res);
 }
 
+TEST(cardano_protocol_parameters_get_max_ref_script_size_per_block, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t max_ref_script_size_per_block = cardano_protocol_parameters_get_max_ref_script_size_per_block(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_ref_script_size_per_block, 0);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_block, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = nullptr;
+  uint64_t                       max_ref_script_size_per_block = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_block(protocol_parameters, max_ref_script_size_per_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_block, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_block = 1048576;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_block(protocol_parameters, max_ref_script_size_per_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_block(protocol_parameters), max_ref_script_size_per_block);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_block, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_block = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_block(protocol_parameters, max_ref_script_size_per_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_max_ref_script_size_per_tx, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t max_ref_script_size_per_tx = cardano_protocol_parameters_get_max_ref_script_size_per_tx(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_ref_script_size_per_tx, 0);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_tx, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters        = nullptr;
+  uint64_t                       max_ref_script_size_per_tx = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_tx(protocol_parameters, max_ref_script_size_per_tx);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_tx, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters        = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_tx = 204800;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_tx(protocol_parameters, max_ref_script_size_per_tx);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_tx(protocol_parameters), max_ref_script_size_per_tx);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_tx, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters        = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_tx = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_tx(protocol_parameters, max_ref_script_size_per_tx);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_ref_script_cost_stride, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t ref_script_cost_stride = cardano_protocol_parameters_get_ref_script_cost_stride(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(ref_script_cost_stride, 0);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_stride, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters    = nullptr;
+  uint64_t                       ref_script_cost_stride = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_stride(protocol_parameters, ref_script_cost_stride);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_stride, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters    = init_protocol_parameters();
+  uint64_t                       ref_script_cost_stride = 25600;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_stride(protocol_parameters, ref_script_cost_stride);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_ref_script_cost_stride(protocol_parameters), ref_script_cost_stride);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_stride, returnsErrorIfValueIsZero)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters    = init_protocol_parameters();
+  uint64_t                       ref_script_cost_stride = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_stride(protocol_parameters, ref_script_cost_stride);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_stride, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters    = init_protocol_parameters();
+  uint64_t                       ref_script_cost_stride = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_stride(protocol_parameters, ref_script_cost_stride);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_ref_script_cost_multiplier, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  cardano_unit_interval_t* ref_script_cost_multiplier = cardano_protocol_parameters_get_ref_script_cost_multiplier(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(ref_script_cost_multiplier, (cardano_unit_interval_t*)0);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_multiplier, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters        = nullptr;
+  cardano_unit_interval_t*       ref_script_cost_multiplier = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_multiplier(protocol_parameters, ref_script_cost_multiplier);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_ref_script_cost_multiplier, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters        = init_protocol_parameters();
+  cardano_unit_interval_t*       ref_script_cost_multiplier = cardano_get_zero_interval();
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_ref_script_cost_multiplier(protocol_parameters, ref_script_cost_multiplier);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_ref_script_cost_multiplier(protocol_parameters);
+  EXPECT_EQ(res, ref_script_cost_multiplier);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_unit_interval_unref(&ref_script_cost_multiplier);
+  cardano_unit_interval_unref(&res);
+}
+
 TEST(cardano_protocol_parameters_new, returnErrorIfGivenNull)
 {
   // Act

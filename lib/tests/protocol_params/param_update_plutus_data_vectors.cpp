@@ -132,3 +132,47 @@ TEST(param_update_plutus_data, matchesAikenVector)
   cardano_unit_interval_unref(&d10);
   cardano_protocol_param_update_unref(&u);
 }
+
+// changed-parameters CBOR for the Dijkstra reference script parameters (tags
+// 34-37), following the same encoding scheme: tag -> I value for the sizes and
+// the stride, tag -> gcd-reduced rational for the multiplier (12/10 -> 6/5).
+static const char* kDijkstraChangedParamsCbor =
+  "a418221a00030d4018231a000186a018241961a818259f0605ff";
+
+TEST(param_update_plutus_data, matchesDijkstraRefScriptVector)
+{
+  cardano_protocol_param_update_t* u = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&u), CARDANO_SUCCESS);
+
+  const uint64_t per_block = 200000U;
+  const uint64_t per_tx    = 100000U;
+  const uint64_t stride    = 25000U;
+  ASSERT_EQ(cardano_protocol_param_update_set_max_ref_script_size_per_block(u, &per_block), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_max_ref_script_size_per_tx(u, &per_tx), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_ref_script_cost_stride(u, &stride), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* multiplier = ui(12U, 10U); // reduces to 6/5
+  ASSERT_EQ(cardano_protocol_param_update_set_ref_script_cost_multiplier(u, multiplier), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(u, &pd), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  ASSERT_EQ(cardano_plutus_data_to_cbor(pd, writer), CARDANO_SUCCESS);
+
+  cardano_buffer_t* buffer = nullptr;
+  ASSERT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  const size_t size          = cardano_buffer_get_hex_size(buffer);
+  char         ours_hex[256] = { 0 };
+  ASSERT_LE(size, sizeof(ours_hex));
+  ASSERT_EQ(cardano_buffer_to_hex(buffer, ours_hex, size), CARDANO_SUCCESS);
+
+  EXPECT_EQ(std::string(ours_hex), std::string(kDijkstraChangedParamsCbor));
+
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&pd);
+  cardano_unit_interval_unref(&multiplier);
+  cardano_protocol_param_update_unref(&u);
+}

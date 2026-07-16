@@ -141,6 +141,22 @@ Protocol Parameters
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_parameters_get_max_ref_script_size_per_block
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_max_ref_script_size_per_tx
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_script_cost_stride
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_script_cost_multiplier
+
+------------
+
 .. doxygenfunction:: cardano_protocol_parameters_set_min_fee_a
 
 ------------
@@ -270,6 +286,22 @@ Protocol Parameters
 ------------
 
 .. doxygenfunction:: cardano_protocol_parameters_set_ref_script_cost_per_byte
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_max_ref_script_size_per_block
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_max_ref_script_size_per_tx
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_script_cost_stride
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_script_cost_multiplier
 
 ------------
 

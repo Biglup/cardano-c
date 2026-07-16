@@ -1688,6 +1688,197 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_script_cost
   cardano_unit_interval_t**        ref_script_cost_per_byte);
 
 /**
+ * \brief Retrieves the maximum total reference script size per block from the protocol parameter update.
+ *
+ * This function returns the maximum cumulative size, in bytes, of the reference scripts that
+ * a single block may use. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_ref_script_size_per_block Pointer to where the maximum reference script size per block will be stored.
+ *                                           If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per block was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_block = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_ref_script_size_per_block(protocol_param_update, &max_ref_script_size_per_block);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max ref script size per block retrieved successfully: %lu.\n", max_ref_script_size_per_block);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Max ref script size per block is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get max ref script size per block: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_ref_script_size_per_block(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_block);
+
+/**
+ * \brief Retrieves the maximum total reference script size per transaction from the protocol parameter update.
+ *
+ * This function returns the maximum cumulative size, in bytes, of the reference scripts that
+ * a single transaction may use. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_ref_script_size_per_tx Pointer to where the maximum reference script size per transaction will be stored.
+ *                                        If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per transaction was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_tx = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_ref_script_size_per_tx(protocol_param_update, &max_ref_script_size_per_tx);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max ref script size per tx retrieved successfully: %lu.\n", max_ref_script_size_per_tx);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Max ref script size per tx is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get max ref script size per tx: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_ref_script_size_per_tx(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_tx);
+
+/**
+ * \brief Retrieves the reference script cost stride from the protocol parameter update.
+ *
+ * This function returns the size step, in bytes, at which the reference script fee tier
+ * increases. On the wire this parameter is a positive 32-bit unsigned integer; zero is
+ * not a valid value.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] ref_script_cost_stride Pointer to where the reference script cost stride will be stored.
+ *                                    If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference script cost stride was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_script_cost_stride = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_ref_script_cost_stride(protocol_param_update, &ref_script_cost_stride);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Ref script cost stride retrieved successfully: %lu.\n", ref_script_cost_stride);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Ref script cost stride is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get ref script cost stride: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_script_cost_stride(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_script_cost_stride);
+
+/**
+ * \brief Retrieves the reference script cost multiplier from the protocol parameter update.
+ *
+ * This function returns the multiplier applied to the reference script fee at each cost stride.
+ * On the wire this parameter is a positive interval (a rational number); its value is expected
+ * to be greater than zero.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] ref_script_cost_multiplier Pointer to where the reference script cost multiplier will be stored.
+ *                                        If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference script cost multiplier was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* ref_script_cost_multiplier = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_ref_script_cost_multiplier(protocol_param_update, &ref_script_cost_multiplier);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Ref script cost multiplier retrieved successfully: %f.\n", cardano_unit_interval_to_double(ref_script_cost_multiplier));
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Ref script cost multiplier is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get ref script cost multiplier: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&ref_script_cost_multiplier);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_script_cost_multiplier(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        ref_script_cost_multiplier);
+
+/**
  * \brief Sets the minimum fee A in the protocol parameter update.
  *
  * This function sets the minimum fee A value in the protocol parameter update.
@@ -3038,6 +3229,181 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_script_cost_per_byte(
   cardano_protocol_param_update_t* protocol_param_update,
   cardano_unit_interval_t*         ref_script_cost_per_byte);
+
+/**
+ * \brief Sets the maximum total reference script size per block in the protocol parameter update.
+ *
+ * This function sets the maximum cumulative size, in bytes, of the reference scripts that a single
+ * block may use. If NULL is passed for max_ref_script_size_per_block, it indicates that the update
+ * should not propose a change for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_ref_script_size_per_block Pointer to the maximum reference script size per block.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per block was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_block = 1048576;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_ref_script_size_per_block(protocol_param_update, &max_ref_script_size_per_block);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max ref script size per block set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set max ref script size per block.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_ref_script_size_per_block(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_block);
+
+/**
+ * \brief Sets the maximum total reference script size per transaction in the protocol parameter update.
+ *
+ * This function sets the maximum cumulative size, in bytes, of the reference scripts that a single
+ * transaction may use. If NULL is passed for max_ref_script_size_per_tx, it indicates that the update
+ * should not propose a change for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_ref_script_size_per_tx Pointer to the maximum reference script size per transaction.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per transaction was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_tx = 204800;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_ref_script_size_per_tx(protocol_param_update, &max_ref_script_size_per_tx);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max ref script size per tx set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set max ref script size per tx.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_ref_script_size_per_tx(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_tx);
+
+/**
+ * \brief Sets the reference script cost stride in the protocol parameter update.
+ *
+ * This function sets the size step, in bytes, at which the reference script fee tier increases.
+ * If NULL is passed for ref_script_cost_stride, it indicates that the update should not propose
+ * a change for this parameter. On the wire this parameter is a positive 32-bit unsigned integer;
+ * zero and values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     ref_script_cost_stride Pointer to the reference script cost stride.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference script cost stride was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value is zero or does not fit in a 32-bit unsigned integer, or an appropriate error
+ *         code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_script_cost_stride = 25600;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_ref_script_cost_stride(protocol_param_update, &ref_script_cost_stride);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Ref script cost stride set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set ref script cost stride.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_script_cost_stride(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_script_cost_stride);
+
+/**
+ * \brief Sets the reference script cost multiplier in the protocol parameter update.
+ *
+ * This function sets the multiplier applied to the reference script fee at each cost stride.
+ * If NULL is passed for ref_script_cost_multiplier, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a positive interval
+ * (a rational number); its value is expected to be greater than zero.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     ref_script_cost_multiplier Pointer to the reference script cost multiplier. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference script cost multiplier was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* ref_script_cost_multiplier = NULL;
+ *
+ * // Assume ref_script_cost_multiplier is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_ref_script_cost_multiplier(protocol_param_update, ref_script_cost_multiplier);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Ref script cost multiplier set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set ref script cost multiplier.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_script_cost_multiplier(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         ref_script_cost_multiplier);
 
 /**
  * \brief Decrements the reference count of a cardano_protocol_param_update_t object.
