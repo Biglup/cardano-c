@@ -318,6 +318,37 @@ CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_guard_set_is_tagged(const cardano_guard_set_t* guard_set);
 
 /**
+ * \brief Enables or disables tagged encoding (Conway era feature) for the guard set.
+ *
+ * This function sets whether the specified \ref cardano_guard_set_t object should use tagged encoding
+ * (introduced in the Conway era) when serializing the set in CBOR. If \p use_tag is set to \c true, the set will be
+ * encoded using tagged sets. Otherwise, it will use the older array-based encoding method.
+ *
+ * \param[in,out] guard_set A pointer to an initialized \ref cardano_guard_set_t object.
+ * \param[in] use_tag A boolean value that determines whether to use tagged encoding (\c true) or legacy array encoding (\c false).
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
+ *         or an appropriate error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_guard_set_t* guard_set = ...; // Assume guard_set is already initialized
+ * cardano_error_t result = cardano_guard_set_set_use_tag(guard_set, true);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The guard set is now set to use tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set tagged encoding: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_guard_set_set_use_tag(cardano_guard_set_t* guard_set, bool use_tag);
+
+/**
  * \brief Decrements the reference count of a guard_set object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_guard_set_t object

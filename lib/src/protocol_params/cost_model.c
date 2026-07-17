@@ -170,17 +170,47 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     return read_array_result;
   }
 
-  if ((cost_model_size < 0) || (cost_model_size > 2048))
+  if (cost_model_size > 2048)
   {
     *cost_model = NULL;
     return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
   }
 
-  int64_t* costs = _cardano_malloc((size_t)cost_model_size * sizeof(int64_t));
+  const bool   is_indefinite = cost_model_size < 0;
+  const size_t max_costs     = is_indefinite ? 2048U : (size_t)cost_model_size;
 
-  for (int64_t i = 0; i < cost_model_size; ++i)
+  int64_t* costs = _cardano_malloc(max_costs * sizeof(int64_t));
+
+  if (costs == NULL)
   {
-    const cardano_error_t read_cost_result = cardano_cbor_reader_read_int(reader, &costs[i]);
+    *cost_model = NULL;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  size_t costs_count = 0U;
+
+  while (costs_count < max_costs)
+  {
+    if (is_indefinite)
+    {
+      cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+      const cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+      if (peek_result != CARDANO_SUCCESS)
+      {
+        _cardano_free(costs);
+        *cost_model = NULL;
+        return peek_result;
+      }
+
+      if (state == CARDANO_CBOR_READER_STATE_END_ARRAY)
+      {
+        break;
+      }
+    }
+
+    const cardano_error_t read_cost_result = cardano_cbor_reader_read_int(reader, &costs[costs_count]);
 
     if (read_cost_result != CARDANO_SUCCESS)
     {
@@ -188,6 +218,8 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
       *cost_model = NULL;
       return read_cost_result;
     }
+
+    ++costs_count;
   }
 
   const cardano_error_t expect_end_array_result = cardano_cbor_validate_end_array(validator_name, reader);
@@ -200,7 +232,7 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     return expect_end_array_result;
   }
 
-  cardano_error_t new_model_result = cardano_cost_model_new(language_version, costs, cost_model_size, cost_model);
+  cardano_error_t new_model_result = cardano_cost_model_new(language_version, costs, costs_count, cost_model);
   _cardano_free(costs);
 
   return new_model_result;

@@ -125,6 +125,14 @@ Transaction Body
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_body_get_guards
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_guards
+
+------------
+
 .. doxygenfunction:: cardano_transaction_body_get_network_id
 
 ------------
@@ -186,6 +194,38 @@ Transaction Body
 ------------
 
 .. doxygenfunction:: cardano_transaction_body_set_donation
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_get_sub_transactions
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_sub_transactions
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_get_required_top_level_guards
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_required_top_level_guards
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_get_direct_deposits
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_direct_deposits
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_get_account_balance_intervals
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_account_balance_intervals
 
 ------------
 

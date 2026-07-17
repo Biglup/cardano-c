@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/certs/certificate_set.h>
+#include <cardano/common/guard_set.h>
 #include <cardano/common/network_id.h>
 #include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/blake2b_hash.h>
@@ -35,6 +36,10 @@
 #include <cardano/error.h>
 #include <cardano/proposal_procedures/proposal_procedure_set.h>
 #include <cardano/protocol_params/update.h>
+#include <cardano/transaction_body/account_balance_intervals_map.h>
+#include <cardano/transaction_body/direct_deposit_map.h>
+#include <cardano/transaction_body/required_guards_map.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_input_set.h>
 #include <cardano/transaction_body/transaction_output.h>
@@ -1136,9 +1141,13 @@ cardano_transaction_body_set_collateral(cardano_transaction_body_t* transaction_
  * This function fetches the set of required signers from the given \ref cardano_transaction_body_t object.
  * Required signers are represented as hashes of public keys and are needed to authorize the transaction.
  *
+ * The returned set is the legacy view over the guards of the transaction body: it contains the key hash
+ * members of the guards, mirroring how the ledger derives the required signer hashes. Script hash guards
+ * are not part of this view; use \ref cardano_transaction_body_get_guards to access the full credential set.
+ *
  * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
  *
- * \return A pointer to a \ref cardano_blake2b_hash_set_t object representing the set of required signers. If no required signers are set,
+ * \return A pointer to a \ref cardano_blake2b_hash_set_t object representing the set of required signers. If no guards are set,
  *         this function returns NULL. If a set of required signers is returned, it is a new reference, and the caller is responsible for releasing
  *         it by calling \ref cardano_blake2b_hash_set_unref when no longer needed.
  *
@@ -1169,6 +1178,11 @@ CARDANO_EXPORT cardano_blake2b_hash_set_t* cardano_transaction_body_get_required
  *
  * This function assigns a set of required signers to the given \ref cardano_transaction_body_t object.
  * Required signers are represented as hashes of public keys and are necessary to authorize the transaction.
+ *
+ * The set is stored as guards: each hash becomes a key hash credential, replacing any guards previously
+ * held by the transaction body. Guard sets whose members are all key hashes serialize with the legacy
+ * required signers wire format, so transaction bodies produced through this function encode exactly as
+ * they did in earlier eras.
  *
  * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object to which the required signers will be set.
  * \param[in] required_signers A pointer to a \ref cardano_blake2b_hash_set_t object representing the set of required signers. This parameter can be NULL
@@ -1203,6 +1217,66 @@ CARDANO_EXPORT cardano_blake2b_hash_set_t* cardano_transaction_body_get_required
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_transaction_body_set_required_signers(cardano_transaction_body_t* transaction_body, cardano_blake2b_hash_set_t* required_signers);
+
+/**
+ * \brief Retrieves the guards from the transaction body.
+ *
+ * This function returns the guard set from a \ref cardano_transaction_body_t object, if it is present.
+ * Guards are credentials that must authorize the transaction, either with a signature (key hash guards)
+ * or by running the corresponding script (script hash guards). A guard set whose members are all key
+ * hashes is the credential view of the legacy required signers field.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_guard_set_t object representing the guards. The returned object
+ *         is a new reference, and the caller is responsible for releasing it by calling \ref cardano_guard_set_unref
+ *         when it is no longer needed. If the \p transaction_body is NULL or has no guards, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_guard_set_t* guards = cardano_transaction_body_get_guards(transaction_body);
+ *
+ * if (guards != NULL)
+ * {
+ *   // Use the guards
+ *   cardano_guard_set_unref(&guards);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_guard_set_t* cardano_transaction_body_get_guards(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the guards for a transaction body.
+ *
+ * This function assigns a guard set to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the guards, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] guards A pointer to an initialized \ref cardano_guard_set_t object, or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the guards were
+ *         successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p guards object when it is not NULL; the caller retains
+ *       ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_guard_set_t* guards = ...; // Assume guards are initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_guards(transaction_body, guards);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_guard_set_unref(&guards);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_guards(cardano_transaction_body_t* transaction_body, cardano_guard_set_t* guards);
 
 /**
  * \brief Retrieves the network ID from a transaction body.
@@ -1779,6 +1853,250 @@ CARDANO_EXPORT const uint64_t* cardano_transaction_body_get_donation(cardano_tra
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_transaction_body_set_donation(cardano_transaction_body_t* transaction_body, const uint64_t* donation);
+
+/**
+ * \brief Retrieves the sub transactions from the transaction body.
+ *
+ * This function returns the sub transaction set from a \ref cardano_transaction_body_t object, if it is present.
+ * Sub transactions are complete transactions nested inside the top-level transaction that are validated
+ * atomically together with it.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_sub_transaction_set_t object representing the sub transactions. The returned object
+ *         is a new reference, and the caller is responsible for releasing it by calling \ref cardano_sub_transaction_set_unref
+ *         when it is no longer needed. If the \p transaction_body is NULL or has no sub transactions, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(transaction_body);
+ *
+ * if (sub_transactions != NULL)
+ * {
+ *   // Use the sub transactions
+ *   cardano_sub_transaction_set_unref(&sub_transactions);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_sub_transaction_set_t* cardano_transaction_body_get_sub_transactions(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the sub transactions for a transaction body.
+ *
+ * This function assigns a sub transaction set to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the sub transactions, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] sub_transactions A pointer to an initialized \ref cardano_sub_transaction_set_t object, or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the sub transactions were
+ *         successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p sub_transactions object when it is not NULL; the caller retains
+ *       ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_sub_transaction_set_t* sub_transactions = ...; // Assume sub_transactions is initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_sub_transactions(transaction_body, sub_transactions);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_sub_transaction_set_unref(&sub_transactions);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_sub_transactions(
+  cardano_transaction_body_t*    transaction_body,
+  cardano_sub_transaction_set_t* sub_transactions);
+
+/**
+ * \brief Retrieves the required top level guards from the transaction body.
+ *
+ * This function returns the required top level guards from a \ref cardano_transaction_body_t object, if they are present.
+ * The map restricts which guards must be declared by the top-level transaction, each optionally paired with
+ * the datum the guard must be invoked with. At the top level the field is a self assertion: its credentials
+ * are expected to be a subset of the guards of the same body, although that is a ledger rule and is not
+ * enforced during serialization.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_required_guards_map_t object representing the required top level guards. The returned object
+ *         is a new reference, and the caller is responsible for releasing it by calling \ref cardano_required_guards_map_unref
+ *         when it is no longer needed. If the \p transaction_body is NULL or has no required top level guards, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_required_guards_map_t* required_guards = cardano_transaction_body_get_required_top_level_guards(transaction_body);
+ *
+ * if (required_guards != NULL)
+ * {
+ *   // Use the required top level guards
+ *   cardano_required_guards_map_unref(&required_guards);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_required_guards_map_t* cardano_transaction_body_get_required_top_level_guards(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the required top level guards for a transaction body.
+ *
+ * This function assigns a required guards map to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the required top level guards, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] required_top_level_guards A pointer to an initialized \ref cardano_required_guards_map_t object, or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the required top level guards were
+ *         successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p required_top_level_guards object when it is not NULL; the caller retains
+ *       ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_required_guards_map_t* required_guards = ...; // Assume required_guards is initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_required_top_level_guards(transaction_body, required_guards);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_required_guards_map_unref(&required_guards);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_required_top_level_guards(
+  cardano_transaction_body_t*    transaction_body,
+  cardano_required_guards_map_t* required_top_level_guards);
+
+/**
+ * \brief Retrieves the direct deposits from the transaction body.
+ *
+ * This function returns the direct deposits from a \ref cardano_transaction_body_t object, if they are present.
+ * Direct deposits map reward accounts to the amount of lovelace deposited directly into them.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_direct_deposit_map_t object representing the direct deposits. The returned object
+ *         is a new reference, and the caller is responsible for releasing it by calling \ref cardano_direct_deposit_map_unref
+ *         when it is no longer needed. If the \p transaction_body is NULL or has no direct deposits, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_direct_deposit_map_t* direct_deposits = cardano_transaction_body_get_direct_deposits(transaction_body);
+ *
+ * if (direct_deposits != NULL)
+ * {
+ *   // Use the direct deposits
+ *   cardano_direct_deposit_map_unref(&direct_deposits);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_direct_deposit_map_t* cardano_transaction_body_get_direct_deposits(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the direct deposits for a transaction body.
+ *
+ * This function assigns a direct deposit map to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the direct deposits, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] direct_deposits A pointer to an initialized \ref cardano_direct_deposit_map_t object, or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the direct deposits were
+ *         successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p direct_deposits object when it is not NULL; the caller retains
+ *       ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_direct_deposit_map_t* direct_deposits = ...; // Assume direct_deposits is initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_direct_deposits(transaction_body, direct_deposits);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_direct_deposit_map_unref(&direct_deposits);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_direct_deposits(
+  cardano_transaction_body_t*   transaction_body,
+  cardano_direct_deposit_map_t* direct_deposits);
+
+/**
+ * \brief Retrieves the account balance intervals from the transaction body.
+ *
+ * This function returns the account balance intervals from a \ref cardano_transaction_body_t object, if they are present.
+ * The map constrains, per credential, the balance an account must fall within for the transaction to be valid.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_account_balance_intervals_map_t object representing the account balance intervals. The returned object
+ *         is a new reference, and the caller is responsible for releasing it by calling \ref cardano_account_balance_intervals_map_unref
+ *         when it is no longer needed. If the \p transaction_body is NULL or has no account balance intervals, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_account_balance_intervals_map_t* intervals = cardano_transaction_body_get_account_balance_intervals(transaction_body);
+ *
+ * if (intervals != NULL)
+ * {
+ *   // Use the account balance intervals
+ *   cardano_account_balance_intervals_map_unref(&intervals);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_account_balance_intervals_map_t* cardano_transaction_body_get_account_balance_intervals(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the account balance intervals for a transaction body.
+ *
+ * This function assigns an account balance intervals map to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the account balance intervals, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] account_balance_intervals A pointer to an initialized \ref cardano_account_balance_intervals_map_t object, or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the account balance intervals were
+ *         successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p account_balance_intervals object when it is not NULL; the caller retains
+ *       ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_account_balance_intervals_map_t* intervals = ...; // Assume intervals is initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_account_balance_intervals(transaction_body, intervals);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_account_balance_intervals_map_unref(&intervals);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_account_balance_intervals(
+  cardano_transaction_body_t*              transaction_body,
+  cardano_account_balance_intervals_map_t* account_balance_intervals);
 
 /**
  * \brief Retrieves the hash of a transaction body.

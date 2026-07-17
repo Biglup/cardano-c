@@ -43,6 +43,10 @@ static const char* COST_MODE_V3_CBOR_HEX = "0298b31a0003236119032c01011903e81902
 static const char* COST_MODEL_V4_HEX     = "98b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
 static const char* COST_MODE_V4_CBOR_HEX = "0398b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
 
+// Small cost model vectors exercising the indefinite length costs array decode.
+static const char* COST_MODEL_DEFINITE_CBOR_HEX   = "0083010203";
+static const char* COST_MODEL_INDEFINITE_CBOR_HEX = "009f010203ff";
+
 static std::vector<int64_t>
 hex_string_to_costs(const char* hex_string)
 {
@@ -334,6 +338,85 @@ TEST(cardano_cost_model_from_cbor, canDeserializeCostModelV4)
 
   // Cleanup
   cardano_cost_model_unref(&cost_model);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_from_cbor, canDeserializeIndefiniteLengthCostsArray)
+{
+  // Arrange
+  cardano_cost_model_t*  definite_cost_model   = nullptr;
+  cardano_cost_model_t*  indefinite_cost_model = nullptr;
+  cardano_cbor_reader_t* definite_reader       = cardano_cbor_reader_from_hex(COST_MODEL_DEFINITE_CBOR_HEX, strlen(COST_MODEL_DEFINITE_CBOR_HEX));
+  cardano_cbor_reader_t* indefinite_reader     = cardano_cbor_reader_from_hex(COST_MODEL_INDEFINITE_CBOR_HEX, strlen(COST_MODEL_INDEFINITE_CBOR_HEX));
+
+  // Act
+  cardano_error_t definite_error   = cardano_cost_model_from_cbor(definite_reader, &definite_cost_model);
+  cardano_error_t indefinite_error = cardano_cost_model_from_cbor(indefinite_reader, &indefinite_cost_model);
+
+  // Assert
+  EXPECT_EQ(definite_error, CARDANO_SUCCESS);
+  EXPECT_EQ(indefinite_error, CARDANO_SUCCESS);
+  EXPECT_THAT(indefinite_cost_model, testing::Not((cardano_cost_model_t*)nullptr));
+
+  ASSERT_EQ(cardano_cost_model_get_costs_size(indefinite_cost_model), cardano_cost_model_get_costs_size(definite_cost_model));
+
+  for (size_t i = 0U; i < cardano_cost_model_get_costs_size(definite_cost_model); ++i)
+  {
+    int64_t definite_cost   = 0;
+    int64_t indefinite_cost = 0;
+
+    EXPECT_EQ(cardano_cost_model_get_cost(definite_cost_model, i, &definite_cost), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_cost_model_get_cost(indefinite_cost_model, i, &indefinite_cost), CARDANO_SUCCESS);
+    EXPECT_EQ(indefinite_cost, definite_cost);
+  }
+
+  // Cleanup
+  cardano_cost_model_unref(&definite_cost_model);
+  cardano_cost_model_unref(&indefinite_cost_model);
+  cardano_cbor_reader_unref(&definite_reader);
+  cardano_cbor_reader_unref(&indefinite_reader);
+}
+
+TEST(cardano_cost_model_from_cbor, returnsErrorIfIndefiniteArrayIsMissingTheBreakByte)
+{
+  // Arrange
+  cardano_cost_model_t*  cost_model = nullptr;
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("009f0102", 8);
+
+  // Act
+  cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(cost_model, (cardano_cost_model_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_from_cbor, returnsErrorIfIndefiniteArrayExceedsMaxCostModelSize)
+{
+  // Arrange
+  std::string cbor = "009f";
+
+  for (size_t i = 0U; i < 2049U; ++i)
+  {
+    cbor += "00";
+  }
+
+  cbor += "ff";
+
+  cardano_cost_model_t*  cost_model = nullptr;
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+
+  // Act
+  cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(cost_model, (cardano_cost_model_t*)nullptr);
+
+  // Cleanup
   cardano_cbor_reader_unref(&reader);
 }
 
