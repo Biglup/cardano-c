@@ -765,7 +765,24 @@ TEST(cardano_redeemer_list_from_cbor, returnErrorIfInvalidRedeemerTag)
   cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &list);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_redeemer_list_from_cbor, returnErrorIfMapRedeemerTagOutOfRange)
+{
+  // Arrange
+  cardano_redeemer_list_t* list   = nullptr;
+  const char*              cbor   = "a18207008200821821182c";
+  cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &list);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);

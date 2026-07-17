@@ -259,7 +259,13 @@ cardano_redeemer_list_from_cbor(cardano_cbor_reader_t* reader, cardano_redeemer_
       uint64_t tag   = 0;
       uint64_t index = 0;
 
-      result = cardano_cbor_reader_read_uint(reader, &tag);
+      result = cardano_cbor_validate_uint_in_range(
+        "redeemer_list",
+        "tag",
+        reader,
+        &tag,
+        CARDANO_REDEEMER_TAG_SPEND,
+        CARDANO_REDEEMER_TAG_GUARDING);
 
       if (result != CARDANO_SUCCESS)
       {

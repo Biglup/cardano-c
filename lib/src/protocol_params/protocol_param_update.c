@@ -417,18 +417,24 @@ pp_encode_drep_thresholds(cardano_drep_voting_thresholds_t* t, cardano_plutus_da
 static cardano_error_t
 pp_encode_cost_models(cardano_costmdls_t* costmdls, cardano_plutus_data_t** out)
 {
-  static const cardano_plutus_language_version_t languages[3] = {
+  static const cardano_plutus_language_version_t languages[4] = {
     CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
     CARDANO_PLUTUS_LANGUAGE_VERSION_V2,
-    CARDANO_PLUTUS_LANGUAGE_VERSION_V3
+    CARDANO_PLUTUS_LANGUAGE_VERSION_V3,
+    CARDANO_PLUTUS_LANGUAGE_VERSION_V4
   };
 
   cardano_plutus_map_t* map    = NULL;
   cardano_error_t       result = cardano_plutus_map_new(&map);
 
-  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < 3U); ++i)
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < 4U); ++i)
   {
     cardano_cost_model_t* model = NULL;
+
+    if (!cardano_costmdls_has(costmdls, languages[i]))
+    {
+      continue;
+    }
 
     if (cardano_costmdls_get(costmdls, languages[i], &model) != CARDANO_SUCCESS)
     {
