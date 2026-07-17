@@ -28,15 +28,20 @@
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/certificate.h>
 #include <cardano/certs/certificate_set.h>
+#include <cardano/common/credential.h>
 #include <cardano/common/governance_action_id.h>
+#include <cardano/common/guard_set.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
+#include <cardano/scripts/native_scripts/native_script.h>
+#include <cardano/scripts/native_scripts/script_require_guard.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/voting_procedures/voter.h>
 #include <cardano/voting_procedures/voting_procedure.h>
 #include <cardano/voting_procedures/voting_procedures.h>
+#include <cardano/witness_set/native_script_set.h>
 #include <cardano/witness_set/redeemer_tag.h>
 #include <cardano/witness_set/witness_set.h>
 
@@ -64,6 +69,10 @@ static const char* CBOR_TX_ID                 = "c7f20e9550b5631f07622a583a5103f
 static const char* CBOR3_TX_ID                = "2d7f290c815e061fb7c27e91d2a898bd7b454a71c9b7a26660e2257ac31ebe32";
 static const char* CBOR_NULLIFY_ENTROPY_TX_ID = "fc863a441b55acceebb7d25c81ff7259e4fc9b92fbdf6d594118fb8f1110a78c";
 static const char* VKEY_WITNESS_CBOR          = "d90102848258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a8258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
+// Three element Dijkstra transaction whose witness set carries a require guard native script and
+// whose body guards at key 14 hold the script wrapped credential followed by the script hash
+// credential of that same script.
+static const char* REQUIRE_GUARD_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e828201581caabbccddeeff00112233445566778899aabbccddeeff0011223344558201581cbaf8f17908592241efd1f36ec3a12fd5e8dc907c83da9d9400210aeea101d901028182068201581caabbccddeeff00112233445566778899aabbccddeeff001122334455f6";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -581,6 +590,90 @@ TEST(cardano_transaction_from_cbor, roundTripsTheDijkstraGoldenTransactionByteEx
   cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&writer);
   cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_from_cbor, roundTripsARequireGuardTransactionByteExact)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(REQUIRE_GUARD_TX_CBOR);
+  EXPECT_NE(transaction, nullptr);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  ASSERT_EQ(cardano_transaction_to_cbor(transaction, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(hex, REQUIRE_GUARD_TX_CBOR);
+
+  cardano_witness_set_t*       witness_set    = cardano_transaction_get_witness_set(transaction);
+  cardano_native_script_set_t* native_scripts = cardano_witness_set_get_native_scripts(witness_set);
+
+  EXPECT_EQ(cardano_native_script_set_get_length(native_scripts), 1);
+
+  cardano_native_script_t* native_script = NULL;
+
+  ASSERT_EQ(cardano_native_script_set_get(native_scripts, 0, &native_script), CARDANO_SUCCESS);
+
+  cardano_native_script_type_t type;
+
+  ASSERT_EQ(cardano_native_script_get_type(native_script, &type), CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD);
+
+  cardano_script_require_guard_t* require_guard = NULL;
+
+  ASSERT_EQ(cardano_native_script_to_require_guard(native_script, &require_guard), CARDANO_SUCCESS);
+
+  cardano_credential_t* script_credential = NULL;
+
+  ASSERT_EQ(cardano_script_require_guard_get_credential(require_guard, &script_credential), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body   = cardano_transaction_get_body(transaction);
+  cardano_guard_set_t*        guards = cardano_transaction_body_get_guards(body);
+
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 2);
+
+  // The first guard entry is the credential the require guard script wraps.
+  cardano_credential_t* guarded_credential = NULL;
+
+  ASSERT_EQ(cardano_guard_set_get(guards, 0, &guarded_credential), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_credential_equals(script_credential, guarded_credential));
+
+  // The second guard entry is the script hash credential of the require guard script itself.
+  cardano_credential_t* script_hash_credential = NULL;
+
+  ASSERT_EQ(cardano_guard_set_get(guards, 1, &script_hash_credential), CARDANO_SUCCESS);
+
+  cardano_credential_type_t credential_type;
+
+  ASSERT_EQ(cardano_credential_get_type(script_hash_credential, &credential_type), CARDANO_SUCCESS);
+  EXPECT_EQ(credential_type, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  cardano_blake2b_hash_t* script_hash     = cardano_native_script_get_hash(native_script);
+  cardano_blake2b_hash_t* credential_hash = cardano_credential_get_hash(script_hash_credential);
+
+  EXPECT_TRUE(cardano_blake2b_hash_equals(script_hash, credential_hash));
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_native_script_set_unref(&native_scripts);
+  cardano_native_script_unref(&native_script);
+  cardano_script_require_guard_unref(&require_guard);
+  cardano_credential_unref(&script_credential);
+  cardano_credential_unref(&guarded_credential);
+  cardano_credential_unref(&script_hash_credential);
+  cardano_guard_set_unref(&guards);
+  cardano_transaction_body_unref(&body);
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_blake2b_hash_unref(&credential_hash);
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
 }
 
 TEST(cardano_transaction_to_cbor, returnsErrorIfCertIsNull)

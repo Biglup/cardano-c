@@ -78,11 +78,15 @@ static const char* SUB_TRANSACTIONS_BARE_BODY     = "a400d9010281825820ee155ace9
 static const char* REQUIRED_TOP_LEVEL_GUARDS_BODY = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf6";
 static const char* DIRECT_DEPOSITS_BODY           = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0";
 static const char* ACCOUNT_BALANCE_INTERVALS_BODY = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181aa38200581c00112233445566778899aabbccddeeff00112233445566778899aabb8218641913888200581cffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544821901f4f68201581caabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
-static const char* GUARDS_CBOR                    = "d90102828200581c00112233445566778899aabbccddeeff00112233445566778899aabb8201581caabbccddeeff00112233445566778899aabbccddeeff001122334455";
-static const char* SUB_TRANSACTION_SET_CBOR       = "d901028183a200d90102800180a0f6";
-static const char* REQUIRED_GUARDS_CBOR           = "a28200581c00112233445566778899aabbccddeeff00112233445566778899aabbf68201581caabbccddeeff00112233445566778899aabbccddeeff001122334455d87980";
-static const char* DIRECT_DEPOSITS_CBOR           = "a1581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a000f4240";
-static const char* BALANCE_INTERVALS_CBOR         = "a18200581c00112233445566778899aabbccddeeff00112233445566778899aabb821864191388";
+// Synthetic body carrying every key the top level decoder accepts (0-5, 7-9, 11, 13-26), composed
+// from the fixture fragments above in fresh encode form: ascending keys, tagged sets, credential
+// form guards and the required top level guards at the top level rather than inside a sub body.
+static const char* ALL_TOP_LEVEL_KEYS_BODY  = "b81800d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a031903e804d90102828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570030758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0dd90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c370f0110a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc01820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50013a28202581c10000000000000000000000000000000000000000000000000000000a38258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258202000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008203581c20000000000000000000000000000000000000000000000000000000a28258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f5820000000000000000000000000000000000000000000000000000000000000000014d9010281841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f830582582000000000000000000000000000000000000000000000000000000000000000000382827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000151907d0161903e817d901028283a300d90102800180031864a0a101647465737483a200d90102800180a0f61818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf61819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0181aa38200581c00112233445566778899aabbccddeeff00112233445566778899aabb8218641913888200581cffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544821901f4f68201581caabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
+static const char* GUARDS_CBOR              = "d90102828200581c00112233445566778899aabbccddeeff00112233445566778899aabb8201581caabbccddeeff00112233445566778899aabbccddeeff001122334455";
+static const char* SUB_TRANSACTION_SET_CBOR = "d901028183a200d90102800180a0f6";
+static const char* REQUIRED_GUARDS_CBOR     = "a28200581c00112233445566778899aabbccddeeff00112233445566778899aabbf68201581caabbccddeeff00112233445566778899aabbccddeeff001122334455d87980";
+static const char* DIRECT_DEPOSITS_CBOR     = "a1581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a000f4240";
+static const char* BALANCE_INTERVALS_CBOR   = "a18200581c00112233445566778899aabbccddeeff00112233445566778899aabb821864191388";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -2709,6 +2713,66 @@ TEST(cardano_transaction_body_from_cbor, roundTripsTheDijkstraGoldenBodyByteExac
   cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&writer);
   free(hex);
+}
+
+TEST(cardano_transaction_body_from_cbor, roundTripsABodyCarryingEveryTopLevelKeyByteExact)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(ALL_TOP_LEVEL_KEYS_BODY, strlen(ALL_TOP_LEVEL_KEYS_BODY));
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* cached_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, cached_writer), CARDANO_SUCCESS);
+
+  size_t cached_hex_size = cardano_cbor_writer_get_hex_size(cached_writer);
+  char*  cached_hex      = (char*)malloc(cached_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(cached_writer, cached_hex, cached_hex_size), CARDANO_SUCCESS);
+
+  cardano_transaction_body_clear_cbor_cache(transaction_body);
+
+  cardano_cbor_writer_t* fresh_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, fresh_writer), CARDANO_SUCCESS);
+
+  size_t fresh_hex_size = cardano_cbor_writer_get_hex_size(fresh_writer);
+  char*  fresh_hex      = (char*)malloc(fresh_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(fresh_writer, fresh_hex, fresh_hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(cached_hex, ALL_TOP_LEVEL_KEYS_BODY);
+  EXPECT_STREQ(fresh_hex, ALL_TOP_LEVEL_KEYS_BODY);
+
+  // Unlike the golden vector, this body declares the required guards at the top level.
+  cardano_guard_set_t*                     guards            = cardano_transaction_body_get_guards(transaction_body);
+  cardano_sub_transaction_set_t*           sub_transactions  = cardano_transaction_body_get_sub_transactions(transaction_body);
+  cardano_required_guards_map_t*           required_guards   = cardano_transaction_body_get_required_top_level_guards(transaction_body);
+  cardano_direct_deposit_map_t*            direct_deposits   = cardano_transaction_body_get_direct_deposits(transaction_body);
+  cardano_account_balance_intervals_map_t* balance_intervals = cardano_transaction_body_get_account_balance_intervals(transaction_body);
+
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 2);
+  EXPECT_EQ(cardano_sub_transaction_set_get_length(sub_transactions), 2);
+  EXPECT_EQ(cardano_required_guards_map_get_length(required_guards), 1);
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(direct_deposits), 2);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(balance_intervals), 3);
+
+  // Cleanup
+  cardano_guard_set_unref(&guards);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+  cardano_required_guards_map_unref(&required_guards);
+  cardano_direct_deposit_map_unref(&direct_deposits);
+  cardano_account_balance_intervals_map_unref(&balance_intervals);
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&cached_writer);
+  cardano_cbor_writer_unref(&fresh_writer);
+  free(cached_hex);
+  free(fresh_hex);
 }
 
 TEST(cardano_transaction_body_from_cbor, rejectsUnknownKeys)
