@@ -977,8 +977,10 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
     return result;
   }
 
-  bool   seen_keys[WITNESS_SET_FIELD_COUNT] = { false };
-  size_t order_index                        = 0U;
+  bool   seen_keys[WITNESS_SET_FIELD_COUNT];
+  size_t order_index = 0U;
+
+  (void)memset(seen_keys, 0, sizeof(seen_keys));
 
   for (size_t i = 0U; i < (size_t)map_size; ++i)
   {

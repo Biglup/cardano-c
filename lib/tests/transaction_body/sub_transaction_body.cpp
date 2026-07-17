@@ -312,6 +312,7 @@ TEST(cardano_sub_transaction_body_from_cbor, rejectsTotalCollateralKey)
 {
   // Act & Assert
   expect_decode_failure(TOTAL_COLLATERAL_KEY_CBOR, CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
+  expect_decode_failure("a300d90102800180110a", CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
 }
 
 TEST(cardano_sub_transaction_body_from_cbor, rejectsNestedSubTransactionsKey)
