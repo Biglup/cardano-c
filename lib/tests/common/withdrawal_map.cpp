@@ -214,6 +214,37 @@ TEST(cardano_withdrawal_map_to_cbor, canDeserializeAndReserializeCbor)
   free(actual_cbor);
 }
 
+TEST(cardano_withdrawal_map_to_cbor, returnsErrorIfRewardAddressWriteFails)
+{
+  // Arrange
+  cardano_withdrawal_map_t* withdrawal_map = nullptr;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_cbor_writer_t*    writer         = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_withdrawal_map_from_cbor(reader, &withdrawal_map);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  byte_t padding[122] = { 0 };
+
+  error = cardano_cbor_writer_write_bytestring(writer, padding, sizeof(padding));
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  error = cardano_withdrawal_map_to_cbor(withdrawal_map, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_withdrawal_map_unref(&withdrawal_map);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+}
+
 TEST(cardano_withdrawal_map_from_cbor, returnErrorIfProposedParamUpdatesIsNull)
 {
   // Arrange

@@ -40,8 +40,9 @@ is_costmdls_empty(const cardano_costmdls_t* costmdls)
   const bool has_plutus_v1 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
   const bool has_plutus_v2 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
   const bool has_plutus_v3 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
+  const bool has_plutus_v4 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
 
-  return (costmdls == NULL) || (!has_plutus_v1 && !has_plutus_v2 && !has_plutus_v3);
+  return (costmdls == NULL) || (!has_plutus_v1 && !has_plutus_v2 && !has_plutus_v3 && !has_plutus_v4);
 }
 
 /* DEFINITIONS ***************************************************************/

@@ -5652,6 +5652,25 @@ pd_map_get_tag(cardano_plutus_data_t* map_pd, uint64_t tag)
   return value;
 }
 
+// Returns true if a plutus-data map contains an entry for the given integer key (tag).
+static bool
+pd_map_has_tag(cardano_plutus_data_t* map_pd, uint64_t tag)
+{
+  cardano_plutus_map_t* map = nullptr;
+  EXPECT_EQ(cardano_plutus_data_to_map(map_pd, &map), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* key = nullptr;
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_uint(tag, &key), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* value  = nullptr;
+  const bool             exists = cardano_plutus_map_get(map, key, &value) == CARDANO_SUCCESS;
+
+  cardano_plutus_data_unref(&value);
+  cardano_plutus_data_unref(&key);
+  cardano_plutus_map_unref(&map);
+  return exists;
+}
+
 // Returns the index-th integer of a plutus-data list.
 static int64_t
 pd_list_i64(cardano_plutus_data_t* list_pd, size_t index)
@@ -5739,15 +5758,114 @@ TEST(cardano_protocol_param_update_to_plutus_data, encodesAFullUpdateWithEveryPa
   EXPECT_GT(cardano_plutus_map_get_length(map), 25U);
   cardano_plutus_map_unref(&map);
 
-  // cost models (tag 18) must be a non-empty map of language id -> cost list.
+  // cost models (tag 18): the fixture sets V1 and V2 only, so the map has exactly two entries.
   cardano_plutus_data_t* cost_models = pd_map_get_tag(pd, 18U);
   cardano_plutus_map_t*  cm_map      = nullptr;
   ASSERT_EQ(cardano_plutus_data_to_map(cost_models, &cm_map), CARDANO_SUCCESS);
-  EXPECT_GT(cardano_plutus_map_get_length(cm_map), 0U);
+  EXPECT_EQ(cardano_plutus_map_get_length(cm_map), 2U);
 
   cardano_plutus_map_unref(&cm_map);
   cardano_plutus_data_unref(&cost_models);
   cardano_plutus_data_unref(&pd);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesThePlutusV4CostModel)
+{
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+
+  const int64_t v3_costs[] = { 1, 2, 3 };
+  const int64_t v4_costs[] = { 4, 5, 6 };
+
+  cardano_cost_model_t* v3_model = nullptr;
+  cardano_cost_model_t* v4_model = nullptr;
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V3, v3_costs, 3U, &v3_model), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V4, v4_costs, 3U, &v4_model), CARDANO_SUCCESS);
+
+  cardano_costmdls_t* costmdls = nullptr;
+  ASSERT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_costmdls_insert(costmdls, v3_model), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_costmdls_insert(costmdls, v4_model), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_cost_models(update, costmdls), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* cost_models = pd_map_get_tag(pd, 18U);
+
+  // only the two present languages are encoded.
+  cardano_plutus_map_t* cm_map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(cost_models, &cm_map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(cm_map), 2U);
+  cardano_plutus_map_unref(&cm_map);
+
+  EXPECT_FALSE(pd_map_has_tag(cost_models, 0U));
+  EXPECT_FALSE(pd_map_has_tag(cost_models, 1U));
+
+  // language 2 (PlutusV3) -> [1, 2, 3]
+  cardano_plutus_data_t* v3_list = pd_map_get_tag(cost_models, 2U);
+  EXPECT_EQ(pd_list_i64(v3_list, 0U), 1);
+  EXPECT_EQ(pd_list_i64(v3_list, 1U), 2);
+  EXPECT_EQ(pd_list_i64(v3_list, 2U), 3);
+  cardano_plutus_data_unref(&v3_list);
+
+  // language 3 (PlutusV4) -> [4, 5, 6]
+  cardano_plutus_data_t* v4_list = pd_map_get_tag(cost_models, 3U);
+  EXPECT_EQ(pd_list_i64(v4_list, 0U), 4);
+  EXPECT_EQ(pd_list_i64(v4_list, 1U), 5);
+  EXPECT_EQ(pd_list_i64(v4_list, 2U), 6);
+  cardano_plutus_data_unref(&v4_list);
+
+  cardano_plutus_data_unref(&cost_models);
+  cardano_plutus_data_unref(&pd);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cost_model_unref(&v3_model);
+  cardano_cost_model_unref(&v4_model);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, omitsAbsentCostModelLanguages)
+{
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+
+  const int64_t v1_costs[] = { 1, 2, 3 };
+
+  cardano_cost_model_t* v1_model = nullptr;
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, v1_costs, 3U, &v1_model), CARDANO_SUCCESS);
+
+  cardano_costmdls_t* costmdls = nullptr;
+  ASSERT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_costmdls_insert(costmdls, v1_model), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_cost_models(update, costmdls), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* cost_models = pd_map_get_tag(pd, 18U);
+
+  // only PlutusV1 is present, so the map has exactly one entry.
+  cardano_plutus_map_t* cm_map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(cost_models, &cm_map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(cm_map), 1U);
+  cardano_plutus_map_unref(&cm_map);
+
+  // language 0 (PlutusV1) -> [1, 2, 3]
+  cardano_plutus_data_t* v1_list = pd_map_get_tag(cost_models, 0U);
+  EXPECT_EQ(pd_list_i64(v1_list, 0U), 1);
+  EXPECT_EQ(pd_list_i64(v1_list, 1U), 2);
+  EXPECT_EQ(pd_list_i64(v1_list, 2U), 3);
+  cardano_plutus_data_unref(&v1_list);
+
+  EXPECT_FALSE(pd_map_has_tag(cost_models, 1U));
+  EXPECT_FALSE(pd_map_has_tag(cost_models, 2U));
+  EXPECT_FALSE(pd_map_has_tag(cost_models, 3U));
+
+  cardano_plutus_data_unref(&cost_models);
+  cardano_plutus_data_unref(&pd);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cost_model_unref(&v1_model);
   cardano_protocol_param_update_unref(&update);
 }
 

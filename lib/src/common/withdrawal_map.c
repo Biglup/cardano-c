@@ -374,7 +374,7 @@ cardano_withdrawal_map_to_cbor(const cardano_withdrawal_map_t* withdrawal_map, c
     if (write_reward_address_result != CARDANO_SUCCESS)
     {
       cardano_object_unref(&kvp);
-      return result;
+      return write_reward_address_result;
     }
 
     result = cardano_cbor_writer_write_uint(writer, kvp_data->value);
