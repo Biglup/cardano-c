@@ -480,6 +480,19 @@ cardano_guard_set_is_tagged(const cardano_guard_set_t* guard_set)
   return guard_set->use_tags;
 }
 
+cardano_error_t
+cardano_guard_set_set_use_tag(cardano_guard_set_t* guard_set, const bool use_tag)
+{
+  if (guard_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  guard_set->use_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_guard_set_unref(cardano_guard_set_t** guard_set)
 {

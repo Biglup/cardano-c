@@ -3827,21 +3827,54 @@ TEST(cardano_tx_builder_add_signer, canAddSigner)
   cardano_transaction_body_unref(&body);
 
   cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
-  cardano_blake2b_hash_set_unref(&signers);
 
   cardano_blake2b_hash_t* signer = nullptr;
 
   EXPECT_EQ(cardano_blake2b_hash_set_get(signers, 0, &signer), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(signer, signing_key);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(signer, signing_key));
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
 
+  cardano_blake2b_hash_set_unref(&signers);
   cardano_blake2b_hash_unref(&signing_key);
   cardano_blake2b_hash_unref(&signer);
+}
+
+TEST(cardano_tx_builder_add_signer, addingTheSameSignerTwiceKeepsASingleGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_blake2b_hash_t*        signing_key = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &signing_key), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_signer(tx_builder, signing_key);
+  cardano_tx_builder_add_signer(tx_builder, signing_key);
+  cardano_tx_builder_add_signer_ex(tx_builder, HASH_HEX, strlen(HASH_HEX));
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_NE(guards, nullptr);
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_guard_set_unref(&guards);
+  cardano_blake2b_hash_unref(&signing_key);
 }
 
 TEST(cardano_tx_builder_add_signer, returnsErrorIfMemoryAllocationFails)
@@ -3914,7 +3947,6 @@ TEST(cardano_tx_builder_add_signer_ex, canAddSigner)
   cardano_transaction_body_unref(&body);
 
   cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
-  cardano_blake2b_hash_set_unref(&signers);
 
   cardano_blake2b_hash_t* signer = nullptr;
 
@@ -3927,6 +3959,7 @@ TEST(cardano_tx_builder_add_signer_ex, canAddSigner)
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
 
+  cardano_blake2b_hash_set_unref(&signers);
   cardano_blake2b_hash_unref(&signing_key);
   cardano_blake2b_hash_unref(&signer);
 }

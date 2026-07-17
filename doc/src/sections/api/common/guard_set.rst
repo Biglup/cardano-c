@@ -33,6 +33,10 @@ Guard Set
 
 ------------
 
+.. doxygenfunction:: cardano_guard_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_guard_set_unref
 
 ------------

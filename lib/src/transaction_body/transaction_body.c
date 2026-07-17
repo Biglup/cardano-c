@@ -21,6 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/common/guard_set.h>
 #include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/object.h>
 #include <cardano/transaction_body/transaction_body.h>
@@ -39,29 +40,33 @@
  */
 typedef struct cardano_transaction_body_t
 {
-    cardano_object_t                   base;
-    cardano_transaction_input_set_t*   inputs;
-    cardano_transaction_output_list_t* outputs;
-    uint64_t*                          fee;
-    uint64_t*                          invalid_after;
-    cardano_certificate_set_t*         certificates;
-    cardano_withdrawal_map_t*          withdrawals;
-    cardano_update_t*                  update;
-    cardano_blake2b_hash_t*            aux_data_hash;
-    uint64_t*                          invalid_before;
-    cardano_multi_asset_t*             mint;
-    cardano_blake2b_hash_t*            script_data_hash;
-    cardano_transaction_input_set_t*   collateral;
-    cardano_blake2b_hash_set_t*        required_signers;
-    cardano_network_id_t*              network_id;
-    cardano_transaction_output_t*      collateral_return;
-    uint64_t*                          total_collateral;
-    cardano_transaction_input_set_t*   reference_inputs;
-    cardano_voting_procedures_t*       voting_procedures;
-    cardano_proposal_procedure_set_t*  proposal_procedures;
-    uint64_t*                          treasury_value;
-    uint64_t*                          donation;
-    cardano_buffer_t*                  cbor_cache;
+    cardano_object_t                         base;
+    cardano_transaction_input_set_t*         inputs;
+    cardano_transaction_output_list_t*       outputs;
+    uint64_t*                                fee;
+    uint64_t*                                invalid_after;
+    cardano_certificate_set_t*               certificates;
+    cardano_withdrawal_map_t*                withdrawals;
+    cardano_update_t*                        update;
+    cardano_blake2b_hash_t*                  aux_data_hash;
+    uint64_t*                                invalid_before;
+    cardano_multi_asset_t*                   mint;
+    cardano_blake2b_hash_t*                  script_data_hash;
+    cardano_transaction_input_set_t*         collateral;
+    cardano_guard_set_t*                     guards;
+    cardano_network_id_t*                    network_id;
+    cardano_transaction_output_t*            collateral_return;
+    uint64_t*                                total_collateral;
+    cardano_transaction_input_set_t*         reference_inputs;
+    cardano_voting_procedures_t*             voting_procedures;
+    cardano_proposal_procedure_set_t*        proposal_procedures;
+    uint64_t*                                treasury_value;
+    uint64_t*                                donation;
+    cardano_sub_transaction_set_t*           sub_transactions;
+    cardano_required_guards_map_t*           required_top_level_guards;
+    cardano_direct_deposit_map_t*            direct_deposits;
+    cardano_account_balance_intervals_map_t* account_balance_intervals;
+    cardano_buffer_t*                        cbor_cache;
 } cardano_transaction_body_t;
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -120,7 +125,7 @@ cardano_transaction_body_deallocate(void* object)
   cardano_multi_asset_unref(&data->mint);
   cardano_blake2b_hash_unref(&data->script_data_hash);
   cardano_transaction_input_set_unref(&data->collateral);
-  cardano_blake2b_hash_set_unref(&data->required_signers);
+  cardano_guard_set_unref(&data->guards);
   _cardano_free(data->network_id);
   cardano_transaction_output_unref(&data->collateral_return);
   _cardano_free(data->total_collateral);
@@ -129,6 +134,10 @@ cardano_transaction_body_deallocate(void* object)
   cardano_proposal_procedure_set_unref(&data->proposal_procedures);
   _cardano_free(data->treasury_value);
   _cardano_free(data->donation);
+  cardano_sub_transaction_set_unref(&data->sub_transactions);
+  cardano_required_guards_map_unref(&data->required_top_level_guards);
+  cardano_direct_deposit_map_unref(&data->direct_deposits);
+  cardano_account_balance_intervals_map_unref(&data->account_balance_intervals);
   cardano_buffer_unref(&data->cbor_cache);
 
   _cardano_free(object);
@@ -208,7 +217,7 @@ get_map_size(const cardano_transaction_body_t* body)
     map_size += 1U;
   }
 
-  if (body->required_signers != NULL)
+  if (body->guards != NULL)
   {
     map_size += 1U;
   }
@@ -249,6 +258,26 @@ get_map_size(const cardano_transaction_body_t* body)
   }
 
   if (body->donation != NULL)
+  {
+    map_size += 1U;
+  }
+
+  if (body->sub_transactions != NULL)
+  {
+    map_size += 1U;
+  }
+
+  if (body->required_top_level_guards != NULL)
+  {
+    map_size += 1U;
+  }
+
+  if (body->direct_deposits != NULL)
+  {
+    map_size += 1U;
+  }
+
+  if (body->account_balance_intervals != NULL)
   {
     map_size += 1U;
   }
@@ -301,7 +330,7 @@ get_field_ptr(cardano_transaction_body_t* body, size_t key)
     case 13:
       return (void*)&body->collateral;
     case 14:
-      return (void*)&body->required_signers;
+      return (void*)&body->guards;
     case 15:
       return (void*)&body->network_id;
     case 16:
@@ -318,6 +347,14 @@ get_field_ptr(cardano_transaction_body_t* body, size_t key)
       return (void*)&body->treasury_value;
     case 22:
       return (void*)&body->donation;
+    case 23:
+      return (void*)&body->sub_transactions;
+    case 24:
+      return (void*)&body->required_top_level_guards;
+    case 25:
+      return (void*)&body->direct_deposits;
+    case 26:
+      return (void*)&body->account_balance_intervals;
 
     default:
       return NULL;
@@ -580,34 +617,327 @@ handle_multi_asset(cardano_cbor_reader_t* reader, void* field_ptr)
 }
 
 /**
- * \brief Reads a cardano_blake2b_hash_set_t value from the CBOR reader and stores it in the specified field.
+ * \brief Determines whether the CBOR reader is positioned at an empty guard set.
  *
- * This function reads a cardano_blake2b_hash_set_t value from the provided CBOR reader and stores the result
- * in the specified field pointer. It is used as a handler function for parameters that are
- * represented as cardano_blake2b_hash_set_t in the transaction body body.
+ * Historical (pre-Conway) transaction bodies may carry an empty required signers set at key 14,
+ * either as a bare empty array or as a tag 258 empty array. This function looks ahead on a clone
+ * of the reader without consuming any input.
  *
- * \param[in] reader A pointer to the CBOR reader from which to read the cardano_blake2b_hash_set_t value.
- * \param[out] field_ptr A pointer to the field where the read cardano_blake2b_hash_set_t value should be stored.
- *                       The field pointer should be of type cardano_blake2b_hash_set_t*.
+ * \param[in] reader A pointer to the CBOR reader positioned at the guard set value.
+ * \param[out] is_empty On success, set to \c true if the guard set is empty; \c false otherwise.
+ * \param[out] is_tagged On success, set to \c true if the guard set is prefixed with tag 258; \c false otherwise.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the cardano_blake2b_hash_set_t value was successfully read and stored.
+ *         - \ref CARDANO_SUCCESS if the look ahead completed successfully.
  *         - An appropriate error code indicating the failure reason.
  */
 static cardano_error_t
-handle_blake2b_hash_set(cardano_cbor_reader_t* reader, void* field_ptr)
+peek_empty_guard_set(cardano_cbor_reader_t* reader, bool* is_empty, bool* is_tagged)
+{
+  assert(reader != NULL);
+  assert(is_empty != NULL);
+  assert(is_tagged != NULL);
+
+  cardano_cbor_reader_t* reader_copy = NULL;
+  cardano_error_t        result      = cardano_cbor_reader_clone(reader, &reader_copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_cbor_reader_state_t state;
+
+  result = cardano_cbor_reader_peek_state(reader_copy, &state);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_cbor_reader_unref(&reader_copy);
+    return result;
+  }
+
+  *is_tagged = state == CARDANO_CBOR_READER_STATE_TAG;
+
+  if (*is_tagged)
+  {
+    cardano_cbor_tag_t tag = CARDANO_CBOR_TAG_SET;
+
+    result = cardano_cbor_reader_read_tag(reader_copy, &tag);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_cbor_reader_unref(&reader_copy);
+      return result;
+    }
+  }
+
+  int64_t length = 0;
+
+  result = cardano_cbor_reader_read_start_array(reader_copy, &length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_cbor_reader_unref(&reader_copy);
+    return result;
+  }
+
+  result = cardano_cbor_reader_peek_state(reader_copy, &state);
+
+  cardano_cbor_reader_unref(&reader_copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *is_empty = state == CARDANO_CBOR_READER_STATE_END_ARRAY;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Consumes an empty guard set from the CBOR reader and materializes it as an empty set.
+ *
+ * The guard set decoder rejects empty sets because the Dijkstra sub body forbids them, but the
+ * transaction body key 14 must remain permissive with the historical empty required signers form.
+ * This function consumes the optional tag 258, the empty array, and creates an empty guard set
+ * that preserves the tag presence so the re-encode stays byte exact.
+ *
+ * \param[in] reader A pointer to the CBOR reader positioned at the empty guard set value.
+ * \param[in] is_tagged \c true if the empty guard set is prefixed with tag 258; \c false otherwise.
+ * \param[out] guard_set On success, points to a newly created empty guard set.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the empty guard set was successfully read.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+read_empty_guard_set(cardano_cbor_reader_t* reader, const bool is_tagged, cardano_guard_set_t** guard_set)
+{
+  assert(reader != NULL);
+  assert(guard_set != NULL);
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  if (is_tagged)
+  {
+    result = cardano_cbor_validate_tag("guard_set", reader, CARDANO_CBOR_TAG_SET);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  int64_t length = 0;
+
+  result = cardano_cbor_reader_read_start_array(reader, &length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_cbor_validate_end_array("guard_set", reader);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_guard_set_t* empty_set = NULL;
+
+  result = cardano_guard_set_new(&empty_set);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_guard_set_set_use_tag(empty_set, is_tagged);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_guard_set_unref(&empty_set);
+    return result;
+  }
+
+  *guard_set = empty_set;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Reads a cardano_guard_set_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_guard_set_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_guard_set_t in the transaction body body.
+ *
+ * Empty sets are accepted for backwards compatibility with the historical required signers form
+ * and are materialized as empty guard sets, both with and without the tag 258 prefix.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_guard_set_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_guard_set_t value should be stored.
+ *                       The field pointer should be of type cardano_guard_set_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_guard_set_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_guard_set(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   assert(reader != NULL);
   assert(field_ptr != NULL);
 
-  cardano_blake2b_hash_set_t** field = (cardano_blake2b_hash_set_t**)field_ptr;
+  cardano_guard_set_t** field = (cardano_guard_set_t**)field_ptr;
 
   if (*field != NULL)
   {
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_blake2b_hash_set_from_cbor(reader, field);
+  bool is_empty  = false;
+  bool is_tagged = false;
+
+  const cardano_error_t peek_result = peek_empty_guard_set(reader, &is_empty, &is_tagged);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (is_empty)
+  {
+    return read_empty_guard_set(reader, is_tagged, field);
+  }
+
+  return cardano_guard_set_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads a cardano_sub_transaction_set_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_sub_transaction_set_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_sub_transaction_set_t in the transaction body body.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_sub_transaction_set_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_sub_transaction_set_t value should be stored.
+ *                       The field pointer should be of type cardano_sub_transaction_set_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_sub_transaction_set_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_sub_transaction_set(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_sub_transaction_set_t** field = (cardano_sub_transaction_set_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_sub_transaction_set_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads a cardano_required_guards_map_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_required_guards_map_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_required_guards_map_t in the transaction body body.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_required_guards_map_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_required_guards_map_t value should be stored.
+ *                       The field pointer should be of type cardano_required_guards_map_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_required_guards_map_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_required_guards_map(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_required_guards_map_t** field = (cardano_required_guards_map_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_required_guards_map_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads a cardano_direct_deposit_map_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_direct_deposit_map_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_direct_deposit_map_t in the transaction body body.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_direct_deposit_map_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_direct_deposit_map_t value should be stored.
+ *                       The field pointer should be of type cardano_direct_deposit_map_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_direct_deposit_map_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_direct_deposit_map(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_direct_deposit_map_t** field = (cardano_direct_deposit_map_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_direct_deposit_map_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads a cardano_account_balance_intervals_map_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_account_balance_intervals_map_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_account_balance_intervals_map_t in the transaction body body.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_account_balance_intervals_map_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_account_balance_intervals_map_t value should be stored.
+ *                       The field pointer should be of type cardano_account_balance_intervals_map_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_account_balance_intervals_map_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_account_balance_intervals_map(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_account_balance_intervals_map_t** field = (cardano_account_balance_intervals_map_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_account_balance_intervals_map_from_cbor(reader, field);
 }
 
 /**
@@ -1102,13 +1432,13 @@ write_multi_asset_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
 /**
  * \brief Writes a key-value pair to the CBOR writer if the value is present.
  *
- * This function writes a key and its associated blake2b hash set value to the CBOR writer
+ * This function writes a key and its associated guard set value to the CBOR writer
  * only if the value is not NULL. If the value is NULL, the function does nothing and
  * returns \ref CARDANO_SUCCESS.
  *
  * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
  * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the blake2b hash set value to be written. If NULL, nothing is written.
+ * \param[in] value A pointer to the guard set value to be written. If NULL, nothing is written.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation.
  *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
@@ -1117,7 +1447,7 @@ write_multi_asset_if_present(cardano_cbor_writer_t* writer, const uint64_t key, 
  * \pre \p writer must not be NULL.
  */
 static cardano_error_t
-write_blake2b_hash_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_blake2b_hash_set_t* value)
+write_guard_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_guard_set_t* value)
 {
   assert(writer != NULL);
 
@@ -1130,7 +1460,7 @@ write_blake2b_hash_set_if_present(cardano_cbor_writer_t* writer, const uint64_t 
       return result;
     }
 
-    result = cardano_blake2b_hash_set_to_cbor(value, writer);
+    result = cardano_guard_set_to_cbor(value, writer);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1310,6 +1640,248 @@ write_proposal_procedure_set_if_present(cardano_cbor_writer_t* writer, const uin
 }
 
 /**
+ * \brief Writes a key-value pair to the CBOR writer if the value is present.
+ *
+ * This function writes a key and its associated sub transaction set value to the CBOR writer
+ * only if the value is not NULL. If the value is NULL, the function does nothing and
+ * returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] value A pointer to the sub transaction set value to be written. If NULL, nothing is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_sub_transaction_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_sub_transaction_set_t* value)
+{
+  assert(writer != NULL);
+
+  if (value != NULL)
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_sub_transaction_set_to_cbor(value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Writes a key-value pair to the CBOR writer if the value is present.
+ *
+ * This function writes a key and its associated required guards map value to the CBOR writer
+ * only if the value is not NULL. If the value is NULL, the function does nothing and
+ * returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] value A pointer to the required guards map value to be written. If NULL, nothing is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_required_guards_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_required_guards_map_t* value)
+{
+  assert(writer != NULL);
+
+  if (value != NULL)
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_required_guards_map_to_cbor(value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Writes a key-value pair to the CBOR writer if the value is present.
+ *
+ * This function writes a key and its associated direct deposit map value to the CBOR writer
+ * only if the value is not NULL. If the value is NULL, the function does nothing and
+ * returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] value A pointer to the direct deposit map value to be written. If NULL, nothing is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_direct_deposit_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_direct_deposit_map_t* value)
+{
+  assert(writer != NULL);
+
+  if (value != NULL)
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_direct_deposit_map_to_cbor(value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Writes a key-value pair to the CBOR writer if the value is present.
+ *
+ * This function writes a key and its associated account balance intervals map value to the CBOR writer
+ * only if the value is not NULL. If the value is NULL, the function does nothing and
+ * returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] value A pointer to the account balance intervals map value to be written. If NULL, nothing is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_account_balance_intervals_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_account_balance_intervals_map_t* value)
+{
+  assert(writer != NULL);
+
+  if (value != NULL)
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_account_balance_intervals_map_to_cbor(value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Builds the legacy required signers view over a guard set.
+ *
+ * The Dijkstra ledger derives the required signer hashes of a transaction from the key hash
+ * members of its guards. This function materializes that view as a set of blake2b hashes,
+ * skipping any script hash guard.
+ *
+ * \param[in] guards Pointer to the guard set to derive the view from. Must not be NULL.
+ *
+ * \return A newly allocated \ref cardano_blake2b_hash_set_t with the key hash guard members,
+ *         or NULL if memory allocation fails.
+ */
+static cardano_blake2b_hash_set_t*
+get_key_hash_guards(const cardano_guard_set_t* guards)
+{
+  assert(guards != NULL);
+
+  cardano_blake2b_hash_set_t* hashes = NULL;
+
+  if (cardano_blake2b_hash_set_new(&hashes) != CARDANO_SUCCESS)
+  {
+    return NULL;
+  }
+
+  for (size_t i = 0U; i < cardano_guard_set_get_length(guards); ++i)
+  {
+    cardano_credential_t* credential = NULL;
+    cardano_error_t       result     = cardano_guard_set_get(guards, i, &credential);
+
+    cardano_credential_unref(&credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_set_unref(&hashes);
+      return NULL;
+    }
+
+    cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+
+    result = cardano_credential_get_type(credential, &type);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_set_unref(&hashes);
+      return NULL;
+    }
+
+    if (type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
+    {
+      continue;
+    }
+
+    cardano_blake2b_hash_t* hash = cardano_credential_get_hash(credential);
+
+    if (hash == NULL)
+    {
+      cardano_blake2b_hash_set_unref(&hashes);
+      return NULL;
+    }
+
+    result = cardano_blake2b_hash_set_add(hashes, hash);
+
+    cardano_blake2b_hash_unref(&hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_set_unref(&hashes);
+      return NULL;
+    }
+  }
+
+  return hashes;
+}
+
+/**
  * \brief Allocates and initializes a new cardano_transaction_body_t structure.
  *
  * \param transaction_body A pointer to the location where the new cardano_transaction_body_t structure should be stored.
@@ -1325,31 +1897,35 @@ create_transaction_body_new(void)
     return NULL;
   }
 
-  transaction_body->base.deallocator    = cardano_transaction_body_deallocate;
-  transaction_body->base.ref_count      = 1;
-  transaction_body->base.last_error[0]  = '\0';
-  transaction_body->inputs              = NULL;
-  transaction_body->outputs             = NULL;
-  transaction_body->fee                 = NULL;
-  transaction_body->invalid_after       = NULL;
-  transaction_body->certificates        = NULL;
-  transaction_body->withdrawals         = NULL;
-  transaction_body->update              = NULL;
-  transaction_body->aux_data_hash       = NULL;
-  transaction_body->invalid_before      = NULL;
-  transaction_body->mint                = NULL;
-  transaction_body->script_data_hash    = NULL;
-  transaction_body->collateral          = NULL;
-  transaction_body->required_signers    = NULL;
-  transaction_body->network_id          = NULL;
-  transaction_body->collateral_return   = NULL;
-  transaction_body->total_collateral    = NULL;
-  transaction_body->reference_inputs    = NULL;
-  transaction_body->voting_procedures   = NULL;
-  transaction_body->proposal_procedures = NULL;
-  transaction_body->treasury_value      = NULL;
-  transaction_body->donation            = NULL;
-  transaction_body->cbor_cache          = NULL;
+  transaction_body->base.deallocator          = cardano_transaction_body_deallocate;
+  transaction_body->base.ref_count            = 1;
+  transaction_body->base.last_error[0]        = '\0';
+  transaction_body->inputs                    = NULL;
+  transaction_body->outputs                   = NULL;
+  transaction_body->fee                       = NULL;
+  transaction_body->invalid_after             = NULL;
+  transaction_body->certificates              = NULL;
+  transaction_body->withdrawals               = NULL;
+  transaction_body->update                    = NULL;
+  transaction_body->aux_data_hash             = NULL;
+  transaction_body->invalid_before            = NULL;
+  transaction_body->mint                      = NULL;
+  transaction_body->script_data_hash          = NULL;
+  transaction_body->collateral                = NULL;
+  transaction_body->guards                    = NULL;
+  transaction_body->network_id                = NULL;
+  transaction_body->collateral_return         = NULL;
+  transaction_body->total_collateral          = NULL;
+  transaction_body->reference_inputs          = NULL;
+  transaction_body->voting_procedures         = NULL;
+  transaction_body->proposal_procedures       = NULL;
+  transaction_body->treasury_value            = NULL;
+  transaction_body->donation                  = NULL;
+  transaction_body->sub_transactions          = NULL;
+  transaction_body->required_top_level_guards = NULL;
+  transaction_body->direct_deposits           = NULL;
+  transaction_body->account_balance_intervals = NULL;
+  transaction_body->cbor_cache                = NULL;
 
   return transaction_body;
 }
@@ -1372,7 +1948,7 @@ static const param_handler_t param_handlers[] = {
   handle_blake2b_hash,
   handle_invalid_key, // unused key
   handle_transaction_input_set,
-  handle_blake2b_hash_set,
+  handle_guard_set,
   handle_network_id,
   handle_transaction_output,
   handle_uint64,
@@ -1380,7 +1956,11 @@ static const param_handler_t param_handlers[] = {
   handle_voting_procedures,
   handle_proposal_procedure_set,
   handle_uint64,
-  handle_uint64
+  handle_uint64,
+  handle_sub_transaction_set,
+  handle_required_guards_map,
+  handle_direct_deposit_map,
+  handle_account_balance_intervals_map
 };
 
 /* DEFINITIONS ****************************************************************/
@@ -1654,7 +2234,7 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
     return result;
   }
 
-  result = write_blake2b_hash_set_if_present(writer, 14U, transaction_body->required_signers);
+  result = write_guard_set_if_present(writer, 14U, transaction_body->guards);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1711,6 +2291,34 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
   }
 
   result = write_uint_if_present(writer, 22U, transaction_body->donation);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_sub_transaction_set_if_present(writer, 23U, transaction_body->sub_transactions);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_required_guards_map_if_present(writer, 24U, transaction_body->required_top_level_guards);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_direct_deposit_map_if_present(writer, 25U, transaction_body->direct_deposits);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_account_balance_intervals_map_if_present(writer, 26U, transaction_body->account_balance_intervals);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1842,10 +2450,19 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
     }
   }
 
-  if (transaction_body->required_signers != NULL)
+  if (transaction_body->guards != NULL)
   {
+    cardano_blake2b_hash_set_t* required_signers = get_key_hash_guards(transaction_body->guards);
+
+    if (required_signers == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
     cardano_json_writer_write_property_name(writer, "required_signers", 16);
-    result = cardano_blake2b_hash_set_to_cip116_json(transaction_body->required_signers, writer);
+    result = cardano_blake2b_hash_set_to_cip116_json(required_signers, writer);
+
+    cardano_blake2b_hash_set_unref(&required_signers);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2378,9 +2995,12 @@ cardano_transaction_body_get_required_signers(cardano_transaction_body_t* transa
     return NULL;
   }
 
-  cardano_blake2b_hash_set_ref(transaction_body->required_signers);
+  if (transaction_body->guards == NULL)
+  {
+    return NULL;
+  }
 
-  return transaction_body->required_signers;
+  return get_key_hash_guards(transaction_body->guards);
 }
 
 cardano_error_t
@@ -2395,15 +3015,93 @@ cardano_transaction_body_set_required_signers(
 
   if (required_signers == NULL)
   {
-    cardano_blake2b_hash_set_unref(&transaction_body->required_signers);
-    transaction_body->required_signers = NULL;
+    cardano_guard_set_unref(&transaction_body->guards);
+    transaction_body->guards = NULL;
 
     return CARDANO_SUCCESS;
   }
 
-  cardano_blake2b_hash_set_ref(required_signers);
-  cardano_blake2b_hash_set_unref(&transaction_body->required_signers);
-  transaction_body->required_signers = required_signers;
+  cardano_guard_set_t* guards = NULL;
+  cardano_error_t      result = cardano_guard_set_new(&guards);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  for (size_t i = 0U; i < cardano_blake2b_hash_set_get_length(required_signers); ++i)
+  {
+    cardano_blake2b_hash_t* hash = NULL;
+
+    result = cardano_blake2b_hash_set_get(required_signers, i, &hash);
+
+    cardano_blake2b_hash_unref(&hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_guard_set_unref(&guards);
+      return result;
+    }
+
+    cardano_credential_t* credential = NULL;
+
+    result = cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_guard_set_unref(&guards);
+      return result;
+    }
+
+    result = cardano_guard_set_add(guards, credential);
+
+    cardano_credential_unref(&credential);
+
+    if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
+    {
+      cardano_guard_set_unref(&guards);
+      return result;
+    }
+  }
+
+  cardano_guard_set_unref(&transaction_body->guards);
+  transaction_body->guards = guards;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_guard_set_t*
+cardano_transaction_body_get_guards(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_guard_set_ref(transaction_body->guards);
+
+  return transaction_body->guards;
+}
+
+cardano_error_t
+cardano_transaction_body_set_guards(cardano_transaction_body_t* transaction_body, cardano_guard_set_t* guards)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (guards == NULL)
+  {
+    cardano_guard_set_unref(&transaction_body->guards);
+    transaction_body->guards = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_guard_set_ref(guards);
+  cardano_guard_set_unref(&transaction_body->guards);
+  transaction_body->guards = guards;
 
   return CARDANO_SUCCESS;
 }
@@ -2721,6 +3419,158 @@ cardano_transaction_body_set_donation(cardano_transaction_body_t* transaction_bo
   }
 
   *transaction_body->donation = *donation;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_sub_transaction_set_t*
+cardano_transaction_body_get_sub_transactions(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_sub_transaction_set_ref(transaction_body->sub_transactions);
+
+  return transaction_body->sub_transactions;
+}
+
+cardano_error_t
+cardano_transaction_body_set_sub_transactions(
+  cardano_transaction_body_t*    transaction_body,
+  cardano_sub_transaction_set_t* sub_transactions)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (sub_transactions == NULL)
+  {
+    cardano_sub_transaction_set_unref(&transaction_body->sub_transactions);
+    transaction_body->sub_transactions = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_sub_transaction_set_ref(sub_transactions);
+  cardano_sub_transaction_set_unref(&transaction_body->sub_transactions);
+  transaction_body->sub_transactions = sub_transactions;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_required_guards_map_t*
+cardano_transaction_body_get_required_top_level_guards(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_required_guards_map_ref(transaction_body->required_top_level_guards);
+
+  return transaction_body->required_top_level_guards;
+}
+
+cardano_error_t
+cardano_transaction_body_set_required_top_level_guards(
+  cardano_transaction_body_t*    transaction_body,
+  cardano_required_guards_map_t* required_top_level_guards)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (required_top_level_guards == NULL)
+  {
+    cardano_required_guards_map_unref(&transaction_body->required_top_level_guards);
+    transaction_body->required_top_level_guards = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_required_guards_map_ref(required_top_level_guards);
+  cardano_required_guards_map_unref(&transaction_body->required_top_level_guards);
+  transaction_body->required_top_level_guards = required_top_level_guards;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_direct_deposit_map_t*
+cardano_transaction_body_get_direct_deposits(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_direct_deposit_map_ref(transaction_body->direct_deposits);
+
+  return transaction_body->direct_deposits;
+}
+
+cardano_error_t
+cardano_transaction_body_set_direct_deposits(
+  cardano_transaction_body_t*   transaction_body,
+  cardano_direct_deposit_map_t* direct_deposits)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (direct_deposits == NULL)
+  {
+    cardano_direct_deposit_map_unref(&transaction_body->direct_deposits);
+    transaction_body->direct_deposits = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_direct_deposit_map_ref(direct_deposits);
+  cardano_direct_deposit_map_unref(&transaction_body->direct_deposits);
+  transaction_body->direct_deposits = direct_deposits;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_account_balance_intervals_map_t*
+cardano_transaction_body_get_account_balance_intervals(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_account_balance_intervals_map_ref(transaction_body->account_balance_intervals);
+
+  return transaction_body->account_balance_intervals;
+}
+
+cardano_error_t
+cardano_transaction_body_set_account_balance_intervals(
+  cardano_transaction_body_t*              transaction_body,
+  cardano_account_balance_intervals_map_t* account_balance_intervals)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (account_balance_intervals == NULL)
+  {
+    cardano_account_balance_intervals_map_unref(&transaction_body->account_balance_intervals);
+    transaction_body->account_balance_intervals = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_account_balance_intervals_map_ref(account_balance_intervals);
+  cardano_account_balance_intervals_map_unref(&transaction_body->account_balance_intervals);
+  transaction_body->account_balance_intervals = account_balance_intervals;
 
   return CARDANO_SUCCESS;
 }

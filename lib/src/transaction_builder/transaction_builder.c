@@ -2565,26 +2565,26 @@ cardano_tx_builder_add_signer(
   cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
   cardano_transaction_body_unref(&body);
 
-  cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
 
-  if (signers == NULL)
+  if (guards == NULL)
   {
-    cardano_error_t result = cardano_blake2b_hash_set_new(&signers);
+    cardano_error_t result = cardano_guard_set_new(&guards);
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_tx_builder_set_last_error(builder, "Failed to create signers set.");
+      cardano_tx_builder_set_last_error(builder, "Failed to create guards set.");
       builder->last_error = result;
 
       return;
     }
 
-    result = cardano_transaction_body_set_required_signers(body, signers);
+    result = cardano_transaction_body_set_guards(body, guards);
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_tx_builder_set_last_error(builder, "Failed to set signers set.");
-      cardano_blake2b_hash_set_unref(&signers);
+      cardano_tx_builder_set_last_error(builder, "Failed to set guards set.");
+      cardano_guard_set_unref(&guards);
 
       builder->last_error = result;
 
@@ -2592,11 +2592,24 @@ cardano_tx_builder_add_signer(
     }
   }
 
-  cardano_blake2b_hash_set_unref(&signers);
+  cardano_guard_set_unref(&guards);
 
-  cardano_error_t result = cardano_blake2b_hash_set_add(signers, pub_key_hash);
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = cardano_credential_new(pub_key_hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential);
 
   if (result != CARDANO_SUCCESS)
+  {
+    cardano_tx_builder_set_last_error(builder, "Failed to create signer credential.");
+    builder->last_error = result;
+
+    return;
+  }
+
+  result = cardano_guard_set_add(guards, credential);
+
+  cardano_credential_unref(&credential);
+
+  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
   {
     cardano_tx_builder_set_last_error(builder, "Failed to add signer.");
     builder->last_error = result;

@@ -1043,9 +1043,10 @@ _cardano_get_unique_signers(
   }
 
   cardano_blake2b_hash_set_t* required_signers = cardano_transaction_body_get_required_signers(body);
-  cardano_blake2b_hash_set_unref(&required_signers);
 
   result = _cardano_add_required_signers(*unique_signers, required_signers);
+
+  cardano_blake2b_hash_set_unref(&required_signers);
 
   if (result != CARDANO_SUCCESS)
   {
