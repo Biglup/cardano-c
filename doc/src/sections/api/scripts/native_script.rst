@@ -29,6 +29,10 @@ Native Script
 
 ------------
 
+.. doxygenfunction:: cardano_native_script_new_require_guard
+
+------------
+
 .. doxygenfunction:: cardano_native_script_from_cbor
 
 ------------
@@ -70,6 +74,10 @@ Native Script
 ------------
 
 .. doxygenfunction:: cardano_native_script_to_invalid_before
+
+------------
+
+.. doxygenfunction:: cardano_native_script_to_require_guard
 
 ------------
 
