@@ -44,6 +44,7 @@ typedef struct cardano_sub_transaction_t
     cardano_sub_transaction_body_t* body;
     cardano_witness_set_t*          witness_set;
     cardano_auxiliary_data_t*       auxiliary_data;
+    cardano_blake2b_hash_t*         id;
 } cardano_sub_transaction_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -71,6 +72,7 @@ cardano_sub_transaction_deallocate(void* object)
   cardano_sub_transaction_body_unref(&sub_transaction->body);
   cardano_witness_set_unref(&sub_transaction->witness_set);
   cardano_auxiliary_data_unref(&sub_transaction->auxiliary_data);
+  cardano_blake2b_hash_unref(&sub_transaction->id);
 
   _cardano_free(object);
 }
@@ -112,6 +114,7 @@ cardano_sub_transaction_new(
   (*sub_transaction)->body               = body;
   (*sub_transaction)->witness_set        = witness_set;
   (*sub_transaction)->auxiliary_data     = auxiliary_data;
+  (*sub_transaction)->id                 = NULL;
 
   cardano_sub_transaction_body_ref(body);
   cardano_witness_set_ref(witness_set);
@@ -324,6 +327,9 @@ cardano_sub_transaction_set_body(cardano_sub_transaction_t* sub_transaction, car
 
   cardano_sub_transaction_body_ref(body);
 
+  cardano_blake2b_hash_unref(&sub_transaction->id);
+  sub_transaction->id = NULL;
+
   return CARDANO_SUCCESS;
 }
 
@@ -400,7 +406,19 @@ cardano_sub_transaction_get_id(cardano_sub_transaction_t* sub_transaction)
     return NULL;
   }
 
-  return cardano_sub_transaction_body_get_hash(sub_transaction->body);
+  if (sub_transaction->id == NULL)
+  {
+    sub_transaction->id = cardano_sub_transaction_body_get_hash(sub_transaction->body);
+
+    if (sub_transaction->id == NULL)
+    {
+      return NULL;
+    }
+  }
+
+  cardano_blake2b_hash_ref(sub_transaction->id);
+
+  return sub_transaction->id;
 }
 
 void
@@ -414,6 +432,9 @@ cardano_sub_transaction_clear_cbor_cache(cardano_sub_transaction_t* sub_transact
   cardano_sub_transaction_body_clear_cbor_cache(sub_transaction->body);
   cardano_witness_set_clear_cbor_cache(sub_transaction->witness_set);
   cardano_auxiliary_data_clear_cbor_cache(sub_transaction->auxiliary_data);
+
+  cardano_blake2b_hash_unref(&sub_transaction->id);
+  sub_transaction->id = NULL;
 }
 
 void

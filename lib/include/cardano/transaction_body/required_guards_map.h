@@ -28,6 +28,7 @@
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/plutus_data/plutus_data.h>
+#include <cardano/proposal_procedures/credential_set.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -294,6 +295,57 @@ CARDANO_EXPORT cardano_error_t cardano_required_guards_map_insert(
   cardano_required_guards_map_t* required_guards_map,
   cardano_credential_t*          key,
   cardano_plutus_data_t*         value);
+
+/**
+ * \brief Retrieves the keys from the required guards map.
+ *
+ * This function retrieves all the keys from the provided required guards map and returns them as a set.
+ * The caller is responsible for managing the lifecycle of the returned set by calling
+ * \ref cardano_credential_set_unref when it is no longer needed.
+ *
+ * \note The returned set is canonically ordered (by credential type, then hash bytes) and may not
+ *       match the map's insertion-order iteration via the index based accessors.
+ *
+ * \param[in] required_guards_map A pointer to the \ref cardano_required_guards_map_t object from which
+ *                       the keys are to be retrieved.
+ * \param[out] keys A pointer to a variable where the retrieved keys will be stored as a set.
+ *                  If successful, this variable will be set to point to the set of keys.
+ *                  The caller is responsible for managing the lifecycle of this set.
+ *                  It must be released by calling \ref cardano_credential_set_unref when no longer needed.
+ *
+ * \return \ref CARDANO_SUCCESS if the keys were successfully retrieved, or an appropriate
+ *         error code if the input parameters are invalid or any other error occurs.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_required_guards_map_t* required_guards_map = NULL;
+ * cardano_error_t result = cardano_required_guards_map_new(&required_guards_map);
+ *
+ * // Populate the required_guards_map with key-value pairs
+ *
+ * cardano_credential_set_t* keys = NULL;
+ * result = cardano_required_guards_map_get_keys(required_guards_map, &keys);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the set of keys
+ *   // Keys must also be freed if retrieved from the set
+ *
+ *   // Once done, ensure to clean up and release the keys set
+ *   cardano_credential_set_unref(&keys);
+ * }
+ * else
+ * {
+ *   // Handle error
+ * }
+ *
+ * cardano_required_guards_map_unref(&required_guards_map);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_required_guards_map_get_keys(
+  cardano_required_guards_map_t* required_guards_map,
+  cardano_credential_set_t**     keys);
 
 /**
  * \brief Retrieves the credential at a specific index from the required guards map.

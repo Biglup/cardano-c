@@ -890,6 +890,57 @@ TEST(cardano_sub_transaction_set_is_tagged, returnsFalseIfFromCborReadUntaggedSe
   cardano_sub_transaction_set_unref(&sub_transaction_set);
 }
 
+TEST(cardano_sub_transaction_set_set_use_tag, canEncodeBareArrayWhenDisabled)
+{
+  // Arrange
+  cardano_sub_transaction_set_t* sub_transaction_set = new_default_sub_transaction_set(SET_TAGGED_CBOR);
+  ASSERT_THAT(sub_transaction_set, testing::Not((cardano_sub_transaction_set_t*)nullptr));
+
+  // Act
+  cardano_error_t error = cardano_sub_transaction_set_set_use_tag(sub_transaction_set, false);
+
+  char* actual_cbor = encode_sub_transaction_set(sub_transaction_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_FALSE(cardano_sub_transaction_set_is_tagged(sub_transaction_set));
+  EXPECT_STREQ(actual_cbor, SET_BARE_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_set_unref(&sub_transaction_set);
+  free(actual_cbor);
+}
+
+TEST(cardano_sub_transaction_set_set_use_tag, canEncodeTaggedSetWhenEnabled)
+{
+  // Arrange
+  cardano_sub_transaction_set_t* sub_transaction_set = new_default_sub_transaction_set(SET_BARE_CBOR);
+  ASSERT_THAT(sub_transaction_set, testing::Not((cardano_sub_transaction_set_t*)nullptr));
+
+  // Act
+  cardano_error_t error = cardano_sub_transaction_set_set_use_tag(sub_transaction_set, true);
+
+  char* actual_cbor = encode_sub_transaction_set(sub_transaction_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_sub_transaction_set_is_tagged(sub_transaction_set));
+  EXPECT_STREQ(actual_cbor, SET_TAGGED_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_set_unref(&sub_transaction_set);
+  free(actual_cbor);
+}
+
+TEST(cardano_sub_transaction_set_set_use_tag, returnsErrorIfSubTransactionSetIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_sub_transaction_set_set_use_tag(nullptr, true);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
 TEST(cardano_sub_transaction_set_ref, increasesTheReferenceCount)
 {
   // Arrange
