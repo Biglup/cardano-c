@@ -84,6 +84,60 @@ cardano_value_deallocate(void* object)
   _cardano_free(object);
 }
 
+/**
+ * \brief Checks whether a multi asset carries at least one asset entry.
+ *
+ * Policies whose inner asset name maps are empty do not count as encodable entries.
+ *
+ * \param[in]  multi_asset The multi asset to inspect.
+ * \param[out] has_assets  Set to true if at least one policy has a non empty asset name map.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+multi_asset_has_assets(cardano_multi_asset_t* multi_asset, bool* has_assets)
+{
+  cardano_policy_id_list_t* policies = NULL;
+
+  cardano_error_t result = cardano_multi_asset_get_keys(multi_asset, &policies);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *has_assets = false;
+
+  const size_t length = cardano_policy_id_list_get_length(policies);
+
+  for (size_t i = 0U; (i < length) && (!(*has_assets)) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_blake2b_hash_t* policy_id = NULL;
+
+    result = cardano_policy_id_list_get(policies, i, &policy_id);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_asset_name_map_t* assets = NULL;
+
+      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        *has_assets = cardano_asset_name_map_get_length(assets) > 0U;
+
+        cardano_asset_name_map_unref(&assets);
+      }
+
+      cardano_blake2b_hash_unref(&policy_id);
+    }
+  }
+
+  cardano_policy_id_list_unref(&policies);
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -340,7 +394,19 @@ cardano_value_to_cbor(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if ((value->multi_asset == NULL) || (cardano_multi_asset_get_policy_count(value->multi_asset) == 0U))
+  bool has_assets = false;
+
+  if (value->multi_asset != NULL)
+  {
+    cardano_error_t has_assets_result = multi_asset_has_assets(value->multi_asset, &has_assets);
+
+    if (has_assets_result != CARDANO_SUCCESS)
+    {
+      return has_assets_result;
+    }
+  }
+
+  if (!has_assets)
   {
     return cardano_cbor_writer_write_uint(writer, value->coin);
   }

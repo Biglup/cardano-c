@@ -143,6 +143,9 @@ cardano_multi_asset_from_cbor(cardano_cbor_reader_t* reader, cardano_multi_asset
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p multi_asset or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
+ * \remark Policies whose inner asset name maps are empty are skipped, so the encoder never emits
+ *         empty inner policy maps.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_multi_asset_t* multi_asset = ...;

@@ -37,7 +37,8 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t ALONZO_ERA_FRAME_SIZE = 4;
+static const int64_t ALONZO_ERA_FRAME_SIZE   = 4;
+static const int64_t DIJKSTRA_ERA_FRAME_SIZE = 3;
 
 /* STRUCTURES ****************************************************************/
 
@@ -51,6 +52,7 @@ typedef struct cardano_transaction_t
     cardano_witness_set_t*      witness_set;
     cardano_auxiliary_data_t*   auxiliary_data;
     bool                        is_valid;
+    int64_t                     frame_size;
 } cardano_transaction_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -120,6 +122,7 @@ cardano_transaction_new(
   (*transaction)->witness_set        = witness_set;
   (*transaction)->auxiliary_data     = auxiliary_data;
   (*transaction)->is_valid           = true;
+  (*transaction)->frame_size         = ALONZO_ERA_FRAME_SIZE;
 
   cardano_transaction_body_ref(body);
   cardano_witness_set_ref(witness_set);
@@ -263,6 +266,11 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     return set_is_valid_result;
   }
 
+  if (array_size == DIJKSTRA_ERA_FRAME_SIZE)
+  {
+    (*transaction)->frame_size = DIJKSTRA_ERA_FRAME_SIZE;
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -279,9 +287,16 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  int64_t frame_size = transaction->frame_size;
+
+  if (!transaction->is_valid)
+  {
+    frame_size = ALONZO_ERA_FRAME_SIZE;
+  }
+
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
     writer,
-    ALONZO_ERA_FRAME_SIZE);
+    frame_size);
 
   if (write_start_array_result != CARDANO_SUCCESS)
   {
@@ -302,11 +317,14 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
     return witness_set_result;
   }
 
-  cardano_error_t write_bool_result = cardano_cbor_writer_write_bool(writer, transaction->is_valid);
-
-  if (write_bool_result != CARDANO_SUCCESS)
+  if (frame_size == ALONZO_ERA_FRAME_SIZE)
   {
-    return write_bool_result;
+    cardano_error_t write_bool_result = cardano_cbor_writer_write_bool(writer, transaction->is_valid);
+
+    if (write_bool_result != CARDANO_SUCCESS)
+    {
+      return write_bool_result;
+    }
   }
 
   if (transaction->auxiliary_data == NULL)

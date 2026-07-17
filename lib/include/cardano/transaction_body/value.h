@@ -256,6 +256,9 @@ cardano_value_from_cbor(cardano_cbor_reader_t* reader, cardano_value_t** value);
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p value or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
+ * \remark A value without assets encodes as a plain coin unsigned integer. A multi asset map is never
+ *         encoded empty; policies whose inner asset name maps are empty are not encoded either.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_value_t* value = ...;

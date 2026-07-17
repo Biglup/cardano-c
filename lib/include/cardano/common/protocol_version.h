@@ -103,6 +103,9 @@ cardano_protocol_version_new(
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the protocol version were successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark The minor version is bounded to the uint32 range (0 to 4294967295); the function returns
+ *         \ref CARDANO_ERROR_INVALID_CBOR_VALUE for larger values.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_protocol_version_t object by calling
  *       \ref cardano_protocol_version_unref when it is no longer needed.
@@ -278,10 +281,11 @@ CARDANO_EXPORT uint64_t cardano_protocol_version_get_minor(const cardano_protoco
  * This function sets the minor version number of the Protocol Version.
  *
  * \param[in] protocol_version Pointer to the Protocol Version object.
- * \param[in] minor The minor version number to set.
+ * \param[in] minor The minor version number to set. It must be in the uint32 range (0 to 4294967295).
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the minor version number was successfully set, or an appropriate error code
+ *         if the minor version number was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT if
+ *         \p minor is greater than the maximum uint32 value, or an appropriate error code
  *         indicating the failure reason.
  *
  * Usage Example:

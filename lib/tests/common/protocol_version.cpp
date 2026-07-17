@@ -171,6 +171,57 @@ TEST(cardano_protocol_version_from_cbor, canDeserializeProtocolVersion)
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_protocol_version_from_cbor, canDeserializeTheMaximumUint32MinorVersion)
+{
+  // Arrange
+  cardano_protocol_version_t* protocol_version = nullptr;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex("820c1affffffff", strlen("820c1affffffff"));
+  cardano_cbor_writer_t*      writer           = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t error = cardano_protocol_version_from_cbor(reader, &protocol_version);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_version_get_major(protocol_version), 12);
+  EXPECT_EQ(cardano_protocol_version_get_minor(protocol_version), 4294967295U);
+
+  error = cardano_protocol_version_to_cbor(protocol_version, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, "820c1affffffff");
+
+  // Cleanup
+  cardano_protocol_version_unref(&protocol_version);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_version_from_cbor, returnErrorIfMinorVersionIsGreaterThanUint32)
+{
+  // Arrange
+  cardano_protocol_version_t* protocol_version = nullptr;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex("820c1b0000000100000000", strlen("820c1b0000000100000000"));
+
+  // Act
+  cardano_error_t error = cardano_protocol_version_from_cbor(reader, &protocol_version);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  EXPECT_EQ(protocol_version, (cardano_protocol_version_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
 TEST(cardano_protocol_version_from_cbor, returnErrorIfProtocolVersionIsNull)
 {
   // Arrange
@@ -489,6 +540,44 @@ TEST(cardano_protocol_version_set_minor, returnErrorIfProtocolVersionIsNull)
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_version_set_minor, setsTheMaximumUint32MinorVersion)
+{
+  // Arrange
+  cardano_protocol_version_t* protocol_version = nullptr;
+  cardano_error_t             error            = cardano_protocol_version_new(1, 3, &protocol_version);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_protocol_version_set_minor(protocol_version, 4294967295U);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_version_get_minor(protocol_version), 4294967295U);
+
+  // Cleanup
+  cardano_protocol_version_unref(&protocol_version);
+}
+
+TEST(cardano_protocol_version_set_minor, returnErrorIfMinorVersionIsGreaterThanUint32)
+{
+  // Arrange
+  cardano_protocol_version_t* protocol_version = nullptr;
+  cardano_error_t             error            = cardano_protocol_version_new(1, 3, &protocol_version);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_protocol_version_set_minor(protocol_version, 4294967296U);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_version_get_minor(protocol_version), 3);
+
+  // Cleanup
+  cardano_protocol_version_unref(&protocol_version);
 }
 
 TEST(cardano_protocol_version_to_cip116_json, canConvertToCip116Json)

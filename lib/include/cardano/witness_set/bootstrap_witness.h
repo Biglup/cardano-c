@@ -127,6 +127,9 @@ cardano_bootstrap_witness_new(
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the bootstrap witness were successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark The chain code must be exactly 32 bytes long (the CDDL declares it as bytes .size 32);
+ *         the function returns \ref CARDANO_ERROR_INVALID_CBOR_VALUE for any other size.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_bootstrap_witness_t object by calling
  *       \ref cardano_bootstrap_witness_unref when it is no longer needed.
@@ -420,11 +423,13 @@ CARDANO_EXPORT cardano_buffer_t* cardano_bootstrap_witness_get_chain_code(
  * \param[in,out] bootstrap_witness A pointer to an initialized \ref cardano_bootstrap_witness_t object
  *                                  to which the chain code will be set.
  * \param[in] chain_code A pointer to an initialized \ref cardano_buffer_t object containing the new chain code bytes.
- *                       This parameter must not be NULL.
+ *                       This parameter must not be NULL and must be exactly 32 bytes long (the CDDL declares
+ *                       the chain code as bytes .size 32).
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the chain code
  *         was successfully set, or an appropriate error code if an error occurred, such as \ref CARDANO_ERROR_POINTER_IS_NULL
- *         if any of the input pointers are NULL.
+ *         if any of the input pointers are NULL, or \ref CARDANO_ERROR_INVALID_ARGUMENT if the chain code is not
+ *         exactly 32 bytes long.
  *
  * \note This function increases the reference count of the \p chain_code object, so the caller retains ownership of
  *       their respective references and must manage their lifecycles appropriately.
