@@ -66,7 +66,9 @@ static const char* PROPOSAL_PROCEDURE_CBOR = "d9010284841a000f4240581de1cb0ec269
 // Dijkstra transaction body vectors. The GUARDS_*, REQUIRED_TOP_LEVEL_GUARDS, DIRECT_DEPOSITS and
 // ACCOUNT_BALANCE_INTERVALS bodies share a minimal prefix (inputs, outputs, fee) followed by the
 // key specific fragment.
+static const char* MINIMAL_DIJKSTRA_BODY          = "a300d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a";
 static const char* GUARDS_KEY_HASH_FORM_BODY      = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
+static const char* GUARDS_UNTAGGED_INPUTS_BODY    = "a400818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
 static const char* GUARDS_TAGGED_KEY_HASH_BODY    = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010282581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
 static const char* GUARDS_EMPTY_TAGGED_BODY       = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010280";
 static const char* GUARDS_EMPTY_BARE_BODY         = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e80";
@@ -2570,9 +2572,56 @@ TEST(cardano_transaction_body_to_cip116_json, canConvertConwayToCip116Json)
   free(json_str);
 }
 
+TEST(cardano_transaction_body_from_cbor, roundTripsTheMinimalInputsOutputsFeeBodyByteExact)
+{
+  expect_byte_exact_round_trip(MINIMAL_DIJKSTRA_BODY);
+}
+
 TEST(cardano_transaction_body_from_cbor, roundTripsLegacyRequiredSignersFormByteExact)
 {
   expect_byte_exact_round_trip(GUARDS_KEY_HASH_FORM_BODY);
+}
+
+TEST(cardano_transaction_body_from_cbor, preservesUntaggedInputsOnCachedReencodeAndUpgradesThemOnFreshEncode)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(GUARDS_UNTAGGED_INPUTS_BODY, strlen(GUARDS_UNTAGGED_INPUTS_BODY));
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* cached_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, cached_writer), CARDANO_SUCCESS);
+
+  size_t cached_hex_size = cardano_cbor_writer_get_hex_size(cached_writer);
+  char*  cached_hex      = (char*)malloc(cached_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(cached_writer, cached_hex, cached_hex_size), CARDANO_SUCCESS);
+
+  cardano_transaction_body_clear_cbor_cache(transaction_body);
+
+  cardano_cbor_writer_t* fresh_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, fresh_writer), CARDANO_SUCCESS);
+
+  size_t fresh_hex_size = cardano_cbor_writer_get_hex_size(fresh_writer);
+  char*  fresh_hex      = (char*)malloc(fresh_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(fresh_writer, fresh_hex, fresh_hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(cached_hex, GUARDS_UNTAGGED_INPUTS_BODY);
+  EXPECT_STREQ(fresh_hex, GUARDS_KEY_HASH_FORM_BODY);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&cached_writer);
+  cardano_cbor_writer_unref(&fresh_writer);
+  free(cached_hex);
+  free(fresh_hex);
 }
 
 TEST(cardano_transaction_body_from_cbor, roundTripsTaggedLegacyRequiredSignersFormByteExact)

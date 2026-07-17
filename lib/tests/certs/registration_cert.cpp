@@ -36,8 +36,9 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* CBOR            = "83078200581c0000000000000000000000000000000000000000000000000000000000";
-static const char* CREDENTIAL_CBOR = "8200581c00000000000000000000000000000000000000000000000000000000";
+static const char* CBOR                      = "83078200581c0000000000000000000000000000000000000000000000000000000000";
+static const char* CBOR_WITH_NONZERO_DEPOSIT = "83078200581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a001e8480";
+static const char* CREDENTIAL_CBOR           = "8200581c00000000000000000000000000000000000000000000000000000000";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -253,6 +254,36 @@ TEST(cardano_registration_cert_to_cbor, canSerialize)
 
   // Cleanup
   cardano_registration_cert_unref(&cert);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_registration_cert_to_cbor, canDeserializeAndReserializeNonZeroDepositByteExact)
+{
+  // Arrange
+  cardano_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*       reader = cardano_cbor_reader_from_hex(CBOR_WITH_NONZERO_DEPOSIT, strlen(CBOR_WITH_NONZERO_DEPOSIT));
+  cardano_cbor_writer_t*       writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_registration_cert_from_cbor(reader, &cert), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_registration_cert_get_deposit(cert), 2000000);
+
+  // Act
+  cardano_error_t result = cardano_registration_cert_to_cbor(cert, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_WITH_NONZERO_DEPOSIT);
+
+  // Cleanup
+  cardano_registration_cert_unref(&cert);
+  cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&writer);
   free(hex);
 }

@@ -37,8 +37,7 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t ALONZO_ERA_FRAME_SIZE   = 4;
-static const int64_t DIJKSTRA_ERA_FRAME_SIZE = 3;
+static const int64_t ALONZO_ERA_FRAME_SIZE = 4;
 
 /* STRUCTURES ****************************************************************/
 
@@ -265,6 +264,8 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     cardano_transaction_unref(transaction);
     return set_is_valid_result;
   }
+
+  const int64_t DIJKSTRA_ERA_FRAME_SIZE = 3;
 
   if (array_size == DIJKSTRA_ERA_FRAME_SIZE)
   {

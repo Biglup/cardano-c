@@ -23,6 +23,7 @@
 
 #include <cardano/error.h>
 
+#include <cardano/common/ex_units.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
 
@@ -50,6 +51,10 @@ static const char* REDEEMER9_CBOR = "840001d8799f0102030405ff821821182c";
 static const char* CBOR_GUARDING               = "a282000082d8799f0102030405ff821821182c82060082d8799f0102030405ff8218371842";
 static const char* REDEEMER_GUARDING_CBOR      = "840600d8799f0102030405ff8218371842";
 static const char* REDEEMER_INDEX_ABOVE_UINT32 = "84001b0000000100000000d8799f0102030405ff821821182c";
+
+static const char* CBOR_LEGACY_WITH_VOTE      = "82840000d8799f0102030405ff821821182c840400d8799f0102030405ff8218371842";
+static const char* CBOR_MAP_SPEND_AND_VOTE    = "a282000082d8799f0102030405ff821821182c82040082d8799f0102030405ff8218371842";
+static const char* CBOR_THREE_ELEMENT_MAP_KEY = "a28308000082d8799f0102030405ff821821182c82040082d8799f0102030405ff8218371842";
 
 /**
  * Creates a new default instance of the redeemer.
@@ -334,6 +339,107 @@ TEST(cardano_redeemer_list_to_cbor, canDeserializeAndReserializeGuardingRedeemer
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   EXPECT_STREQ(actual_cbor, CBOR_GUARDING);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canDeserializeLegacyVoteArrayAndReserializeAsMap)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR_LEGACY_WITH_VOTE, strlen(CBOR_LEGACY_WITH_VOTE));
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &redeemer_list);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemer_list), 2);
+
+  cardano_redeemer_t* spend_redeemer = nullptr;
+  cardano_redeemer_t* vote_redeemer  = nullptr;
+
+  EXPECT_EQ(cardano_redeemer_list_get(redeemer_list, 0, &spend_redeemer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_get(redeemer_list, 1, &vote_redeemer), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(spend_redeemer), CARDANO_REDEEMER_TAG_SPEND);
+  EXPECT_EQ(cardano_redeemer_get_index(spend_redeemer), 0);
+  EXPECT_EQ(cardano_redeemer_get_tag(vote_redeemer), CARDANO_REDEEMER_TAG_VOTING);
+  EXPECT_EQ(cardano_redeemer_get_index(vote_redeemer), 0);
+
+  cardano_ex_units_t* spend_ex_units = cardano_redeemer_get_ex_units(spend_redeemer);
+  cardano_ex_units_t* vote_ex_units  = cardano_redeemer_get_ex_units(vote_redeemer);
+
+  EXPECT_EQ(cardano_ex_units_get_memory(spend_ex_units), 33);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(spend_ex_units), 44);
+  EXPECT_EQ(cardano_ex_units_get_memory(vote_ex_units), 55);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(vote_ex_units), 66);
+
+  cardano_ex_units_unref(&spend_ex_units);
+  cardano_ex_units_unref(&vote_ex_units);
+  cardano_redeemer_unref(&spend_redeemer);
+  cardano_redeemer_unref(&vote_redeemer);
+  cardano_redeemer_list_clear_cbor_cache(redeemer_list);
+
+  // Act
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(CBOR_MAP_SPEND_AND_VOTE) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, CBOR_MAP_SPEND_AND_VOTE);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canDeserializeAndReserializeSpendAndVoteMap)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR_MAP_SPEND_AND_VOTE, strlen(CBOR_MAP_SPEND_AND_VOTE));
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &redeemer_list);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemer_list), 2);
+
+  cardano_redeemer_t* redeemer = nullptr;
+  error                        = cardano_redeemer_list_get(redeemer_list, 1, &redeemer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_VOTING);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), 0);
+
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_clear_cbor_cache(redeemer_list);
+
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(CBOR_MAP_SPEND_AND_VOTE) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, CBOR_MAP_SPEND_AND_VOTE);
 
   // Cleanup
   cardano_redeemer_list_unref(&redeemer_list);
@@ -726,6 +832,22 @@ TEST(cardano_redeemer_list_from_cbor, returnErrorIfInvalidRedeemerKeyArray)
   cardano_redeemer_list_t* list   = nullptr;
   const char*              cbor   = "a181008200821821182c";
   cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &list);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_redeemer_list_from_cbor, returnErrorIfMapKeyArrayHasThreeElements)
+{
+  // Arrange
+  cardano_redeemer_list_t* list   = nullptr;
+  cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(CBOR_THREE_ELEMENT_MAP_KEY, strlen(CBOR_THREE_ELEMENT_MAP_KEY));
 
   // Act
   cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &list);

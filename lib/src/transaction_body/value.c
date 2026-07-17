@@ -95,7 +95,7 @@ cardano_value_deallocate(void* object)
  * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
  */
 static cardano_error_t
-multi_asset_has_assets(cardano_multi_asset_t* multi_asset, bool* has_assets)
+multi_asset_has_assets(const cardano_multi_asset_t* multi_asset, bool* has_assets)
 {
   cardano_policy_id_list_t* policies = NULL;
 

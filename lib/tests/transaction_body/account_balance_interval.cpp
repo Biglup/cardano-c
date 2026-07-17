@@ -33,6 +33,7 @@
 /* CONSTANTS *****************************************************************/
 
 static const char* BOTH_BOUNDS_CBOR      = "821864191388";
+static const char* BOTH_BOUNDS_WIDE_CBOR = "821864192710";
 static const char* LOWER_ONLY_CBOR       = "821901f4f6";
 static const char* UPPER_ONLY_CBOR       = "82f6192710";
 static const char* BOTH_NIL_CBOR         = "82f6f6";
@@ -460,6 +461,31 @@ TEST(cardano_account_balance_interval_to_cbor, canRoundTripIntervalWithBothBound
 
   // Assert
   EXPECT_STREQ(actual_cbor, BOTH_BOUNDS_CBOR);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  free(actual_cbor);
+}
+
+TEST(cardano_account_balance_interval_to_cbor, canRoundTripIntervalWithBothBoundsAndWideUpperBound)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = new_default_account_balance_interval(BOTH_BOUNDS_WIDE_CBOR);
+  ASSERT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+
+  const uint64_t* inclusive_lower_bound = cardano_account_balance_interval_get_inclusive_lower_bound(account_balance_interval);
+  const uint64_t* exclusive_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(account_balance_interval);
+
+  ASSERT_THAT(inclusive_lower_bound, testing::Not((const uint64_t*)nullptr));
+  ASSERT_THAT(exclusive_upper_bound, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*inclusive_lower_bound, 100);
+  EXPECT_EQ(*exclusive_upper_bound, 10000);
+
+  // Act
+  char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, BOTH_BOUNDS_WIDE_CBOR);
 
   // Cleanup
   cardano_account_balance_interval_unref(&account_balance_interval);
