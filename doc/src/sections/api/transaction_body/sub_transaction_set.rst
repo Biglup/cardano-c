@@ -37,6 +37,10 @@ Sub Transaction Set
 
 ------------
 
+.. doxygenfunction:: cardano_sub_transaction_set_set_use_tag
+
+------------
+
 .. doxygenfunction:: cardano_sub_transaction_set_unref
 
 ------------

@@ -364,6 +364,37 @@ CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_sub_transaction_set_is_tagged(const cardano_sub_transaction_set_t* sub_transaction_set);
 
 /**
+ * \brief Enables or disables tagged encoding (Conway era feature) for the sub transaction set.
+ *
+ * This function sets whether the specified \ref cardano_sub_transaction_set_t object should use tagged encoding
+ * (introduced in the Conway era) when serializing the set in CBOR. If \p use_tag is set to \c true, the set will be
+ * encoded using tagged sets. Otherwise, it will use the older array-based encoding method.
+ *
+ * \param[in,out] sub_transaction_set A pointer to an initialized \ref cardano_sub_transaction_set_t object.
+ * \param[in] use_tag A boolean value that determines whether to use tagged encoding (\c true) or legacy array encoding (\c false).
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the operation was successful,
+ *         or an appropriate error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_transaction_set_t* sub_transaction_set = ...; // Assume sub_transaction_set is already initialized
+ * cardano_error_t result = cardano_sub_transaction_set_set_use_tag(sub_transaction_set, true);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The sub transaction set is now set to use tagged encoding.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set tagged encoding: %s\n", cardano_error_to_string(result));
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_sub_transaction_set_set_use_tag(cardano_sub_transaction_set_t* sub_transaction_set, bool use_tag);
+
+/**
  * \brief Decrements the reference count of a sub_transaction_set object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_sub_transaction_set_t object

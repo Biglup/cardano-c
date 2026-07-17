@@ -457,6 +457,10 @@ CARDANO_EXPORT cardano_error_t cardano_sub_transaction_set_auxiliary_data(cardan
  * \note The sub transaction ID is the primary reference used to identify and track a sub transaction within
  *       its enclosing top-level transaction.
  *
+ * \note The hash is computed on the first call and cached inside the sub transaction; subsequent calls return
+ *       a new reference to the cached hash. The cache is invalidated by \ref cardano_sub_transaction_set_body
+ *       and \ref cardano_sub_transaction_clear_cbor_cache.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_sub_transaction_t* sub_transaction = ...; // Assume sub transaction is already initialized

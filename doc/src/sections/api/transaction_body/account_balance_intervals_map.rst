@@ -29,6 +29,10 @@ Account Balance Intervals Map
 
 ------------
 
+.. doxygenfunction:: cardano_account_balance_intervals_map_get_keys
+
+------------
+
 .. doxygenfunction:: cardano_account_balance_intervals_map_get_key_at
 
 ------------

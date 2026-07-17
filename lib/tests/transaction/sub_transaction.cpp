@@ -40,6 +40,9 @@
 static const char* MINIMAL_BODY_CBOR = "a200d90102800180";
 static const char* MINIMAL_BODY_HASH = "da4603f4488d798af667794ab542f130a4bd1c20c7ed950c4648aaa95d0be4f4";
 
+static const char* BODY_WITH_FEE_CBOR = "a300d90102800180031864";
+static const char* BODY_WITH_FEE_HASH = "8cbebc5de7b583095090a501bd7cd092fcebbfdb87a48adb03e8c00a8960a0ad";
+
 static const char* AUXILIARY_DATA_CBOR = "a1016474657374";
 static const char* WITNESS_SET_CBOR    = "a100d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
 
@@ -895,6 +898,86 @@ TEST(cardano_sub_transaction_get_id, returnsNullIfSubTransactionIsNull)
 
   // Assert
   EXPECT_EQ(id, nullptr);
+}
+
+TEST(cardano_sub_transaction_get_id, returnsTheCachedHashOnSubsequentCalls)
+{
+  // Arrange
+  cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(MINIMAL_CBOR);
+
+  // Act
+  cardano_blake2b_hash_t* first_id  = cardano_sub_transaction_get_id(sub_transaction);
+  cardano_blake2b_hash_t* second_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  // Assert
+  EXPECT_EQ(first_id, second_id);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(first_id, second_id));
+  EXPECT_EQ(cardano_blake2b_hash_refcount(first_id), 3);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&first_id);
+  cardano_blake2b_hash_unref(&second_id);
+  cardano_sub_transaction_unref(&sub_transaction);
+}
+
+TEST(cardano_sub_transaction_get_id, changesAfterSetBody)
+{
+  // Arrange
+  cardano_sub_transaction_t*      sub_transaction = new_default_sub_transaction(MINIMAL_CBOR);
+  cardano_sub_transaction_body_t* body            = new_default_sub_transaction_body(BODY_WITH_FEE_CBOR);
+
+  cardano_blake2b_hash_t* first_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  // Act
+  EXPECT_EQ(cardano_sub_transaction_set_body(sub_transaction, body), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* second_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  size_t size = cardano_blake2b_hash_get_hex_size(second_id);
+  char*  hex  = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(second_id, hex, size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_FALSE(cardano_blake2b_hash_equals(first_id, second_id));
+  EXPECT_STREQ(hex, BODY_WITH_FEE_HASH);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&first_id);
+  cardano_blake2b_hash_unref(&second_id);
+  cardano_sub_transaction_body_unref(&body);
+  cardano_sub_transaction_unref(&sub_transaction);
+  free(hex);
+}
+
+TEST(cardano_sub_transaction_get_id, unchangedAfterSetAuxiliaryData)
+{
+  // Arrange
+  cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(MINIMAL_CBOR);
+  cardano_auxiliary_data_t*  auxiliary_data  = new_default_auxiliary_data(AUXILIARY_DATA_CBOR);
+
+  cardano_blake2b_hash_t* first_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  // Act
+  EXPECT_EQ(cardano_sub_transaction_set_auxiliary_data(sub_transaction, auxiliary_data), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* second_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  size_t size = cardano_blake2b_hash_get_hex_size(second_id);
+  char*  hex  = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(second_id, hex, size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_TRUE(cardano_blake2b_hash_equals(first_id, second_id));
+  EXPECT_STREQ(hex, MINIMAL_BODY_HASH);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&first_id);
+  cardano_blake2b_hash_unref(&second_id);
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_sub_transaction_unref(&sub_transaction);
+  free(hex);
 }
 
 TEST(cardano_sub_transaction_clear_cbor_cache, doesNothingIfGivenNullPtr)

@@ -433,6 +433,52 @@ cardano_account_balance_intervals_map_insert(
 }
 
 cardano_error_t
+cardano_account_balance_intervals_map_get_keys(
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map,
+  cardano_credential_set_t**               keys)
+{
+  if (account_balance_intervals_map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (keys == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_credential_set_t* list = NULL;
+
+  cardano_error_t result = cardano_credential_set_new(&list);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  for (size_t i = 0; i < cardano_array_get_size(account_balance_intervals_map->array); ++i)
+  {
+    cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, i);
+    cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
+
+    result = cardano_credential_set_add(list, kvp->key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_credential_set_unref(&list);
+      cardano_object_unref(&object);
+      return result;
+    }
+
+    cardano_object_unref(&object);
+  }
+
+  *keys = list;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 cardano_account_balance_intervals_map_get_key_at(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
   const size_t                                   index,

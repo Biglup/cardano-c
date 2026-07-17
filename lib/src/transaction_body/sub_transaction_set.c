@@ -443,6 +443,19 @@ cardano_sub_transaction_set_is_tagged(const cardano_sub_transaction_set_t* sub_t
   return sub_transaction_set->use_tags;
 }
 
+cardano_error_t
+cardano_sub_transaction_set_set_use_tag(cardano_sub_transaction_set_t* sub_transaction_set, const bool use_tag)
+{
+  if (sub_transaction_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  sub_transaction_set->use_tags = use_tag;
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_sub_transaction_set_unref(cardano_sub_transaction_set_t** sub_transaction_set)
 {
