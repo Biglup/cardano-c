@@ -197,6 +197,89 @@ TEST(cardano_multi_asset_to_cbor, canSerializeAnEmptyAssetMultiAssets)
   free(actual_cbor);
 }
 
+TEST(cardano_multi_asset_to_cbor, skipsPoliciesWithEmptyAssetMaps)
+{
+  // Arrange
+  cardano_multi_asset_t*    multi_asset  = nullptr;
+  cardano_cbor_writer_t*    writer       = cardano_cbor_writer_new();
+  cardano_blake2b_hash_t*   empty_policy = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+  cardano_blake2b_hash_t*   policy       = new_default_blake2b_hash(POLICY_ID_HEX_2B);
+  cardano_asset_name_map_t* empty_assets = nullptr;
+  cardano_asset_name_map_t* assets       = new_default_asset_name_map("a3443031323218644433343536186344404142420a");
+
+  cardano_error_t error = cardano_multi_asset_new(&multi_asset);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_asset_name_map_new(&empty_assets);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  ASSERT_EQ(cardano_multi_asset_insert_assets(multi_asset, empty_policy, empty_assets), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_multi_asset_insert_assets(multi_asset, policy, assets), CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_multi_asset_to_cbor(multi_asset, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, "a1581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a");
+
+  // Cleanup
+  cardano_multi_asset_unref(&multi_asset);
+  cardano_cbor_writer_unref(&writer);
+  cardano_blake2b_hash_unref(&empty_policy);
+  cardano_blake2b_hash_unref(&policy);
+  cardano_asset_name_map_unref(&empty_assets);
+  cardano_asset_name_map_unref(&assets);
+  free(actual_cbor);
+}
+
+TEST(cardano_multi_asset_to_cbor, encodesAnEmptyMapWhenAllPoliciesAreEmpty)
+{
+  // Arrange
+  cardano_multi_asset_t*    multi_asset  = nullptr;
+  cardano_cbor_writer_t*    writer       = cardano_cbor_writer_new();
+  cardano_blake2b_hash_t*   empty_policy = new_default_blake2b_hash(POLICY_ID_HEX_1B);
+  cardano_asset_name_map_t* empty_assets = nullptr;
+
+  cardano_error_t error = cardano_multi_asset_new(&multi_asset);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  error = cardano_asset_name_map_new(&empty_assets);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  ASSERT_EQ(cardano_multi_asset_insert_assets(multi_asset, empty_policy, empty_assets), CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_multi_asset_to_cbor(multi_asset, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, "a0");
+
+  // Cleanup
+  cardano_multi_asset_unref(&multi_asset);
+  cardano_cbor_writer_unref(&writer);
+  cardano_blake2b_hash_unref(&empty_policy);
+  cardano_asset_name_map_unref(&empty_assets);
+  free(actual_cbor);
+}
+
 TEST(cardano_multi_asset_to_cbor, returnsErrorIfGivenANullPtr)
 {
   // Arrange

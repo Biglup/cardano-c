@@ -30,7 +30,9 @@
 #include <cardano/certs/certificate_set.h>
 #include <cardano/common/governance_action_id.h>
 #include <cardano/crypto/blake2b_hash.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/voting_procedures/voter.h>
 #include <cardano/voting_procedures/voting_procedure.h>
@@ -43,7 +45,11 @@
 
 #include <allocators.h>
 
+#include <filesystem>
+#include <fstream>
 #include <gmock/gmock.h>
+#include <string>
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -131,6 +137,27 @@ new_default_witness_set(const char* cbor)
   cardano_cbor_reader_unref(&reader);
 
   return witness_set;
+};
+
+/**
+ * Loads the Dijkstra golden transaction vector as raw CBOR bytes.
+ *
+ * The vector path is derived from this source file location so the test does not depend
+ * on the working directory the binary is launched from.
+ *
+ * @return The raw CBOR bytes of the golden transaction.
+ */
+static std::vector<char>
+load_golden_tx_bytes()
+{
+  const std::filesystem::path path = std::filesystem::path(__FILE__).parent_path().parent_path() / "vectors" / "dijkstra" / "golden" / "tx.cbor";
+
+  std::ifstream     stream(path, std::ios::binary);
+  std::vector<char> bytes((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+  EXPECT_FALSE(bytes.empty());
+
+  return bytes;
 };
 
 /**
@@ -383,6 +410,177 @@ TEST(cardano_transaction_to_cbor, canSerialize2)
   cardano_transaction_unref(&transaction);
   cardano_cbor_writer_unref(&writer);
   free(hex);
+}
+
+TEST(cardano_transaction_to_cbor, preservesTheThreeElementFrameOnReencode)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
+  cardano_transaction_t* transaction = new_default_transaction(CBOR_NULLIFY_ENTROPY);
+  EXPECT_NE(transaction, nullptr);
+
+  // Act
+  cardano_error_t result = cardano_transaction_to_cbor(transaction, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_NULLIFY_ENTROPY);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_transaction_to_cbor, preservesIsValidFalseOnReencode)
+{
+  // Arrange
+  std::string cbor(CBOR2);
+  cbor.replace(cbor.size() - 4U, 2U, "f4");
+
+  cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
+  cardano_transaction_t* transaction = new_default_transaction(cbor.c_str());
+  EXPECT_NE(transaction, nullptr);
+
+  // Act
+  cardano_error_t result = cardano_transaction_to_cbor(transaction, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_FALSE(cardano_transaction_get_is_valid(transaction));
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, cbor.c_str());
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_transaction_to_cbor, promotesToFourElementFrameWhenIsValidIsFalse)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
+  cardano_transaction_t* transaction = new_default_transaction(CBOR_NULLIFY_ENTROPY);
+  EXPECT_NE(transaction, nullptr);
+
+  EXPECT_EQ(cardano_transaction_set_is_valid(transaction, false), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_transaction_to_cbor(transaction, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  // The transaction is promoted to the 4-element frame so the is_valid flag is preserved.
+  EXPECT_EQ(strncmp(hex, "84", 2), 0);
+
+  cardano_transaction_t* decoded = new_default_transaction(hex);
+  EXPECT_NE(decoded, nullptr);
+
+  EXPECT_FALSE(cardano_transaction_get_is_valid(decoded));
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_transaction_unref(&decoded);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_transaction_get_is_valid, returnsTrueForThreeElementFrames)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR_NULLIFY_ENTROPY);
+  EXPECT_NE(transaction, nullptr);
+
+  // Act & Assert
+  EXPECT_TRUE(cardano_transaction_get_is_valid(transaction));
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_from_cbor, roundTripsTheDijkstraGoldenTransactionByteExact)
+{
+  // Arrange
+  const std::vector<char> bytes = load_golden_tx_bytes();
+
+  cardano_transaction_t* transaction = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_new((const byte_t*)bytes.data(), bytes.size());
+
+  // Act
+  ASSERT_EQ(cardano_transaction_from_cbor(reader, &transaction), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_transaction_to_cbor(transaction, writer), CARDANO_SUCCESS);
+
+  cardano_buffer_t* encoded = NULL;
+
+  ASSERT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &encoded), CARDANO_SUCCESS);
+
+  // Assert
+  ASSERT_EQ(cardano_buffer_get_size(encoded), bytes.size());
+  EXPECT_EQ(memcmp(cardano_buffer_get_data(encoded), bytes.data(), bytes.size()), 0);
+
+  EXPECT_TRUE(cardano_transaction_get_is_valid(transaction));
+
+  cardano_transaction_body_t*    body             = cardano_transaction_get_body(transaction);
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+
+  EXPECT_EQ(cardano_sub_transaction_set_get_length(sub_transactions), 1);
+
+  // The transaction id is the blake2b-256 hash of the encoded body bytes.
+  cardano_cbor_reader_t* body_reader = cardano_cbor_reader_new((const byte_t*)bytes.data(), bytes.size());
+
+  int64_t array_size = 0;
+  EXPECT_EQ(cardano_cbor_reader_read_start_array(body_reader, &array_size), CARDANO_SUCCESS);
+  EXPECT_EQ(array_size, 3);
+
+  cardano_buffer_t* body_bytes = NULL;
+  EXPECT_EQ(cardano_cbor_reader_read_encoded_value(body_reader, &body_bytes), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* expected_id = NULL;
+
+  EXPECT_EQ(
+    cardano_blake2b_compute_hash(
+      cardano_buffer_get_data(body_bytes),
+      cardano_buffer_get_size(body_bytes),
+      CARDANO_BLAKE2B_HASH_SIZE_256,
+      &expected_id),
+    CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* id = cardano_transaction_get_id(transaction);
+
+  EXPECT_TRUE(cardano_blake2b_hash_equals(id, expected_id));
+
+  // Cleanup
+  cardano_transaction_body_unref(&body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+  cardano_blake2b_hash_unref(&expected_id);
+  cardano_blake2b_hash_unref(&id);
+  cardano_buffer_unref(&body_bytes);
+  cardano_buffer_unref(&encoded);
+  cardano_cbor_reader_unref(&body_reader);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  cardano_transaction_unref(&transaction);
 }
 
 TEST(cardano_transaction_to_cbor, returnsErrorIfCertIsNull)

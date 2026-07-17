@@ -146,7 +146,7 @@ cardano_protocol_version_from_cbor(cardano_cbor_reader_t* reader, cardano_protoc
     reader,
     &minor,
     0,
-    UINT64_MAX);
+    UINT32_MAX);
 
   if (read_minor_result != CARDANO_SUCCESS)
   {
@@ -262,6 +262,11 @@ cardano_protocol_version_set_minor(cardano_protocol_version_t* protocol_version,
   if (protocol_version == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (minor > (uint64_t)UINT32_MAX)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
   protocol_version->minor = minor;

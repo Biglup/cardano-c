@@ -109,7 +109,8 @@ cardano_witness_set_new(cardano_witness_set_t** witness_set);
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
  *         the resulting encoding could be different. This would change the witness_set and could invalidate any existing signatures.
  *         To prevent this, when a witness_set object is created using \ref cardano_witness_set_from_cbor, it caches the original
- *         CBOR representation of datums and redeemers internally. When \ref cardano_witness_set_to_cbor is called, it will output the cached CBOR.
+ *         CBOR representation of datums and redeemers internally, and it also records the order in which the witness set map keys
+ *         were decoded. When \ref cardano_witness_set_to_cbor is called, it will output the cached CBOR and keep the decoded key order.
  *         If the cached CBOR representation is not needed, the client can call \ref cardano_witness_set_clear_cbor_cache after the object has been created.
  *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
@@ -159,7 +160,8 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
  *         the resulting encoding could be different. This would change the witness_set and could invalidate any existing signatures.
  *         To prevent this, when a witness_set object is created using \ref cardano_witness_set_from_cbor, it caches the original
- *         CBOR representation of datums and redeemers internally. When \ref cardano_witness_set_to_cbor is called, it will output the cached CBOR.
+ *         CBOR representation of datums and redeemers internally, and it also records the order in which the witness set map keys
+ *         were decoded. When \ref cardano_witness_set_to_cbor is called, it will output the cached CBOR and keep the decoded key order.
  *         If the cached CBOR representation is not needed, the client can call \ref cardano_witness_set_clear_cbor_cache after the object has been created.
  *
  * Usage Example:

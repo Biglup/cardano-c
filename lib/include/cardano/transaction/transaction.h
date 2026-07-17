@@ -131,6 +131,14 @@ cardano_transaction_new(
  *         CBOR representation internally. When \ref cardano_transaction_to_cbor is called, it will output the cached CBOR.
  *         If the cached CBOR representation is not needed, the client can call \ref cardano_transaction_clear_cbor_cache after the object has been created.
  *
+ * \remark This function accepts both transaction frames: the Dijkstra on-chain 3-element tuple
+ *         [body, witness_set, auxiliary_data / nil] and the mempool/legacy 4-element frame
+ *         [body, witness_set, is_valid, auxiliary_data / nil]. A 3-element frame implies is_valid = true.
+ *         The decoded frame form is preserved while is_valid remains true, so \ref cardano_transaction_to_cbor
+ *         re-encodes the transaction with the same number of elements it was decoded from. If is_valid is
+ *         set to false, \ref cardano_transaction_to_cbor promotes the transaction to the 4-element frame
+ *         so the flag is not lost.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_transaction_t object by calling
  *       \ref cardano_transaction_unref when it is no longer needed.
@@ -180,6 +188,13 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
  *         To prevent this, when a transaction object is created using \ref cardano_transaction_from_cbor, it caches the original
  *         CBOR representation internally. When \ref cardano_transaction_to_cbor is called, it will output the cached CBOR.
  *         If the cached CBOR representation is not needed, the client can call \ref cardano_transaction_clear_cbor_cache after the object has been created.
+ *
+ * \remark Transactions created with \ref cardano_transaction_new are serialized as the mempool/legacy
+ *         4-element frame [body, witness_set, is_valid, auxiliary_data / nil]. Transactions decoded with
+ *         \ref cardano_transaction_from_cbor keep the frame form they were decoded from, so a Dijkstra
+ *         on-chain 3-element tuple [body, witness_set, auxiliary_data / nil] re-encodes as a 3-element tuple.
+ *         The 3-element form is only kept while is_valid is true; a transaction whose is_valid flag is false
+ *         is always serialized as the 4-element frame so the flag is preserved.
  *
  * Usage Example:
  * \code{.c}
@@ -477,7 +492,11 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_set_auxiliary_data(cardano_tr
  * \return \c false if the transaction is expected to fail Plutus script validation; otherwise, \c true.
  *
  * \note Even if a transaction is expected to fail validation (i.e., the flag is \c false),
- *       it can still be submitted to the blockchain.
+ *       it can still be submitted to the blockchain. From protocol version 12 the ledger rejects
+ *       transactions with this flag set to \c false.
+ *
+ * \note Transactions decoded from the Dijkstra on-chain 3-element tuple carry no is_valid flag;
+ *       for those transactions this function returns \c true.
  *
  * Usage Example:
  * \code{.c}

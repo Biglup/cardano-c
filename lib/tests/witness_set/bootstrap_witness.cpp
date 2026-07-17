@@ -490,7 +490,43 @@ TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfInvalidChainCode)
   cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
 
   // Assert
-  ASSERT_EQ(result, CARDANO_ERROR_DECODING);
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_bootstrap_witness_unref(&bootstrap_witness);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_bootstrap_witness_from_cbor, rejectsChainCodeShorterThan32Bytes)
+{
+  // Arrange
+  cardano_bootstrap_witness_t* bootstrap_witness = NULL;
+  const char*                  cbor              = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a581f0000000000000000000000000000000000000000000000000000000000000041a0";
+  cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+
+  // Cleanup
+  cardano_bootstrap_witness_unref(&bootstrap_witness);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_bootstrap_witness_from_cbor, rejectsChainCodeLongerThan32Bytes)
+{
+  // Arrange
+  cardano_bootstrap_witness_t* bootstrap_witness = NULL;
+  const char*                  cbor              = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a582100000000000000000000000000000000000000000000000000000000000000000041a0";
+  cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
 
   // Cleanup
   cardano_bootstrap_witness_unref(&bootstrap_witness);
@@ -764,6 +800,40 @@ TEST(cardano_bootstrap_witness_get_attributes, returnsErrorIfObjectIsNull)
 
   // Assert
   EXPECT_EQ(attr, nullptr);
+}
+
+TEST(cardano_bootstrap_witness_set_chain_code, rejectsChainCodeShorterThan32Bytes)
+{
+  // Arrange
+  cardano_bootstrap_witness_t* bootstrap_witness = new_default_witness();
+  cardano_buffer_t*            cc                = new_default_buffer("00000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_error_t result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, cc);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_bootstrap_witness_unref(&bootstrap_witness);
+  cardano_buffer_unref(&cc);
+}
+
+TEST(cardano_bootstrap_witness_set_chain_code, rejectsChainCodeLongerThan32Bytes)
+{
+  // Arrange
+  cardano_bootstrap_witness_t* bootstrap_witness = new_default_witness();
+  cardano_buffer_t*            cc                = new_default_buffer("000000000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_error_t result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, cc);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_bootstrap_witness_unref(&bootstrap_witness);
+  cardano_buffer_unref(&cc);
 }
 
 TEST(cardano_bootstrap_witness_set_attributes, canSetAttributes)

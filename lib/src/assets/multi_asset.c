@@ -321,9 +321,26 @@ cardano_multi_asset_to_cbor(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  size_t size = cardano_array_get_size(multi_asset->array);
+  size_t size           = cardano_array_get_size(multi_asset->array);
+  size_t non_empty_size = 0U;
 
-  cardano_error_t write_map_result = cardano_cbor_writer_write_start_map(writer, (int64_t)size);
+  for (size_t i = 0U; i < size; ++i)
+  {
+    cardano_multi_asset_kvp_t* kvp = (cardano_multi_asset_kvp_t*)((void*)cardano_array_get(multi_asset->array, i));
+    cardano_object_unref((cardano_object_t**)((void*)&kvp));
+
+    if (kvp == NULL)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    if (cardano_asset_name_map_get_length(kvp->value) > 0U)
+    {
+      ++non_empty_size;
+    }
+  }
+
+  cardano_error_t write_map_result = cardano_cbor_writer_write_start_map(writer, (int64_t)non_empty_size);
 
   if (write_map_result != CARDANO_SUCCESS)
   {
@@ -338,6 +355,11 @@ cardano_multi_asset_to_cbor(
     if (kvp == NULL)
     {
       return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    if (cardano_asset_name_map_get_length(kvp->value) == 0U)
+    {
+      continue;
     }
 
     cardano_error_t write_voter_result = cardano_blake2b_hash_to_cbor(kvp->key, writer);

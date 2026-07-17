@@ -34,7 +34,8 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t EMBEDDED_GROUP_SIZE = 4;
+static const int64_t  EMBEDDED_GROUP_SIZE = 4;
+static const uint32_t CHAIN_CODE_SIZE     = 32U;
 
 /* STRUCTURES ****************************************************************/
 
@@ -214,7 +215,7 @@ cardano_bootstrap_witness_from_cbor(cardano_cbor_reader_t* reader, cardano_boots
 
   cardano_buffer_t* chain_code = NULL;
 
-  cardano_error_t read_chain_code_result = cardano_cbor_reader_read_bytestring(reader, &chain_code);
+  cardano_error_t read_chain_code_result = cardano_cbor_validate_byte_string_of_size(validator_name, reader, &chain_code, CHAIN_CODE_SIZE);
 
   if (read_chain_code_result != CARDANO_SUCCESS)
   {
@@ -451,6 +452,11 @@ cardano_bootstrap_witness_set_chain_code(
   if (chan_code == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (cardano_buffer_get_size(chan_code) != (size_t)CHAIN_CODE_SIZE)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
   cardano_buffer_ref(chan_code);

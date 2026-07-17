@@ -31,6 +31,10 @@
 #include <cardano/scripts/script.h>
 #include <string.h>
 
+/* CONSTANTS *****************************************************************/
+
+#define WITNESS_SET_FIELD_COUNT ((size_t)8U)
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -52,6 +56,7 @@ typedef struct cardano_witness_set_t
     cardano_redeemer_list_t*         redeemer;
     cardano_plutus_v2_script_set_t*  plutus_v2_scripts;
     cardano_plutus_v3_script_set_t*  plutus_v3_scripts;
+    size_t                           key_order[WITNESS_SET_FIELD_COUNT];
 } cardano_witness_set_t;
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -816,6 +821,70 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 }
 
 /**
+ * \brief Writes the witness set field identified by the given map key if it is present.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] witness_set The witness set whose field is to be written.
+ * \param[in] key The witness set map key identifying the field to write.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ */
+static cardano_error_t
+write_field_if_present(cardano_cbor_writer_t* writer, const cardano_witness_set_t* witness_set, const size_t key)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  switch (key)
+  {
+    case 0U:
+      result = write_vkey_witness_set_if_present(writer, 0U, witness_set->vkey_witnesses);
+      break;
+    case 1U:
+      result = write_native_script_if_present(writer, 1U, witness_set->native_scripts);
+      break;
+    case 2U:
+      result = write_bootstrap_witness_set_if_present(writer, 2U, witness_set->bootstrap_witnesses);
+      break;
+    case 3U:
+      result = write_plutus_v1_script_set_if_present(writer, 3U, witness_set->plutus_v1_scripts);
+      break;
+    case 4U:
+      result = write_plutus_data_if_present(writer, 4U, witness_set->plutus_data);
+      break;
+    case 5U:
+      result = write_redeemer_list_if_present(writer, 5U, witness_set->redeemer);
+      break;
+    case 6U:
+      result = write_plutus_v2_script_set_if_present(writer, 6U, witness_set->plutus_v2_scripts);
+      break;
+    case 7U:
+      result = write_plutus_v3_script_set_if_present(writer, 7U, witness_set->plutus_v3_scripts);
+      break;
+    default:
+      result = CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
+      break;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Resets the serialization key order of the witness set to the canonical ascending order.
+ *
+ * \param witness_set The witness set object whose key order will be reset.
+ */
+static void
+reset_key_order(cardano_witness_set_t* witness_set)
+{
+  assert(witness_set != NULL);
+
+  for (size_t i = 0U; i < WITNESS_SET_FIELD_COUNT; ++i)
+  {
+    witness_set->key_order[i] = i;
+  }
+}
+
+/**
  * \brief Allocates and initializes a new cardano_witness_set_t structure.
  *
  * \param witness_set A pointer to the location where the new cardano_witness_set_t structure should be stored.
@@ -842,6 +911,8 @@ create_witness_set_new(void)
   witness_set->redeemer            = NULL;
   witness_set->plutus_v2_scripts   = NULL;
   witness_set->plutus_v3_scripts   = NULL;
+
+  reset_key_order(witness_set);
 
   return witness_set;
 }
@@ -906,6 +977,9 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
     return result;
   }
 
+  bool   seen_keys[WITNESS_SET_FIELD_COUNT] = { false };
+  size_t order_index                        = 0U;
+
   for (size_t i = 0U; i < (size_t)map_size; ++i)
   {
     uint64_t key = 0;
@@ -918,11 +992,18 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
       return result;
     }
 
-    if (key >= (sizeof(param_handlers) / sizeof(param_handlers[0])))
+    if (key >= WITNESS_SET_FIELD_COUNT)
     {
       cardano_witness_set_unref(&witness);
 
       return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
+    }
+
+    if (!seen_keys[key])
+    {
+      seen_keys[key]                  = true;
+      witness->key_order[order_index] = (size_t)key;
+      order_index                     += 1U;
     }
 
     void* field_ptr = get_field_ptr(witness, key);
@@ -941,6 +1022,15 @@ cardano_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_witness_set
       cardano_witness_set_unref(&witness);
 
       return result;
+    }
+  }
+
+  for (size_t key = 0U; key < WITNESS_SET_FIELD_COUNT; ++key)
+  {
+    if (!seen_keys[key])
+    {
+      witness->key_order[order_index] = key;
+      order_index                     += 1U;
     }
   }
 
@@ -971,60 +1061,14 @@ cardano_witness_set_to_cbor(const cardano_witness_set_t* witness_set, cardano_cb
     return result;
   }
 
-  result = write_vkey_witness_set_if_present(writer, 0U, witness_set->vkey_witnesses);
-
-  if (result != CARDANO_SUCCESS)
+  for (size_t i = 0U; i < WITNESS_SET_FIELD_COUNT; ++i)
   {
-    return result;
-  }
+    result = write_field_if_present(writer, witness_set, witness_set->key_order[i]);
 
-  result = write_native_script_if_present(writer, 1U, witness_set->native_scripts);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_bootstrap_witness_set_if_present(writer, 2U, witness_set->bootstrap_witnesses);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_plutus_v1_script_set_if_present(writer, 3U, witness_set->plutus_v1_scripts);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_plutus_data_if_present(writer, 4U, witness_set->plutus_data);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_redeemer_list_if_present(writer, 5U, witness_set->redeemer);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_plutus_v2_script_set_if_present(writer, 6U, witness_set->plutus_v2_scripts);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = write_plutus_v3_script_set_if_present(writer, 7U, witness_set->plutus_v3_scripts);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
 
   return CARDANO_SUCCESS;
@@ -1501,6 +1545,8 @@ cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* witness_set)
   {
     return;
   }
+
+  reset_key_order(witness_set);
 
   cardano_plutus_data_set_clear_cbor_cache(witness_set->plutus_data);
   cardano_redeemer_list_clear_cbor_cache(witness_set->redeemer);
