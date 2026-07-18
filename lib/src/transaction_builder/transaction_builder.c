@@ -32,21 +32,15 @@
 
 #include "../allocators.h"
 #include "./internals/blake2b_hash_to_redeemer_map.h"
+#include "./internals/builder_certs.h"
 #include "./internals/builder_inputs.h"
 #include "./internals/builder_mint.h"
 #include "./internals/builder_outputs.h"
 #include "./internals/builder_redeemers.h"
 #include "./internals/builder_state.h"
+#include "./internals/builder_withdrawals.h"
 
 #include <assert.h>
-#include <cardano/certs/register_drep_cert.h>
-#include <cardano/certs/registration_cert.h>
-#include <cardano/certs/stake_delegation_cert.h>
-#include <cardano/certs/unregister_drep_cert.h>
-#include <cardano/certs/unregistration_cert.h>
-#include <cardano/certs/update_drep_cert.h>
-#include <cardano/certs/vote_delegation_cert.h>
-#include <cardano/encoding/bech32.h>
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 #include <cardano/proposal_procedures/info_action.h>
@@ -55,7 +49,6 @@
 #include <cardano/proposal_procedures/parameter_change_action.h>
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <src/string_safe.h>
-#include <string.h>
 
 /* STRUCTURES ****************************************************************/
 
@@ -564,67 +557,6 @@ compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_blake2b_ha
   *id = id_hash;
 
   return CARDANO_SUCCESS;
-}
-
-/**
- * @brief Computes a deterministic, sortable hash ID for a credential.
- *
- * This function creates a unique identifier by concatenating the credential's type
- * and its raw hash bytes.
- *
- * @param[in] credential A pointer to the `cardano_credential_t` object.
- * @param[out] id On success, this will be populated with a pointer to a newly allocated
- * `cardano_blake2b_hash_t` object representing the unique ID.
- *
- * @return `CARDANO_SUCCESS` if the ID was computed successfully, or an appropriate
- * error code on failure.
- *
- * @note The caller is responsible for managing the lifecycle of the returned `id` object
- * and must release it by calling `cardano_blake2b_hash_unref`.
- */
-static cardano_error_t
-compute_credential_sortable_id(cardano_credential_t* credential, cardano_blake2b_hash_t** id)
-{
-  if ((credential == NULL) || (id == NULL))
-  {
-    return CARDANO_ERROR_INVALID_ARGUMENT;
-  }
-
-  cardano_credential_type_t type;
-  cardano_error_t           result = cardano_credential_get_type(credential, &type);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  cardano_blake2b_hash_t* hash       = cardano_credential_get_hash(credential);
-  const byte_t*           hash_bytes = cardano_blake2b_hash_get_data(hash);
-  size_t                  hash_size  = cardano_blake2b_hash_get_bytes_size(hash);
-
-  const size_t total_size = sizeof(type) + hash_size;
-  byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
-
-  if (id_bytes == NULL)
-  {
-    cardano_blake2b_hash_unref(&hash);
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  size_t cursor = 0;
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size, &type, sizeof(type));
-  cursor += sizeof(type);
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
-
-  cardano_blake2b_hash_unref(&hash);
-
-  result = cardano_blake2b_hash_from_bytes(id_bytes, total_size, id);
-
-  _cardano_free(id_bytes);
-
-  return result;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -1684,123 +1616,11 @@ cardano_tx_builder_withdraw_rewards(
     return;
   }
 
-  if (address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  if (amount < 0)
-  {
-    cardano_tx_builder_set_last_error(builder, "Amount must be greater than zero.");
-    builder->last_error = CARDANO_ERROR_INVALID_ARGUMENT;
-    return;
-  }
+  const cardano_error_t result = cardano_builder_withdraw_rewards(&builder->state, address, amount, redeemer, &error_message);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
-
-  cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
-
-  if (withdrawals == NULL)
-  {
-    cardano_error_t result = cardano_withdrawal_map_new(&withdrawals);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create withdrawal map.");
-      builder->last_error = result;
-      return;
-    }
-
-    result = cardano_transaction_body_set_withdrawals(body, withdrawals);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set withdrawal map.");
-      cardano_withdrawal_map_unref(&withdrawals);
-      builder->last_error = result;
-      return;
-    }
-  }
-
-  cardano_withdrawal_map_unref(&withdrawals);
-
-  cardano_error_t result = cardano_withdrawal_map_insert(withdrawals, address, amount);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to insert withdrawal.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
-
-  cardano_blake2b_hash_t* hash = NULL;
-
-  result = compute_credential_sortable_id(credential, &hash);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to compute credential sortable ID.");
-    builder->last_error = result;
-    return;
-  }
-
-  if (redeemer != NULL)
-  {
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
-    cardano_witness_set_unref(&witnesses);
-
-    const char* error_message = NULL;
-
-    result = cardano_builder_add_redeemer(witnesses, hash, redeemer, CARDANO_REDEEMER_TAG_REWARD, &builder->state, &error_message);
-
-    cardano_blake2b_hash_unref(&hash);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
-      builder->last_error = result;
-    }
-  }
-  else
-  {
-    // We still want to add an entry in the withdrawals_to_redeemer_map with a NULL redeemer
-    // so it can compute the indices correctly.
-    cardano_credential_type_t cred_type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
-    result                              = cardano_credential_get_type(credential, &cred_type);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_blake2b_hash_unref(&hash);
-      cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
-      builder->last_error = result;
-
-      return;
-    }
-
-    // For withdrawals due to a quirk in the node, script credentials are processed first than pub key
-    // hash credentials regardless of the canonical sorting, so we need to skip them when computing
-    // the redeemer index.
-    if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
-    {
-      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.withdrawals_to_redeemer_map, hash, NULL);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_blake2b_hash_unref(&hash);
-        cardano_tx_builder_set_last_error(builder, "Failed to add withdrawal.");
-        builder->last_error = result;
-        return;
-      }
-    }
-
-    cardano_blake2b_hash_unref(&hash);
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1816,25 +1636,11 @@ cardano_tx_builder_withdraw_rewards_ex(
     return;
   }
 
-  if ((reward_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_reward_address_t* addr   = NULL;
-  cardano_error_t           result = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
+  const cardano_error_t result = cardano_builder_withdraw_rewards_ex(&builder->state, reward_address, address_size, amount, redeemer, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_withdraw_rewards(builder, addr, amount, redeemer);
-  cardano_reward_address_unref(&addr);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1848,42 +1654,11 @@ cardano_tx_builder_register_reward_address(
     return;
   }
 
-  if (address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
+  const cardano_error_t result = cardano_builder_register_reward_address(&builder->state, address, redeemer, &error_message);
 
-  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->state.params);
-
-  cardano_certificate_t*       cert         = NULL;
-  cardano_registration_cert_t* registration = NULL;
-  cardano_error_t              result       = cardano_registration_cert_new(credential, deposit, &registration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create registration certificate.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  result = cardano_certificate_new_registration(registration, &cert);
-  cardano_registration_cert_unref(&registration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1898,25 +1673,11 @@ cardano_tx_builder_register_reward_address_ex(
     return;
   }
 
-  if ((reward_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_reward_address_t* addr   = NULL;
-  cardano_error_t           result = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
+  const cardano_error_t result = cardano_builder_register_reward_address_ex(&builder->state, reward_address, address_size, redeemer, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_register_reward_address(builder, addr, redeemer);
-  cardano_reward_address_unref(&addr);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1930,43 +1691,11 @@ cardano_tx_builder_deregister_reward_address(
     return;
   }
 
-  if (address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
+  const cardano_error_t result = cardano_builder_deregister_reward_address(&builder->state, address, redeemer, &error_message);
 
-  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->state.params);
-
-  cardano_certificate_t*         cert           = NULL;
-  cardano_unregistration_cert_t* unregistration = NULL;
-
-  cardano_error_t result = cardano_unregistration_cert_new(credential, deposit, &unregistration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create unregistration certificate.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  result = cardano_certificate_new_unregistration(unregistration, &cert);
-  cardano_unregistration_cert_unref(&unregistration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1981,26 +1710,11 @@ cardano_tx_builder_deregister_reward_address_ex(
     return;
   }
 
-  if ((reward_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_reward_address_t* addr = NULL;
+  const cardano_error_t result = cardano_builder_deregister_reward_address_ex(&builder->state, reward_address, address_size, redeemer, &error_message);
 
-  cardano_error_t result = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_deregister_reward_address(builder, addr, redeemer);
-  cardano_reward_address_unref(&addr);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2015,47 +1729,11 @@ cardano_tx_builder_delegate_stake(
     return;
   }
 
-  if (address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  if (pool_id == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Pool ID is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const cardano_error_t result = cardano_builder_delegate_stake(&builder->state, address, pool_id, redeemer, &error_message);
 
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
-
-  cardano_certificate_t*           cert       = NULL;
-  cardano_stake_delegation_cert_t* delegation = NULL;
-
-  cardano_error_t result = cardano_stake_delegation_cert_new(credential, pool_id, &delegation);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create delegation certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  result = cardano_certificate_new_stake_delegation(delegation, &cert);
-  cardano_stake_delegation_cert_unref(&delegation);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2072,69 +1750,11 @@ cardano_tx_builder_delegate_stake_ex(
     return;
   }
 
-  if ((reward_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_delegate_stake_ex(&builder->state, reward_address, address_size, pool_id, pool_id_size, redeemer, &error_message);
 
-  if ((pool_id == NULL) || (pool_id_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Pool ID is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-
-    return;
-  }
-
-  byte_t pool_id_hex[28] = { 0 };
-  char   pool_hrp[5]     = { 0 };
-
-  cardano_error_t result = cardano_encoding_bech32_decode(pool_id, pool_id_size, pool_hrp, sizeof(pool_hrp), pool_id_hex, sizeof(pool_id_hex));
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to decode pool ID.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  if (strncmp(pool_hrp, "pool", 4) != 0)
-  {
-    cardano_tx_builder_set_last_error(builder, "Invalid pool ID.");
-    builder->last_error = CARDANO_ERROR_INVALID_ARGUMENT;
-
-    return;
-  }
-
-  cardano_blake2b_hash_t* hash = NULL;
-  result                       = cardano_blake2b_hash_from_bytes(pool_id_hex, sizeof(pool_id_hex), &hash);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse pool ID.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_reward_address_t* addr = NULL;
-  result                         = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_blake2b_hash_unref(&hash);
-    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_tx_builder_delegate_stake(builder, addr, hash, redeemer);
-  cardano_reward_address_unref(&addr);
-  cardano_blake2b_hash_unref(&hash);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2149,47 +1769,11 @@ cardano_tx_builder_delegate_voting_power(
     return;
   }
 
-  if (address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  if (drep == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "DREP is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const cardano_error_t result = cardano_builder_delegate_voting_power(&builder->state, address, drep, redeemer, &error_message);
 
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
-
-  cardano_certificate_t*          cert       = NULL;
-  cardano_vote_delegation_cert_t* delegation = NULL;
-
-  cardano_error_t result = cardano_vote_delegation_cert_new(credential, drep, &delegation);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create delegation certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  result = cardano_certificate_new_vote_delegation(delegation, &cert);
-  cardano_vote_delegation_cert_unref(&delegation);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2206,45 +1790,11 @@ cardano_tx_builder_delegate_voting_power_ex(
     return;
   }
 
-  if ((reward_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  if ((drep_id == NULL) || (drep_id_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "DREP ID is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const cardano_error_t result = cardano_builder_delegate_voting_power_ex(&builder->state, reward_address, address_size, drep_id, drep_id_size, redeemer, &error_message);
 
-  cardano_reward_address_t* addr   = NULL;
-  cardano_error_t           result = cardano_reward_address_from_bech32(reward_address, address_size, &addr);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse reward address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_drep_t* drep = NULL;
-  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse DREP ID.");
-    cardano_reward_address_unref(&addr);
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_delegate_voting_power(builder, addr, drep, redeemer);
-
-  cardano_reward_address_unref(&addr);
-  cardano_drep_unref(&drep);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2259,50 +1809,11 @@ cardano_tx_builder_register_drep(
     return;
   }
 
-  if (drep == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_certificate_t*        cert          = NULL;
-  cardano_register_drep_cert_t* register_drep = NULL;
-  cardano_credential_t*         credential    = NULL;
+  const cardano_error_t result = cardano_builder_register_drep(&builder->state, drep, anchor, redeemer, &error_message);
 
-  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
-  cardano_credential_unref(&credential);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
-    builder->last_error = result;
-    return;
-  }
-
-  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->state.params);
-  result                 = cardano_register_drep_cert_new(credential, deposit, anchor, &register_drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create DRep registration certificate.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  result = cardano_certificate_new_register_drep(register_drep, &cert);
-  cardano_register_drep_cert_unref(&register_drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2321,39 +1832,11 @@ cardano_tx_builder_register_drep_ex(
     return;
   }
 
-  if ((drep_id == NULL) || (drep_id_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_anchor_t* anchor = NULL;
+  const cardano_error_t result = cardano_builder_register_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, redeemer, &error_message);
 
-  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_drep_t* drep = NULL;
-  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_anchor_unref(&anchor);
-    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_register_drep(builder, drep, anchor, redeemer);
-
-  cardano_drep_unref(&drep);
-  cardano_anchor_unref(&anchor);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2368,48 +1851,11 @@ cardano_tx_builder_update_drep(
     return;
   }
 
-  if (drep == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_certificate_t*      cert        = NULL;
-  cardano_update_drep_cert_t* update_drep = NULL;
-  cardano_credential_t*       credential  = NULL;
+  const cardano_error_t result = cardano_builder_update_drep(&builder->state, drep, anchor, redeemer, &error_message);
 
-  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
-  cardano_credential_unref(&credential);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
-    builder->last_error = result;
-    return;
-  }
-
-  result = cardano_update_drep_cert_new(credential, anchor, &update_drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create DRep update certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  result = cardano_certificate_new_update_drep(update_drep, &cert);
-  cardano_update_drep_cert_unref(&update_drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2428,39 +1874,11 @@ cardano_tx_builder_update_drep_ex(
     return;
   }
 
-  if ((drep_id == NULL) || (drep_id_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_anchor_t* anchor = NULL;
+  const cardano_error_t result = cardano_builder_update_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, redeemer, &error_message);
 
-  cardano_error_t result = cardano_anchor_from_hash_hex(metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &anchor);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create anchor.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_drep_t* drep = NULL;
-  result               = cardano_drep_from_string(drep_id, drep_id_size, &drep);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_anchor_unref(&anchor);
-    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_update_drep(builder, drep, anchor, redeemer);
-
-  cardano_drep_unref(&drep);
-  cardano_anchor_unref(&anchor);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2474,49 +1892,11 @@ cardano_tx_builder_deregister_drep(
     return;
   }
 
-  if (drep == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_certificate_t*          cert           = NULL;
-  cardano_unregister_drep_cert_t* deregistration = NULL;
-  cardano_credential_t*           credential     = NULL;
+  const cardano_error_t result = cardano_builder_deregister_drep(&builder->state, drep, redeemer, &error_message);
 
-  cardano_error_t result = cardano_drep_get_credential(drep, &credential);
-  cardano_credential_unref(&credential);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to get credential.");
-    builder->last_error = result;
-    return;
-  }
-
-  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->state.params);
-  result                 = cardano_unregister_drep_cert_new(credential, deposit, &deregistration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create DRep deregistration certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  result = cardano_certificate_new_unregister_drep(deregistration, &cert);
-  cardano_unregister_drep_cert_unref(&deregistration);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, cert, redeemer);
-  cardano_certificate_unref(&cert);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2531,25 +1911,11 @@ cardano_tx_builder_deregister_drep_ex(
     return;
   }
 
-  if ((drep_id == NULL) || (drep_id_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "DRep ID is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_drep_t* drep   = NULL;
-  cardano_error_t result = cardano_drep_from_string(drep_id, drep_id_size, &drep);
+  const cardano_error_t result = cardano_builder_deregister_drep_ex(&builder->state, drep_id, drep_id_size, redeemer, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse DRep ID.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_deregister_drep(builder, drep, redeemer);
-  cardano_drep_unref(&drep);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2678,131 +2044,11 @@ cardano_tx_builder_add_certificate(
     return;
   }
 
-  if (certificate == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Certificate is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const cardano_error_t result = cardano_builder_add_certificate(&builder->state, certificate, redeemer, &error_message);
 
-  cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
-
-  if (certs == NULL)
-  {
-    cardano_error_t result = cardano_certificate_set_new(&certs);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create certificate set.");
-      builder->last_error = result;
-      return;
-    }
-
-    result = cardano_transaction_body_set_certificates(body, certs);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set certificate set.");
-      cardano_certificate_set_unref(&certs);
-      builder->last_error = result;
-      return;
-    }
-  }
-
-  cardano_certificate_set_unref(&certs);
-
-  cardano_error_t result = cardano_certificate_set_add(certs, certificate);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to add certificate.");
-    builder->last_error = result;
-    return;
-  }
-
-  if (redeemer != NULL)
-  {
-    cardano_redeemer_t* rdmer = NULL;
-
-    cardano_ex_units_t* ex_units = NULL;
-    result                       = cardano_ex_units_new(0, 0, &ex_units);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create execution units.");
-      builder->last_error = result;
-      return;
-    }
-
-    const size_t certs_size = cardano_certificate_set_get_length(certs);
-
-    if (certs_size == 0U)
-    {
-      cardano_redeemer_unref(&rdmer);
-      cardano_tx_builder_set_last_error(builder, "Unexpected empty certificate set.");
-      builder->last_error = CARDANO_ERROR_INVALID_ARGUMENT;
-
-      return;
-    }
-
-    const size_t cert_index = cardano_certificate_set_get_length(certs) - 1U;
-
-    result = cardano_redeemer_new(CARDANO_REDEEMER_TAG_CERTIFYING, cert_index, redeemer, ex_units, &rdmer);
-    cardano_ex_units_unref(&ex_units);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create redeemer.");
-      builder->last_error = result;
-
-      return;
-    }
-
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
-    cardano_witness_set_unref(&witnesses);
-
-    cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
-
-    if (redeemers == NULL)
-    {
-      result = cardano_redeemer_list_new(&redeemers);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_redeemer_unref(&rdmer);
-        cardano_tx_builder_set_last_error(builder, "Failed to create redeemer list.");
-        builder->last_error = result;
-
-        return;
-      }
-
-      result = cardano_witness_set_set_redeemers(witnesses, redeemers);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_redeemer_unref(&rdmer);
-        cardano_tx_builder_set_last_error(builder, "Failed to set redeemer list.");
-        cardano_redeemer_list_unref(&redeemers);
-        builder->last_error = result;
-
-        return;
-      }
-    }
-
-    cardano_redeemer_list_unref(&redeemers);
-
-    result = cardano_redeemer_list_add(redeemers, rdmer);
-    cardano_redeemer_unref(&rdmer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to add redeemer.");
-      builder->last_error = result;
-    }
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -4147,57 +3393,11 @@ cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
     return;
   }
 
-  if ((address == NULL) || (callback == NULL))
-  {
-    cardano_tx_builder_set_last_error(builder, "Reward address and callback are required");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-
-    return;
-  }
-
-  cardano_plutus_data_t* placeholder = NULL;
-
-  cardano_error_t result = cardano_builder_create_placeholder_plutus_data(&placeholder);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_tx_builder_withdraw_rewards(builder, address, amount, placeholder);
-
-  cardano_plutus_data_unref(&placeholder);
-
-  if (builder->last_error != CARDANO_SUCCESS)
-  {
-    return;
-  }
-
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
-
-  cardano_blake2b_hash_t* hash = NULL;
-
-  result = compute_credential_sortable_id(credential, &hash);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to compute the withdrawal sortable id.");
-    builder->last_error = result;
-
-    return;
-  }
-
   const char* error_message = NULL;
 
-  result = cardano_builder_register_deferred_from_map(&builder->state, builder->state.withdrawals_to_redeemer_map, hash, callback, user_context, &error_message);
+  const cardano_error_t result = cardano_builder_withdraw_rewards_with_deferred_redeemer(&builder->state, address, amount, callback, user_context, &error_message);
 
   track_builder_result(builder, result, error_message);
-
-  cardano_blake2b_hash_unref(&hash);
 }
 
 void
@@ -4212,81 +3412,11 @@ cardano_tx_builder_add_certificate_with_deferred_redeemer(
     return;
   }
 
-  if ((certificate == NULL) || (callback == NULL))
-  {
-    cardano_tx_builder_set_last_error(builder, "Certificate and callback are required");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_add_certificate_with_deferred_redeemer(&builder->state, certificate, callback, user_context, &error_message);
 
-  cardano_plutus_data_t* placeholder = NULL;
-
-  cardano_error_t result = cardano_builder_create_placeholder_plutus_data(&placeholder);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create the placeholder redeemer.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_tx_builder_add_certificate(builder, certificate, placeholder);
-
-  cardano_plutus_data_unref(&placeholder);
-
-  if (builder->last_error != CARDANO_SUCCESS)
-  {
-    return;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
-
-  cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
-  cardano_certificate_set_unref(&certs);
-
-  const uint64_t cert_index = (uint64_t)(cardano_certificate_set_get_length(certs) - 1U);
-
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
-  cardano_witness_set_unref(&witnesses);
-
-  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
-  cardano_redeemer_list_unref(&redeemers);
-
-  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
-
-  const size_t redeemer_count = cardano_redeemer_list_get_length(redeemers);
-
-  for (size_t i = 0U; (i < redeemer_count) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
-  {
-    cardano_redeemer_t* redeemer = NULL;
-
-    const cardano_error_t get_result = cardano_redeemer_list_get(redeemers, i, &redeemer);
-
-    if (get_result != CARDANO_SUCCESS)
-    {
-      result = get_result;
-      break;
-    }
-
-    const bool matches = (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_CERTIFYING) &&
-      (cardano_redeemer_get_index(redeemer) == cert_index);
-
-    if (matches)
-    {
-      result = cardano_deferred_redeemer_list_add(builder->state.deferred_redeemers, redeemer, callback, user_context);
-    }
-
-    cardano_redeemer_unref(&redeemer);
-  }
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to register the deferred redeemer.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
