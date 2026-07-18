@@ -28,6 +28,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "internals/body_fields.h"
 
 #include <assert.h>
 #include <string.h>
@@ -307,11 +308,10 @@ get_field_ptr(cardano_sub_transaction_body_t* body, size_t key)
 }
 
 /**
- * \brief Reads a uint64_t value from the CBOR reader and stores it in the specified field.
+ * \brief Reads the time to live field from the CBOR reader and stores it in the specified field.
  *
- * This function reads a uint64_t value from the provided CBOR reader and stores the result
- * in the specified field pointer. It is used as a handler function for parameters that are
- * represented as uint64_t in the sub transaction body.
+ * This function allocates the storage for the time to live value and delegates the wire decoding
+ * to the shared body field codec.
  *
  * \param[in] reader A pointer to the CBOR reader from which to read the uint64_t value.
  * \param[out] field_ptr A pointer to the field where the read uint64_t value should be stored.
@@ -322,7 +322,7 @@ get_field_ptr(cardano_sub_transaction_body_t* body, size_t key)
  *         - An appropriate error code indicating the failure reason.
  */
 static cardano_error_t
-handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
+handle_ttl(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   assert(reader != NULL);
   assert(field_ptr != NULL);
@@ -341,15 +341,125 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  return cardano_cbor_reader_read_uint(reader, *field);
+  return cardano_body_read_ttl(reader, *field);
 }
 
 /**
- * \brief Reads a cardano_transaction_input_set_t value from the CBOR reader and stores it in the specified field.
+ * \brief Reads the validity start interval field from the CBOR reader and stores it in the specified field.
  *
- * This function reads a cardano_transaction_input_set_t value from the provided CBOR reader and stores the result
- * in the specified field pointer. It is used as a handler function for parameters that are
- * represented as cardano_transaction_input_set_t in the sub transaction body.
+ * This function allocates the storage for the validity start interval value and delegates the
+ * wire decoding to the shared body field codec.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the uint64_t value.
+ * \param[out] field_ptr A pointer to the field where the read uint64_t value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the uint64_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_validity_start(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  return cardano_body_read_validity_start(reader, *field);
+}
+
+/**
+ * \brief Reads the treasury value field from the CBOR reader and stores it in the specified field.
+ *
+ * This function allocates the storage for the treasury value and delegates the wire decoding to
+ * the shared body field codec.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the uint64_t value.
+ * \param[out] field_ptr A pointer to the field where the read uint64_t value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the uint64_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_treasury_value(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  return cardano_body_read_treasury_value(reader, *field);
+}
+
+/**
+ * \brief Reads the donation field from the CBOR reader and stores it in the specified field.
+ *
+ * This function allocates the storage for the donation value and delegates the wire decoding to
+ * the shared body field codec.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the uint64_t value.
+ * \param[out] field_ptr A pointer to the field where the read uint64_t value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the uint64_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_donation(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  return cardano_body_read_donation(reader, *field);
+}
+
+/**
+ * \brief Reads the inputs field from the CBOR reader and stores it in the specified field.
+ *
+ * This function checks the field for duplicates and delegates the wire decoding of the
+ * transaction input set to the shared body field codec.
  *
  * \param[in] reader A pointer to the CBOR reader from which to read the cardano_transaction_input_set_t value.
  * \param[out] field_ptr A pointer to the field where the read cardano_transaction_input_set_t value should be stored.
@@ -360,7 +470,7 @@ handle_uint64(cardano_cbor_reader_t* reader, void* field_ptr)
  *         - An appropriate error code indicating the failure reason.
  */
 static cardano_error_t
-handle_transaction_input_set(cardano_cbor_reader_t* reader, void* field_ptr)
+handle_inputs(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   assert(reader != NULL);
   assert(field_ptr != NULL);
@@ -372,7 +482,37 @@ handle_transaction_input_set(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_transaction_input_set_from_cbor(reader, field);
+  return cardano_body_read_inputs(reader, field);
+}
+
+/**
+ * \brief Reads the reference inputs field from the CBOR reader and stores it in the specified field.
+ *
+ * This function checks the field for duplicates and delegates the wire decoding of the
+ * transaction input set to the shared body field codec.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_transaction_input_set_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_transaction_input_set_t value should be stored.
+ *                       The field pointer should be of type cardano_transaction_input_set_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_transaction_input_set_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_reference_inputs(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_transaction_input_set_t** field = (cardano_transaction_input_set_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_body_read_reference_inputs(reader, field);
 }
 
 /**
@@ -403,7 +543,7 @@ handle_transaction_output_list(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_transaction_output_list_from_cbor(reader, field);
+  return cardano_body_read_outputs(reader, field);
 }
 
 /**
@@ -435,7 +575,7 @@ handle_certificate_set(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  cardano_error_t result = cardano_certificate_set_from_cbor(reader, field);
+  cardano_error_t result = cardano_body_read_certificates(reader, field);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -481,7 +621,7 @@ handle_withdrawal_map(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  cardano_error_t result = cardano_withdrawal_map_from_cbor(reader, field);
+  cardano_error_t result = cardano_body_read_withdrawals(reader, field);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -499,11 +639,10 @@ handle_withdrawal_map(cardano_cbor_reader_t* reader, void* field_ptr)
 }
 
 /**
- * \brief Reads a cardano_blake2b_hash_t value from the CBOR reader and stores it in the specified field.
+ * \brief Reads the auxiliary data hash field from the CBOR reader and stores it in the specified field.
  *
- * This function reads a cardano_blake2b_hash_t value from the provided CBOR reader and stores the result
- * in the specified field pointer. It is used as a handler function for parameters that are
- * represented as cardano_blake2b_hash_t in the sub transaction body.
+ * This function checks the field for duplicates and delegates the wire decoding of the blake2b
+ * hash to the shared body field codec.
  *
  * \param[in] reader A pointer to the CBOR reader from which to read the cardano_blake2b_hash_t value.
  * \param[out] field_ptr A pointer to the field where the read cardano_blake2b_hash_t value should be stored.
@@ -514,7 +653,7 @@ handle_withdrawal_map(cardano_cbor_reader_t* reader, void* field_ptr)
  *         - An appropriate error code indicating the failure reason.
  */
 static cardano_error_t
-handle_blake2b_hash(cardano_cbor_reader_t* reader, void* field_ptr)
+handle_aux_data_hash(cardano_cbor_reader_t* reader, void* field_ptr)
 {
   assert(reader != NULL);
   assert(field_ptr != NULL);
@@ -526,7 +665,37 @@ handle_blake2b_hash(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_blake2b_hash_from_cbor(reader, field);
+  return cardano_body_read_aux_data_hash(reader, field);
+}
+
+/**
+ * \brief Reads the script data hash field from the CBOR reader and stores it in the specified field.
+ *
+ * This function checks the field for duplicates and delegates the wire decoding of the blake2b
+ * hash to the shared body field codec.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_blake2b_hash_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_blake2b_hash_t value should be stored.
+ *                       The field pointer should be of type cardano_blake2b_hash_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_blake2b_hash_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_script_data_hash(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_blake2b_hash_t** field = (cardano_blake2b_hash_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_body_read_script_data_hash(reader, field);
 }
 
 /**
@@ -558,7 +727,7 @@ handle_multi_asset(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  cardano_error_t result = cardano_multi_asset_from_cbor(reader, field);
+  cardano_error_t result = cardano_body_read_mint(reader, field);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -603,7 +772,7 @@ handle_guard_set(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_guard_set_from_cbor(reader, field);
+  return cardano_body_read_guards(reader, field);
 }
 
 /**
@@ -641,7 +810,7 @@ handle_network_id(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  return cardano_cbor_reader_read_uint(reader, (uint64_t*)((void*)*field));
+  return cardano_body_read_network_id(reader, *field);
 }
 
 /**
@@ -672,7 +841,7 @@ handle_voting_procedures(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_voting_procedures_from_cbor(reader, field);
+  return cardano_body_read_voting_procedures(reader, field);
 }
 
 /**
@@ -703,7 +872,7 @@ handle_proposal_procedure_set(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_proposal_procedure_set_from_cbor(reader, field);
+  return cardano_body_read_proposal_procedures(reader, field);
 }
 
 /**
@@ -734,7 +903,7 @@ handle_required_guards_map(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_required_guards_map_from_cbor(reader, field);
+  return cardano_body_read_required_top_level_guards(reader, field);
 }
 
 /**
@@ -765,7 +934,7 @@ handle_direct_deposit_map(cardano_cbor_reader_t* reader, void* field_ptr)
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_direct_deposit_map_from_cbor(reader, field);
+  return cardano_body_read_direct_deposits(reader, field);
 }
 
 /**
@@ -796,7 +965,7 @@ handle_account_balance_intervals_map(cardano_cbor_reader_t* reader, void* field_
     return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
   }
 
-  return cardano_account_balance_intervals_map_from_cbor(reader, field);
+  return cardano_body_read_account_balance_intervals(reader, field);
 }
 
 /**
@@ -821,594 +990,6 @@ handle_invalid_key(cardano_cbor_reader_t* reader, void* field_ptr)
   CARDANO_UNUSED(field_ptr);
 
   return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated unsigned integer value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the unsigned integer value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const uint64_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_cbor_writer_write_uint(writer, *value);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated input set value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the input set value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_transaction_input_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_transaction_input_set_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_transaction_input_set_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated output list value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the output list value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_transaction_output_list_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_transaction_output_list_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_transaction_output_list_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated certificate set value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the certificate set value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_certificate_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_certificate_set_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_certificate_set_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated withdrawal map value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the withdrawal map value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_withdrawal_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_withdrawal_map_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_withdrawal_map_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated blake2b hash value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the blake2b hash value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_blake2b_hash_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_blake2b_hash_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_blake2b_hash_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated multi asset value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the multi asset value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_multi_asset_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_multi_asset_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_multi_asset_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated guard set value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the guard set value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_guard_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_guard_set_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_guard_set_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated network id value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the network id value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_network_id_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_network_id_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_cbor_writer_write_uint(writer, *value);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated voting procedures value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the voting procedures value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_voting_procedures_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_voting_procedures_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_voting_procedures_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated proposal procedures value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the proposal procedures value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_proposal_procedure_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_proposal_procedure_set_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_proposal_procedure_set_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated required guards map value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the required guards map value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_required_guards_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_required_guards_map_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_required_guards_map_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated direct deposit map value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the direct deposit map value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_direct_deposit_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_direct_deposit_map_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_direct_deposit_map_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Writes a key-value pair to the CBOR writer if the value is present.
- *
- * This function writes a key and its associated account balance intervals map value to the CBOR writer
- * only if the value is not NULL. If the value is NULL, the function does nothing and
- * returns \ref CARDANO_SUCCESS.
- *
- * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
- * \param[in] key The key to be written to the CBOR map.
- * \param[in] value A pointer to the account balance intervals map value to be written. If NULL, nothing is written.
- *
- * \return \ref cardano_error_t indicating the outcome of the operation.
- *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
- *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
- *
- * \pre \p writer must not be NULL.
- */
-static cardano_error_t
-write_account_balance_intervals_map_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_account_balance_intervals_map_t* value)
-{
-  assert(writer != NULL);
-
-  if (value != NULL)
-  {
-    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    result = cardano_account_balance_intervals_map_to_cbor(value, writer);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return CARDANO_SUCCESS;
 }
 
 /**
@@ -1457,29 +1038,29 @@ create_sub_transaction_body_new(void)
 
 // cppcheck-suppress misra-c2012-8.9; Reason: Is more readable to define the map here
 static const param_handler_t param_handlers[] = {
-  handle_transaction_input_set,
+  handle_inputs,
   handle_transaction_output_list,
   handle_invalid_key, // top-level-only key (fee)
-  handle_uint64,
+  handle_ttl,
   handle_certificate_set,
   handle_withdrawal_map,
   handle_invalid_key, // unused key
-  handle_blake2b_hash,
-  handle_uint64,
+  handle_aux_data_hash,
+  handle_validity_start,
   handle_multi_asset,
   handle_invalid_key, // unused key
-  handle_blake2b_hash,
+  handle_script_data_hash,
   handle_invalid_key, // unused key
   handle_invalid_key, // top-level-only key (collateral)
   handle_guard_set,
   handle_network_id,
   handle_invalid_key, // top-level-only key (collateral return)
   handle_invalid_key, // top-level-only key (total collateral)
-  handle_transaction_input_set,
+  handle_reference_inputs,
   handle_voting_procedures,
   handle_proposal_procedure_set,
-  handle_uint64,
-  handle_uint64,
+  handle_treasury_value,
+  handle_donation,
   handle_invalid_key, // top-level-only key (sub transactions)
   handle_required_guards_map,
   handle_direct_deposit_map,
@@ -1670,133 +1251,133 @@ cardano_sub_transaction_body_to_cbor(const cardano_sub_transaction_body_t* sub_t
     return result;
   }
 
-  result = write_transaction_input_set_if_present(writer, 0U, sub_transaction_body->inputs);
+  result = cardano_body_write_inputs_if_present(writer, sub_transaction_body->inputs);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_transaction_output_list_if_present(writer, 1U, sub_transaction_body->outputs);
+  result = cardano_body_write_outputs_if_present(writer, sub_transaction_body->outputs);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_uint_if_present(writer, 3U, sub_transaction_body->invalid_after);
+  result = cardano_body_write_ttl_if_present(writer, sub_transaction_body->invalid_after);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_certificate_set_if_present(writer, 4U, sub_transaction_body->certificates);
+  result = cardano_body_write_certificates_if_present(writer, sub_transaction_body->certificates);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_withdrawal_map_if_present(writer, 5U, sub_transaction_body->withdrawals);
+  result = cardano_body_write_withdrawals_if_present(writer, sub_transaction_body->withdrawals);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_blake2b_hash_if_present(writer, 7U, sub_transaction_body->aux_data_hash);
+  result = cardano_body_write_aux_data_hash_if_present(writer, sub_transaction_body->aux_data_hash);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_uint_if_present(writer, 8U, sub_transaction_body->invalid_before);
+  result = cardano_body_write_validity_start_if_present(writer, sub_transaction_body->invalid_before);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_multi_asset_if_present(writer, 9U, sub_transaction_body->mint);
+  result = cardano_body_write_mint_if_present(writer, sub_transaction_body->mint);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_blake2b_hash_if_present(writer, 11U, sub_transaction_body->script_data_hash);
+  result = cardano_body_write_script_data_hash_if_present(writer, sub_transaction_body->script_data_hash);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_guard_set_if_present(writer, 14U, sub_transaction_body->guards);
+  result = cardano_body_write_guards_if_present(writer, sub_transaction_body->guards);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_network_id_if_present(writer, 15U, sub_transaction_body->network_id);
+  result = cardano_body_write_network_id_if_present(writer, sub_transaction_body->network_id);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_transaction_input_set_if_present(writer, 18U, sub_transaction_body->reference_inputs);
+  result = cardano_body_write_reference_inputs_if_present(writer, sub_transaction_body->reference_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_voting_procedures_if_present(writer, 19U, sub_transaction_body->voting_procedures);
+  result = cardano_body_write_voting_procedures_if_present(writer, sub_transaction_body->voting_procedures);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_proposal_procedure_set_if_present(writer, 20U, sub_transaction_body->proposal_procedures);
+  result = cardano_body_write_proposal_procedures_if_present(writer, sub_transaction_body->proposal_procedures);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_uint_if_present(writer, 21U, sub_transaction_body->treasury_value);
+  result = cardano_body_write_treasury_value_if_present(writer, sub_transaction_body->treasury_value);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_uint_if_present(writer, 22U, sub_transaction_body->donation);
+  result = cardano_body_write_donation_if_present(writer, sub_transaction_body->donation);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_required_guards_map_if_present(writer, 24U, sub_transaction_body->required_top_level_guards);
+  result = cardano_body_write_required_top_level_guards_if_present(writer, sub_transaction_body->required_top_level_guards);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_direct_deposit_map_if_present(writer, 25U, sub_transaction_body->direct_deposits);
+  result = cardano_body_write_direct_deposits_if_present(writer, sub_transaction_body->direct_deposits);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = write_account_balance_intervals_map_if_present(writer, 26U, sub_transaction_body->account_balance_intervals);
+  result = cardano_body_write_account_balance_intervals_if_present(writer, sub_transaction_body->account_balance_intervals);
 
   if (result != CARDANO_SUCCESS)
   {
