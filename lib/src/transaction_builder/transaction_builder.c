@@ -29,13 +29,12 @@
 #include <cardano/time.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
-#include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
-#include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/witness_set/redeemer.h>
 
 #include "../allocators.h"
 #include "./internals/blake2b_hash_to_redeemer_map.h"
+#include "./internals/builder_state.h"
 
 #include <assert.h>
 #include <cardano/certs/register_drep_cert.h>
@@ -71,30 +70,9 @@
  */
 typedef struct cardano_tx_builder_t
 {
-    cardano_object_t               base;
-    cardano_error_t                last_error;
-    cardano_transaction_t*         transaction;
-    cardano_protocol_parameters_t* params;
-    cardano_slot_config_t          slot_config;
-    cardano_coin_selector_t*       coin_selector;
-    cardano_tx_evaluator_t*        tx_evaluator;
-    cardano_address_t*             change_address;
-    cardano_address_t*             collateral_address;
-    cardano_utxo_list_t*           available_utxos;
-    cardano_utxo_list_t*           collateral_utxos;
-    cardano_utxo_list_t*           pre_selected_inputs;
-    cardano_utxo_list_t*           reference_inputs;
-    bool                           has_plutus_v1;
-    bool                           has_plutus_v2;
-    bool                           has_plutus_v3;
-    size_t                         additional_signature_count;
-
-    // Redeemer maps
-    cardano_input_to_redeemer_map_t*        input_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* withdrawals_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* mints_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* votes_to_redeemer_map;
-    cardano_deferred_redeemer_list_t*       deferred_redeemers;
+    cardano_object_t        base;
+    cardano_error_t         last_error;
+    cardano_builder_state_t state;
 } cardano_tx_builder_t;
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -119,94 +97,9 @@ cardano_tx_builder_deallocate(void* object)
 
   cardano_tx_builder_t* builder = (cardano_tx_builder_t*)object;
 
-  cardano_transaction_unref(&builder->transaction);
-  cardano_protocol_parameters_unref(&builder->params);
-  cardano_coin_selector_unref(&builder->coin_selector);
-  cardano_tx_evaluator_unref(&builder->tx_evaluator);
-  cardano_address_unref(&builder->change_address);
-  cardano_address_unref(&builder->collateral_address);
-  cardano_utxo_list_unref(&builder->available_utxos);
-  cardano_utxo_list_unref(&builder->collateral_utxos);
-  cardano_utxo_list_unref(&builder->pre_selected_inputs);
-  cardano_utxo_list_unref(&builder->reference_inputs);
-  cardano_input_to_redeemer_map_unref(&builder->input_to_redeemer_map);
-  cardano_blake2b_hash_to_redeemer_map_unref(&builder->withdrawals_to_redeemer_map);
-  cardano_blake2b_hash_to_redeemer_map_unref(&builder->mints_to_redeemer_map);
-  cardano_blake2b_hash_to_redeemer_map_unref(&builder->votes_to_redeemer_map);
-  cardano_deferred_redeemer_list_unref(&builder->deferred_redeemers);
+  cardano_builder_state_release(&builder->state);
 
   _cardano_free(builder);
-}
-
-/**
- * \brief Creates and initializes a new, empty transaction.
- *
- * This function allocates and initializes a new instance of a \ref cardano_transaction_t object.
- *
- * \return A pointer to the newly created \ref cardano_transaction_t object if successful. Returns
- * \c NULL if memory allocation fails.
- */
-static cardano_transaction_t*
-transaction_new(void)
-{
-  cardano_transaction_body_t*        body        = NULL;
-  cardano_transaction_input_set_t*   inputs      = NULL;
-  cardano_transaction_output_list_t* outputs     = NULL;
-  cardano_witness_set_t*             witnesses   = NULL;
-  cardano_transaction_t*             transaction = NULL;
-
-  cardano_error_t result = cardano_transaction_input_set_new(&inputs);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return NULL;
-  }
-
-  result = cardano_transaction_output_list_new(&outputs);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_input_set_unref(&inputs);
-    return NULL;
-  }
-
-  result = cardano_transaction_body_new(inputs, outputs, 0U, NULL, &body);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_input_set_unref(&inputs);
-    cardano_transaction_output_list_unref(&outputs);
-    return NULL;
-  }
-
-  result = cardano_witness_set_new(&witnesses);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_input_set_unref(&inputs);
-    cardano_transaction_output_list_unref(&outputs);
-    cardano_transaction_body_unref(&body);
-    return NULL;
-  }
-
-  result = cardano_transaction_new(body, witnesses, NULL, &transaction);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_transaction_input_set_unref(&inputs);
-    cardano_transaction_output_list_unref(&outputs);
-    cardano_transaction_body_unref(&body);
-    cardano_witness_set_unref(&witnesses);
-
-    return NULL;
-  }
-
-  cardano_transaction_input_set_unref(&inputs);
-  cardano_transaction_output_list_unref(&outputs);
-  cardano_transaction_body_unref(&body);
-  cardano_witness_set_unref(&witnesses);
-
-  return transaction;
 }
 
 /**
@@ -309,12 +202,12 @@ get_cost_model_for_version(
 static cardano_error_t
 get_cost_models(cardano_tx_builder_t* builder, cardano_costmdls_t* costmdls)
 {
-  cardano_costmdls_t* pparams_costmdls = cardano_protocol_parameters_get_cost_models(builder->params);
+  cardano_costmdls_t* pparams_costmdls = cardano_protocol_parameters_get_cost_models(builder->state.params);
   cardano_costmdls_unref(&pparams_costmdls);
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  if (builder->has_plutus_v1)
+  if (builder->state.has_plutus_v1)
   {
     result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
 
@@ -324,7 +217,7 @@ get_cost_models(cardano_tx_builder_t* builder, cardano_costmdls_t* costmdls)
     }
   }
 
-  if (builder->has_plutus_v2)
+  if (builder->state.has_plutus_v2)
   {
     result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
 
@@ -334,7 +227,7 @@ get_cost_models(cardano_tx_builder_t* builder, cardano_costmdls_t* costmdls)
     }
   }
 
-  if (builder->has_plutus_v3)
+  if (builder->state.has_plutus_v3)
   {
     result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
 
@@ -487,7 +380,7 @@ add_redeemer(
     {
       case CARDANO_REDEEMER_TAG_MINT:
       {
-        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->mints_to_redeemer_map, hash, rdmer);
+        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.mints_to_redeemer_map, hash, rdmer);
 
         if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
         {
@@ -509,7 +402,7 @@ add_redeemer(
       }
       case CARDANO_REDEEMER_TAG_REWARD:
       {
-        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->withdrawals_to_redeemer_map, hash, rdmer);
+        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.withdrawals_to_redeemer_map, hash, rdmer);
 
         if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
         {
@@ -531,7 +424,7 @@ add_redeemer(
       }
       case CARDANO_REDEEMER_TAG_VOTING:
       {
-        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, hash, rdmer);
+        result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.votes_to_redeemer_map, hash, rdmer);
 
         if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
         {
@@ -882,119 +775,9 @@ cardano_tx_builder_new(
   builder->base.last_error[0] = '\0';
   builder->base.deallocator   = cardano_tx_builder_deallocate;
 
-  builder->last_error                  = CARDANO_SUCCESS;
-  builder->transaction                 = NULL;
-  builder->params                      = NULL;
-  builder->slot_config                 = *slot_config;
-  builder->coin_selector               = NULL;
-  builder->tx_evaluator                = NULL;
-  builder->change_address              = NULL;
-  builder->collateral_address          = NULL;
-  builder->available_utxos             = NULL;
-  builder->collateral_utxos            = NULL;
-  builder->pre_selected_inputs         = NULL;
-  builder->reference_inputs            = NULL;
-  builder->input_to_redeemer_map       = NULL;
-  builder->withdrawals_to_redeemer_map = NULL;
-  builder->mints_to_redeemer_map       = NULL;
-  builder->votes_to_redeemer_map       = NULL;
-  builder->deferred_redeemers          = NULL;
-  builder->tx_evaluator                = NULL;
+  builder->last_error = CARDANO_SUCCESS;
 
-  cardano_protocol_parameters_ref(params);
-  builder->params = params;
-
-  cardano_error_t result = cardano_random_improve_coin_selector_new(&builder->coin_selector);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  builder->transaction = transaction_new();
-
-  if (builder->transaction == NULL)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  builder->change_address             = NULL;
-  builder->collateral_address         = NULL;
-  builder->available_utxos            = NULL;
-  builder->collateral_utxos           = NULL;
-  builder->pre_selected_inputs        = NULL;
-  builder->reference_inputs           = NULL;
-  builder->has_plutus_v1              = false;
-  builder->has_plutus_v2              = false;
-  builder->has_plutus_v3              = false;
-  builder->additional_signature_count = 0U;
-
-  result = cardano_utxo_list_new(&builder->pre_selected_inputs);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_utxo_list_new(&builder->reference_inputs);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_input_to_redeemer_map_new(&builder->input_to_redeemer_map);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_blake2b_hash_to_redeemer_map_new(&builder->withdrawals_to_redeemer_map);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_blake2b_hash_to_redeemer_map_new(&builder->mints_to_redeemer_map);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_blake2b_hash_to_redeemer_map_new(&builder->votes_to_redeemer_map);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  result = cardano_deferred_redeemer_list_new(&builder->deferred_redeemers);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_unref(&builder);
-    return NULL;
-  }
-
-  cardano_costmdls_t*         cost_models    = cardano_protocol_parameters_get_cost_models(builder->params);
-  cardano_protocol_version_t* version        = cardano_protocol_parameters_get_protocol_version(builder->params);
-  const uint64_t              protocol_major = cardano_protocol_version_get_major(version);
-
-  result = cardano_tx_evaluator_new_native(&builder->slot_config, cost_models, protocol_major, &builder->tx_evaluator);
-
-  cardano_costmdls_unref(&cost_models);
-  cardano_protocol_version_unref(&version);
+  const cardano_error_t result = cardano_builder_state_init(&builder->state, params, slot_config);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1023,8 +806,8 @@ cardano_tx_builder_set_coin_selector(
   }
 
   cardano_coin_selector_ref(coin_selector);
-  cardano_coin_selector_unref(&builder->coin_selector);
-  builder->coin_selector = coin_selector;
+  cardano_coin_selector_unref(&builder->state.coin_selector);
+  builder->state.coin_selector = coin_selector;
 }
 
 void
@@ -1045,8 +828,8 @@ cardano_tx_builder_set_tx_evaluator(
   }
 
   cardano_tx_evaluator_ref(tx_evaluator);
-  cardano_tx_evaluator_unref(&builder->tx_evaluator);
-  builder->tx_evaluator = tx_evaluator;
+  cardano_tx_evaluator_unref(&builder->state.tx_evaluator);
+  builder->state.tx_evaluator = tx_evaluator;
 }
 
 void
@@ -1059,7 +842,7 @@ cardano_tx_builder_set_network_id(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1097,8 +880,8 @@ cardano_tx_builder_set_change_address(
   }
 
   cardano_address_ref(change_address);
-  cardano_address_unref(&builder->change_address);
-  builder->change_address = change_address;
+  cardano_address_unref(&builder->state.change_address);
+  builder->state.change_address = change_address;
 }
 
 void
@@ -1151,8 +934,8 @@ cardano_tx_builder_set_collateral_change_address(
   }
 
   cardano_address_ref(collateral_change_address);
-  cardano_address_unref(&builder->collateral_address);
-  builder->collateral_address = collateral_change_address;
+  cardano_address_unref(&builder->state.collateral_address);
+  builder->state.collateral_address = collateral_change_address;
 }
 
 void
@@ -1197,7 +980,7 @@ cardano_tx_builder_set_minimum_fee(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1227,7 +1010,7 @@ cardano_tx_builder_set_donation(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1274,8 +1057,8 @@ cardano_tx_builder_set_utxos(
   }
 
   cardano_utxo_list_ref(utxos);
-  cardano_utxo_list_unref(&builder->available_utxos);
-  builder->available_utxos = utxos;
+  cardano_utxo_list_unref(&builder->state.available_utxos);
+  builder->state.available_utxos = utxos;
 }
 
 void
@@ -1296,8 +1079,8 @@ cardano_tx_builder_set_collateral_utxos(
   }
 
   cardano_utxo_list_ref(utxos);
-  cardano_utxo_list_unref(&builder->collateral_utxos);
-  builder->collateral_utxos = utxos;
+  cardano_utxo_list_unref(&builder->state.collateral_utxos);
+  builder->state.collateral_utxos = utxos;
 }
 
 void
@@ -1310,7 +1093,7 @@ cardano_tx_builder_set_invalid_after(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1340,7 +1123,7 @@ cardano_tx_builder_set_invalid_after_ex(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1351,7 +1134,7 @@ cardano_tx_builder_set_invalid_after_ex(
     return;
   }
 
-  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->slot_config);
+  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->state.slot_config);
   cardano_error_t result = cardano_transaction_body_set_invalid_after(body, &slot);
 
   if (result != CARDANO_SUCCESS)
@@ -1371,7 +1154,7 @@ cardano_tx_builder_set_invalid_before(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1401,7 +1184,7 @@ cardano_tx_builder_set_invalid_before_ex(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   if (body == NULL)
@@ -1412,7 +1195,7 @@ cardano_tx_builder_set_invalid_before_ex(
     return;
   }
 
-  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->slot_config);
+  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->state.slot_config);
   cardano_error_t result = cardano_transaction_body_set_invalid_before(body, &slot);
 
   if (result != CARDANO_SUCCESS)
@@ -1439,7 +1222,7 @@ cardano_tx_builder_add_reference_input(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_reference_inputs(body);
@@ -1510,17 +1293,17 @@ cardano_tx_builder_add_reference_input(
     {
       case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
       {
-        builder->has_plutus_v1 = true;
+        builder->state.has_plutus_v1 = true;
         break;
       }
       case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
       {
-        builder->has_plutus_v2 = true;
+        builder->state.has_plutus_v2 = true;
         break;
       }
       case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
       {
-        builder->has_plutus_v3 = true;
+        builder->state.has_plutus_v3 = true;
         break;
       }
       default:
@@ -1530,7 +1313,7 @@ cardano_tx_builder_add_reference_input(
     }
   }
 
-  result = cardano_utxo_list_add(builder->reference_inputs, utxo);
+  result = cardano_utxo_list_add(builder->state.reference_inputs, utxo);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1567,7 +1350,7 @@ cardano_tx_builder_send_lovelace(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1663,7 +1446,7 @@ cardano_tx_builder_send_value(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1760,7 +1543,7 @@ cardano_tx_builder_lock_lovelace(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1860,7 +1643,7 @@ cardano_tx_builder_lock_value(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1975,7 +1758,7 @@ register_deferred_from_map(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+    result = cardano_deferred_redeemer_list_add(builder->state.deferred_redeemers, redeemer, callback, user_context);
   }
 
   cardano_redeemer_unref(&redeemer);
@@ -2023,7 +1806,7 @@ cardano_tx_builder_add_input(
     return;
   }
 
-  result = cardano_utxo_list_add(builder->pre_selected_inputs, utxo);
+  result = cardano_utxo_list_add(builder->state.pre_selected_inputs, utxo);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -2033,7 +1816,7 @@ cardano_tx_builder_add_input(
     return;
   }
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
   cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
@@ -2099,7 +1882,7 @@ cardano_tx_builder_add_input(
     cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
     cardano_transaction_input_unref(&input);
 
-    result = cardano_input_to_redeemer_map_insert(builder->input_to_redeemer_map, input, rdmer);
+    result = cardano_input_to_redeemer_map_insert(builder->state.input_to_redeemer_map, input, rdmer);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2164,7 +1947,7 @@ cardano_tx_builder_add_output(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -2196,7 +1979,7 @@ cardano_tx_builder_set_metadata(
     return;
   }
 
-  cardano_auxiliary_data_t* auxiliary_data = cardano_transaction_get_auxiliary_data(builder->transaction);
+  cardano_auxiliary_data_t* auxiliary_data = cardano_transaction_get_auxiliary_data(builder->state.transaction);
 
   if (auxiliary_data == NULL)
   {
@@ -2209,7 +1992,7 @@ cardano_tx_builder_set_metadata(
       return;
     }
 
-    result = cardano_transaction_set_auxiliary_data(builder->transaction, auxiliary_data);
+    result = cardano_transaction_set_auxiliary_data(builder->state.transaction, auxiliary_data);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2258,7 +2041,7 @@ cardano_tx_builder_set_metadata(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_blake2b_hash_t* hash = cardano_auxiliary_data_get_hash(auxiliary_data);
@@ -2335,7 +2118,7 @@ cardano_tx_builder_mint_token(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* tokens = cardano_transaction_body_get_mint(body);
@@ -2379,7 +2162,7 @@ cardano_tx_builder_mint_token(
 
   if (redeemer != NULL)
   {
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
     cardano_witness_set_unref(&witnesses);
 
     result = add_redeemer(witnesses, policy_id, redeemer, CARDANO_REDEEMER_TAG_MINT, builder);
@@ -2394,7 +2177,7 @@ cardano_tx_builder_mint_token(
   {
     // We still want to add an entry in the mints_to_redeemer_map with a NULL redeemer
     // so it can compute the indices correctly.
-    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->mints_to_redeemer_map, policy_id, NULL);
+    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.mints_to_redeemer_map, policy_id, NULL);
 
     // Avoid error on duplicated key, as it can happen when minting multiple assets
     // under the same policy without redeemer.
@@ -2541,7 +2324,7 @@ cardano_tx_builder_pad_signer_count(
     return;
   }
 
-  builder->additional_signature_count = count;
+  builder->state.additional_signature_count = count;
 }
 
 void
@@ -2562,7 +2345,7 @@ cardano_tx_builder_add_signer(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
@@ -2668,7 +2451,7 @@ cardano_tx_builder_add_datum(
     return;
   }
 
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witness_set);
 
   cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
@@ -2737,7 +2520,7 @@ cardano_tx_builder_withdraw_rewards(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
@@ -2791,7 +2574,7 @@ cardano_tx_builder_withdraw_rewards(
 
   if (redeemer != NULL)
   {
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
     cardano_witness_set_unref(&witnesses);
 
     result = add_redeemer(witnesses, hash, redeemer, CARDANO_REDEEMER_TAG_REWARD, builder);
@@ -2825,7 +2608,7 @@ cardano_tx_builder_withdraw_rewards(
     // the redeemer index.
     if (cred_type != CARDANO_CREDENTIAL_TYPE_KEY_HASH)
     {
-      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->withdrawals_to_redeemer_map, hash, NULL);
+      result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.withdrawals_to_redeemer_map, hash, NULL);
 
       if (result != CARDANO_SUCCESS)
       {
@@ -2895,7 +2678,7 @@ cardano_tx_builder_register_reward_address(
   cardano_credential_t* credential = cardano_reward_address_get_credential(address);
   cardano_credential_unref(&credential);
 
-  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->params);
+  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->state.params);
 
   cardano_certificate_t*       cert         = NULL;
   cardano_registration_cert_t* registration = NULL;
@@ -2977,7 +2760,7 @@ cardano_tx_builder_deregister_reward_address(
   cardano_credential_t* credential = cardano_reward_address_get_credential(address);
   cardano_credential_unref(&credential);
 
-  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->params);
+  const uint64_t deposit = cardano_protocol_parameters_get_key_deposit(builder->state.params);
 
   cardano_certificate_t*         cert           = NULL;
   cardano_unregistration_cert_t* unregistration = NULL;
@@ -3317,7 +3100,7 @@ cardano_tx_builder_register_drep(
     return;
   }
 
-  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->params);
+  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->state.params);
   result                 = cardano_register_drep_cert_new(credential, deposit, anchor, &register_drep);
 
   if (result != CARDANO_SUCCESS)
@@ -3532,7 +3315,7 @@ cardano_tx_builder_deregister_drep(
     return;
   }
 
-  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->params);
+  const uint64_t deposit = cardano_protocol_parameters_get_drep_deposit(builder->state.params);
   result                 = cardano_unregister_drep_cert_new(credential, deposit, &deregistration);
 
   if (result != CARDANO_SUCCESS)
@@ -3623,7 +3406,7 @@ cardano_tx_builder_vote(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_voting_procedures_t* votes = cardano_transaction_body_get_voting_procedures(body);
@@ -3673,7 +3456,7 @@ cardano_tx_builder_vote(
 
   if (redeemer != NULL)
   {
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
     cardano_witness_set_unref(&witnesses);
 
     result = add_redeemer(witnesses, id_hash, redeemer, CARDANO_REDEEMER_TAG_VOTING, builder);
@@ -3687,7 +3470,7 @@ cardano_tx_builder_vote(
   }
   else
   {
-    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->votes_to_redeemer_map, id_hash, NULL);
+    result = cardano_blake2b_hash_to_redeemer_map_insert(builder->state.votes_to_redeemer_map, id_hash, NULL);
 
     if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
     {
@@ -3720,7 +3503,7 @@ cardano_tx_builder_add_certificate(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -3796,7 +3579,7 @@ cardano_tx_builder_add_certificate(
       return;
     }
 
-    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
     cardano_witness_set_unref(&witnesses);
 
     cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
@@ -3873,17 +3656,17 @@ cardano_tx_builder_add_script(
   {
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
     {
-      builder->has_plutus_v1 = true;
+      builder->state.has_plutus_v1 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
     {
-      builder->has_plutus_v2 = true;
+      builder->state.has_plutus_v2 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
     {
-      builder->has_plutus_v3 = true;
+      builder->state.has_plutus_v3 = true;
       break;
     }
     default:
@@ -3892,7 +3675,7 @@ cardano_tx_builder_add_script(
     }
   }
 
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witness_set);
 
   result = cardano_witness_set_add_script(witness_set, script);
@@ -3936,7 +3719,7 @@ cardano_tx_builder_propose_parameter_change(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_parameter_change_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -3949,7 +3732,7 @@ cardano_tx_builder_propose_parameter_change(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -3964,7 +3747,7 @@ cardano_tx_builder_propose_parameter_change(
 
   cardano_proposal_procedure_unref(&proposal);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
   const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
 
@@ -4117,7 +3900,7 @@ cardano_tx_builder_propose_hardfork(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_hard_fork_initiation_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -4130,7 +3913,7 @@ cardano_tx_builder_propose_hardfork(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4279,7 +4062,7 @@ cardano_tx_builder_propose_treasury_withdrawals(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_treasury_withdrawals_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -4292,7 +4075,7 @@ cardano_tx_builder_propose_treasury_withdrawals(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4306,7 +4089,7 @@ cardano_tx_builder_propose_treasury_withdrawals(
     builder->last_error = result;
   }
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
   const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
 
@@ -4429,7 +4212,7 @@ cardano_tx_builder_propose_no_confidence(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_no_confidence_action(deposit, reward_address, anchor, action, &proposal);
   cardano_no_confidence_action_unref(&action);
@@ -4441,7 +4224,7 @@ cardano_tx_builder_propose_no_confidence(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4570,7 +4353,7 @@ cardano_tx_builder_propose_update_committee(
 
   cardano_proposal_procedure_t* proposal;
 
-  const uint64_t deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_update_committee_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -4583,7 +4366,7 @@ cardano_tx_builder_propose_update_committee(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4728,7 +4511,7 @@ cardano_tx_builder_propose_new_constitution(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_constitution_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -4741,7 +4524,7 @@ cardano_tx_builder_propose_new_constitution(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4867,7 +4650,7 @@ cardano_tx_builder_propose_info(
   }
 
   cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->params);
+  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(builder->state.params);
 
   result = cardano_proposal_procedure_new_info_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -4880,7 +4663,7 @@ cardano_tx_builder_propose_info(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(builder, body);
@@ -4981,7 +4764,7 @@ cardano_tx_builder_build(
     return builder->last_error;
   }
 
-  if (builder->change_address == NULL)
+  if (builder->state.change_address == NULL)
   {
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
     cardano_tx_builder_set_last_error(
@@ -4991,7 +4774,7 @@ cardano_tx_builder_build(
     return builder->last_error;
   }
 
-  if (builder->available_utxos == NULL)
+  if (builder->state.available_utxos == NULL)
   {
     builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
     cardano_tx_builder_set_last_error(
@@ -5001,9 +4784,9 @@ cardano_tx_builder_build(
     return builder->last_error;
   }
 
-  if (cardano_transaction_has_script_data(builder->transaction))
+  if (cardano_transaction_has_script_data(builder->state.transaction))
   {
-    if (builder->collateral_address == NULL)
+    if (builder->state.collateral_address == NULL)
     {
       builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
       cardano_tx_builder_set_last_error(
@@ -5013,7 +4796,7 @@ cardano_tx_builder_build(
       return builder->last_error;
     }
 
-    if (builder->collateral_utxos == NULL)
+    if (builder->state.collateral_utxos == NULL)
     {
       builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
       cardano_tx_builder_set_last_error(
@@ -5024,7 +4807,7 @@ cardano_tx_builder_build(
     }
   }
 
-  cardano_transaction_t* tx = builder->transaction;
+  cardano_transaction_t* tx = builder->state.transaction;
 
   cardano_error_t result = set_dummy_script_data_hash(tx);
 
@@ -5036,18 +4819,18 @@ cardano_tx_builder_build(
 
   result = cardano_balance_transaction(
     tx,
-    builder->additional_signature_count,
-    builder->params,
-    builder->reference_inputs,
-    builder->pre_selected_inputs,
-    builder->input_to_redeemer_map,
-    builder->available_utxos,
-    builder->coin_selector,
-    builder->change_address,
-    builder->collateral_utxos,
-    builder->collateral_address,
-    builder->tx_evaluator,
-    builder->deferred_redeemers);
+    builder->state.additional_signature_count,
+    builder->state.params,
+    builder->state.reference_inputs,
+    builder->state.pre_selected_inputs,
+    builder->state.input_to_redeemer_map,
+    builder->state.available_utxos,
+    builder->state.coin_selector,
+    builder->state.change_address,
+    builder->state.collateral_utxos,
+    builder->state.collateral_address,
+    builder->state.tx_evaluator,
+    builder->state.deferred_redeemers);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -5175,11 +4958,11 @@ cardano_tx_builder_add_input_with_deferred_redeemer(
 
   cardano_redeemer_t* redeemer = NULL;
 
-  result = cardano_input_to_redeemer_map_get(builder->input_to_redeemer_map, input, &redeemer);
+  result = cardano_input_to_redeemer_map_get(builder->state.input_to_redeemer_map, input, &redeemer);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+    result = cardano_deferred_redeemer_list_add(builder->state.deferred_redeemers, redeemer, callback, user_context);
   }
 
   cardano_redeemer_unref(&redeemer);
@@ -5234,7 +5017,7 @@ cardano_tx_builder_mint_token_with_deferred_redeemer(
     return;
   }
 
-  register_deferred_from_map(builder, builder->mints_to_redeemer_map, policy_id, callback, user_context);
+  register_deferred_from_map(builder, builder->state.mints_to_redeemer_map, policy_id, callback, user_context);
 }
 
 void
@@ -5294,7 +5077,7 @@ cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
     return;
   }
 
-  register_deferred_from_map(builder, builder->withdrawals_to_redeemer_map, hash, callback, user_context);
+  register_deferred_from_map(builder, builder->state.withdrawals_to_redeemer_map, hash, callback, user_context);
 
   cardano_blake2b_hash_unref(&hash);
 }
@@ -5340,7 +5123,7 @@ cardano_tx_builder_add_certificate_with_deferred_redeemer(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5348,7 +5131,7 @@ cardano_tx_builder_add_certificate_with_deferred_redeemer(
 
   const uint64_t cert_index = (uint64_t)(cardano_certificate_set_get_length(certs) - 1U);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
   cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
@@ -5375,7 +5158,7 @@ cardano_tx_builder_add_certificate_with_deferred_redeemer(
 
     if (matches)
     {
-      result = cardano_deferred_redeemer_list_add(builder->deferred_redeemers, redeemer, callback, user_context);
+      result = cardano_deferred_redeemer_list_add(builder->state.deferred_redeemers, redeemer, callback, user_context);
     }
 
     cardano_redeemer_unref(&redeemer);
@@ -5443,7 +5226,7 @@ cardano_tx_builder_vote_with_deferred_redeemer(
     return;
   }
 
-  register_deferred_from_map(builder, builder->votes_to_redeemer_map, hash, callback, user_context);
+  register_deferred_from_map(builder, builder->state.votes_to_redeemer_map, hash, callback, user_context);
 
   cardano_blake2b_hash_unref(&hash);
 }

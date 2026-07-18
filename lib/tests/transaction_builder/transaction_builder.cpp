@@ -30,6 +30,7 @@
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include "../../src/transaction_builder/internals/blake2b_hash_to_redeemer_map.h"
+#include "../../src/transaction_builder/internals/builder_state.h"
 #include <allocators.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
@@ -43,29 +44,9 @@
 
 typedef struct cardano_tx_builder_t
 {
-    cardano_object_t               base;
-    cardano_error_t                last_error;
-    cardano_transaction_t*         transaction;
-    cardano_protocol_parameters_t* params;
-    cardano_slot_config_t          slot_config;
-    cardano_coin_selector_t*       coin_selector;
-    cardano_tx_evaluator_t*        tx_evaluator;
-    cardano_address_t*             change_address;
-    cardano_address_t*             collateral_address;
-    cardano_utxo_list_t*           available_utxos;
-    cardano_utxo_list_t*           collateral_utxos;
-    cardano_utxo_list_t*           pre_selected_inputs;
-    cardano_utxo_list_t*           reference_inputs;
-    bool                           has_plutus_v1;
-    bool                           has_plutus_v2;
-    bool                           has_plutus_v3;
-    size_t                         additional_signature_count;
-
-    cardano_input_to_redeemer_map_t*        input_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* withdrawals_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* mints_to_redeemer_map;
-    cardano_blake2b_hash_to_redeemer_map_t* votes_to_redeemer_map;
-    cardano_deferred_redeemer_list_t*       deferred_redeemers;
+    cardano_object_t        base;
+    cardano_error_t         last_error;
+    cardano_builder_state_t state;
 } cardano_tx_builder_t;
 
 /* CONSTANTS *****************************************************************/
@@ -529,7 +510,7 @@ TEST(cardano_tx_builder_set_coin_selector, canSetCoinSelector)
   cardano_tx_builder_set_coin_selector(builder, selector);
 
   // Assert
-  EXPECT_EQ(builder->coin_selector, selector);
+  EXPECT_EQ(builder->state.coin_selector, selector);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -564,7 +545,7 @@ TEST(cardano_tx_builder_set_network_id, canSetNetworkId)
   // Act
   cardano_tx_builder_set_network_id(builder, CARDANO_NETWORK_ID_MAIN_NET);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   const cardano_network_id_t* network_id = cardano_transaction_body_get_network_id(body);
@@ -584,8 +565,8 @@ TEST(cardano_tx_builder_set_network_id, returnsErroIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_set_network_id(builder, CARDANO_NETWORK_ID_MAIN_NET);
@@ -656,7 +637,7 @@ TEST(cardano_tx_builder_set_tx_evaluator, canSetTxEvaluator)
   cardano_tx_builder_set_tx_evaluator(builder, evaluator);
 
   // Assert
-  EXPECT_EQ(builder->tx_evaluator, evaluator);
+  EXPECT_EQ(builder->state.tx_evaluator, evaluator);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -700,7 +681,7 @@ TEST(cardano_tx_builder_set_change_address, canSetChangeAddress)
   cardano_tx_builder_set_change_address(builder, address);
 
   // Assert
-  EXPECT_EQ(builder->change_address, address);
+  EXPECT_EQ(builder->state.change_address, address);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -744,7 +725,7 @@ TEST(cardano_tx_builder_set_change_address_ex, canSetChangeAddress)
   cardano_tx_builder_set_change_address_ex(builder, "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"));
 
   // Assert
-  EXPECT_STREQ(cardano_address_get_string(builder->change_address), cardano_address_get_string(address));
+  EXPECT_STREQ(cardano_address_get_string(builder->state.change_address), cardano_address_get_string(address));
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -811,7 +792,7 @@ TEST(cardano_tx_builder_set_collateral_change_address, canSetCollateralChangeAdd
   cardano_tx_builder_set_collateral_change_address(builder, address);
 
   // Assert
-  EXPECT_EQ(builder->collateral_address, address);
+  EXPECT_EQ(builder->state.collateral_address, address);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -855,7 +836,7 @@ TEST(cardano_tx_builder_set_collateral_change_address_ex, canSetCollateralChange
   cardano_tx_builder_set_collateral_change_address_ex(builder, "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"));
 
   // Assert
-  EXPECT_STREQ(cardano_address_get_string(builder->collateral_address), cardano_address_get_string(address));
+  EXPECT_STREQ(cardano_address_get_string(builder->state.collateral_address), cardano_address_get_string(address));
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -913,7 +894,7 @@ TEST(cardano_tx_builder_set_minimum_fee, canSetMinimumFee)
   // Act
   cardano_tx_builder_set_minimum_fee(builder, 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -931,8 +912,8 @@ TEST(cardano_tx_builder_set_minimum_fee, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_set_minimum_fee(builder, 1000);
@@ -971,7 +952,7 @@ TEST(cardano_tx_builder_set_donation, canSetDonationFee)
   // Act
   cardano_tx_builder_set_donation(builder, 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -992,7 +973,7 @@ TEST(cardano_tx_builder_set_donation, canUnsetDonation)
   // Act
   cardano_tx_builder_set_donation(builder, 0);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -1052,7 +1033,7 @@ TEST(cardano_tx_builder_set_utxos, canSetUtxos)
   cardano_tx_builder_set_utxos(builder, utxos);
 
   // Assert
-  EXPECT_EQ(builder->available_utxos, utxos);
+  EXPECT_EQ(builder->state.available_utxos, utxos);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -1122,7 +1103,7 @@ TEST(cardano_tx_builder_set_collateral_utxos, canSetCollateralUtxos)
   cardano_tx_builder_set_collateral_utxos(builder, utxos);
 
   // Assert
-  EXPECT_EQ(builder->collateral_utxos, utxos);
+  EXPECT_EQ(builder->state.collateral_utxos, utxos);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -1157,7 +1138,7 @@ TEST(cardano_tx_builder_set_invalid_after, canSetInvalidAfter)
   // Act
   cardano_tx_builder_set_invalid_after(builder, 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -1175,8 +1156,8 @@ TEST(cardano_tx_builder_set_invalid_after, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_set_invalid_after(builder, 1000);
@@ -1238,7 +1219,7 @@ TEST(cardano_tx_builder_set_invalid_after_ex, canSetInvalidAfter)
   // Act
   cardano_tx_builder_set_invalid_after_ex(builder, 1730901968);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -1256,8 +1237,8 @@ TEST(cardano_tx_builder_set_invalid_after_ex, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_set_invalid_after_ex(builder, 1000);
@@ -1319,7 +1300,7 @@ TEST(cardano_tx_builder_set_invalid_before, canSetInvalidBefore)
   // Act
   cardano_tx_builder_set_invalid_before(builder, 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -1337,8 +1318,8 @@ TEST(cardano_tx_builder_set_invalid_before, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_set_invalid_before(builder, 1000);
@@ -1396,7 +1377,7 @@ TEST(cardano_tx_builder_set_invalid_before_ex, canSetInvalidBefore)
 
   cardano_tx_builder_set_invalid_before_ex(builder, 1730901968);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   // Assert
@@ -1415,8 +1396,8 @@ TEST(cardano_tx_builder_set_invalid_before_ex, returnsErrorIfBodyIsNull)
   // Act
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   cardano_tx_builder_set_invalid_before_ex(builder, 1000);
 
@@ -1492,7 +1473,7 @@ TEST(cardano_tx_builder_add_reference_input, canAddReferenceInput)
   cardano_tx_builder_add_reference_input(builder, utxo3);
   cardano_tx_builder_add_reference_input(builder, utxo4);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_reference_inputs(body);
@@ -1520,8 +1501,8 @@ TEST(cardano_tx_builder_add_reference_input, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_add_reference_input(builder, utxo);
@@ -1546,8 +1527,8 @@ TEST(cardano_tx_builder_add_reference_input, returnsErrorIfReferenceInputsIsNull
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_utxo_list_unref(&builder->reference_inputs);
-  builder->reference_inputs = NULL;
+  cardano_utxo_list_unref(&builder->state.reference_inputs);
+  builder->state.reference_inputs = NULL;
 
   cardano_tx_builder_add_reference_input(builder, utxo);
 
@@ -1622,7 +1603,7 @@ TEST(cardano_tx_builder_send_lovelace, canSendLovelace)
   // Act
   cardano_tx_builder_send_lovelace(builder, address, 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1656,8 +1637,8 @@ TEST(cardano_tx_builder_send_lovelace, returnsErrorIfBodyIsNull)
 
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   // Act
   cardano_tx_builder_send_lovelace(builder, address, 1000);
@@ -1745,7 +1726,7 @@ TEST(cardano_tx_builder_send_lovelace_ex, canSendLovelace)
 
   cardano_tx_builder_send_lovelace_ex(builder, address, strlen(address), 1000);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1843,7 +1824,7 @@ TEST(cardano_tx_builder_send_value, canSendValue)
 
   cardano_tx_builder_send_value(builder, address, value);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -1882,8 +1863,8 @@ TEST(cardano_tx_builder_send_value, returnsErrorIfBodyIsNull)
   // Act
   cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-  cardano_transaction_unref(&builder->transaction);
-  builder->transaction = NULL;
+  cardano_transaction_unref(&builder->state.transaction);
+  builder->state.transaction = NULL;
 
   cardano_tx_builder_send_value(builder, address, value);
 
@@ -2010,7 +1991,7 @@ TEST(cardano_tx_builder_send_value_ex, canSendValue)
 
   cardano_tx_builder_send_value_ex(builder, address, strlen(address), value);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
@@ -2138,7 +2119,7 @@ TEST(cardano_tx_builder_pad_signer_count, canSetTheSignerCount)
   cardano_tx_builder_pad_signer_count(builder, 10);
 
   // Assert
-  EXPECT_EQ(builder->additional_signature_count, 10);
+  EXPECT_EQ(builder->state.additional_signature_count, 10);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -2408,8 +2389,8 @@ TEST(cardano_tx_builder_build, returnsErrorIfBalancingFails)
   // Act
   cardano_transaction_t* tx = nullptr;
 
-  cardano_transaction_unref(&tx_builder->transaction);
-  tx_builder->transaction = NULL;
+  cardano_transaction_unref(&tx_builder->state.transaction);
+  tx_builder->state.transaction = NULL;
 
   cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
 
@@ -3263,10 +3244,10 @@ TEST(cardano_tx_builder_set_metadata, canSetMetadata)
   // Act
   cardano_tx_builder_set_metadata(tx_builder, 0, metadata);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
-  cardano_auxiliary_data_t* aux_data = cardano_transaction_get_auxiliary_data(tx_builder->transaction);
+  cardano_auxiliary_data_t* aux_data = cardano_transaction_get_auxiliary_data(tx_builder->state.transaction);
   cardano_auxiliary_data_unref(&aux_data);
 
   cardano_transaction_metadata_t* tx_metadata = cardano_auxiliary_data_get_transaction_metadata(aux_data);
@@ -3359,10 +3340,10 @@ TEST(cardano_tx_builder_set_metadata_ex, canSetMetadata)
   // Act
   cardano_tx_builder_set_metadata_ex(tx_builder, 0, "{ \"name\": \"test\" }", strlen("{ \"name\": \"test\" }"));
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
-  cardano_auxiliary_data_t* aux_data = cardano_transaction_get_auxiliary_data(tx_builder->transaction);
+  cardano_auxiliary_data_t* aux_data = cardano_transaction_get_auxiliary_data(tx_builder->state.transaction);
   cardano_auxiliary_data_unref(&aux_data);
 
   cardano_transaction_metadata_t* tx_metadata = cardano_auxiliary_data_get_transaction_metadata(aux_data);
@@ -3454,7 +3435,7 @@ TEST(cardano_tx_builder_mint_token, canSentMintToken)
   cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 4, redeemer);
   cardano_tx_builder_mint_token(tx_builder, policy_id1, asset_name, 5, NULL);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
@@ -3559,7 +3540,7 @@ TEST(cardano_tx_builder_mint_token_ex, canSentMintToken)
   cardano_transaction_t* tx = nullptr;
   cardano_tx_builder_mint_token_ex(tx_builder, HASH_HEX, strlen(HASH_HEX), "54455854", strlen("54455854"), 4, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
@@ -3659,7 +3640,7 @@ TEST(cardano_tx_builder_mint_token_with_id, canSentMintToken)
   cardano_transaction_t* tx = nullptr;
   cardano_tx_builder_mint_token_with_id(tx_builder, asset_id, 4, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
@@ -3715,7 +3696,7 @@ TEST(cardano_tx_builder_mint_token_with_id_ex, canSentMintToken)
   cardano_transaction_t* tx = nullptr;
   cardano_tx_builder_mint_token_with_id_ex(tx_builder, ASSET_ID_HEX, strlen(ASSET_ID_HEX), 4, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
@@ -3823,7 +3804,7 @@ TEST(cardano_tx_builder_add_signer, canAddSigner)
   // Act
   cardano_tx_builder_add_signer(tx_builder, signing_key);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
@@ -3859,7 +3840,7 @@ TEST(cardano_tx_builder_add_signer, addingTheSameSignerTwiceKeepsASingleGuard)
   cardano_tx_builder_add_signer(tx_builder, signing_key);
   cardano_tx_builder_add_signer_ex(tx_builder, HASH_HEX, strlen(HASH_HEX));
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
@@ -3943,7 +3924,7 @@ TEST(cardano_tx_builder_add_signer_ex, canAddSigner)
   // Act
   cardano_tx_builder_add_signer_ex(tx_builder, HASH_HEX, strlen(HASH_HEX));
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
@@ -4038,7 +4019,7 @@ TEST(cardano_tx_builder_add_datum, canAddDatum)
   // Act
   cardano_tx_builder_add_datum(tx_builder, datum);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
   cardano_plutus_data_set_t* data = cardano_witness_set_get_plutus_data(witnesses);
@@ -4137,7 +4118,7 @@ TEST(cardano_tx_builder_add_script, canAddScript)
   cardano_tx_builder_add_script(tx_builder, scriptV3);
   cardano_tx_builder_add_script(tx_builder, scriptNative);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
   cardano_plutus_v1_script_set_t* scripts = cardano_witness_set_get_plutus_v1_scripts(witnesses);
@@ -4157,9 +4138,9 @@ TEST(cardano_tx_builder_add_script, canAddScript)
   EXPECT_EQ(cardano_native_script_set_get_length(scriptsNative), 1);
 
   // Assert
-  EXPECT_TRUE(tx_builder->has_plutus_v1);
-  EXPECT_TRUE(tx_builder->has_plutus_v2);
-  EXPECT_TRUE(tx_builder->has_plutus_v3);
+  EXPECT_TRUE(tx_builder->state.has_plutus_v1);
+  EXPECT_TRUE(tx_builder->state.has_plutus_v2);
+  EXPECT_TRUE(tx_builder->state.has_plutus_v3);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -4279,7 +4260,7 @@ TEST(cardano_tx_builder_withdraw_rewards, canWithdrawRewards)
   cardano_tx_builder_withdraw_rewards(tx_builder, script_reward, 1002, redeemer);
   cardano_tx_builder_withdraw_rewards(tx_builder, script_reward2, 1003, NULL);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
@@ -4401,7 +4382,7 @@ TEST(cardano_tx_builder_withdraw_rewards_ex, canWithdrawRewards)
   // Act
   cardano_tx_builder_withdraw_rewards_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 1000, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
@@ -4468,7 +4449,7 @@ TEST(cardano_tx_builder_register_reward_address, canRegisterRewardAddress)
   // Act
   cardano_tx_builder_register_reward_address(tx_builder, reward_address, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -4554,7 +4535,7 @@ TEST(cardano_tx_builder_register_reward_address_ex, canRegisterRewardAddress)
   // Act
   cardano_tx_builder_register_reward_address_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -4609,7 +4590,7 @@ TEST(cardano_tx_builder_deregister_reward_address, canDeregisterRewardAddress)
   // Act
   cardano_tx_builder_deregister_reward_address(tx_builder, reward_address, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -4695,7 +4676,7 @@ TEST(cardano_tx_builder_deregister_reward_address_ex, canDeregisterRewardAddress
   // Act
   cardano_tx_builder_deregister_reward_address_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -4763,7 +4744,7 @@ TEST(cardano_tx_builder_delegate_stake, canDelegateStake)
   // Act
   cardano_tx_builder_delegate_stake(tx_builder, reward_address, pool_id, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -4860,7 +4841,7 @@ TEST(cardano_tx_builder_delegate_stake_ex, canDelegateStake)
   // Act
   cardano_tx_builder_delegate_stake_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "pool1pzdqdxrv0k74p4q33y98f2u7vzaz95et7mjeedjcfy0jcgk754f", strlen("pool1pzdqdxrv0k74p4q33y98f2u7vzaz95et7mjeedjcfy0jcgk754f"), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5003,7 +4984,7 @@ TEST(cardano_tx_builder_delegate_voting_power, canDelegateVotingPower)
   // Act
   cardano_tx_builder_delegate_voting_power(tx_builder, reward_address, drep, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5132,7 +5113,7 @@ TEST(cardano_tx_builder_delegate_voting_power_ex, canDelegateVotingPower)
   // Act
   cardano_tx_builder_delegate_voting_power_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5199,7 +5180,7 @@ TEST(cardano_tx_builder_register_drep, canRegisterDrep)
   // Act
   cardano_tx_builder_register_drep(tx_builder, drep, anchor, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5310,7 +5291,7 @@ TEST(cardano_tx_builder_register_drep_ex, canRegisterDrep)
   // Act
   cardano_tx_builder_register_drep_ex(tx_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5378,7 +5359,7 @@ TEST(cardano_tx_builder_update_drep, canUpdateDrep)
   // Act
   cardano_tx_builder_update_drep(tx_builder, drep, anchor, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5489,7 +5470,7 @@ TEST(cardano_tx_builder_update_drep_ex, canUpdateDrep)
   // Act
   cardano_tx_builder_update_drep_ex(tx_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5552,7 +5533,7 @@ TEST(cardano_tx_builder_deregister_drep, canDeregisterDrep)
   // Act
   cardano_tx_builder_deregister_drep(tx_builder, drep, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5648,7 +5629,7 @@ TEST(cardano_tx_builder_deregister_drep_ex, canDeregisterDrep)
   // Act
   cardano_tx_builder_deregister_drep_ex(tx_builder, DREP_ID, strlen(DREP_ID), redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -5757,7 +5738,7 @@ TEST(cardano_tx_builder_vote, canVote)
   // Act
   cardano_tx_builder_vote(tx_builder, voter, action_id, procedure, redeemer);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
@@ -5813,13 +5794,13 @@ TEST(cardano_tx_builder_vote, keyHashVotersOccupyARedeemerIndexSlot)
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map), 2U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.votes_to_redeemer_map), 2U);
 
   size_t non_null_slots = 0;
-  for (size_t i = 0; i < cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map); ++i)
+  for (size_t i = 0; i < cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.votes_to_redeemer_map); ++i)
   {
     cardano_redeemer_t* value = nullptr;
-    EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->votes_to_redeemer_map, i, &value), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.votes_to_redeemer_map, i, &value), CARDANO_SUCCESS);
 
     if (value != nullptr)
     {
@@ -5878,10 +5859,10 @@ TEST(cardano_tx_builder_vote, oneVoterVotingOnSeveralActionsUsesASingleRedeemerS
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.votes_to_redeemer_map), 1U);
 
   cardano_redeemer_t* value = nullptr;
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->votes_to_redeemer_map, 0, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.votes_to_redeemer_map, 0, &value), CARDANO_SUCCESS);
   ASSERT_NE(value, (cardano_redeemer_t*)nullptr);
   EXPECT_EQ(cardano_redeemer_get_index(value), 0U);
   cardano_redeemer_unref(&value);
@@ -6053,7 +6034,7 @@ TEST(cardano_tx_builder_propose_parameter_change, canProposeParameterChange)
   // Act
   cardano_tx_builder_propose_parameter_change(tx_builder, reward_address, anchor, pparam_update, action_id, hash);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -6334,7 +6315,7 @@ TEST(cardano_tx_builder_propose_hardfork, canProposeHardfork)
   // Act
   cardano_tx_builder_propose_hardfork(tx_builder, reward_address, anchor, protocol_version, action_id);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -6600,7 +6581,7 @@ TEST(cardano_tx_builder_propose_treasury_withdrawals, canProposeTreasuryWithdraw
   // Act
   cardano_tx_builder_propose_treasury_withdrawals(tx_builder, reward_address, anchor, treasury_withdrawal, policy_id);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -6860,7 +6841,7 @@ TEST(cardano_tx_builder_propose_no_confidence, canProposeNoConfidence)
   // Act
   cardano_tx_builder_propose_no_confidence(tx_builder, reward_address, anchor, action_id);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7008,7 +6989,7 @@ TEST(cardano_tx_builder_propose_no_confidence_ex, canAddNoConfidencePorposal)
   // Act
   cardano_tx_builder_propose_no_confidence_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1));
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7191,7 +7172,7 @@ TEST(cardano_tx_builder_propose_update_committee, canProposeUpdateCommittee)
   // Act
   cardano_tx_builder_propose_update_committee(tx_builder, reward_address, anchor, action_id, members_to_be_removed, members_to_be_added, new_quorum);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7432,7 +7413,7 @@ TEST(cardano_tx_builder_propose_update_committee_ex, canProposeUpdateCommittee)
   // Act
   cardano_tx_builder_propose_update_committee_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), members_to_be_removed, members_to_be_added, 0.0);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7606,7 +7587,7 @@ TEST(cardano_tx_builder_propose_new_constitution, canProposeNewConstitution)
   // Act
   cardano_tx_builder_propose_new_constitution(tx_builder, reward_address, anchor, action_id, constitution);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7785,7 +7766,7 @@ TEST(cardano_tx_builder_propose_new_constitution_ex, canProposeNewConstitution)
   // Act
   cardano_tx_builder_propose_new_constitution_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), constitution);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -7908,7 +7889,7 @@ TEST(cardano_tx_builder_propose_info, canProposeInfo)
   // Act
   cardano_tx_builder_propose_info(tx_builder, reward_address, anchor);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -8031,7 +8012,7 @@ TEST(cardano_tx_builder_propose_info_ex, canProposeInfo)
   // Act
   cardano_tx_builder_propose_info_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* actions = cardano_transaction_body_get_proposal_procedures(body);
@@ -8593,9 +8574,9 @@ TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, registersDeferredRede
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 1U);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
@@ -8607,7 +8588,7 @@ TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, registersDeferredRede
 
   // The mint redeemer starts out as the placeholder `constr 0 []`...
   cardano_redeemer_t* redeemer = NULL;
-  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get(tx_builder->mints_to_redeemer_map, policy_id, &redeemer), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get(tx_builder->state.mints_to_redeemer_map, policy_id, &redeemer), CARDANO_SUCCESS);
   cardano_redeemer_unref(&redeemer);
 
   cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
@@ -8620,7 +8601,7 @@ TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, registersDeferredRede
   cardano_utxo_list_t* resolved_inputs = NULL;
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->state.deferred_redeemers, tx_builder->state.transaction, resolved_inputs), CARDANO_SUCCESS);
 
   cardano_plutus_data_t* expected = NULL;
   EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
@@ -8670,7 +8651,7 @@ TEST(cardano_tx_builder_mint_token_with_deferred_redeemer, latchesErrorOnNullArg
   tx_builder->last_error = CARDANO_ERROR_GENERIC;
   cardano_tx_builder_mint_token_with_deferred_redeemer(tx_builder, policy_id, asset_name, 4, fixed_payload_deferred_callback, NULL);
   EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 0U);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -8744,12 +8725,12 @@ TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, registersDeferr
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->withdrawals_to_redeemer_map), 1U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.withdrawals_to_redeemer_map), 1U);
 
   // The withdrawal redeemer starts out as the placeholder `constr 0 []`...
   cardano_redeemer_t* redeemer = NULL;
-  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->withdrawals_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.withdrawals_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
   cardano_redeemer_unref(&redeemer);
 
   cardano_plutus_data_t* placeholder = new_placeholder_plutus_data();
@@ -8762,7 +8743,7 @@ TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, registersDeferr
   cardano_utxo_list_t* resolved_inputs = NULL;
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->state.deferred_redeemers, tx_builder->state.transaction, resolved_inputs), CARDANO_SUCCESS);
 
   cardano_plutus_data_t* expected = NULL;
   EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
@@ -8808,7 +8789,7 @@ TEST(cardano_tx_builder_withdraw_rewards_with_deferred_redeemer, latchesErrorOnN
   // A failure in the underlying withdrawal declaration must abort the registration.
   cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(tx_builder, reward_address, -1, fixed_payload_deferred_callback, NULL);
   EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 0U);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -8895,9 +8876,9 @@ TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, registersDeferre
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 1U);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->transaction);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
   cardano_transaction_body_unref(&body);
 
   cardano_certificate_set_t* certs = cardano_transaction_body_get_certificates(body);
@@ -8906,7 +8887,7 @@ TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, registersDeferre
   EXPECT_EQ(cardano_certificate_set_get_length(certs), 1U);
 
   // The certificate redeemer starts out as the placeholder `constr 0 []`...
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->transaction);
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
   cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
@@ -8931,7 +8912,7 @@ TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, registersDeferre
   cardano_utxo_list_t* resolved_inputs = NULL;
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->state.deferred_redeemers, tx_builder->state.transaction, resolved_inputs), CARDANO_SUCCESS);
 
   cardano_plutus_data_t* expected = NULL;
   EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
@@ -8976,7 +8957,7 @@ TEST(cardano_tx_builder_add_certificate_with_deferred_redeemer, latchesErrorOnNu
   tx_builder->last_error = CARDANO_ERROR_GENERIC;
   cardano_tx_builder_add_certificate_with_deferred_redeemer(tx_builder, certificate, fixed_payload_deferred_callback, NULL);
   EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 0U);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -9047,12 +9028,12 @@ TEST(cardano_tx_builder_vote_with_deferred_redeemer, registersDeferredRedeemerFo
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 1U);
-  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->votes_to_redeemer_map), 1U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.votes_to_redeemer_map), 1U);
 
   // The vote redeemer starts out as the placeholder `constr 0 []`...
   cardano_redeemer_t* redeemer = NULL;
-  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->votes_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.votes_to_redeemer_map, 0U, &redeemer), CARDANO_SUCCESS);
   cardano_redeemer_unref(&redeemer);
 
   EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_VOTING);
@@ -9067,7 +9048,7 @@ TEST(cardano_tx_builder_vote_with_deferred_redeemer, registersDeferredRedeemerFo
   cardano_utxo_list_t* resolved_inputs = NULL;
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->deferred_redeemers, tx_builder->transaction, resolved_inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(tx_builder->state.deferred_redeemers, tx_builder->state.transaction, resolved_inputs), CARDANO_SUCCESS);
 
   cardano_plutus_data_t* expected = NULL;
   EXPECT_EQ(cardano_plutus_data_new_integer_from_int(7, &expected), CARDANO_SUCCESS);
@@ -9132,7 +9113,7 @@ TEST(cardano_tx_builder_vote_with_deferred_redeemer, latchesErrorOnNullArguments
   tx_builder->last_error = CARDANO_ERROR_GENERIC;
   cardano_tx_builder_vote_with_deferred_redeemer(tx_builder, voter, action_id, procedure, fixed_payload_deferred_callback, NULL);
   EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_GENERIC);
-  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->deferred_redeemers), 0U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(tx_builder->state.deferred_redeemers), 0U);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
