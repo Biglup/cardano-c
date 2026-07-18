@@ -24,15 +24,12 @@
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include <cardano/object.h>
-#include <cardano/time.h>
-#include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
-#include <cardano/transaction_builder/balancing/transaction_balancing.h>
-#include <cardano/transaction_builder/script_data_hash.h>
-#include <cardano/witness_set/redeemer.h>
 
 #include "../allocators.h"
 #include "./internals/blake2b_hash_to_redeemer_map.h"
+#include "./internals/builder_build.h"
 #include "./internals/builder_certs.h"
+#include "./internals/builder_config.h"
 #include "./internals/builder_inputs.h"
 #include "./internals/builder_mint.h"
 #include "./internals/builder_outputs.h"
@@ -41,6 +38,7 @@
 #include "./internals/builder_state.h"
 #include "./internals/builder_votes.h"
 #include "./internals/builder_withdrawals.h"
+#include "./internals/builder_witnesses.h"
 
 #include <assert.h>
 
@@ -121,215 +119,6 @@ track_builder_result(
   }
 }
 
-/**
- * \brief Sets a dummy script data hash in the transaction.
- *
- * This function assigns a placeholder script data hash to the specified transaction for fee calculation
- * purposes when the transaction includes script data.
- *
- * \param[in,out] tx A pointer to a \ref cardano_transaction_t object representing the transaction to which
- *                   the dummy script data hash will be set. This parameter must not be NULL.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the dummy
- *         script data hash was successfully set, or an appropriate error code indicating the failure reason.
- */
-static cardano_error_t
-set_dummy_script_data_hash(cardano_transaction_t* tx)
-{
-  if (!cardano_transaction_has_script_data(tx))
-  {
-    return CARDANO_SUCCESS;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
-  static byte_t           dummy_hash[32] = { 0 };
-  cardano_blake2b_hash_t* hash           = NULL;
-
-  cardano_error_t new_hash_result = cardano_blake2b_hash_from_bytes(dummy_hash, sizeof(dummy_hash), &hash);
-
-  if (new_hash_result != CARDANO_SUCCESS)
-  {
-    return new_hash_result;
-  }
-
-  new_hash_result = cardano_transaction_body_set_script_data_hash(body, hash);
-  cardano_blake2b_hash_unref(&hash);
-
-  if (new_hash_result != CARDANO_SUCCESS)
-  {
-    return new_hash_result;
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Retrieves the cost model for a specified Plutus language version.
- *
- * This function searches for the cost model matching the specified Plutus language version within a
- * provided set of source cost models and, if found, copies it into a destination cost model set.
- *
- * \param[in] source_models A pointer to the \ref cardano_costmdls_t object containing the source cost models.
- * \param[out] dest_models A pointer to the \ref cardano_costmdls_t object where the matching cost model
- *                         for the specified version will be copied. This parameter must not be NULL.
- * \param[in] version The Plutus language version of the cost model to retrieve.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the cost model
- *         was successfully found and copied, or an appropriate error code if an internal error occurs.
- */
-static cardano_error_t
-get_cost_model_for_version(
-  cardano_costmdls_t*                     source_models,
-  cardano_costmdls_t*                     dest_models,
-  const cardano_plutus_language_version_t version)
-{
-  assert(source_models != NULL);
-  assert(dest_models != NULL);
-
-  cardano_cost_model_t* cost_model = NULL;
-
-  cardano_error_t result = cardano_costmdls_get(source_models, version, &cost_model);
-  cardano_cost_model_unref(&cost_model);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_costmdls_insert(dest_models, cost_model);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Retrieves the cost models flagged by the the transaction builder.
- *
- * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance from which the cost models will be retrieved.
- * \param[out] costmdls A pointer to an initialized \ref cardano_costmdls_t object where the cost models will be stored.
- *                      This parameter must not be NULL.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the cost models
- *         were successfully retrieved and stored, or an appropriate error code if an error occurs during retrieval.
- */
-static cardano_error_t
-get_cost_models(cardano_tx_builder_t* builder, cardano_costmdls_t* costmdls)
-{
-  cardano_costmdls_t* pparams_costmdls = cardano_protocol_parameters_get_cost_models(builder->state.params);
-  cardano_costmdls_unref(&pparams_costmdls);
-
-  cardano_error_t result = CARDANO_SUCCESS;
-
-  if (builder->state.has_plutus_v1)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  if (builder->state.has_plutus_v2)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  if (builder->state.has_plutus_v3)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return result;
-}
-
-/**
- * \brief Computes and updates the script data hash in a transaction.
- *
- * This function calculates the script data hash based on the redeemers, datums, and cost models
- * associated with the transaction in the \ref cardano_tx_builder_t instance, then updates this
- * hash in the provided \ref cardano_transaction_t.
- *
- * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance containing the necessary
- *                    transaction data, including redeemers, datums, and cost models.
- * \param[in,out] tx A pointer to an initialized \ref cardano_transaction_t object. This transaction
- *                   will be updated with the computed script data hash.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS
- *         if the script data hash was successfully computed and updated in the transaction, or an
- *         appropriate error code if the computation or update fails.
- */
-static cardano_error_t
-update_script_data_hash(cardano_tx_builder_t* builder, cardano_transaction_t* tx)
-{
-  if (!cardano_transaction_has_script_data(tx))
-  {
-    return CARDANO_SUCCESS;
-  }
-
-  cardano_costmdls_t* costmdls = NULL;
-
-  cardano_error_t result = cardano_costmdls_new(&costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = get_cost_models(builder, costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_costmdls_unref(&costmdls);
-    return result;
-  }
-
-  cardano_blake2b_hash_t* hash = NULL;
-
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
-  cardano_witness_set_unref(&witness_set);
-
-  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
-  cardano_redeemer_list_unref(&redeemers);
-
-  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
-  cardano_plutus_data_set_unref(&datums);
-
-  result = cardano_compute_script_data_hash(costmdls, redeemers, datums, &hash);
-  cardano_costmdls_unref(&costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_blake2b_hash_unref(&hash);
-
-    return result;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
-  result = cardano_transaction_body_set_script_data_hash(body, hash);
-  cardano_blake2b_hash_unref(&hash);
-
-  return result;
-}
-
 /* DEFINITIONS ****************************************************************/
 
 cardano_tx_builder_t*
@@ -376,16 +165,11 @@ cardano_tx_builder_set_coin_selector(
     return;
   }
 
-  if (coin_selector == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Coin selector is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_coin_selector_ref(coin_selector);
-  cardano_coin_selector_unref(&builder->state.coin_selector);
-  builder->state.coin_selector = coin_selector;
+  const cardano_error_t result = cardano_builder_set_coin_selector(&builder->state, coin_selector, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -398,16 +182,11 @@ cardano_tx_builder_set_tx_evaluator(
     return;
   }
 
-  if (tx_evaluator == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction evaluator is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_tx_evaluator_ref(tx_evaluator);
-  cardano_tx_evaluator_unref(&builder->state.tx_evaluator);
-  builder->state.tx_evaluator = tx_evaluator;
+  const cardano_error_t result = cardano_builder_set_tx_evaluator(&builder->state, tx_evaluator, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -420,24 +199,11 @@ cardano_tx_builder_set_network_id(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_network_id(&builder->state, network_id, &error_message);
 
-    return;
-  }
-
-  cardano_error_t result = cardano_transaction_body_set_network_id(body, &network_id);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set network ID.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -450,16 +216,11 @@ cardano_tx_builder_set_change_address(
     return;
   }
 
-  if (change_address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Change address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_address_ref(change_address);
-  cardano_address_unref(&builder->state.change_address);
-  builder->state.change_address = change_address;
+  const cardano_error_t result = cardano_builder_set_change_address(&builder->state, change_address, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -473,25 +234,11 @@ cardano_tx_builder_set_change_address_ex(
     return;
   }
 
-  if ((change_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Change address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_address_t* address = NULL;
-  cardano_error_t    result  = cardano_address_from_string(change_address, address_size, &address);
+  const cardano_error_t result = cardano_builder_set_change_address_ex(&builder->state, change_address, address_size, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse change address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_set_change_address(builder, address);
-  cardano_address_unref(&address);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -504,16 +251,11 @@ cardano_tx_builder_set_collateral_change_address(
     return;
   }
 
-  if (collateral_change_address == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Collateral change address is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_address_ref(collateral_change_address);
-  cardano_address_unref(&builder->state.collateral_address);
-  builder->state.collateral_address = collateral_change_address;
+  const cardano_error_t result = cardano_builder_set_collateral_change_address(&builder->state, collateral_change_address, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -527,25 +269,11 @@ cardano_tx_builder_set_collateral_change_address_ex(
     return;
   }
 
-  if ((collateral_change_address == NULL) || (address_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Collateral change address is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_address_t* address = NULL;
-  cardano_error_t    result  = cardano_address_from_string(collateral_change_address, address_size, &address);
+  const cardano_error_t result = cardano_builder_set_collateral_change_address_ex(&builder->state, collateral_change_address, address_size, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse collateral change address.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_set_collateral_change_address(builder, address);
-  cardano_address_unref(&address);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -558,24 +286,11 @@ cardano_tx_builder_set_minimum_fee(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_minimum_fee(&builder->state, minimum_fee, &error_message);
 
-    return;
-  }
-
-  cardano_error_t result = cardano_transaction_body_set_fee(body, minimum_fee);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set fee.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -588,33 +303,11 @@ cardano_tx_builder_set_donation(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_donation(&builder->state, donation, &error_message);
 
-    return;
-  }
-
-  cardano_error_t result = CARDANO_SUCCESS;
-
-  if (donation == 0U)
-  {
-    result = cardano_transaction_body_set_donation(body, NULL);
-  }
-  else
-  {
-    result = cardano_transaction_body_set_donation(body, &donation);
-  }
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set donation.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -627,16 +320,11 @@ cardano_tx_builder_set_utxos(
     return;
   }
 
-  if (utxos == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "UTXOs list is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_utxo_list_ref(utxos);
-  cardano_utxo_list_unref(&builder->state.available_utxos);
-  builder->state.available_utxos = utxos;
+  const cardano_error_t result = cardano_builder_set_utxos(&builder->state, utxos, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -649,16 +337,11 @@ cardano_tx_builder_set_collateral_utxos(
     return;
   }
 
-  if (utxos == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Collateral UTXOs list is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_utxo_list_ref(utxos);
-  cardano_utxo_list_unref(&builder->state.collateral_utxos);
-  builder->state.collateral_utxos = utxos;
+  const cardano_error_t result = cardano_builder_set_collateral_utxos(&builder->state, utxos, &error_message);
+
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -671,24 +354,11 @@ cardano_tx_builder_set_invalid_after(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_invalid_after(&builder->state, slot, &error_message);
 
-    return;
-  }
-
-  cardano_error_t result = cardano_transaction_body_set_invalid_after(body, &slot);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set invalid after.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -701,25 +371,11 @@ cardano_tx_builder_set_invalid_after_ex(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_invalid_after_ex(&builder->state, unix_time, &error_message);
 
-    return;
-  }
-
-  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->state.slot_config);
-  cardano_error_t result = cardano_transaction_body_set_invalid_after(body, &slot);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set invalid after.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -732,24 +388,11 @@ cardano_tx_builder_set_invalid_before(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_invalid_before(&builder->state, slot, &error_message);
 
-    return;
-  }
-
-  cardano_error_t result = cardano_transaction_body_set_invalid_before(body, &slot);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set invalid before.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -762,25 +405,11 @@ cardano_tx_builder_set_invalid_before_ex(
     return;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
+  const char* error_message = NULL;
 
-  if (body == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Transaction body is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const cardano_error_t result = cardano_builder_set_invalid_before_ex(&builder->state, unix_time, &error_message);
 
-    return;
-  }
-
-  const uint64_t  slot   = unix_time_to_enclosing_slot(unix_time * 1000U, &builder->state.slot_config);
-  cardano_error_t result = cardano_transaction_body_set_invalid_before(body, &slot);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set invalid before.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -997,88 +626,11 @@ cardano_tx_builder_set_metadata(
     return;
   }
 
-  if (metadata == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Metadata is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_auxiliary_data_t* auxiliary_data = cardano_transaction_get_auxiliary_data(builder->state.transaction);
+  const cardano_error_t result = cardano_builder_set_metadata(&builder->state, tag, metadata, &error_message);
 
-  if (auxiliary_data == NULL)
-  {
-    cardano_error_t result = cardano_auxiliary_data_new(&auxiliary_data);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create auxiliary data.");
-      builder->last_error = result;
-      return;
-    }
-
-    result = cardano_transaction_set_auxiliary_data(builder->state.transaction, auxiliary_data);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set auxiliary data.");
-      cardano_auxiliary_data_unref(&auxiliary_data);
-      builder->last_error = result;
-      return;
-    }
-  }
-
-  cardano_auxiliary_data_unref(&auxiliary_data);
-
-  cardano_transaction_metadata_t* tx_metadata = cardano_auxiliary_data_get_transaction_metadata(auxiliary_data);
-
-  if (tx_metadata == NULL)
-  {
-    cardano_error_t result = cardano_transaction_metadata_new(&tx_metadata);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create transaction metadata.");
-      builder->last_error = result;
-      return;
-    }
-
-    result = cardano_auxiliary_data_set_transaction_metadata(auxiliary_data, tx_metadata);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set transaction metadata.");
-      cardano_transaction_metadata_unref(&tx_metadata);
-      builder->last_error = result;
-      return;
-    }
-  }
-
-  cardano_transaction_metadata_unref(&tx_metadata);
-
-  cardano_error_t result = cardano_transaction_metadata_insert(tx_metadata, tag, metadata);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to insert metadata.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
-
-  cardano_blake2b_hash_t* hash = cardano_auxiliary_data_get_hash(auxiliary_data);
-
-  result = cardano_transaction_body_set_aux_data_hash(body, hash);
-  cardano_blake2b_hash_unref(&hash);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to set auxiliary data hash.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1093,25 +645,11 @@ cardano_tx_builder_set_metadata_ex(
     return;
   }
 
-  if ((metadata_json == NULL) || (json_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Metadata is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    return;
-  }
+  const char* error_message = NULL;
 
-  cardano_metadatum_t* metadata = NULL;
-  cardano_error_t      result   = cardano_metadatum_from_json(metadata_json, json_size, &metadata);
+  const cardano_error_t result = cardano_builder_set_metadata_ex(&builder->state, tag, metadata_json, json_size, &error_message);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse metadata.");
-    builder->last_error = result;
-    return;
-  }
-
-  cardano_tx_builder_set_metadata(builder, tag, metadata);
-  cardano_metadatum_unref(&metadata);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1205,7 +743,9 @@ cardano_tx_builder_pad_signer_count(
     return;
   }
 
-  builder->state.additional_signature_count = count;
+  const cardano_error_t result = cardano_builder_pad_signer_count(&builder->state, count);
+
+  track_builder_result(builder, result, NULL);
 }
 
 void
@@ -1218,66 +758,11 @@ cardano_tx_builder_add_signer(
     return;
   }
 
-  if (pub_key_hash == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Public key hash is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_add_signer(&builder->state, pub_key_hash, &error_message);
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
-  cardano_transaction_body_unref(&body);
-
-  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
-
-  if (guards == NULL)
-  {
-    cardano_error_t result = cardano_guard_set_new(&guards);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create guards set.");
-      builder->last_error = result;
-
-      return;
-    }
-
-    result = cardano_transaction_body_set_guards(body, guards);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set guards set.");
-      cardano_guard_set_unref(&guards);
-
-      builder->last_error = result;
-
-      return;
-    }
-  }
-
-  cardano_guard_set_unref(&guards);
-
-  cardano_credential_t* credential = NULL;
-  cardano_error_t       result     = cardano_credential_new(pub_key_hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to create signer credential.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  result = cardano_guard_set_add(guards, credential);
-
-  cardano_credential_unref(&credential);
-
-  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to add signer.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1291,27 +776,11 @@ cardano_tx_builder_add_signer_ex(
     return;
   }
 
-  if ((pub_key_hash == NULL) || (hash_size == 0U))
-  {
-    cardano_tx_builder_set_last_error(builder, "Public key hash is NULL or empty.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_add_signer_ex(&builder->state, pub_key_hash, hash_size, &error_message);
 
-  cardano_blake2b_hash_t* hash   = NULL;
-  cardano_error_t         result = cardano_blake2b_hash_from_hex(pub_key_hash, hash_size, &hash);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to parse public key hash.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  cardano_tx_builder_add_signer(builder, hash);
-  cardano_blake2b_hash_unref(&hash);
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1324,55 +793,11 @@ cardano_tx_builder_add_datum(
     return;
   }
 
-  if (datum == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Datum is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_add_datum(&builder->state, datum, &error_message);
 
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->state.transaction);
-  cardano_witness_set_unref(&witness_set);
-
-  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
-
-  if (datums == NULL)
-  {
-    cardano_error_t result = cardano_plutus_data_set_new(&datums);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to create datums set.");
-      builder->last_error = result;
-
-      return;
-    }
-
-    result = cardano_witness_set_set_plutus_data(witness_set, datums);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_tx_builder_set_last_error(builder, "Failed to set datums set.");
-      cardano_plutus_data_set_unref(&datums);
-
-      builder->last_error = result;
-
-      return;
-    }
-  }
-
-  cardano_plutus_data_set_unref(&datums);
-
-  cardano_error_t result = cardano_plutus_data_set_add(datums, datum);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to add datum.");
-    builder->last_error = result;
-
-    return;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -1737,58 +1162,11 @@ cardano_tx_builder_add_script(
     return;
   }
 
-  if (script == NULL)
-  {
-    cardano_tx_builder_set_last_error(builder, "Script is NULL.");
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+  const char* error_message = NULL;
 
-    return;
-  }
+  const cardano_error_t result = cardano_builder_add_script(&builder->state, script, &error_message);
 
-  cardano_script_language_t language;
-  cardano_error_t           result = cardano_script_get_language(script, &language);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to get script language.");
-    builder->last_error = result;
-
-    return;
-  }
-
-  switch (language)
-  {
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
-    {
-      builder->state.has_plutus_v1 = true;
-      break;
-    }
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
-    {
-      builder->state.has_plutus_v2 = true;
-      break;
-    }
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
-    {
-      builder->state.has_plutus_v3 = true;
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->state.transaction);
-  cardano_witness_set_unref(&witness_set);
-
-  result = cardano_witness_set_add_script(witness_set, script);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_tx_builder_set_last_error(builder, "Failed to add script to witness set.");
-    builder->last_error = result;
-  }
+  track_builder_result(builder, result, error_message);
 }
 
 void
@@ -2127,96 +1505,17 @@ cardano_tx_builder_build(
     return builder->last_error;
   }
 
-  if (builder->state.change_address == NULL)
-  {
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    cardano_tx_builder_set_last_error(
-      builder,
-      "You must set a change address before calling `build`.");
+  const char* error_message = NULL;
 
-    return builder->last_error;
-  }
-
-  if (builder->state.available_utxos == NULL)
-  {
-    builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-    cardano_tx_builder_set_last_error(
-      builder,
-      "You must set the available UTXOs for input selection before calling `build`.");
-
-    return builder->last_error;
-  }
-
-  if (cardano_transaction_has_script_data(builder->state.transaction))
-  {
-    if (builder->state.collateral_address == NULL)
-    {
-      builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-      cardano_tx_builder_set_last_error(
-        builder,
-        "This transaction interacts with plutus validators. You must set a collateral change address before calling `build`.");
-
-      return builder->last_error;
-    }
-
-    if (builder->state.collateral_utxos == NULL)
-    {
-      builder->last_error = CARDANO_ERROR_POINTER_IS_NULL;
-      cardano_tx_builder_set_last_error(
-        builder,
-        "This transaction interacts with plutus validators. You must set the collateral UTXOs before calling `build`.");
-
-      return builder->last_error;
-    }
-  }
-
-  cardano_transaction_t* tx = builder->state.transaction;
-
-  cardano_error_t result = set_dummy_script_data_hash(tx);
+  const cardano_error_t result = cardano_builder_build(&builder->state, transaction, &error_message);
 
   if (result != CARDANO_SUCCESS)
   {
-    builder->last_error = result;
-    return result;
-  }
-
-  result = cardano_balance_transaction(
-    tx,
-    builder->state.additional_signature_count,
-    builder->state.params,
-    builder->state.reference_inputs,
-    builder->state.pre_selected_inputs,
-    builder->state.input_to_redeemer_map,
-    builder->state.available_utxos,
-    builder->state.coin_selector,
-    builder->state.change_address,
-    builder->state.collateral_utxos,
-    builder->state.collateral_address,
-    builder->state.tx_evaluator,
-    builder->state.deferred_redeemers);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    builder->last_error = result;
-    cardano_tx_builder_set_last_error(
-      builder,
-      cardano_transaction_get_last_error(tx));
+    track_builder_result(builder, result, error_message);
 
     return result;
   }
 
-  result = update_script_data_hash(builder, tx);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    builder->last_error = result;
-    return result;
-  }
-
-  cardano_transaction_ref(tx);
-  *transaction = tx;
-
-  // Build method can only be called once
   builder->last_error = CARDANO_ERROR_ILLEGAL_STATE;
 
   return CARDANO_SUCCESS;
