@@ -26,7 +26,6 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
-#include "./internals/blake2b_hash_to_redeemer_map.h"
 #include "./internals/builder_build.h"
 #include "./internals/builder_certs.h"
 #include "./internals/builder_config.h"
