@@ -113,7 +113,7 @@ cardano_builder_add_certificate(
 
     if (certs_size == 0U)
     {
-      cardano_redeemer_unref(&rdmer);
+      cardano_ex_units_unref(&ex_units);
       *error_message = "Unexpected empty certificate set.";
 
       return CARDANO_ERROR_INVALID_ARGUMENT;
