@@ -124,6 +124,8 @@ add_proposing_redeemer(
   if (result != CARDANO_SUCCESS)
   {
     cardano_plutus_data_unref(&empty_plutus_data);
+    cardano_redeemer_list_unref(&redeemers);
+
     return result;
   }
 
@@ -134,6 +136,8 @@ add_proposing_redeemer(
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_redeemer_list_unref(&redeemers);
+
     return result;
   }
 
@@ -215,25 +219,33 @@ cardano_builder_propose_parameter_change(
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
 
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   result = cardano_proposal_procedure_set_add(proposals, proposal);
+  cardano_proposal_procedure_unref(&proposal);
 
   if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to add proposal procedure.";
-  }
 
-  cardano_proposal_procedure_unref(&proposal);
+    return result;
+  }
 
   cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(state->transaction);
   cardano_witness_set_unref(&witnesses);
   const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
 
-  const cardano_error_t redeemer_result = add_proposing_redeemer(witnesses, proposal_index);
+  result = add_proposing_redeemer(witnesses, proposal_index);
 
-  if (redeemer_result != CARDANO_SUCCESS)
+  if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to add proposing redeemer.";
-    result         = redeemer_result;
   }
 
   return result;
@@ -546,24 +558,33 @@ cardano_builder_propose_treasury_withdrawals(
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
 
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   result = cardano_proposal_procedure_set_add(proposals, proposal);
   cardano_proposal_procedure_unref(&proposal);
 
   if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to add proposal procedure.";
+
+    return result;
   }
 
   cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(state->transaction);
   cardano_witness_set_unref(&witnesses);
   const size_t proposal_index = cardano_proposal_procedure_set_get_length(proposals) - 1U;
 
-  const cardano_error_t redeemer_result = add_proposing_redeemer(witnesses, proposal_index);
+  result = add_proposing_redeemer(witnesses, proposal_index);
 
-  if (redeemer_result != CARDANO_SUCCESS)
+  if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to add proposing redeemer.";
-    result         = redeemer_result;
   }
 
   return result;

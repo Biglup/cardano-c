@@ -53,7 +53,8 @@ extern "C" {
  * governance action deposit from the state protocol parameters and adds it to the proposal
  * procedures of the transaction body, creating the set when it is missing. It also adds an empty
  * proposing redeemer for the proposal to the witness set so the constitution script can validate
- * the proposal.
+ * the proposal. The proposing redeemer is added only after the proposal was added successfully;
+ * when adding the proposal fails, that error is returned and the witness set is left untouched.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -210,7 +211,9 @@ cardano_builder_propose_hardfork_ex(
  * \p policy_hash, wraps it in a proposal procedure funded with the governance action deposit from
  * the state protocol parameters and adds it to the proposal procedures of the transaction body,
  * creating the set when it is missing. It also adds an empty proposing redeemer for the proposal
- * to the witness set so the constitution script can validate the proposal.
+ * to the witness set so the constitution script can validate the proposal. The proposing redeemer
+ * is added only after the proposal was added successfully; when adding the proposal fails, that
+ * error is returned and the witness set is left untouched.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.

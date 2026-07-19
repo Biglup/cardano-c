@@ -132,7 +132,10 @@ cardano_builder_state_init(
   state->mints_to_redeemer_map       = NULL;
   state->votes_to_redeemer_map       = NULL;
   state->deferred_redeemers          = NULL;
-  state->tx_evaluator                = NULL;
+  state->has_plutus_v1               = false;
+  state->has_plutus_v2               = false;
+  state->has_plutus_v3               = false;
+  state->additional_signature_count  = 0U;
 
   cardano_protocol_parameters_ref(params);
   state->params = params;
@@ -150,17 +153,6 @@ cardano_builder_state_init(
   {
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
-
-  state->change_address             = NULL;
-  state->collateral_address         = NULL;
-  state->available_utxos            = NULL;
-  state->collateral_utxos           = NULL;
-  state->pre_selected_inputs        = NULL;
-  state->reference_inputs           = NULL;
-  state->has_plutus_v1              = false;
-  state->has_plutus_v2              = false;
-  state->has_plutus_v3              = false;
-  state->additional_signature_count = 0U;
 
   result = cardano_utxo_list_new(&state->pre_selected_inputs);
 
