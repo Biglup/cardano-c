@@ -75,6 +75,17 @@ typedef struct cardano_protocol_parameters_t
     uint64_t                          max_ref_script_size_per_tx;
     uint64_t                          ref_script_cost_stride;
     cardano_unit_interval_t*          ref_script_cost_multiplier;
+    cardano_unit_interval_t*          max_pledge_leverage;
+    cardano_unit_interval_t*          min_pool_margin;
+    uint64_t                          leios_announcement_period_length;
+    uint64_t                          leios_vote_period_length;
+    uint64_t                          leios_diffusion_period_length;
+    uint64_t                          leios_committee_size;
+    cardano_unit_interval_t*          leios_quorum_stake_threshold;
+    uint64_t                          max_endorser_block_references_size;
+    uint64_t                          max_endorser_block_txs_size;
+    cardano_ex_units_t*               max_endorser_block_execution_units;
+    uint64_t                          max_ref_script_size_per_endorser_block;
 } cardano_protocol_parameters_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -113,6 +124,10 @@ cardano_protocol_parameters_deallocate(void* object)
   cardano_drep_voting_thresholds_unref(&data->drep_voting_thresholds);
   cardano_unit_interval_unref(&data->ref_script_cost_per_byte);
   cardano_unit_interval_unref(&data->ref_script_cost_multiplier);
+  cardano_unit_interval_unref(&data->max_pledge_leverage);
+  cardano_unit_interval_unref(&data->min_pool_margin);
+  cardano_unit_interval_unref(&data->leios_quorum_stake_threshold);
+  cardano_ex_units_unref(&data->max_endorser_block_execution_units);
 
   _cardano_free(object);
 }
@@ -128,6 +143,26 @@ cardano_get_one_interval(void)
   cardano_unit_interval_t* unit_interval = NULL;
 
   cardano_error_t result = cardano_unit_interval_new(1, 1, &unit_interval);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return NULL;
+  }
+
+  return unit_interval;
+}
+
+/**
+ * Creates a unit interval with 0/1 values.
+ *
+ * @return The new unit interval.
+ */
+static cardano_unit_interval_t*
+cardano_get_zero_interval(void)
+{
+  cardano_unit_interval_t* unit_interval = NULL;
+
+  cardano_error_t result = cardano_unit_interval_new(0, 1, &unit_interval);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -335,45 +370,56 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->base.ref_count     = 1;
   (*protocol_parameters)->base.last_error[0] = '\0';
 
-  (*protocol_parameters)->min_fee_a                         = 0;
-  (*protocol_parameters)->min_fee_b                         = 0;
-  (*protocol_parameters)->max_block_body_size               = 0;
-  (*protocol_parameters)->max_tx_size                       = 0;
-  (*protocol_parameters)->max_block_header_size             = 0;
-  (*protocol_parameters)->key_deposit                       = 0;
-  (*protocol_parameters)->pool_deposit                      = 0;
-  (*protocol_parameters)->max_epoch                         = 0;
-  (*protocol_parameters)->n_opt                             = 0;
-  (*protocol_parameters)->pool_pledge_influence             = cardano_get_one_interval();
-  (*protocol_parameters)->expansion_rate                    = cardano_get_one_interval();
-  (*protocol_parameters)->treasury_growth_rate              = cardano_get_one_interval();
-  (*protocol_parameters)->d                                 = cardano_get_one_interval();
-  (*protocol_parameters)->extra_entropy                     = cardano_buffer_new(1);
-  (*protocol_parameters)->protocol_version                  = cardano_get_protocol_version();
-  (*protocol_parameters)->min_pool_cost                     = 0;
-  (*protocol_parameters)->ada_per_utxo_byte                 = 0;
-  (*protocol_parameters)->cost_models                       = cardano_get_costmdls();
-  (*protocol_parameters)->execution_costs                   = cardano_get_ex_unit_prices();
-  (*protocol_parameters)->max_tx_ex_units                   = cardano_get_ex_unit();
-  (*protocol_parameters)->max_block_ex_units                = cardano_get_ex_unit();
-  (*protocol_parameters)->max_value_size                    = 0;
-  (*protocol_parameters)->collateral_percentage             = 0;
-  (*protocol_parameters)->max_collateral_inputs             = 0;
-  (*protocol_parameters)->pool_voting_thresholds            = cardano_get_pool_voting_thresholds();
-  (*protocol_parameters)->drep_voting_thresholds            = cardano_get_drep_voting_thresholds();
-  (*protocol_parameters)->min_committee_size                = 0;
-  (*protocol_parameters)->committee_term_limit              = 0;
-  (*protocol_parameters)->governance_action_validity_period = 0;
-  (*protocol_parameters)->governance_action_deposit         = 0;
-  (*protocol_parameters)->drep_deposit                      = 0;
-  (*protocol_parameters)->drep_inactivity_period            = 0;
-  (*protocol_parameters)->ref_script_cost_per_byte          = cardano_get_one_interval();
-  (*protocol_parameters)->max_ref_script_size_per_block     = 0;
-  (*protocol_parameters)->max_ref_script_size_per_tx        = 0;
-  (*protocol_parameters)->ref_script_cost_stride            = 1;
-  (*protocol_parameters)->ref_script_cost_multiplier        = cardano_get_one_interval();
+  (*protocol_parameters)->min_fee_a                              = 0;
+  (*protocol_parameters)->min_fee_b                              = 0;
+  (*protocol_parameters)->max_block_body_size                    = 0;
+  (*protocol_parameters)->max_tx_size                            = 0;
+  (*protocol_parameters)->max_block_header_size                  = 0;
+  (*protocol_parameters)->key_deposit                            = 0;
+  (*protocol_parameters)->pool_deposit                           = 0;
+  (*protocol_parameters)->max_epoch                              = 0;
+  (*protocol_parameters)->n_opt                                  = 0;
+  (*protocol_parameters)->pool_pledge_influence                  = cardano_get_one_interval();
+  (*protocol_parameters)->expansion_rate                         = cardano_get_one_interval();
+  (*protocol_parameters)->treasury_growth_rate                   = cardano_get_one_interval();
+  (*protocol_parameters)->d                                      = cardano_get_one_interval();
+  (*protocol_parameters)->extra_entropy                          = cardano_buffer_new(1);
+  (*protocol_parameters)->protocol_version                       = cardano_get_protocol_version();
+  (*protocol_parameters)->min_pool_cost                          = 0;
+  (*protocol_parameters)->ada_per_utxo_byte                      = 0;
+  (*protocol_parameters)->cost_models                            = cardano_get_costmdls();
+  (*protocol_parameters)->execution_costs                        = cardano_get_ex_unit_prices();
+  (*protocol_parameters)->max_tx_ex_units                        = cardano_get_ex_unit();
+  (*protocol_parameters)->max_block_ex_units                     = cardano_get_ex_unit();
+  (*protocol_parameters)->max_value_size                         = 0;
+  (*protocol_parameters)->collateral_percentage                  = 0;
+  (*protocol_parameters)->max_collateral_inputs                  = 0;
+  (*protocol_parameters)->pool_voting_thresholds                 = cardano_get_pool_voting_thresholds();
+  (*protocol_parameters)->drep_voting_thresholds                 = cardano_get_drep_voting_thresholds();
+  (*protocol_parameters)->min_committee_size                     = 0;
+  (*protocol_parameters)->committee_term_limit                   = 0;
+  (*protocol_parameters)->governance_action_validity_period      = 0;
+  (*protocol_parameters)->governance_action_deposit              = 0;
+  (*protocol_parameters)->drep_deposit                           = 0;
+  (*protocol_parameters)->drep_inactivity_period                 = 0;
+  (*protocol_parameters)->ref_script_cost_per_byte               = cardano_get_one_interval();
+  (*protocol_parameters)->max_ref_script_size_per_block          = 0;
+  (*protocol_parameters)->max_ref_script_size_per_tx             = 0;
+  (*protocol_parameters)->ref_script_cost_stride                 = 1;
+  (*protocol_parameters)->ref_script_cost_multiplier             = cardano_get_one_interval();
+  (*protocol_parameters)->max_pledge_leverage                    = NULL;
+  (*protocol_parameters)->min_pool_margin                        = cardano_get_zero_interval();
+  (*protocol_parameters)->leios_announcement_period_length       = 0;
+  (*protocol_parameters)->leios_vote_period_length               = 0;
+  (*protocol_parameters)->leios_diffusion_period_length          = 0;
+  (*protocol_parameters)->leios_committee_size                   = 0;
+  (*protocol_parameters)->leios_quorum_stake_threshold           = cardano_get_zero_interval();
+  (*protocol_parameters)->max_endorser_block_references_size     = 0;
+  (*protocol_parameters)->max_endorser_block_txs_size            = 0;
+  (*protocol_parameters)->max_endorser_block_execution_units     = cardano_get_ex_unit();
+  (*protocol_parameters)->max_ref_script_size_per_endorser_block = 0;
 
-  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->ref_script_cost_multiplier == NULL))
+  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->ref_script_cost_multiplier == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL))
   {
     cardano_protocol_parameters_unref(protocol_parameters);
 
@@ -839,6 +885,142 @@ cardano_protocol_parameters_get_ref_script_cost_multiplier(
 
   cardano_unit_interval_ref(protocol_parameters->ref_script_cost_multiplier);
   return protocol_parameters->ref_script_cost_multiplier;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_max_pledge_leverage(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->max_pledge_leverage);
+  return protocol_parameters->max_pledge_leverage;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_min_pool_margin(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->min_pool_margin);
+  return protocol_parameters->min_pool_margin;
+}
+
+uint64_t
+cardano_protocol_parameters_get_leios_announcement_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->leios_announcement_period_length;
+}
+
+uint64_t
+cardano_protocol_parameters_get_leios_vote_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->leios_vote_period_length;
+}
+
+uint64_t
+cardano_protocol_parameters_get_leios_diffusion_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->leios_diffusion_period_length;
+}
+
+uint64_t
+cardano_protocol_parameters_get_leios_committee_size(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->leios_committee_size;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_leios_quorum_stake_threshold(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->leios_quorum_stake_threshold);
+  return protocol_parameters->leios_quorum_stake_threshold;
+}
+
+uint64_t
+cardano_protocol_parameters_get_max_endorser_block_references_size(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->max_endorser_block_references_size;
+}
+
+uint64_t
+cardano_protocol_parameters_get_max_endorser_block_txs_size(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->max_endorser_block_txs_size;
+}
+
+cardano_ex_units_t*
+cardano_protocol_parameters_get_max_endorser_block_execution_units(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_ex_units_ref(protocol_parameters->max_endorser_block_execution_units);
+  return protocol_parameters->max_endorser_block_execution_units;
+}
+
+uint64_t
+cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->max_ref_script_size_per_endorser_block;
 }
 
 cardano_error_t
@@ -1405,6 +1587,217 @@ cardano_protocol_parameters_set_ref_script_cost_multiplier(
   cardano_unit_interval_ref(ref_script_cost_multiplier);
   cardano_unit_interval_unref(&protocol_parameters->ref_script_cost_multiplier);
   protocol_parameters->ref_script_cost_multiplier = ref_script_cost_multiplier;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_pledge_leverage(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       max_pledge_leverage)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(max_pledge_leverage);
+  cardano_unit_interval_unref(&protocol_parameters->max_pledge_leverage);
+  protocol_parameters->max_pledge_leverage = max_pledge_leverage;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_min_pool_margin(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       min_pool_margin)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(min_pool_margin);
+  cardano_unit_interval_unref(&protocol_parameters->min_pool_margin);
+  protocol_parameters->min_pool_margin = min_pool_margin;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_leios_announcement_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_announcement_period_length)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (leios_announcement_period_length > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Leios announcement period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->leios_announcement_period_length = leios_announcement_period_length;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_leios_vote_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_vote_period_length)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (leios_vote_period_length > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Leios vote period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->leios_vote_period_length = leios_vote_period_length;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_leios_diffusion_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_diffusion_period_length)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (leios_diffusion_period_length > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Leios diffusion period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->leios_diffusion_period_length = leios_diffusion_period_length;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_leios_committee_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_committee_size)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (leios_committee_size > UINT16_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Leios committee size must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->leios_committee_size = leios_committee_size;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_leios_quorum_stake_threshold(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       leios_quorum_stake_threshold)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(leios_quorum_stake_threshold);
+  cardano_unit_interval_unref(&protocol_parameters->leios_quorum_stake_threshold);
+  protocol_parameters->leios_quorum_stake_threshold = leios_quorum_stake_threshold;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_endorser_block_references_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_endorser_block_references_size)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (max_endorser_block_references_size > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Max endorser block references size must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->max_endorser_block_references_size = max_endorser_block_references_size;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_endorser_block_txs_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_endorser_block_txs_size)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (max_endorser_block_txs_size > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Max endorser block txs size must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->max_endorser_block_txs_size = max_endorser_block_txs_size;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_endorser_block_execution_units(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_ex_units_t*            max_endorser_block_execution_units)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_ex_units_ref(max_endorser_block_execution_units);
+  cardano_ex_units_unref(&protocol_parameters->max_endorser_block_execution_units);
+  protocol_parameters->max_endorser_block_execution_units = max_endorser_block_execution_units;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_ref_script_size_per_endorser_block)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (max_ref_script_size_per_endorser_block > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Max ref script size per endorser block must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->max_ref_script_size_per_endorser_block = max_ref_script_size_per_endorser_block;
   return CARDANO_SUCCESS;
 }
 
