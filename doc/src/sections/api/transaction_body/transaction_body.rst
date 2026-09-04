@@ -229,6 +229,14 @@ Transaction Body
 
 ------------
 
+.. doxygenfunction:: cardano_transaction_body_get_starting_account_balance_intervals
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_set_starting_account_balance_intervals
+
+------------
+
 .. doxygenfunction:: cardano_transaction_body_get_hash
 
 ------------

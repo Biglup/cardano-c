@@ -381,6 +381,25 @@ cardano_error_t
 cardano_body_read_account_balance_intervals(cardano_cbor_reader_t* reader, cardano_account_balance_intervals_map_t** account_balance_intervals);
 
 /**
+ * \brief Reads the wire form of a body starting account balance intervals field value.
+ *
+ * This function decodes a starting account balance intervals map from the given CBOR reader. The
+ * map key is expected to have already been consumed by the caller.
+ *
+ * \param[in] reader A pointer to the CBOR reader positioned at the field value. This parameter
+ *                   must not be NULL.
+ * \param[out] starting_account_balance_intervals On success, points to the decoded starting
+ *                                                account balance intervals map. The caller owns
+ *                                                the returned reference and must release it.
+ *                                                This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the value was decoded, or an appropriate error code indicating
+ *         the failure reason.
+ */
+cardano_error_t
+cardano_body_read_starting_account_balance_intervals(cardano_cbor_reader_t* reader, cardano_account_balance_intervals_map_t** starting_account_balance_intervals);
+
+/**
  * \brief Writes a body inputs field as a key value pair when the value is present.
  *
  * This function writes map key 0 followed by the CBOR encoding of \p inputs to the given writer.
@@ -675,6 +694,23 @@ cardano_body_write_direct_deposits_if_present(cardano_cbor_writer_t* writer, con
  */
 cardano_error_t
 cardano_body_write_account_balance_intervals_if_present(cardano_cbor_writer_t* writer, const cardano_account_balance_intervals_map_t* account_balance_intervals);
+
+/**
+ * \brief Writes a body starting account balance intervals field as a key value pair when the value is present.
+ *
+ * This function writes map key 27 followed by the CBOR encoding of
+ * \p starting_account_balance_intervals to the given writer. If
+ * \p starting_account_balance_intervals is NULL, nothing is written and the function succeeds.
+ *
+ * \param[in] writer A pointer to the CBOR writer. This parameter must not be NULL.
+ * \param[in] starting_account_balance_intervals A pointer to the starting account balance intervals
+ *                                               map to write. If NULL, nothing is written.
+ *
+ * \return \ref CARDANO_SUCCESS if the field was written or absent, or an appropriate error code
+ *         indicating the failure reason.
+ */
+cardano_error_t
+cardano_body_write_starting_account_balance_intervals_if_present(cardano_cbor_writer_t* writer, const cardano_account_balance_intervals_map_t* starting_account_balance_intervals);
 
 #ifdef __cplusplus
 }

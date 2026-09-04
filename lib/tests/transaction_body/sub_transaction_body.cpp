@@ -77,19 +77,20 @@ static const char* REQUIRED_GUARDS_CBOR     = "a28200581c00112233445566778899aab
 static const char* DIRECT_DEPOSITS_CBOR     = "a1581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a000f4240";
 static const char* BALANCE_INTERVALS_CBOR   = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388";
 
-static const char* FEE_KEY_CBOR               = "a300d90102800180020a";
-static const char* COLLATERAL_KEY_CBOR        = "a300d901028001800d00";
-static const char* COLLATERAL_RETURN_KEY_CBOR = "a300d901028001801000";
-static const char* TOTAL_COLLATERAL_KEY_CBOR  = "a300d901028001801100";
-static const char* NESTED_SUB_TX_KEY_CBOR     = "a300d901028001801700";
-static const char* UNKNOWN_KEY_CBOR           = "a300d90102800180186300";
-static const char* MISSING_INPUTS_CBOR        = "a10180";
-static const char* MISSING_OUTPUTS_CBOR       = "a100d9010280";
-static const char* EMPTY_CERTIFICATES_CBOR    = "a300d901028001800480";
-static const char* EMPTY_WITHDRAWALS_CBOR     = "a300d9010280018005a0";
-static const char* EMPTY_MINT_CBOR            = "a300d9010280018009a0";
-static const char* EMPTY_GUARDS_CBOR          = "a300d901028001800e80";
-static const char* EMPTY_REQUIRED_GUARDS_CBOR = "a300d901028001801818a0";
+static const char* FEE_KEY_CBOR                = "a300d90102800180020a";
+static const char* COLLATERAL_KEY_CBOR         = "a300d901028001800d00";
+static const char* COLLATERAL_RETURN_KEY_CBOR  = "a300d901028001801000";
+static const char* TOTAL_COLLATERAL_KEY_CBOR   = "a300d901028001801100";
+static const char* NESTED_SUB_TX_KEY_CBOR      = "a300d901028001801700";
+static const char* STARTING_INTERVALS_KEY_CBOR = "a300d90102800180181ba0";
+static const char* UNKNOWN_KEY_CBOR            = "a300d90102800180186300";
+static const char* MISSING_INPUTS_CBOR         = "a10180";
+static const char* MISSING_OUTPUTS_CBOR        = "a100d9010280";
+static const char* EMPTY_CERTIFICATES_CBOR     = "a300d901028001800480";
+static const char* EMPTY_WITHDRAWALS_CBOR      = "a300d9010280018005a0";
+static const char* EMPTY_MINT_CBOR             = "a300d9010280018009a0";
+static const char* EMPTY_GUARDS_CBOR           = "a300d901028001800e80";
+static const char* EMPTY_REQUIRED_GUARDS_CBOR  = "a300d901028001801818a0";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -319,6 +320,12 @@ TEST(cardano_sub_transaction_body_from_cbor, rejectsNestedSubTransactionsKey)
 {
   // Act & Assert
   expect_decode_failure(NESTED_SUB_TX_KEY_CBOR, CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
+}
+
+TEST(cardano_sub_transaction_body_from_cbor, rejectsStartingAccountBalanceIntervalsKey)
+{
+  // Act & Assert
+  expect_decode_failure(STARTING_INTERVALS_KEY_CBOR, CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
 }
 
 TEST(cardano_sub_transaction_body_from_cbor, rejectsUnknownKey)
