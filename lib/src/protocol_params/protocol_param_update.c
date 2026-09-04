@@ -24,6 +24,7 @@
 #include <cardano/object.h>
 #include <cardano/protocol_params/protocol_param_update.h>
 
+#include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
@@ -83,6 +84,18 @@ typedef struct cardano_protocol_param_update_t
     uint64_t*                         max_ref_script_size_per_tx;
     uint64_t*                         ref_script_cost_stride;
     cardano_unit_interval_t*          ref_script_cost_multiplier;
+    bool                              has_max_pledge_leverage;
+    cardano_unit_interval_t*          max_pledge_leverage;
+    cardano_unit_interval_t*          min_pool_margin;
+    uint64_t*                         leios_announcement_period_length;
+    uint64_t*                         leios_vote_period_length;
+    uint64_t*                         leios_diffusion_period_length;
+    uint64_t*                         leios_committee_size;
+    cardano_unit_interval_t*          leios_quorum_stake_threshold;
+    uint64_t*                         max_endorser_block_references_size;
+    uint64_t*                         max_endorser_block_txs_size;
+    cardano_ex_units_t*               max_endorser_block_execution_units;
+    uint64_t*                         max_ref_script_size_per_endorser_block;
 } cardano_protocol_param_update_t;
 
 /* PLUTUS-DATA ENCODING ******************************************************/
@@ -213,6 +226,48 @@ pp_encode_ex_units(cardano_ex_units_t* ex_units, cardano_plutus_data_t** out)
   cardano_plutus_list_unref(&list);
   cardano_plutus_data_unref(&mem_pd);
   cardano_plutus_data_unref(&step_pd);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an optional rational the way the ledger encodes a StrictMaybe:
+ * Constr 1 [] when the value is absent and Constr 0 [rational] when it is present.
+ */
+static cardano_error_t
+pp_encode_optional_rational(cardano_unit_interval_t* interval, cardano_plutus_data_t** out)
+{
+  static const uint64_t just_alternative    = 0U;
+  static const uint64_t nothing_alternative = 1U;
+
+  cardano_plutus_list_t*        fields = NULL;
+  cardano_plutus_data_t*        value  = NULL;
+  cardano_constr_plutus_data_t* constr = NULL;
+  cardano_error_t               result = cardano_plutus_list_new(&fields);
+
+  if ((result == CARDANO_SUCCESS) && (interval != NULL))
+  {
+    result = pp_encode_rational(interval, &value);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(fields, value);
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_constr_plutus_data_new((interval != NULL) ? just_alternative : nothing_alternative, fields, &constr);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_constr(constr, out);
+  }
+
+  cardano_constr_plutus_data_unref(&constr);
+  cardano_plutus_data_unref(&value);
+  cardano_plutus_list_unref(&fields);
 
   return result;
 }
@@ -947,6 +1002,138 @@ cardano_protocol_param_update_to_plutus_data(
     cardano_plutus_data_unref(&v);
   }
 
+  if ((result == CARDANO_SUCCESS) && (u->has_max_pledge_leverage))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_optional_rational(u->max_pledge_leverage, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 38U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->min_pool_margin != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->min_pool_margin, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 39U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->leios_announcement_period_length != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->leios_announcement_period_length, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 40U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->leios_vote_period_length != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->leios_vote_period_length, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 41U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->leios_diffusion_period_length != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->leios_diffusion_period_length, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 42U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->leios_committee_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->leios_committee_size, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 43U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->leios_quorum_stake_threshold != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->leios_quorum_stake_threshold, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 44U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_endorser_block_references_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_endorser_block_references_size, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 45U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_endorser_block_txs_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_endorser_block_txs_size, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 46U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_endorser_block_execution_units != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_ex_units(u->max_endorser_block_execution_units, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 47U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->max_ref_script_size_per_endorser_block != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->max_ref_script_size_per_endorser_block, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 48U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
   if (result == CARDANO_SUCCESS)
   {
     result = cardano_plutus_data_new_map(map, plutus_data);
@@ -1038,6 +1225,17 @@ cardano_protocol_param_update_deallocate(void* object)
   _cardano_free(data->max_ref_script_size_per_tx);
   _cardano_free(data->ref_script_cost_stride);
   cardano_unit_interval_unref(&data->ref_script_cost_multiplier);
+  cardano_unit_interval_unref(&data->max_pledge_leverage);
+  cardano_unit_interval_unref(&data->min_pool_margin);
+  _cardano_free(data->leios_announcement_period_length);
+  _cardano_free(data->leios_vote_period_length);
+  _cardano_free(data->leios_diffusion_period_length);
+  _cardano_free(data->leios_committee_size);
+  cardano_unit_interval_unref(&data->leios_quorum_stake_threshold);
+  _cardano_free(data->max_endorser_block_references_size);
+  _cardano_free(data->max_endorser_block_txs_size);
+  cardano_ex_units_unref(&data->max_endorser_block_execution_units);
+  _cardano_free(data->max_ref_script_size_per_endorser_block);
 
   _cardano_free(object);
 }
@@ -1241,6 +1439,61 @@ get_map_size(const cardano_protocol_param_update_t* update)
     ++map_size;
   }
 
+  if (update->has_max_pledge_leverage)
+  {
+    ++map_size;
+  }
+
+  if (update->min_pool_margin != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->leios_announcement_period_length != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->leios_vote_period_length != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->leios_diffusion_period_length != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->leios_committee_size != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->leios_quorum_stake_threshold != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->max_endorser_block_references_size != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->max_endorser_block_txs_size != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->max_endorser_block_execution_units != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->max_ref_script_size_per_endorser_block != NULL)
+  {
+    ++map_size;
+  }
+
   return map_size;
 }
 
@@ -1338,6 +1591,28 @@ get_field_ptr(cardano_protocol_param_update_t* update, size_t key)
       return (void*)&update->ref_script_cost_stride;
     case 37:
       return (void*)&update->ref_script_cost_multiplier;
+    case 38:
+      return (void*)update;
+    case 39:
+      return (void*)&update->min_pool_margin;
+    case 40:
+      return (void*)&update->leios_announcement_period_length;
+    case 41:
+      return (void*)&update->leios_vote_period_length;
+    case 42:
+      return (void*)&update->leios_diffusion_period_length;
+    case 43:
+      return (void*)&update->leios_committee_size;
+    case 44:
+      return (void*)&update->leios_quorum_stake_threshold;
+    case 45:
+      return (void*)&update->max_endorser_block_references_size;
+    case 46:
+      return (void*)&update->max_endorser_block_txs_size;
+    case 47:
+      return (void*)&update->max_endorser_block_execution_units;
+    case 48:
+      return (void*)&update->max_ref_script_size_per_endorser_block;
 
     default:
       return NULL;
@@ -1482,6 +1757,55 @@ handle_positive_uint32(cardano_cbor_reader_t* reader, void* field_ptr)
 }
 
 /**
+ * \brief Reads a 16-bit bounded unsigned integer from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads an unsigned integer from the provided CBOR reader, validates that it fits
+ * in 16 bits and stores the result in the specified field pointer. It is used as a handler
+ * function for parameters whose wire format is a 16-bit unsigned integer.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the value.
+ * \param[out] field_ptr A pointer to the field where the read value should be stored.
+ *                       The field pointer should be of type uint64_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_uint16(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  uint64_t** field = (uint64_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  uint64_t value = 0U;
+
+  cardano_error_t result = cardano_cbor_validate_uint_in_range("protocol_param_update", "parameter", reader, &value, 0U, UINT16_MAX);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *field = _cardano_malloc(sizeof(uint64_t));
+
+  if (*field == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  **field = value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Reads a unit interval value from the CBOR reader and stores it in the specified field.
  *
  * This function reads a unit interval value from the provided CBOR reader and stores the result
@@ -1510,6 +1834,60 @@ handle_unit_interval(cardano_cbor_reader_t* reader, void* field_ptr)
   }
 
   return cardano_unit_interval_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads the maximum pledge leverage from the CBOR reader and stores it in the update.
+ *
+ * The maximum pledge leverage is a nullable parameter: the wire value is either a nonnegative
+ * interval (a bounded leverage) or CBOR null (an unbounded leverage). Both forms mark the
+ * parameter as present in the update; the null form leaves the stored interval NULL.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the value.
+ * \param[out] field_ptr A pointer to the protocol parameter update object that receives the value.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_max_pledge_leverage(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_protocol_param_update_t* update = (cardano_protocol_param_update_t*)field_ptr;
+
+  if (update->has_max_pledge_leverage)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (state == CARDANO_CBOR_READER_STATE_NULL)
+  {
+    result = cardano_cbor_reader_read_null(reader);
+  }
+  else
+  {
+    result = cardano_unit_interval_from_cbor(reader, &update->max_pledge_leverage);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  update->has_max_pledge_leverage = true;
+
+  return CARDANO_SUCCESS;
 }
 
 /**
@@ -1870,6 +2248,50 @@ write_unit_interval_if_present(cardano_cbor_writer_t* writer, const uint64_t key
   }
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Writes a key and its nullable unit interval value to the CBOR writer if the parameter is present.
+ *
+ * This function writes a key and its associated unit interval value to the CBOR writer only if
+ * the parameter is marked as present. A present parameter whose value is NULL is written as
+ * CBOR null, which proposes lifting the bound. If the parameter is not present, the function
+ * does nothing and returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] is_present Whether the parameter is part of the update.
+ * \param[in] value A pointer to the unit interval value to be written. If NULL, CBOR null is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the parameter is absent.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_nullable_unit_interval_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const bool is_present, const cardano_unit_interval_t* value)
+{
+  assert(writer != NULL);
+
+  if (!is_present)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (value == NULL)
+  {
+    return cardano_cbor_writer_write_null(writer);
+  }
+
+  return cardano_unit_interval_to_cbor(value, writer);
 }
 
 /**
@@ -2240,7 +2662,18 @@ static const param_handler_t param_handlers[] = {
   handle_uint32,
   handle_uint32,
   handle_positive_uint32,
-  handle_unit_interval
+  handle_unit_interval,
+  handle_max_pledge_leverage,
+  handle_unit_interval,
+  handle_uint32,
+  handle_uint32,
+  handle_uint32,
+  handle_uint16,
+  handle_unit_interval,
+  handle_uint32,
+  handle_uint32,
+  handle_ex_units,
+  handle_uint32
 };
 
 /* DEFINITIONS ****************************************************************/
@@ -2264,43 +2697,55 @@ cardano_protocol_param_update_new(cardano_protocol_param_update_t** protocol_par
   (*protocol_param_update)->base.ref_count     = 1;
   (*protocol_param_update)->base.last_error[0] = '\0';
 
-  (*protocol_param_update)->min_fee_a                         = NULL;
-  (*protocol_param_update)->min_fee_b                         = NULL;
-  (*protocol_param_update)->max_block_body_size               = NULL;
-  (*protocol_param_update)->max_tx_size                       = NULL;
-  (*protocol_param_update)->max_block_header_size             = NULL;
-  (*protocol_param_update)->key_deposit                       = NULL;
-  (*protocol_param_update)->pool_deposit                      = NULL;
-  (*protocol_param_update)->max_epoch                         = NULL;
-  (*protocol_param_update)->n_opt                             = NULL;
-  (*protocol_param_update)->pool_pledge_influence             = NULL;
-  (*protocol_param_update)->expansion_rate                    = NULL;
-  (*protocol_param_update)->treasury_growth_rate              = NULL;
-  (*protocol_param_update)->d                                 = NULL;
-  (*protocol_param_update)->extra_entropy                     = NULL;
-  (*protocol_param_update)->protocol_version                  = NULL;
-  (*protocol_param_update)->min_pool_cost                     = NULL;
-  (*protocol_param_update)->ada_per_utxo_byte                 = NULL;
-  (*protocol_param_update)->cost_models                       = NULL;
-  (*protocol_param_update)->execution_costs                   = NULL;
-  (*protocol_param_update)->max_tx_ex_units                   = NULL;
-  (*protocol_param_update)->max_block_ex_units                = NULL;
-  (*protocol_param_update)->max_value_size                    = NULL;
-  (*protocol_param_update)->collateral_percentage             = NULL;
-  (*protocol_param_update)->max_collateral_inputs             = NULL;
-  (*protocol_param_update)->pool_voting_thresholds            = NULL;
-  (*protocol_param_update)->drep_voting_thresholds            = NULL;
-  (*protocol_param_update)->min_committee_size                = NULL;
-  (*protocol_param_update)->committee_term_limit              = NULL;
-  (*protocol_param_update)->governance_action_validity_period = NULL;
-  (*protocol_param_update)->governance_action_deposit         = NULL;
-  (*protocol_param_update)->drep_deposit                      = NULL;
-  (*protocol_param_update)->drep_inactivity_period            = NULL;
-  (*protocol_param_update)->ref_script_cost_per_byte          = NULL;
-  (*protocol_param_update)->max_ref_script_size_per_block     = NULL;
-  (*protocol_param_update)->max_ref_script_size_per_tx        = NULL;
-  (*protocol_param_update)->ref_script_cost_stride            = NULL;
-  (*protocol_param_update)->ref_script_cost_multiplier        = NULL;
+  (*protocol_param_update)->min_fee_a                              = NULL;
+  (*protocol_param_update)->min_fee_b                              = NULL;
+  (*protocol_param_update)->max_block_body_size                    = NULL;
+  (*protocol_param_update)->max_tx_size                            = NULL;
+  (*protocol_param_update)->max_block_header_size                  = NULL;
+  (*protocol_param_update)->key_deposit                            = NULL;
+  (*protocol_param_update)->pool_deposit                           = NULL;
+  (*protocol_param_update)->max_epoch                              = NULL;
+  (*protocol_param_update)->n_opt                                  = NULL;
+  (*protocol_param_update)->pool_pledge_influence                  = NULL;
+  (*protocol_param_update)->expansion_rate                         = NULL;
+  (*protocol_param_update)->treasury_growth_rate                   = NULL;
+  (*protocol_param_update)->d                                      = NULL;
+  (*protocol_param_update)->extra_entropy                          = NULL;
+  (*protocol_param_update)->protocol_version                       = NULL;
+  (*protocol_param_update)->min_pool_cost                          = NULL;
+  (*protocol_param_update)->ada_per_utxo_byte                      = NULL;
+  (*protocol_param_update)->cost_models                            = NULL;
+  (*protocol_param_update)->execution_costs                        = NULL;
+  (*protocol_param_update)->max_tx_ex_units                        = NULL;
+  (*protocol_param_update)->max_block_ex_units                     = NULL;
+  (*protocol_param_update)->max_value_size                         = NULL;
+  (*protocol_param_update)->collateral_percentage                  = NULL;
+  (*protocol_param_update)->max_collateral_inputs                  = NULL;
+  (*protocol_param_update)->pool_voting_thresholds                 = NULL;
+  (*protocol_param_update)->drep_voting_thresholds                 = NULL;
+  (*protocol_param_update)->min_committee_size                     = NULL;
+  (*protocol_param_update)->committee_term_limit                   = NULL;
+  (*protocol_param_update)->governance_action_validity_period      = NULL;
+  (*protocol_param_update)->governance_action_deposit              = NULL;
+  (*protocol_param_update)->drep_deposit                           = NULL;
+  (*protocol_param_update)->drep_inactivity_period                 = NULL;
+  (*protocol_param_update)->ref_script_cost_per_byte               = NULL;
+  (*protocol_param_update)->max_ref_script_size_per_block          = NULL;
+  (*protocol_param_update)->max_ref_script_size_per_tx             = NULL;
+  (*protocol_param_update)->ref_script_cost_stride                 = NULL;
+  (*protocol_param_update)->ref_script_cost_multiplier             = NULL;
+  (*protocol_param_update)->has_max_pledge_leverage                = false;
+  (*protocol_param_update)->max_pledge_leverage                    = NULL;
+  (*protocol_param_update)->min_pool_margin                        = NULL;
+  (*protocol_param_update)->leios_announcement_period_length       = NULL;
+  (*protocol_param_update)->leios_vote_period_length               = NULL;
+  (*protocol_param_update)->leios_diffusion_period_length          = NULL;
+  (*protocol_param_update)->leios_committee_size                   = NULL;
+  (*protocol_param_update)->leios_quorum_stake_threshold           = NULL;
+  (*protocol_param_update)->max_endorser_block_references_size     = NULL;
+  (*protocol_param_update)->max_endorser_block_txs_size            = NULL;
+  (*protocol_param_update)->max_endorser_block_execution_units     = NULL;
+  (*protocol_param_update)->max_ref_script_size_per_endorser_block = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -2656,6 +3101,83 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
     return result;
   }
 
+  result = write_nullable_unit_interval_if_present(writer, 38U, protocol_param_update->has_max_pledge_leverage, protocol_param_update->max_pledge_leverage);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_unit_interval_if_present(writer, 39U, protocol_param_update->min_pool_margin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 40U, protocol_param_update->leios_announcement_period_length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 41U, protocol_param_update->leios_vote_period_length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 42U, protocol_param_update->leios_diffusion_period_length);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 43U, protocol_param_update->leios_committee_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_unit_interval_if_present(writer, 44U, protocol_param_update->leios_quorum_stake_threshold);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 45U, protocol_param_update->max_endorser_block_references_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 46U, protocol_param_update->max_endorser_block_txs_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_ex_units_if_present(writer, 47U, protocol_param_update->max_endorser_block_execution_units);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 48U, protocol_param_update->max_ref_script_size_per_endorser_block);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -2956,6 +3478,100 @@ cardano_protocol_param_update_to_cip116_json(
     {
       return error;
     }
+  }
+
+  if (update->has_max_pledge_leverage)
+  {
+    cardano_json_writer_write_property_name(writer, "max_pledge_leverage", 19);
+
+    if (update->max_pledge_leverage == NULL)
+    {
+      cardano_json_writer_write_null(writer);
+    }
+    else
+    {
+      cardano_error_t error = cardano_unit_interval_to_cip116_json(update->max_pledge_leverage, writer);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+    }
+  }
+
+  if (update->min_pool_margin != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "min_pool_margin", 15);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->min_pool_margin, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->leios_announcement_period_length != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "leios_announcement_period_length", 32);
+    cardano_json_writer_write_uint_as_string(writer, *update->leios_announcement_period_length);
+  }
+
+  if (update->leios_vote_period_length != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "leios_vote_period_length", 24);
+    cardano_json_writer_write_uint_as_string(writer, *update->leios_vote_period_length);
+  }
+
+  if (update->leios_diffusion_period_length != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "leios_diffusion_period_length", 29);
+    cardano_json_writer_write_uint_as_string(writer, *update->leios_diffusion_period_length);
+  }
+
+  if (update->leios_committee_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "leios_committee_size", 20);
+    cardano_json_writer_write_uint_as_string(writer, *update->leios_committee_size);
+  }
+
+  if (update->leios_quorum_stake_threshold != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "leios_quorum_stake_threshold", 28);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->leios_quorum_stake_threshold, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_endorser_block_references_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_endorser_block_references_size", 34);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_endorser_block_references_size);
+  }
+
+  if (update->max_endorser_block_txs_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_endorser_block_txs_size", 27);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_endorser_block_txs_size);
+  }
+
+  if (update->max_endorser_block_execution_units != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_endorser_block_execution_units", 34);
+    cardano_error_t error = cardano_ex_units_to_cip116_json(update->max_endorser_block_execution_units, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->max_ref_script_size_per_endorser_block != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "max_ref_script_size_per_endorser_block", 38);
+    cardano_json_writer_write_uint_as_string(writer, *update->max_ref_script_size_per_endorser_block);
   }
 
   cardano_json_writer_write_end_object(writer);
@@ -3713,6 +4329,246 @@ cardano_protocol_param_update_get_ref_script_cost_multiplier(
 
   cardano_unit_interval_ref(protocol_param_update->ref_script_cost_multiplier);
   *ref_script_cost_multiplier = protocol_param_update->ref_script_cost_multiplier;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        max_pledge_leverage)
+{
+  if ((protocol_param_update == NULL) || (max_pledge_leverage == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (!protocol_param_update->has_max_pledge_leverage)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (protocol_param_update->max_pledge_leverage != NULL)
+  {
+    cardano_unit_interval_ref(protocol_param_update->max_pledge_leverage);
+  }
+
+  *max_pledge_leverage = protocol_param_update->max_pledge_leverage;
+
+  return CARDANO_SUCCESS;
+}
+
+bool
+cardano_protocol_param_update_has_max_pledge_leverage(
+  const cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return false;
+  }
+
+  return protocol_param_update->has_max_pledge_leverage;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_min_pool_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        min_pool_margin)
+{
+  if ((protocol_param_update == NULL) || (min_pool_margin == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->min_pool_margin == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_unit_interval_ref(protocol_param_update->min_pool_margin);
+  *min_pool_margin = protocol_param_update->min_pool_margin;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_leios_announcement_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_announcement_period_length)
+{
+  if ((protocol_param_update == NULL) || (leios_announcement_period_length == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_announcement_period_length == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *leios_announcement_period_length = *protocol_param_update->leios_announcement_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_leios_vote_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_vote_period_length)
+{
+  if ((protocol_param_update == NULL) || (leios_vote_period_length == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_vote_period_length == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *leios_vote_period_length = *protocol_param_update->leios_vote_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_leios_diffusion_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_diffusion_period_length)
+{
+  if ((protocol_param_update == NULL) || (leios_diffusion_period_length == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_diffusion_period_length == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *leios_diffusion_period_length = *protocol_param_update->leios_diffusion_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_leios_committee_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_committee_size)
+{
+  if ((protocol_param_update == NULL) || (leios_committee_size == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_committee_size == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *leios_committee_size = *protocol_param_update->leios_committee_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_leios_quorum_stake_threshold(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        leios_quorum_stake_threshold)
+{
+  if ((protocol_param_update == NULL) || (leios_quorum_stake_threshold == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_quorum_stake_threshold == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_unit_interval_ref(protocol_param_update->leios_quorum_stake_threshold);
+  *leios_quorum_stake_threshold = protocol_param_update->leios_quorum_stake_threshold;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_endorser_block_references_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_endorser_block_references_size)
+{
+  if ((protocol_param_update == NULL) || (max_endorser_block_references_size == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_endorser_block_references_size == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *max_endorser_block_references_size = *protocol_param_update->max_endorser_block_references_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_endorser_block_txs_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_endorser_block_txs_size)
+{
+  if ((protocol_param_update == NULL) || (max_endorser_block_txs_size == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_endorser_block_txs_size == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *max_endorser_block_txs_size = *protocol_param_update->max_endorser_block_txs_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_endorser_block_execution_units(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_ex_units_t**             max_endorser_block_execution_units)
+{
+  if ((protocol_param_update == NULL) || (max_endorser_block_execution_units == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_endorser_block_execution_units == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_ex_units_ref(protocol_param_update->max_endorser_block_execution_units);
+  *max_endorser_block_execution_units = protocol_param_update->max_endorser_block_execution_units;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_endorser_block)
+{
+  if ((protocol_param_update == NULL) || (max_ref_script_size_per_endorser_block == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_endorser_block == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *max_ref_script_size_per_endorser_block = *protocol_param_update->max_ref_script_size_per_endorser_block;
 
   return CARDANO_SUCCESS;
 }
@@ -4908,6 +5764,447 @@ cardano_protocol_param_update_set_ref_script_cost_multiplier(
 
   cardano_unit_interval_ref(ref_script_cost_multiplier);
   protocol_param_update->ref_script_cost_multiplier = (cardano_unit_interval_t*)ref_script_cost_multiplier;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         max_pledge_leverage)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_pledge_leverage != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->max_pledge_leverage);
+  }
+
+  if (max_pledge_leverage == NULL)
+  {
+    protocol_param_update->max_pledge_leverage     = NULL;
+    protocol_param_update->has_max_pledge_leverage = false;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(max_pledge_leverage);
+  protocol_param_update->max_pledge_leverage     = max_pledge_leverage;
+  protocol_param_update->has_max_pledge_leverage = true;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_pledge_leverage_unbounded(
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_pledge_leverage != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->max_pledge_leverage);
+  }
+
+  protocol_param_update->max_pledge_leverage     = NULL;
+  protocol_param_update->has_max_pledge_leverage = true;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_clear_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_pledge_leverage != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->max_pledge_leverage);
+  }
+
+  protocol_param_update->max_pledge_leverage     = NULL;
+  protocol_param_update->has_max_pledge_leverage = false;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_min_pool_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         min_pool_margin)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->min_pool_margin != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->min_pool_margin);
+  }
+
+  if (min_pool_margin == NULL)
+  {
+    protocol_param_update->min_pool_margin = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(min_pool_margin);
+  protocol_param_update->min_pool_margin = min_pool_margin;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_leios_announcement_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_announcement_period_length)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((leios_announcement_period_length != NULL) && (*leios_announcement_period_length > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Leios announcement period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->leios_announcement_period_length != NULL)
+  {
+    _cardano_free(protocol_param_update->leios_announcement_period_length);
+  }
+
+  if (leios_announcement_period_length == NULL)
+  {
+    protocol_param_update->leios_announcement_period_length = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->leios_announcement_period_length = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->leios_announcement_period_length == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->leios_announcement_period_length = *leios_announcement_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_leios_vote_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_vote_period_length)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((leios_vote_period_length != NULL) && (*leios_vote_period_length > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Leios vote period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->leios_vote_period_length != NULL)
+  {
+    _cardano_free(protocol_param_update->leios_vote_period_length);
+  }
+
+  if (leios_vote_period_length == NULL)
+  {
+    protocol_param_update->leios_vote_period_length = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->leios_vote_period_length = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->leios_vote_period_length == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->leios_vote_period_length = *leios_vote_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_leios_diffusion_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_diffusion_period_length)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((leios_diffusion_period_length != NULL) && (*leios_diffusion_period_length > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Leios diffusion period length must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->leios_diffusion_period_length != NULL)
+  {
+    _cardano_free(protocol_param_update->leios_diffusion_period_length);
+  }
+
+  if (leios_diffusion_period_length == NULL)
+  {
+    protocol_param_update->leios_diffusion_period_length = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->leios_diffusion_period_length = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->leios_diffusion_period_length == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->leios_diffusion_period_length = *leios_diffusion_period_length;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_leios_committee_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_committee_size)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((leios_committee_size != NULL) && (*leios_committee_size > UINT16_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Leios committee size must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->leios_committee_size != NULL)
+  {
+    _cardano_free(protocol_param_update->leios_committee_size);
+  }
+
+  if (leios_committee_size == NULL)
+  {
+    protocol_param_update->leios_committee_size = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->leios_committee_size = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->leios_committee_size == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->leios_committee_size = *leios_committee_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_leios_quorum_stake_threshold(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         leios_quorum_stake_threshold)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->leios_quorum_stake_threshold != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->leios_quorum_stake_threshold);
+  }
+
+  if (leios_quorum_stake_threshold == NULL)
+  {
+    protocol_param_update->leios_quorum_stake_threshold = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(leios_quorum_stake_threshold);
+  protocol_param_update->leios_quorum_stake_threshold = leios_quorum_stake_threshold;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_endorser_block_references_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_endorser_block_references_size)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((max_endorser_block_references_size != NULL) && (*max_endorser_block_references_size > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Max endorser block references size must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->max_endorser_block_references_size != NULL)
+  {
+    _cardano_free(protocol_param_update->max_endorser_block_references_size);
+  }
+
+  if (max_endorser_block_references_size == NULL)
+  {
+    protocol_param_update->max_endorser_block_references_size = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->max_endorser_block_references_size = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->max_endorser_block_references_size == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->max_endorser_block_references_size = *max_endorser_block_references_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_endorser_block_txs_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_endorser_block_txs_size)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((max_endorser_block_txs_size != NULL) && (*max_endorser_block_txs_size > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Max endorser block txs size must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->max_endorser_block_txs_size != NULL)
+  {
+    _cardano_free(protocol_param_update->max_endorser_block_txs_size);
+  }
+
+  if (max_endorser_block_txs_size == NULL)
+  {
+    protocol_param_update->max_endorser_block_txs_size = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->max_endorser_block_txs_size = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->max_endorser_block_txs_size == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->max_endorser_block_txs_size = *max_endorser_block_txs_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_endorser_block_execution_units(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_ex_units_t*              max_endorser_block_execution_units)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->max_endorser_block_execution_units != NULL)
+  {
+    cardano_ex_units_unref(&protocol_param_update->max_endorser_block_execution_units);
+  }
+
+  if (max_endorser_block_execution_units == NULL)
+  {
+    protocol_param_update->max_endorser_block_execution_units = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_ex_units_ref(max_endorser_block_execution_units);
+  protocol_param_update->max_endorser_block_execution_units = max_endorser_block_execution_units;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_endorser_block)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((max_ref_script_size_per_endorser_block != NULL) && (*max_ref_script_size_per_endorser_block > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Max ref script size per endorser block must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->max_ref_script_size_per_endorser_block != NULL)
+  {
+    _cardano_free(protocol_param_update->max_ref_script_size_per_endorser_block);
+  }
+
+  if (max_ref_script_size_per_endorser_block == NULL)
+  {
+    protocol_param_update->max_ref_script_size_per_endorser_block = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->max_ref_script_size_per_endorser_block = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->max_ref_script_size_per_endorser_block == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->max_ref_script_size_per_endorser_block = *max_ref_script_size_per_endorser_block;
 
   return CARDANO_SUCCESS;
 }
