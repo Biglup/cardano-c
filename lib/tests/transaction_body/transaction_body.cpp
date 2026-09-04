@@ -66,29 +66,32 @@ static const char* PROPOSAL_PROCEDURE_CBOR = "d9010284841a000f4240581de1cb0ec269
 // Dijkstra transaction body vectors. The GUARDS_*, REQUIRED_TOP_LEVEL_GUARDS, DIRECT_DEPOSITS and
 // ACCOUNT_BALANCE_INTERVALS bodies share a minimal prefix (inputs, outputs, fee) followed by the
 // key specific fragment.
-static const char* MINIMAL_DIJKSTRA_BODY          = "a300d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a";
-static const char* GUARDS_KEY_HASH_FORM_BODY      = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
-static const char* GUARDS_UNTAGGED_INPUTS_BODY    = "a400818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
-static const char* GUARDS_TAGGED_KEY_HASH_BODY    = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010282581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
-static const char* GUARDS_EMPTY_TAGGED_BODY       = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010280";
-static const char* GUARDS_EMPTY_BARE_BODY         = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e80";
-static const char* GUARDS_CREDENTIAL_FORM_BODY    = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
-static const char* GUARDS_CREDENTIAL_TAGGED_BODY  = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed90102828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
-static const char* GUARDS_SCRIPT_ONLY_BODY        = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e818201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
-static const char* SUB_TRANSACTIONS_TAGGED_BODY   = "a400d9010281825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e25000180020017d901028283a300d90102800180031864a0a101647465737483a200d90102800180a0f6";
-static const char* SUB_TRANSACTIONS_BARE_BODY     = "a400d9010281825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e250001800200178283a300d90102800180031864a0a101647465737483a200d90102800180a0f6";
-static const char* REQUIRED_TOP_LEVEL_GUARDS_BODY = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf6";
-static const char* DIRECT_DEPOSITS_BODY           = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0";
-static const char* ACCOUNT_BALANCE_INTERVALS_BODY = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
-// Synthetic body carrying every key the top level decoder accepts (0-5, 7-9, 11, 13-26), composed
+static const char* MINIMAL_DIJKSTRA_BODY                   = "a300d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a";
+static const char* GUARDS_KEY_HASH_FORM_BODY               = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
+static const char* GUARDS_UNTAGGED_INPUTS_BODY             = "a400818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
+static const char* GUARDS_TAGGED_KEY_HASH_BODY             = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010282581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* GUARDS_EMPTY_TAGGED_BODY                = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed9010280";
+static const char* GUARDS_EMPTY_BARE_BODY                  = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e80";
+static const char* GUARDS_CREDENTIAL_FORM_BODY             = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* GUARDS_CREDENTIAL_TAGGED_BODY           = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0ed90102828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* GUARDS_SCRIPT_ONLY_BODY                 = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a0e818201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* SUB_TRANSACTIONS_TAGGED_BODY            = "a400d9010281825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e25000180020017d901028283a300d90102800180031864a0a101647465737483a200d90102800180a0f6";
+static const char* SUB_TRANSACTIONS_BARE_BODY              = "a400d9010281825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e250001800200178283a300d90102800180031864a0a101647465737483a200d90102800180a0f6";
+static const char* REQUIRED_TOP_LEVEL_GUARDS_BODY          = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf6";
+static const char* DIRECT_DEPOSITS_BODY                    = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a1819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0";
+static const char* ACCOUNT_BALANCE_INTERVALS_BODY          = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
+static const char* STARTING_ACCOUNT_BALANCE_INTERVALS_BODY = "a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
+static const char* BOTH_ACCOUNT_BALANCE_INTERVALS_BODY     = "a500d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
+// Synthetic body carrying every key the top level decoder accepts (0-5, 7-9, 11, 13-27), composed
 // from the fixture fragments above in fresh encode form: ascending keys, tagged sets, credential
 // form guards and the required top level guards at the top level rather than inside a sub body.
-static const char* ALL_TOP_LEVEL_KEYS_BODY  = "b81800d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a031903e804d90102828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570030758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0dd90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c370f0110a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc01820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50013a28202581c10000000000000000000000000000000000000000000000000000000a38258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258202000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008203581c20000000000000000000000000000000000000000000000000000000a28258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f5820000000000000000000000000000000000000000000000000000000000000000014d9010281841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f830582582000000000000000000000000000000000000000000000000000000000000000000382827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000151907d0161903e817d901028283a300d90102800180031864a0a101647465737483a200d90102800180a0f61818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf61819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
+static const char* ALL_TOP_LEVEL_KEYS_BODY  = "b81900d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a031903e804d90102828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570030758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0dd90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e828200581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d398201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c370f0110a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc01820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50013a28202581c10000000000000000000000000000000000000000000000000000000a38258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258202000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008203581c20000000000000000000000000000000000000000000000000000000a28258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f5820000000000000000000000000000000000000000000000000000000000000000014d9010281841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f830582582000000000000000000000000000000000000000000000000000000000000000000382827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000151907d0161903e817d901028283a300d90102800180031864a0a101647465737483a200d90102800180a0f61818a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbf61819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01903e8581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce725701907d0181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
 static const char* GUARDS_CBOR              = "d90102828200581c00112233445566778899aabbccddeeff00112233445566778899aabb8201581caabbccddeeff00112233445566778899aabbccddeeff001122334455";
 static const char* SUB_TRANSACTION_SET_CBOR = "d901028183a200d90102800180a0f6";
 static const char* REQUIRED_GUARDS_CBOR     = "a28200581c00112233445566778899aabbccddeeff00112233445566778899aabbf68201581caabbccddeeff00112233445566778899aabbccddeeff001122334455d87980";
 static const char* DIRECT_DEPOSITS_CBOR     = "a1581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a000f4240";
 static const char* BALANCE_INTERVALS_CBOR   = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388";
+static const char* STARTING_INTERVALS_CBOR  = "a2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -2707,6 +2710,75 @@ TEST(cardano_transaction_body_from_cbor, roundTripsAccountBalanceIntervalsByteEx
   expect_byte_exact_round_trip(ACCOUNT_BALANCE_INTERVALS_BODY);
 }
 
+TEST(cardano_transaction_body_from_cbor, roundTripsStartingAccountBalanceIntervalsByteExact)
+{
+  expect_byte_exact_round_trip(STARTING_ACCOUNT_BALANCE_INTERVALS_BODY);
+}
+
+TEST(cardano_transaction_body_from_cbor, roundTripsBothAccountBalanceIntervalKeysByteExact)
+{
+  expect_byte_exact_round_trip(BOTH_ACCOUNT_BALANCE_INTERVALS_BODY);
+}
+
+TEST(cardano_transaction_body_from_cbor, decodesStartingAccountBalanceIntervalsApartFromAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(BOTH_ACCOUNT_BALANCE_INTERVALS_BODY, strlen(BOTH_ACCOUNT_BALANCE_INTERVALS_BODY));
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+  cardano_account_balance_intervals_map_t* balance_intervals          = cardano_transaction_body_get_account_balance_intervals(transaction_body);
+  cardano_account_balance_intervals_map_t* starting_balance_intervals = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+
+  // Assert
+  EXPECT_NE(balance_intervals, starting_balance_intervals);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(balance_intervals), 3);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(starting_balance_intervals), 2);
+
+  cardano_reward_address_t*           first_account   = NULL;
+  cardano_account_balance_interval_t* first_interval  = NULL;
+  cardano_reward_address_t*           second_account  = NULL;
+  cardano_account_balance_interval_t* second_interval = NULL;
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(starting_balance_intervals, 0, &first_account, &first_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(starting_balance_intervals, 1, &second_account, &second_interval), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cardano_reward_address_get_string(first_account), "stake_test1upqykkjq3zhf4085s6n70w8cyp57dl87r0ezduv9rnnj2uqk5zmdv");
+  EXPECT_STREQ(cardano_reward_address_get_string(second_account), "stake_test17z4thnxaamlsqyfzxdz92enh3zv64w7vmhh07qq3yge5g4g53ps7x");
+
+  const uint64_t* first_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(first_interval);
+  const uint64_t* second_exact      = cardano_account_balance_interval_get_exact_balance(second_interval);
+
+  EXPECT_EQ(cardano_account_balance_interval_get_inclusive_lower_bound(first_interval), nullptr);
+  EXPECT_NE(first_upper_bound, nullptr);
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(second_interval));
+  EXPECT_NE(second_exact, nullptr);
+
+  if ((first_upper_bound != nullptr) && (second_exact != nullptr))
+  {
+    EXPECT_EQ(*first_upper_bound, 10000);
+    EXPECT_EQ(*second_exact, 42);
+  }
+
+  // Cleanup
+  cardano_reward_address_unref(&first_account);
+  cardano_account_balance_interval_unref(&first_interval);
+  cardano_reward_address_unref(&second_account);
+  cardano_account_balance_interval_unref(&second_interval);
+  cardano_account_balance_intervals_map_unref(&balance_intervals);
+  cardano_account_balance_intervals_map_unref(&starting_balance_intervals);
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_from_cbor, rejectsDuplicatedStartingAccountBalanceIntervalsKey)
+{
+  // Act & Assert
+  expect_decode_failure("a500d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a", CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+}
+
 TEST(cardano_transaction_body_from_cbor, roundTripsTheDijkstraGoldenBodyByteExact)
 {
   // Arrange
@@ -2822,17 +2894,19 @@ TEST(cardano_transaction_body_from_cbor, roundTripsABodyCarryingEveryTopLevelKey
   EXPECT_STREQ(fresh_hex, ALL_TOP_LEVEL_KEYS_BODY);
 
   // Unlike the golden vector, this body declares the required guards at the top level.
-  cardano_guard_set_t*                     guards            = cardano_transaction_body_get_guards(transaction_body);
-  cardano_sub_transaction_set_t*           sub_transactions  = cardano_transaction_body_get_sub_transactions(transaction_body);
-  cardano_required_guards_map_t*           required_guards   = cardano_transaction_body_get_required_top_level_guards(transaction_body);
-  cardano_direct_deposit_map_t*            direct_deposits   = cardano_transaction_body_get_direct_deposits(transaction_body);
-  cardano_account_balance_intervals_map_t* balance_intervals = cardano_transaction_body_get_account_balance_intervals(transaction_body);
+  cardano_guard_set_t*                     guards                     = cardano_transaction_body_get_guards(transaction_body);
+  cardano_sub_transaction_set_t*           sub_transactions           = cardano_transaction_body_get_sub_transactions(transaction_body);
+  cardano_required_guards_map_t*           required_guards            = cardano_transaction_body_get_required_top_level_guards(transaction_body);
+  cardano_direct_deposit_map_t*            direct_deposits            = cardano_transaction_body_get_direct_deposits(transaction_body);
+  cardano_account_balance_intervals_map_t* balance_intervals          = cardano_transaction_body_get_account_balance_intervals(transaction_body);
+  cardano_account_balance_intervals_map_t* starting_balance_intervals = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
 
   EXPECT_EQ(cardano_guard_set_get_length(guards), 2);
   EXPECT_EQ(cardano_sub_transaction_set_get_length(sub_transactions), 2);
   EXPECT_EQ(cardano_required_guards_map_get_length(required_guards), 1);
   EXPECT_EQ(cardano_direct_deposit_map_get_length(direct_deposits), 2);
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(balance_intervals), 3);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(starting_balance_intervals), 2);
 
   // Cleanup
   cardano_guard_set_unref(&guards);
@@ -2840,6 +2914,7 @@ TEST(cardano_transaction_body_from_cbor, roundTripsABodyCarryingEveryTopLevelKey
   cardano_required_guards_map_unref(&required_guards);
   cardano_direct_deposit_map_unref(&direct_deposits);
   cardano_account_balance_intervals_map_unref(&balance_intervals);
+  cardano_account_balance_intervals_map_unref(&starting_balance_intervals);
   cardano_transaction_body_unref(&transaction_body);
   cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&cached_writer);
@@ -2851,8 +2926,8 @@ TEST(cardano_transaction_body_from_cbor, roundTripsABodyCarryingEveryTopLevelKey
 TEST(cardano_transaction_body_from_cbor, rejectsUnknownKeys)
 {
   // Act & Assert
-  expect_decode_failure("a1181b00", CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
   expect_decode_failure("a1181c00", CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
+  expect_decode_failure("a1181d00", CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
 }
 
 TEST(cardano_transaction_body_from_cbor, rejectsUnusedKeys)
@@ -2870,7 +2945,8 @@ TEST(cardano_transaction_body_from_cbor, returnsErrorIfMemoryAllocationFailsOnDi
     SUB_TRANSACTIONS_TAGGED_BODY,
     REQUIRED_TOP_LEVEL_GUARDS_BODY,
     DIRECT_DEPOSITS_BODY,
-    ACCOUNT_BALANCE_INTERVALS_BODY
+    ACCOUNT_BALANCE_INTERVALS_BODY,
+    STARTING_ACCOUNT_BALANCE_INTERVALS_BODY
   };
 
   for (size_t vector = 0U; vector < (sizeof(vectors) / sizeof(vectors[0])); ++vector)
@@ -3454,4 +3530,239 @@ TEST(cardano_transaction_body_set_account_balance_intervals, canSetAccountBalanc
   cardano_account_balance_intervals_map_unref(&account_balance_intervals);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_from_body);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_get_starting_account_balance_intervals, returnsNullIfTransactionBodyIsNull)
+{
+  // Act
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals = cardano_transaction_body_get_starting_account_balance_intervals(nullptr);
+
+  // Assert
+  EXPECT_EQ(starting_account_balance_intervals, nullptr);
+}
+
+TEST(cardano_transaction_body_get_starting_account_balance_intervals, returnsNullIfTheBodyHasNoStartingAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(ACCOUNT_BALANCE_INTERVALS_BODY, strlen(ACCOUNT_BALANCE_INTERVALS_BODY));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+  // Act
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+
+  // Assert
+  EXPECT_EQ(starting_account_balance_intervals, nullptr);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_get_starting_account_balance_intervals, returnsStartingAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(STARTING_ACCOUNT_BALANCE_INTERVALS_BODY, strlen(STARTING_ACCOUNT_BALANCE_INTERVALS_BODY));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+  // Act
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+
+  // Assert
+  EXPECT_NE(starting_account_balance_intervals, nullptr);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(starting_account_balance_intervals), 2);
+  EXPECT_EQ(cardano_account_balance_intervals_map_refcount(starting_account_balance_intervals), 2);
+  EXPECT_EQ(cardano_transaction_body_get_account_balance_intervals(transaction_body), nullptr);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_account_balance_intervals_map_unref(&starting_account_balance_intervals);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_set_starting_account_balance_intervals, canSetStartingAccountBalanceIntervalsToNull)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = new_default_transaction_body();
+  EXPECT_NE(transaction_body, nullptr);
+
+  // Act
+  cardano_error_t result = cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_get_starting_account_balance_intervals(transaction_body), nullptr);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+}
+
+TEST(cardano_transaction_body_set_starting_account_balance_intervals, returnsErrorIfTransactionBodyNull)
+{
+  // Act
+  cardano_error_t result = cardano_transaction_body_set_starting_account_balance_intervals(nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_transaction_body_set_starting_account_balance_intervals, canSetStartingAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = new_default_transaction_body();
+  EXPECT_NE(transaction_body, nullptr);
+
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals = NULL;
+  cardano_cbor_reader_t*                   reader                             = cardano_cbor_reader_from_hex(STARTING_INTERVALS_CBOR, strlen(STARTING_INTERVALS_CBOR));
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_from_cbor(reader, &starting_account_balance_intervals), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, starting_account_balance_intervals);
+
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals_from_body = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+
+  EXPECT_EQ(starting_account_balance_intervals_from_body, starting_account_balance_intervals);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_refcount(starting_account_balance_intervals), 3);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_account_balance_intervals_map_unref(&starting_account_balance_intervals);
+  cardano_account_balance_intervals_map_unref(&starting_account_balance_intervals_from_body);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_set_starting_account_balance_intervals, replacesThePreviousStartingAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      body_reader      = cardano_cbor_reader_from_hex(STARTING_ACCOUNT_BALANCE_INTERVALS_BODY, strlen(STARTING_ACCOUNT_BALANCE_INTERVALS_BODY));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(body_reader, &transaction_body), CARDANO_SUCCESS);
+
+  cardano_account_balance_intervals_map_t* previous    = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+  cardano_account_balance_intervals_map_t* replacement = NULL;
+  cardano_cbor_reader_t*                   reader      = cardano_cbor_reader_from_hex(BALANCE_INTERVALS_CBOR, strlen(BALANCE_INTERVALS_CBOR));
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_from_cbor(reader, &replacement), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, replacement);
+
+  cardano_account_balance_intervals_map_t* current = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(current, replacement);
+  EXPECT_EQ(cardano_account_balance_intervals_map_refcount(previous), 1);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(current), 1);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_account_balance_intervals_map_unref(&previous);
+  cardano_account_balance_intervals_map_unref(&replacement);
+  cardano_account_balance_intervals_map_unref(&current);
+  cardano_cbor_reader_unref(&body_reader);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_to_cbor, encodesStartingAccountBalanceIntervalsAfterAccountBalanceIntervals)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      body_reader      = cardano_cbor_reader_from_hex(MINIMAL_DIJKSTRA_BODY, strlen(MINIMAL_DIJKSTRA_BODY));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(body_reader, &transaction_body), CARDANO_SUCCESS);
+  cardano_transaction_body_clear_cbor_cache(transaction_body);
+
+  cardano_account_balance_intervals_map_t* balance_intervals          = NULL;
+  cardano_account_balance_intervals_map_t* starting_balance_intervals = NULL;
+  cardano_cbor_reader_t*                   intervals_reader           = cardano_cbor_reader_from_hex(BALANCE_INTERVALS_CBOR, strlen(BALANCE_INTERVALS_CBOR));
+  cardano_cbor_reader_t*                   starting_reader            = cardano_cbor_reader_from_hex(STARTING_INTERVALS_CBOR, strlen(STARTING_INTERVALS_CBOR));
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_from_cbor(intervals_reader, &balance_intervals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_from_cbor(starting_reader, &starting_balance_intervals), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, starting_balance_intervals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_account_balance_intervals(transaction_body, balance_intervals), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(hex, "a500d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020a181aa1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388181ba2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a");
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_account_balance_intervals_map_unref(&balance_intervals);
+  cardano_account_balance_intervals_map_unref(&starting_balance_intervals);
+  cardano_cbor_reader_unref(&body_reader);
+  cardano_cbor_reader_unref(&intervals_reader);
+  cardano_cbor_reader_unref(&starting_reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_transaction_body_to_cbor, omitsStartingAccountBalanceIntervalsOnceUnset)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      body_reader      = cardano_cbor_reader_from_hex(MINIMAL_DIJKSTRA_BODY, strlen(MINIMAL_DIJKSTRA_BODY));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(body_reader, &transaction_body), CARDANO_SUCCESS);
+  cardano_transaction_body_clear_cbor_cache(transaction_body);
+
+  cardano_account_balance_intervals_map_t* starting_balance_intervals = NULL;
+  cardano_cbor_reader_t*                   starting_reader            = cardano_cbor_reader_from_hex(STARTING_INTERVALS_CBOR, strlen(STARTING_INTERVALS_CBOR));
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_from_cbor(starting_reader, &starting_balance_intervals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, starting_balance_intervals), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* set_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, set_writer), CARDANO_SUCCESS);
+
+  size_t set_hex_size = cardano_cbor_writer_get_hex_size(set_writer);
+  char*  set_hex      = (char*)malloc(set_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(set_writer, set_hex, set_hex_size), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, nullptr), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* unset_writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, unset_writer), CARDANO_SUCCESS);
+
+  size_t unset_hex_size = cardano_cbor_writer_get_hex_size(unset_writer);
+  char*  unset_hex      = (char*)malloc(unset_hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(unset_writer, unset_hex, unset_hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(set_hex, STARTING_ACCOUNT_BALANCE_INTERVALS_BODY);
+  EXPECT_STREQ(unset_hex, MINIMAL_DIJKSTRA_BODY);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_account_balance_intervals_map_unref(&starting_balance_intervals);
+  cardano_cbor_reader_unref(&body_reader);
+  cardano_cbor_reader_unref(&starting_reader);
+  cardano_cbor_writer_unref(&set_writer);
+  cardano_cbor_writer_unref(&unset_writer);
+  free(set_hex);
+  free(unset_hex);
 }

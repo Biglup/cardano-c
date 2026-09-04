@@ -2099,6 +2099,70 @@ cardano_transaction_body_set_account_balance_intervals(
   cardano_account_balance_intervals_map_t* account_balance_intervals);
 
 /**
+ * \brief Retrieves the starting account balance intervals from the transaction body.
+ *
+ * This function returns the starting account balance intervals from a \ref cardano_transaction_body_t object, if they
+ * are present. The map constrains, per reward account, the balance the account must have had before the batch
+ * started, whereas the account balance intervals constrain the balance at the point the transaction is applied,
+ * after earlier sub transactions ran. Only top level transaction bodies carry this field.
+ *
+ * \param[in] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ *
+ * \return A pointer to a \ref cardano_account_balance_intervals_map_t object representing the starting account balance
+ *         intervals. The returned object is a new reference, and the caller is responsible for releasing it by calling
+ *         \ref cardano_account_balance_intervals_map_unref when it is no longer needed. If the \p transaction_body is NULL
+ *         or has no starting account balance intervals, this function returns NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_account_balance_intervals_map_t* intervals = cardano_transaction_body_get_starting_account_balance_intervals(transaction_body);
+ *
+ * if (intervals != NULL)
+ * {
+ *   // Use the starting account balance intervals
+ *   cardano_account_balance_intervals_map_unref(&intervals);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_account_balance_intervals_map_t* cardano_transaction_body_get_starting_account_balance_intervals(cardano_transaction_body_t* transaction_body);
+
+/**
+ * \brief Sets the starting account balance intervals for a transaction body.
+ *
+ * This function assigns a starting account balance intervals map to a \ref cardano_transaction_body_t object. Passing NULL
+ * unsets the starting account balance intervals, removing them from the transaction body.
+ *
+ * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
+ * \param[in] starting_account_balance_intervals A pointer to an initialized \ref cardano_account_balance_intervals_map_t object,
+ *                                               or NULL to unset the field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the starting account
+ *         balance intervals were successfully set or unset, or \ref CARDANO_ERROR_POINTER_IS_NULL if \p transaction_body is NULL.
+ *
+ * \note This function increases the reference count of the \p starting_account_balance_intervals object when it is not NULL;
+ *       the caller retains ownership of their reference and must release it when no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_body_t* transaction_body = ...; // Assume transaction_body is initialized
+ * cardano_account_balance_intervals_map_t* intervals = ...; // Assume intervals is initialized
+ *
+ * cardano_error_t result = cardano_transaction_body_set_starting_account_balance_intervals(transaction_body, intervals);
+ *
+ * // Clean up resources when no longer needed
+ * cardano_account_balance_intervals_map_unref(&intervals);
+ * cardano_transaction_body_unref(&transaction_body);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_transaction_body_set_starting_account_balance_intervals(
+  cardano_transaction_body_t*              transaction_body,
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals);
+
+/**
  * \brief Retrieves the hash of a transaction body.
  *
  * This function computes and returns the hash of the given \ref cardano_transaction_body_t object. The hash is a unique identifier for the transaction body,

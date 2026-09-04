@@ -67,6 +67,7 @@ typedef struct cardano_transaction_body_t
     cardano_required_guards_map_t*           required_top_level_guards;
     cardano_direct_deposit_map_t*            direct_deposits;
     cardano_account_balance_intervals_map_t* account_balance_intervals;
+    cardano_account_balance_intervals_map_t* starting_account_balance_intervals;
     cardano_buffer_t*                        cbor_cache;
 } cardano_transaction_body_t;
 
@@ -139,6 +140,7 @@ cardano_transaction_body_deallocate(void* object)
   cardano_required_guards_map_unref(&data->required_top_level_guards);
   cardano_direct_deposit_map_unref(&data->direct_deposits);
   cardano_account_balance_intervals_map_unref(&data->account_balance_intervals);
+  cardano_account_balance_intervals_map_unref(&data->starting_account_balance_intervals);
   cardano_buffer_unref(&data->cbor_cache);
 
   _cardano_free(object);
@@ -283,6 +285,11 @@ get_map_size(const cardano_transaction_body_t* body)
     map_size += 1U;
   }
 
+  if (body->starting_account_balance_intervals != NULL)
+  {
+    map_size += 1U;
+  }
+
   return map_size;
 }
 
@@ -356,6 +363,8 @@ get_field_ptr(cardano_transaction_body_t* body, size_t key)
       return (void*)&body->direct_deposits;
     case 26:
       return (void*)&body->account_balance_intervals;
+    case 27:
+      return (void*)&body->starting_account_balance_intervals;
 
     default:
       return NULL;
@@ -1179,6 +1188,38 @@ handle_account_balance_intervals_map(cardano_cbor_reader_t* reader, void* field_
 }
 
 /**
+ * \brief Reads the starting account balance intervals map from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_account_balance_intervals_map_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as the handler function for the starting account balance
+ * intervals field of the transaction body, which constrains the account balances as they were before
+ * the batch started.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_account_balance_intervals_map_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_account_balance_intervals_map_t value should be stored.
+ *                       The field pointer should be of type cardano_account_balance_intervals_map_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_account_balance_intervals_map_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_starting_account_balance_intervals_map(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_account_balance_intervals_map_t** field = (cardano_account_balance_intervals_map_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_body_read_starting_account_balance_intervals(reader, field);
+}
+
+/**
  * \brief Reads a cardano_network_id_t value from the CBOR reader and stores it in the specified field.
  *
  * This function reads a cardano_network_id_t value from the provided CBOR reader and stores the result
@@ -1631,35 +1672,36 @@ create_transaction_body_new(void)
     return NULL;
   }
 
-  transaction_body->base.deallocator          = cardano_transaction_body_deallocate;
-  transaction_body->base.ref_count            = 1;
-  transaction_body->base.last_error[0]        = '\0';
-  transaction_body->inputs                    = NULL;
-  transaction_body->outputs                   = NULL;
-  transaction_body->fee                       = NULL;
-  transaction_body->invalid_after             = NULL;
-  transaction_body->certificates              = NULL;
-  transaction_body->withdrawals               = NULL;
-  transaction_body->update                    = NULL;
-  transaction_body->aux_data_hash             = NULL;
-  transaction_body->invalid_before            = NULL;
-  transaction_body->mint                      = NULL;
-  transaction_body->script_data_hash          = NULL;
-  transaction_body->collateral                = NULL;
-  transaction_body->guards                    = NULL;
-  transaction_body->network_id                = NULL;
-  transaction_body->collateral_return         = NULL;
-  transaction_body->total_collateral          = NULL;
-  transaction_body->reference_inputs          = NULL;
-  transaction_body->voting_procedures         = NULL;
-  transaction_body->proposal_procedures       = NULL;
-  transaction_body->treasury_value            = NULL;
-  transaction_body->donation                  = NULL;
-  transaction_body->sub_transactions          = NULL;
-  transaction_body->required_top_level_guards = NULL;
-  transaction_body->direct_deposits           = NULL;
-  transaction_body->account_balance_intervals = NULL;
-  transaction_body->cbor_cache                = NULL;
+  transaction_body->base.deallocator                   = cardano_transaction_body_deallocate;
+  transaction_body->base.ref_count                     = 1;
+  transaction_body->base.last_error[0]                 = '\0';
+  transaction_body->inputs                             = NULL;
+  transaction_body->outputs                            = NULL;
+  transaction_body->fee                                = NULL;
+  transaction_body->invalid_after                      = NULL;
+  transaction_body->certificates                       = NULL;
+  transaction_body->withdrawals                        = NULL;
+  transaction_body->update                             = NULL;
+  transaction_body->aux_data_hash                      = NULL;
+  transaction_body->invalid_before                     = NULL;
+  transaction_body->mint                               = NULL;
+  transaction_body->script_data_hash                   = NULL;
+  transaction_body->collateral                         = NULL;
+  transaction_body->guards                             = NULL;
+  transaction_body->network_id                         = NULL;
+  transaction_body->collateral_return                  = NULL;
+  transaction_body->total_collateral                   = NULL;
+  transaction_body->reference_inputs                   = NULL;
+  transaction_body->voting_procedures                  = NULL;
+  transaction_body->proposal_procedures                = NULL;
+  transaction_body->treasury_value                     = NULL;
+  transaction_body->donation                           = NULL;
+  transaction_body->sub_transactions                   = NULL;
+  transaction_body->required_top_level_guards          = NULL;
+  transaction_body->direct_deposits                    = NULL;
+  transaction_body->account_balance_intervals          = NULL;
+  transaction_body->starting_account_balance_intervals = NULL;
+  transaction_body->cbor_cache                         = NULL;
 
   return transaction_body;
 }
@@ -1694,7 +1736,8 @@ static const param_handler_t param_handlers[] = {
   handle_sub_transaction_set,
   handle_required_guards_map,
   handle_direct_deposit_map,
-  handle_account_balance_intervals_map
+  handle_account_balance_intervals_map,
+  handle_starting_account_balance_intervals_map
 };
 
 /* DEFINITIONS ****************************************************************/
@@ -2053,6 +2096,13 @@ cardano_transaction_body_to_cbor(const cardano_transaction_body_t* transaction_b
   }
 
   result = cardano_body_write_account_balance_intervals_if_present(writer, transaction_body->account_balance_intervals);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_body_write_starting_account_balance_intervals_if_present(writer, transaction_body->starting_account_balance_intervals);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -3305,6 +3355,44 @@ cardano_transaction_body_set_account_balance_intervals(
   cardano_account_balance_intervals_map_ref(account_balance_intervals);
   cardano_account_balance_intervals_map_unref(&transaction_body->account_balance_intervals);
   transaction_body->account_balance_intervals = account_balance_intervals;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_account_balance_intervals_map_t*
+cardano_transaction_body_get_starting_account_balance_intervals(cardano_transaction_body_t* transaction_body)
+{
+  if (transaction_body == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_account_balance_intervals_map_ref(transaction_body->starting_account_balance_intervals);
+
+  return transaction_body->starting_account_balance_intervals;
+}
+
+cardano_error_t
+cardano_transaction_body_set_starting_account_balance_intervals(
+  cardano_transaction_body_t*              transaction_body,
+  cardano_account_balance_intervals_map_t* starting_account_balance_intervals)
+{
+  if (transaction_body == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (starting_account_balance_intervals == NULL)
+  {
+    cardano_account_balance_intervals_map_unref(&transaction_body->starting_account_balance_intervals);
+    transaction_body->starting_account_balance_intervals = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_account_balance_intervals_map_ref(starting_account_balance_intervals);
+  cardano_account_balance_intervals_map_unref(&transaction_body->starting_account_balance_intervals);
+  transaction_body->starting_account_balance_intervals = starting_account_balance_intervals;
 
   return CARDANO_SUCCESS;
 }

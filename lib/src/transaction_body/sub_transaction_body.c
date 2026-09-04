@@ -1064,7 +1064,8 @@ static const param_handler_t param_handlers[] = {
   handle_invalid_key, // top-level-only key (sub transactions)
   handle_required_guards_map,
   handle_direct_deposit_map,
-  handle_account_balance_intervals_map
+  handle_account_balance_intervals_map,
+  handle_invalid_key // top-level-only key (starting account balance intervals)
 };
 
 /* DEFINITIONS ****************************************************************/

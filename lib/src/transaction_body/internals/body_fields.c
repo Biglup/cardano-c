@@ -199,6 +199,15 @@ cardano_body_read_account_balance_intervals(cardano_cbor_reader_t* reader, carda
 }
 
 cardano_error_t
+cardano_body_read_starting_account_balance_intervals(cardano_cbor_reader_t* reader, cardano_account_balance_intervals_map_t** starting_account_balance_intervals)
+{
+  assert(reader != NULL);
+  assert(starting_account_balance_intervals != NULL);
+
+  return cardano_account_balance_intervals_map_from_cbor(reader, starting_account_balance_intervals);
+}
+
+cardano_error_t
 cardano_body_write_inputs_if_present(cardano_cbor_writer_t* writer, const cardano_transaction_input_set_t* inputs)
 {
   assert(writer != NULL);
@@ -663,6 +672,31 @@ cardano_body_write_account_balance_intervals_if_present(cardano_cbor_writer_t* w
     }
 
     result = cardano_account_balance_intervals_map_to_cbor(account_balance_intervals, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_body_write_starting_account_balance_intervals_if_present(cardano_cbor_writer_t* writer, const cardano_account_balance_intervals_map_t* starting_account_balance_intervals)
+{
+  assert(writer != NULL);
+
+  if (starting_account_balance_intervals != NULL)
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, 27U);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_account_balance_intervals_map_to_cbor(starting_account_balance_intervals, writer);
 
     if (result != CARDANO_SUCCESS)
     {
