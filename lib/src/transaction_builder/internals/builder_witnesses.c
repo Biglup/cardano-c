@@ -29,31 +29,32 @@
 #include <cardano/witness_set/plutus_data_set.h>
 #include <cardano/witness_set/witness_set.h>
 
-/* IMPLEMENTATION ************************************************************/
+/* STATIC DECLARATIONS *******************************************************/
 
-cardano_error_t
-cardano_builder_pad_signer_count(
+/**
+ * \brief Adds a credential to the guard set of the transaction body.
+ *
+ * This function fetches the guard set of the transaction body, creating it when it is missing, and
+ * appends \p credential to it. Adding a credential that is already present leaves the transaction
+ * unchanged and succeeds.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] credential A pointer to the \ref cardano_credential_t to add. This parameter must not be
+ *                       NULL.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the credential was added or was already present, or an appropriate
+ *         error code indicating the failure reason.
+ */
+static cardano_error_t
+add_guard_credential(
   cardano_builder_state_t* state,
-  const size_t             count)
-{
-  state->additional_signature_count = count;
-
-  return CARDANO_SUCCESS;
-}
-
-cardano_error_t
-cardano_builder_add_signer(
-  cardano_builder_state_t* state,
-  cardano_blake2b_hash_t*  pub_key_hash,
+  cardano_credential_t*    credential,
   const char**             error_message)
 {
-  if (pub_key_hash == NULL)
-  {
-    *error_message = "Public key hash is NULL.";
-
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
   cardano_transaction_body_unref(&body);
 
@@ -83,6 +84,43 @@ cardano_builder_add_signer(
 
   cardano_guard_set_unref(&guards);
 
+  const cardano_error_t result = cardano_guard_set_add(guards, credential);
+
+  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
+  {
+    *error_message = "Failed to add guard.";
+
+    return result;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/* IMPLEMENTATION ************************************************************/
+
+cardano_error_t
+cardano_builder_pad_signer_count(
+  cardano_builder_state_t* state,
+  const size_t             count)
+{
+  state->additional_signature_count = count;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_builder_add_signer(
+  cardano_builder_state_t* state,
+  cardano_blake2b_hash_t*  pub_key_hash,
+  const char**             error_message)
+{
+  if (pub_key_hash == NULL)
+  {
+    *error_message = "Public key hash is NULL.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   cardano_credential_t* credential = NULL;
   cardano_error_t       result     = cardano_credential_new(pub_key_hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential);
 
@@ -93,18 +131,10 @@ cardano_builder_add_signer(
     return result;
   }
 
-  result = cardano_guard_set_add(guards, credential);
-
+  result = add_guard_credential(state, credential, error_message);
   cardano_credential_unref(&credential);
 
-  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_DUPLICATED_KEY))
-  {
-    *error_message = "Failed to add signer.";
-
-    return result;
-  }
-
-  return CARDANO_SUCCESS;
+  return result;
 }
 
 cardano_error_t
@@ -133,6 +163,53 @@ cardano_builder_add_signer_ex(
 
   result = cardano_builder_add_signer(state, hash, error_message);
   cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+cardano_error_t
+cardano_builder_add_guard(
+  cardano_builder_state_t* state,
+  cardano_credential_t*    guard,
+  const char**             error_message)
+{
+  if (guard == NULL)
+  {
+    *error_message = "Guard is NULL.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return add_guard_credential(state, guard, error_message);
+}
+
+cardano_error_t
+cardano_builder_add_guard_ex(
+  cardano_builder_state_t*        state,
+  const char*                     hash_hex,
+  size_t                          hash_hex_size,
+  const cardano_credential_type_t type,
+  const char**                    error_message)
+{
+  if ((hash_hex == NULL) || (hash_hex_size == 0U))
+  {
+    *error_message = "Guard hash is NULL or empty.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_credential_t* guard  = NULL;
+  cardano_error_t       result = cardano_credential_from_hash_hex(hash_hex, hash_hex_size, type, &guard);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to parse guard hash.";
+
+    return result;
+  }
+
+  result = cardano_builder_add_guard(state, guard, error_message);
+  cardano_credential_unref(&guard);
 
   return result;
 }

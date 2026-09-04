@@ -67,6 +67,9 @@ static const char* COSTMDLS_ALL_CBOR           = "a30098a61a0003236119032c010119
 static const char* SCRIPT_ADDRESS              = "addr1x8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gt7r0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shskhj42g";
 static const char* HASH_HEX                    = "00000000000000000000000000000000000000000000000000000000";
 static const char* HASH_HEX1                   = "10000000000000000000000000000000000000000000000000000000";
+static const char* SCRIPT_HASH_HEX             = "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* KEY_HASH_GUARDS_BODY_CBOR   = "a400d9010280018002000ed9010281581c00000000000000000000000000000000000000000000000000000000";
+static const char* CREDENTIAL_GUARDS_BODY_CBOR = "a400d9010280018002000ed90102828200581c000000000000000000000000000000000000000000000000000000008201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
 static const char* ASSET_ID_HEX                = "0000000000000000000000000000000000000000000000000000000054455854";
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
 static const char* PLUTUS_V2_CBOR              = "82025908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
@@ -438,6 +441,51 @@ new_default_voter2()
 
   return voter;
 };
+
+/**
+ * Creates a credential from the given hash hex and type.
+ * \param hash_hex the hash hex string.
+ * \param type the credential type.
+ * \return A new instance of the credential.
+ */
+static cardano_credential_t*
+create_credential(const char* hash_hex, const cardano_credential_type_t type)
+{
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = cardano_credential_from_hash_hex(hash_hex, strlen(hash_hex), type, &credential);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  return credential;
+}
+
+/**
+ * Encodes the body of the transaction under construction to a CBOR hex string.
+ * \param tx_builder the transaction builder.
+ * \return The CBOR hex string. The caller must free the returned string.
+ */
+static char*
+encode_body(cardano_tx_builder_t* tx_builder)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_transaction_body_to_cbor(body, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        body_hex = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, body_hex, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return body_hex;
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -3981,6 +4029,326 @@ TEST(cardano_tx_builder_add_signer_ex, returnsErrorIfMemoryAllocationFails)
   cardano_protocol_parameters_unref(&params);
 
   cardano_blake2b_hash_unref(&signing_key);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_add_guard, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_add_guard(nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_add_guard, returnsErrorIfGuardIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard(tx_builder, nullptr);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard, keyHashGuardMatchesAddSigner)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_blake2b_hash_t*        signing_key = NULL;
+  cardano_credential_t*          guard       = create_credential(HASH_HEX, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &signing_key), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* guard_builder  = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_tx_builder_t* signer_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard(guard_builder, guard);
+  cardano_tx_builder_add_signer(signer_builder, signing_key);
+
+  char* guard_body_hex  = encode_body(guard_builder);
+  char* signer_body_hex = encode_body(signer_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(guard_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_blake2b_hash_set_t* signers = cardano_transaction_body_get_required_signers(body);
+  cardano_blake2b_hash_t*     signer  = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_set_get(signers, 0, &signer), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(guard_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(guard_body_hex, signer_body_hex);
+  EXPECT_STREQ(guard_body_hex, KEY_HASH_GUARDS_BODY_CBOR);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(signer, signing_key));
+
+  // Cleanup
+  cardano_tx_builder_unref(&guard_builder);
+  cardano_tx_builder_unref(&signer_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_blake2b_hash_set_unref(&signers);
+  cardano_blake2b_hash_unref(&signing_key);
+  cardano_blake2b_hash_unref(&signer);
+  cardano_credential_unref(&guard);
+  free(guard_body_hex);
+  free(signer_body_hex);
+}
+
+TEST(cardano_tx_builder_add_guard, canAddScriptHashGuardAfterSigner)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_credential_t*          guard  = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_signer_ex(tx_builder, HASH_HEX, strlen(HASH_HEX));
+  cardano_tx_builder_add_guard(tx_builder, guard);
+
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t*  guards       = cardano_transaction_body_get_guards(body);
+  cardano_credential_t* second_guard = nullptr;
+
+  EXPECT_EQ(cardano_guard_set_get(guards, 1, &second_guard), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 2);
+  EXPECT_TRUE(cardano_credential_equals(second_guard, guard));
+  EXPECT_STREQ(body_hex, CREDENTIAL_GUARDS_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_guard_set_unref(&guards);
+  cardano_credential_unref(&second_guard);
+  cardano_credential_unref(&guard);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_guard, addingTheSameGuardTwiceKeepsASingleGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_credential_t*          guard  = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard(tx_builder, guard);
+  cardano_tx_builder_add_guard(tx_builder, guard);
+  cardano_tx_builder_add_guard_ex(tx_builder, SCRIPT_HASH_HEX, strlen(SCRIPT_HASH_HEX), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_NE(guards, nullptr);
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 1);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_guard_set_unref(&guards);
+  cardano_credential_unref(&guard);
+}
+
+TEST(cardano_tx_builder_add_guard, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_credential_t*          guard  = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  for (int i = 0; i < 2; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_guard(tx_builder, guard);
+
+    // Assert
+    EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_credential_unref(&guard);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_tx_builder_add_guard_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_guard_ex(nullptr, nullptr, 0, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_tx_builder_add_guard_ex(tx_builder, nullptr, 0, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_ex, keyHashGuardMatchesAddSignerEx)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* guard_builder  = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_tx_builder_t* signer_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard_ex(guard_builder, HASH_HEX, strlen(HASH_HEX), CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_tx_builder_add_signer_ex(signer_builder, HASH_HEX, strlen(HASH_HEX));
+
+  char* guard_body_hex  = encode_body(guard_builder);
+  char* signer_body_hex = encode_body(signer_builder);
+
+  // Assert
+  EXPECT_THAT(guard_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(guard_body_hex, signer_body_hex);
+  EXPECT_STREQ(guard_body_hex, KEY_HASH_GUARDS_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&guard_builder);
+  cardano_tx_builder_unref(&signer_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  free(guard_body_hex);
+  free(signer_body_hex);
+}
+
+TEST(cardano_tx_builder_add_guard_ex, canAddScriptHashGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard_ex(tx_builder, HASH_HEX, strlen(HASH_HEX), CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_tx_builder_add_guard_ex(tx_builder, SCRIPT_HASH_HEX, strlen(SCRIPT_HASH_HEX), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t*      guards = cardano_transaction_body_get_guards(body);
+  cardano_credential_t*     guard  = nullptr;
+  cardano_credential_type_t type   = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+
+  EXPECT_EQ(cardano_guard_set_get(guards, 1, &guard), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_credential_get_type(guard, &type), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_guard_set_get_length(guards), 2);
+  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  EXPECT_STREQ(cardano_credential_get_hash_hex(guard), SCRIPT_HASH_HEX);
+  EXPECT_STREQ(body_hex, CREDENTIAL_GUARDS_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_guard_set_unref(&guards);
+  cardano_credential_unref(&guard);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_guard_ex, reportsInvalidHexWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_guard_ex(tx_builder, "abc", 3, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_tx_builder_add_guard_ex(tx_builder, SCRIPT_HASH_HEX, strlen(SCRIPT_HASH_HEX), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INVALID_BLAKE2B_HASH_SIZE);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(guards, nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  for (int i = 0; i < 5; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_guard_ex(tx_builder, SCRIPT_HASH_HEX, strlen(SCRIPT_HASH_HEX), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+    // Assert
+    EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+    cardano_tx_builder_unref(&tx_builder);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_protocol_parameters_unref(&params);
   cardano_set_allocators(malloc, realloc, free);
 }
 

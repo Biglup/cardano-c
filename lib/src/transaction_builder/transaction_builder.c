@@ -783,6 +783,42 @@ cardano_tx_builder_add_signer_ex(
 }
 
 void
+cardano_tx_builder_add_guard(
+  cardano_tx_builder_t* builder,
+  cardano_credential_t* guard)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_guard(&builder->state, guard, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_guard_ex(
+  cardano_tx_builder_t*           builder,
+  const char*                     hash_hex,
+  size_t                          hash_hex_size,
+  const cardano_credential_type_t type)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_guard_ex(&builder->state, hash_hex, hash_hex_size, type, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_tx_builder_add_datum(
   cardano_tx_builder_t*  builder,
   cardano_plutus_data_t* datum)

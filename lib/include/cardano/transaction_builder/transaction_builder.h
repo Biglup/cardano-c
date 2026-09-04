@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/common/credential.h>
 #include <cardano/common/drep.h>
 #include <cardano/error.h>
 #include <cardano/proposal_procedures/constitution.h>
@@ -1083,6 +1084,71 @@ CARDANO_EXPORT void cardano_tx_builder_add_signer_ex(
   cardano_tx_builder_t* builder,
   const char*           pub_key_hash,
   size_t                hash_size);
+
+/**
+ * \brief Adds a guard to the transaction being built.
+ *
+ * This function registers a guard credential for the transaction. Guards generalize required signers: a key hash
+ * guard is exactly a required signer, so the transaction must carry a witness for that key, while a script hash
+ * guard requires the ledger to run the script with the guarding redeemer purpose as a validity condition. Adding a
+ * key hash guard produces the same transaction as `cardano_tx_builder_add_signer`. Adding a guard that is already
+ * present leaves the transaction unchanged.
+ *
+ * The builder does not resolve or attach the script behind a script hash guard. Provide the script with
+ * `cardano_tx_builder_add_script` or through a reference input, and attach its guarding redeemer through the
+ * redeemer functions of the builder.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
+ * \param[in] guard A pointer to the \ref cardano_credential_t structure representing the guard to be added.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;  // Initialized transaction builder
+ * cardano_credential_t* guard = ...;       // Key hash or script hash credential
+ *
+ * cardano_tx_builder_add_guard(tx_builder, guard);
+ * \endcode
+ *
+ * \note Required signers are encoded as a set of key hashes while every guard is a key hash. As soon as a script
+ *       hash guard is added, the field switches to the credential wire form, which is only valid from the Dijkstra
+ *       era onwards. Errors related to adding guards are deferred and will only be reported when
+ *       `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_guard(
+  cardano_tx_builder_t* builder,
+  cardano_credential_t* guard);
+
+/**
+ * \brief Adds a guard to the transaction by specifying the credential hash in hexadecimal format.
+ *
+ * This function registers a guard by accepting the hash of its credential as a hexadecimal string together with
+ * the credential type. See `cardano_tx_builder_add_guard` for the difference between key hash and script hash
+ * guards.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
+ * \param[in] hash_hex A string representing the credential hash in hexadecimal format.
+ * \param[in] hash_hex_size The size of the `hash_hex` string.
+ * \param[in] type The type of the credential, either \ref CARDANO_CREDENTIAL_TYPE_KEY_HASH or
+ *                 \ref CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;  // Initialized transaction builder
+ * const char* script_hash = "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+ * size_t hash_size = strlen(script_hash);
+ *
+ * cardano_tx_builder_add_guard_ex(tx_builder, script_hash, hash_size, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+ * \endcode
+ *
+ * \note Adding a script hash guard switches the required signers field to the credential wire form, which is only
+ *       valid from the Dijkstra era onwards. Errors associated with adding a guard are deferred and will only be
+ *       reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_guard_ex(
+  cardano_tx_builder_t*     builder,
+  const char*               hash_hex,
+  size_t                    hash_hex_size,
+  cardano_credential_type_t type);
 
 /**
  * \brief Adds a datum to the transaction builder for use in script-locked UTXOs.

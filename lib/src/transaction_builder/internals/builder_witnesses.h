@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/common/credential.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
@@ -100,6 +101,55 @@ cardano_builder_add_signer_ex(
   const char*              pub_key_hash,
   size_t                   hash_size,
   const char**             error_message);
+
+/**
+ * \brief Adds a guard credential to the transaction.
+ *
+ * This function adds \p guard to the guard set of the transaction body, creating the set when it is
+ * missing. A key hash guard is a required signer; a script hash guard requires the ledger to run the
+ * script with the guarding redeemer purpose. Adding a guard that is already present leaves the
+ * transaction unchanged and succeeds.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] guard A pointer to the \ref cardano_credential_t to add. This parameter must not be NULL.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the guard was added, or an appropriate error code indicating the
+ *         failure reason.
+ */
+cardano_error_t
+cardano_builder_add_guard(
+  cardano_builder_state_t* state,
+  cardano_credential_t*    guard,
+  const char**             error_message);
+
+/**
+ * \brief Adds a guard credential given its hash as a hexadecimal string.
+ *
+ * This function parses the credential hash and delegates to \ref cardano_builder_add_guard.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] hash_hex A pointer to the hexadecimal string with the credential hash.
+ * \param[in] hash_hex_size The size of the credential hash string in bytes.
+ * \param[in] type The type of the credential, key hash or script hash.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the guard was added, or an appropriate error code indicating the
+ *         failure reason.
+ */
+cardano_error_t
+cardano_builder_add_guard_ex(
+  cardano_builder_state_t*  state,
+  const char*               hash_hex,
+  size_t                    hash_hex_size,
+  cardano_credential_type_t type,
+  const char**              error_message);
 
 /**
  * \brief Adds a datum to the witness set.

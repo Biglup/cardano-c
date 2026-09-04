@@ -157,6 +157,14 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_add_guard
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_guard_ex
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_add_datum
 
 ------------
