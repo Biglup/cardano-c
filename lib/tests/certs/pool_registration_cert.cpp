@@ -35,8 +35,13 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* CBOR             = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
-static const char* POOL_PARAMS_CBOR = "581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR                   = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* POOL_PARAMS_CBOR       = "581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR_WITH_BLS_KEY      = "8b03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db0825860000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f5830606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f1927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR_WITH_NULL_BLS_KEY = "8b03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db0f61927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR_NINE_ELEMENTS     = "8903581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR_TWELVE_ELEMENTS   = "8c03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* BLS_KEY_CBOR           = "825860000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f5830606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -603,4 +608,177 @@ TEST(cardano_pool_registration_cert_to_cip116_json, returnsErrorIfWriterIsNull)
   cardano_reward_address_unref(&addr);
   cardano_pool_owners_unref(&owners);
   cardano_relays_unref(&relays);
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, canDecodeCertWithBlsKey)
+{
+  // Arrange
+  cardano_pool_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(CBOR_WITH_BLS_KEY, strlen(CBOR_WITH_BLS_KEY));
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &cert);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_pool_params_t* params  = NULL;
+  cardano_bls_key_t*     bls_key = NULL;
+
+  ASSERT_EQ(cardano_pool_registration_cert_get_params(cert, &params), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_get_bls_key(params, &bls_key), CARDANO_SUCCESS);
+
+  EXPECT_NE(bls_key, nullptr);
+  EXPECT_EQ(cardano_bls_key_get_public_key_size(bls_key), 96);
+  EXPECT_EQ(cardano_bls_key_get_public_key_bytes(bls_key)[0], 0x00);
+  EXPECT_EQ(cardano_bls_key_get_public_key_bytes(bls_key)[95], 0x5f);
+  EXPECT_EQ(cardano_bls_key_get_possession_proof_size(bls_key), 48);
+  EXPECT_EQ(cardano_bls_key_get_possession_proof_bytes(bls_key)[0], 0x60);
+  EXPECT_EQ(cardano_bls_key_get_possession_proof_bytes(bls_key)[47], 0x8f);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_pool_registration_cert_to_cbor(cert, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_WITH_BLS_KEY);
+
+  // Cleanup
+  cardano_bls_key_unref(&bls_key);
+  cardano_pool_params_unref(&params);
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, canDecodeCertWithNullBlsKey)
+{
+  // Arrange
+  cardano_pool_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(CBOR_WITH_NULL_BLS_KEY, strlen(CBOR_WITH_NULL_BLS_KEY));
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &cert);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_pool_params_t* params  = NULL;
+  cardano_bls_key_t*     bls_key = NULL;
+
+  ASSERT_EQ(cardano_pool_registration_cert_get_params(cert, &params), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_get_bls_key(params, &bls_key), CARDANO_SUCCESS);
+
+  EXPECT_EQ(bls_key, nullptr);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_pool_registration_cert_to_cbor(cert, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR);
+
+  // Cleanup
+  cardano_pool_params_unref(&params);
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfArrayHasNineElements)
+{
+  // Arrange
+  cardano_pool_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(CBOR_NINE_ELEMENTS, strlen(CBOR_NINE_ELEMENTS));
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &cert);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
+  EXPECT_EQ(cert, nullptr);
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'pool_registration_cert', expected an array of 10 or 11 elements (pool params with an optional BLS key).");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfArrayHasTwelveElements)
+{
+  // Arrange
+  cardano_pool_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(CBOR_TWELVE_ELEMENTS, strlen(CBOR_TWELVE_ELEMENTS));
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &cert);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE);
+  EXPECT_EQ(cert, nullptr);
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'pool_registration_cert', expected an array of 10 or 11 elements (pool params with an optional BLS key).");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_pool_registration_cert_to_cbor, writesElevenElementsWhenBlsKeyIsSet)
+{
+  // Arrange
+  cardano_pool_registration_cert_t* cert       = new_default_cert();
+  cardano_pool_params_t*            params     = NULL;
+  cardano_bls_key_t*                bls_key    = NULL;
+  cardano_cbor_reader_t*            key_reader = cardano_cbor_reader_from_hex(BLS_KEY_CBOR, strlen(BLS_KEY_CBOR));
+
+  ASSERT_EQ(cardano_pool_registration_cert_get_params(cert, &params), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_bls_key_from_cbor(key_reader, &bls_key), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_bls_key(params, bls_key), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_to_cbor(cert, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, CBOR_WITH_BLS_KEY);
+
+  // Clearing the key restores the ten element form
+  ASSERT_EQ(cardano_pool_params_set_bls_key(params, nullptr), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer2 = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_pool_registration_cert_to_cbor(cert, writer2), CARDANO_SUCCESS);
+
+  size_t hex_size2 = cardano_cbor_writer_get_hex_size(writer2);
+  char*  hex2      = (char*)malloc(hex_size2);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer2, hex2, hex_size2), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex2, CBOR);
+
+  // Cleanup
+  cardano_bls_key_unref(&bls_key);
+  cardano_pool_params_unref(&params);
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_cbor_reader_unref(&key_reader);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_writer_unref(&writer2);
+  free(hex);
+  free(hex2);
 }

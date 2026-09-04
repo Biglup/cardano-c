@@ -25,6 +25,7 @@
 #include <cardano/common/unit_interval.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/object.h>
+#include <cardano/pool_params/bls_key.h>
 #include <cardano/pool_params/pool_metadata.h>
 #include <cardano/pool_params/pool_owners.h>
 #include <cardano/pool_params/pool_params.h>
@@ -52,6 +53,7 @@ typedef struct cardano_pool_params_t
     cardano_object_t          base;
     cardano_blake2b_hash_t*   operator_hash;
     cardano_blake2b_hash_t*   vrf_vk_hash;
+    cardano_bls_key_t*        bls_key;
     uint64_t                  pledge;
     uint64_t                  cost;
     cardano_unit_interval_t*  margin;
@@ -85,6 +87,7 @@ cardano_pool_params_deallocate(void* object)
 
   cardano_blake2b_hash_unref(&pool_params->operator_hash);
   cardano_blake2b_hash_unref(&pool_params->vrf_vk_hash);
+  cardano_bls_key_unref(&pool_params->bls_key);
   cardano_unit_interval_unref(&pool_params->margin);
   cardano_reward_address_unref(&pool_params->reward_account);
   cardano_pool_owners_unref(&pool_params->owners);
@@ -161,8 +164,9 @@ cardano_pool_params_new(
   cardano_blake2b_hash_ref(vrf_vk_hash);
   (*pool_params)->vrf_vk_hash = vrf_vk_hash;
 
-  (*pool_params)->pledge = pledge;
-  (*pool_params)->cost   = cost;
+  (*pool_params)->bls_key = NULL;
+  (*pool_params)->pledge  = pledge;
+  (*pool_params)->cost    = cost;
 
   cardano_unit_interval_ref(margin);
   (*pool_params)->margin = margin;
@@ -198,6 +202,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
 
   cardano_blake2b_hash_t*   operator_key_hash = NULL;
   cardano_blake2b_hash_t*   vrf_vk_hash       = NULL;
+  cardano_bls_key_t*        bls_key           = NULL;
   uint64_t                  pledge            = 0;
   uint64_t                  cost              = 0;
   cardano_unit_interval_t*  margin            = NULL;
@@ -221,12 +226,40 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     return vrf_vk_hash_result;
   }
 
+  cardano_cbor_reader_state_t bls_key_state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t bls_key_result = cardano_cbor_reader_peek_state(reader, &bls_key_state);
+
+  if (bls_key_result == CARDANO_SUCCESS)
+  {
+    if (bls_key_state == CARDANO_CBOR_READER_STATE_START_ARRAY)
+    {
+      bls_key_result = cardano_bls_key_from_cbor(reader, &bls_key);
+    }
+    else if (bls_key_state == CARDANO_CBOR_READER_STATE_NULL)
+    {
+      bls_key_result = cardano_cbor_reader_read_null(reader);
+    }
+    else
+    {
+      bls_key = NULL;
+    }
+  }
+
+  if (bls_key_result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&operator_key_hash);
+    cardano_blake2b_hash_unref(&vrf_vk_hash);
+    return bls_key_result;
+  }
+
   cardano_error_t read_uint_result = cardano_cbor_reader_read_uint(reader, &pledge);
 
   if (read_uint_result != CARDANO_SUCCESS)
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     return read_uint_result;
   }
 
@@ -236,6 +269,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     return read_uint_result;
   }
 
@@ -245,6 +279,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     return read_margin_result;
   }
 
@@ -256,6 +291,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     cardano_unit_interval_unref(&margin);
     return read_reward_account_result;
   }
@@ -268,6 +304,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     cardano_unit_interval_unref(&margin);
     return reward_account_result;
   }
@@ -278,6 +315,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     cardano_unit_interval_unref(&margin);
     cardano_reward_address_unref(&reward_account);
 
@@ -290,6 +328,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     cardano_unit_interval_unref(&margin);
     cardano_reward_address_unref(&reward_account);
     cardano_pool_owners_unref(&owners);
@@ -305,6 +344,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
   {
     cardano_blake2b_hash_unref(&operator_key_hash);
     cardano_blake2b_hash_unref(&vrf_vk_hash);
+    cardano_bls_key_unref(&bls_key);
     cardano_unit_interval_unref(&margin);
     cardano_reward_address_unref(&reward_account);
     cardano_pool_owners_unref(&owners);
@@ -321,6 +361,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     {
       cardano_blake2b_hash_unref(&operator_key_hash);
       cardano_blake2b_hash_unref(&vrf_vk_hash);
+      cardano_bls_key_unref(&bls_key);
       cardano_unit_interval_unref(&margin);
       cardano_reward_address_unref(&reward_account);
       cardano_pool_owners_unref(&owners);
@@ -339,6 +380,7 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     {
       cardano_blake2b_hash_unref(&operator_key_hash);
       cardano_blake2b_hash_unref(&vrf_vk_hash);
+      cardano_bls_key_unref(&bls_key);
       cardano_unit_interval_unref(&margin);
       cardano_reward_address_unref(&reward_account);
       cardano_pool_owners_unref(&owners);
@@ -360,8 +402,15 @@ cardano_pool_params_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_params
     metadata,
     pool_params);
 
+  if (create_instance_result == CARDANO_SUCCESS)
+  {
+    cardano_bls_key_ref(bls_key);
+    (*pool_params)->bls_key = bls_key;
+  }
+
   cardano_blake2b_hash_unref(&operator_key_hash);
   cardano_blake2b_hash_unref(&vrf_vk_hash);
+  cardano_bls_key_unref(&bls_key);
   cardano_unit_interval_unref(&margin);
   cardano_reward_address_unref(&reward_account);
   cardano_pool_owners_unref(&owners);
@@ -396,6 +445,16 @@ cardano_pool_params_to_cbor(const cardano_pool_params_t* pool_params, cardano_cb
   if (write_vrf_vk_hash_result != CARDANO_SUCCESS)
   {
     return write_vrf_vk_hash_result;
+  }
+
+  if (pool_params->bls_key != NULL)
+  {
+    cardano_error_t write_bls_key_result = cardano_bls_key_to_cbor(pool_params->bls_key, writer);
+
+    if (write_bls_key_result != CARDANO_SUCCESS)
+    {
+      return write_bls_key_result;
+    }
   }
 
   cardano_error_t write_pledge_result = cardano_cbor_writer_write_uint(writer, pool_params->pledge);
@@ -485,6 +544,19 @@ cardano_pool_params_to_cip116_json(
     cardano_blake2b_hash_get_data(params->vrf_vk_hash),
     cardano_blake2b_hash_get_bytes_size(params->vrf_vk_hash));
 
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  if (params->bls_key != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "bls_key", 7);
+    error = cardano_bls_key_to_cip116_json(params->bls_key, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
   cardano_json_writer_write_property_name(writer, "pledge", 6);
   cardano_json_writer_write_uint_as_string(writer, params->pledge);
 
@@ -492,7 +564,7 @@ cardano_pool_params_to_cip116_json(
   cardano_json_writer_write_uint_as_string(writer, params->cost);
 
   cardano_json_writer_write_property_name(writer, "margin", 6);
-  cardano_error_t error = cardano_unit_interval_to_cip116_json(params->margin, writer);
+  error = cardano_unit_interval_to_cip116_json(params->margin, writer);
 
   if (error != CARDANO_SUCCESS)
   {
@@ -622,6 +694,63 @@ cardano_pool_params_set_vrf_vk_hash(
   cardano_blake2b_hash_ref(vrf_vk_hash);
   cardano_blake2b_hash_unref(&pool_params->vrf_vk_hash);
   pool_params->vrf_vk_hash = vrf_vk_hash;
+
+  return CARDANO_SUCCESS;
+}
+
+bool
+cardano_pool_params_has_bls_key(const cardano_pool_params_t* pool_params)
+{
+  if (pool_params == NULL)
+  {
+    return false;
+  }
+
+  return pool_params->bls_key != NULL;
+}
+
+cardano_error_t
+cardano_pool_params_get_bls_key(
+  cardano_pool_params_t* pool_params,
+  cardano_bls_key_t**    bls_key)
+{
+  if (pool_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (bls_key == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_bls_key_ref(pool_params->bls_key);
+  *bls_key = pool_params->bls_key;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_pool_params_set_bls_key(
+  cardano_pool_params_t* pool_params,
+  cardano_bls_key_t*     bls_key)
+{
+  if (pool_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (bls_key == NULL)
+  {
+    cardano_bls_key_unref(&pool_params->bls_key);
+    pool_params->bls_key = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_bls_key_ref(bls_key);
+  cardano_bls_key_unref(&pool_params->bls_key);
+  pool_params->bls_key = bls_key;
 
   return CARDANO_SUCCESS;
 }

@@ -35,7 +35,8 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t EMBEDDED_GROUP_SIZE = 10;
+static const int64_t EMBEDDED_GROUP_SIZE              = 10;
+static const int64_t EMBEDDED_GROUP_SIZE_WITH_BLS_KEY = 11;
 
 /* STRUCTURES ****************************************************************/
 
@@ -125,13 +126,39 @@ cardano_pool_registration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  static const char* validator_name = "pool_registration_cert";
+  static const char* validator_name           = "pool_registration_cert";
+  static const char* array_size_error_message = "There was an error decoding 'pool_registration_cert', expected an array of 10 or 11 elements (pool params with an optional BLS key).";
 
-  cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)EMBEDDED_GROUP_SIZE);
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
-  if (expect_array_result != CARDANO_SUCCESS)
+  cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
   {
-    return expect_array_result;
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_START_ARRAY)
+  {
+    cardano_cbor_reader_set_last_error(reader, array_size_error_message);
+
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  int64_t array_size = 0;
+
+  cardano_error_t read_start_array_result = cardano_cbor_reader_read_start_array(reader, &array_size);
+
+  if (read_start_array_result != CARDANO_SUCCESS)
+  {
+    return read_start_array_result;
+  }
+
+  if ((array_size != EMBEDDED_GROUP_SIZE) && (array_size != EMBEDDED_GROUP_SIZE_WITH_BLS_KEY))
+  {
+    cardano_cbor_reader_set_last_error(reader, array_size_error_message);
+
+    return CARDANO_ERROR_INVALID_CBOR_ARRAY_SIZE;
   }
 
   uint64_t              type             = 0U;
@@ -184,7 +211,9 @@ cardano_pool_registration_cert_to_cbor(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, EMBEDDED_GROUP_SIZE);
+  const int64_t array_size = cardano_pool_params_has_bls_key(pool_registration_cert->params) ? EMBEDDED_GROUP_SIZE_WITH_BLS_KEY : EMBEDDED_GROUP_SIZE;
+
+  cardano_error_t write_array_result = cardano_cbor_writer_write_start_array(writer, array_size);
 
   if (write_array_result != CARDANO_SUCCESS)
   {
