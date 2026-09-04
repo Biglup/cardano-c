@@ -26,6 +26,7 @@
 
 #include <cardano/error.h>
 #include <cardano/protocol_params/protocol_parameters.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/typedefs.h>
 
@@ -87,6 +88,40 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_compute_implicit_coin(
   cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_implicit_coin_t*       implicit_coin);
+
+/**
+ * \brief Computes the implicit coin balance for a sub transaction.
+ *
+ * The `cardano_compute_sub_transaction_implicit_coin` function calculates the implicit coin balance of a CIP-118 sub transaction
+ * from the withdrawals, certificates and proposal procedures of its body, applying the same rules as \ref cardano_compute_implicit_coin
+ * does for a top level transaction.
+ *
+ * \param[in] sub_tx A pointer to the \ref cardano_sub_transaction_t object representing the sub transaction.
+ * \param[in] protocol_params A pointer to \ref cardano_protocol_parameters_t containing the protocol parameters necessary for accurate computation.
+ * \param[out] implicit_coin A pointer to \ref cardano_implicit_coin_t where the computed implicit coin balance will be stored.
+ *
+ * \return \ref CARDANO_SUCCESS if the implicit coin balance was successfully computed, or an appropriate error code indicating failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_transaction_t* sub_transaction = ...;     // Sub transaction object
+ * cardano_protocol_parameters_t* protocol_params = ...; // Protocol parameters
+ * cardano_implicit_coin_t implicit_coin = { 0 };
+ *
+ * cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_transaction, protocol_params, &implicit_coin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The implicit coin balance was successfully computed and stored in `implicit_coin`
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_compute_sub_transaction_implicit_coin(
+  cardano_sub_transaction_t*     sub_tx,
   cardano_protocol_parameters_t* protocol_params,
   cardano_implicit_coin_t*       implicit_coin);
 

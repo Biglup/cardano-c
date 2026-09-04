@@ -35,14 +35,19 @@
 
 /* STATIC FUNCTIONS **********************************************************/
 
+/**
+ * \brief Accumulates the reward withdrawals of a body into the implicit coin.
+ *
+ * \param[in]  withdrawals   The withdrawal map of the body, or NULL when the body has none.
+ * \param[out] implicit_coin The implicit coin accumulator to update.
+ *
+ * \return \ref CARDANO_SUCCESS if the withdrawals were accumulated, or an appropriate error code.
+ */
 static cardano_error_t
 compute_withdrawals(
-  cardano_transaction_body_t* body,
-  cardano_implicit_coin_t*    implicit_coin)
+  cardano_withdrawal_map_t* withdrawals,
+  cardano_implicit_coin_t*  implicit_coin)
 {
-  cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
-  cardano_withdrawal_map_unref(&withdrawals);
-
   const size_t size = cardano_withdrawal_map_get_length(withdrawals);
 
   for (size_t i = 0U; i < size; ++i)
@@ -62,16 +67,25 @@ compute_withdrawals(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Accumulates the deposits and refunds of the Shelley era certificates into the implicit coin.
+ *
+ * Shelley era certificates do not carry their deposit, so the amounts are taken from the protocol parameters.
+ *
+ * \param[in]  certificates  The certificate set of the body, or NULL when the body has none.
+ * \param[in]  pool_deposit  The pool deposit from the protocol parameters.
+ * \param[in]  stake_deposit The stake key deposit from the protocol parameters.
+ * \param[out] implicit_coin The implicit coin accumulator to update.
+ *
+ * \return \ref CARDANO_SUCCESS if the deposits were accumulated, or an appropriate error code.
+ */
 static cardano_error_t
 compute_shelley_deposits(
-  cardano_transaction_body_t* body,
-  const uint64_t              pool_deposit,
-  const uint64_t              stake_deposit,
-  cardano_implicit_coin_t*    implicit_coin)
+  cardano_certificate_set_t* certificates,
+  const uint64_t             pool_deposit,
+  const uint64_t             stake_deposit,
+  cardano_implicit_coin_t*   implicit_coin)
 {
-  cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
-  cardano_certificate_set_unref(&certificates);
-
   const size_t size = cardano_certificate_set_get_length(certificates);
 
   // Remark: For the case of deregistration (CARDANO_CERT_TYPE_STAKE_DEREGISTRATION and CARDANO_CERT_TYPE_POOL_RETIREMENT) the code here is not entirely correct
@@ -133,17 +147,23 @@ compute_shelley_deposits(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Accumulates the deposits and refunds of the Conway era certificates and proposals into the implicit coin.
+ *
+ * Conway era certificates and governance proposals carry their own deposit amount.
+ *
+ * \param[in]  certificates        The certificate set of the body, or NULL when the body has none.
+ * \param[in]  proposal_procedures The proposal procedure set of the body, or NULL when the body has none.
+ * \param[out] implicit_coin       The implicit coin accumulator to update.
+ *
+ * \return \ref CARDANO_SUCCESS if the deposits were accumulated, or an appropriate error code.
+ */
 static cardano_error_t
 compute_conway_deposits(
-  cardano_transaction_body_t* body,
-  cardano_implicit_coin_t*    implicit_coin)
+  cardano_certificate_set_t*        certificates,
+  cardano_proposal_procedure_set_t* proposal_procedures,
+  cardano_implicit_coin_t*          implicit_coin)
 {
-  cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
-  cardano_certificate_set_unref(&certificates);
-
-  cardano_proposal_procedure_set_t* proposal_procedures = cardano_transaction_body_get_proposal_procedures(body);
-  cardano_proposal_procedure_set_unref(&proposal_procedures);
-
   const size_t size = cardano_certificate_set_get_length(certificates);
 
   for (size_t i = 0U; i < size; ++i)
@@ -301,6 +321,47 @@ compute_conway_deposits(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Computes the implicit coin from the certificates, withdrawals and proposals of a body.
+ *
+ * \param[in]  certificates        The certificate set of the body, or NULL when the body has none.
+ * \param[in]  withdrawals         The withdrawal map of the body, or NULL when the body has none.
+ * \param[in]  proposal_procedures The proposal procedure set of the body, or NULL when the body has none.
+ * \param[in]  protocol_params     The protocol parameters supplying the Shelley era deposit amounts.
+ * \param[out] implicit_coin       The implicit coin accumulator to update.
+ *
+ * \return \ref CARDANO_SUCCESS if the implicit coin was computed, or an appropriate error code.
+ */
+static cardano_error_t
+compute_implicit_coin(
+  cardano_certificate_set_t*        certificates,
+  cardano_withdrawal_map_t*         withdrawals,
+  cardano_proposal_procedure_set_t* proposal_procedures,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_implicit_coin_t*          implicit_coin)
+{
+  const uint64_t pool_deposit  = cardano_protocol_parameters_get_pool_deposit(protocol_params);
+  const uint64_t stake_deposit = cardano_protocol_parameters_get_key_deposit(protocol_params);
+
+  cardano_error_t result = compute_withdrawals(withdrawals, implicit_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = compute_shelley_deposits(certificates, pool_deposit, stake_deposit, implicit_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = compute_conway_deposits(certificates, proposal_procedures, implicit_coin);
+
+  return result;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -327,24 +388,50 @@ cardano_compute_implicit_coin(
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
   cardano_transaction_body_unref(&body);
 
-  const uint64_t pool_deposit  = cardano_protocol_parameters_get_pool_deposit(protocol_params);
-  const uint64_t stake_deposit = cardano_protocol_parameters_get_key_deposit(protocol_params);
+  cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certificates);
 
-  cardano_error_t result = compute_withdrawals(body, implicit_coin);
+  cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+  cardano_withdrawal_map_unref(&withdrawals);
 
-  if (result != CARDANO_SUCCESS)
+  cardano_proposal_procedure_set_t* proposal_procedures = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&proposal_procedures);
+
+  return compute_implicit_coin(certificates, withdrawals, proposal_procedures, protocol_params, implicit_coin);
+}
+
+cardano_error_t
+cardano_compute_sub_transaction_implicit_coin(
+  cardano_sub_transaction_t*     sub_tx,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_implicit_coin_t*       implicit_coin)
+{
+  if (sub_tx == NULL)
   {
-    return result;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  result = compute_shelley_deposits(body, pool_deposit, stake_deposit, implicit_coin);
-
-  if (result != CARDANO_SUCCESS)
+  if (protocol_params == NULL)
   {
-    return result;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  result = compute_conway_deposits(body, implicit_coin);
+  if (implicit_coin == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
 
-  return result;
+  cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+  cardano_sub_transaction_body_unref(&body);
+
+  cardano_certificate_set_t* certificates = cardano_sub_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certificates);
+
+  cardano_withdrawal_map_t* withdrawals = cardano_sub_transaction_body_get_withdrawals(body);
+  cardano_withdrawal_map_unref(&withdrawals);
+
+  cardano_proposal_procedure_set_t* proposal_procedures = cardano_sub_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&proposal_procedures);
+
+  return compute_implicit_coin(certificates, withdrawals, proposal_procedures, protocol_params, implicit_coin);
 }
