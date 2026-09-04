@@ -37,12 +37,14 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Represents a half open interval of lovelace amounts.
+ * \brief Represents a constraint on an account balance expressed in lovelace.
  *
- * The interval is encoded on the wire as a two element CBOR array where the first
- * element is the inclusive lower bound and the second element is the exclusive upper
- * bound. Either bound may be encoded as CBOR null to indicate that the interval is
- * unbounded on that side, but at least one bound must be present.
+ * The interval takes one of two shapes. A range is encoded on the wire as a two element
+ * CBOR array where the first element is the inclusive lower bound and the second element
+ * is the exclusive upper bound. Either bound may be encoded as CBOR null to indicate that
+ * the range is unbounded on that side, but at least one bound must be present. An exact
+ * balance is encoded as a bare unsigned integer and requires the account balance to be
+ * exactly that amount.
  */
 typedef struct cardano_account_balance_interval_t cardano_account_balance_interval_t;
 
@@ -93,13 +95,54 @@ cardano_account_balance_interval_new(
   cardano_account_balance_interval_t** account_balance_interval);
 
 /**
+ * \brief Creates and initializes a new account balance interval in its exact form.
+ *
+ * This function allocates and initializes a new instance of \ref cardano_account_balance_interval_t
+ * that requires the account balance to be exactly the given amount of lovelace. The exact form is a
+ * distinct shape from a range, so the resulting interval reports no lower or upper bound.
+ *
+ * \param[in] exact_balance The exact account balance in lovelace.
+ * \param[out] account_balance_interval A pointer to a pointer to a \ref cardano_account_balance_interval_t object. Upon successful
+ *                        initialization, this will point to a newly created \ref cardano_account_balance_interval_t
+ *                        object. This object represents a "strong reference" to the account_balance_interval,
+ *                        fully initialized and ready for use. The caller is responsible for managing
+ *                        the lifecycle of this object. Specifically, once the account_balance_interval is no longer
+ *                        needed, the caller must release it by calling \ref cardano_account_balance_interval_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the account_balance_interval was successfully created, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_account_balance_interval_t* account_balance_interval = NULL;
+ *
+ * // Attempt to create a new account_balance_interval
+ * cardano_error_t result = cardano_account_balance_interval_new_exact(1000, &account_balance_interval);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the account_balance_interval
+ *
+ *   // Once done, ensure to clean up and release the account_balance_interval
+ *   cardano_account_balance_interval_unref(&account_balance_interval);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_account_balance_interval_new_exact(
+  uint64_t                             exact_balance,
+  cardano_account_balance_interval_t** account_balance_interval);
+
+/**
  * \brief Creates an account balance interval from a CBOR reader.
  *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_account_balance_interval_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for an account balance interval.
  *
- * The interval must be a two element CBOR array. A bound encoded as CBOR null is decoded as an
- * absent bound. Decoding fails with \ref CARDANO_ERROR_INVALID_ARGUMENT if both bounds are null.
+ * A bare unsigned integer is decoded as an exact balance. Any other value must be a two element CBOR
+ * array. A bound encoded as CBOR null is decoded as an absent bound. Decoding fails with
+ * \ref CARDANO_ERROR_INVALID_ARGUMENT if both bounds are null.
  *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded account balance interval data.
  * \param[out] account_balance_interval A pointer to a pointer of \ref cardano_account_balance_interval_t that will be set to the address
@@ -143,7 +186,8 @@ cardano_account_balance_interval_from_cbor(cardano_cbor_reader_t* reader, cardan
  * \brief Serializes an account balance interval into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_account_balance_interval_t object using a \ref cardano_cbor_writer_t.
- * The interval is written as a two element CBOR array; an absent bound is written as CBOR null.
+ * An exact balance is written as a bare unsigned integer. A range is written as a two element CBOR array;
+ * an absent bound is written as CBOR null.
  *
  * \param[in] account_balance_interval A constant pointer to the \ref cardano_account_balance_interval_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
@@ -187,7 +231,7 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_interval_to_cbor(
  *
  * This function returns a pointer to the inclusive lower bound of the given account balance
  * interval, expressed in lovelace. The bound is optional; a NULL return value indicates that
- * the interval has no lower bound.
+ * the interval has no lower bound. Exact intervals have no bounds and always return NULL.
  *
  * \param[in] account_balance_interval A constant pointer to the \ref cardano_account_balance_interval_t object from which
  *                       the bound is to be retrieved.
@@ -222,7 +266,7 @@ CARDANO_EXPORT const uint64_t* cardano_account_balance_interval_get_inclusive_lo
  *
  * This function returns a pointer to the exclusive upper bound of the given account balance
  * interval, expressed in lovelace. The bound is optional; a NULL return value indicates that
- * the interval has no upper bound.
+ * the interval has no upper bound. Exact intervals have no bounds and always return NULL.
  *
  * \param[in] account_balance_interval A constant pointer to the \ref cardano_account_balance_interval_t object from which
  *                       the bound is to be retrieved.
@@ -251,6 +295,70 @@ CARDANO_EXPORT const uint64_t* cardano_account_balance_interval_get_inclusive_lo
 CARDANO_NODISCARD
 CARDANO_EXPORT const uint64_t* cardano_account_balance_interval_get_exclusive_upper_bound(
   const cardano_account_balance_interval_t* account_balance_interval);
+
+/**
+ * \brief Retrieves the exact balance required by the interval.
+ *
+ * This function returns a pointer to the exact account balance required by the given interval,
+ * expressed in lovelace. A NULL return value indicates that the interval is a range rather than
+ * an exact balance.
+ *
+ * \param[in] account_balance_interval A constant pointer to the \ref cardano_account_balance_interval_t object from which
+ *                       the exact balance is to be retrieved.
+ *
+ * \return A pointer to the exact balance, or NULL if the interval is a range or if
+ *         \p account_balance_interval is NULL. The returned pointer refers to internal storage of the
+ *         interval object and must not be modified or freed by the caller. It remains valid for the
+ *         lifetime of the interval object.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_account_balance_interval_t* account_balance_interval = ...;
+ *
+ * const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(account_balance_interval);
+ *
+ * if (exact_balance != NULL)
+ * {
+ *   printf("Exact balance: %llu\n", (unsigned long long)*exact_balance);
+ * }
+ * else
+ * {
+ *   printf("The interval is a range.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const uint64_t* cardano_account_balance_interval_get_exact_balance(
+  const cardano_account_balance_interval_t* account_balance_interval);
+
+/**
+ * \brief Checks whether the interval is an exact balance.
+ *
+ * This function checks whether the given \ref cardano_account_balance_interval_t object requires
+ * an exact account balance rather than a range of balances.
+ *
+ * \param[in] account_balance_interval A constant pointer to an initialized \ref cardano_account_balance_interval_t object.
+ *
+ * \return A boolean value:
+ *         - \c true if the interval is an exact balance.
+ *         - \c false if the interval is a range or if \p account_balance_interval is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_account_balance_interval_t* account_balance_interval = ...;
+ *
+ * if (cardano_account_balance_interval_is_exact(account_balance_interval))
+ * {
+ *   printf("The interval requires an exact balance.\n");
+ * }
+ * else
+ * {
+ *   printf("The interval is a range.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_account_balance_interval_is_exact(const cardano_account_balance_interval_t* account_balance_interval);
 
 /**
  * \brief Decrements the reference count of an account_balance_interval object.

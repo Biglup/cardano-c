@@ -37,7 +37,7 @@ static const int64_t ACCOUNT_BALANCE_INTERVAL_EMBEDDED_GROUP_SIZE = 2;
 /* STRUCTURES ****************************************************************/
 
 /**
- * \brief Represents a half open interval of lovelace amounts.
+ * \brief Represents a constraint on an account balance expressed in lovelace.
  */
 typedef struct cardano_account_balance_interval_t
 {
@@ -46,6 +46,8 @@ typedef struct cardano_account_balance_interval_t
     uint64_t         inclusive_lower_bound;
     bool             has_exclusive_upper_bound;
     uint64_t         exclusive_upper_bound;
+    bool             is_exact;
+    uint64_t         exact_balance;
 } cardano_account_balance_interval_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -70,6 +72,38 @@ cardano_account_balance_interval_deallocate(void* object)
   _cardano_free(object);
 }
 
+/**
+ * \brief Allocates an account balance interval with every field cleared.
+ *
+ * \param[out] account_balance_interval On success, points to a newly allocated interval with no bounds and no
+ *                                      exact balance. Set to NULL on failure.
+ *
+ * \return \ref CARDANO_SUCCESS if the interval was allocated, \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED otherwise.
+ */
+static cardano_error_t
+cardano_account_balance_interval_allocate(cardano_account_balance_interval_t** account_balance_interval)
+{
+  *account_balance_interval = _cardano_malloc(sizeof(cardano_account_balance_interval_t));
+
+  if (*account_balance_interval == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  (*account_balance_interval)->base.deallocator   = cardano_account_balance_interval_deallocate;
+  (*account_balance_interval)->base.ref_count     = 1;
+  (*account_balance_interval)->base.last_error[0] = '\0';
+
+  (*account_balance_interval)->has_inclusive_lower_bound = false;
+  (*account_balance_interval)->inclusive_lower_bound     = 0U;
+  (*account_balance_interval)->has_exclusive_upper_bound = false;
+  (*account_balance_interval)->exclusive_upper_bound     = 0U;
+  (*account_balance_interval)->is_exact                  = false;
+  (*account_balance_interval)->exact_balance             = 0U;
+
+  return CARDANO_SUCCESS;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -89,21 +123,40 @@ cardano_account_balance_interval_new(
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  *account_balance_interval = _cardano_malloc(sizeof(cardano_account_balance_interval_t));
+  const cardano_error_t allocate_result = cardano_account_balance_interval_allocate(account_balance_interval);
 
-  if (*account_balance_interval == NULL)
+  if (allocate_result != CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    return allocate_result;
   }
-
-  (*account_balance_interval)->base.deallocator   = cardano_account_balance_interval_deallocate;
-  (*account_balance_interval)->base.ref_count     = 1;
-  (*account_balance_interval)->base.last_error[0] = '\0';
 
   (*account_balance_interval)->has_inclusive_lower_bound = (inclusive_lower_bound != NULL);
   (*account_balance_interval)->inclusive_lower_bound     = (inclusive_lower_bound != NULL) ? *inclusive_lower_bound : 0U;
   (*account_balance_interval)->has_exclusive_upper_bound = (exclusive_upper_bound != NULL);
   (*account_balance_interval)->exclusive_upper_bound     = (exclusive_upper_bound != NULL) ? *exclusive_upper_bound : 0U;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_account_balance_interval_new_exact(
+  const uint64_t                       exact_balance,
+  cardano_account_balance_interval_t** account_balance_interval)
+{
+  if (account_balance_interval == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const cardano_error_t allocate_result = cardano_account_balance_interval_allocate(account_balance_interval);
+
+  if (allocate_result != CARDANO_SUCCESS)
+  {
+    return allocate_result;
+  }
+
+  (*account_balance_interval)->is_exact      = true;
+  (*account_balance_interval)->exact_balance = exact_balance;
 
   return CARDANO_SUCCESS;
 }
@@ -124,6 +177,31 @@ cardano_account_balance_interval_from_cbor(cardano_cbor_reader_t* reader, cardan
 
   static const char* validator_name = "account_balance_interval";
 
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *account_balance_interval = NULL;
+    return result;
+  }
+
+  if (state == CARDANO_CBOR_READER_STATE_UNSIGNED_INTEGER)
+  {
+    uint64_t exact_balance = 0U;
+
+    result = cardano_cbor_reader_read_uint(reader, &exact_balance);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      *account_balance_interval = NULL;
+      return result;
+    }
+
+    return cardano_account_balance_interval_new_exact(exact_balance, account_balance_interval);
+  }
+
   const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, (uint32_t)ACCOUNT_BALANCE_INTERVAL_EMBEDDED_GROUP_SIZE);
 
   if (expect_array_result != CARDANO_SUCCESS)
@@ -137,9 +215,7 @@ cardano_account_balance_interval_from_cbor(cardano_cbor_reader_t* reader, cardan
   bool     has_exclusive_upper_bound = false;
   uint64_t exclusive_upper_bound     = 0U;
 
-  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
-
-  cardano_error_t result = cardano_cbor_reader_peek_state(reader, &state);
+  result = cardano_cbor_reader_peek_state(reader, &state);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -222,6 +298,11 @@ cardano_account_balance_interval_to_cbor(const cardano_account_balance_interval_
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if (account_balance_interval->is_exact)
+  {
+    return cardano_cbor_writer_write_uint(writer, account_balance_interval->exact_balance);
+  }
+
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, ACCOUNT_BALANCE_INTERVAL_EMBEDDED_GROUP_SIZE);
 
   if (result != CARDANO_SUCCESS)
@@ -285,6 +366,33 @@ cardano_account_balance_interval_get_exclusive_upper_bound(const cardano_account
   }
 
   return &account_balance_interval->exclusive_upper_bound;
+}
+
+const uint64_t*
+cardano_account_balance_interval_get_exact_balance(const cardano_account_balance_interval_t* account_balance_interval)
+{
+  if (account_balance_interval == NULL)
+  {
+    return NULL;
+  }
+
+  if (!account_balance_interval->is_exact)
+  {
+    return NULL;
+  }
+
+  return &account_balance_interval->exact_balance;
+}
+
+bool
+cardano_account_balance_interval_is_exact(const cardano_account_balance_interval_t* account_balance_interval)
+{
+  if (account_balance_interval == NULL)
+  {
+    return false;
+  }
+
+  return account_balance_interval->is_exact;
 }
 
 void

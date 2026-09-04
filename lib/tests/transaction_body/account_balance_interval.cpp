@@ -41,9 +41,18 @@ static const char* ZERO_LOWER_ONLY_CBOR  = "8200f6";
 static const char* ZERO_LOWER_UPPER_CBOR = "8200192710";
 static const char* ONE_ELEMENT_CBOR      = "811864";
 static const char* THREE_ELEMENTS_CBOR   = "8318641913880a";
+static const char* EXACT_CBOR            = "1903e8";
+static const char* EXACT_WIDE_CBOR       = "1b0000000100000000";
+static const char* LOWER_UPPER_CBOR      = "82011864";
+static const char* NIL_LOWER_CBOR        = "82f61864";
+static const char* NIL_UPPER_CBOR        = "8201f6";
+static const char* TEXT_STRING_CBOR      = "6161";
+static const char* NEGATIVE_INTEGER_CBOR = "20";
 
 static const uint64_t INCLUSIVE_LOWER_BOUND = 100;
 static const uint64_t EXCLUSIVE_UPPER_BOUND = 5000;
+static const uint64_t EXACT_BALANCE         = 1000;
+static const uint64_t EXACT_WIDE_BALANCE    = 4294967296ULL;
 
 /**
  * Decodes the given CBOR hex string into an account balance interval.
@@ -200,6 +209,57 @@ TEST(cardano_account_balance_interval_new, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_account_balance_interval_new_exact, canCreateExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(account_balance_interval));
+
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(account_balance_interval);
+
+  ASSERT_THAT(exact_balance, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*exact_balance, EXACT_BALANCE);
+  EXPECT_EQ(cardano_account_balance_interval_get_inclusive_lower_bound(account_balance_interval), (const uint64_t*)nullptr);
+  EXPECT_EQ(cardano_account_balance_interval_get_exclusive_upper_bound(account_balance_interval), (const uint64_t*)nullptr);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
+TEST(cardano_account_balance_interval_new_exact, returnsErrorIfIntervalIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_account_balance_interval_new_exact, returnsErrorIfMemoryAllocationFails)
+{
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_account_balance_interval_from_cbor, canDeserializeIntervalWithBothBounds)
 {
   // Arrange
@@ -299,6 +359,91 @@ TEST(cardano_account_balance_interval_from_cbor, decodesZeroLowerBoundAsZeroRath
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_account_balance_interval_from_cbor, canDeserializeExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(EXACT_CBOR, strlen(EXACT_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(account_balance_interval));
+
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(account_balance_interval);
+
+  ASSERT_THAT(exact_balance, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*exact_balance, EXACT_BALANCE);
+  EXPECT_EQ(cardano_account_balance_interval_get_inclusive_lower_bound(account_balance_interval), (const uint64_t*)nullptr);
+  EXPECT_EQ(cardano_account_balance_interval_get_exclusive_upper_bound(account_balance_interval), (const uint64_t*)nullptr);
+
+  char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+  EXPECT_STREQ(actual_cbor, EXACT_CBOR);
+
+  // Cleanup
+  free(actual_cbor);
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, canDeserializeExactIntervalWithWideBalance)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(EXACT_WIDE_CBOR, strlen(EXACT_WIDE_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(account_balance_interval));
+
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(account_balance_interval);
+
+  ASSERT_THAT(exact_balance, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*exact_balance, EXACT_WIDE_BALANCE);
+
+  char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+  EXPECT_STREQ(actual_cbor, EXACT_WIDE_CBOR);
+
+  // Cleanup
+  free(actual_cbor);
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, decodesArrayFormsAsRangesRatherThanExact)
+{
+  // Arrange
+  const char* cbor_forms[] = { LOWER_UPPER_CBOR, NIL_LOWER_CBOR, NIL_UPPER_CBOR };
+
+  for (const char* cbor: cbor_forms)
+  {
+    cardano_account_balance_interval_t* account_balance_interval = nullptr;
+    cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+    // Act
+    cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+    EXPECT_FALSE(cardano_account_balance_interval_is_exact(account_balance_interval));
+    EXPECT_EQ(cardano_account_balance_interval_get_exact_balance(account_balance_interval), (const uint64_t*)nullptr);
+
+    char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+    EXPECT_STREQ(actual_cbor, cbor);
+
+    // Cleanup
+    free(actual_cbor);
+    cardano_account_balance_interval_unref(&account_balance_interval);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
 TEST(cardano_account_balance_interval_from_cbor, returnErrorIfBothBoundsAreNil)
 {
   // Arrange
@@ -351,17 +496,51 @@ TEST(cardano_account_balance_interval_from_cbor, returnErrorIfArrayHasThreeEleme
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_account_balance_interval_from_cbor, returnErrorIfNotAnArray)
+TEST(cardano_account_balance_interval_from_cbor, returnErrorIfTextString)
 {
   // Arrange
   cardano_account_balance_interval_t* account_balance_interval = nullptr;
-  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex("01", 2);
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(TEXT_STRING_CBOR, strlen(TEXT_STRING_CBOR));
 
   // Act
   cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, returnErrorIfNegativeInteger)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(NEGATIVE_INTEGER_CBOR, strlen(NEGATIVE_INTEGER_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, returnErrorIfReaderIsEmpty)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex("", 0);
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+  // Assert
+  EXPECT_THAT(error, testing::Not(CARDANO_SUCCESS));
   EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
 
   // Cleanup
@@ -434,6 +613,27 @@ TEST(cardano_account_balance_interval_from_cbor, returnErrorIfMemoryAllocationFa
   // Arrange
   cardano_account_balance_interval_t* account_balance_interval = nullptr;
   cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(BOTH_BOUNDS_CBOR, strlen(BOTH_BOUNDS_CBOR));
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_account_balance_interval_from_cbor(reader, &account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, returnErrorIfMemoryAllocationFailsForExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_cbor_reader_t*              reader                   = cardano_cbor_reader_from_hex(EXACT_CBOR, strlen(EXACT_CBOR));
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
@@ -553,6 +753,60 @@ TEST(cardano_account_balance_interval_to_cbor, encodesZeroBoundDistinctlyFromAbs
   free(absent_lower_cbor);
 }
 
+TEST(cardano_account_balance_interval_to_cbor, canRoundTripExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = new_default_account_balance_interval(EXACT_CBOR);
+  ASSERT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+
+  // Act
+  char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, EXACT_CBOR);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  free(actual_cbor);
+}
+
+TEST(cardano_account_balance_interval_to_cbor, encodesExactIntervalAsBareUnsignedInteger)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, EXACT_CBOR);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  free(actual_cbor);
+}
+
+TEST(cardano_account_balance_interval_to_cbor, returnsErrorIfWriterIsNullForExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_account_balance_interval_to_cbor(account_balance_interval, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
 TEST(cardano_account_balance_interval_to_cbor, returnsErrorIfGivenANullPtr)
 {
   // Arrange
@@ -602,6 +856,78 @@ TEST(cardano_account_balance_interval_get_exclusive_upper_bound, returnsNullIfIn
 
   // Assert
   EXPECT_EQ(exclusive_upper_bound, (const uint64_t*)nullptr);
+}
+
+TEST(cardano_account_balance_interval_get_exact_balance, returnsNullIfIntervalIsNull)
+{
+  // Act
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(nullptr);
+
+  // Assert
+  EXPECT_EQ(exact_balance, (const uint64_t*)nullptr);
+}
+
+TEST(cardano_account_balance_interval_get_exact_balance, returnsNullIfIntervalIsARange)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  cardano_error_t error = cardano_account_balance_interval_new(&INCLUSIVE_LOWER_BOUND, &EXCLUSIVE_UPPER_BOUND, &account_balance_interval);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(exact_balance, (const uint64_t*)nullptr);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
+TEST(cardano_account_balance_interval_is_exact, returnsFalseIfIntervalIsNull)
+{
+  // Act
+  bool is_exact = cardano_account_balance_interval_is_exact(nullptr);
+
+  // Assert
+  EXPECT_FALSE(is_exact);
+}
+
+TEST(cardano_account_balance_interval_is_exact, returnsFalseIfIntervalIsARange)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  cardano_error_t error = cardano_account_balance_interval_new(&INCLUSIVE_LOWER_BOUND, nullptr, &account_balance_interval);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool is_exact = cardano_account_balance_interval_is_exact(account_balance_interval);
+
+  // Assert
+  EXPECT_FALSE(is_exact);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
+TEST(cardano_account_balance_interval_is_exact, returnsTrueIfIntervalIsExact)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+
+  cardano_error_t error = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  bool is_exact = cardano_account_balance_interval_is_exact(account_balance_interval);
+
+  // Assert
+  EXPECT_TRUE(is_exact);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
 }
 
 TEST(cardano_account_balance_interval_ref, increasesTheReferenceCount)
@@ -703,6 +1029,29 @@ TEST(cardano_account_balance_interval_refcount, returnsZeroIfGivenANullPtr)
   EXPECT_EQ(ref_count, 0);
 }
 
+TEST(cardano_account_balance_interval_refcount, tracksReferencesOfExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_error_t                     error                    = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_account_balance_interval_ref(account_balance_interval);
+  size_t ref_count = cardano_account_balance_interval_refcount(account_balance_interval);
+
+  cardano_account_balance_interval_unref(&account_balance_interval);
+  size_t updated_ref_count = cardano_account_balance_interval_refcount(account_balance_interval);
+
+  cardano_account_balance_interval_unref(&account_balance_interval);
+
+  // Assert
+  EXPECT_EQ(ref_count, 2);
+  EXPECT_EQ(updated_ref_count, 1);
+  EXPECT_EQ(account_balance_interval, (cardano_account_balance_interval_t*)nullptr);
+}
+
 TEST(cardano_account_balance_interval_set_last_error, doesNothingWhenObjectIsNull)
 {
   // Arrange
@@ -731,6 +1080,26 @@ TEST(cardano_account_balance_interval_set_last_error, doesNothingWhenWhenMessage
 
   // Assert
   EXPECT_STREQ(cardano_account_balance_interval_get_last_error(account_balance_interval), "");
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
+TEST(cardano_account_balance_interval_set_last_error, recordsMessageOnExactInterval)
+{
+  // Arrange
+  cardano_account_balance_interval_t* account_balance_interval = nullptr;
+  cardano_error_t                     error                    = cardano_account_balance_interval_new_exact(EXACT_BALANCE, &account_balance_interval);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const char* message = "This is a test message";
+
+  // Act
+  cardano_account_balance_interval_set_last_error(account_balance_interval, message);
+
+  // Assert
+  EXPECT_STREQ(cardano_account_balance_interval_get_last_error(account_balance_interval), message);
 
   // Cleanup
   cardano_account_balance_interval_unref(&account_balance_interval);
