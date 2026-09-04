@@ -169,6 +169,54 @@ Protocol Parameter Update
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_param_update_get_max_pledge_leverage
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_has_max_pledge_leverage
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_min_pool_margin
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_leios_announcement_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_leios_vote_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_leios_diffusion_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_leios_committee_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_leios_quorum_stake_threshold
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_max_endorser_block_references_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_max_endorser_block_txs_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_max_endorser_block_execution_units
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block
+
+------------
+
 .. doxygenfunction:: cardano_protocol_param_update_set_min_fee_a
 
 ------------
@@ -314,6 +362,58 @@ Protocol Parameter Update
 ------------
 
 .. doxygenfunction:: cardano_protocol_param_update_set_ref_script_cost_multiplier
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_pledge_leverage
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_pledge_leverage_unbounded
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_clear_max_pledge_leverage
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_min_pool_margin
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_leios_announcement_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_leios_vote_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_leios_diffusion_period_length
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_leios_committee_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_leios_quorum_stake_threshold
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_endorser_block_references_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_endorser_block_txs_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_endorser_block_execution_units
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block
 
 ------------
 

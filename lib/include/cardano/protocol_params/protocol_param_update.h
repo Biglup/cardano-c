@@ -1879,6 +1879,577 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_script_cost
   cardano_unit_interval_t**        ref_script_cost_multiplier);
 
 /**
+ * \brief Retrieves the maximum pledge leverage from the protocol parameter update.
+ *
+ * This function returns the maximum pledge leverage of a stake pool (CIP-50): the largest ratio between
+ * a pool's total stake and its pledge that still earns full rewards. The parameter is nullable: an update
+ * can propose a bounded leverage (a nonnegative rational, which may be greater than one) or propose
+ * removing the bound altogether, encoded as CBOR null on the wire.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_pledge_leverage Pointer to where the maximum pledge leverage will be stored. When the
+ *             update proposes an unbounded leverage the function succeeds and stores NULL. If the parameter
+ *             is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum pledge leverage was successfully retrieved (bounded or unbounded), or
+ *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the parameter is not set in the update. Other appropriate
+ *         error codes may indicate different failure reasons.
+ *
+ * \note When a bounded value is returned, the caller is responsible for releasing it by calling
+ *       \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* max_pledge_leverage = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_pledge_leverage(protocol_param_update, &max_pledge_leverage);
+ *
+ * if ((result == CARDANO_SUCCESS) && (max_pledge_leverage != NULL))
+ * {
+ *   printf("Max pledge leverage retrieved successfully: %f.\n", cardano_unit_interval_to_double(max_pledge_leverage));
+ * }
+ * else if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update proposes an unbounded pledge leverage.\n");
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Max pledge leverage is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get max pledge leverage: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&max_pledge_leverage);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        max_pledge_leverage);
+
+/**
+ * \brief Checks whether the protocol parameter update proposes a change to the maximum pledge leverage.
+ *
+ * This function reports whether the update carries the maximum pledge leverage parameter, regardless of
+ * whether the proposed value is a bounded leverage or the unbounded (null) form.
+ *
+ * \param[in] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \c true if the update proposes a maximum pledge leverage (bounded or unbounded), \c false if the
+ *         parameter is not part of the update or \p protocol_param_update is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * if (cardano_protocol_param_update_has_max_pledge_leverage(protocol_param_update))
+ * {
+ *   printf("The update proposes a change to the max pledge leverage.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_protocol_param_update_has_max_pledge_leverage(
+  const cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Retrieves the minimum pool margin from the protocol parameter update.
+ *
+ * This function returns the minimum margin that a stake pool may declare (CIP-23). On the wire this
+ * parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] min_pool_margin Pointer to where the minimum pool margin will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the minimum pool margin was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * \note The caller is responsible for releasing the returned \ref cardano_unit_interval_t object by
+ *       calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* min_pool_margin = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_min_pool_margin(protocol_param_update, &min_pool_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Minimum pool margin retrieved successfully: %f.\n", cardano_unit_interval_to_double(min_pool_margin));
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Minimum pool margin is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get minimum pool margin: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&min_pool_margin);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_min_pool_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        min_pool_margin);
+
+/**
+ * \brief Retrieves the Leios announcement period length from the protocol parameter update.
+ *
+ * This function returns the length, in milliseconds, of the Leios announcement period (CIP-164). On the
+ * wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] leios_announcement_period_length Pointer to where the Leios announcement period length will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios announcement period length was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_announcement_period_length = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_leios_announcement_period_length(protocol_param_update, &leios_announcement_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios announcement period length retrieved successfully: %lu.\n", leios_announcement_period_length);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Leios announcement period length is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Leios announcement period length: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_leios_announcement_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_announcement_period_length);
+
+/**
+ * \brief Retrieves the Leios vote period length from the protocol parameter update.
+ *
+ * This function returns the length, in milliseconds, of the Leios vote period (CIP-164). On the wire this
+ * parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] leios_vote_period_length Pointer to where the Leios vote period length will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios vote period length was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_vote_period_length = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_leios_vote_period_length(protocol_param_update, &leios_vote_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios vote period length retrieved successfully: %lu.\n", leios_vote_period_length);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Leios vote period length is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Leios vote period length: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_leios_vote_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_vote_period_length);
+
+/**
+ * \brief Retrieves the Leios diffusion period length from the protocol parameter update.
+ *
+ * This function returns the length, in milliseconds, of the Leios diffusion period (CIP-164). On the wire
+ * this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] leios_diffusion_period_length Pointer to where the Leios diffusion period length will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios diffusion period length was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_diffusion_period_length = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_leios_diffusion_period_length(protocol_param_update, &leios_diffusion_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios diffusion period length retrieved successfully: %lu.\n", leios_diffusion_period_length);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Leios diffusion period length is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Leios diffusion period length: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_leios_diffusion_period_length(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_diffusion_period_length);
+
+/**
+ * \brief Retrieves the Leios committee size from the protocol parameter update.
+ *
+ * This function returns the number of members of the Leios voting committee (CIP-164). On the wire this
+ * parameter is a 16-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] leios_committee_size Pointer to where the Leios committee size will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios committee size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_committee_size = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_leios_committee_size(protocol_param_update, &leios_committee_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios committee size retrieved successfully: %lu.\n", leios_committee_size);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Leios committee size is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Leios committee size: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_leios_committee_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              leios_committee_size);
+
+/**
+ * \brief Retrieves the Leios quorum stake threshold from the protocol parameter update.
+ *
+ * This function returns the fraction of the committee stake that a Leios vote needs to reach a quorum
+ * (CIP-164). On the wire this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] leios_quorum_stake_threshold Pointer to where the Leios quorum stake threshold will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios quorum stake threshold was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * \note The caller is responsible for releasing the returned \ref cardano_unit_interval_t object by
+ *       calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* leios_quorum_stake_threshold = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_leios_quorum_stake_threshold(protocol_param_update, &leios_quorum_stake_threshold);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios quorum stake threshold retrieved successfully: %f.\n", cardano_unit_interval_to_double(leios_quorum_stake_threshold));
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Leios quorum stake threshold is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Leios quorum stake threshold: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&leios_quorum_stake_threshold);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_leios_quorum_stake_threshold(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        leios_quorum_stake_threshold);
+
+/**
+ * \brief Retrieves the maximum endorser block references size from the protocol parameter update.
+ *
+ * This function returns the maximum total size, in bytes, of the references carried by a Leios endorser
+ * block. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_endorser_block_references_size Pointer to where the maximum endorser block references size will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block references size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_endorser_block_references_size = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_endorser_block_references_size(protocol_param_update, &max_endorser_block_references_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block references size retrieved successfully: %lu.\n", max_endorser_block_references_size);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Maximum endorser block references size is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get maximum endorser block references size: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_endorser_block_references_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_endorser_block_references_size);
+
+/**
+ * \brief Retrieves the maximum endorser block transactions size from the protocol parameter update.
+ *
+ * This function returns the maximum total size, in bytes, of the transactions referenced by a Leios
+ * endorser block. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_endorser_block_txs_size Pointer to where the maximum endorser block transactions size will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block transactions size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_endorser_block_txs_size = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_endorser_block_txs_size(protocol_param_update, &max_endorser_block_txs_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block transactions size retrieved successfully: %lu.\n", max_endorser_block_txs_size);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Maximum endorser block transactions size is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get maximum endorser block transactions size: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_endorser_block_txs_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_endorser_block_txs_size);
+
+/**
+ * \brief Retrieves the maximum endorser block execution units from the protocol parameter update.
+ *
+ * This function returns the maximum execution units that the scripts of a Leios endorser block can
+ * consume (CIP-164). Execution units are measurements of the computational and memory resources used
+ * by transactions involving smart contracts.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_endorser_block_execution_units Pointer to where the maximum endorser block execution units object will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block execution units were successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * \note The caller is responsible for releasing the returned \ref cardano_ex_units_t object by
+ *       calling \ref cardano_ex_units_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_ex_units_t* max_endorser_block_execution_units = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_endorser_block_execution_units(protocol_param_update, &max_endorser_block_execution_units);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block execution units retrieved.\n");
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Maximum endorser block execution units are not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get maximum endorser block execution units: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_ex_units_unref(&max_endorser_block_execution_units);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_endorser_block_execution_units(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_ex_units_t**             max_endorser_block_execution_units);
+
+/**
+ * \brief Retrieves the maximum reference script size per endorser block from the protocol parameter update.
+ *
+ * This function returns the maximum cumulative size, in bytes, of the reference scripts that a Leios
+ * endorser block may use. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] max_ref_script_size_per_endorser_block Pointer to where the maximum reference script size per endorser block will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per endorser block was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_endorser_block = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block(protocol_param_update, &max_ref_script_size_per_endorser_block);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum reference script size per endorser block retrieved successfully: %lu.\n", max_ref_script_size_per_endorser_block);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Maximum reference script size per endorser block is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get maximum reference script size per endorser block: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              max_ref_script_size_per_endorser_block);
+
+/**
  * \brief Sets the minimum fee A in the protocol parameter update.
  *
  * This function sets the minimum fee A value in the protocol parameter update.
@@ -3404,6 +3975,556 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_script_cost_multiplier(
   cardano_protocol_param_update_t* protocol_param_update,
   cardano_unit_interval_t*         ref_script_cost_multiplier);
+
+/**
+ * \brief Sets a bounded maximum pledge leverage in the protocol parameter update.
+ *
+ * This function proposes a bounded maximum pledge leverage (CIP-50): the largest ratio between a pool's
+ * total stake and its pledge that still earns full rewards. The value is a nonnegative rational and may be
+ * greater than one. If NULL is passed for max_pledge_leverage, the parameter is removed from the update,
+ * exactly as \ref cardano_protocol_param_update_clear_max_pledge_leverage does. To propose removing the
+ * bound instead, use \ref cardano_protocol_param_update_set_max_pledge_leverage_unbounded.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_pledge_leverage Pointer to the maximum pledge leverage. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum pledge leverage was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* max_pledge_leverage = NULL;
+ *
+ * // Assume max_pledge_leverage is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_pledge_leverage(protocol_param_update, max_pledge_leverage);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max pledge leverage set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set max pledge leverage.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         max_pledge_leverage);
+
+/**
+ * \brief Proposes an unbounded maximum pledge leverage in the protocol parameter update.
+ *
+ * This function marks the maximum pledge leverage as part of the update with the unbounded value, which
+ * proposes removing the pledge leverage bound (CIP-50). On the wire the parameter is encoded as CBOR null.
+ * Any bounded value previously set on the update is released.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the unbounded maximum pledge leverage was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_pledge_leverage_unbounded(protocol_param_update);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update now proposes an unbounded pledge leverage.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_pledge_leverage_unbounded(
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Removes the maximum pledge leverage from the protocol parameter update.
+ *
+ * This function removes the maximum pledge leverage parameter from the update, whether it proposed a
+ * bounded or an unbounded value, so that the update no longer proposes a change for this parameter.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the parameter was removed, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_clear_max_pledge_leverage(protocol_param_update);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update no longer proposes a max pledge leverage.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_clear_max_pledge_leverage(
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Sets the minimum pool margin in the protocol parameter update.
+ *
+ * This function sets the minimum margin that a stake pool may declare (CIP-23). If NULL is passed for
+ * min_pool_margin, it indicates that the update should not propose a change for this parameter. On the
+ * wire this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     min_pool_margin Pointer to the minimum pool margin. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the minimum pool margin was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* min_pool_margin = NULL;
+ *
+ * // Assume min_pool_margin is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_min_pool_margin(protocol_param_update, min_pool_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Minimum pool margin set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set minimum pool margin.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_min_pool_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         min_pool_margin);
+
+/**
+ * \brief Sets the Leios announcement period length in the protocol parameter update.
+ *
+ * This function sets the length, in milliseconds, of the Leios announcement period (CIP-164). If NULL is
+ * passed for leios_announcement_period_length, it indicates that the update should not propose a change
+ * for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     leios_announcement_period_length Pointer to the Leios announcement period length.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios announcement period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_announcement_period_length = 1000; // One second
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_leios_announcement_period_length(protocol_param_update, &leios_announcement_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios announcement period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Leios announcement period length.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_leios_announcement_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_announcement_period_length);
+
+/**
+ * \brief Sets the Leios vote period length in the protocol parameter update.
+ *
+ * This function sets the length, in milliseconds, of the Leios vote period (CIP-164). If NULL is passed
+ * for leios_vote_period_length, it indicates that the update should not propose a change for this
+ * parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     leios_vote_period_length Pointer to the Leios vote period length.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios vote period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_vote_period_length = 2000; // Two seconds
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_leios_vote_period_length(protocol_param_update, &leios_vote_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios vote period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Leios vote period length.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_leios_vote_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_vote_period_length);
+
+/**
+ * \brief Sets the Leios diffusion period length in the protocol parameter update.
+ *
+ * This function sets the length, in milliseconds, of the Leios diffusion period (CIP-164). If NULL is
+ * passed for leios_diffusion_period_length, it indicates that the update should not propose a change for
+ * this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     leios_diffusion_period_length Pointer to the Leios diffusion period length.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios diffusion period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_diffusion_period_length = 3000; // Three seconds
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_leios_diffusion_period_length(protocol_param_update, &leios_diffusion_period_length);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios diffusion period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Leios diffusion period length.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_leios_diffusion_period_length(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_diffusion_period_length);
+
+/**
+ * \brief Sets the Leios committee size in the protocol parameter update.
+ *
+ * This function sets the number of members of the Leios voting committee (CIP-164). If NULL is passed for
+ * leios_committee_size, it indicates that the update should not propose a change for this parameter. On
+ * the wire this parameter is a 16-bit unsigned integer; values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     leios_committee_size Pointer to the Leios committee size.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios committee size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t leios_committee_size = 500; // 500 committee members
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_leios_committee_size(protocol_param_update, &leios_committee_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios committee size set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Leios committee size.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_leios_committee_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  leios_committee_size);
+
+/**
+ * \brief Sets the Leios quorum stake threshold in the protocol parameter update.
+ *
+ * This function sets the fraction of the committee stake that a Leios vote needs to reach a quorum
+ * (CIP-164). If NULL is passed for leios_quorum_stake_threshold, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a unit interval (a rational number
+ * between zero and one).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     leios_quorum_stake_threshold Pointer to the Leios quorum stake threshold. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Leios quorum stake threshold was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* leios_quorum_stake_threshold = NULL;
+ *
+ * // Assume leios_quorum_stake_threshold is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_leios_quorum_stake_threshold(protocol_param_update, leios_quorum_stake_threshold);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios quorum stake threshold set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Leios quorum stake threshold.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_leios_quorum_stake_threshold(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         leios_quorum_stake_threshold);
+
+/**
+ * \brief Sets the maximum endorser block references size in the protocol parameter update.
+ *
+ * This function sets the maximum total size, in bytes, of the references carried by a Leios endorser
+ * block. If NULL is passed for max_endorser_block_references_size, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_endorser_block_references_size Pointer to the maximum endorser block references size.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block references size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_endorser_block_references_size = 65536; // 64 KiB of references
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_endorser_block_references_size(protocol_param_update, &max_endorser_block_references_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block references size set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set maximum endorser block references size.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_endorser_block_references_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_endorser_block_references_size);
+
+/**
+ * \brief Sets the maximum endorser block transactions size in the protocol parameter update.
+ *
+ * This function sets the maximum total size, in bytes, of the transactions referenced by a Leios endorser
+ * block. If NULL is passed for max_endorser_block_txs_size, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_endorser_block_txs_size Pointer to the maximum endorser block transactions size.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block transactions size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_endorser_block_txs_size = 100000; // 100 KB of transactions
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_endorser_block_txs_size(protocol_param_update, &max_endorser_block_txs_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block transactions size set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set maximum endorser block transactions size.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_endorser_block_txs_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_endorser_block_txs_size);
+
+/**
+ * \brief Sets the maximum endorser block execution units in the protocol parameter update.
+ *
+ * This function sets the maximum execution units that the scripts of a Leios endorser block can
+ * consume (CIP-164). If NULL is passed for max_endorser_block_execution_units, it indicates that
+ * the update should not propose a change for this parameter.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_endorser_block_execution_units Pointer to the maximum execution units for an endorser block.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum endorser block execution units were successfully set, or an appropriate error code
+ *         indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_ex_units_t* max_endorser_block_execution_units = NULL;
+ *
+ * // Assume max_endorser_block_execution_units is initialized properly
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_endorser_block_execution_units(protocol_param_update, max_endorser_block_execution_units);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block execution units set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set maximum endorser block execution units.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_ex_units_unref(&max_endorser_block_execution_units);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_endorser_block_execution_units(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_ex_units_t*              max_endorser_block_execution_units);
+
+/**
+ * \brief Sets the maximum reference script size per endorser block in the protocol parameter update.
+ *
+ * This function sets the maximum cumulative size, in bytes, of the reference scripts that a Leios endorser
+ * block may use. If NULL is passed for max_ref_script_size_per_endorser_block, it indicates that the
+ * update should not propose a change for this parameter. On the wire this parameter is a 32-bit unsigned
+ * integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     max_ref_script_size_per_endorser_block Pointer to the maximum reference script size per endorser block.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the maximum reference script size per endorser block was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t max_ref_script_size_per_endorser_block = 204800; // 200 KiB of reference scripts
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block(protocol_param_update, &max_ref_script_size_per_endorser_block);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum reference script size per endorser block set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set maximum reference script size per endorser block.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  max_ref_script_size_per_endorser_block);
 
 /**
  * \brief Decrements the reference count of a cardano_protocol_param_update_t object.
