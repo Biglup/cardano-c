@@ -23,7 +23,8 @@
 
 #include <cardano/error.h>
 
-#include <cardano/common/credential.h>
+#include <cardano/address/reward_address.h>
+#include <cardano/common/reward_address_list.h>
 #include <cardano/transaction_body/account_balance_interval.h>
 #include <cardano/transaction_body/account_balance_intervals_map.h>
 
@@ -34,45 +35,46 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const char* KEY_HASH_A_HEX  = "00112233445566778899aabbccddeeff00112233445566778899aabb";
-static const char* KEY_HASH_B_HEX  = "ffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544";
-static const char* SCRIPT_HASH_HEX = "aabbccddeeff00112233445566778899aabbccddeeff001122334455";
-
-static const char* KEY_HASH_A_CREDENTIAL_CBOR  = "8200581c00112233445566778899aabbccddeeff00112233445566778899aabb";
-static const char* KEY_HASH_B_CREDENTIAL_CBOR  = "8200581cffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544";
-static const char* SCRIPT_HASH_CREDENTIAL_CBOR = "8201581caabbccddeeff00112233445566778899aabbccddeeff001122334455";
+static const char* ACCOUNT_A_BECH32 = "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27";
+static const char* ACCOUNT_B_BECH32 = "stake_test1upqykkjq3zhf4085s6n70w8cyp57dl87r0ezduv9rnnj2uqk5zmdv";
+static const char* ACCOUNT_C_BECH32 = "stake_test17z4thnxaamlsqyfzxdz92enh3zv64w7vmhh07qq3yge5g4g53ps7x";
 
 static const char* BOTH_BOUNDS_INTERVAL_CBOR = "821864191388";
 static const char* LOWER_ONLY_INTERVAL_CBOR  = "821901f4f6";
 static const char* UPPER_ONLY_INTERVAL_CBOR  = "82f6192710";
+static const char* EXACT_INTERVAL_CBOR       = "182a";
 
-static const char* CBOR           = "a38200581c00112233445566778899aabbccddeeff00112233445566778899aabb8218641913888200581cffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544821901f4f68201581caabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
-static const char* REVERSED_CBOR  = "a28200581cffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544821901f4f68200581c00112233445566778899aabbccddeeff00112233445566778899aabb821864191388";
-static const char* EMPTY_MAP_CBOR = "a0";
-static const char* DUPLICATE_CBOR = "a28200581c00112233445566778899aabbccddeeff00112233445566778899aabb8218641913888200581c00112233445566778899aabbccddeeff00112233445566778899aabb821901f4f6";
+static const char* CBOR                 = "a3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
+static const char* RANGES_CBOR          = "a3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
+static const char* REVERSED_CBOR        = "a2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388";
+static const char* EMPTY_MAP_CBOR       = "a0";
+static const char* DUPLICATE_CBOR       = "a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d082f6192710";
+static const char* INVALID_KEY_CBOR     = "a101821864191388";
+static const char* INVALID_ADDRESS_CBOR = "a144deadbeef821864191388";
+static const char* INVALID_VALUE_CBOR   = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0f6";
+static const char* NIL_BOUNDS_CBOR      = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d082f6f6";
+
+static const uint64_t INCLUSIVE_LOWER_BOUND = 100;
+static const uint64_t EXCLUSIVE_UPPER_BOUND = 5000;
+static const uint64_t UPPER_ONLY_BOUND      = 10000;
+static const uint64_t EXACT_BALANCE         = 42;
+
+/* STATIC FUNCTIONS **********************************************************/
 
 /**
- * Creates a new default instance of the credential.
- * @return A new instance of the credential.
+ * Creates a new default instance of the reward address.
+ * @return A new instance of the reward address.
  */
-static cardano_credential_t*
-new_default_credential(const char* cbor)
+static cardano_reward_address_t*
+new_default_reward_address(const char* reward_address)
 {
-  cardano_credential_t*  credential = nullptr;
-  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_reward_address_t* reward_address_obj = NULL;
+  cardano_error_t           result             = cardano_reward_address_from_bech32(reward_address, strlen(reward_address), &reward_address_obj);
 
-  cardano_error_t error = cardano_credential_from_cbor(reader, &credential);
+  EXPECT_THAT(result, CARDANO_SUCCESS);
 
-  cardano_cbor_reader_unref(&reader);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    cardano_credential_unref(&credential);
-    return nullptr;
-  }
-
-  return credential;
-}
+  return reward_address_obj;
+};
 
 /**
  * Creates a new default instance of the account balance interval.
@@ -245,39 +247,48 @@ TEST(cardano_account_balance_intervals_map_from_cbor, canDeserializeAccountBalan
   EXPECT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(account_balance_intervals_map), 3);
 
-  cardano_credential_t*               key1   = nullptr;
-  cardano_credential_t*               key3   = nullptr;
+  cardano_reward_address_t*           key1   = nullptr;
+  cardano_reward_address_t*           key2   = nullptr;
+  cardano_reward_address_t*           key3   = nullptr;
   cardano_account_balance_interval_t* value1 = nullptr;
+  cardano_account_balance_interval_t* value2 = nullptr;
   cardano_account_balance_interval_t* value3 = nullptr;
 
   EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &key1, &value1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 1, &key2, &value2), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 2, &key3, &value3), CARDANO_SUCCESS);
 
-  cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH;
-  EXPECT_EQ(cardano_credential_get_type(key1, &type), CARDANO_SUCCESS);
-  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
-  EXPECT_STREQ(cardano_credential_get_hash_hex(key1), KEY_HASH_A_HEX);
+  EXPECT_STREQ(cardano_reward_address_get_string(key1), ACCOUNT_A_BECH32);
+  EXPECT_STREQ(cardano_reward_address_get_string(key2), ACCOUNT_B_BECH32);
+  EXPECT_STREQ(cardano_reward_address_get_string(key3), ACCOUNT_C_BECH32);
 
   const uint64_t* inclusive_lower_bound = cardano_account_balance_interval_get_inclusive_lower_bound(value1);
   const uint64_t* exclusive_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(value1);
 
   ASSERT_THAT(inclusive_lower_bound, testing::Not((const uint64_t*)nullptr));
   ASSERT_THAT(exclusive_upper_bound, testing::Not((const uint64_t*)nullptr));
-  EXPECT_EQ(*inclusive_lower_bound, 100);
-  EXPECT_EQ(*exclusive_upper_bound, 5000);
+  EXPECT_EQ(*inclusive_lower_bound, INCLUSIVE_LOWER_BOUND);
+  EXPECT_EQ(*exclusive_upper_bound, EXCLUSIVE_UPPER_BOUND);
 
-  EXPECT_EQ(cardano_credential_get_type(key3, &type), CARDANO_SUCCESS);
-  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
-  EXPECT_STREQ(cardano_credential_get_hash_hex(key3), SCRIPT_HASH_HEX);
+  EXPECT_EQ(cardano_account_balance_interval_get_inclusive_lower_bound(value2), (const uint64_t*)nullptr);
+  exclusive_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(value2);
 
-  char* interval_cbor = encode_account_balance_interval(value3);
-  EXPECT_STREQ(interval_cbor, UPPER_ONLY_INTERVAL_CBOR);
+  ASSERT_THAT(exclusive_upper_bound, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*exclusive_upper_bound, UPPER_ONLY_BOUND);
+
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(value3));
+
+  const uint64_t* exact_balance = cardano_account_balance_interval_get_exact_balance(value3);
+
+  ASSERT_THAT(exact_balance, testing::Not((const uint64_t*)nullptr));
+  EXPECT_EQ(*exact_balance, EXACT_BALANCE);
 
   // Cleanup
-  free(interval_cbor);
-  cardano_credential_unref(&key1);
-  cardano_credential_unref(&key3);
+  cardano_reward_address_unref(&key1);
+  cardano_reward_address_unref(&key2);
+  cardano_reward_address_unref(&key3);
   cardano_account_balance_interval_unref(&value1);
+  cardano_account_balance_interval_unref(&value2);
   cardano_account_balance_interval_unref(&value3);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
   cardano_cbor_reader_unref(&reader);
@@ -340,13 +351,30 @@ TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorIfInvalidKey)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
-  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex("a101821864191388", 16);
+  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex(INVALID_KEY_CBOR, strlen(INVALID_KEY_CBOR));
 
   // Act
   cardano_error_t error = cardano_account_balance_intervals_map_from_cbor(reader, &account_balance_intervals_map);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_THAT(error, testing::Not(CARDANO_SUCCESS));
+  EXPECT_EQ(account_balance_intervals_map, (cardano_account_balance_intervals_map_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorIfInvalidRewardAddress)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex(INVALID_ADDRESS_CBOR, strlen(INVALID_ADDRESS_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_account_balance_intervals_map_from_cbor(reader, &account_balance_intervals_map);
+
+  // Assert
+  EXPECT_THAT(error, testing::Not(CARDANO_SUCCESS));
   EXPECT_EQ(account_balance_intervals_map, (cardano_account_balance_intervals_map_t*)nullptr);
 
   // Cleanup
@@ -357,7 +385,7 @@ TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorIfInvalidValue)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
-  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex("a18200581c00112233445566778899aabbccddeeff00112233445566778899aabbff", 68);
+  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex(INVALID_VALUE_CBOR, strlen(INVALID_VALUE_CBOR));
 
   // Act
   cardano_error_t error = cardano_account_balance_intervals_map_from_cbor(reader, &account_balance_intervals_map);
@@ -374,7 +402,7 @@ TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorIfValueHasBothB
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
-  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex("a18200581c00112233445566778899aabbccddeeff00112233445566778899aabb82f6f6", 72);
+  cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex(NIL_BOUNDS_CBOR, strlen(NIL_BOUNDS_CBOR));
 
   // Act
   cardano_error_t error = cardano_account_balance_intervals_map_from_cbor(reader, &account_balance_intervals_map);
@@ -453,15 +481,32 @@ TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripAllIntervalShape
   free(actual_cbor);
 }
 
+TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripAllRangeShapes)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(RANGES_CBOR);
+  ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
+
+  // Act
+  char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, RANGES_CBOR);
+
+  // Cleanup
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+  free(actual_cbor);
+}
+
 TEST(cardano_account_balance_intervals_map_to_cbor, preservesKeyInsertionOrder)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(REVERSED_CBOR);
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
-  cardano_credential_t* key = nullptr;
+  cardano_reward_address_t* key = nullptr;
   EXPECT_EQ(cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 0, &key), CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_credential_get_hash_hex(key), KEY_HASH_B_HEX);
+  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_B_BECH32);
 
   // Act
   char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
@@ -470,7 +515,7 @@ TEST(cardano_account_balance_intervals_map_to_cbor, preservesKeyInsertionOrder)
   EXPECT_STREQ(actual_cbor, REVERSED_CBOR);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
   free(actual_cbor);
 }
@@ -483,17 +528,21 @@ TEST(cardano_account_balance_intervals_map_to_cbor, canSerializeManuallyBuiltMap
   cardano_error_t error = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t* key_a = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
-  cardano_credential_t* key_b = new_default_credential(KEY_HASH_B_CREDENTIAL_CBOR);
-  cardano_credential_t* key_s = new_default_credential(SCRIPT_HASH_CREDENTIAL_CBOR);
+  cardano_reward_address_t* key_a = new_default_reward_address(ACCOUNT_A_BECH32);
+  cardano_reward_address_t* key_b = new_default_reward_address(ACCOUNT_B_BECH32);
+  cardano_reward_address_t* key_c = new_default_reward_address(ACCOUNT_C_BECH32);
 
-  cardano_account_balance_interval_t* both_bounds_interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
-  cardano_account_balance_interval_t* lower_only_interval  = new_default_account_balance_interval(LOWER_ONLY_INTERVAL_CBOR);
-  cardano_account_balance_interval_t* upper_only_interval  = new_default_account_balance_interval(UPPER_ONLY_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* both_bounds_interval = nullptr;
+  cardano_account_balance_interval_t* upper_only_interval  = nullptr;
+  cardano_account_balance_interval_t* exact_interval       = nullptr;
+
+  ASSERT_EQ(cardano_account_balance_interval_new(&INCLUSIVE_LOWER_BOUND, &EXCLUSIVE_UPPER_BOUND, &both_bounds_interval), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_account_balance_interval_new(nullptr, &UPPER_ONLY_BOUND, &upper_only_interval), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_account_balance_interval_new_exact(EXACT_BALANCE, &exact_interval), CARDANO_SUCCESS);
 
   EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_a, both_bounds_interval), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_b, lower_only_interval), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_s, upper_only_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_b, upper_only_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_c, exact_interval), CARDANO_SUCCESS);
 
   // Act
   char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
@@ -502,9 +551,39 @@ TEST(cardano_account_balance_intervals_map_to_cbor, canSerializeManuallyBuiltMap
   EXPECT_STREQ(actual_cbor, CBOR);
 
   // Cleanup
-  cardano_credential_unref(&key_a);
-  cardano_credential_unref(&key_b);
-  cardano_credential_unref(&key_s);
+  cardano_reward_address_unref(&key_a);
+  cardano_reward_address_unref(&key_b);
+  cardano_reward_address_unref(&key_c);
+  cardano_account_balance_interval_unref(&both_bounds_interval);
+  cardano_account_balance_interval_unref(&upper_only_interval);
+  cardano_account_balance_interval_unref(&exact_interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+  free(actual_cbor);
+}
+
+TEST(cardano_account_balance_intervals_map_to_cbor, canSerializeMapBuiltFromBech32Keys)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+
+  cardano_error_t error = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_account_balance_interval_t* both_bounds_interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* lower_only_interval  = new_default_account_balance_interval(LOWER_ONLY_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* upper_only_interval  = new_default_account_balance_interval(UPPER_ONLY_INTERVAL_CBOR);
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), both_bounds_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_B_BECH32, strlen(ACCOUNT_B_BECH32), lower_only_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_C_BECH32, strlen(ACCOUNT_C_BECH32), upper_only_interval), CARDANO_SUCCESS);
+
+  // Act
+  char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, RANGES_CBOR);
+
+  // Cleanup
   cardano_account_balance_interval_unref(&both_bounds_interval);
   cardano_account_balance_interval_unref(&lower_only_interval);
   cardano_account_balance_interval_unref(&upper_only_interval);
@@ -575,7 +654,7 @@ TEST(cardano_account_balance_intervals_map_get_length, returnsZeroIfAccountBalan
 TEST(cardano_account_balance_intervals_map_get, returnsErrorIfAccountBalanceIntervalsMapIsNull)
 {
   // Arrange
-  cardano_credential_t*               key      = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_A_BECH32);
   cardano_account_balance_interval_t* interval = nullptr;
 
   // Act
@@ -585,7 +664,7 @@ TEST(cardano_account_balance_intervals_map_get, returnsErrorIfAccountBalanceInte
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
 }
 
 TEST(cardano_account_balance_intervals_map_get, returnsErrorIfKeyIsNull)
@@ -616,7 +695,7 @@ TEST(cardano_account_balance_intervals_map_get, returnsErrorIfElementIsNull)
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t* key = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t* key = new_default_reward_address(ACCOUNT_A_BECH32);
 
   // Act
   error = cardano_account_balance_intervals_map_get(account_balance_intervals_map, key, nullptr);
@@ -625,7 +704,7 @@ TEST(cardano_account_balance_intervals_map_get, returnsErrorIfElementIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
 
@@ -635,7 +714,7 @@ TEST(cardano_account_balance_intervals_map_get, returnsErrorIfElementNotFound)
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(REVERSED_CBOR);
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
-  cardano_credential_t*               key      = new_default_credential(SCRIPT_HASH_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_C_BECH32);
   cardano_account_balance_interval_t* interval = nullptr;
 
   // Act
@@ -645,17 +724,17 @@ TEST(cardano_account_balance_intervals_map_get, returnsErrorIfElementNotFound)
   EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
 
-TEST(cardano_account_balance_intervals_map_get, returnsIntervalForCredential)
+TEST(cardano_account_balance_intervals_map_get, returnsIntervalForRewardAddress)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(CBOR);
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
-  cardano_credential_t*               key      = new_default_credential(KEY_HASH_B_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_B_BECH32);
   cardano_account_balance_interval_t* interval = nullptr;
 
   // Act
@@ -666,11 +745,38 @@ TEST(cardano_account_balance_intervals_map_get, returnsIntervalForCredential)
   EXPECT_THAT(interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
 
   char* interval_cbor = encode_account_balance_interval(interval);
-  EXPECT_STREQ(interval_cbor, LOWER_ONLY_INTERVAL_CBOR);
+  EXPECT_STREQ(interval_cbor, UPPER_ONLY_INTERVAL_CBOR);
 
   // Cleanup
   free(interval_cbor);
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+}
+
+TEST(cardano_account_balance_intervals_map_get, returnsExactIntervalForRewardAddress)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(CBOR);
+  ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
+
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_C_BECH32);
+  cardano_account_balance_interval_t* interval = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_account_balance_intervals_map_get(account_balance_intervals_map, key, &interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+  EXPECT_TRUE(cardano_account_balance_interval_is_exact(interval));
+
+  char* interval_cbor = encode_account_balance_interval(interval);
+  EXPECT_STREQ(interval_cbor, EXACT_INTERVAL_CBOR);
+
+  // Cleanup
+  free(interval_cbor);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
@@ -678,7 +784,7 @@ TEST(cardano_account_balance_intervals_map_get, returnsIntervalForCredential)
 TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfAccountBalanceIntervalsMapIsNull)
 {
   // Arrange
-  cardano_credential_t*               key      = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_A_BECH32);
   cardano_account_balance_interval_t* interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
 
   // Act
@@ -688,7 +794,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfAccountBalanceI
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_interval_unref(&interval);
 }
 
@@ -721,7 +827,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfValueIsNull)
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t* key = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t* key = new_default_reward_address(ACCOUNT_A_BECH32);
 
   // Act
   error = cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key, nullptr);
@@ -730,7 +836,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfValueIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
 
@@ -742,7 +848,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfKeyIsDuplicated
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t*               key      = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_A_BECH32);
   cardano_account_balance_interval_t* interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
 
   // Act
@@ -754,7 +860,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfKeyIsDuplicated
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(account_balance_intervals_map), 1);
 
   // Cleanup
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
@@ -767,7 +873,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfMemoryAllocatio
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t*               key      = new_default_credential(KEY_HASH_A_CREDENTIAL_CBOR);
+  cardano_reward_address_t*           key      = new_default_reward_address(ACCOUNT_A_BECH32);
   cardano_account_balance_interval_t* interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
 
   reset_allocators_run_count();
@@ -781,7 +887,89 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfMemoryAllocatio
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
-  cardano_credential_unref(&key);
+  cardano_reward_address_unref(&key);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+}
+
+TEST(cardano_account_balance_intervals_map_insert_ex, returnsErrorIfAccountBalanceIntervalsMapIsNull)
+{
+  // Arrange
+  cardano_account_balance_interval_t* interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
+
+  // Act
+  cardano_error_t error = cardano_account_balance_intervals_map_insert_ex(nullptr, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_account_balance_intervals_map_insert_ex, returnsErrorIfRewardAddressIsInvalid)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_error_t                          error                         = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_account_balance_interval_t* interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
+
+  // Act
+  error = cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, "invalid_address", strlen("invalid_address"), interval);
+
+  // Assert
+  EXPECT_THAT(error, testing::Not(CARDANO_SUCCESS));
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(account_balance_intervals_map), 0);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+}
+
+TEST(cardano_account_balance_intervals_map_insert_ex, returnsErrorIfValueIsNull)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_error_t                          error                         = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+}
+
+TEST(cardano_account_balance_intervals_map_insert_ex, canInsertAnIntervalEntry)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_error_t                          error                         = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_account_balance_interval_t* interval = new_default_account_balance_interval(EXACT_INTERVAL_CBOR);
+
+  // Act
+  error = cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), interval);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(account_balance_intervals_map), 1);
+
+  cardano_reward_address_t* key = nullptr;
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 0, &key), CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_A_BECH32);
+
+  // Cleanup
+  cardano_reward_address_unref(&key);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
@@ -789,7 +977,7 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfMemoryAllocatio
 TEST(cardano_account_balance_intervals_map_get_keys, returnsErrorIfAccountBalanceIntervalsMapIsNull)
 {
   // Arrange
-  cardano_credential_set_t* keys = nullptr;
+  cardano_reward_address_list_t* keys = nullptr;
 
   // Act
   cardano_error_t error = cardano_account_balance_intervals_map_get_keys(nullptr, &keys);
@@ -816,7 +1004,7 @@ TEST(cardano_account_balance_intervals_map_get_keys, returnsErrorIfKeysIsNull)
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
 
-TEST(cardano_account_balance_intervals_map_get_keys, returnsEmptySetIfNoElements)
+TEST(cardano_account_balance_intervals_map_get_keys, returnsEmptyListIfNoElements)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
@@ -824,68 +1012,65 @@ TEST(cardano_account_balance_intervals_map_get_keys, returnsEmptySetIfNoElements
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_set_t* keys = nullptr;
+  cardano_reward_address_list_t* keys = nullptr;
 
   // Act
   error = cardano_account_balance_intervals_map_get_keys(account_balance_intervals_map, &keys);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_credential_set_get_length(keys), 0);
+  EXPECT_EQ(cardano_reward_address_list_get_length(keys), 0);
 
   // Cleanup
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
-  cardano_credential_set_unref(&keys);
+  cardano_reward_address_list_unref(&keys);
 }
 
-TEST(cardano_account_balance_intervals_map_get_keys, returnsTheKeys)
+TEST(cardano_account_balance_intervals_map_get_keys, returnsTheKeysInInsertionOrder)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(CBOR);
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
-  cardano_credential_set_t* keys = nullptr;
+  cardano_reward_address_list_t* keys = nullptr;
 
   // Act
   cardano_error_t error = cardano_account_balance_intervals_map_get_keys(account_balance_intervals_map, &keys);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_credential_set_get_length(keys), 3);
+  EXPECT_EQ(cardano_reward_address_list_get_length(keys), 3);
 
-  const char* expected_credentials[] = { KEY_HASH_A_CREDENTIAL_CBOR, KEY_HASH_B_CREDENTIAL_CBOR, SCRIPT_HASH_CREDENTIAL_CBOR };
+  const char* expected_accounts[] = { ACCOUNT_A_BECH32, ACCOUNT_B_BECH32, ACCOUNT_C_BECH32 };
 
   for (size_t i = 0; i < 3; ++i)
   {
-    cardano_credential_t* key = nullptr;
-    EXPECT_EQ(cardano_credential_set_get(keys, i, &key), CARDANO_SUCCESS);
+    cardano_reward_address_t* key = nullptr;
+    EXPECT_EQ(cardano_reward_address_list_get(keys, i, &key), CARDANO_SUCCESS);
 
-    cardano_credential_t* expected = new_default_credential(expected_credentials[i]);
+    EXPECT_STREQ(cardano_reward_address_get_string(key), expected_accounts[i]);
 
-    EXPECT_TRUE(cardano_credential_equals(key, expected));
-
-    cardano_credential_unref(&expected);
-    cardano_credential_unref(&key);
+    cardano_reward_address_unref(&key);
   }
 
   // Cleanup
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
-  cardano_credential_set_unref(&keys);
+  cardano_reward_address_list_unref(&keys);
 }
 
 TEST(cardano_account_balance_intervals_map_get_key_at, returnsErrorIfAccountBalanceIntervalsMapIsNull)
 {
   // Arrange
-  cardano_credential_t* credential = nullptr;
+  cardano_reward_address_t* reward_address = nullptr;
 
   // Act
-  cardano_error_t error = cardano_account_balance_intervals_map_get_key_at(nullptr, 0, &credential);
+  cardano_error_t error = cardano_account_balance_intervals_map_get_key_at(nullptr, 0, &reward_address);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
-TEST(cardano_account_balance_intervals_map_get_key_at, returnsErrorIfCredentialIsNull)
+TEST(cardano_account_balance_intervals_map_get_key_at, returnsErrorIfRewardAddressIsNull)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
@@ -911,10 +1096,10 @@ TEST(cardano_account_balance_intervals_map_get_key_at, returnsErrorIfIndexIsOutO
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t* credential = nullptr;
+  cardano_reward_address_t* reward_address = nullptr;
 
   // Act
-  error = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 0, &credential);
+  error = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 0, &reward_address);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
@@ -930,15 +1115,15 @@ TEST(cardano_account_balance_intervals_map_get_key_at, canReturnTheRightKey)
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
   // Act
-  cardano_credential_t* credential = nullptr;
-  cardano_error_t       error      = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 2, &credential);
+  cardano_reward_address_t* reward_address = nullptr;
+  cardano_error_t           error          = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 2, &reward_address);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_credential_get_hash_hex(credential), SCRIPT_HASH_HEX);
+  EXPECT_STREQ(cardano_reward_address_get_string(reward_address), ACCOUNT_C_BECH32);
 
   // Cleanup
-  cardano_credential_unref(&credential);
+  cardano_reward_address_unref(&reward_address);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
 
@@ -1008,7 +1193,7 @@ TEST(cardano_account_balance_intervals_map_get_value_at, canReturnTheRightValue)
   EXPECT_THAT(interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
 
   char* interval_cbor = encode_account_balance_interval(interval);
-  EXPECT_STREQ(interval_cbor, LOWER_ONLY_INTERVAL_CBOR);
+  EXPECT_STREQ(interval_cbor, UPPER_ONLY_INTERVAL_CBOR);
 
   // Cleanup
   free(interval_cbor);
@@ -1019,17 +1204,17 @@ TEST(cardano_account_balance_intervals_map_get_value_at, canReturnTheRightValue)
 TEST(cardano_account_balance_intervals_map_get_key_value_at, returnsErrorIfAccountBalanceIntervalsMapIsNull)
 {
   // Arrange
-  cardano_credential_t*               credential = nullptr;
-  cardano_account_balance_interval_t* interval   = nullptr;
+  cardano_reward_address_t*           reward_address = nullptr;
+  cardano_account_balance_interval_t* interval       = nullptr;
 
   // Act
-  cardano_error_t error = cardano_account_balance_intervals_map_get_key_value_at(nullptr, 0, &credential, &interval);
+  cardano_error_t error = cardano_account_balance_intervals_map_get_key_value_at(nullptr, 0, &reward_address, &interval);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
-TEST(cardano_account_balance_intervals_map_get_key_value_at, returnsErrorIfCredentialIsNull)
+TEST(cardano_account_balance_intervals_map_get_key_value_at, returnsErrorIfRewardAddressIsNull)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
@@ -1057,10 +1242,10 @@ TEST(cardano_account_balance_intervals_map_get_key_value_at, returnsErrorIfInter
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t* credential = nullptr;
+  cardano_reward_address_t* reward_address = nullptr;
 
   // Act
-  error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &credential, nullptr);
+  error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &reward_address, nullptr);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -1077,11 +1262,11 @@ TEST(cardano_account_balance_intervals_map_get_key_value_at, returnsErrorIfIndex
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  cardano_credential_t*               credential = nullptr;
-  cardano_account_balance_interval_t* interval   = nullptr;
+  cardano_reward_address_t*           reward_address = nullptr;
+  cardano_account_balance_interval_t* interval       = nullptr;
 
   // Act
-  error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &credential, &interval);
+  error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &reward_address, &interval);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
@@ -1097,21 +1282,21 @@ TEST(cardano_account_balance_intervals_map_get_key_value_at, canReturnTheRightKe
   ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
 
   // Act
-  cardano_credential_t*               credential = nullptr;
-  cardano_account_balance_interval_t* interval   = nullptr;
+  cardano_reward_address_t*           reward_address = nullptr;
+  cardano_account_balance_interval_t* interval       = nullptr;
 
-  cardano_error_t error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &credential, &interval);
+  cardano_error_t error = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &reward_address, &interval);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_credential_get_hash_hex(credential), KEY_HASH_A_HEX);
+  EXPECT_STREQ(cardano_reward_address_get_string(reward_address), ACCOUNT_A_BECH32);
 
   char* interval_cbor = encode_account_balance_interval(interval);
   EXPECT_STREQ(interval_cbor, BOTH_BOUNDS_INTERVAL_CBOR);
 
   // Cleanup
   free(interval_cbor);
-  cardano_credential_unref(&credential);
+  cardano_reward_address_unref(&reward_address);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }

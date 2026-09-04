@@ -34,7 +34,7 @@
 /* STRUCTURES ****************************************************************/
 
 /**
- * \brief Represents a map of credentials to account balance intervals.
+ * \brief Represents a map of reward addresses to account balance intervals.
  */
 typedef struct cardano_account_balance_intervals_map_t
 {
@@ -43,12 +43,12 @@ typedef struct cardano_account_balance_intervals_map_t
 } cardano_account_balance_intervals_map_t;
 
 /**
- * \brief Represents a credential to account balance interval key value pair.
+ * \brief Represents a reward address to account balance interval key value pair.
  */
 typedef struct cardano_account_balance_intervals_map_kvp_t
 {
     cardano_object_t                    base;
-    cardano_credential_t*               key;
+    cardano_reward_address_t*           key;
     cardano_account_balance_interval_t* value;
 } cardano_account_balance_intervals_map_kvp_t;
 
@@ -104,7 +104,7 @@ cardano_account_balance_intervals_map_kvp_deallocate(void* object)
 
   if (map->key != NULL)
   {
-    cardano_credential_unref(&map->key);
+    cardano_reward_address_unref(&map->key);
   }
 
   if (map->value != NULL)
@@ -113,6 +113,41 @@ cardano_account_balance_intervals_map_kvp_deallocate(void* object)
   }
 
   _cardano_free(map);
+}
+
+/**
+ * \brief Compares two reward addresses based on their serialized bytes.
+ *
+ * \param[in] lhs Pointer to the first reward address object.
+ * \param[in] rhs Pointer to the second reward address object.
+ *
+ * \return true if the addresses are equal, false otherwise.
+ */
+static bool
+reward_address_equals(const cardano_reward_address_t* lhs, const cardano_reward_address_t* rhs)
+{
+  if (lhs == NULL)
+  {
+    return false;
+  }
+
+  if (rhs == NULL)
+  {
+    return false;
+  }
+
+  const size_t lhs_size = cardano_reward_address_get_bytes_size(lhs);
+  const size_t rhs_size = cardano_reward_address_get_bytes_size(rhs);
+
+  if (lhs_size != rhs_size)
+  {
+    return false;
+  }
+
+  const uint8_t* lhs_bytes = cardano_reward_address_get_bytes(lhs);
+  const uint8_t* rhs_bytes = cardano_reward_address_get_bytes(rhs);
+
+  return memcmp(lhs_bytes, rhs_bytes, lhs_size) == 0;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -213,10 +248,22 @@ cardano_account_balance_intervals_map_from_cbor(cardano_cbor_reader_t* reader, c
       break;
     }
 
-    cardano_credential_t*               key   = NULL;
+    cardano_reward_address_t*           key   = NULL;
     cardano_account_balance_interval_t* value = NULL;
 
-    result = cardano_credential_from_cbor(reader, &key);
+    cardano_buffer_t* reward_address_bytes = NULL;
+
+    result = cardano_cbor_reader_read_bytestring(reader, &reward_address_bytes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_account_balance_intervals_map_unref(&map);
+      return result;
+    }
+
+    result = cardano_reward_address_from_bytes(cardano_buffer_get_data(reward_address_bytes), cardano_buffer_get_size(reward_address_bytes), &key);
+
+    cardano_buffer_unref(&reward_address_bytes);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -228,14 +275,14 @@ cardano_account_balance_intervals_map_from_cbor(cardano_cbor_reader_t* reader, c
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_credential_unref(&key);
+      cardano_reward_address_unref(&key);
       cardano_account_balance_intervals_map_unref(&map);
       return result;
     }
 
     result = cardano_account_balance_intervals_map_insert(map, key, value);
 
-    cardano_credential_unref(&key);
+    cardano_reward_address_unref(&key);
     cardano_account_balance_interval_unref(&value);
 
     if (result != CARDANO_SUCCESS)
@@ -295,7 +342,7 @@ cardano_account_balance_intervals_map_to_cbor(const cardano_account_balance_inte
 
     cardano_account_balance_intervals_map_kvp_t* kvp_data = (cardano_account_balance_intervals_map_kvp_t*)((void*)kvp);
 
-    result = cardano_credential_to_cbor(kvp_data->key, writer);
+    result = cardano_cbor_writer_write_bytestring(writer, cardano_reward_address_get_bytes(kvp_data->key), cardano_reward_address_get_bytes_size(kvp_data->key));
 
     if (result != CARDANO_SUCCESS)
     {
@@ -330,7 +377,7 @@ cardano_account_balance_intervals_map_get_length(const cardano_account_balance_i
 cardano_error_t
 cardano_account_balance_intervals_map_get(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_t*                          key,
+  cardano_reward_address_t*                      key,
   cardano_account_balance_interval_t**           element)
 {
   if (account_balance_intervals_map == NULL)
@@ -353,7 +400,7 @@ cardano_account_balance_intervals_map_get(
     cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, i);
     cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
 
-    if (cardano_credential_equals(kvp->key, key))
+    if (reward_address_equals(kvp->key, key))
     {
       cardano_account_balance_interval_ref(kvp->value);
 
@@ -372,7 +419,7 @@ cardano_account_balance_intervals_map_get(
 cardano_error_t
 cardano_account_balance_intervals_map_insert(
   cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_t*                    key,
+  cardano_reward_address_t*                key,
   cardano_account_balance_interval_t*      value)
 {
   if (account_balance_intervals_map == NULL)
@@ -395,7 +442,7 @@ cardano_account_balance_intervals_map_insert(
     cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, i);
     cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
 
-    const bool duplicated = cardano_credential_equals(kvp->key, key);
+    const bool duplicated = reward_address_equals(kvp->key, key);
 
     cardano_object_unref(&object);
 
@@ -418,7 +465,7 @@ cardano_account_balance_intervals_map_insert(
   kvp->key                = key;
   kvp->value              = value;
 
-  cardano_credential_ref(key);
+  cardano_reward_address_ref(key);
   cardano_account_balance_interval_ref(value);
 
   const size_t old_size = cardano_array_get_size(account_balance_intervals_map->array);
@@ -433,9 +480,37 @@ cardano_account_balance_intervals_map_insert(
 }
 
 cardano_error_t
+cardano_account_balance_intervals_map_insert_ex(
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map,
+  const char*                              reward_address,
+  size_t                                   reward_address_size,
+  cardano_account_balance_interval_t*      value)
+{
+  if (account_balance_intervals_map == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_reward_address_t* key = NULL;
+
+  cardano_error_t result = cardano_reward_address_from_bech32(reward_address, reward_address_size, &key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key, value);
+
+  cardano_reward_address_unref(&key);
+
+  return result;
+}
+
+cardano_error_t
 cardano_account_balance_intervals_map_get_keys(
   cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_set_t**               keys)
+  cardano_reward_address_list_t**          keys)
 {
   if (account_balance_intervals_map == NULL)
   {
@@ -447,9 +522,9 @@ cardano_account_balance_intervals_map_get_keys(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_credential_set_t* list = NULL;
+  cardano_reward_address_list_t* list = NULL;
 
-  cardano_error_t result = cardano_credential_set_new(&list);
+  cardano_error_t result = cardano_reward_address_list_new(&list);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -461,11 +536,11 @@ cardano_account_balance_intervals_map_get_keys(
     cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, i);
     cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
 
-    result = cardano_credential_set_add(list, kvp->key);
+    result = cardano_reward_address_list_add(list, kvp->key);
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_credential_set_unref(&list);
+      cardano_reward_address_list_unref(&list);
       cardano_object_unref(&object);
       return result;
     }
@@ -482,14 +557,14 @@ cardano_error_t
 cardano_account_balance_intervals_map_get_key_at(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
   const size_t                                   index,
-  cardano_credential_t**                         credential)
+  cardano_reward_address_t**                     reward_address)
 {
   if (account_balance_intervals_map == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (credential == NULL)
+  if (reward_address == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -502,10 +577,10 @@ cardano_account_balance_intervals_map_get_key_at(
   cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, index);
   cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
 
-  cardano_credential_ref(kvp->key);
+  cardano_reward_address_ref(kvp->key);
   cardano_object_unref(&object);
 
-  *credential = kvp->key;
+  *reward_address = kvp->key;
 
   return CARDANO_SUCCESS;
 }
@@ -546,7 +621,7 @@ cardano_error_t
 cardano_account_balance_intervals_map_get_key_value_at(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
   const size_t                                   index,
-  cardano_credential_t**                         credential,
+  cardano_reward_address_t**                     reward_address,
   cardano_account_balance_interval_t**           interval)
 {
   if (account_balance_intervals_map == NULL)
@@ -554,7 +629,7 @@ cardano_account_balance_intervals_map_get_key_value_at(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (credential == NULL)
+  if (reward_address == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -572,12 +647,12 @@ cardano_account_balance_intervals_map_get_key_value_at(
   cardano_object_t*                            object = cardano_array_get(account_balance_intervals_map->array, index);
   cardano_account_balance_intervals_map_kvp_t* kvp    = (cardano_account_balance_intervals_map_kvp_t*)((void*)object);
 
-  cardano_credential_ref(kvp->key);
+  cardano_reward_address_ref(kvp->key);
   cardano_account_balance_interval_ref(kvp->value);
   cardano_object_unref(&object);
 
-  *credential = kvp->key;
-  *interval   = kvp->value;
+  *reward_address = kvp->key;
+  *interval       = kvp->value;
 
   return CARDANO_SUCCESS;
 }

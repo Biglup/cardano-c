@@ -24,10 +24,12 @@
 
 /* INCLUDES ******************************************************************/
 
-#include <cardano/common/credential.h>
+#include <cardano/address/reward_address.h>
+#include <cardano/cbor/cbor_reader.h>
+#include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/reward_address_list.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
-#include <cardano/proposal_procedures/credential_set.h>
 #include <cardano/transaction_body/account_balance_interval.h>
 
 /* DECLARATIONS **************************************************************/
@@ -37,11 +39,12 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Represents a map of credentials to account balance intervals.
+ * \brief Represents a map of reward addresses to account balance intervals.
  *
- * A transaction body carries this map to state, for each credential, a half open
- * interval of lovelace amounts. Each entry maps a credential to an
- * \ref cardano_account_balance_interval_t describing the interval bounds.
+ * A transaction body carries this map to state, for each reward account, the balance the
+ * account must satisfy. Each entry maps a reward address to an
+ * \ref cardano_account_balance_interval_t, which is either a half open range of lovelace
+ * amounts or an exact lovelace balance.
  */
 typedef struct cardano_account_balance_intervals_map_t cardano_account_balance_intervals_map_t;
 
@@ -87,9 +90,9 @@ cardano_account_balance_intervals_map_new(cardano_account_balance_intervals_map_
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_account_balance_intervals_map_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for an account balance intervals map.
  *
- * The map must not be empty on the wire; decoding an empty map fails with
- * \ref CARDANO_ERROR_INVALID_CBOR_MAP_SIZE. Duplicated credentials fail with
- * \ref CARDANO_ERROR_DUPLICATED_KEY.
+ * Each key is read as a bytestring holding a serialized reward address. The map must not be empty on the wire;
+ * decoding an empty map fails with \ref CARDANO_ERROR_INVALID_CBOR_MAP_SIZE. A map that contains the same reward
+ * address more than once fails with \ref CARDANO_ERROR_DUPLICATED_KEY.
  *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded account balance intervals map data.
  * \param[out] account_balance_intervals_map A pointer to a pointer of \ref cardano_account_balance_intervals_map_t that will be set to the address
@@ -133,7 +136,7 @@ cardano_account_balance_intervals_map_from_cbor(cardano_cbor_reader_t* reader, c
  * \brief Serializes an account balance intervals map into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_account_balance_intervals_map_t object using a \ref cardano_cbor_writer_t.
- * Entries are written in insertion order.
+ * Each key is written as a bytestring holding the serialized reward address. Entries are written in insertion order.
  *
  * \param[in] account_balance_intervals_map A constant pointer to the \ref cardano_account_balance_intervals_map_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
@@ -199,26 +202,26 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_account_balance_intervals_map_get_length(const cardano_account_balance_intervals_map_t* account_balance_intervals_map);
 
 /**
- * \brief Retrieves the interval associated with a given credential in the account balance intervals map.
+ * \brief Retrieves the interval associated with a given reward address in the account balance intervals map.
  *
- * This function retrieves the interval associated with the specified credential in the provided account balance intervals map.
- * It returns the interval through the output parameter `element`. If the credential is not found in the map, the
- * function returns \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ * This function retrieves the interval associated with the specified reward address in the provided account balance
+ * intervals map. It returns the interval through the output parameter `element`. If the reward address is not found
+ * in the map, the function returns \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \param[in] account_balance_intervals_map A constant pointer to the \ref cardano_account_balance_intervals_map_t object from which
  *                       the interval is to be retrieved.
- * \param[in] key The credential whose associated interval is to be retrieved from the account_balance_intervals_map.
- * \param[out] element A pointer to a variable where the retrieved interval will be stored. If the credential
+ * \param[in] key The reward address whose associated interval is to be retrieved from the account_balance_intervals_map.
+ * \param[out] element A pointer to a variable where the retrieved interval will be stored. If the reward address
  *                     is found, this variable will be set to the associated interval, and the caller must
  *                     release it by calling \ref cardano_account_balance_interval_unref.
  *
- * \return \ref CARDANO_SUCCESS if the credential was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
- *         credential is not present in the map, or an appropriate error code if the input parameters are invalid.
+ * \return \ref CARDANO_SUCCESS if the reward address was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
+ *         reward address is not present in the map, or an appropriate error code if the input parameters are invalid.
  *
  * Usage Example:
  * \code{.c}
  * cardano_account_balance_intervals_map_t* account_balance_intervals_map = ...;
- * cardano_credential_t* key = ...; // Create a credential object representing the key
+ * cardano_reward_address_t* key = ...; // Create a reward address object representing the key
  * cardano_account_balance_interval_t* interval = NULL;
  *
  * cardano_error_t result = cardano_account_balance_intervals_map_get(account_balance_intervals_map, key, &interval);
@@ -233,28 +236,28 @@ CARDANO_EXPORT size_t cardano_account_balance_intervals_map_get_length(const car
  *   // Handle error or key not found
  * }
  *
- * cardano_credential_unref(&key); // Clean up the key resource
+ * cardano_reward_address_unref(&key); // Clean up the key resource
  * cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
  * \endcode
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_t*                          key,
+  cardano_reward_address_t*                      key,
   cardano_account_balance_interval_t**           element);
 
 /**
  * \brief Inserts a key-value pair into the account balance intervals map.
  *
- * This function inserts the specified credential and its interval into the provided account balance intervals map.
- * Entries keep their insertion order when the map is serialized. Inserting a credential that is already
+ * This function inserts the specified reward address and its interval into the provided account balance intervals map.
+ * Entries keep their insertion order when the map is serialized. Inserting a reward address that is already
  * present in the map fails with \ref CARDANO_ERROR_DUPLICATED_KEY.
  *
  * \param[in] account_balance_intervals_map A constant pointer to the \ref cardano_account_balance_intervals_map_t object where
  *                       the key-value pair is to be inserted.
- * \param[in] key The credential to be inserted into the account balance intervals map. The caller is responsible for managing
+ * \param[in] key The reward address to be inserted into the account balance intervals map. The caller is responsible for managing
  *                the lifecycle of the key object.
- * \param[in] value The interval to be associated with the credential. The caller is responsible for managing
+ * \param[in] value The interval to be associated with the reward address. The caller is responsible for managing
  *                  the lifecycle of the value object.
  *
  * \return \ref CARDANO_SUCCESS if the key-value pair was successfully inserted, or an appropriate
@@ -266,7 +269,7 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get(
  * cardano_error_t result = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
  *
  * // Create key and value objects
- * cardano_credential_t* key = ...;
+ * cardano_reward_address_t* key = ...;
  * cardano_account_balance_interval_t* value = ...;
  *
  * // Insert the key-value pair into the account_balance_intervals_map
@@ -278,7 +281,7 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get(
  * }
  *
  * // Clean up key and value objects
- * cardano_credential_unref(&key);
+ * cardano_reward_address_unref(&key);
  * cardano_account_balance_interval_unref(&value);
  *
  * cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
@@ -287,25 +290,67 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get(
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_insert(
   cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_t*                    key,
+  cardano_reward_address_t*                key,
+  cardano_account_balance_interval_t*      value);
+
+/**
+ * \brief Inserts an interval into the account balance intervals map using a Bech32-encoded reward address.
+ *
+ * This function inserts an interval into the specified \ref cardano_account_balance_intervals_map_t object. The interval
+ * is associated with the reward account identified by the given Bech32 string. Inserting a reward address that is
+ * already present in the map fails with \ref CARDANO_ERROR_DUPLICATED_KEY.
+ *
+ * \param[in, out] account_balance_intervals_map A pointer to the \ref cardano_account_balance_intervals_map_t object where the entry will be inserted.
+ * \param[in] reward_address A pointer to a string representing the Bech32-encoded reward address. This parameter must not be NULL.
+ * \param[in] reward_address_size The length of the reward address string in bytes.
+ * \param[in] value The interval to be associated with the reward address. The caller is responsible for managing
+ *                  the lifecycle of the value object.
+ *
+ * \return \ref CARDANO_SUCCESS if the entry was successfully inserted into the map, or an appropriate error code
+ * indicating the type of failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_account_balance_intervals_map_t* account_balance_intervals_map = ...; // Assume initialized
+ * const char* reward_address = "stake1u..."; // Bech32-encoded reward address
+ * cardano_account_balance_interval_t* value = ...;
+ *
+ * cardano_error_t result = cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, reward_address, strlen(reward_address), value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Entry successfully added
+ * }
+ * else
+ * {
+ *   printf("Failed to insert entry: %s\n", cardano_error_to_string(result));
+ * }
+ *
+ * // Cleanup when done
+ * cardano_account_balance_interval_unref(&value);
+ * cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_insert_ex(
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map,
+  const char*                              reward_address,
+  size_t                                   reward_address_size,
   cardano_account_balance_interval_t*      value);
 
 /**
  * \brief Retrieves the keys from the account balance intervals map.
  *
- * This function retrieves all the keys from the provided account balance intervals map and returns them as a set.
- * The caller is responsible for managing the lifecycle of the returned set by calling
- * \ref cardano_credential_set_unref when it is no longer needed.
- *
- * \note The returned set is canonically ordered (by credential type, then hash bytes) and may not
- *       match the map's insertion-order iteration via the index based accessors.
+ * This function retrieves all the keys from the provided account balance intervals map and returns them as a list.
+ * The list preserves the insertion order of the map. The caller is responsible for managing the lifecycle of the
+ * returned list by calling \ref cardano_reward_address_list_unref when it is no longer needed.
  *
  * \param[in] account_balance_intervals_map A pointer to the \ref cardano_account_balance_intervals_map_t object from which
  *                       the keys are to be retrieved.
- * \param[out] keys A pointer to a variable where the retrieved keys will be stored as a set.
- *                  If successful, this variable will be set to point to the set of keys.
- *                  The caller is responsible for managing the lifecycle of this set.
- *                  It must be released by calling \ref cardano_credential_set_unref when no longer needed.
+ * \param[out] keys A pointer to a variable where the retrieved keys will be stored as a list.
+ *                  If successful, this variable will be set to point to the list of keys.
+ *                  The caller is responsible for managing the lifecycle of this list.
+ *                  It must be released by calling \ref cardano_reward_address_list_unref when no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the keys were successfully retrieved, or an appropriate
  *         error code if the input parameters are invalid or any other error occurs.
@@ -317,16 +362,16 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_insert(
  *
  * // Populate the account_balance_intervals_map with key-value pairs
  *
- * cardano_credential_set_t* keys = NULL;
+ * cardano_reward_address_list_t* keys = NULL;
  * result = cardano_account_balance_intervals_map_get_keys(account_balance_intervals_map, &keys);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the set of keys
- *   // Keys must also be freed if retrieved from the set
+ *   // Use the list of keys
+ *   // Keys must also be freed if retrieved from the list
  *
- *   // Once done, ensure to clean up and release the keys set
- *   cardano_credential_set_unref(&keys);
+ *   // Once done, ensure to clean up and release the keys list
+ *   cardano_reward_address_list_unref(&keys);
  * }
  * else
  * {
@@ -339,40 +384,40 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_insert(
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_keys(
   cardano_account_balance_intervals_map_t* account_balance_intervals_map,
-  cardano_credential_set_t**               keys);
+  cardano_reward_address_list_t**          keys);
 
 /**
- * \brief Retrieves the credential at a specific index from the account balance intervals map.
+ * \brief Retrieves the reward address at a specific index from the account balance intervals map.
  *
- * This function retrieves the credential at the specified index from the account balance intervals map.
+ * This function retrieves the reward address at the specified index from the account balance intervals map.
  *
  * \param[in] account_balance_intervals_map Pointer to the account balance intervals map object.
- * \param[in] index The index of the credential to retrieve.
- * \param[out] credential On successful retrieval, this will point to the credential
+ * \param[in] index The index of the reward address to retrieve.
+ * \param[out] reward_address On successful retrieval, this will point to the reward address
  *                            at the specified index. The caller is responsible for managing the lifecycle
- *                            of this object. Specifically, once the credential is no longer needed,
- *                            the caller must release it by calling \ref cardano_credential_unref.
+ *                            of this object. Specifically, once the reward address is no longer needed,
+ *                            the caller must release it by calling \ref cardano_reward_address_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the credential was successfully retrieved, or an appropriate error code
+ *         if the reward address was successfully retrieved, or an appropriate error code
  *         indicating the failure reason.
  *
  * Usage Example:
  * \code{.c}
  * cardano_account_balance_intervals_map_t* account_balance_intervals_map = NULL;
- * cardano_credential_t* credential = NULL;
- * size_t index = 0; // Index of the credential to retrieve
+ * cardano_reward_address_t* reward_address = NULL;
+ * size_t index = 0; // Index of the reward address to retrieve
  *
  * // Assume account_balance_intervals_map is initialized properly
  *
- * cardano_error_t result = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, index, &credential);
+ * cardano_error_t result = cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, index, &reward_address);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the credential
+ *   // Use the reward address
  *
- *   // Once done, ensure to clean up and release the credential
- *   cardano_credential_unref(&credential);
+ *   // Once done, ensure to clean up and release the reward address
+ *   cardano_reward_address_unref(&reward_address);
  * }
  * else
  * {
@@ -384,7 +429,7 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_key_at(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
   size_t                                         index,
-  cardano_credential_t**                         credential);
+  cardano_reward_address_t**                     reward_address);
 
 /**
  * \brief Retrieves the interval at a specific index from the account balance intervals map.
@@ -431,16 +476,16 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_value_a
   cardano_account_balance_interval_t**           interval);
 
 /**
- * \brief Retrieves the credential and interval at the specified index.
+ * \brief Retrieves the reward address and interval at the specified index.
  *
- * This function retrieves the credential and its interval from the account balance intervals map
+ * This function retrieves the reward address and its interval from the account balance intervals map
  * at the specified index.
  *
  * \param[in]  account_balance_intervals_map    Pointer to the account balance intervals map object.
  * \param[in]  index             The index at which to retrieve the key-value pair.
- * \param[out] credential On successful retrieval, this will point to the credential at the specified index.
+ * \param[out] reward_address On successful retrieval, this will point to the reward address at the specified index.
  *                            The caller is responsible for managing the lifecycle of this object and should release it using
- *                            \ref cardano_credential_unref when it is no longer needed.
+ *                            \ref cardano_reward_address_unref when it is no longer needed.
  * \param[out] interval On successful retrieval, this will point to the interval at the specified index.
  *                      The caller is responsible for managing the lifecycle of this object and must release
  *                      it by calling \ref cardano_account_balance_interval_unref.
@@ -454,14 +499,14 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_value_a
  * // Assume account_balance_intervals_map is initialized properly
  *
  * size_t index = 0;
- * cardano_credential_t* credential = NULL;
+ * cardano_reward_address_t* reward_address = NULL;
  * cardano_account_balance_interval_t* interval = NULL;
  *
- * cardano_error_t result = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, index, &credential, &interval);
+ * cardano_error_t result = cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, index, &reward_address, &interval);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the credential and the interval
+ *   // Use the reward address and the interval
  * }
  * else
  * {
@@ -471,7 +516,7 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_value_a
  *
  * // Clean up
  * cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
- * cardano_credential_unref(&credential);
+ * cardano_reward_address_unref(&reward_address);
  * cardano_account_balance_interval_unref(&interval);
  * \endcode
  */
@@ -479,7 +524,7 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get_key_value_at(
   const cardano_account_balance_intervals_map_t* account_balance_intervals_map,
   size_t                                         index,
-  cardano_credential_t**                         credential,
+  cardano_reward_address_t**                     reward_address,
   cardano_account_balance_interval_t**           interval);
 
 /**

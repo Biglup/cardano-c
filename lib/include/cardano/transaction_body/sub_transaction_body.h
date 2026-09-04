@@ -1291,7 +1291,7 @@ cardano_sub_transaction_body_set_direct_deposits(
  * \brief Retrieves the account balance intervals from the sub transaction body.
  *
  * This function returns the account balance intervals from a \ref cardano_sub_transaction_body_t object, if they are present.
- * The map constrains, per credential, the balance an account must fall within for the sub transaction to be valid.
+ * The map constrains, per reward account, the balance the account must satisfy for the sub transaction to be valid.
  *
  * \param[in] sub_transaction_body A pointer to an initialized \ref cardano_sub_transaction_body_t object.
  *
