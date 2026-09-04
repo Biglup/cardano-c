@@ -10,6 +10,7 @@ Together, these parameters govern how the staking pool operates, distributes rew
 .. toctree::
    :maxdepth: 1
 
+   bls_key
    ipv4
    ipv6
    multi_host_name_relay

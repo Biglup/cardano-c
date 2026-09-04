@@ -142,6 +142,7 @@
 #include <cardano/plutus_data/plutus_data_kind.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/plutus_data/plutus_map.h>
+#include <cardano/pool_params/bls_key.h>
 #include <cardano/pool_params/ipv4.h>
 #include <cardano/pool_params/ipv6.h>
 #include <cardano/pool_params/multi_host_name_relay.h>

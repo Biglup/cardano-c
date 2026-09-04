@@ -31,6 +31,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/pool_params/bls_key.h>
 #include <cardano/pool_params/pool_metadata.h>
 #include <cardano/pool_params/pool_owners.h>
 #include <cardano/pool_params/relays.h>
@@ -77,6 +78,9 @@ typedef struct cardano_pool_params_t cardano_pool_params_t;
  * \note This function takes references from all input objects. The caller is responsible for managing
  *       the lifecycle of these objects and must call the appropriate unref functions to release them
  *       when they are no longer needed.
+ *
+ * \note The pool parameters are created without a BLS key. Use \ref cardano_pool_params_set_bls_key to
+ *       attach one when the pool takes part in Leios voting.
  *
  * Usage Example:
  * \code{.c}
@@ -379,6 +383,110 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_pool_params_set_vrf_vk_hash(
   cardano_pool_params_t*  pool_params,
   cardano_blake2b_hash_t* vrf_vk_hash);
+
+/**
+ * \brief Checks whether the pool parameters carry a BLS key.
+ *
+ * This function reports whether a BLS key has been attached to a \ref cardano_pool_params_t object,
+ * without taking a reference to it. Pools that do not take part in Leios voting carry no key.
+ *
+ * \param[in] pool_params A pointer to an initialized \ref cardano_pool_params_t object.
+ *
+ * \return \c true if the pool parameters carry a BLS key, \c false if they carry none or if \p pool_params is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_pool_params_t* pool_params = ...; // Assume pool_params is already initialized
+ *
+ * if (cardano_pool_params_has_bls_key(pool_params))
+ * {
+ *   printf("The pool registers a BLS key.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_pool_params_has_bls_key(const cardano_pool_params_t* pool_params);
+
+/**
+ * \brief Retrieves the BLS key from the pool parameters.
+ *
+ * This function gets the BLS key associated with a \ref cardano_pool_params_t object. The BLS key is
+ * optional; pools that do not take part in Leios voting carry no key.
+ *
+ * \param[in] pool_params A pointer to an initialized \ref cardano_pool_params_t object from which the BLS key will be retrieved.
+ * \param[out] bls_key On successful retrieval, this will point to the \ref cardano_bls_key_t object containing the BLS key,
+ *                     or to NULL when the pool parameters carry no BLS key.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the BLS key was successfully
+ *         retrieved (or is absent), or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if any of the input pointers are NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_pool_params_t* pool_params = ...; // Assume pool_params is already initialized
+ * cardano_bls_key_t* bls_key = NULL;
+ *
+ * cardano_error_t result = cardano_pool_params_get_bls_key(pool_params, &bls_key);
+ * if (result == CARDANO_SUCCESS && bls_key != NULL)
+ * {
+ *   // Use the bls_key
+ *
+ *   // Once done, ensure to clean up and release the bls_key
+ *   cardano_bls_key_unref(&bls_key);
+ * }
+ * else
+ * {
+ *   printf("The pool parameters carry no BLS key.\n");
+ * }
+ * \endcode
+ *
+ * \note This function increments the reference count of the returned bls_key to ensure the caller has a valid reference.
+ *       It is the caller's responsibility to decrement this count when the key is no longer needed.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_pool_params_get_bls_key(
+  cardano_pool_params_t* pool_params,
+  cardano_bls_key_t**    bls_key);
+
+/**
+ * \brief Sets the BLS key for the pool parameters.
+ *
+ * This function assigns a BLS key to a given \ref cardano_pool_params_t object. If the pool parameters
+ * already have a BLS key assigned, it is replaced by the new one. Passing NULL removes the key, so the
+ * pool parameters serialize again in the form without a BLS key.
+ *
+ * \param[in] pool_params A pointer to an initialized \ref cardano_pool_params_t object to which the BLS key will be set.
+ * \param[in] bls_key A pointer to an initialized \ref cardano_bls_key_t object representing the BLS key, or NULL to clear it.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the BLS key was successfully set,
+ *         or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if pool_params is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_pool_params_t* pool_params = ...; // Assume pool_params is already initialized
+ * cardano_bls_key_t* bls_key = ...; // Assume bls_key is already initialized
+ *
+ * cardano_error_t result = cardano_pool_params_set_bls_key(pool_params, bls_key);
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The bls_key is now set for the pool_params
+ * }
+ * else
+ * {
+ *   printf("Failed to set the BLS key.\n");
+ * }
+ *
+ * // The caller must continue to manage the lifecycle of bls_key
+ * cardano_bls_key_unref(&bls_key);
+ * \endcode
+ *
+ * \note This function takes a reference to the bls_key provided. The caller is responsible for managing their reference and must ensure
+ *       that it is decremented when no longer needed. The pool parameters object will hold its own reference.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_pool_params_set_bls_key(
+  cardano_pool_params_t* pool_params,
+  cardano_bls_key_t*     bls_key);
 
 /**
  * \brief Retrieves the pledge amount from the pool parameters.

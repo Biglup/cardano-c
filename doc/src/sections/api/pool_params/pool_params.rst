@@ -37,6 +37,18 @@ Pool Parameters
 
 ------------
 
+.. doxygenfunction:: cardano_pool_params_has_bls_key
+
+------------
+
+.. doxygenfunction:: cardano_pool_params_get_bls_key
+
+------------
+
+.. doxygenfunction:: cardano_pool_params_set_bls_key
+
+------------
+
 .. doxygenfunction:: cardano_pool_params_get_pledge
 
 ------------
