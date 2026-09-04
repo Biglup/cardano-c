@@ -2057,6 +2057,937 @@ TEST(cardano_protocol_parameters_set_ref_script_cost_multiplier, setsTheValue)
   cardano_unit_interval_unref(&res);
 }
 
+TEST(cardano_protocol_parameters_get_max_pledge_leverage, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  cardano_unit_interval_t* max_pledge_leverage = cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_pledge_leverage, (cardano_unit_interval_t*)0);
+}
+
+TEST(cardano_protocol_parameters_get_max_pledge_leverage, returnsNullWhenUnbounded)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+
+  // Act
+  cardano_unit_interval_t* max_pledge_leverage = cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_pledge_leverage, (cardano_unit_interval_t*)0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_pledge_leverage, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+  cardano_unit_interval_t*       max_pledge_leverage = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, max_pledge_leverage);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_pledge_leverage, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+  cardano_unit_interval_t*       max_pledge_leverage = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(7112083425886, 100, &max_pledge_leverage), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, max_pledge_leverage);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters);
+  EXPECT_EQ(res, max_pledge_leverage);
+  EXPECT_EQ(cardano_unit_interval_get_numerator(res), 7112083425886);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(res), 100);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_unit_interval_unref(&max_pledge_leverage);
+  cardano_unit_interval_unref(&res);
+}
+
+TEST(cardano_protocol_parameters_set_max_pledge_leverage, acceptsNullOnAFreshObject)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters), (cardano_unit_interval_t*)0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_pledge_leverage, settingNullReleasesThePreviousValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+  cardano_unit_interval_t*       max_pledge_leverage = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(5, 1, &max_pledge_leverage), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, max_pledge_leverage), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 2);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 1);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters), (cardano_unit_interval_t*)0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_unit_interval_unref(&max_pledge_leverage);
+}
+
+TEST(cardano_protocol_parameters_set_max_pledge_leverage, takesAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+  cardano_unit_interval_t*       max_pledge_leverage = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(5, 1, &max_pledge_leverage), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 1);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_pledge_leverage(protocol_parameters, max_pledge_leverage);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 2);
+
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 3);
+
+  cardano_unit_interval_unref(&res);
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(max_pledge_leverage), 1);
+
+  // Cleanup
+  cardano_unit_interval_unref(&max_pledge_leverage);
+}
+
+TEST(cardano_protocol_parameters_get_min_pool_margin, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  cardano_unit_interval_t* min_pool_margin = cardano_protocol_parameters_get_min_pool_margin(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(min_pool_margin, (cardano_unit_interval_t*)0);
+}
+
+TEST(cardano_protocol_parameters_set_min_pool_margin, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+  cardano_unit_interval_t*       min_pool_margin     = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_min_pool_margin(protocol_parameters, min_pool_margin);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_min_pool_margin, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+  cardano_unit_interval_t*       min_pool_margin     = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(1, 100, &min_pool_margin), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_min_pool_margin(protocol_parameters, min_pool_margin);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_min_pool_margin(protocol_parameters);
+  EXPECT_EQ(res, min_pool_margin);
+  EXPECT_EQ(cardano_unit_interval_get_numerator(res), 1);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(res), 100);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_unit_interval_unref(&min_pool_margin);
+  cardano_unit_interval_unref(&res);
+}
+
+TEST(cardano_protocol_parameters_set_min_pool_margin, takesAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+  cardano_unit_interval_t*       min_pool_margin     = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(1, 100, &min_pool_margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(min_pool_margin), 1);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_min_pool_margin(protocol_parameters, min_pool_margin);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(min_pool_margin), 2);
+
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_min_pool_margin(protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(min_pool_margin), 3);
+
+  cardano_unit_interval_unref(&res);
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(min_pool_margin), 1);
+
+  // Cleanup
+  cardano_unit_interval_unref(&min_pool_margin);
+}
+
+TEST(cardano_protocol_parameters_get_leios_announcement_period_length, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t leios_announcement_period_length = cardano_protocol_parameters_get_leios_announcement_period_length(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(leios_announcement_period_length, 0);
+}
+
+TEST(cardano_protocol_parameters_set_leios_announcement_period_length, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters              = nullptr;
+  uint64_t                       leios_announcement_period_length = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_announcement_period_length(protocol_parameters, leios_announcement_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_leios_announcement_period_length, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters              = init_protocol_parameters();
+  uint64_t                       leios_announcement_period_length = 5000;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_announcement_period_length(protocol_parameters, leios_announcement_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_announcement_period_length(protocol_parameters), leios_announcement_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_announcement_period_length, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters              = init_protocol_parameters();
+  uint64_t                       leios_announcement_period_length = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_announcement_period_length(protocol_parameters, leios_announcement_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_announcement_period_length(protocol_parameters), leios_announcement_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_announcement_period_length, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters              = init_protocol_parameters();
+  uint64_t                       leios_announcement_period_length = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_announcement_period_length(protocol_parameters, leios_announcement_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_announcement_period_length(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_leios_vote_period_length, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t leios_vote_period_length = cardano_protocol_parameters_get_leios_vote_period_length(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(leios_vote_period_length, 0);
+}
+
+TEST(cardano_protocol_parameters_set_leios_vote_period_length, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters      = nullptr;
+  uint64_t                       leios_vote_period_length = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_vote_period_length(protocol_parameters, leios_vote_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_leios_vote_period_length, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters      = init_protocol_parameters();
+  uint64_t                       leios_vote_period_length = 5000;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_vote_period_length(protocol_parameters, leios_vote_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_vote_period_length(protocol_parameters), leios_vote_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_vote_period_length, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters      = init_protocol_parameters();
+  uint64_t                       leios_vote_period_length = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_vote_period_length(protocol_parameters, leios_vote_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_vote_period_length(protocol_parameters), leios_vote_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_vote_period_length, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters      = init_protocol_parameters();
+  uint64_t                       leios_vote_period_length = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_vote_period_length(protocol_parameters, leios_vote_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_vote_period_length(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_leios_diffusion_period_length, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t leios_diffusion_period_length = cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(leios_diffusion_period_length, 0);
+}
+
+TEST(cardano_protocol_parameters_set_leios_diffusion_period_length, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = nullptr;
+  uint64_t                       leios_diffusion_period_length = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_diffusion_period_length(protocol_parameters, leios_diffusion_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_leios_diffusion_period_length, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = init_protocol_parameters();
+  uint64_t                       leios_diffusion_period_length = 10000;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_diffusion_period_length(protocol_parameters, leios_diffusion_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_parameters), leios_diffusion_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_diffusion_period_length, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = init_protocol_parameters();
+  uint64_t                       leios_diffusion_period_length = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_diffusion_period_length(protocol_parameters, leios_diffusion_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_parameters), leios_diffusion_period_length);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_diffusion_period_length, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters           = init_protocol_parameters();
+  uint64_t                       leios_diffusion_period_length = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_diffusion_period_length(protocol_parameters, leios_diffusion_period_length);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_leios_committee_size, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t leios_committee_size = cardano_protocol_parameters_get_leios_committee_size(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(leios_committee_size, 0);
+}
+
+TEST(cardano_protocol_parameters_set_leios_committee_size, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters  = nullptr;
+  uint64_t                       leios_committee_size = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_committee_size(protocol_parameters, leios_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_leios_committee_size, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters  = init_protocol_parameters();
+  uint64_t                       leios_committee_size = 500;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_committee_size(protocol_parameters, leios_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_committee_size(protocol_parameters), leios_committee_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_committee_size, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters  = init_protocol_parameters();
+  uint64_t                       leios_committee_size = UINT16_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_committee_size(protocol_parameters, leios_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_committee_size(protocol_parameters), leios_committee_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_leios_committee_size, returnsErrorIfValueExceedsUint16Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters  = init_protocol_parameters();
+  uint64_t                       leios_committee_size = 65536U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_committee_size(protocol_parameters, leios_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_committee_size(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_leios_quorum_stake_threshold, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  cardano_unit_interval_t* leios_quorum_stake_threshold = cardano_protocol_parameters_get_leios_quorum_stake_threshold(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(leios_quorum_stake_threshold, (cardano_unit_interval_t*)0);
+}
+
+TEST(cardano_protocol_parameters_set_leios_quorum_stake_threshold, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters          = nullptr;
+  cardano_unit_interval_t*       leios_quorum_stake_threshold = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_quorum_stake_threshold(protocol_parameters, leios_quorum_stake_threshold);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_leios_quorum_stake_threshold, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters          = init_protocol_parameters();
+  cardano_unit_interval_t*       leios_quorum_stake_threshold = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(3, 4, &leios_quorum_stake_threshold), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_quorum_stake_threshold(protocol_parameters, leios_quorum_stake_threshold);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_leios_quorum_stake_threshold(protocol_parameters);
+  EXPECT_EQ(res, leios_quorum_stake_threshold);
+  EXPECT_EQ(cardano_unit_interval_get_numerator(res), 3);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(res), 4);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_unit_interval_unref(&leios_quorum_stake_threshold);
+  cardano_unit_interval_unref(&res);
+}
+
+TEST(cardano_protocol_parameters_set_leios_quorum_stake_threshold, takesAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters          = init_protocol_parameters();
+  cardano_unit_interval_t*       leios_quorum_stake_threshold = nullptr;
+
+  EXPECT_EQ(cardano_unit_interval_new(3, 4, &leios_quorum_stake_threshold), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(leios_quorum_stake_threshold), 1);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_leios_quorum_stake_threshold(protocol_parameters, leios_quorum_stake_threshold);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(leios_quorum_stake_threshold), 2);
+
+  cardano_unit_interval_t* res = cardano_protocol_parameters_get_leios_quorum_stake_threshold(protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(leios_quorum_stake_threshold), 3);
+
+  cardano_unit_interval_unref(&res);
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  EXPECT_EQ(cardano_unit_interval_refcount(leios_quorum_stake_threshold), 1);
+
+  // Cleanup
+  cardano_unit_interval_unref(&leios_quorum_stake_threshold);
+}
+
+TEST(cardano_protocol_parameters_get_max_endorser_block_references_size, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t max_endorser_block_references_size = cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_endorser_block_references_size, 0);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_references_size, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = nullptr;
+  uint64_t                       max_endorser_block_references_size = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_references_size(protocol_parameters, max_endorser_block_references_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_references_size, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = init_protocol_parameters();
+  uint64_t                       max_endorser_block_references_size = 1048576;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_references_size(protocol_parameters, max_endorser_block_references_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_parameters), max_endorser_block_references_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_references_size, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = init_protocol_parameters();
+  uint64_t                       max_endorser_block_references_size = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_references_size(protocol_parameters, max_endorser_block_references_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_parameters), max_endorser_block_references_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_references_size, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = init_protocol_parameters();
+  uint64_t                       max_endorser_block_references_size = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_references_size(protocol_parameters, max_endorser_block_references_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_max_endorser_block_txs_size, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t max_endorser_block_txs_size = cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_endorser_block_txs_size, 0);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_txs_size, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters         = nullptr;
+  uint64_t                       max_endorser_block_txs_size = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_txs_size(protocol_parameters, max_endorser_block_txs_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_txs_size, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters         = init_protocol_parameters();
+  uint64_t                       max_endorser_block_txs_size = 4194304;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_txs_size(protocol_parameters, max_endorser_block_txs_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_parameters), max_endorser_block_txs_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_txs_size, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters         = init_protocol_parameters();
+  uint64_t                       max_endorser_block_txs_size = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_txs_size(protocol_parameters, max_endorser_block_txs_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_parameters), max_endorser_block_txs_size);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_txs_size, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters         = init_protocol_parameters();
+  uint64_t                       max_endorser_block_txs_size = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_txs_size(protocol_parameters, max_endorser_block_txs_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_get_max_endorser_block_execution_units, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  cardano_ex_units_t* max_endorser_block_execution_units = cardano_protocol_parameters_get_max_endorser_block_execution_units(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_endorser_block_execution_units, (cardano_ex_units_t*)0);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_execution_units, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = nullptr;
+  cardano_ex_units_t*            max_endorser_block_execution_units = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_execution_units(protocol_parameters, max_endorser_block_execution_units);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_execution_units, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = init_protocol_parameters();
+  cardano_ex_units_t*            max_endorser_block_execution_units = nullptr;
+
+  EXPECT_EQ(cardano_ex_units_new(14000000, 10000000000, &max_endorser_block_execution_units), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_execution_units(protocol_parameters, max_endorser_block_execution_units);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  cardano_ex_units_t* res = cardano_protocol_parameters_get_max_endorser_block_execution_units(protocol_parameters);
+  EXPECT_EQ(res, max_endorser_block_execution_units);
+  EXPECT_EQ(cardano_ex_units_get_memory(res), 14000000);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(res), 10000000000);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  cardano_ex_units_unref(&max_endorser_block_execution_units);
+  cardano_ex_units_unref(&res);
+}
+
+TEST(cardano_protocol_parameters_set_max_endorser_block_execution_units, takesAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                = init_protocol_parameters();
+  cardano_ex_units_t*            max_endorser_block_execution_units = nullptr;
+
+  EXPECT_EQ(cardano_ex_units_new(14000000, 10000000000, &max_endorser_block_execution_units), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ex_units_refcount(max_endorser_block_execution_units), 1);
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_endorser_block_execution_units(protocol_parameters, max_endorser_block_execution_units);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ex_units_refcount(max_endorser_block_execution_units), 2);
+
+  cardano_ex_units_t* res = cardano_protocol_parameters_get_max_endorser_block_execution_units(protocol_parameters);
+  EXPECT_EQ(cardano_ex_units_refcount(max_endorser_block_execution_units), 3);
+
+  cardano_ex_units_unref(&res);
+  cardano_protocol_parameters_unref(&protocol_parameters);
+  EXPECT_EQ(cardano_ex_units_refcount(max_endorser_block_execution_units), 1);
+
+  // Cleanup
+  cardano_ex_units_unref(&max_endorser_block_execution_units);
+}
+
+TEST(cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block, returnsZeroWhenObjectIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = nullptr;
+
+  // Act
+  uint64_t max_ref_script_size_per_endorser_block = cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_ref_script_size_per_endorser_block, 0);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block, returnsErrorIfPointerIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                    = nullptr;
+  uint64_t                       max_ref_script_size_per_endorser_block = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(protocol_parameters, max_ref_script_size_per_endorser_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block, setsTheValue)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                    = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_endorser_block = 1048576;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(protocol_parameters, max_ref_script_size_per_endorser_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_parameters), max_ref_script_size_per_endorser_block);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block, acceptsTheWireMaximum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                    = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_endorser_block = UINT32_MAX;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(protocol_parameters, max_ref_script_size_per_endorser_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_parameters), max_ref_script_size_per_endorser_block);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters                    = init_protocol_parameters();
+  uint64_t                       max_ref_script_size_per_endorser_block = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(protocol_parameters, max_ref_script_size_per_endorser_block);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
+TEST(cardano_protocol_parameters_new, initializesTheDijkstraParametersToTheirDefaults)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+
+  // Act
+  cardano_unit_interval_t* max_pledge_leverage                = cardano_protocol_parameters_get_max_pledge_leverage(protocol_parameters);
+  cardano_unit_interval_t* min_pool_margin                    = cardano_protocol_parameters_get_min_pool_margin(protocol_parameters);
+  cardano_unit_interval_t* leios_quorum_stake_threshold       = cardano_protocol_parameters_get_leios_quorum_stake_threshold(protocol_parameters);
+  cardano_ex_units_t*      max_endorser_block_execution_units = cardano_protocol_parameters_get_max_endorser_block_execution_units(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(max_pledge_leverage, (cardano_unit_interval_t*)0);
+
+  EXPECT_THAT(min_pool_margin, testing::Not((cardano_unit_interval_t*)nullptr));
+  EXPECT_EQ(cardano_unit_interval_get_numerator(min_pool_margin), 0);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(min_pool_margin), 1);
+
+  EXPECT_THAT(leios_quorum_stake_threshold, testing::Not((cardano_unit_interval_t*)nullptr));
+  EXPECT_EQ(cardano_unit_interval_get_numerator(leios_quorum_stake_threshold), 0);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(leios_quorum_stake_threshold), 1);
+
+  EXPECT_THAT(max_endorser_block_execution_units, testing::Not((cardano_ex_units_t*)nullptr));
+  EXPECT_EQ(cardano_ex_units_get_memory(max_endorser_block_execution_units), 0);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(max_endorser_block_execution_units), 0);
+
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_announcement_period_length(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_vote_period_length(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_leios_committee_size(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_parameters), 0);
+  EXPECT_EQ(cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_parameters), 0);
+
+  // Cleanup
+  cardano_unit_interval_unref(&min_pool_margin);
+  cardano_unit_interval_unref(&leios_quorum_stake_threshold);
+  cardano_ex_units_unref(&max_endorser_block_execution_units);
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
 TEST(cardano_protocol_parameters_new, returnErrorIfGivenNull)
 {
   // Act

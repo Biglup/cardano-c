@@ -1288,6 +1288,366 @@ CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_ref_scri
   cardano_protocol_parameters_t* protocol_parameters);
 
 /**
+ * \brief Retrieves the maximum pledge leverage from the protocol parameters.
+ *
+ * This function returns the maximum pledge leverage (CIP-50), the largest ratio of delegated stake to
+ * pledge that a stake pool may reach before its rewards are capped, as specified in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a non-negative interval
+ * (a rational number, which may be greater than one) or nil when the leverage is unbounded.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the maximum pledge leverage,
+ *         or NULL when the leverage is unbounded. A freshly created parameter set reports an unbounded
+ *         leverage, which is the state of every era before the parameter was introduced.
+ *         If the \p protocol_parameters pointer is NULL, the function also returns NULL.
+ *
+ * \note When the function returns a non-NULL pointer, the caller is responsible for managing the lifecycle of the
+ *       returned \ref cardano_unit_interval_t object. Specifically, the caller must release the object by calling
+ *       \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* max_pledge_leverage = cardano_protocol_parameters_get_max_pledge_leverage(protocol_params);
+ *
+ * if (max_pledge_leverage != NULL)
+ * {
+ *   // Use the maximum pledge leverage as needed
+ *
+ *   // Clean up when done
+ *   cardano_unit_interval_unref(&max_pledge_leverage);
+ * }
+ * else
+ * {
+ *   printf("The pledge leverage is unbounded.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_max_pledge_leverage(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the minimum pool margin from the protocol parameters.
+ *
+ * This function returns the minimum pool margin (CIP-23), the smallest share of the rewards a stake pool
+ * may keep for itself, as specified in the given \ref cardano_protocol_parameters_t object. On the wire
+ * this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the minimum pool margin.
+ *         If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ *
+ * \note The caller is responsible for managing the lifecycle of the returned \ref cardano_unit_interval_t object.
+ *       Specifically, the caller must release the object by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* min_pool_margin = cardano_protocol_parameters_get_min_pool_margin(protocol_params);
+ *
+ * if (min_pool_margin != NULL)
+ * {
+ *   // Use the minimum pool margin as needed
+ *
+ *   // Clean up when done
+ *   cardano_unit_interval_unref(&min_pool_margin);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve the minimum pool margin.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_min_pool_margin(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Leios announcement period length from the protocol parameters.
+ *
+ * This function returns the length, in milliseconds, of the Leios announcement period, the window during
+ * which an endorser block is announced to the network before voting starts, as specified in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Leios announcement period length in milliseconds.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t announcement_period = cardano_protocol_parameters_get_leios_announcement_period_length(protocol_params);
+ *
+ * printf("Leios announcement period length: %llu\n", announcement_period);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_leios_announcement_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Leios vote period length from the protocol parameters.
+ *
+ * This function returns the length, in milliseconds, of the Leios vote period, the window during which the
+ * committee casts votes on an endorser block, as specified in the given \ref cardano_protocol_parameters_t
+ * object. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Leios vote period length in milliseconds.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t vote_period = cardano_protocol_parameters_get_leios_vote_period_length(protocol_params);
+ *
+ * printf("Leios vote period length: %llu\n", vote_period);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_leios_vote_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Leios diffusion period length from the protocol parameters.
+ *
+ * This function returns the length, in milliseconds, of the Leios diffusion period, the time allotted for
+ * an endorser block and its transactions to propagate through the network, as specified in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Leios diffusion period length in milliseconds.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t diffusion_period = cardano_protocol_parameters_get_leios_diffusion_period_length(protocol_params);
+ *
+ * printf("Leios diffusion period length: %llu\n", diffusion_period);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_leios_diffusion_period_length(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Leios committee size from the protocol parameters.
+ *
+ * This function returns the number of top-stake pools seated in the Leios voting committee for the epoch,
+ * as specified in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a
+ * 16-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Leios committee size.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t committee_size = cardano_protocol_parameters_get_leios_committee_size(protocol_params);
+ *
+ * printf("Leios committee size: %llu\n", committee_size);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_leios_committee_size(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Leios quorum stake threshold from the protocol parameters.
+ *
+ * This function returns the minimum fraction of the total active stake that the votes in a certificate
+ * must represent for an endorser block to be certified, as specified in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a unit interval (a rational
+ * number between zero and one).
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the Leios quorum stake threshold.
+ *         If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ *
+ * \note The caller is responsible for managing the lifecycle of the returned \ref cardano_unit_interval_t object.
+ *       Specifically, the caller must release the object by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* quorum = cardano_protocol_parameters_get_leios_quorum_stake_threshold(protocol_params);
+ *
+ * if (quorum != NULL)
+ * {
+ *   // Use the quorum stake threshold as needed
+ *
+ *   // Clean up when done
+ *   cardano_unit_interval_unref(&quorum);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve the Leios quorum stake threshold.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_leios_quorum_stake_threshold(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the maximum endorser block references size from the protocol parameters.
+ *
+ * This function returns the maximum size, in bytes, of the list of transaction references (a transaction
+ * hash and a transaction size per entry) that an endorser block itself carries, as specified in the given
+ * \ref cardano_protocol_parameters_t object. Since an endorser block references its transactions instead
+ * of embedding them, this limit caps the size of the endorser block when many small transactions are
+ * referenced. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The maximum endorser block references size in bytes.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t max_references_size = cardano_protocol_parameters_get_max_endorser_block_references_size(protocol_params);
+ *
+ * printf("Maximum endorser block references size: %llu\n", max_references_size);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_max_endorser_block_references_size(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the maximum endorser block transactions size from the protocol parameters.
+ *
+ * This function returns the maximum total size, in bytes, of the transactions carried by a single endorser
+ * block, as specified in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is
+ * a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The maximum endorser block transactions size in bytes.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t max_txs_size = cardano_protocol_parameters_get_max_endorser_block_txs_size(protocol_params);
+ *
+ * printf("Maximum endorser block transactions size: %llu\n", max_txs_size);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_max_endorser_block_txs_size(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the maximum endorser block execution units from the protocol parameters.
+ *
+ * This function returns the maximum execution units (CPU and memory) that the Plutus scripts of a single
+ * endorser block may consume in total, as specified in the given \ref cardano_protocol_parameters_t object.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_ex_units_t object representing the maximum execution units for an endorser block.
+ *         If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ *
+ * \note The caller is responsible for managing the lifecycle of the returned \ref cardano_ex_units_t object.
+ *       Specifically, the caller must release the object by calling \ref cardano_ex_units_unref when it is no longer needed.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_ex_units_t* max_ex_units = cardano_protocol_parameters_get_max_endorser_block_execution_units(protocol_params);
+ *
+ * if (max_ex_units != NULL)
+ * {
+ *   // Use the maximum execution units as needed
+ *
+ *   // Clean up when done
+ *   cardano_ex_units_unref(&max_ex_units);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve the maximum endorser block execution units.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_ex_units_t* cardano_protocol_parameters_get_max_endorser_block_execution_units(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the maximum reference script size per endorser block from the protocol parameters.
+ *
+ * This function returns the maximum cumulative size, in bytes, of the reference scripts that the
+ * transactions of a single endorser block may use, as specified in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The maximum reference script size per endorser block in bytes.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t max_ref_script_size = cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(protocol_params);
+ *
+ * printf("Maximum reference script size per endorser block: %llu\n", max_ref_script_size);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
  * \brief Sets the minimum fee coefficient "A" in the protocol parameters.
  *
  * This function sets the minimum fee coefficient "A" in the given \ref cardano_protocol_parameters_t object.
@@ -2805,6 +3165,472 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_ref_script_cost_multiplier(
   cardano_protocol_parameters_t* protocol_parameters,
   cardano_unit_interval_t*       ref_script_cost_multiplier);
+
+/**
+ * \brief Sets the maximum pledge leverage in the protocol parameters.
+ *
+ * This function sets the maximum pledge leverage (CIP-50), the largest ratio of delegated stake to
+ * pledge that a stake pool may reach before its rewards are capped, in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a non-negative interval
+ * (a rational number, which may be greater than one) or nil when the leverage is unbounded.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] max_pledge_leverage A pointer to an initialized \ref cardano_unit_interval_t object representing the
+ *                                maximum pledge leverage, or NULL to mark the leverage as unbounded. Passing NULL
+ *                                releases any previously set value.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the maximum pledge leverage was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_unit_interval_t object. The object must be
+ *       released by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* max_pledge_leverage = ...; // Assume max_pledge_leverage is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_max_pledge_leverage(protocol_params, max_pledge_leverage);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max pledge leverage set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set max pledge leverage.\n");
+ * }
+ *
+ * // Clean up the max_pledge_leverage when no longer needed
+ * cardano_unit_interval_unref(&max_pledge_leverage);
+ *
+ * // Mark the leverage as unbounded again
+ * result = cardano_protocol_parameters_set_max_pledge_leverage(protocol_params, NULL);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_pledge_leverage(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       max_pledge_leverage);
+
+/**
+ * \brief Sets the minimum pool margin in the protocol parameters.
+ *
+ * This function sets the minimum pool margin (CIP-23), the smallest share of the rewards a stake pool
+ * may keep for itself, in the given \ref cardano_protocol_parameters_t object. On the wire this
+ * parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] min_pool_margin A pointer to an initialized \ref cardano_unit_interval_t object representing the minimum pool margin.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the minimum pool margin was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_unit_interval_t object. The object must be
+ *       released by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* min_pool_margin = ...; // Assume min_pool_margin is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_min_pool_margin(protocol_params, min_pool_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Min pool margin set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set min pool margin.\n");
+ * }
+ *
+ * // Clean up the min_pool_margin when no longer needed
+ * cardano_unit_interval_unref(&min_pool_margin);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_min_pool_margin(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       min_pool_margin);
+
+/**
+ * \brief Sets the Leios announcement period length in the protocol parameters.
+ *
+ * This function sets the length, in milliseconds, of the Leios announcement period, the window during which
+ * an endorser block is announced to the network before voting starts in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer;
+ * values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] leios_announcement_period_length The new Leios announcement period length.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Leios announcement period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 5000; // A five second announcement period
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_leios_announcement_period_length(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios announcement period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Leios announcement period length.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_leios_announcement_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_announcement_period_length);
+
+/**
+ * \brief Sets the Leios vote period length in the protocol parameters.
+ *
+ * This function sets the length, in milliseconds, of the Leios vote period, the window during which the
+ * committee casts votes on an endorser block in the given \ref cardano_protocol_parameters_t object. On the
+ * wire this parameter is a 32-bit unsigned integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] leios_vote_period_length The new Leios vote period length.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Leios vote period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 5000; // A five second vote period
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_leios_vote_period_length(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios vote period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Leios vote period length.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_leios_vote_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_vote_period_length);
+
+/**
+ * \brief Sets the Leios diffusion period length in the protocol parameters.
+ *
+ * This function sets the length, in milliseconds, of the Leios diffusion period, the time allotted for an
+ * endorser block and its transactions to propagate through the network in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer;
+ * values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] leios_diffusion_period_length The new Leios diffusion period length.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Leios diffusion period length was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 10000; // A ten second diffusion period
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_leios_diffusion_period_length(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios diffusion period length set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Leios diffusion period length.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_leios_diffusion_period_length(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_diffusion_period_length);
+
+/**
+ * \brief Sets the Leios committee size in the protocol parameters.
+ *
+ * This function sets the number of top-stake pools seated in the Leios voting committee for the epoch in
+ * the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a 16-bit unsigned
+ * integer; values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] leios_committee_size The new Leios committee size.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Leios committee size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 500; // A committee of five hundred pools
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_leios_committee_size(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios committee size set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Leios committee size.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_leios_committee_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       leios_committee_size);
+
+/**
+ * \brief Sets the Leios quorum stake threshold in the protocol parameters.
+ *
+ * This function sets the minimum fraction of the total active stake that the votes in a certificate must
+ * represent for an endorser block to be certified in the given \ref cardano_protocol_parameters_t object.
+ * On the wire this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] leios_quorum_stake_threshold A pointer to an initialized \ref cardano_unit_interval_t object representing the quorum stake threshold.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Leios quorum stake threshold was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_unit_interval_t object. The object must be
+ *       released by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* quorum = ...; // Assume quorum is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_leios_quorum_stake_threshold(protocol_params, quorum);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Leios quorum stake threshold set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Leios quorum stake threshold.\n");
+ * }
+ *
+ * // Clean up the quorum when no longer needed
+ * cardano_unit_interval_unref(&quorum);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_leios_quorum_stake_threshold(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       leios_quorum_stake_threshold);
+
+/**
+ * \brief Sets the maximum endorser block references size in the protocol parameters.
+ *
+ * This function sets the maximum size, in bytes, of the list of transaction references (a transaction hash
+ * and a transaction size per entry) that an endorser block itself carries in the given
+ * \ref cardano_protocol_parameters_t object. Since an endorser block references its transactions instead
+ * of embedding them, this limit caps the size of the endorser block when many small transactions are
+ * referenced. On the wire this parameter is a 32-bit unsigned integer; values greater than \c UINT32_MAX
+ * are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] max_endorser_block_references_size The new maximum endorser block references size.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the maximum endorser block references size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 1048576; // 1 MiB of references per endorser block
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_max_endorser_block_references_size(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block references size set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set maximum endorser block references size.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_endorser_block_references_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_endorser_block_references_size);
+
+/**
+ * \brief Sets the maximum endorser block transactions size in the protocol parameters.
+ *
+ * This function sets the maximum total size, in bytes, of the transactions carried by a single endorser
+ * block in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit
+ * unsigned integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] max_endorser_block_txs_size The new maximum endorser block transactions size.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the maximum endorser block transactions size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 4194304; // 4 MiB of transactions per endorser block
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_max_endorser_block_txs_size(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum endorser block transactions size set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set maximum endorser block transactions size.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_endorser_block_txs_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_endorser_block_txs_size);
+
+/**
+ * \brief Sets the maximum endorser block execution units in the protocol parameters.
+ *
+ * This function sets the maximum execution units (CPU and memory) that the Plutus scripts of a single
+ * endorser block may consume in total in the given \ref cardano_protocol_parameters_t object.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] max_endorser_block_execution_units A pointer to an initialized \ref cardano_ex_units_t object
+ *                                                representing the maximum execution units for an endorser
+ *                                                block.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the maximum endorser block execution units were successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_ex_units_t object. The object must be
+ *       released by calling \ref cardano_ex_units_unref when it is no longer needed.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_ex_units_t* max_ex_units = ...; // Assume max_ex_units is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_max_endorser_block_execution_units(protocol_params, max_ex_units);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Max endorser block execution units set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set max endorser block execution units.\n");
+ * }
+ *
+ * // Clean up when done
+ * cardano_ex_units_unref(&max_ex_units);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_endorser_block_execution_units(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_ex_units_t*            max_endorser_block_execution_units);
+
+/**
+ * \brief Sets the maximum reference script size per endorser block in the protocol parameters.
+ *
+ * This function sets the maximum cumulative size, in bytes, of the reference scripts that the transactions
+ * of a single endorser block may use in the given \ref cardano_protocol_parameters_t object. On the wire
+ * this parameter is a 32-bit unsigned integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] max_ref_script_size_per_endorser_block The new maximum reference script size per endorser block.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the maximum reference script size per endorser block was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Leios parameters (CIP-164) configure the endorser block pipeline that carries transactions
+ *       beyond the capacity of the ranking blocks alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 1048576; // 1 MiB of reference scripts per endorser block
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Maximum reference script size per endorser block set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set maximum reference script size per endorser block.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       max_ref_script_size_per_endorser_block);
 
 /**
  * \brief Decrements the reference count of a cardano_protocol_parameters_t object.
