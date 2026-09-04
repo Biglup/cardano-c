@@ -27,12 +27,17 @@
 
 #include <cardano/common/utxo.h>
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
+#include <cardano/witness_set/witness_set.h>
 
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR = "84b000818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e8049182008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01483088200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f186482018200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f82008200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f81581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d58304581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01901f483028200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db784108200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05f683118200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0584108200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05f683118200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05840b8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db70a840c8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d08200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0a850d8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db78200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0a82018200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a0758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5001481841864581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d08106827468747470733a2f2f74657374696e672e7468697358203e33018e8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80da700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d87a9f187bff82190bb8191b58840201d87a9f187bff821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626";
+
+// A sub transaction whose body carries a Shelley stake registration, a Conway registration with a deposit of 10,
+// a Conway unregistration refunding 20, a pool retirement and two withdrawals of 10 and 5 lovelace.
+static const char* SUB_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181a200583900dc435fc2638f6684bd1f9f6f917d80c92ae642a4a33a412e516479e64245236ab8056760efceebbff57e8cab220182be3e36439e520a6454011a0098968004d901028482008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0148304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f05a0f6";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -49,6 +54,51 @@ new_default_transaction()
   cardano_cbor_reader_unref(&reader);
 
   return transaction;
+};
+
+static cardano_sub_transaction_t*
+new_default_sub_transaction()
+{
+  cardano_sub_transaction_t* sub_transaction = NULL;
+  cardano_cbor_reader_t*     reader          = cardano_cbor_reader_from_hex(SUB_TX_CBOR, strlen(SUB_TX_CBOR));
+
+  cardano_error_t result = cardano_sub_transaction_from_cbor(reader, &sub_transaction);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return sub_transaction;
+};
+
+static cardano_sub_transaction_t*
+new_sub_transaction_from_body(cardano_transaction_body_t* body)
+{
+  cardano_transaction_input_set_t*   inputs              = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_output_list_t* outputs             = cardano_transaction_body_get_outputs(body);
+  cardano_certificate_set_t*         certificates        = cardano_transaction_body_get_certificates(body);
+  cardano_withdrawal_map_t*          withdrawals         = cardano_transaction_body_get_withdrawals(body);
+  cardano_proposal_procedure_set_t*  proposal_procedures = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_sub_transaction_body_t*    sub_body            = NULL;
+  cardano_witness_set_t*             witness_set         = NULL;
+  cardano_sub_transaction_t*         sub_transaction     = NULL;
+
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, NULL, &sub_body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_certificates(sub_body, certificates), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_withdrawals(sub_body, withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_proposal_procedures(sub_body, proposal_procedures), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_new(sub_body, witness_set, NULL, &sub_transaction), CARDANO_SUCCESS);
+
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_certificate_set_unref(&certificates);
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_proposal_procedure_set_unref(&proposal_procedures);
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_witness_set_unref(&witness_set);
+
+  return sub_transaction;
 };
 
 static cardano_protocol_parameters_t*
@@ -148,5 +198,107 @@ TEST(cardano_compute_implicit_coin, returnsErrorIfGivenNullImplicitCoin)
 
   // Cleanup
   cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, canComputeImplicitCoin)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.withdrawals, 15);
+  EXPECT_EQ(implicit_coin.deposits, 12);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 23);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, matchesTopLevelResultForTheSameCertificatesAndWithdrawals)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_transaction_body_t*    body            = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_t*     sub_tx          = new_sub_transaction_from_body(body);
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        tx_coin         = { 0 };
+  cardano_implicit_coin_t        sub_tx_coin     = { 0 };
+
+  cardano_transaction_body_unref(&body);
+
+  // Act
+  cardano_error_t tx_result     = cardano_compute_implicit_coin(tx, protocol_params, &tx_coin);
+  cardano_error_t sub_tx_result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &sub_tx_coin);
+
+  // Assert
+  EXPECT_EQ(tx_result, CARDANO_SUCCESS);
+  EXPECT_EQ(sub_tx_result, CARDANO_SUCCESS);
+  EXPECT_EQ(sub_tx_coin.withdrawals, tx_coin.withdrawals);
+  EXPECT_EQ(sub_tx_coin.deposits, tx_coin.deposits);
+  EXPECT_EQ(sub_tx_coin.reclaim_deposits, tx_coin.reclaim_deposits);
+  EXPECT_EQ(sub_tx_coin.withdrawals, 10);
+  EXPECT_EQ(sub_tx_coin.deposits, 157);
+  EXPECT_EQ(sub_tx_coin.reclaim_deposits, 137);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(NULL, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfGivenNullProtocolParameters)
+{
+  // Arrange
+  cardano_sub_transaction_t* sub_tx        = new_default_sub_transaction();
+  cardano_implicit_coin_t    implicit_coin = { 0 };
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, NULL, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfGivenNullImplicitCoin)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, NULL);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
   cardano_protocol_parameters_unref(&protocol_params);
 }

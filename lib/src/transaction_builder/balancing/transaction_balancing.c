@@ -194,6 +194,265 @@ coalesce_all_outputs(cardano_transaction_output_list_t* outputs, cardano_value_t
 }
 
 /**
+ * \brief Sums the lovelace amounts of a direct deposit map.
+ *
+ * \param[in]  direct_deposits The direct deposit map of the body, or NULL when the body has none.
+ * \param[out] total           A pointer to store the sum of all direct deposit amounts.
+ *
+ * \return \ref CARDANO_SUCCESS if the total was computed, or an appropriate error code.
+ */
+static cardano_error_t
+sum_direct_deposits(cardano_direct_deposit_map_t* direct_deposits, uint64_t* total)
+{
+  const size_t num_deposits = cardano_direct_deposit_map_get_length(direct_deposits);
+
+  *total = 0U;
+
+  for (size_t i = 0U; i < num_deposits; ++i)
+  {
+    uint64_t amount = 0U;
+
+    cardano_error_t result = cardano_direct_deposit_map_get_value_at(direct_deposits, i, &amount);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    *total += amount;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds every asset of one policy to a value.
+ *
+ * \param[in,out] value     The value that receives the assets.
+ * \param[in]     policy_id The policy id of the assets.
+ * \param[in]     assets    The asset name map holding the quantity of each asset.
+ *
+ * \return \ref CARDANO_SUCCESS if every asset was added, or an appropriate error code.
+ */
+static cardano_error_t
+add_policy_assets(cardano_value_t* value, cardano_blake2b_hash_t* policy_id, cardano_asset_name_map_t* assets)
+{
+  const size_t asset_count = cardano_asset_name_map_get_length(assets);
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < asset_count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_asset_name_t* asset_name = NULL;
+    int64_t               quantity   = 0;
+
+    result = cardano_asset_name_map_get_key_value_at(assets, i, &asset_name, &quantity);
+    cardano_asset_name_unref(&asset_name);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_value_add_asset(value, policy_id, asset_name, quantity);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Creates a value with the same coin and assets as another value but backed by its own multi asset object.
+ *
+ * Value arithmetic shares the multi asset of the non-empty operand when the other operand carries no assets, and
+ * merging two multi assets shares the asset name maps of the policies that only one of them holds. The outcome of a
+ * chain of additions and subtractions can therefore still reference the maps of one of its inputs. This function
+ * rebuilds the value asset by asset so that it can be modified without affecting any of those inputs.
+ *
+ * \param[in]  value A pointer to the value to copy.
+ * \param[out] copy  A pointer to store the independent copy of the value.
+ *
+ * \return \ref CARDANO_SUCCESS if the copy was created, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `copy` when it is no longer needed.
+ */
+static cardano_error_t
+copy_value(cardano_value_t* value, cardano_value_t** copy)
+{
+  cardano_error_t result = cardano_value_new(cardano_value_get_coin(value), NULL, copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+  cardano_multi_asset_unref(&multi_asset);
+
+  cardano_policy_id_list_t* policies = NULL;
+
+  result = cardano_multi_asset_get_keys(multi_asset, &policies);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(copy);
+
+    return result;
+  }
+
+  const size_t policy_count = cardano_policy_id_list_get_length(policies);
+
+  for (size_t i = 0U; (i < policy_count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_blake2b_hash_t*   policy_id = NULL;
+    cardano_asset_name_map_t* assets    = NULL;
+
+    result = cardano_policy_id_list_get(policies, i, &policy_id);
+    cardano_blake2b_hash_unref(&policy_id);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
+      cardano_asset_name_map_unref(&assets);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = add_policy_assets(*copy, policy_id, assets);
+    }
+  }
+
+  cardano_policy_id_list_unref(&policies);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(copy);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Computes the imbalance of a body as the value it consumes minus the value it produces.
+ *
+ * The consumed value is the sum of the resolved inputs plus the implicit consumed coin and the mint field (where
+ * minted assets are positive and burned assets negative). The produced value is the sum of the outputs plus the
+ * implicit produced coin.
+ *
+ * \param[in]  inputs          The set of inputs of the body.
+ * \param[in]  resolved_inputs The UTXO list containing resolved values for each input.
+ * \param[in]  outputs         The list of outputs of the body.
+ * \param[in]  mint            The mint field of the body, or NULL when the body has none.
+ * \param[in]  consumed_coin   The implicit consumed coin: the withdrawals plus the deposit refunds.
+ * \param[in]  produced_coin   The implicit produced coin: the fee, the deposits, the donation and the direct deposits.
+ * \param[out] imbalance       A pointer to store the resulting imbalance value. The value owns its multi asset, so it
+ *                             never aliases the mint field or a resolved input and can be modified freely.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was computed, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `imbalance` when it is no longer needed.
+ */
+static cardano_error_t
+compute_imbalance(
+  cardano_transaction_input_set_t*   inputs,
+  cardano_utxo_list_t*               resolved_inputs,
+  cardano_transaction_output_list_t* outputs,
+  cardano_multi_asset_t*             mint,
+  const int64_t                      consumed_coin,
+  const int64_t                      produced_coin,
+  cardano_value_t**                  imbalance)
+{
+  cardano_value_t* implicit_consumed = NULL;
+  cardano_value_t* implicit_produced = NULL;
+
+  cardano_error_t result = cardano_value_new(consumed_coin, mint, &implicit_consumed);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_value_new(produced_coin, NULL, &implicit_produced);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&implicit_consumed);
+
+    return result;
+  }
+
+  cardano_value_t* total_input_value  = NULL;
+  cardano_value_t* total_output_value = NULL;
+  cardano_value_t* consumed_value     = NULL;
+  cardano_value_t* diff_value         = NULL;
+
+  result = coalesce_all_inputs(inputs, resolved_inputs, &total_input_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&implicit_consumed);
+    cardano_value_unref(&implicit_produced);
+
+    return result;
+  }
+
+  result = coalesce_all_outputs(outputs, &total_output_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&implicit_consumed);
+    cardano_value_unref(&implicit_produced);
+    cardano_value_unref(&total_input_value);
+
+    return result;
+  }
+
+  result = cardano_value_add(total_input_value, implicit_consumed, &consumed_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&implicit_consumed);
+    cardano_value_unref(&implicit_produced);
+    cardano_value_unref(&total_input_value);
+    cardano_value_unref(&total_output_value);
+
+    return result;
+  }
+
+  result = cardano_value_subtract(consumed_value, total_output_value, &diff_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&implicit_consumed);
+    cardano_value_unref(&implicit_produced);
+    cardano_value_unref(&total_input_value);
+    cardano_value_unref(&total_output_value);
+    cardano_value_unref(&consumed_value);
+
+    return result;
+  }
+
+  cardano_value_t* imbalance_value = NULL;
+
+  result = cardano_value_subtract(diff_value, implicit_produced, &imbalance_value);
+
+  cardano_value_unref(&implicit_consumed);
+  cardano_value_unref(&implicit_produced);
+  cardano_value_unref(&total_input_value);
+  cardano_value_unref(&total_output_value);
+  cardano_value_unref(&consumed_value);
+  cardano_value_unref(&diff_value);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = copy_value(imbalance_value, imbalance);
+
+  cardano_value_unref(&imbalance_value);
+
+  return result;
+}
+
+/**
  * \brief Sets the transaction inputs for a transaction body.
  *
  * This function takes a list of selected UTXOs and sets them as inputs in the provided transaction body.
@@ -913,11 +1172,53 @@ cardano_is_transaction_balanced(
 
   *is_balanced = false;
 
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol_params, &imbalance);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *is_balanced = cardano_value_is_zero(imbalance);
+
+  cardano_value_unref(&imbalance);
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_compute_transaction_imbalance(
+  cardano_transaction_t*         tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance)
+{
+  if (imbalance == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *imbalance = NULL;
+
+  if (tx == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (resolved_inputs == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
   cardano_transaction_body_unref(&body);
-
-  cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
-  cardano_multi_asset_unref(&mint);
 
   cardano_implicit_coin_t implicit_coin = { 0 };
 
@@ -928,79 +1229,102 @@ cardano_is_transaction_balanced(
     return result;
   }
 
-  const uint64_t* donationPtr         = cardano_transaction_body_get_donation(body);
-  const uint64_t  donation            = (donationPtr != NULL) ? *donationPtr : 0U;
-  const uint64_t  fee                 = cardano_transaction_body_get_fee(body);
-  const int64_t   implicit_coin_value = ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) - (int64_t)implicit_coin.deposits;
+  cardano_direct_deposit_map_t* direct_deposits = cardano_transaction_body_get_direct_deposits(body);
+  cardano_direct_deposit_map_unref(&direct_deposits);
 
-  cardano_value_t* implicit_value = NULL;
+  uint64_t direct_deposit_total = 0U;
 
-  result = cardano_value_new(implicit_coin_value - ((int64_t)fee + (int64_t)donation), mint, &implicit_value);
+  result = sum_direct_deposits(direct_deposits, &direct_deposit_total);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  cardano_value_t*                   total_output_value = NULL;
-  cardano_value_t*                   total_input_value  = NULL;
-  cardano_value_t*                   diff_value         = NULL;
-  cardano_value_t*                   net_value          = NULL;
-  cardano_transaction_output_list_t* outputs            = cardano_transaction_body_get_outputs(body);
-  cardano_transaction_input_set_t*   inputs             = cardano_transaction_body_get_inputs(body);
+  cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&mint);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_input_set_t*   inputs  = cardano_transaction_body_get_inputs(body);
 
   cardano_transaction_output_list_unref(&outputs);
   cardano_transaction_input_set_unref(&inputs);
 
-  result = coalesce_all_outputs(outputs, &total_output_value);
+  const uint64_t* donation_ptr  = cardano_transaction_body_get_donation(body);
+  const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
+  const uint64_t  fee           = cardano_transaction_body_get_fee(body);
+  const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
+  const int64_t   produced_coin = (int64_t)fee + (int64_t)implicit_coin.deposits + (int64_t)donation + (int64_t)direct_deposit_total;
+
+  return compute_imbalance(inputs, resolved_inputs, outputs, mint, consumed_coin, produced_coin, imbalance);
+}
+
+cardano_error_t
+cardano_compute_sub_transaction_imbalance(
+  cardano_sub_transaction_t*     sub_tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance)
+{
+  if (imbalance == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *imbalance = NULL;
+
+  if (sub_tx == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (resolved_inputs == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+  cardano_sub_transaction_body_unref(&body);
+
+  cardano_implicit_coin_t implicit_coin = { 0 };
+
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_value_unref(&implicit_value);
-
     return result;
   }
 
-  result = coalesce_all_inputs(inputs, resolved_inputs, &total_input_value);
+  cardano_direct_deposit_map_t* direct_deposits = cardano_sub_transaction_body_get_direct_deposits(body);
+  cardano_direct_deposit_map_unref(&direct_deposits);
+
+  uint64_t direct_deposit_total = 0U;
+
+  result = sum_direct_deposits(direct_deposits, &direct_deposit_total);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_value_unref(&implicit_value);
-    cardano_value_unref(&total_output_value);
-
     return result;
   }
 
-  result = cardano_value_subtract(total_output_value, total_input_value, &diff_value);
+  cardano_multi_asset_t* mint = cardano_sub_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&mint);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_value_unref(&implicit_value);
-    cardano_value_unref(&total_output_value);
-    cardano_value_unref(&total_input_value);
+  cardano_transaction_output_list_t* outputs = cardano_sub_transaction_body_get_outputs(body);
+  cardano_transaction_input_set_t*   inputs  = cardano_sub_transaction_body_get_inputs(body);
 
-    return result;
-  }
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_input_set_unref(&inputs);
 
-  result = cardano_value_subtract(diff_value, implicit_value, &net_value);
+  const uint64_t* donation_ptr  = cardano_sub_transaction_body_get_donation(body);
+  const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
+  const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
+  const int64_t   produced_coin = (int64_t)implicit_coin.deposits + (int64_t)donation + (int64_t)direct_deposit_total;
 
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_value_unref(&implicit_value);
-    cardano_value_unref(&total_output_value);
-    cardano_value_unref(&total_input_value);
-    cardano_value_unref(&diff_value);
-
-    return result;
-  }
-
-  *is_balanced = cardano_value_is_zero(net_value);
-
-  cardano_value_unref(&implicit_value);
-  cardano_value_unref(&total_output_value);
-  cardano_value_unref(&total_input_value);
-  cardano_value_unref(&diff_value);
-  cardano_value_unref(&net_value);
-
-  return CARDANO_SUCCESS;
+  return compute_imbalance(inputs, resolved_inputs, outputs, mint, consumed_coin, produced_coin, imbalance);
 }

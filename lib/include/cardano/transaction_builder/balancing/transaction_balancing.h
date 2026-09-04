@@ -27,7 +27,9 @@
 #include <cardano/error.h>
 #include <cardano/protocol_params/protocol_parameters.h>
 #include <cardano/providers/provider.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/value.h>
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
@@ -156,6 +158,103 @@ cardano_is_transaction_balanced(
   cardano_utxo_list_t*           resolved_inputs,
   cardano_protocol_parameters_t* protocol_params,
   bool*                          is_balanced);
+
+/**
+ * \brief Computes the imbalance of a Cardano transaction.
+ *
+ * The imbalance is the value the transaction consumes minus the value it produces. Consumed value is the sum of the
+ * resolved input values, the reward withdrawals, the deposit refunds and the minted assets; produced value is the sum
+ * of the outputs, the fee, the deposits, the treasury donation, the direct deposits and the burned assets.
+ *
+ * A zero imbalance means the transaction is balanced. A positive coin or asset amount means the transaction consumes
+ * more than it produces (a surplus that a change output or another transaction in a CIP-118 batch must absorb), while
+ * a negative amount means it produces more than it consumes (a deficit that other transactions in the batch must fund).
+ *
+ * The returned value is independent of the transaction and of the resolved inputs: it owns its multi asset, so it may
+ * be modified freely (for example with \ref cardano_value_add_asset) without altering the mint field of the body or
+ * the value of any resolved UTXO.
+ *
+ * \param[in]  tx               A pointer to the transaction whose imbalance is computed.
+ * \param[in]  resolved_inputs  A list of UTXOs resolving every input of the transaction.
+ * \param[in]  protocol_params  Protocol parameters supplying the deposit amounts of the Shelley era certificates.
+ * \param[out] imbalance        On success, a pointer to a newly created \ref cardano_value_t holding the imbalance.
+ *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input has no
+ *         resolved UTXO, or an appropriate error code indicating the type of failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_t* tx = ...;                // Transaction to inspect
+ * cardano_utxo_list_t* resolved_inputs = ...;     // List of resolved input UTXOs
+ * cardano_protocol_parameters_t* params = ...;    // Protocol parameters
+ * cardano_value_t* imbalance = NULL;
+ *
+ * cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, params, &imbalance);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   if (cardano_value_get_coin(imbalance) > 0)
+ *   {
+ *     // The transaction consumes more lovelace than it produces
+ *   }
+ *
+ *   cardano_value_unref(&imbalance);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_compute_transaction_imbalance(
+  cardano_transaction_t*         tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance);
+
+/**
+ * \brief Computes the imbalance of a CIP-118 sub transaction.
+ *
+ * A sub transaction is an intent: it is deliberately unbalanced and its imbalance is what a batcher matches against the
+ * other transactions of the batch. The imbalance is the value the sub transaction consumes minus the value it produces,
+ * with the same terms and the same sign convention as \ref cardano_compute_transaction_imbalance, except that a sub
+ * transaction body carries no fee.
+ *
+ * The returned value is independent of the sub transaction and of the resolved inputs: it owns its multi asset, so a
+ * batcher may modify it freely (for example with \ref cardano_value_add_asset) without altering the mint field of the
+ * sub transaction body or the value of any resolved UTXO.
+ *
+ * \param[in]  sub_tx           A pointer to the sub transaction whose imbalance is computed.
+ * \param[in]  resolved_inputs  A list of UTXOs resolving every input of the sub transaction.
+ * \param[in]  protocol_params  Protocol parameters supplying the deposit amounts of the Shelley era certificates.
+ * \param[out] imbalance        On success, a pointer to a newly created \ref cardano_value_t holding the imbalance.
+ *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input has no
+ *         resolved UTXO, or an appropriate error code indicating the type of failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_transaction_t* sub_tx = ...;        // Sub transaction to inspect
+ * cardano_utxo_list_t* resolved_inputs = ...;     // List of resolved input UTXOs
+ * cardano_protocol_parameters_t* params = ...;    // Protocol parameters
+ * cardano_value_t* imbalance = NULL;
+ *
+ * cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, params, &imbalance);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Match the imbalance against the rest of the batch
+ *   cardano_value_unref(&imbalance);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_compute_sub_transaction_imbalance(
+  cardano_sub_transaction_t*     sub_tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance);
 
 #ifdef __cplusplus
 }
