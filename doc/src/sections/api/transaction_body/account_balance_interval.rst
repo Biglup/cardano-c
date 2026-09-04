@@ -9,6 +9,10 @@ Account Balance Interval
 
 ------------
 
+.. doxygenfunction:: cardano_account_balance_interval_new_exact
+
+------------
+
 .. doxygenfunction:: cardano_account_balance_interval_from_cbor
 
 ------------
@@ -22,6 +26,14 @@ Account Balance Interval
 ------------
 
 .. doxygenfunction:: cardano_account_balance_interval_get_exclusive_upper_bound
+
+------------
+
+.. doxygenfunction:: cardano_account_balance_interval_get_exact_balance
+
+------------
+
+.. doxygenfunction:: cardano_account_balance_interval_is_exact
 
 ------------
 
