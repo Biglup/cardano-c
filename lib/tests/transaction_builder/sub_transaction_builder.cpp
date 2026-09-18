@@ -79,7 +79,7 @@ static const char* PLUTUS_V1_CBOR              = "82014e4d0100003322222005120012
 static const char* PLUTUS_V2_CBOR              = "82024e4d01000033222220051200120011";
 static const char* PLUTUS_V3_CBOR              = "82034e4d01000033222220051200120011";
 static const char* PLUTUS_V4_CBOR              = "82044e4d01000033222220051200120011";
-static const char* PLUTUS_SCRIPT_ERROR         = "Plutus scripts can not run inside sub transactions, only native scripts are supported.";
+static const char* PLUTUS_SCRIPT_ERROR         = "Plutus scripts are not supported in sub transactions by this builder, only native scripts are supported.";
 static const char* METADATA_JSON               = "{ \"name\": \"test\" }";
 
 static const uint64_t KEY_DEPOSIT               = 2000000;

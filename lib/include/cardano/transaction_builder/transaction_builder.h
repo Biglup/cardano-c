@@ -2785,6 +2785,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  *
  * This function finalizes the transaction by aggregating all previously added inputs, outputs, certificates, and other data.
  * If any required data is missing or incorrect, this function will report the errors encountered during the build process.
+ * See \ref cardano_tx_builder_add_sub_transaction for the failures that are specific to a transaction that carries
+ * sub transactions, such as a missing required top level guard or sub transactions that do not balance.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that manages the transaction details.
  * \param[out] transaction A pointer to a \ref cardano_transaction_t pointer where the created transaction will be stored upon success.
