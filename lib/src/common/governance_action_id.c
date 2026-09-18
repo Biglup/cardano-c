@@ -168,7 +168,14 @@ cardano_governance_action_id_new(const cardano_blake2b_hash_t* hash, const uint6
   assert(copy_hex_result == CARDANO_SUCCESS);
   CARDANO_UNUSED(copy_hex_result);
 
-  return to_cip29_bech32((*governance_action_id)->hash_bytes, sizeof((*governance_action_id)->hash_bytes), (byte_t)index, (*governance_action_id)->cip129_str, sizeof((*governance_action_id)->cip129_str));
+  const cardano_error_t bech32_result = to_cip29_bech32((*governance_action_id)->hash_bytes, sizeof((*governance_action_id)->hash_bytes), (byte_t)index, (*governance_action_id)->cip129_str, sizeof((*governance_action_id)->cip129_str));
+
+  if (bech32_result != CARDANO_SUCCESS)
+  {
+    cardano_governance_action_id_unref(governance_action_id);
+  }
+
+  return bech32_result;
 }
 
 cardano_error_t

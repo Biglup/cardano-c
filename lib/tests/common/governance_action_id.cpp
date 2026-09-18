@@ -336,6 +336,37 @@ TEST(cardano_governance_action_id_new, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_governance_action_id_new, releasesTheObjectIfEventualMemoryAllocationFails)
+{
+  // Arrange
+  cardano_governance_action_id_t* governance_action_id = nullptr;
+  cardano_blake2b_hash_t*         hash                 = nullptr;
+
+  cardano_error_t error = cardano_blake2b_hash_from_hex(
+    KEY_HASH_HEX,
+    strlen(KEY_HASH_HEX),
+    &hash);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  error = cardano_governance_action_id_new(
+    hash,
+    0,
+    &governance_action_id);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_governance_action_id_new, returnsErrorIfHashIsInvalidSize)
 {
   // Arrange
