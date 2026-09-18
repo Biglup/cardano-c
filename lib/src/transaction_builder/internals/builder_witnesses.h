@@ -257,7 +257,7 @@ cardano_builder_add_script(
 /**
  * \brief Adds a script to the witness set of a sub transaction.
  *
- * Plutus scripts can not run inside a sub transaction, so this function only accepts native scripts.
+ * The sub transaction builder does not support Plutus scripts, so this function only accepts native scripts.
  * A native script is added through \ref cardano_builder_add_script, and a Plutus script of any
  * language version is rejected leaving the witness set unchanged.
  *

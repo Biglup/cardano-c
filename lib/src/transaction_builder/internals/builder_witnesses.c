@@ -520,7 +520,7 @@ cardano_builder_add_sub_transaction_script(
 
   if (language != CARDANO_SCRIPT_LANGUAGE_NATIVE)
   {
-    *error_message = "Plutus scripts can not run inside sub transactions, only native scripts are supported.";
+    *error_message = "Plutus scripts are not supported in sub transactions by this builder, only native scripts are supported.";
 
     return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }

@@ -81,10 +81,11 @@ extern "C" {
  *   the batch.
  * - **Sub Transaction Fields Only**: Fees, collateral and starting account balance intervals only exist on a
  *   top level transaction, so this builder has no functions for them.
- * - **Native Scripts and Key Witnesses**: Plutus scripts can not run inside a sub transaction, so no function
- *   of this builder takes a redeemer and Plutus scripts are rejected. For the same reason the governance
- *   proposals that are validated by the guardrails script, which is a Plutus script, have no functions on this
- *   builder: parameter change and treasury withdrawals proposals belong in a top level transaction.
+ * - **Native Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub
+ *   transaction and PlutusV4 scripts are not supported by this builder yet, so no function of this builder
+ *   takes a redeemer and Plutus scripts are rejected. For the same reason the governance proposals that are
+ *   validated by the guardrails script, which is a Plutus script, have no functions on this builder: parameter
+ *   change and treasury withdrawals proposals belong in a top level transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -271,7 +272,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_invalid_before_ex(cardano_sub_tx_
  *
  * This function appends a specified UTXO as an input to the sub transaction being built. The builder never selects
  * inputs by itself, so the sub transaction spends exactly the UTXOs added through this function. Only inputs locked
- * by a key or by a native script can be spent, since Plutus scripts can not run inside a sub transaction.
+ * by a key or by a native script can be spent, since this builder only supports native scripts and key witnesses.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance in which to add the input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the resolved UTXO to be used as an input.
@@ -498,7 +499,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_metadata_ex(
  *
  * This function allows the user to specify a token minting operation within a sub transaction, including
  * the policy ID, asset name and amount. This enables minting (positive amount) or burning (negative amount) of
- * tokens. The minting policy must be a native script, since Plutus scripts can not run inside a sub transaction.
+ * tokens. The minting policy must be a native script, since this builder does not support Plutus scripts.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance for building the sub transaction.
  * \param[in] policy_id A pointer to a \ref cardano_blake2b_hash_t representing the unique minting policy ID.
@@ -527,7 +528,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
  * \brief Adds a token minting operation to the sub transaction builder using policy ID and asset name in hexadecimal format.
  *
  * This function allows the sub transaction builder to mint or burn tokens associated with a specific policy ID and asset name.
- * The minting policy must be a native script, since Plutus scripts can not run inside a sub transaction.
+ * The minting policy must be a native script, since this builder does not support Plutus scripts.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] policy_id_hex A string in hexadecimal format representing the policy ID of the token to mint or burn.
@@ -562,7 +563,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_ex(
  * \brief Adds a token minting operation to the sub transaction builder using a predefined asset ID.
  *
  * This function allows minting or burning of tokens within a sub transaction by specifying an asset ID along with the amount.
- * The minting policy must be a native script, since Plutus scripts can not run inside a sub transaction.
+ * The minting policy must be a native script, since this builder does not support Plutus scripts.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
  * \param[in] asset_id A pointer to a \ref cardano_asset_id_t structure representing the asset to mint or burn.
@@ -588,7 +589,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id(
  * \brief Adds a token minting operation to the sub transaction builder using an asset ID in hexadecimal format.
  *
  * This function enables minting or burning tokens for a specific asset identified by its unique `asset_id` in hexadecimal format.
- * The minting policy must be a native script, since Plutus scripts can not run inside a sub transaction.
+ * The minting policy must be a native script, since this builder does not support Plutus scripts.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] asset_id_hex A string in hexadecimal format representing the unique asset ID.
@@ -617,8 +618,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id_ex(
  * \brief Adds a script to the sub transaction builder.
  *
  * This function allows the addition of a native script (`cardano_script_t`) to the witness set of the sub transaction.
- * Native scripts define the conditions under which outputs can be unlocked and tokens can be minted. Plutus scripts
- * can not run inside a sub transaction, so adding a Plutus script of any language version is reported as an error.
+ * Native scripts define the conditions under which outputs can be unlocked and tokens can be minted. PlutusV1,
+ * PlutusV2 and PlutusV3 scripts can not run inside a sub transaction and PlutusV4 scripts are not supported by this
+ * builder yet, so adding a Plutus script of any language version is reported as an error.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction details.
  * \param[in] script A pointer to the \ref cardano_script_t structure representing the native script to be added.
@@ -1366,7 +1368,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep_ex(
  * \brief Registers a vote for a specified governance action within the sub transaction.
  *
  * This function allows a voter to submit their vote for a given governance action. The voter must be identified by
- * a key or by a native script, since Plutus scripts can not run inside a sub transaction.
+ * a key or by a native script, since this builder only supports native scripts and key witnesses.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] voter A pointer to a \ref cardano_voter_t structure representing the voter participating in the governance action.
@@ -1396,8 +1398,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_vote(
  *
  * This function adds a specified certificate to the sub transaction being constructed. Certificates are used to perform
  * various actions on the blockchain, such as staking, delegating, or registering/deregistering entities. The
- * credential the certificate acts on must be a key or a native script, since Plutus scripts can not run inside a sub
- * transaction.
+ * credential the certificate acts on must be a key or a native script, since this builder only supports native
+ * scripts and key witnesses.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] certificate A pointer to a \ref cardano_certificate_t structure representing the certificate to add.
