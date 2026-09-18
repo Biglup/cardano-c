@@ -26,13 +26,17 @@
 #include <cardano/object.h>
 
 #include "../allocators.h"
+#include "./internals/builder_certs.h"
 #include "./internals/builder_config.h"
 #include "./internals/builder_entities.h"
 #include "./internals/builder_inputs.h"
 #include "./internals/builder_mint.h"
 #include "./internals/builder_outputs.h"
+#include "./internals/builder_proposals.h"
 #include "./internals/builder_state.h"
 #include "./internals/builder_sub_build.h"
+#include "./internals/builder_votes.h"
+#include "./internals/builder_withdrawals.h"
 #include "./internals/builder_witnesses.h"
 
 #include <assert.h>
@@ -649,6 +653,563 @@ cardano_sub_tx_builder_add_account_balance_interval_ex(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_add_account_balance_interval_ex(&builder->state, reward_address, address_size, interval, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_withdraw_rewards(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  const int64_t             amount)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_withdraw_rewards(&builder->state, address, amount, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_withdraw_rewards_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  const int64_t             amount)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_withdraw_rewards_ex(&builder->state, reward_address, address_size, amount, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_register_reward_address(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_register_reward_address(&builder->state, address, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_register_reward_address_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_register_reward_address_ex(&builder->state, reward_address, address_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_deregister_reward_address(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_deregister_reward_address(&builder->state, address, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_deregister_reward_address_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_deregister_reward_address_ex(&builder->state, reward_address, address_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_delegate_stake(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  cardano_blake2b_hash_t*   pool_id)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_delegate_stake(&builder->state, address, pool_id, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_delegate_stake_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  const char*               pool_id,
+  size_t                    pool_id_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_delegate_stake_ex(&builder->state, reward_address, address_size, pool_id, pool_id_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_delegate_voting_power(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  cardano_drep_t*           drep)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_delegate_voting_power(&builder->state, address, drep, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_delegate_voting_power_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  const char*               drep_id,
+  size_t                    drep_id_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_delegate_voting_power_ex(&builder->state, reward_address, address_size, drep_id, drep_id_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_register_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep,
+  cardano_anchor_t*         anchor)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_register_drep(&builder->state, drep, anchor, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_register_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  const size_t              drep_id_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_register_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_update_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep,
+  cardano_anchor_t*         anchor)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_update_drep(&builder->state, drep, anchor, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_update_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  const size_t              drep_id_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_update_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_deregister_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_deregister_drep(&builder->state, drep, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_deregister_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  size_t                    drep_id_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_deregister_drep_ex(&builder->state, drep_id, drep_id_size, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_vote(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_vote(&builder->state, voter, action_id, vote, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_add_certificate(
+  cardano_sub_tx_builder_t* builder,
+  cardano_certificate_t*    certificate)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_certificate(&builder->state, certificate, NULL, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_hardfork(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_protocol_version_t*     version,
+  cardano_governance_action_id_t* governance_action_id)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_hardfork(&builder->state, reward_address, anchor, version, governance_action_id, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_hardfork_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size,
+  const char*               gov_action_id,
+  const size_t              gov_action_id_size,
+  const uint64_t            minor_protocol_version,
+  const uint64_t            major_protocol_version)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_hardfork_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, minor_protocol_version, major_protocol_version, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_no_confidence(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_no_confidence(&builder->state, reward_address, anchor, governance_action_id, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_no_confidence_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size,
+  const char*               gov_action_id,
+  const size_t              gov_action_id_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_no_confidence_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_update_committee(
+  cardano_sub_tx_builder_t*        builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  cardano_unit_interval_t*         new_quorum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_update_committee(&builder->state, reward_address, anchor, governance_action_id, members_to_be_removed, members_to_be_added, new_quorum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_update_committee_ex(
+  cardano_sub_tx_builder_t*        builder,
+  const char*                      reward_address,
+  const size_t                     reward_address_size,
+  const char*                      metadata_url,
+  const size_t                     metadata_url_size,
+  const char*                      metadata_hash_hex,
+  const size_t                     metadata_hash_hex_size,
+  const char*                      gov_action_id,
+  const size_t                     gov_action_id_size,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  const double                     new_quorum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_update_committee_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, members_to_be_removed, members_to_be_added, new_quorum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_new_constitution(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id,
+  cardano_constitution_t*         constitution)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_new_constitution(&builder->state, reward_address, anchor, governance_action_id, constitution, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_new_constitution_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size,
+  const char*               gov_action_id,
+  const size_t              gov_action_id_size,
+  cardano_constitution_t*   constitution)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_new_constitution_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, constitution, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_info(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_info(&builder->state, reward_address, anchor, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_info_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_info_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

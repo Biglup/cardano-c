@@ -1182,10 +1182,17 @@ CARDANO_EXPORT void cardano_tx_builder_add_datum(
  * reward account. It uses the associated \ref cardano_provider_t to fetch the available reward balance
  * for the given account address and adds the withdrawal to the transaction.
  *
+ * Up to the Conway era a withdrawal must drain the account, so the amount must be the full available reward balance.
+ * From the Dijkstra era partial withdrawals are valid: the ledger only requires that the withdrawals of an account,
+ * added over the top level transaction and every sub transaction of the batch, do not exceed the balance the account
+ * had before the batch. The exception is a top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script,
+ * whose withdrawals must still drain the account exactly.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
  *                    from which rewards should be withdrawn.
- * \param[in] amount  The amount of rewards to withdraw from the account. It must be the full available reward balance.
+ * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace. See the description for when it
+ *                    must be the full available reward balance.
  * \param[in] redeemer An optional pointer to \ref cardano_plutus_data_t that serves as the redeemer for
  *                     script-locked withdrawals, if applicable.
  *
@@ -1232,10 +1239,14 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
  * using a string format for the reward address. It uses the associated \ref cardano_provider_t to fetch the available
  * reward balance for the given address and includes the withdrawal in the transaction.
  *
+ * The amount follows the same rules as in \ref cardano_tx_builder_withdraw_rewards: it must be the full available
+ * reward balance up to the Conway era and whenever the transaction uses a PlutusV1, PlutusV2 or PlutusV3 script, and
+ * it may be a part of the balance otherwise from the Dijkstra era.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.
  * \param[in] address_size The size of the reward address string in bytes.
- * \param[in] amount  The amount of rewards to withdraw from the account. It must be the full available reward balance.
+ * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
  * \param[in] redeemer An optional pointer to \ref cardano_plutus_data_t that acts as the redeemer for
  *                     script-locked withdrawals, if applicable.
  *
