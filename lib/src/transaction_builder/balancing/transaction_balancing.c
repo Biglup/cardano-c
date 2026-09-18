@@ -453,6 +453,52 @@ compute_imbalance(
 }
 
 /**
+ * \brief Adds the imbalance of a sub transaction to a running total.
+ *
+ * \param[in]     sub_tx          The sub transaction whose imbalance is added.
+ * \param[in]     resolved_inputs The UTXO list containing resolved values for each input of the sub transaction.
+ * \param[in]     protocol_params The protocol parameters supplying the deposit amounts.
+ * \param[in,out] total           The running total. On success it is replaced by a new value holding the sum; on
+ *                                failure it is left untouched.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was added, or an appropriate error code.
+ */
+static cardano_error_t
+add_sub_transaction_imbalance(
+  cardano_sub_transaction_t*     sub_tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              total)
+{
+  cardano_value_t* sub_imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol_params, &sub_imbalance);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_value_t* tmp_value = NULL;
+
+  result = cardano_value_add(*total, sub_imbalance, &tmp_value);
+
+  cardano_value_unref(&sub_imbalance);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&tmp_value);
+
+    return result;
+  }
+
+  cardano_value_unref(total);
+  *total = tmp_value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Sets the transaction inputs for a transaction body.
  *
  * This function takes a list of selected UTXOs and sets them as inputs in the provided transaction body.
@@ -1190,7 +1236,7 @@ cardano_is_transaction_balanced(
 
   cardano_value_t* imbalance = NULL;
 
-  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol_params, &imbalance);
+  cardano_error_t result = cardano_compute_transaction_batch_imbalance(tx, resolved_inputs, protocol_params, &imbalance);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1343,4 +1389,79 @@ cardano_compute_sub_transaction_imbalance(
   const int64_t   produced_coin = (int64_t)implicit_coin.deposits + (int64_t)donation + (int64_t)direct_deposit_total;
 
   return compute_imbalance(inputs, resolved_inputs, outputs, mint, consumed_coin, produced_coin, imbalance);
+}
+
+cardano_error_t
+cardano_compute_transaction_batch_imbalance(
+  cardano_transaction_t*         tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance)
+{
+  if (imbalance == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *imbalance = NULL;
+
+  if (tx == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (resolved_inputs == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_value_t* total = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol_params, &total);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; i < num_sub_transactions; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_value_unref(&total);
+
+      return result;
+    }
+
+    result = add_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol_params, &total);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_value_unref(&total);
+
+      return result;
+    }
+  }
+
+  *imbalance = total;
+
+  return CARDANO_SUCCESS;
 }
