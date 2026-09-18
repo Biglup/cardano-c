@@ -747,6 +747,22 @@ cardano_balance_transaction(
     return result;
   }
 
+  cardano_direct_deposit_map_t* direct_deposits = cardano_transaction_body_get_direct_deposits(body);
+  cardano_direct_deposit_map_unref(&direct_deposits);
+
+  uint64_t direct_deposit_total = 0U;
+
+  result = sum_direct_deposits(direct_deposits, &direct_deposit_total);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "Failed to compute direct deposits for transaction balancing.");
+
+    return result;
+  }
+
   cardano_transaction_output_list_t* original_outputs       = cardano_transaction_body_get_outputs(body);
   cardano_transaction_output_list_t* shallow_cloned_outputs = shallow_clone_outputs(original_outputs);
   cardano_transaction_output_list_unref(&original_outputs);
@@ -792,7 +808,7 @@ cardano_balance_transaction(
 
     result = cardano_value_new(
       ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) -
-        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)donation),
+        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)donation + (int64_t)direct_deposit_total),
       mint,
       &implicit_value);
 
