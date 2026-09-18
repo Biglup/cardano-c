@@ -122,8 +122,14 @@ cardano_balance_transaction(
  * This function verifies if the specified transaction (`tx`) meets the balance requirements as per Cardano protocol rules.
  * It considers the total inputs, outputs, fees, and execution costs to determine if the transaction is balanced.
  *
+ * Value conservation covers the whole CIP-118 batch: when the transaction carries sub transactions, the value they
+ * consume and produce is accounted together with the top level body, so the transaction is balanced when its
+ * \ref cardano_compute_transaction_batch_imbalance is zero. A transaction without sub transactions is balanced when its
+ * own body is.
+ *
  * \param[in]  tx               A pointer to the transaction to be checked.
  * \param[in]  resolved_inputs  A list of UTXOs that have been selected and are expected to cover the transaction's outputs and fees.
+ *                              It must resolve the inputs of the transaction and of every sub transaction it carries.
  * \param[in]  protocol_params  Protocol parameters needed for fee calculation, including min-fee coefficients and other constraints.
  * \param[out] is_balanced      A pointer to a boolean that will hold the result. Set to `true` if the transaction is balanced, or `false` otherwise.
  *
@@ -252,6 +258,60 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t
 cardano_compute_sub_transaction_imbalance(
   cardano_sub_transaction_t*     sub_tx,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              imbalance);
+
+/**
+ * \brief Computes the imbalance of a whole CIP-118 batch.
+ *
+ * The ledger checks value conservation over the whole batch: the value consumed and produced by the top level
+ * transaction body and by every sub transaction it carries is summed in a single check. This function returns the
+ * imbalance of the top level body (see \ref cardano_compute_transaction_imbalance) plus the imbalance of each sub
+ * transaction (see \ref cardano_compute_sub_transaction_imbalance), coin and multi assets included, with the same sign
+ * convention: a positive amount is value the batch still has left over, a negative amount is value the batch still
+ * needs, and a zero imbalance means the batch is balanced.
+ *
+ * For a transaction that carries no sub transactions the result equals \ref cardano_compute_transaction_imbalance.
+ *
+ * The returned value is independent of the transaction, of its sub transactions and of the resolved inputs: it may be
+ * modified freely (for example with \ref cardano_value_add_asset) without altering any of them.
+ *
+ * \param[in]  tx               A pointer to the top level transaction whose batch imbalance is computed.
+ * \param[in]  resolved_inputs  A list of UTXOs resolving every input of the top level transaction body and of every sub
+ *                              transaction it carries.
+ * \param[in]  protocol_params  Protocol parameters supplying the deposit amounts of the Shelley era certificates.
+ * \param[out] imbalance        On success, a pointer to a newly created \ref cardano_value_t holding the imbalance.
+ *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input of the
+ *         top level body or of a sub transaction has no resolved UTXO, or an appropriate error code indicating the
+ *         type of failure.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_transaction_t* tx = ...;                // Top level transaction carrying the sub transactions
+ * cardano_utxo_list_t* resolved_inputs = ...;     // Resolved input UTXOs of the top level body and the sub transactions
+ * cardano_protocol_parameters_t* params = ...;    // Protocol parameters
+ * cardano_value_t* imbalance = NULL;
+ *
+ * cardano_error_t result = cardano_compute_transaction_batch_imbalance(tx, resolved_inputs, params, &imbalance);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   if (cardano_value_get_coin(imbalance) < 0)
+ *   {
+ *     // The batch still needs lovelace that the top level transaction must fund
+ *   }
+ *
+ *   cardano_value_unref(&imbalance);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_compute_transaction_batch_imbalance(
+  cardano_transaction_t*         tx,
   cardano_utxo_list_t*           resolved_inputs,
   cardano_protocol_parameters_t* protocol_params,
   cardano_value_t**              imbalance);
