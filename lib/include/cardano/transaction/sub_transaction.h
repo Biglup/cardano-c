@@ -538,6 +538,43 @@ CARDANO_EXPORT cardano_blake2b_hash_t* cardano_sub_transaction_get_id(cardano_su
 CARDANO_EXPORT void cardano_sub_transaction_clear_cbor_cache(cardano_sub_transaction_t* sub_transaction);
 
 /**
+ * \brief Applies verification key (vkey) witnesses to a sub transaction.
+ *
+ * This function attaches a set of vkey witnesses to the witness set of the given sub transaction. The party that
+ * authors a sub transaction signs its id (see \ref cardano_sub_transaction_get_id), which is the hash of the body
+ * alone. Applying witnesses never touches the body, so the id and the body bytes that were signed are preserved.
+ *
+ * \param[in,out] sub_transaction A pointer to the \ref cardano_sub_transaction_t structure representing the sub
+ *                                transaction to which the vkey witnesses will be applied.
+ * \param[in] new_vkeys A pointer to the \ref cardano_vkey_witness_set_t structure containing the set of vkey witnesses to
+ *                  be applied.
+ *
+ * \return \ref CARDANO_SUCCESS if the vkey witnesses were successfully applied to the sub transaction, or an appropriate
+ *         error code if an error occurred.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_transaction_t* sub_transaction = ...; // Initialized sub transaction
+ * cardano_vkey_witness_set_t* vkey_witnesses = ...; // Initialized set of vkey witnesses
+ *
+ * cardano_error_t result = cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witnesses);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // The vkey witnesses were successfully applied to the sub transaction
+ * }
+ * else
+ * {
+ *   // Handle the error
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_sub_transaction_apply_vkey_witnesses(
+  cardano_sub_transaction_t*  sub_transaction,
+  cardano_vkey_witness_set_t* new_vkeys);
+
+/**
  * \brief Decrements the reference count of a cardano_sub_transaction_t object.
  *
  * This function is responsible for managing the lifecycle of a \ref cardano_sub_transaction_t object

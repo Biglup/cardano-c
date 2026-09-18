@@ -46,10 +46,17 @@ static const char* BODY_WITH_FEE_HASH = "8cbebc5de7b583095090a501bd7cd092fcebbfd
 static const char* AUXILIARY_DATA_CBOR = "a1016474657374";
 static const char* WITNESS_SET_CBOR    = "a100d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
 
+static const char* VKEY_WITNESS_SET_CBOR       = "d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
+static const char* OTHER_VKEY_WITNESS_SET_CBOR = "d90102818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d3958406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
+
 static const char* MINIMAL_CBOR                   = "83a200d90102800180a0f6";
 static const char* WITH_AUX_DATA_CBOR             = "83a200d90102800180a0a1016474657374";
 static const char* WITH_WITNESS_CBOR              = "83a200d90102800180a100d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40af6";
 static const char* WITH_WITNESS_AND_AUX_DATA_CBOR = "83a200d90102800180a100d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40aa1016474657374";
+
+static const char* NON_CANONICAL_BODY_HASH         = "4f263f08c7088114791db8af7a5cb3342e8881bac857c0c1a48f5edcc44fdaad";
+static const char* NON_CANONICAL_CBOR              = "83a201800081825820000000000000000000000000000000000000000000000000000000000000000000a0f6";
+static const char* NON_CANONICAL_WITH_WITNESS_CBOR = "83a201800081825820000000000000000000000000000000000000000000000000000000000000000000a100d90102818258203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40af6";
 
 static const char* TWO_ELEMENT_CBOR         = "82a200d90102800180a0";
 static const char* FOUR_ELEMENT_CBOR        = "84a200d90102800180a0f5f6";
@@ -129,6 +136,24 @@ new_default_auxiliary_data(const char* cbor)
   cardano_cbor_reader_unref(&reader);
 
   return auxiliary_data;
+};
+
+/**
+ * Creates a new default instance of the vkey_witness_set.
+ * @return A new instance of the vkey_witness_set.
+ */
+static cardano_vkey_witness_set_t*
+new_default_vkey_witness_set(const char* cbor)
+{
+  cardano_vkey_witness_set_t* vkey_witness_set = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_error_t             result           = cardano_vkey_witness_set_from_cbor(reader, &vkey_witness_set);
+
+  EXPECT_THAT(result, CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return vkey_witness_set;
 };
 
 /**
@@ -984,4 +1009,142 @@ TEST(cardano_sub_transaction_clear_cbor_cache, doesNothingIfGivenNullPtr)
 {
   // Act
   cardano_sub_transaction_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, canUpdateWitnessSet)
+{
+  // Arrange
+  cardano_sub_transaction_t*  sub_transaction  = new_default_sub_transaction(WITH_WITNESS_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(OTHER_VKEY_WITNESS_SET_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_witness_set_t* witness_set = cardano_sub_transaction_get_witness_set(sub_transaction);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_vkey_witness_set_t* vkeys = cardano_witness_set_get_vkeys(witness_set);
+  cardano_vkey_witness_set_unref(&vkeys);
+
+  EXPECT_EQ(cardano_vkey_witness_set_get_length(vkeys), 2U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, canUpdateWitnessSetEvenIfVkeyIsNull)
+{
+  // Arrange
+  cardano_sub_transaction_t*  sub_transaction  = new_default_sub_transaction(MINIMAL_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_SET_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  expect_encodes_to(sub_transaction, WITH_WITNESS_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, preservesTheIdOfTheSubTransaction)
+{
+  // Arrange
+  cardano_sub_transaction_t*  sub_transaction  = new_default_sub_transaction(MINIMAL_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_SET_CBOR);
+
+  cardano_blake2b_hash_t* first_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  // Act
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* second_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  size_t size = cardano_blake2b_hash_get_hex_size(second_id);
+  char*  hex  = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(second_id, hex, size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_TRUE(cardano_blake2b_hash_equals(first_id, second_id));
+  EXPECT_STREQ(hex, MINIMAL_BODY_HASH);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&first_id);
+  cardano_blake2b_hash_unref(&second_id);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  free(hex);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, preservesTheIdAndBodyBytesOfANonCanonicalSubTransaction)
+{
+  // Arrange
+  cardano_sub_transaction_t*  sub_transaction  = new_default_sub_transaction(NON_CANONICAL_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_SET_CBOR);
+
+  cardano_blake2b_hash_t* first_id = cardano_sub_transaction_get_id(sub_transaction);
+
+  size_t size      = cardano_blake2b_hash_get_hex_size(first_id);
+  char*  first_hex = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(first_id, first_hex, size), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* second_id  = cardano_sub_transaction_get_id(sub_transaction);
+  char*                   second_hex = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(second_id, second_hex, size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(first_hex, NON_CANONICAL_BODY_HASH);
+  EXPECT_STREQ(second_hex, NON_CANONICAL_BODY_HASH);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(first_id, second_id));
+  expect_encodes_to(sub_transaction, NON_CANONICAL_WITH_WITNESS_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&first_id);
+  cardano_blake2b_hash_unref(&second_id);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  free(first_hex);
+  free(second_hex);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, returnsErrorIfNull)
+{
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses((cardano_sub_transaction_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(nullptr, (cardano_vkey_witness_set_t*)""), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_sub_transaction_apply_vkey_witnesses, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_sub_transaction_t*  sub_transaction  = new_default_sub_transaction(MINIMAL_CBOR);
+  cardano_vkey_witness_set_t* vkey_witness_set = new_default_vkey_witness_set(VKEY_WITNESS_SET_CBOR);
+
+  // Act
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  cardano_error_t result = cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
 }
