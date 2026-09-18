@@ -30,6 +30,7 @@
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/providers/provider.h>
 #include <cardano/slot_config.h>
+#include <cardano/transaction_body/account_balance_interval.h>
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
 #include <cardano/transaction_builder/evaluation/tx_evaluator.h>
@@ -1257,6 +1258,195 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_ex(
   size_t                 address_size,
   int64_t                amount,
   cardano_plutus_data_t* redeemer);
+
+/**
+ * \brief Adds a direct deposit to the transaction being built.
+ *
+ * A direct deposit pays lovelace straight into a reward account without creating a UTxO. The deposited amount is
+ * value produced by the transaction, so the builder funds it from the selected inputs together with the outputs
+ * and the fee. Adding a direct deposit for a reward account that already has one accumulates both amounts.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A pointer to the \ref cardano_reward_address_t representing the reward account that
+ *                           receives the deposit.
+ * \param[in] amount The amount of lovelace to deposit. It must be greater than zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;           // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Initialized reward address
+ *
+ * cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 2000000);
+ * \endcode
+ *
+ * \note Direct deposits are only valid from the Dijkstra era onwards. Errors related to adding a direct deposit,
+ *       including an accumulated amount that does not fit in 64 bits, are deferred and will only be reported when
+ *       `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_direct_deposit(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  uint64_t                  amount);
+
+/**
+ * \brief Adds a direct deposit to the transaction using a string reward address.
+ *
+ * This function behaves like `cardano_tx_builder_add_direct_deposit` but accepts the reward account as a Bech32
+ * string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A string representing the reward account that receives the deposit.
+ * \param[in] address_size The size of the reward address string in bytes.
+ * \param[in] amount The amount of lovelace to deposit. It must be greater than zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;          // Initialized transaction builder
+ * const char* reward_addr = "stake1u9...";         // Reward address in string format
+ * size_t address_size = strlen(reward_addr);       // Length of the reward address string
+ *
+ * cardano_tx_builder_add_direct_deposit_ex(tx_builder, reward_addr, address_size, 2000000);
+ * \endcode
+ *
+ * \note Direct deposits are only valid from the Dijkstra era onwards. Errors related to adding a direct deposit
+ *       are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_direct_deposit_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  size_t                address_size,
+  uint64_t              amount);
+
+/**
+ * \brief Adds an account balance interval to the transaction being built.
+ *
+ * An account balance interval makes the transaction valid only while the balance of the reward account sits
+ * inside the interval at the point the transaction is applied. An interval is either bounded (inclusive lower
+ * bound, exclusive upper bound, either of which may be absent) or an exact balance. Adding an interval for a
+ * reward account that already has one replaces the previous interval.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A pointer to the \ref cardano_reward_address_t representing the reward account the
+ *                           interval constrains.
+ * \param[in] interval A pointer to the \ref cardano_account_balance_interval_t the account balance must sit in.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;           // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Initialized reward address
+ * cardano_account_balance_interval_t* interval = NULL;
+ * const uint64_t lower_bound = 1000000;
+ *
+ * if (cardano_account_balance_interval_new(&lower_bound, NULL, &interval) == CARDANO_SUCCESS)
+ * {
+ *   cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, interval);
+ *   cardano_account_balance_interval_unref(&interval);
+ * }
+ * \endcode
+ *
+ * \note Account balance intervals are only valid from the Dijkstra era onwards. Errors related to adding an
+ *       interval are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_account_balance_interval(
+  cardano_tx_builder_t*               builder,
+  cardano_reward_address_t*           reward_address,
+  cardano_account_balance_interval_t* interval);
+
+/**
+ * \brief Adds an account balance interval to the transaction using a string reward address.
+ *
+ * This function behaves like `cardano_tx_builder_add_account_balance_interval` but accepts the reward account
+ * as a Bech32 string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A string representing the reward account the interval constrains.
+ * \param[in] address_size The size of the reward address string in bytes.
+ * \param[in] interval A pointer to the \ref cardano_account_balance_interval_t the account balance must sit in.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;                   // Initialized transaction builder
+ * cardano_account_balance_interval_t* interval = ...;       // Initialized interval
+ * const char* reward_addr = "stake1u9...";                  // Reward address in string format
+ * size_t address_size = strlen(reward_addr);                // Length of the reward address string
+ *
+ * cardano_tx_builder_add_account_balance_interval_ex(tx_builder, reward_addr, address_size, interval);
+ * \endcode
+ *
+ * \note Account balance intervals are only valid from the Dijkstra era onwards. Errors related to adding an
+ *       interval are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_account_balance_interval_ex(
+  cardano_tx_builder_t*               builder,
+  const char*                         reward_address,
+  size_t                              address_size,
+  cardano_account_balance_interval_t* interval);
+
+/**
+ * \brief Adds a starting account balance interval to the transaction being built.
+ *
+ * A starting account balance interval makes the transaction valid only while the balance the reward account had
+ * before any sub transaction of the transaction was applied sits inside the interval, while
+ * `cardano_tx_builder_add_account_balance_interval` constrains the balance at the point the transaction itself is
+ * applied. Adding an interval for a reward account that already has one replaces the previous interval.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A pointer to the \ref cardano_reward_address_t representing the reward account the
+ *                           interval constrains.
+ * \param[in] interval A pointer to the \ref cardano_account_balance_interval_t the starting account balance must
+ *                     sit in.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;           // Initialized transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Initialized reward address
+ * cardano_account_balance_interval_t* interval = NULL;
+ *
+ * if (cardano_account_balance_interval_new_exact(5000000, &interval) == CARDANO_SUCCESS)
+ * {
+ *   cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, interval);
+ *   cardano_account_balance_interval_unref(&interval);
+ * }
+ * \endcode
+ *
+ * \note Starting account balance intervals are only valid from the Dijkstra era onwards. Errors related to adding
+ *       an interval are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval(
+  cardano_tx_builder_t*               builder,
+  cardano_reward_address_t*           reward_address,
+  cardano_account_balance_interval_t* interval);
+
+/**
+ * \brief Adds a starting account balance interval to the transaction using a string reward address.
+ *
+ * This function behaves like `cardano_tx_builder_add_starting_account_balance_interval` but accepts the reward
+ * account as a Bech32 string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] reward_address A string representing the reward account the interval constrains.
+ * \param[in] address_size The size of the reward address string in bytes.
+ * \param[in] interval A pointer to the \ref cardano_account_balance_interval_t the starting account balance must
+ *                     sit in.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;                   // Initialized transaction builder
+ * cardano_account_balance_interval_t* interval = ...;       // Initialized interval
+ * const char* reward_addr = "stake1u9...";                  // Reward address in string format
+ * size_t address_size = strlen(reward_addr);                // Length of the reward address string
+ *
+ * cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, reward_addr, address_size, interval);
+ * \endcode
+ *
+ * \note Starting account balance intervals are only valid from the Dijkstra era onwards. Errors related to adding
+ *       an interval are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
+  cardano_tx_builder_t*               builder,
+  const char*                         reward_address,
+  size_t                              address_size,
+  cardano_account_balance_interval_t* interval);
 
 /**
  * \brief Registers a staking reward address.

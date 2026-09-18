@@ -29,6 +29,7 @@
 #include "./internals/builder_build.h"
 #include "./internals/builder_certs.h"
 #include "./internals/builder_config.h"
+#include "./internals/builder_entities.h"
 #include "./internals/builder_inputs.h"
 #include "./internals/builder_mint.h"
 #include "./internals/builder_outputs.h"
@@ -870,6 +871,117 @@ cardano_tx_builder_withdraw_rewards_ex(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_withdraw_rewards_ex(&builder->state, reward_address, address_size, amount, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_direct_deposit(
+  cardano_tx_builder_t*     builder,
+  cardano_reward_address_t* reward_address,
+  const uint64_t            amount)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_direct_deposit(&builder->state, reward_address, amount, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_direct_deposit_ex(
+  cardano_tx_builder_t* builder,
+  const char*           reward_address,
+  size_t                address_size,
+  const uint64_t        amount)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_direct_deposit_ex(&builder->state, reward_address, address_size, amount, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_account_balance_interval(
+  cardano_tx_builder_t*               builder,
+  cardano_reward_address_t*           reward_address,
+  cardano_account_balance_interval_t* interval)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_account_balance_interval(&builder->state, reward_address, interval, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_account_balance_interval_ex(
+  cardano_tx_builder_t*               builder,
+  const char*                         reward_address,
+  size_t                              address_size,
+  cardano_account_balance_interval_t* interval)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_account_balance_interval_ex(&builder->state, reward_address, address_size, interval, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_starting_account_balance_interval(
+  cardano_tx_builder_t*               builder,
+  cardano_reward_address_t*           reward_address,
+  cardano_account_balance_interval_t* interval)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_starting_account_balance_interval(&builder->state, reward_address, interval, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_starting_account_balance_interval_ex(
+  cardano_tx_builder_t*               builder,
+  const char*                         reward_address,
+  size_t                              address_size,
+  cardano_account_balance_interval_t* interval)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_starting_account_balance_interval_ex(&builder->state, reward_address, address_size, interval, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

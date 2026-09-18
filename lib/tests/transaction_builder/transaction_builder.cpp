@@ -35,6 +35,7 @@
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
+#include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <gmock/gmock.h>
 #include <string_safe.h>
@@ -70,6 +71,14 @@ static const char* HASH_HEX1                   = "100000000000000000000000000000
 static const char* SCRIPT_HASH_HEX             = "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
 static const char* KEY_HASH_GUARDS_BODY_CBOR   = "a400d9010280018002000ed9010281581c00000000000000000000000000000000000000000000000000000000";
 static const char* CREDENTIAL_GUARDS_BODY_CBOR = "a400d9010280018002000ed90102828200581c000000000000000000000000000000000000000000000000000000008201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* CHANGE_ADDRESS              = "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg";
+static const char* EMPTY_BODY_CBOR             = "a300d901028001800200";
+static const char* DIRECT_DEPOSIT_MAP_CBOR     = "a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a002dc6c0";
+static const char* DIRECT_DEPOSIT_BODY_CBOR    = "a400d9010280018002001819a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a002dc6c0";
+static const char* BALANCE_INTERVAL_MAP_CBOR   = "a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454821a000f4240f6";
+static const char* BALANCE_INTERVAL_BODY_CBOR  = "a400d901028001800200181aa1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454821a000f4240f6";
+static const char* STARTING_INTERVAL_MAP_CBOR  = "a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a004c4b40";
+static const char* STARTING_INTERVAL_BODY_CBOR = "a400d901028001800200181ba1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a004c4b40";
 static const char* ASSET_ID_HEX                = "0000000000000000000000000000000000000000000000000000000054455854";
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
 static const char* PLUTUS_V2_CBOR              = "82025908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
@@ -485,6 +494,166 @@ encode_body(cardano_tx_builder_t* tx_builder)
   cardano_cbor_writer_unref(&writer);
 
   return body_hex;
+}
+
+/**
+ * Encodes a transaction to a CBOR hex string.
+ * \param tx the transaction to encode.
+ * \return The CBOR hex string. The caller must free the returned string.
+ */
+static char*
+encode_transaction(cardano_transaction_t* tx)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_transaction_to_cbor(tx, writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        tx_hex   = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, tx_hex, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return tx_hex;
+}
+
+/**
+ * Sums the lovelace held by the UTXOs that the transaction spends.
+ * \param tx the transaction whose inputs are resolved.
+ * \param utxos the UTXOs the inputs were selected from.
+ * \return The total lovelace consumed by the inputs of the transaction.
+ */
+static uint64_t
+sum_input_lovelace(cardano_transaction_t* tx, cardano_utxo_list_t* utxos)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  uint64_t total = 0U;
+
+  for (size_t i = 0U; i < cardano_transaction_input_set_get_length(inputs); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    EXPECT_EQ(cardano_transaction_input_set_get(inputs, i, &input), CARDANO_SUCCESS);
+    cardano_transaction_input_unref(&input);
+
+    for (size_t j = 0U; j < cardano_utxo_list_get_length(utxos); ++j)
+    {
+      cardano_utxo_t* utxo = NULL;
+
+      EXPECT_EQ(cardano_utxo_list_get(utxos, j, &utxo), CARDANO_SUCCESS);
+      cardano_utxo_unref(&utxo);
+
+      cardano_transaction_input_t* utxo_input = cardano_utxo_get_input(utxo);
+      cardano_transaction_input_unref(&utxo_input);
+
+      if (cardano_transaction_input_equals(input, utxo_input))
+      {
+        cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+        cardano_transaction_output_unref(&output);
+
+        cardano_value_t* value = cardano_transaction_output_get_value(output);
+        cardano_value_unref(&value);
+
+        total += (uint64_t)cardano_value_get_coin(value);
+      }
+    }
+  }
+
+  return total;
+}
+
+/**
+ * Sums the lovelace held by the outputs of a transaction.
+ * \param tx the transaction whose outputs are added up.
+ * \return The total lovelace locked by the outputs of the transaction.
+ */
+static uint64_t
+sum_output_lovelace(cardano_transaction_t* tx)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_output_list_unref(&outputs);
+
+  uint64_t total = 0U;
+
+  for (size_t i = 0U; i < cardano_transaction_output_list_get_length(outputs); ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+
+    EXPECT_EQ(cardano_transaction_output_list_get(outputs, i, &output), CARDANO_SUCCESS);
+    cardano_transaction_output_unref(&output);
+
+    cardano_value_t* value = cardano_transaction_output_get_value(output);
+    cardano_value_unref(&value);
+
+    total += (uint64_t)cardano_value_get_coin(value);
+  }
+
+  return total;
+}
+
+/**
+ * Creates a transaction builder that is ready to build, with a change address and spendable UTXOs.
+ * \param params the protocol parameters.
+ * \param utxos the UTXOs available for coin selection.
+ * \return A new instance of the transaction builder.
+ */
+static cardano_tx_builder_t*
+new_funded_tx_builder(cardano_protocol_parameters_t* params, cardano_utxo_list_t* utxos)
+{
+  cardano_address_t* change_address = nullptr;
+
+  EXPECT_EQ(cardano_address_from_string(CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), &change_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_change_address(tx_builder, change_address);
+  cardano_tx_builder_set_utxos(tx_builder, utxos);
+
+  cardano_address_unref(&change_address);
+
+  return tx_builder;
+}
+
+/**
+ * Creates an account balance interval that only bounds the balance from below.
+ * \param inclusive_lower_bound the minimum balance in lovelace.
+ * \return A new instance of the account balance interval.
+ */
+static cardano_account_balance_interval_t*
+new_lower_bounded_interval(const uint64_t inclusive_lower_bound)
+{
+  cardano_account_balance_interval_t* interval = NULL;
+
+  EXPECT_EQ(cardano_account_balance_interval_new(&inclusive_lower_bound, NULL, &interval), CARDANO_SUCCESS);
+
+  return interval;
+}
+
+/**
+ * Creates an account balance interval that requires an exact balance.
+ * \param balance the exact balance in lovelace.
+ * \return A new instance of the account balance interval.
+ */
+static cardano_account_balance_interval_t*
+new_exact_interval(const uint64_t balance)
+{
+  cardano_account_balance_interval_t* interval = NULL;
+
+  EXPECT_EQ(cardano_account_balance_interval_new_exact(balance, &interval), CARDANO_SUCCESS);
+
+  return interval;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -4769,6 +4938,1096 @@ TEST(cardano_tx_builder_withdraw_rewards_ex, canWithdrawRewards)
 
   cardano_reward_address_unref(&reward_address);
   cardano_plutus_data_unref(&redeemer);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_add_direct_deposit(nullptr, nullptr, 0);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, returnsErrorIfRewardAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, nullptr, 3000000);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, returnsErrorIfAmountIsZero)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 0);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Direct deposit amount must be greater than zero.");
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, canAddDirectDeposit)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 3000000);
+
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_direct_deposit_map_t* deposits = cardano_transaction_body_get_direct_deposits(body);
+  cardano_direct_deposit_map_unref(&deposits);
+
+  uint64_t amount = 0;
+
+  EXPECT_EQ(cardano_direct_deposit_map_get(deposits, reward_address, &amount), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(deposits), 1);
+  EXPECT_EQ(amount, 3000000);
+  EXPECT_STREQ(body_hex, DIRECT_DEPOSIT_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, accumulatesDepositsToTheSameRewardAccount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 1000000);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 2000000);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, DIRECT_DEPOSIT_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, reportsOverflowWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, UINT64_MAX);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 1);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 1);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Direct deposit amount overflows.");
+  EXPECT_EQ(tx, nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, bodyWithoutDirectDepositsKeepsItsEncoding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_STREQ(body_hex, EMPTY_BODY_CBOR);
+  EXPECT_EQ(cardano_transaction_body_get_direct_deposits(body), nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_account_balance_intervals(body), nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_starting_account_balance_intervals(body), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, buildsABalancedTransactionThatFundsTheDeposit)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_send_lovelace_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), 2000000);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 3000000);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  const uint64_t fee = cardano_transaction_body_get_fee(body);
+
+  EXPECT_GT(fee, 0U);
+  EXPECT_EQ(sum_input_lovelace(tx, utxos), sum_output_lovelace(tx) + fee + 3000000U);
+
+  char* tx_hex = encode_transaction(tx);
+
+  EXPECT_NE(strstr(tx_hex, (std::string("1819") + DIRECT_DEPOSIT_MAP_CBOR).c_str()), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  free(tx_hex);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 3000000);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_direct_deposit_ex(nullptr, nullptr, 0, 0);
+  cardano_tx_builder_add_direct_deposit_ex(tx_builder, nullptr, 0, 3000000);
+
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit_ex, canAddDirectDeposit)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 3000000);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, DIRECT_DEPOSIT_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit_ex, reportsInvalidRewardAddressWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos  = new_utxo_list();
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit_ex(tx_builder, "invalid", strlen("invalid"), 3000000);
+  cardano_tx_builder_add_direct_deposit_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 3000000);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(result, tx_builder->last_error);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Failed to parse reward address.");
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_direct_deposits(body), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_direct_deposit_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 3000000);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+      cardano_transaction_body_unref(&body);
+
+      EXPECT_EQ(cardano_transaction_body_get_direct_deposits(body), nullptr);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_add_account_balance_interval(nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, returnsErrorIfRewardAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_lower_bounded_interval(1000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval(tx_builder, nullptr, interval);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, returnsErrorIfIntervalIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, nullptr);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, canAddInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval       = new_lower_bounded_interval(1000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_account_balance_intervals_map_t* intervals = cardano_transaction_body_get_account_balance_intervals(body);
+  cardano_account_balance_intervals_map_unref(&intervals);
+
+  cardano_account_balance_interval_t* stored = nullptr;
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_get(intervals, reward_address, &stored), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 1);
+  EXPECT_EQ(stored, interval);
+  EXPECT_EQ(cardano_transaction_body_get_starting_account_balance_intervals(body), nullptr);
+  EXPECT_STREQ(body_hex, BALANCE_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&stored);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, replacesTheIntervalOfTheSameRewardAccount)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* previous       = new_exact_interval(1);
+  cardano_account_balance_interval_t* interval       = new_lower_bounded_interval(1000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, previous);
+  cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, BALANCE_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&previous);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, buildsATransactionThatCarriesTheInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_utxo_list_t*                utxos          = new_utxo_list();
+  cardano_account_balance_interval_t* interval       = new_lower_bounded_interval(1000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_send_lovelace_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), 2000000);
+  cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, interval);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  char* tx_hex = encode_transaction(tx);
+
+  EXPECT_NE(strstr(tx_hex, (std::string("181a") + BALANCE_INTERVAL_MAP_CBOR).c_str()), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  free(tx_hex);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval       = new_lower_bounded_interval(1000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_account_balance_interval(tx_builder, reward_address, interval);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_lower_bounded_interval(1000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_account_balance_interval_ex(nullptr, nullptr, 0, nullptr);
+  cardano_tx_builder_add_account_balance_interval_ex(tx_builder, nullptr, 0, interval);
+
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval_ex, returnsErrorIfIntervalIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval_ex, canAddInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_lower_bounded_interval(1000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, BALANCE_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval_ex, reportsInvalidRewardAddressWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_utxo_list_t*                utxos    = new_utxo_list();
+  cardano_account_balance_interval_t* interval = new_lower_bounded_interval(1000000);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_add_account_balance_interval_ex(tx_builder, "invalid", strlen("invalid"), interval);
+  cardano_tx_builder_add_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(result, tx_builder->last_error);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Failed to parse reward address.");
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_account_balance_intervals(body), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_tx_builder_add_account_balance_interval_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_lower_bounded_interval(1000000);
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+      cardano_transaction_body_unref(&body);
+
+      EXPECT_EQ(cardano_transaction_body_get_account_balance_intervals(body), nullptr);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_add_starting_account_balance_interval(nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, returnsErrorIfRewardAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_exact_interval(5000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, nullptr, interval);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, returnsErrorIfIntervalIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, nullptr);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, canAddInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval       = new_exact_interval(5000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_account_balance_intervals_map_t* intervals = cardano_transaction_body_get_starting_account_balance_intervals(body);
+  cardano_account_balance_intervals_map_unref(&intervals);
+
+  cardano_account_balance_interval_t* stored = nullptr;
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_get(intervals, reward_address, &stored), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 1);
+  EXPECT_EQ(stored, interval);
+  EXPECT_EQ(cardano_transaction_body_get_account_balance_intervals(body), nullptr);
+  EXPECT_STREQ(body_hex, STARTING_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&stored);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, replacesTheIntervalOfTheSameRewardAccount)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* previous       = new_exact_interval(1);
+  cardano_account_balance_interval_t* interval       = new_exact_interval(5000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, previous);
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, STARTING_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&previous);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, buildsATransactionThatCarriesTheInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_utxo_list_t*                utxos          = new_utxo_list();
+  cardano_account_balance_interval_t* interval       = new_exact_interval(5000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_send_lovelace_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), 2000000);
+  cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, interval);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  char* tx_hex = encode_transaction(tx);
+
+  EXPECT_NE(strstr(tx_hex, (std::string("181b") + STARTING_INTERVAL_MAP_CBOR).c_str()), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  free(tx_hex);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval       = new_exact_interval(5000000);
+  cardano_reward_address_t*           reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_starting_account_balance_interval(tx_builder, reward_address, interval);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval_ex, doesntCrashIfGivenNull)
+{
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_exact_interval(5000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_add_starting_account_balance_interval_ex(nullptr, nullptr, 0, nullptr);
+  cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, nullptr, 0, interval);
+
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval_ex, returnsErrorIfIntervalIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval_ex, canAddInterval)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_exact_interval(5000000);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+  char* body_hex = encode_body(tx_builder);
+
+  // Assert
+  EXPECT_THAT(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(body_hex, STARTING_INTERVAL_BODY_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  free(body_hex);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval_ex, reportsInvalidRewardAddressWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_utxo_list_t*                utxos    = new_utxo_list();
+  cardano_account_balance_interval_t* interval = new_exact_interval(5000000);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, "invalid", strlen("invalid"), interval);
+  cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(result, tx_builder->last_error);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Failed to parse reward address.");
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_starting_account_balance_intervals(body), nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_tx_builder_add_starting_account_balance_interval_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params   = init_protocol_parameters();
+  cardano_account_balance_interval_t* interval = new_exact_interval(5000000);
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_starting_account_balance_interval_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), interval);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (tx_builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+      cardano_transaction_body_unref(&body);
+
+      EXPECT_EQ(cardano_transaction_body_get_starting_account_balance_intervals(body), nullptr);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_account_balance_interval_unref(&interval);
 }
 
 TEST(cardano_tx_builder_register_reward_address, doesntCrashIfGivenNull)
