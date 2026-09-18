@@ -152,6 +152,64 @@ cardano_builder_add_guard_ex(
   const char**              error_message);
 
 /**
+ * \brief Requires a guard from the top level transaction of the batch.
+ *
+ * This function sets the entry of \p credential in the required top level guards map of the
+ * transaction body, creating the map when it is missing. The top level transaction that carries the
+ * sub transaction must list \p credential among its guards, and \p datum, when present, is handed to
+ * the guard script. Requiring a credential that is already present replaces its datum and keeps its
+ * position in the map.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] credential A pointer to the \ref cardano_credential_t the top level transaction must be
+ *                       guarded by. This parameter must not be NULL.
+ * \param[in] datum A pointer to the \ref cardano_plutus_data_t handed to the guard, or NULL when the
+ *                  guard takes no datum.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the required guard was set, or an appropriate error code indicating
+ *         the failure reason.
+ */
+cardano_error_t
+cardano_builder_require_top_level_guard(
+  cardano_builder_state_t* state,
+  cardano_credential_t*    credential,
+  cardano_plutus_data_t*   datum,
+  const char**             error_message);
+
+/**
+ * \brief Requires a guard from the top level transaction given its hash as a hexadecimal string.
+ *
+ * This function parses the credential hash and delegates to
+ * \ref cardano_builder_require_top_level_guard.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] hash_hex A pointer to the hexadecimal string with the credential hash.
+ * \param[in] hash_hex_size The size of the credential hash string in bytes.
+ * \param[in] type The type of the credential, key hash or script hash.
+ * \param[in] datum A pointer to the \ref cardano_plutus_data_t handed to the guard, or NULL when the
+ *                  guard takes no datum.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the required guard was set, or an appropriate error code indicating
+ *         the failure reason.
+ */
+cardano_error_t
+cardano_builder_require_top_level_guard_ex(
+  cardano_builder_state_t*  state,
+  const char*               hash_hex,
+  size_t                    hash_hex_size,
+  cardano_credential_type_t type,
+  cardano_plutus_data_t*    datum,
+  const char**              error_message);
+
+/**
  * \brief Adds a datum to the witness set.
  *
  * This function appends \p datum to the plutus data set of the witness set, creating the set when it
@@ -192,6 +250,29 @@ cardano_builder_add_datum(
  */
 cardano_error_t
 cardano_builder_add_script(
+  cardano_builder_state_t* state,
+  cardano_script_t*        script,
+  const char**             error_message);
+
+/**
+ * \brief Adds a script to the witness set of a sub transaction.
+ *
+ * Plutus scripts can not run inside a sub transaction, so this function only accepts native scripts.
+ * A native script is added through \ref cardano_builder_add_script, and a Plutus script of any
+ * language version is rejected leaving the witness set unchanged.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the sub transaction
+ *                      under construction. This parameter must not be NULL.
+ * \param[in] script A pointer to the \ref cardano_script_t to add. This parameter must not be NULL.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the script was added, \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE if
+ *         the script is a Plutus script, or an appropriate error code indicating the failure reason.
+ */
+cardano_error_t
+cardano_builder_add_sub_transaction_script(
   cardano_builder_state_t* state,
   cardano_script_t*        script,
   const char**             error_message);

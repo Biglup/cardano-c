@@ -225,6 +225,7 @@
 #include <cardano/transaction_builder/evaluation/tx_evaluator_impl.h>
 #include <cardano/transaction_builder/fee.h>
 #include <cardano/transaction_builder/script_data_hash.h>
+#include <cardano/transaction_builder/sub_transaction_builder.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 #include <cardano/typedefs.h>
 #include <cardano/uplc/uplc_apply_params.h>
