@@ -28,6 +28,7 @@
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
 #include <cardano/proposal_procedures/hard_fork_initiation_action.h>
+#include <cardano/transaction_builder/sub_transaction_builder.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include "../../src/transaction_builder/internals/blake2b_hash_to_redeemer_map.h"
@@ -85,6 +86,7 @@ static const char* SUB_TX_CBOR                 = "83a20081825820d3c887d17486d483
 static const char* OTHER_SUB_TX_CBOR           = "83a200d9010281825820027b68d4c11e97d7e065cc2702912cb1a21b6d0e56c6a74dd605889a55611385000180a0f6";
 static const char* OVERLAPPING_SUB_TX_CBOR     = "83a200d9010282825820027b68d4c11e97d7e065cc2702912cb1a21b6d0e56c6a74dd605889a5561138500825820d3c887d17486d483a2b46b58b01cb9344745f15fdd8f8e70a57f854cdd88a633010180a0f6";
 static const char* SUB_TX_BODY_CBOR            = "a400d90102800180020017d901028183a20081825820d3c887d17486d483a2b46b58b01cb9344745f15fdd8f8e70a57f854cdd88a633010180a0f6";
+static const char* NFT_ASSET_ID_HEX            = "0b0d621b5c26d0a1fd0893a4b04c19d860296a69ede1fbcfc51798824e46542d303031";
 static const char* ASSET_ID_HEX                = "0000000000000000000000000000000000000000000000000000000054455854";
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
 static const char* PLUTUS_V2_CBOR              = "82025908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
@@ -734,6 +736,94 @@ new_funded_tx_builder(cardano_protocol_parameters_t* params, cardano_utxo_list_t
   cardano_address_unref(&change_address);
 
   return tx_builder;
+}
+
+/**
+ * Builds the sub transaction of a party that spends one UTXO and pays a value back to the address of that UTXO.
+ * \param params the protocol parameters.
+ * \param utxo the UTXO the party spends.
+ * \param lovelace the lovelace the party pays back to itself.
+ * \param nft_quantity the quantity of the NFT the party pays back to itself.
+ * \return A new instance of the sub transaction.
+ */
+static cardano_sub_transaction_t*
+build_party_sub_transaction(
+  cardano_protocol_parameters_t* params,
+  cardano_utxo_t*                utxo,
+  const int64_t                  lovelace,
+  const int64_t                  nft_quantity)
+{
+  cardano_sub_tx_builder_t*     builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_transaction_output_t* output          = cardano_utxo_get_output(utxo);
+  cardano_address_t*            address         = cardano_transaction_output_get_address(output);
+  cardano_value_t*              value           = cardano_value_new_from_coin(lovelace);
+  cardano_sub_transaction_t*    sub_transaction = nullptr;
+
+  if (nft_quantity > 0)
+  {
+    EXPECT_EQ(cardano_value_add_asset_with_id_ex(value, NFT_ASSET_ID_HEX, strlen(NFT_ASSET_ID_HEX), nft_quantity), CARDANO_SUCCESS);
+  }
+
+  cardano_sub_tx_builder_add_input(builder, utxo);
+  cardano_sub_tx_builder_send_value(builder, address, value);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(builder, &sub_transaction), CARDANO_SUCCESS);
+
+  cardano_value_unref(&value);
+  cardano_address_unref(&address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_tx_builder_unref(&builder);
+
+  return sub_transaction;
+}
+
+/**
+ * Creates a UTXO list with a single UTXO.
+ * \param utxo the UTXO to add to the list.
+ * \return A new instance of the UTXO list.
+ */
+static cardano_utxo_list_t*
+new_single_utxo_list(cardano_utxo_t* utxo)
+{
+  cardano_utxo_list_t* list = NULL;
+
+  EXPECT_EQ(cardano_utxo_list_new(&list), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_add(list, utxo), CARDANO_SUCCESS);
+
+  return list;
+}
+
+/**
+ * Checks whether the transaction spends a UTXO at the top level.
+ * \param tx the transaction whose inputs are searched.
+ * \param utxo the UTXO to look up.
+ * \return true if one of the inputs of the transaction body points to the UTXO.
+ */
+static bool
+transaction_spends(cardano_transaction_t* tx, cardano_utxo_t* utxo)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  cardano_transaction_input_t* utxo_input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&utxo_input);
+
+  bool is_spent = false;
+
+  for (size_t i = 0U; i < cardano_transaction_input_set_get_length(inputs); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    EXPECT_EQ(cardano_transaction_input_set_get(inputs, i, &input), CARDANO_SUCCESS);
+    cardano_transaction_input_unref(&input);
+
+    is_spent = is_spent || cardano_transaction_input_equals(input, utxo_input);
+  }
+
+  return is_spent;
 }
 
 /**
@@ -6537,6 +6627,295 @@ TEST(cardano_tx_builder_add_sub_transaction, returnsErrorIfMemoryAllocationFails
   cardano_protocol_parameters_unref(&params);
   cardano_sub_transaction_unref(&sub_transaction);
   cardano_utxo_list_unref(&resolved_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchIfThePartiesCancelOut)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_protocol_parameters();
+  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
+  cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL3);
+  cardano_utxo_t*                buyer_utxo    = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos = new_single_utxo_list(batcher_utxo);
+  cardano_utxo_list_t*           buyer_utxos   = new_single_utxo_list(buyer_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+  cardano_sub_transaction_t*     buyer_sub_tx  = build_party_sub_transaction(params, buyer_utxo, 224831727, 1);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
+  cardano_tx_builder_add_sub_transaction(tx_builder, buyer_sub_tx, buyer_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  EXPECT_EQ(cardano_sub_transaction_set_get_length(sub_transactions), 2U);
+  EXPECT_TRUE(transaction_spends(tx, batcher_utxo));
+  EXPECT_FALSE(transaction_spends(tx, seller_utxo));
+  EXPECT_FALSE(transaction_spends(tx, buyer_utxo));
+  EXPECT_EQ(sum_input_lovelace(tx, batcher_utxos), sum_output_lovelace(tx) + cardano_transaction_body_get_fee(body));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&seller_sub_tx);
+  cardano_sub_transaction_unref(&buyer_sub_tx);
+  cardano_utxo_unref(&seller_utxo);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_unref(&buyer_utxo);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_utxo_list_unref(&seller_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+  cardano_utxo_list_unref(&buyer_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchThatFundsTheDeficitOfAParty)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_protocol_parameters();
+  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
+  cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos = new_single_utxo_list(batcher_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_value_t* top_level_imbalance = nullptr;
+
+  EXPECT_EQ(cardano_compute_transaction_imbalance(tx, batcher_utxos, params, &top_level_imbalance), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), 10000000);
+
+  cardano_asset_id_map_t* assets       = cardano_value_as_assets_map(top_level_imbalance);
+  cardano_asset_id_t*     nft_asset_id = nullptr;
+  int64_t                 nft_quantity = 0;
+
+  EXPECT_EQ(cardano_asset_id_from_hex(NFT_ASSET_ID_HEX, strlen(NFT_ASSET_ID_HEX), &nft_asset_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_get(assets, nft_asset_id, &nft_quantity), CARDANO_SUCCESS);
+  EXPECT_EQ(nft_quantity, -1);
+  EXPECT_FALSE(transaction_spends(tx, seller_utxo));
+
+  // Cleanup
+  cardano_asset_id_unref(&nft_asset_id);
+  cardano_asset_id_map_unref(&assets);
+  cardano_value_unref(&top_level_imbalance);
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&seller_sub_tx);
+  cardano_utxo_unref(&seller_utxo);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_utxo_list_unref(&seller_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchThatReturnsTheSurplusOfAPartyAsChange)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_protocol_parameters();
+  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
+  cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                party_utxo    = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           batcher_utxos = new_single_utxo_list(batcher_utxo);
+  cardano_utxo_list_t*           party_utxos   = new_single_utxo_list(party_utxo);
+  cardano_sub_transaction_t*     party_sub_tx  = build_party_sub_transaction(params, party_utxo, 224831727, 0);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, party_sub_tx, party_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  EXPECT_EQ(sum_input_lovelace(tx, batcher_utxos) + 10000000U, sum_output_lovelace(tx) + cardano_transaction_body_get_fee(body));
+  EXPECT_FALSE(transaction_spends(tx, party_utxo));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&party_sub_tx);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_unref(&party_utxo);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+  cardano_utxo_list_unref(&party_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, neverSelectsAnAvailableUtxoSpentByASubTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_protocol_parameters();
+  cardano_utxo_list_t*           all_utxos    = new_utxo_list();
+  cardano_utxo_t*                party_utxo   = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     party_sub_tx = build_party_sub_transaction(params, party_utxo, 234831727, 0);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, all_utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, party_sub_tx, all_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+  EXPECT_FALSE(transaction_spends(tx, party_utxo));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&party_sub_tx);
+  cardano_utxo_unref(&party_utxo);
+  cardano_utxo_list_unref(&all_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInLegacyModeWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_utxo_t*                seller_utxo    = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo   = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                reference_utxo = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_utxo_list_t*           seller_utxos   = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos  = new_single_utxo_list(batcher_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
+  cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&seller_sub_tx);
+  cardano_utxo_unref(&seller_utxo);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_list_unref(&seller_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfThePartiesCancelOut)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_utxo_list_t*           all_utxos      = new_utxo_list();
+  cardano_utxo_t*                seller_utxo    = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo   = create_utxo(CBOR_DIFFERENT_VAL3);
+  cardano_utxo_t*                buyer_utxo     = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                reference_utxo = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_utxo_list_t*           seller_utxos   = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos  = new_single_utxo_list(batcher_utxo);
+  cardano_utxo_list_t*           buyer_utxos    = new_single_utxo_list(buyer_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+  cardano_sub_transaction_t*     buyer_sub_tx   = build_party_sub_transaction(params, buyer_utxo, 224831727, 1);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
+  cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
+  cardano_tx_builder_add_sub_transaction(tx_builder, buyer_sub_tx, buyer_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(tx, nullptr);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_value_t* top_level_imbalance = nullptr;
+
+  EXPECT_EQ(cardano_compute_transaction_imbalance(tx, batcher_utxos, params, &top_level_imbalance), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_value_is_zero(top_level_imbalance));
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&seller_sub_tx);
+  cardano_sub_transaction_unref(&buyer_sub_tx);
+  cardano_utxo_unref(&seller_utxo);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_unref(&buyer_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_utxo_list_unref(&seller_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+  cardano_utxo_list_unref(&buyer_utxos);
 }
 
 TEST(cardano_tx_builder_register_reward_address, doesntCrashIfGivenNull)

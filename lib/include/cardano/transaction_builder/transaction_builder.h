@@ -737,7 +737,8 @@ CARDANO_EXPORT void cardano_tx_builder_lock_value_ex(
  * \brief Adds an input to the transaction.
  *
  * This function appends a specified UTXO as an input to the transaction being built. Optionally,
- * it allows attaching a redeemer and datum if the input is associated with a Plutus script.
+ * it allows attaching a redeemer and datum if the input is associated with a Plutus script. An input that is
+ * already spent by a sub transaction added with `cardano_tx_builder_add_sub_transaction` is rejected.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance in which to add the input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the UTXO to be used as an input.
@@ -1469,9 +1470,17 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * a reference to it and never modifies it, so its original bytes, its id and its signatures are preserved.
  *
  * The inputs spent by a batch must be disjoint and the ids of its sub transactions unique. The sub transaction is
- * rejected when it was already added, or when it spends an input that is also spent by another sub transaction or
- * by an input added with `cardano_tx_builder_add_input`. Likewise, `cardano_tx_builder_add_input` rejects an input
- * that is already spent by a sub transaction.
+ * rejected when it was already added, when it spends an input that is also spent by another sub transaction or
+ * by an input added with `cardano_tx_builder_add_input`, or when one of its spend inputs is not resolved by
+ * \p resolved_utxos. Likewise, `cardano_tx_builder_add_input` rejects an input that is already spent by a sub
+ * transaction.
+ *
+ * `cardano_tx_builder_build` balances the whole batch: a net deficit of the sub transactions is funded by the inputs
+ * selected for the transaction, a net surplus is returned in its change outputs, and the UTXOs spent by the sub
+ * transactions are never selected as inputs of the transaction. When the transaction uses a PlutusV1, PlutusV2 or
+ * PlutusV3 script it must also conserve value by itself, so the sub transactions must balance between themselves;
+ * otherwise building fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub
+ * transaction.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.

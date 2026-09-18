@@ -499,6 +499,372 @@ add_sub_transaction_imbalance(
 }
 
 /**
+ * \brief Adds the imbalance of every sub transaction of a set to a running total.
+ *
+ * \param[in]     sub_transactions The sub transactions whose imbalances are added, or NULL when the body has none.
+ * \param[in]     resolved_inputs  The UTXO list containing resolved values for each input of the sub transactions.
+ * \param[in]     protocol_params  The protocol parameters supplying the deposit amounts.
+ * \param[in,out] total            The running total. On success it holds the sum; on failure the caller must still
+ *                                 release it.
+ *
+ * \return \ref CARDANO_SUCCESS if every imbalance was added, or an appropriate error code.
+ */
+static cardano_error_t
+add_sub_transactions_imbalance(
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_utxo_list_t*           resolved_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t**              total)
+{
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; i < num_sub_transactions; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    cardano_error_t result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = add_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol_params, total);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether a sub transaction spends a transaction input.
+ *
+ * \param[in]  sub_tx   The sub transaction whose spend inputs are searched.
+ * \param[in]  input    The transaction input to look up.
+ * \param[out] is_spent Set to true if the sub transaction spends the input.
+ *
+ * \return \ref CARDANO_SUCCESS if the inputs were searched, or an appropriate error code.
+ */
+static cardano_error_t
+is_spent_by_sub_transaction(
+  cardano_sub_transaction_t*         sub_tx,
+  const cardano_transaction_input_t* input,
+  bool*                              is_spent)
+{
+  cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+  cardano_sub_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_sub_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  const size_t num_inputs = cardano_transaction_input_set_get_length(inputs);
+
+  bool found = false;
+
+  for (size_t i = 0U; (i < num_inputs) && !found; ++i)
+  {
+    cardano_transaction_input_t* spent_input = NULL;
+
+    cardano_error_t result = cardano_transaction_input_set_get(inputs, i, &spent_input);
+    cardano_transaction_input_unref(&spent_input);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    found = cardano_transaction_input_equals(spent_input, input);
+  }
+
+  *is_spent = found;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether any sub transaction of a set spends a transaction input.
+ *
+ * \param[in]  sub_transactions The sub transactions whose spend inputs are searched.
+ * \param[in]  input            The transaction input to look up.
+ * \param[out] is_spent         Set to true if one of the sub transactions spends the input.
+ *
+ * \return \ref CARDANO_SUCCESS if the sub transactions were searched, or an appropriate error code.
+ */
+static cardano_error_t
+is_spent_by_sub_transactions(
+  cardano_sub_transaction_set_t*     sub_transactions,
+  const cardano_transaction_input_t* input,
+  bool*                              is_spent)
+{
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  bool found = false;
+
+  for (size_t i = 0U; (i < num_sub_transactions) && !found; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    cardano_error_t result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = is_spent_by_sub_transaction(sub_tx, input, &found);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  *is_spent = found;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether any UTXO of a list is spent by a sub transaction of a set.
+ *
+ * \param[in]  utxos            The UTXOs to look up, or NULL when there are none.
+ * \param[in]  sub_transactions The sub transactions whose spend inputs are searched, or NULL when the body has none.
+ * \param[out] has_spent_utxo   Set to true if one of the sub transactions spends one of the UTXOs.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were searched, or an appropriate error code.
+ */
+static cardano_error_t
+has_utxo_spent_by_sub_transactions(
+  cardano_utxo_list_t*           utxos,
+  cardano_sub_transaction_set_t* sub_transactions,
+  bool*                          has_spent_utxo)
+{
+  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
+
+  bool found = false;
+
+  for (size_t i = 0U; (i < num_utxos) && !found; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+    cardano_transaction_input_unref(&input);
+
+    result = is_spent_by_sub_transactions(sub_transactions, input, &found);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  *has_spent_utxo = found;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Creates the list of UTXOs that coin selection may spend at the top level of a batch.
+ *
+ * The inputs of the top level transaction must be disjoint from the inputs spent by its sub transactions, so
+ * every available UTXO that a sub transaction already spends is left out. The order of the remaining UTXOs is
+ * preserved.
+ *
+ * \param[in]  available_utxo   The list of available UTXOs.
+ * \param[in]  sub_transactions The sub transactions carried by the transaction, or NULL when it has none.
+ * \param[out] selectable_utxo  A pointer to store the selectable UTXOs, which is \p available_utxo itself when the
+ *                              transaction carries no sub transactions.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `selectable_utxo` when it is no longer needed.
+ */
+static cardano_error_t
+exclude_sub_transaction_inputs(
+  cardano_utxo_list_t*           available_utxo,
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_utxo_list_t**          selectable_utxo)
+{
+  if ((available_utxo == NULL) || (cardano_sub_transaction_set_get_length(sub_transactions) == 0U))
+  {
+    cardano_utxo_list_ref(available_utxo);
+    *selectable_utxo = available_utxo;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_utxo_list_t* utxos  = NULL;
+  cardano_error_t      result = cardano_utxo_list_new(&utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const size_t num_utxos = cardano_utxo_list_get_length(available_utxo);
+
+  for (size_t i = 0U; i < num_utxos; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    result = cardano_utxo_list_get(available_utxo, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&utxos);
+
+      return result;
+    }
+
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+    cardano_transaction_input_unref(&input);
+
+    bool is_spent = false;
+
+    result = is_spent_by_sub_transactions(sub_transactions, input, &is_spent);
+
+    if ((result == CARDANO_SUCCESS) && !is_spent)
+    {
+      result = cardano_utxo_list_add(utxos, utxo);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&utxos);
+
+      return result;
+    }
+  }
+
+  *selectable_utxo = utxos;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether a list of resolved UTXOs carries a PlutusV1, PlutusV2 or PlutusV3 reference script.
+ *
+ * \param[in]  utxos             The resolved UTXOs to inspect, or NULL when there are none.
+ * \param[out] has_legacy_script Set to true if one of the reference scripts is a PlutusV1, PlutusV2 or PlutusV3 script.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+has_legacy_reference_script(cardano_utxo_list_t* utxos, bool* has_legacy_script)
+{
+  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
+
+  bool found = false;
+
+  for (size_t i = 0U; (i < num_utxos) && !found; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+    cardano_transaction_output_unref(&output);
+
+    cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
+    cardano_script_unref(&script);
+
+    if (script == NULL)
+    {
+      continue;
+    }
+
+    cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
+
+    result = cardano_script_get_language(script, &language);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    found = (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1) ||
+      (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2) ||
+      (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
+  }
+
+  *has_legacy_script = found;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether the ledger validates a transaction in legacy mode.
+ *
+ * A top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
+ * its sub transactions removed. The scripts of the top level witness set, the reference scripts of the resolved top
+ * level reference inputs and the reference scripts of the pre selected inputs are inspected.
+ *
+ * \param[in]  tx                The top level transaction.
+ * \param[in]  reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[out] is_legacy_mode    Set to true if the transaction uses a PlutusV1, PlutusV2 or PlutusV3 script.
+ *
+ * \return \ref CARDANO_SUCCESS if the transaction was inspected, or an appropriate error code.
+ */
+static cardano_error_t
+is_legacy_mode_transaction(
+  cardano_transaction_t* tx,
+  cardano_utxo_list_t*   reference_inputs,
+  cardano_utxo_list_t*   pre_selected_utxo,
+  bool*                  is_legacy_mode)
+{
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witnesses);
+
+  cardano_plutus_v1_script_set_t* plutus_v1_scripts = cardano_witness_set_get_plutus_v1_scripts(witnesses);
+  cardano_plutus_v2_script_set_t* plutus_v2_scripts = cardano_witness_set_get_plutus_v2_scripts(witnesses);
+  cardano_plutus_v3_script_set_t* plutus_v3_scripts = cardano_witness_set_get_plutus_v3_scripts(witnesses);
+
+  cardano_plutus_v1_script_set_unref(&plutus_v1_scripts);
+  cardano_plutus_v2_script_set_unref(&plutus_v2_scripts);
+  cardano_plutus_v3_script_set_unref(&plutus_v3_scripts);
+
+  *is_legacy_mode = (cardano_plutus_v1_script_set_get_length(plutus_v1_scripts) > 0U) ||
+    (cardano_plutus_v2_script_set_get_length(plutus_v2_scripts) > 0U) ||
+    (cardano_plutus_v3_script_set_get_length(plutus_v3_scripts) > 0U);
+
+  if (*is_legacy_mode)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  const cardano_error_t result = has_legacy_reference_script(reference_inputs, is_legacy_mode);
+
+  if ((result != CARDANO_SUCCESS) || *is_legacy_mode)
+  {
+    return result;
+  }
+
+  return has_legacy_reference_script(pre_selected_utxo, is_legacy_mode);
+}
+
+/**
  * \brief Sets the transaction inputs for a transaction body.
  *
  * This function takes a list of selected UTXOs and sets them as inputs in the provided transaction body.
@@ -754,15 +1120,43 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
   return (int64_t)vk_witness_set_size * (int64_t)min_fee_coefficient;
 }
 
-/* IMPLEMENTATION ************************************************************/
-
-cardano_error_t
-cardano_balance_transaction(
+/**
+ * \brief Runs the balancing loop of a transaction until the fee converges and the whole batch is balanced.
+ *
+ * On every iteration the value that coin selection must cover is the value of the outputs minus the implicit value of
+ * the batch: the withdrawals, the deposit refunds, the minted assets and the net imbalance of the sub transactions,
+ * minus the deposits, the fee, the donation and the direct deposits. A surplus of the sub transactions therefore lowers
+ * the target or ends up as change, while a deficit is funded by the selected inputs.
+ *
+ * \param[in,out] unbalanced_tx                   The transaction to balance.
+ * \param[in]     foreign_signature_count         The number of expected extra signatures, not specified in the transaction.
+ * \param[in]     protocol_params                 The protocol parameters.
+ * \param[in]     reference_inputs                The resolved reference inputs of the transaction.
+ * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
+ * \param[in]     sub_transaction_resolved_inputs The resolved inputs spent by the sub transactions, or NULL when the
+ *                                                transaction carries none.
+ * \param[in]     sub_transactions_imbalance      The net imbalance of the sub transactions, zero when the transaction
+ *                                                carries none.
+ * \param[in]     input_to_redeemer_map           The map of inputs to redeemers.
+ * \param[in]     available_utxo                  The UTXOs coin selection may spend at the top level.
+ * \param[in]     coin_selector                   The coin selector.
+ * \param[in]     change_address                  The address that receives the change.
+ * \param[in]     available_collateral_utxo       The UTXOs available as collateral.
+ * \param[in]     collateral_change_address       The address that receives the collateral change.
+ * \param[in]     evaluator                       The transaction evaluator.
+ * \param[in]     deferred_redeemers              The deferred redeemers to resolve on every iteration, or NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the transaction was balanced, or an appropriate error code.
+ */
+static cardano_error_t
+balance_transaction(
   cardano_transaction_t*            unbalanced_tx,
   const size_t                      foreign_signature_count,
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
+  cardano_value_t*                  sub_transactions_imbalance,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,
@@ -850,13 +1244,27 @@ cardano_balance_transaction(
       return result;
     }
 
-    cardano_value_t* implicit_value = NULL;
+    cardano_value_t* top_level_implicit_value = NULL;
 
     result = cardano_value_new(
       ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) -
         ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)donation + (int64_t)direct_deposit_total),
       mint,
-      &implicit_value);
+      &top_level_implicit_value);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_value_unref(&total_output_value);
+
+      return result;
+    }
+
+    cardano_value_t* implicit_value = NULL;
+
+    result = cardano_value_add(top_level_implicit_value, sub_transactions_imbalance, &implicit_value);
+
+    cardano_value_unref(&top_level_implicit_value);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1184,6 +1592,21 @@ cardano_balance_transaction(
       continue;
     }
 
+    if (cardano_utxo_list_get_length(sub_transaction_resolved_inputs) > 0U)
+    {
+      cardano_utxo_list_t* resolved_with_sub_transactions = cardano_utxo_list_concat(resolved_inputs, sub_transaction_resolved_inputs);
+
+      cardano_utxo_list_unref(&resolved_inputs);
+      resolved_inputs = resolved_with_sub_transactions;
+
+      if (resolved_inputs == NULL)
+      {
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+
+        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+    }
+
     result = cardano_is_transaction_balanced(unbalanced_tx, resolved_inputs, protocol_params, &is_balanced);
     cardano_utxo_list_unref(&resolved_inputs);
 
@@ -1203,6 +1626,141 @@ cardano_balance_transaction(
   cardano_transaction_output_list_unref(&shallow_cloned_outputs);
 
   return CARDANO_SUCCESS;
+}
+
+/* IMPLEMENTATION ************************************************************/
+
+cardano_error_t
+cardano_balance_transaction(
+  cardano_transaction_t*            unbalanced_tx,
+  const size_t                      foreign_signature_count,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
+  cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
+  cardano_utxo_list_t*              available_utxo,
+  cardano_coin_selector_t*          coin_selector,
+  cardano_address_t*                change_address,
+  cardano_utxo_list_t*              available_collateral_utxo,
+  cardano_address_t*                collateral_change_address,
+  cardano_tx_evaluator_t*           evaluator,
+  cardano_deferred_redeemer_list_t* deferred_redeemers)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(unbalanced_tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  if ((cardano_sub_transaction_set_get_length(sub_transactions) > 0U) && (sub_transaction_resolved_inputs == NULL))
+  {
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "The resolved inputs of the sub transactions are required to balance a transaction that carries sub transactions.");
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  bool has_spent_utxo = false;
+
+  cardano_error_t result = has_utxo_spent_by_sub_transactions(pre_selected_utxo, sub_transactions, &has_spent_utxo);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (has_spent_utxo)
+  {
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "A pre selected input is already spent by a sub transaction. The inputs of the top level transaction must be disjoint from the inputs spent by its sub transactions.");
+
+    return CARDANO_ERROR_DUPLICATED_KEY;
+  }
+
+  cardano_value_t* sub_transactions_imbalance = cardano_value_new_zero();
+
+  if (sub_transactions_imbalance == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  result = add_sub_transactions_imbalance(
+    sub_transactions,
+    sub_transaction_resolved_inputs,
+    protocol_params,
+    &sub_transactions_imbalance);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&sub_transactions_imbalance);
+
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "Failed to compute the imbalance of the sub transactions for transaction balancing.");
+
+    return result;
+  }
+
+  if (!cardano_value_is_zero(sub_transactions_imbalance))
+  {
+    bool is_legacy_mode = false;
+
+    result = is_legacy_mode_transaction(unbalanced_tx, reference_inputs, pre_selected_utxo, &is_legacy_mode);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_value_unref(&sub_transactions_imbalance);
+
+      return result;
+    }
+
+    if (is_legacy_mode)
+    {
+      cardano_value_unref(&sub_transactions_imbalance);
+
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
+
+      return CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS;
+    }
+  }
+
+  cardano_utxo_list_t* selectable_utxo = NULL;
+
+  result = exclude_sub_transaction_inputs(available_utxo, sub_transactions, &selectable_utxo);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&sub_transactions_imbalance);
+
+    return result;
+  }
+
+  result = balance_transaction(
+    unbalanced_tx,
+    foreign_signature_count,
+    protocol_params,
+    reference_inputs,
+    pre_selected_utxo,
+    sub_transaction_resolved_inputs,
+    sub_transactions_imbalance,
+    input_to_redeemer_map,
+    selectable_utxo,
+    coin_selector,
+    change_address,
+    available_collateral_utxo,
+    collateral_change_address,
+    evaluator,
+    deferred_redeemers);
+
+  cardano_value_unref(&sub_transactions_imbalance);
+  cardano_utxo_list_unref(&selectable_utxo);
+
+  return result;
 }
 
 cardano_error_t
@@ -1435,30 +1993,13 @@ cardano_compute_transaction_batch_imbalance(
   cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
   cardano_sub_transaction_set_unref(&sub_transactions);
 
-  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+  result = add_sub_transactions_imbalance(sub_transactions, resolved_inputs, protocol_params, &total);
 
-  for (size_t i = 0U; i < num_sub_transactions; ++i)
+  if (result != CARDANO_SUCCESS)
   {
-    cardano_sub_transaction_t* sub_tx = NULL;
+    cardano_value_unref(&total);
 
-    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
-    cardano_sub_transaction_unref(&sub_tx);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_value_unref(&total);
-
-      return result;
-    }
-
-    result = add_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol_params, &total);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_value_unref(&total);
-
-      return result;
-    }
+    return result;
   }
 
   *imbalance = total;

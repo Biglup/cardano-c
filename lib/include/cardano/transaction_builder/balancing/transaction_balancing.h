@@ -53,11 +53,27 @@ extern "C" {
  * - Calculating the change output to ensure the transaction has the correct total ADA and assets.
  * - Adding collateral inputs if the transaction includes scripts.
  *
+ * When the transaction carries CIP-118 sub transactions the ledger checks value conservation over the whole batch, so
+ * the net imbalance of the sub transactions (see \ref cardano_compute_sub_transaction_imbalance) is part of the value
+ * that coin selection must cover: a net deficit is funded by additional top level inputs and a net surplus ends up in
+ * the change outputs. The UTXOs spent by the sub transactions are never selected as top level inputs, and the result is
+ * verified with the whole batch check of \ref cardano_is_transaction_balanced.
+ *
+ * A top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script (in its witness set, as a reference script
+ * of a resolved reference input or as a reference script of a pre selected input) must also conserve value by itself,
+ * with the sub transactions removed. In that case the sub transactions must balance between themselves, otherwise the
+ * function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction,
+ * since top level change can not absorb the imbalance.
+ *
  * \param[in, out] unbalanced_tx              A pointer to the transaction that needs balancing.
  * \param[in]      foreign_signature_count    The number of expected extra signatures, not specified in the transaction.
  * \param[in]      protocol_params            A pointer to the protocol parameters required for fee calculation and balancing.
  * \param[in]      reference_inputs           A list of resolved reference inputs that have already been included in the transaction.
- * \param[in]      pre_selected_utxo          A list of UTXOs that must be included in the transaction inputs.
+ * \param[in]      pre_selected_utxo          A list of UTXOs that must be included in the transaction inputs. They must be disjoint from the inputs
+ *                                            spent by the sub transactions the transaction carries, an overlap is rejected.
+ * \param[in]      sub_transaction_resolved_inputs
+ *                                            A list of UTXOs that resolves every input spent by the sub transactions the transaction carries.
+ *                                            Can be NULL if the transaction carries no sub transactions.
  * \param[in]      input_to_redeemer_map      A map of inputs to redeemers. This map associates specific references of inputs to redeemers in the witness set. Balancing the transaction can add
  *                                            additional inputs and this can make inputs change positions in the input set. Redeemers must be updated to point to the correct input.
  *                                            If you provide redeemers for any pre-selected input, you must specify this association in this map.
@@ -71,7 +87,11 @@ extern "C" {
  *                                            input order, change outputs and fee of the draft transaction are known. Each entry's callback produces
  *                                            the redeemer payload from the balanced draft. Can be NULL if the transaction has no deferred redeemers.
  *
- * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, or an appropriate error code indicating the type of failure.
+ * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction
+ *         carries sub transactions and \p sub_transaction_resolved_inputs is NULL, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input of a
+ *         sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
+ *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction uses a PlutusV1, PlutusV2 or PlutusV3 script and
+ *         its sub transactions do not balance between themselves, or an appropriate error code indicating the type of failure.
  *
  * \note This function assumes that the `unbalanced_tx` is a valid but incomplete transaction, missing necessary inputs to meet the target balance.
  *       After calling this function, the `unbalanced_tx` will be updated with additional inputs, collateral, and, if necessary, a change output.
@@ -83,6 +103,7 @@ extern "C" {
  * cardano_protocol_parameters_t* params = ...;                   // Protocol parameters
  * cardano_utxo_list_t* ref_inputs = ...;                         // Resolved reference inputs
  * cardano_utxo_list_t* preselected = ...;                        // Pre-selected UTXOs
+ * cardano_utxo_list_t* sub_tx_inputs = ...;                      // Resolved inputs of the sub transactions, or NULL
  * cardano_input_to_redeemer_map_t* input_to_redeemer_map = ...;  // Input to redeemer map
  * cardano_utxo_list_t* available = ...;                          // Available UTXOs
  * cardano_coin_selector_t* selector = ...;                       // Coin selector instance
@@ -91,7 +112,7 @@ extern "C" {
  * cardano_address_t* collateral_change_addr = ...;               // Collateral change address
  * cardano_tx_evaluator_t* eval = ...;                            // Evaluator instance
  *
- * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval, NULL);
+ * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, sub_tx_inputs, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval, NULL);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -107,6 +128,7 @@ cardano_balance_transaction(
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,

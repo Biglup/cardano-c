@@ -200,6 +200,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_MAXIMUM_INPUT_COUNT_EXCEEDED:
       message = "Maximum input count exceeded";
       break;
+    case CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS:
+      message = "Unbalanced sub transactions";
+      break;
     case CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE:
       message = "Script evaluation failure";
       break;
