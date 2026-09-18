@@ -49,6 +49,10 @@ Sub Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_sub_transaction_apply_vkey_witnesses
+
+------------
+
 .. doxygenfunction:: cardano_sub_transaction_unref
 
 ------------
