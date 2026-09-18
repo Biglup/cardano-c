@@ -66,10 +66,12 @@ extern "C" {
  * since top level change can not absorb the imbalance.
  *
  * The top level transaction also pays the fee and posts the collateral of the whole batch. The fee covers the size of the
- * sub transactions, the execution units of the redeemers of every sub transaction and the reference scripts of the resolved
- * reference inputs given in \p sub_transaction_reference_inputs. Collateral is added when a redeemer exists in the
- * transaction or in any of its sub transactions, and it is sized from the fee of the top level transaction. The scripts of
- * the sub transactions are not evaluated, the execution units their redeemers declare are taken as final.
+ * sub transactions, the execution units of the redeemers of every sub transaction and, when reference scripts are priced (a
+ * redeemer exists in the batch), the reference scripts of the resolved reference inputs given in
+ * \p sub_transaction_reference_inputs. Including them is deliberate and may exceed the current ledger minimum, which does not
+ * charge for the reference scripts of sub transactions yet. Collateral is added when a redeemer exists in the transaction or
+ * in any of its sub transactions, and it is sized from the fee of the top level transaction. The scripts of the sub
+ * transactions are not evaluated, the execution units their redeemers declare are taken as final.
  *
  * \param[in, out] unbalanced_tx              A pointer to the transaction that needs balancing.
  * \param[in]      foreign_signature_count    The number of expected extra signatures, not specified in the transaction.
@@ -85,7 +87,8 @@ extern "C" {
  *                                            price their reference scripts in the fee: it takes no part in script evaluation and a PlutusV1, PlutusV2
  *                                            or PlutusV3 reference script in it does not make the top level transaction conserve value by itself.
  *                                            A UTXO referenced by several sub transactions must be listed once per sub transaction, as the ledger
- *                                            counts it. Can be NULL if the sub transactions have no reference inputs.
+ *                                            counts it when it measures the reference script size of a batch. Can be NULL if the sub transactions
+ *                                            have no reference inputs.
  * \param[in]      input_to_redeemer_map      A map of inputs to redeemers. This map associates specific references of inputs to redeemers in the witness set. Balancing the transaction can add
  *                                            additional inputs and this can make inputs change positions in the input set. Redeemers must be updated to point to the correct input.
  *                                            If you provide redeemers for any pre-selected input, you must specify this association in this map.
@@ -208,9 +211,14 @@ cardano_is_transaction_balanced(
  * resolved input values, the reward withdrawals, the deposit refunds and the minted assets; produced value is the sum
  * of the outputs, the fee, the deposits, the treasury donation, the direct deposits and the burned assets.
  *
- * A zero imbalance means the transaction is balanced. A positive coin or asset amount means the transaction consumes
- * more than it produces (a surplus that a change output or another transaction in a CIP-118 batch must absorb), while
- * a negative amount means it produces more than it consumes (a deficit that other transactions in the batch must fund).
+ * The imbalance covers the top level body only and ignores the sub transactions the transaction carries (body key 23).
+ * The figure the ledger checks for a CIP-118 batch is \ref cardano_compute_transaction_batch_imbalance, which is also
+ * what \ref cardano_is_transaction_balanced uses.
+ *
+ * For a transaction without sub transactions, a zero imbalance means the transaction is balanced. A positive coin or
+ * asset amount means the transaction consumes more than it produces (a surplus that a change output or another
+ * transaction in a CIP-118 batch must absorb), while a negative amount means it produces more than it consumes (a
+ * deficit that other transactions in the batch must fund).
  *
  * The returned value is independent of the transaction and of the resolved inputs: it owns its multi asset, so it may
  * be modified freely (for example with \ref cardano_value_add_asset) without altering the mint field of the body or

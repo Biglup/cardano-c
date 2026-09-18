@@ -865,7 +865,7 @@ is_legacy_mode_transaction(
 }
 
 /**
- * \brief Creates the list of resolved reference inputs whose reference scripts are paid for by the fee.
+ * \brief Creates the list of resolved reference inputs whose reference scripts the fee includes when they are priced.
  *
  * The top level transaction pays the fee of the whole batch, so the reference scripts of its own reference inputs are
  * priced together with the ones of the reference inputs of every sub transaction. The list is not distinct: a UTXO
@@ -1175,8 +1175,9 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
  * \param[in]     foreign_signature_count         The number of expected extra signatures, not specified in the transaction.
  * \param[in]     protocol_params                 The protocol parameters.
  * \param[in]     reference_inputs                The resolved reference inputs of the transaction.
- * \param[in]     priced_reference_inputs         The resolved reference inputs whose reference scripts the fee pays for:
- *                                                the ones of the transaction and the ones of its sub transactions.
+ * \param[in]     priced_reference_inputs         The resolved reference inputs whose reference scripts the fee includes
+ *                                                when they are priced: the ones of the transaction and the ones of its
+ *                                                sub transactions.
  * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
  * \param[in]     sub_transaction_resolved_inputs The resolved inputs spent by the sub transactions, or NULL when the
  *                                                transaction carries none.
