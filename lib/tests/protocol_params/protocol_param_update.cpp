@@ -27,6 +27,7 @@
 #include <cardano/common/bigint.h>
 #include <cardano/common/ex_units.h>
 #include <cardano/common/unit_interval.h>
+#include <cardano/json/json_object.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
@@ -37,7 +38,10 @@
 #include "../json_helpers.h"
 #include "../src/allocators.h"
 
+#include <filesystem>
+#include <fstream>
 #include <gmock/gmock.h>
+#include <string>
 
 /* CONSTANTS *****************************************************************/
 
@@ -49,6 +53,133 @@ static const char* DREP_VOTING_THRESHOLDS_CBOR = "8ad81e820000d81e820101d81e8202
 static const char* DIJKSTRA_PARAMS_CBOR        = "a418221affffffff18231a0140000018241964001825d81e820f0a";
 static const char* LEIOS_PARAMS_CBOR           = "ab1826d81e8203021827d81e82011418281903e818291907d0182a190bb8182b1901f4182cd81e820305182d1a00010000182e1a000186a0182f821a00d59f801b00000002540be40018301a00032000";
 static const char* LEIOS_PARAMS_UNBOUNDED_CBOR = "ab1826f61827d81e82011418281903e818291907d0182a190bb8182b1901f4182cd81e820305182d1a00010000182e1a000186a0182f821a00d59f801b00000002540be40018301a00032000";
+
+/* TEST VECTORS **************************************************************/
+
+/**
+ * Sets an integer parameter of a protocol parameter update.
+ */
+typedef cardano_error_t (*protocol_param_update_uint_setter_t)(cardano_protocol_param_update_t*, const uint64_t*);
+
+/**
+ * Gets an integer parameter of a protocol parameter update.
+ */
+typedef cardano_error_t (*protocol_param_update_uint_getter_t)(const cardano_protocol_param_update_t*, uint64_t*);
+
+/**
+ * Maps a parameter of the ledger JSON encoding to the protocol parameter update field that carries it.
+ *
+ * The integer accessors are only present for the fields the library carries as plain integers.
+ */
+typedef struct
+{
+    const char*                         key;
+    const char*                         field;
+    protocol_param_update_uint_setter_t set_uint;
+    protocol_param_update_uint_getter_t get_uint;
+} ledger_parameter_update_t;
+
+/**
+ * Every parameter of the ledger Dijkstra golden update, in the order the golden lists them.
+ */
+static const ledger_parameter_update_t LEDGER_PARAMETER_UPDATES[] = {
+  { "collateralPercentage", "collateral_percentage", cardano_protocol_param_update_set_collateral_percentage, cardano_protocol_param_update_get_collateral_percentage },
+  { "committeeMinSize", "min_committee_size", cardano_protocol_param_update_set_min_committee_size, cardano_protocol_param_update_get_min_committee_size },
+  { "costModels", "cost_models", NULL, NULL },
+  { "dRepActivity", "drep_inactivity_period", cardano_protocol_param_update_set_drep_inactivity_period, cardano_protocol_param_update_get_drep_inactivity_period },
+  { "dRepDeposit", "drep_deposit", cardano_protocol_param_update_set_drep_deposit, cardano_protocol_param_update_get_drep_deposit },
+  { "dRepVotingThresholds", "drep_voting_thresholds", NULL, NULL },
+  { "govActionDeposit", "governance_action_deposit", cardano_protocol_param_update_set_governance_action_deposit, cardano_protocol_param_update_get_governance_action_deposit },
+  { "leiosCommitteeSize", "leios_committee_size", cardano_protocol_param_update_set_leios_committee_size, cardano_protocol_param_update_get_leios_committee_size },
+  { "leiosQuorumStakeThreshold", "leios_quorum_stake_threshold", NULL, NULL },
+  { "leiosVotePeriodLength", "leios_vote_period_length", cardano_protocol_param_update_set_leios_vote_period_length, cardano_protocol_param_update_get_leios_vote_period_length },
+  { "maxBlockBodySize", "max_block_body_size", cardano_protocol_param_update_set_max_block_body_size, cardano_protocol_param_update_get_max_block_body_size },
+  { "maxBlockExecutionUnits", "max_block_ex_units", NULL, NULL },
+  { "maxBlockHeaderSize", "max_block_header_size", cardano_protocol_param_update_set_max_block_header_size, cardano_protocol_param_update_get_max_block_header_size },
+  { "maxCollateralInputs", "max_collateral_inputs", cardano_protocol_param_update_set_max_collateral_inputs, cardano_protocol_param_update_get_max_collateral_inputs },
+  { "maxEndorserBlockReferencesSize", "max_endorser_block_references_size", cardano_protocol_param_update_set_max_endorser_block_references_size, cardano_protocol_param_update_get_max_endorser_block_references_size },
+  { "maxPledgeLeverage", "max_pledge_leverage", NULL, NULL },
+  { "maxRefScriptSizePerBlock", "max_ref_script_size_per_block", cardano_protocol_param_update_set_max_ref_script_size_per_block, cardano_protocol_param_update_get_max_ref_script_size_per_block },
+  { "maxRefScriptSizePerEndorserBlock", "max_ref_script_size_per_endorser_block", cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block, cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block },
+  { "maxRefScriptSizePerTx", "max_ref_script_size_per_tx", cardano_protocol_param_update_set_max_ref_script_size_per_tx, cardano_protocol_param_update_get_max_ref_script_size_per_tx },
+  { "maxTxExecutionUnits", "max_tx_ex_units", NULL, NULL },
+  { "maxTxSize", "max_tx_size", cardano_protocol_param_update_set_max_tx_size, cardano_protocol_param_update_get_max_tx_size },
+  { "maxValueSize", "max_value_size", cardano_protocol_param_update_set_max_value_size, cardano_protocol_param_update_get_max_value_size },
+  { "minFeeRefScriptCostPerByte", "ref_script_cost_per_byte", NULL, NULL },
+  { "minPoolCost", "min_pool_cost", cardano_protocol_param_update_set_min_pool_cost, cardano_protocol_param_update_get_min_pool_cost },
+  { "minPoolMargin", "min_pool_margin", NULL, NULL },
+  { "monetaryExpansion", "expansion_rate", NULL, NULL },
+  { "poolPledgeInfluence", "pool_pledge_influence", NULL, NULL },
+  { "refScriptCostMultiplier", "ref_script_cost_multiplier", NULL, NULL },
+  { "refScriptCostStride", "ref_script_cost_stride", cardano_protocol_param_update_set_ref_script_cost_stride, cardano_protocol_param_update_get_ref_script_cost_stride },
+  { "stakeAddressDeposit", "key_deposit", cardano_protocol_param_update_set_key_deposit, cardano_protocol_param_update_get_key_deposit },
+  { "stakePoolDeposit", "pool_deposit", cardano_protocol_param_update_set_pool_deposit, cardano_protocol_param_update_get_pool_deposit },
+  { "stakePoolTargetNum", "n_opt", cardano_protocol_param_update_set_n_opt, cardano_protocol_param_update_get_n_opt },
+  { "treasuryCut", "treasury_growth_rate", NULL, NULL },
+  { "txFeePerByte", "min_fee_a", cardano_protocol_param_update_set_min_fee_a, cardano_protocol_param_update_get_min_fee_a },
+  { "utxoCostPerByte", "ada_per_utxo_byte", cardano_protocol_param_update_set_ada_per_utxo_byte, cardano_protocol_param_update_get_ada_per_utxo_byte }
+};
+
+static const size_t LEDGER_PARAMETER_UPDATES_SIZE = sizeof(LEDGER_PARAMETER_UPDATES) / sizeof(LEDGER_PARAMETER_UPDATES[0]);
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Loads the Dijkstra golden protocol parameter update as a JSON object.
+ *
+ * The vector path is derived from this source file location so the test does not depend
+ * on the working directory the binary is launched from.
+ *
+ * @return The parsed golden protocol parameter update. The caller must release it.
+ */
+static cardano_json_object_t*
+load_golden_pparams_update()
+{
+  const std::filesystem::path path = std::filesystem::path(__FILE__).parent_path().parent_path() / "vectors" / "dijkstra" / "golden" / "pparams-update.json";
+
+  std::ifstream     stream(path, std::ios::binary);
+  const std::string json((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+  EXPECT_FALSE(json.empty());
+
+  return cardano_json_object_parse(json.data(), json.size());
+};
+
+/**
+ * Finds the mapping of a ledger protocol parameter update entry.
+ *
+ * @param key The ledger JSON key of the parameter.
+ *
+ * @return The mapping of the parameter, or NULL if the library does not carry it.
+ */
+static const ledger_parameter_update_t*
+find_ledger_parameter_update(const std::string& key)
+{
+  for (size_t i = 0; i < LEDGER_PARAMETER_UPDATES_SIZE; ++i)
+  {
+    if (key == LEDGER_PARAMETER_UPDATES[i].key)
+    {
+      return &LEDGER_PARAMETER_UPDATES[i];
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Checks whether a JSON value is a non negative integer.
+ *
+ * @param value The JSON value to check.
+ *
+ * @return true if the value is a number without sign nor fractional part, false otherwise.
+ */
+static bool
+is_plain_integer(const cardano_json_object_t* value)
+{
+  return (cardano_json_object_get_type(value) == CARDANO_JSON_OBJECT_TYPE_NUMBER) &&
+    !cardano_json_object_get_is_real_number(value) &&
+    !cardano_json_object_get_is_negative_number(value);
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -8179,4 +8310,91 @@ TEST(cardano_protocol_param_update_to_plutus_data, encodesAnUnboundedMaxPledgeLe
 
   cardano_plutus_data_unref(&pd);
   cardano_protocol_param_update_unref(&update);
+}
+
+/* LEDGER GOLDEN *************************************************************/
+
+TEST(cardano_protocol_param_update, carriesEveryParameterOfTheLedgerGolden)
+{
+  // Arrange
+  cardano_json_object_t* golden = load_golden_pparams_update();
+  ASSERT_NE(golden, nullptr);
+
+  // Act
+  const size_t count = cardano_json_object_get_property_count(golden);
+
+  // Assert
+  EXPECT_EQ(count, LEDGER_PARAMETER_UPDATES_SIZE);
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    size_t      key_length = 0;
+    const char* key        = cardano_json_object_get_key_at(golden, i, &key_length);
+
+    ASSERT_NE(key, nullptr);
+    EXPECT_NE(find_ledger_parameter_update(std::string(key, key_length)), nullptr) << "The library does not carry the ledger parameter " << key;
+  }
+
+  // Cleanup
+  cardano_json_object_unref(&golden);
+}
+
+TEST(cardano_protocol_param_update, mapsOnlyParametersOfTheLedgerGolden)
+{
+  // Arrange
+  cardano_json_object_t* golden = load_golden_pparams_update();
+  ASSERT_NE(golden, nullptr);
+
+  // Act & Assert
+  for (size_t i = 0; i < LEDGER_PARAMETER_UPDATES_SIZE; ++i)
+  {
+    const char* key   = LEDGER_PARAMETER_UPDATES[i].key;
+    const char* field = LEDGER_PARAMETER_UPDATES[i].field;
+
+    EXPECT_TRUE(cardano_json_object_has_property(golden, key, strlen(key))) << "The ledger golden does not list the parameter " << key << " (" << field << ")";
+    EXPECT_EQ(find_ledger_parameter_update(key), &LEDGER_PARAMETER_UPDATES[i]) << "The ledger parameter " << key << " (" << field << ") is mapped more than once";
+  }
+
+  // Cleanup
+  cardano_json_object_unref(&golden);
+}
+
+TEST(cardano_protocol_param_update, roundTripsTheIntegerParametersOfTheLedgerGolden)
+{
+  // Arrange
+  cardano_json_object_t*           golden                = load_golden_pparams_update();
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+
+  ASSERT_NE(golden, nullptr);
+  ASSERT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  size_t round_tripped = 0;
+
+  // Act & Assert
+  for (size_t i = 0; i < LEDGER_PARAMETER_UPDATES_SIZE; ++i)
+  {
+    const ledger_parameter_update_t* parameter = &LEDGER_PARAMETER_UPDATES[i];
+    cardano_json_object_t*           value     = NULL;
+
+    if ((parameter->set_uint == NULL) || !cardano_json_object_get_ex(golden, parameter->key, strlen(parameter->key), &value) || !is_plain_integer(value))
+    {
+      continue;
+    }
+
+    uint64_t expected = 0;
+    uint64_t actual   = 0;
+
+    ASSERT_EQ(cardano_json_object_get_uint(value, &expected), CARDANO_SUCCESS) << parameter->key << " (" << parameter->field << ")";
+    EXPECT_EQ(parameter->set_uint(protocol_param_update, &expected), CARDANO_SUCCESS) << parameter->key << " (" << parameter->field << ")";
+    EXPECT_EQ(parameter->get_uint(protocol_param_update, &actual), CARDANO_SUCCESS) << parameter->key << " (" << parameter->field << ")";
+    EXPECT_EQ(actual, expected) << parameter->key << " (" << parameter->field << ")";
+
+    ++round_tripped;
+  }
+
+  EXPECT_GT(round_tripped, 0U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_json_object_unref(&golden);
 }
