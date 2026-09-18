@@ -29,13 +29,22 @@
 #include <cardano/assets/asset_id.h>
 #include <cardano/assets/asset_name.h>
 #include <cardano/auxiliary_data/metadatum.h>
+#include <cardano/certs/certificate.h>
+#include <cardano/common/anchor.h>
 #include <cardano/common/credential.h>
+#include <cardano/common/drep.h>
+#include <cardano/common/governance_action_id.h>
 #include <cardano/common/network_id.h>
+#include <cardano/common/protocol_version.h>
+#include <cardano/common/unit_interval.h>
 #include <cardano/common/utxo.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
 #include <cardano/plutus_data/plutus_data.h>
+#include <cardano/proposal_procedures/committee_members_map.h>
+#include <cardano/proposal_procedures/constitution.h>
+#include <cardano/proposal_procedures/credential_set.h>
 #include <cardano/protocol_params/protocol_parameters.h>
 #include <cardano/scripts/script.h>
 #include <cardano/slot_config.h>
@@ -44,6 +53,8 @@
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_body/value.h>
 #include <cardano/typedefs.h>
+#include <cardano/voting_procedures/voter.h>
+#include <cardano/voting_procedures/voting_procedure.h>
 
 /* DECLARATIONS **************************************************************/
 
@@ -62,7 +73,8 @@ extern "C" {
  *
  * **Key Features:**
  * - **Modular Design**: Incrementally add inputs, outputs, minting operations, metadata, native scripts,
- *   guards, direct deposits and account balance intervals.
+ *   guards, direct deposits, account balance intervals, withdrawals, certificates, votes and governance
+ *   proposals.
  * - **Never Balances**: The builder does not select inputs, does not add change outputs and does not compute
  *   fees. The sub transaction carries exactly the inputs and outputs that were added, and its imbalance (see
  *   \ref cardano_compute_sub_transaction_imbalance) is the intent the batcher matches against the rest of
@@ -70,7 +82,9 @@ extern "C" {
  * - **Sub Transaction Fields Only**: Fees, collateral and starting account balance intervals only exist on a
  *   top level transaction, so this builder has no functions for them.
  * - **Native Scripts and Key Witnesses**: Plutus scripts can not run inside a sub transaction, so no function
- *   of this builder takes a redeemer and Plutus scripts are rejected.
+ *   of this builder takes a redeemer and Plutus scripts are rejected. For the same reason the governance
+ *   proposals that are validated by the guardrails script, which is a Plutus script, have no functions on this
+ *   builder: parameter change and treasury withdrawals proposals belong in a top level transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -875,6 +889,965 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_account_balance_interval_ex(
   const char*                         reward_address,
   size_t                              address_size,
   cardano_account_balance_interval_t* interval);
+
+/**
+ * \brief Withdraws rewards from a specified reward account in the sub transaction builder.
+ *
+ * This function adds a withdrawal from the specified reward account to the sub transaction. The withdrawn amount
+ * is value consumed by the sub transaction, so it is part of the imbalance the batch has to match.
+ *
+ * A sub transaction can withdraw part of the balance of an account: the ledger only requires that the withdrawals
+ * of an account, added over the top level transaction and every sub transaction of the batch, do not exceed the
+ * balance the account had before the batch. The rule that a withdrawal must drain the account exactly only
+ * applies to the withdrawals of a top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
+ *                    from which rewards should be withdrawn. The account must be controlled by a key or by a
+ *                    native script.
+ * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;   // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Initialized reward address
+ *
+ * cardano_sub_tx_builder_withdraw_rewards(sub_tx_builder, reward_address, 2532145);
+ * \endcode
+ *
+ * \note Errors related to reward withdrawal will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  int64_t                   amount);
+
+/**
+ * \brief Withdraws rewards from a specified reward account using a string address in the sub transaction builder.
+ *
+ * This function behaves like `cardano_sub_tx_builder_withdraw_rewards` but accepts the reward account as a Bech32
+ * string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
+ * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.
+ * \param[in] address_size The size of the reward address string in bytes.
+ * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_addr = "stake1u9...";         // Reward address in string format
+ * size_t address_size = strlen(reward_addr);       // Length of the reward address string
+ *
+ * cardano_sub_tx_builder_withdraw_rewards_ex(sub_tx_builder, reward_addr, address_size, 966584122);
+ * \endcode
+ *
+ * \note Errors related to reward withdrawal will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  int64_t                   amount);
+
+/**
+ * \brief Registers a staking reward address.
+ *
+ * This function adds a staking reward address to be registered in the sub transaction, allowing the specified
+ * reward account to start receiving staking rewards. The key deposit of the registration is value produced by the
+ * sub transaction, so it is part of the imbalance the batch has to cover.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account to be registered.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_addr = ...;     // Reward address to register
+ *
+ * cardano_sub_tx_builder_register_reward_address(sub_tx_builder, reward_addr);
+ * \endcode
+ *
+ * \note Any errors related to reward address registration will be reported when `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address);
+
+/**
+ * \brief Registers a staking reward address using a Bech32 address string.
+ *
+ * This function behaves like `cardano_sub_tx_builder_register_reward_address` but accepts the reward account as a
+ * Bech32 string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction construction.
+ * \param[in] reward_address A pointer to a bech32 string representing the reward address.
+ * \param[in] address_size The size of the `reward_address` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1uxxx...";
+ * size_t address_size = strlen(reward_address);
+ *
+ * cardano_sub_tx_builder_register_reward_address_ex(sub_tx_builder, reward_address, address_size);
+ * \endcode
+ *
+ * \note Errors related to the reward address registration will be reported only when `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size);
+
+/**
+ * \brief Deregisters a staking reward address.
+ *
+ * This function deregisters the reward address, effectively preventing it from receiving future staking rewards.
+ * The key deposit the deregistration gives back is value consumed by the sub transaction, so it is part of the
+ * imbalance the batch has to match.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t structure representing the reward address to deregister.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;  // Reward address to be deregistered
+ *
+ * cardano_sub_tx_builder_deregister_reward_address(sub_tx_builder, reward_address);
+ * \endcode
+ *
+ * \note Errors related to the deregistration process are deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address);
+
+/**
+ * \brief Deregisters a staking reward address using a Bech32 address string.
+ *
+ * This function behaves like `cardano_sub_tx_builder_deregister_reward_address` but accepts the reward account as a
+ * Bech32 string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] reward_address A pointer to a bech32 string containing the reward address to be deregistered.
+ * \param[in] address_size The length of the reward address string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1uxxx...";    // Reward address in string format
+ * size_t address_size = strlen(reward_address);
+ *
+ * cardano_sub_tx_builder_deregister_reward_address_ex(sub_tx_builder, reward_address, address_size);
+ * \endcode
+ *
+ * \note Errors related to the deregistration process are deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size);
+
+/**
+ * \brief Delegates stake from a specified staking reward address to a staking pool.
+ *
+ * This function delegates stake from a specified staking reward address to a staking pool,
+ * identified by its unique pool ID.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t representing the staking reward address to delegate.
+ * \param[in] pool_id A pointer to the \ref cardano_blake2b_hash_t representing the hash ID of the pool to delegate to.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;  // Reward address for staking
+ * cardano_blake2b_hash_t* pool_id = ...;           // Pool ID to delegate stake to
+ *
+ * cardano_sub_tx_builder_delegate_stake(sub_tx_builder, reward_address, pool_id);
+ * \endcode
+ *
+ * \note Any errors associated with this delegation action will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  cardano_blake2b_hash_t*   pool_id);
+
+/**
+ * \brief Delegates stake from a specified staking reward address to a staking pool using string identifiers.
+ *
+ * This function behaves like `cardano_sub_tx_builder_delegate_stake` but accepts the reward address and the pool ID
+ * as Bech32 strings.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] reward_address A bech32 string representing the staking reward address for delegation.
+ * \param[in] address_size The size of the `reward_address` string.
+ * \param[in] pool_id A bech32 string representing the pool ID to which stake is delegated.
+ * \param[in] pool_id_size The size of the `pool_id` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* pool_id = "pool1xy...";
+ * size_t pool_id_size = strlen(pool_id);
+ *
+ * cardano_sub_tx_builder_delegate_stake_ex(sub_tx_builder, reward_address, reward_address_size, pool_id, pool_id_size);
+ * \endcode
+ *
+ * \note Errors related to this action will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  const char*               pool_id,
+  size_t                    pool_id_size);
+
+/**
+ * \brief Adds a voting power delegation to a DRep for governance purposes.
+ *
+ * This function enables delegating voting power from a specified reward address to a DRep.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t representing the staking reward address that is delegating voting power.
+ * \param[in] drep A pointer to the \ref cardano_drep_t structure that identifies the decentralized representative receiving the delegated voting power.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;  // Reward address delegating voting power
+ * cardano_drep_t* drep = ...;                      // DRep receiving the delegated voting power
+ *
+ * cardano_sub_tx_builder_delegate_voting_power(sub_tx_builder, reward_address, drep);
+ * \endcode
+ *
+ * \note Errors associated with this delegation will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* address,
+  cardano_drep_t*           drep);
+
+/**
+ * \brief Delegates voting power to a DRep using string identifiers.
+ *
+ * This function behaves like `cardano_sub_tx_builder_delegate_voting_power` but accepts the reward address and the
+ * DRep ID as strings. The DRep ID can be provided in either CIP-105 or CIP-129 format.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] reward_address A string representing the staking reward address for the account delegating voting power.
+ * \param[in] address_size The length of the `reward_address` string.
+ * \param[in] drep_id A string representing the ID of the decentralized representative (DRep) receiving the voting power.
+ *                     The DRep ID can be in CIP-105 or CIP-129 format.
+ * \param[in] drep_id_size The length of the `drep_id` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";      // Reward address delegating voting power
+ * size_t address_size = strlen(reward_address);
+ * const char* drep_id = "drep1q...";               // DRep ID in CIP-129 format
+ * size_t drep_id_size = strlen(drep_id);
+ *
+ * cardano_sub_tx_builder_delegate_voting_power_ex(sub_tx_builder, reward_address, address_size, drep_id, drep_id_size);
+ * \endcode
+ *
+ * \note The DRep ID must conform to either CIP-105 or CIP-129 format.
+ *       Errors related to this delegation will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    address_size,
+  const char*               drep_id,
+  size_t                    drep_id_size);
+
+/**
+ * \brief Registers a DRep in the sub transaction.
+ *
+ * This function registers a DRep with an optional anchor in the sub transaction being constructed. The DRep deposit
+ * of the registration is value produced by the sub transaction, so it is part of the imbalance the batch has to
+ * cover.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the decentralized representative to be registered.
+ * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance pointing to the metadata of the DRep.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_drep_t* drep = ...;                      // DRep to register
+ * cardano_anchor_t* anchor = ...;                  // Optional governance anchor
+ *
+ * cardano_sub_tx_builder_register_drep(sub_tx_builder, drep, anchor);
+ * \endcode
+ *
+ * \note Errors related to this registration will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_register_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep,
+  cardano_anchor_t*         anchor);
+
+/**
+ * \brief Registers a DRep by ID in the sub transaction.
+ *
+ * This function behaves like `cardano_sub_tx_builder_register_drep` but accepts the DRep ID and the anchor as
+ * strings. The DRep ID must be provided in either CIP-105 or CIP-129 bech32 format.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
+ * \param[in] drep_id_size The size of the `drep_id` string.
+ * \param[in] metadata_url The URL pointing to the DRep metadata file.
+ * \param[in] metadata_url_size The size of the `metadata_url` string.
+ * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
+ * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* drep_id = "drep1q...";
+ * size_t drep_id_size = strlen(drep_id);
+ * const char* metadata_url = "https://example.com/drep_metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ *
+ * cardano_sub_tx_builder_register_drep_ex(
+ *   sub_tx_builder,
+ *   drep_id,
+ *   drep_id_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash_hex,
+ *   metadata_hash_hex_size);
+ * \endcode
+ *
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Errors related to this registration will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_register_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  size_t                    drep_id_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size);
+
+/**
+ * \brief Updates an existing DRep in the sub transaction.
+ *
+ * This function allows updating a DRep in the sub transaction with a specified DRep object, optionally providing a
+ * new anchor.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the DRep to be updated.
+ * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance pointing to the metadata of the DRep.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_drep_t* drep = ...;                      // DRep object to update
+ * cardano_anchor_t* anchor = ...;                  // Optional anchor
+ *
+ * cardano_sub_tx_builder_update_drep(sub_tx_builder, drep, anchor);
+ * \endcode
+ *
+ * \note Any errors related to updating the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_update_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep,
+  cardano_anchor_t*         anchor);
+
+/**
+ * \brief Updates an existing DRep in the sub transaction by ID.
+ *
+ * This function behaves like `cardano_sub_tx_builder_update_drep` but accepts the DRep ID and the anchor as strings.
+ * The DRep ID must be provided in either CIP-105 or CIP-129 bech32 format.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
+ * \param[in] drep_id_size The size of the `drep_id` string.
+ * \param[in] metadata_url The URL pointing to the DRep metadata file.
+ * \param[in] metadata_url_size The size of the `metadata_url` string.
+ * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
+ * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* drep_id = "drep1q...";
+ * size_t drep_id_size = strlen(drep_id);
+ * const char* metadata_url = "https://example.com/drep_metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ *
+ * cardano_sub_tx_builder_update_drep_ex(
+ *   sub_tx_builder,
+ *   drep_id,
+ *   drep_id_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash_hex,
+ *   metadata_hash_hex_size);
+ * \endcode
+ *
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Errors associated with updating the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_update_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  size_t                    drep_id_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size);
+
+/**
+ * \brief Deregisters an existing DRep.
+ *
+ * This function deregisters a DRep. The DRep deposit the deregistration gives back is value consumed by the sub
+ * transaction, so it is part of the imbalance the batch has to match.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the DRep to deregister.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_drep_t* drep = ...;                      // DRep to deregister
+ *
+ * cardano_sub_tx_builder_deregister_drep(sub_tx_builder, drep);
+ * \endcode
+ *
+ * \note Errors related to deregistering the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep(
+  cardano_sub_tx_builder_t* builder,
+  cardano_drep_t*           drep);
+
+/**
+ * \brief Deregisters an existing DRep by ID.
+ *
+ * This function behaves like `cardano_sub_tx_builder_deregister_drep` but accepts the DRep ID as a string. The DRep
+ * ID must conform to either CIP-105 or CIP-129 standards.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
+ * \param[in] drep_id_size The size of the `drep_id` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* drep_id = "drep1q...";               // DRep ID in CIP-105 format
+ * size_t drep_id_size = strlen(drep_id);
+ *
+ * cardano_sub_tx_builder_deregister_drep_ex(sub_tx_builder, drep_id, drep_id_size);
+ * \endcode
+ *
+ * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
+ *       Errors related to deregistering the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               drep_id,
+  size_t                    drep_id_size);
+
+/**
+ * \brief Registers a vote for a specified governance action within the sub transaction.
+ *
+ * This function allows a voter to submit their vote for a given governance action. The voter must be identified by
+ * a key or by a native script, since Plutus scripts can not run inside a sub transaction.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] voter A pointer to a \ref cardano_voter_t structure representing the voter participating in the governance action.
+ * \param[in] action_id A pointer to a \ref cardano_governance_action_id_t identifying the governance action being voted on.
+ * \param[in] vote A pointer to a \ref cardano_voting_procedure_t defining the voting procedure and choice.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;       // Initialized sub transaction builder
+ * cardano_voter_t* voter = ...;                         // Voter information
+ * cardano_governance_action_id_t* action_id = ...;      // Governance action ID
+ * cardano_voting_procedure_t* vote = ...;               // Voting procedure with choice
+ *
+ * cardano_sub_tx_builder_vote(sub_tx_builder, voter, action_id, vote);
+ * \endcode
+ *
+ * \note Errors related to the voting operation will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_vote(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote);
+
+/**
+ * \brief Adds a certificate to the sub transaction.
+ *
+ * This function adds a specified certificate to the sub transaction being constructed. Certificates are used to perform
+ * various actions on the blockchain, such as staking, delegating, or registering/deregistering entities. The
+ * credential the certificate acts on must be a key or a native script, since Plutus scripts can not run inside a sub
+ * transaction.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] certificate A pointer to a \ref cardano_certificate_t structure representing the certificate to add.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_certificate_t* certificate = ...;        // Certificate to add
+ *
+ * cardano_sub_tx_builder_add_certificate(sub_tx_builder, certificate);
+ * \endcode
+ *
+ * \note Errors related to the certificate addition will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_certificate(
+  cardano_sub_tx_builder_t* builder,
+  cardano_certificate_t*    certificate);
+
+/**
+ * \brief Proposes a hard fork within a sub transaction.
+ *
+ * This function adds a proposal to initiate a hard fork in the Cardano network to the sub transaction being built. The hard fork proposal
+ * specifies the target protocol version and other required parameters. An optional governance action ID can be provided to reference
+ * the most recent enacted hard fork action of the same type. The governance action deposit of the proposal is value produced by the
+ * sub transaction, so it is part of the imbalance the batch has to cover.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
+ * \param[in] reward_address A pointer to a \ref cardano_reward_address_t object where the deposit will be refunded.
+ * \param[in] anchor A pointer to a \ref cardano_anchor_t object containing additional metadata related to the proposal.
+ * \param[in] version A pointer to a \ref cardano_protocol_version_t object specifying the target protocol version for the hard fork.
+ * \param[in] governance_action_id An optional pointer to a \ref cardano_governance_action_id_t object referencing the most recent
+ *                                 enacted governance action of the same type. This can be NULL if no such action has been enacted.
+ *
+ * \note Errors encountered during the addition of the hard fork proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;         // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;         // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                         // Anchor metadata for the proposal
+ * cardano_protocol_version_t* version = ...;              // Target protocol version
+ * cardano_governance_action_id_t* gov_action_id = ...;    // Optional governance action ID
+ *
+ * cardano_sub_tx_builder_propose_hardfork(sub_tx_builder, reward_address, anchor, version, gov_action_id);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_hardfork(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_protocol_version_t*     version,
+  cardano_governance_action_id_t* governance_action_id);
+
+/**
+ * \brief Proposes a hard fork within a sub transaction (extended version).
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_hardfork` but accepts the reward address, the anchor and the
+ * governance action ID as strings, and the target protocol version as numbers.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
+ * \param[in] reward_address A pointer to the reward address string where the deposit will be refunded.
+ *                           This must be a valid Bech32-encoded reward address.
+ * \param[in] reward_address_size The size of the reward address string in bytes.
+ * \param[in] metadata_url A pointer to the URL string containing metadata about the hard fork proposal.
+ * \param[in] metadata_url_size The size of the metadata URL string in bytes.
+ * \param[in] metadata_hash_hex A pointer to the hexadecimal string representing the hash of the metadata file.
+ * \param[in] metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in] gov_action_id A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size The size (in bytes) of the `gov_action_id` string.
+ * \param[in] minor_protocol_version The minor protocol version for the proposed hard fork.
+ * \param[in] major_protocol_version The major protocol version for the proposed hard fork.
+ *
+ * \note Errors encountered during the addition of the hard fork proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1u...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/metadata.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash = "abcdef1234567890...";
+ * size_t metadata_hash_size = strlen(metadata_hash);
+ * const char* gov_action_id = "gov_action1...";
+ * size_t gov_action_id_size = strlen(gov_action_id);
+ *
+ * cardano_sub_tx_builder_propose_hardfork_ex(
+ *   sub_tx_builder,
+ *   reward_address,
+ *   reward_address_size,
+ *   metadata_url,
+ *   metadata_url_size,
+ *   metadata_hash,
+ *   metadata_hash_size,
+ *   gov_action_id,
+ *   gov_action_id_size,
+ *   0,
+ *   12);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_hardfork_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size,
+  const char*               gov_action_id,
+  size_t                    gov_action_id_size,
+  uint64_t                  minor_protocol_version,
+  uint64_t                  major_protocol_version);
+
+/**
+ * \brief Proposes a no-confidence governance action within a sub transaction.
+ *
+ * This function prepares a proposal for a no-confidence action against the current constitutional committee.
+ * If enacted, it signals the community's lack of confidence in the committee, potentially leading to its reconstitution.
+ * The governance action deposit of the proposal is value produced by the sub transaction, so it is part of the imbalance
+ * the batch has to cover.
+ *
+ * \param[in,out] builder                 A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address          A pointer to a \ref cardano_reward_address_t object. This address will receive the deposit refund after the governance action completes.
+ * \param[in]     anchor                  A pointer to a \ref cardano_anchor_t object providing additional context or metadata for the governance action.
+ * \param[in]     governance_action_id    An optional pointer to a \ref cardano_governance_action_id_t object. This represents the unique identifier
+ *                                         for the most recently enacted action of the same type. This parameter can be NULL if no previous actions of this type exist.
+ *
+ * \note Any errors encountered during the addition of the no-confidence proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;      // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;      // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                      // Anchor metadata for the proposal
+ * cardano_governance_action_id_t* action_id = ...;     // Optional governance action ID
+ *
+ * cardano_sub_tx_builder_propose_no_confidence(sub_tx_builder, reward_address, anchor, action_id);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_no_confidence(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id);
+
+/**
+ * \brief Proposes a no-confidence governance action using extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_no_confidence` but accepts the reward address, the anchor
+ * and the governance action ID as strings.
+ *
+ * \param[in,out] builder            A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in] reward_address         A pointer to a string containing the Bech32-encoded reward address. This address will receive the deposit refund
+ *                                   after the governance action completes.
+ * \param[in] reward_address_size    The size of the reward address string in bytes.
+ * \param[in] metadata_url           A pointer to a string containing the metadata URL for additional context regarding the proposal.
+ * \param[in] metadata_url_size      The size of the metadata URL string in bytes.
+ * \param[in] metadata_hash_hex      A pointer to a string containing the hexadecimal representation of the metadata hash.
+ * \param[in] metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in] gov_action_id          A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size     The size (in bytes) of the `gov_action_id` string.
+ *
+ * \note Any errors encountered during the addition of the no-confidence proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;      // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "a1b2c3...";
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * const char* gov_action_id = "gov_action1...";
+ * size_t gov_action_id_size = strlen(gov_action_id);
+ *
+ * cardano_sub_tx_builder_propose_no_confidence_ex(sub_tx_builder, reward_address, reward_address_size,
+ *                                                 metadata_url, metadata_url_size, metadata_hash_hex,
+ *                                                 metadata_hash_hex_size, gov_action_id,
+ *                                                 gov_action_id_size);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_no_confidence_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size,
+  const char*               gov_action_id,
+  size_t                    gov_action_id_size);
+
+/**
+ * \brief Proposes an update to the Cardano constitutional committee.
+ *
+ * This function prepares a governance action to update the Cardano constitutional committee. The proposal specifies:
+ * - Committee members to be added.
+ * - Committee members to be removed.
+ * - The new quorum threshold for the committee.
+ *
+ * The governance action deposit of the proposal is value produced by the sub transaction, so it is part of the imbalance
+ * the batch has to cover.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address         A pointer to a \ref cardano_reward_address_t object representing the reward address that will receive the deposit refund.
+ * \param[in]     anchor                 A pointer to a \ref cardano_anchor_t object representing the anchor for this governance action.
+ * \param[in]     governance_action_id   An optional pointer to a \ref cardano_governance_action_id_t object representing the most recently enacted governance action
+ *                                        of the same type. Can be NULL if no such prior action exists.
+ * \param[in]     members_to_be_removed  A pointer to a \ref cardano_credential_set_t object specifying the committee members to be removed.
+ * \param[in]     members_to_be_added    A pointer to a \ref cardano_committee_members_map_t object specifying the committee members to be added.
+ * \param[in]     new_quorum             A pointer to a \ref cardano_unit_interval_t object specifying the new quorum threshold for the committee.
+ *
+ * \note Any errors encountered during the addition of the update committee proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;         // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;         // Reward address to receive refund
+ * cardano_anchor_t* anchor = ...;                         // Governance action anchor
+ * cardano_governance_action_id_t* gov_action_id = ...;    // Most recently enacted action ID
+ * cardano_credential_set_t* members_to_remove = ...;      // Members to be removed
+ * cardano_committee_members_map_t* members_to_add = ...;  // Members to be added
+ * cardano_unit_interval_t* new_quorum = ...;              // New quorum threshold
+ *
+ * cardano_sub_tx_builder_propose_update_committee(sub_tx_builder, reward_address, anchor,
+ *                                                 gov_action_id, members_to_remove,
+ *                                                 members_to_add, new_quorum);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_update_committee(
+  cardano_sub_tx_builder_t*        builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  cardano_unit_interval_t*         new_quorum);
+
+/**
+ * \brief Proposes an update to the Cardano constitutional committee with extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_update_committee` but accepts the reward address, the anchor
+ * and the governance action ID as strings, and the new quorum threshold as a number.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address         A pointer to a string containing the reward address (in Bech32 format) that will receive the deposit refund.
+ * \param[in]     reward_address_size    The size of the `reward_address` string.
+ * \param[in]     metadata_url           A pointer to a string containing the URL for the governance action metadata.
+ * \param[in]     metadata_url_size      The size of the `metadata_url` string.
+ * \param[in]     metadata_hash_hex      A pointer to a string containing the hex-encoded hash of the metadata file.
+ * \param[in]     metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ * \param[in]     gov_action_id          A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in]     gov_action_id_size     The size (in bytes) of the `gov_action_id` string.
+ * \param[in]     members_to_be_removed  A pointer to a \ref cardano_credential_set_t object specifying the committee members to be removed.
+ * \param[in]     members_to_be_added    A pointer to a \ref cardano_committee_members_map_t object specifying the committee members to be added.
+ * \param[in]     new_quorum             The new quorum threshold for the committee.
+ *
+ * \note Any errors encountered during the addition of the update committee proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;         // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/proposal.json";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abc123...";
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * const char* gov_action_id = "gov_action1...";
+ * size_t gov_action_id_size = strlen(gov_action_id);
+ * cardano_credential_set_t* members_to_remove = ...;      // Members to be removed
+ * cardano_committee_members_map_t* members_to_add = ...;  // Members to be added
+ *
+ * cardano_sub_tx_builder_propose_update_committee_ex(sub_tx_builder,
+ *                                                    reward_address, reward_address_size,
+ *                                                    metadata_url, metadata_url_size,
+ *                                                    metadata_hash_hex, metadata_hash_hex_size,
+ *                                                    gov_action_id, gov_action_id_size,
+ *                                                    members_to_remove,
+ *                                                    members_to_add,
+ *                                                    0.3);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_update_committee_ex(
+  cardano_sub_tx_builder_t*        builder,
+  const char*                      reward_address,
+  size_t                           reward_address_size,
+  const char*                      metadata_url,
+  size_t                           metadata_url_size,
+  const char*                      metadata_hash_hex,
+  size_t                           metadata_hash_hex_size,
+  const char*                      gov_action_id,
+  size_t                           gov_action_id_size,
+  cardano_credential_set_t*        members_to_be_removed,
+  cardano_committee_members_map_t* members_to_be_added,
+  double                           new_quorum);
+
+/**
+ * \brief Proposes a new constitution for the Cardano network.
+ *
+ * This function creates a governance action to propose a new constitution. The governance action deposit of the
+ * proposal is value produced by the sub transaction, so it is part of the imbalance the batch has to cover.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address         A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
+ * \param[in]     anchor                 A pointer to a \ref cardano_anchor_t object containing the anchor metadata for the proposal.
+ * \param[in]     governance_action_id   An optional pointer to a \ref cardano_governance_action_id_t object representing the governance action ID of the most
+ *                                        recently enacted action of the same type. This parameter can be NULL if no prior action exists.
+ * \param[in]     constitution           A pointer to a \ref cardano_constitution_t object containing the new constitution's details.
+ *
+ * \note Any errors encountered during the addition of the new constitution proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;       // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;       // Reward address to refund deposit
+ * cardano_anchor_t* anchor = ...;                       // Anchor metadata
+ * cardano_governance_action_id_t* gov_action_id = ...;  // Optional governance action ID
+ * cardano_constitution_t* constitution = ...;           // Constitution details
+ *
+ * cardano_sub_tx_builder_propose_new_constitution(sub_tx_builder, reward_address, anchor, gov_action_id, constitution);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_new_constitution(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_reward_address_t*       reward_address,
+  cardano_anchor_t*               anchor,
+  cardano_governance_action_id_t* governance_action_id,
+  cardano_constitution_t*         constitution);
+
+/**
+ * \brief Proposes a new constitution for the Cardano network using extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_new_constitution` but accepts the reward address, the
+ * anchor and the governance action ID as strings.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address         A pointer to the reward address as a string. The address will receive the deposit refund.
+ * \param[in]     reward_address_size    The size of the reward address string in bytes.
+ * \param[in]     metadata_url           A pointer to a string containing the URL for additional proposal metadata.
+ * \param[in]     metadata_url_size      The size of the metadata URL string in bytes.
+ * \param[in]     metadata_hash_hex      A pointer to a hexadecimal string representing the hash of the metadata file.
+ * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
+ * \param[in]     gov_action_id          A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in]     gov_action_id_size     The size (in bytes) of the `gov_action_id` string.
+ * \param[in]     constitution           A pointer to a \ref cardano_constitution_t object containing the new constitution's details.
+ *
+ * \note Any errors encountered during the addition of the new constitution proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;      // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abc123...";
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * const char* gov_action_id = "gov_action1...";
+ * size_t gov_action_id_size = strlen(gov_action_id);
+ * cardano_constitution_t* constitution = ...;          // Constitution details
+ *
+ * cardano_sub_tx_builder_propose_new_constitution_ex(
+ *   sub_tx_builder, reward_address, reward_address_size,
+ *   metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size,
+ *   gov_action_id, gov_action_id_size, constitution);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_new_constitution_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size,
+  const char*               gov_action_id,
+  size_t                    gov_action_id_size,
+  cardano_constitution_t*   constitution);
+
+/**
+ * \brief Proposes an informational governance action for the Cardano network.
+ *
+ * This function creates a governance action proposal to share information with the network. The governance action
+ * deposit of the proposal is value produced by the sub transaction, so it is part of the imbalance the batch has to
+ * cover.
+ *
+ * \param[in,out] builder        A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address A pointer to the reward address where the deposit refund will be sent if the proposal is enacted or discarded.
+ * \param[in]     anchor         A pointer to a \ref cardano_anchor_t object containing metadata such as URLs and hashes to link to external information.
+ *
+ * \note Any errors encountered during the addition of the informational proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;  // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                  // Anchor metadata for the proposal
+ *
+ * cardano_sub_tx_builder_propose_info(sub_tx_builder, reward_address, anchor);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_info(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor);
+
+/**
+ * \brief Proposes an informational governance action for the Cardano network using extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_info` but accepts the reward address and the anchor as
+ * strings.
+ *
+ * \param[in,out] builder                A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address         A pointer to the reward address in string format where the deposit refund will be sent if the proposal is enacted or discarded.
+ * \param[in]     reward_address_size    The size of the reward address string in bytes.
+ * \param[in]     metadata_url           A pointer to a string containing the URL for the proposal metadata.
+ * \param[in]     metadata_url_size      The size of the metadata URL string in bytes.
+ * \param[in]     metadata_hash_hex      A pointer to a string containing the hexadecimal hash of the metadata.
+ * \param[in]     metadata_hash_hex_size The size of the metadata hash string in bytes.
+ *
+ * \note Any errors encountered during the addition of the informational proposal will be deferred until \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9...";
+ * size_t reward_address_size = strlen(reward_address);
+ * const char* metadata_url = "https://example.com/proposal-metadata";
+ * size_t metadata_url_size = strlen(metadata_url);
+ * const char* metadata_hash_hex = "abcdef123456...";
+ * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ *
+ * cardano_sub_tx_builder_propose_info_ex(
+ *   sub_tx_builder, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size);
 
 /**
  * \brief Builds the sub transaction from the current state of the sub transaction builder.

@@ -121,6 +121,118 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_withdraw_rewards
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_withdraw_rewards_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_register_reward_address
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_register_reward_address_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_deregister_reward_address
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_deregister_reward_address_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_delegate_stake
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_delegate_stake_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_delegate_voting_power
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_delegate_voting_power_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_register_drep
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_register_drep_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_update_drep
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_update_drep_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_deregister_drep
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_deregister_drep_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_vote
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_certificate
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_hardfork
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_hardfork_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_no_confidence
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_no_confidence_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_update_committee
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_update_committee_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_new_constitution
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_new_constitution_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_info
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_info_ex
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_build
 
 ------------
