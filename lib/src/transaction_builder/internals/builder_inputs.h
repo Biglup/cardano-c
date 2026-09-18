@@ -44,7 +44,9 @@ extern "C" {
  * the transaction is balanced. When \p redeemer is not NULL it creates a spend redeemer with a zero
  * index and zero execution units, appends it to the witness set redeemer list and records it in the
  * state input to redeemer map so its index can be resolved during balancing. When \p datum is not
- * NULL it is added to the witness set plutus data set.
+ * NULL it is added to the witness set plutus data set. The inputs spent by a transaction and by its
+ * sub transactions must be disjoint, so a UTXO that is already spent by a sub transaction added to the
+ * transaction is rejected.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -57,8 +59,9 @@ extern "C" {
  *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
  *                           success. This parameter must not be NULL.
  *
- * \return \ref CARDANO_SUCCESS if the input was added, or an appropriate error code indicating the
- *         failure reason.
+ * \return \ref CARDANO_SUCCESS if the input was added, \ref CARDANO_ERROR_DUPLICATED_KEY if the input
+ *         is already spent by a sub transaction, or an appropriate error code indicating the failure
+ *         reason.
  */
 cardano_error_t
 cardano_builder_add_input(

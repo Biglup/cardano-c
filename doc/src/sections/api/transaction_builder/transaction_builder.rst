@@ -205,6 +205,10 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_add_sub_transaction
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_register_reward_address
 
 ------------

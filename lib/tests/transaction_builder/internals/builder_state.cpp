@@ -92,6 +92,10 @@ TEST(cardano_builder_state_init, canInitializeState)
   EXPECT_EQ(state.collateral_utxos, (cardano_utxo_list_t*)nullptr);
   EXPECT_THAT(state.pre_selected_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
   EXPECT_THAT(state.reference_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+  EXPECT_THAT(state.sub_transaction_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+  EXPECT_THAT(state.sub_transaction_reference_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+  EXPECT_EQ(cardano_utxo_list_get_length(state.sub_transaction_inputs), 0U);
+  EXPECT_EQ(cardano_utxo_list_get_length(state.sub_transaction_reference_inputs), 0U);
   EXPECT_FALSE(state.has_plutus_v1);
   EXPECT_FALSE(state.has_plutus_v2);
   EXPECT_FALSE(state.has_plutus_v3);
@@ -225,6 +229,53 @@ TEST(cardano_builder_state_init, returnsErrorIfEventualMemoryAllocationFails)
   cardano_protocol_parameters_unref(&params);
 }
 
+TEST(cardano_builder_state_init, canBeReleasedWhenAnyMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 500) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_THAT(state.sub_transaction_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+      EXPECT_THAT(state.sub_transaction_reference_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_builder_state_release(&state);
+
+    EXPECT_EQ(state.sub_transaction_inputs, (cardano_utxo_list_t*)nullptr);
+    EXPECT_EQ(state.sub_transaction_reference_inputs, (cardano_utxo_list_t*)nullptr);
+    EXPECT_EQ(cardano_protocol_parameters_refcount(params), 1U);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+}
+
 TEST(cardano_builder_state_release, setsHeldObjectPointersToNull)
 {
   // Arrange
@@ -247,6 +298,8 @@ TEST(cardano_builder_state_release, setsHeldObjectPointersToNull)
   EXPECT_EQ(state.collateral_utxos, (cardano_utxo_list_t*)nullptr);
   EXPECT_EQ(state.pre_selected_inputs, (cardano_utxo_list_t*)nullptr);
   EXPECT_EQ(state.reference_inputs, (cardano_utxo_list_t*)nullptr);
+  EXPECT_EQ(state.sub_transaction_inputs, (cardano_utxo_list_t*)nullptr);
+  EXPECT_EQ(state.sub_transaction_reference_inputs, (cardano_utxo_list_t*)nullptr);
   EXPECT_EQ(state.input_to_redeemer_map, (cardano_input_to_redeemer_map_t*)nullptr);
   EXPECT_EQ(state.withdrawals_to_redeemer_map, (cardano_blake2b_hash_to_redeemer_map_t*)nullptr);
   EXPECT_EQ(state.mints_to_redeemer_map, (cardano_blake2b_hash_to_redeemer_map_t*)nullptr);

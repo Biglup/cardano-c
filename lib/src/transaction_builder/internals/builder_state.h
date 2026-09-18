@@ -87,6 +87,17 @@ typedef struct cardano_builder_state_t
     /** \brief The reference inputs added to the transaction. */
     cardano_utxo_list_t* reference_inputs;
 
+    /** \brief The resolved spend inputs of every sub transaction added to the transaction. */
+    cardano_utxo_list_t* sub_transaction_inputs;
+
+    /**
+     * \brief The resolved reference inputs of every sub transaction added to the transaction.
+     *
+     * Only the reference inputs that were resolved when their sub transaction was added are listed, and
+     * a reference input shared by several sub transactions is listed once per sub transaction.
+     */
+    cardano_utxo_list_t* sub_transaction_reference_inputs;
+
     /** \brief Whether the transaction uses at least one Plutus V1 script. */
     bool has_plutus_v1;
 
@@ -121,8 +132,9 @@ typedef struct cardano_builder_state_t
  * This function initializes every field of the given state, takes a reference on the provided
  * protocol parameters, copies the slot configuration and creates the objects the builder starts
  * from: a random improve coin selector, an empty transaction, the pre selected and reference
- * input lists, the redeemer maps, the deferred redeemer list and a native transaction evaluator
- * configured from the protocol parameters cost models and protocol version.
+ * input lists, the sub transaction input lists, the redeemer maps, the deferred redeemer list and
+ * a native transaction evaluator configured from the protocol parameters cost models and protocol
+ * version.
  *
  * \param[out] state A pointer to the \ref cardano_builder_state_t to initialize. This parameter
  *                   must not be NULL.
