@@ -95,6 +95,30 @@ cardano_tx_builder_build(tx_builder, &transaction);
 
 The callback runs on every balancing iteration (it must be a pure function of its arguments) and receives the balanced draft transaction plus the resolved inputs; the `cardano_transaction_find_*_index` helpers look up canonical positions of inputs, reference inputs, outputs (including change), mint policies, withdrawals, certificates, voters and redeemers. Deferred variants exist for every redeemer purpose the builder can attach: spends, mints, withdrawals, certificates and votes (`cardano_tx_builder_mint_token_with_deferred_redeemer`, `cardano_tx_builder_withdraw_rewards_with_deferred_redeemer`, `cardano_tx_builder_add_certificate_with_deferred_redeemer`, `cardano_tx_builder_vote_with_deferred_redeemer`). See the `deferred_redeemer_*` [examples](examples/) for complete transactions validated by real on-chain scripts.
 
+## Nested Transactions
+
+cardano-c can build the nested transactions of [CIP-118](https://cips.cardano.org/cip/CIP-0118) (Dijkstra era, native scripts and key witnesses for now). Independent parties each build and sign a sub transaction with `cardano_sub_tx_builder_t`. A sub transaction is an intent: it is deliberately unbalanced, pays no fee and posts no collateral. A batcher then adds the finished sub transactions to a regular transaction, which pays the fee for the whole batch, and `cardano_tx_builder_build` balances the batch as a whole, the way the ledger checks it:
+
+```c
+// Each party spends its own UTXO and pays itself what it wants to end up with. The imbalance is its offer.
+cardano_sub_tx_builder_t* sub_tx_builder = cardano_sub_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
+
+cardano_sub_tx_builder_add_input(sub_tx_builder, party_utxo);
+cardano_sub_tx_builder_send_value(sub_tx_builder, party_address, wanted_value);
+cardano_sub_tx_builder_require_top_level_guard(sub_tx_builder, batcher_credential, NULL);
+cardano_sub_tx_builder_build(sub_tx_builder, &sub_transaction);
+
+// The party signs the sub transaction id.
+cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, party_witnesses);
+
+// The batcher aggregates the sub transactions and the builder balances the whole batch.
+cardano_tx_builder_add_sub_transaction(tx_builder, sub_transaction, party_utxos);
+cardano_tx_builder_add_guard(tx_builder, batcher_credential);
+cardano_tx_builder_build(tx_builder, &transaction);
+```
+
+The sub transactions are carried untouched, so their ids and the signatures of the parties are preserved. A net deficit of the sub transactions is funded by the inputs of the batcher and a net surplus ends up in its change. See the [sub transaction batch](examples/src/sub_transaction_batch_example.c) example for a complete trade between two parties that runs offline.
+
 ## Basic Example
 
 This is a basic cardano-c example, it sends `LOVELACE_TO_SEND` coins to `RECEIVING_ADDRESS`. Check full example at [send lovelace](examples/src/send_lovelace_example.c).
