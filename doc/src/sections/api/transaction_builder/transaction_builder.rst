@@ -181,6 +181,30 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_add_direct_deposit
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_direct_deposit_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_account_balance_interval
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_account_balance_interval_ex
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_starting_account_balance_interval
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_starting_account_balance_interval_ex
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_register_reward_address
 
 ------------
