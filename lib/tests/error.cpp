@@ -676,6 +676,18 @@ TEST(cardano_error_to_string, canConvertMaximumInputCountExceeded)
   ASSERT_STREQ(message, "Maximum input count exceeded");
 }
 
+TEST(cardano_error_to_string, canConvertUnbalancedSubTransactions)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Unbalanced sub transactions");
+}
+
 TEST(cardano_error_to_string, canConvertIllegalState)
 {
   // Arrange

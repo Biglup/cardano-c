@@ -301,6 +301,7 @@ cardano_builder_build(
     state->params,
     state->reference_inputs,
     state->pre_selected_inputs,
+    state->sub_transaction_inputs,
     state->input_to_redeemer_map,
     state->available_utxos,
     state->coin_selector,

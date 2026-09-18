@@ -53,6 +53,14 @@ static const char* REWARD_ADDRESS      = "stake_test1uqfu74w3wh4gfzu8m6e7j987h4l
 static const char* CBOR_DIFFERENT_VAL3 = "82825820bb217abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e001a200583900287a7e37219128cfb05322626daa8b19d1ad37c6779d21853f7b94177c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a026679b8a2581c1ec85dcee27f2d90ec1f9a1e4ce74a667dc9be8b184463223f9c9601a14350584c05581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c420a";
 static const char* OTHER_POLICY_ID     = "1ec85dcee27f2d90ec1f9a1e4ce74a667dc9be8b184463223f9c9601";
 static const char* NFT_POLICY_ID       = "0b0d621b5c26d0a1fd0893a4b04c19d860296a69ede1fbcfc5179882";
+static const char* PLUTUS_SCRIPT_HEX   = "4d01000033222220051200120011";
+static const char* REF_SCRIPT_V1_UTXO  = "82825820bb247abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e001a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182014e4d01000033222220051200120011";
+static const char* REF_SCRIPT_V2_UTXO  = "82825820bb257abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e002a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182024e4d02000033222220051200120011";
+static const char* REF_SCRIPT_V3_UTXO  = "82825820bb267abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e003a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182034e4d03000033222220051200120011";
+static const char* REF_SCRIPT_V4_UTXO  = "82825820bb287abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e004a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182044e4d04000033222220051200120011";
+static const char* REF_SCRIPT_NATIVE   = "82825820bb277abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e003a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d818582282008200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
+static const char* BATCH_CHANGE_ADDR   = "addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk";
+static const char* LEGACY_MODE_ERROR   = "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -852,6 +860,190 @@ utxo_list_contains_input(cardano_utxo_list_t* list, cardano_blake2b_hash_t* id, 
   return false;
 }
 
+static cardano_utxo_list_t*
+new_utxo_list_of(cardano_utxo_t* first, cardano_utxo_t* second)
+{
+  cardano_utxo_list_t* list = new_empty_utxo_list();
+
+  EXPECT_EQ(cardano_utxo_list_add(list, first), CARDANO_SUCCESS);
+
+  if (second != NULL)
+  {
+    EXPECT_EQ(cardano_utxo_list_add(list, second), CARDANO_SUCCESS);
+  }
+
+  return list;
+}
+
+static cardano_transaction_t*
+new_top_level_transaction(cardano_sub_transaction_t* first, cardano_sub_transaction_t* second)
+{
+  cardano_transaction_t* tx = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+
+  if (first != NULL)
+  {
+    add_sub_transaction(tx, first);
+  }
+
+  if (second != NULL)
+  {
+    add_sub_transaction(tx, second);
+  }
+
+  return tx;
+}
+
+static cardano_error_t
+balance_batch_with_pre_selected(
+  cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol,
+  cardano_utxo_list_t*           reference_inputs,
+  cardano_utxo_list_t*           pre_selected_utxo,
+  cardano_utxo_list_t*           sub_transaction_inputs,
+  cardano_utxo_list_t*           available_utxo)
+{
+  cardano_coin_selector_t* coin_selector  = NULL;
+  cardano_address_t*       change_address = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    pre_selected_utxo,
+    sub_transaction_inputs,
+    NULL,
+    available_utxo,
+    coin_selector,
+    change_address,
+    NULL,
+    change_address,
+    NULL,
+    nullptr);
+
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_address_unref(&change_address);
+
+  return result;
+}
+
+static cardano_error_t
+balance_batch(
+  cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol,
+  cardano_utxo_list_t*           reference_inputs,
+  cardano_utxo_list_t*           sub_transaction_inputs,
+  cardano_utxo_list_t*           available_utxo)
+{
+  return balance_batch_with_pre_selected(tx, protocol, reference_inputs, NULL, sub_transaction_inputs, available_utxo);
+}
+
+static bool
+is_batch_balanced(
+  cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol,
+  cardano_utxo_list_t*           sub_transaction_inputs,
+  cardano_utxo_list_t*           available_utxo)
+{
+  cardano_utxo_list_t* resolved_inputs = cardano_utxo_list_concat(available_utxo, sub_transaction_inputs);
+  bool                 is_balanced     = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced), CARDANO_SUCCESS);
+
+  cardano_utxo_list_unref(&resolved_inputs);
+
+  return is_balanced;
+}
+
+static cardano_value_t*
+new_top_level_imbalance(
+  cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol,
+  cardano_utxo_list_t*           available_utxo)
+{
+  cardano_value_t* imbalance = NULL;
+
+  EXPECT_EQ(cardano_compute_transaction_imbalance(tx, available_utxo, protocol, &imbalance), CARDANO_SUCCESS);
+
+  return imbalance;
+}
+
+static bool
+transaction_spends(cardano_transaction_t* tx, cardano_utxo_t* utxo)
+{
+  cardano_transaction_body_t*      body       = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* inputs     = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_t*     utxo_input = cardano_utxo_get_input(utxo);
+  bool                             is_spent   = false;
+
+  for (size_t i = 0; i < cardano_transaction_input_set_get_length(inputs); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    EXPECT_EQ(cardano_transaction_input_set_get(inputs, i, &input), CARDANO_SUCCESS);
+
+    is_spent = is_spent || cardano_transaction_input_equals(input, utxo_input);
+
+    cardano_transaction_input_unref(&input);
+  }
+
+  cardano_transaction_input_unref(&utxo_input);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_body_unref(&body);
+
+  return is_spent;
+}
+
+static void
+add_plutus_script(cardano_transaction_t* tx, const cardano_script_language_t language)
+{
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+
+  if (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1)
+  {
+    cardano_plutus_v1_script_t*     script  = NULL;
+    cardano_plutus_v1_script_set_t* scripts = NULL;
+
+    EXPECT_EQ(cardano_plutus_v1_script_new_bytes_from_hex(PLUTUS_SCRIPT_HEX, strlen(PLUTUS_SCRIPT_HEX), &script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v1_script_set_new(&scripts), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v1_script_set_add(scripts, script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v1_scripts(witness_set, scripts), CARDANO_SUCCESS);
+
+    cardano_plutus_v1_script_unref(&script);
+    cardano_plutus_v1_script_set_unref(&scripts);
+  }
+  else if (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2)
+  {
+    cardano_plutus_v2_script_t*     script  = NULL;
+    cardano_plutus_v2_script_set_t* scripts = NULL;
+
+    EXPECT_EQ(cardano_plutus_v2_script_new_bytes_from_hex(PLUTUS_SCRIPT_HEX, strlen(PLUTUS_SCRIPT_HEX), &script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v2_script_set_new(&scripts), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v2_script_set_add(scripts, script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v2_scripts(witness_set, scripts), CARDANO_SUCCESS);
+
+    cardano_plutus_v2_script_unref(&script);
+    cardano_plutus_v2_script_set_unref(&scripts);
+  }
+  else
+  {
+    cardano_plutus_v3_script_t*     script  = NULL;
+    cardano_plutus_v3_script_set_t* scripts = NULL;
+
+    EXPECT_EQ(cardano_plutus_v3_script_new_bytes_from_hex(PLUTUS_SCRIPT_HEX, strlen(PLUTUS_SCRIPT_HEX), &script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v3_script_set_new(&scripts), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v3_script_set_add(scripts, script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v3_scripts(witness_set, scripts), CARDANO_SUCCESS);
+
+    cardano_plutus_v3_script_unref(&script);
+    cardano_plutus_v3_script_set_unref(&scripts);
+  }
+
+  cardano_witness_set_unref(&witness_set);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_balance_transaction, canBalanceATransaction)
@@ -874,6 +1066,7 @@ TEST(cardano_balance_transaction, canBalanceATransaction)
     1,
     protocol,
     reference_inputs,
+    NULL,
     NULL,
     NULL,
     resolved_inputs,
@@ -923,6 +1116,7 @@ TEST(cardano_balance_transaction, canBalanceATransactionWithRandomImproveSelecto
     reference_inputs,
     NULL,
     NULL,
+    NULL,
     resolved_inputs,
     coin_selector,
     change_address,
@@ -968,6 +1162,7 @@ TEST(cardano_balance_transaction, canBalanceATransaction2)
     1,
     protocol,
     reference_inputs,
+    NULL,
     NULL,
     NULL,
     resolved_inputs,
@@ -1022,6 +1217,7 @@ TEST(cardano_balance_transaction, canBalanceATransactionWithDonations)
     reference_inputs,
     NULL,
     NULL,
+    NULL,
     resolved_inputs,
     coin_selector,
     change_address,
@@ -1069,6 +1265,7 @@ TEST(cardano_balance_transaction, canBalanceATransactionWithDirectDeposits)
     1,
     protocol,
     reference_inputs,
+    NULL,
     NULL,
     NULL,
     resolved_inputs,
@@ -1124,6 +1321,7 @@ TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailure)
       reference_inputs,
       NULL,
       NULL,
+      NULL,
       resolved_inputs,
       coin_selector,
       change_address,
@@ -1176,6 +1374,7 @@ TEST(cardano_balance_transaction, useSuggestedFeeIfGivenAndEnough)
     reference_inputs,
     NULL,
     NULL,
+    NULL,
     resolved_inputs,
     coin_selector,
     change_address,
@@ -1221,6 +1420,7 @@ TEST(cardano_balance_transaction, canBalanceTxWithScripts)
     1,
     protocol,
     reference_inputs,
+    NULL,
     NULL,
     NULL,
     resolved_inputs,
@@ -1292,6 +1492,7 @@ TEST(cardano_balance_transaction, forwardsReferenceInputsToTheEvaluator)
     reference_inputs,
     NULL,
     NULL,
+    NULL,
     resolved_inputs,
     coin_selector,
     change_address,
@@ -1318,6 +1519,863 @@ TEST(cardano_balance_transaction, forwardsReferenceInputsToTheEvaluator)
   cardano_utxo_list_unref(&reference_inputs);
   cardano_coin_selector_unref(&coin_selector);
   cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, balancesTheSameWithNullAndEmptySubTransactionInputs)
+{
+  // Arrange
+  cardano_transaction_t*         tx_with_null     = new_top_level_transaction(NULL, NULL);
+  cardano_transaction_t*         tx_with_empty    = new_top_level_transaction(NULL, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_empty_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t null_result  = balance_batch(tx_with_null, protocol, reference_inputs, NULL, available_utxo);
+  cardano_error_t empty_result = balance_batch(tx_with_empty, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  char* null_body_hex  = get_transaction_body_hex(tx_with_null);
+  char* empty_body_hex = get_transaction_body_hex(tx_with_empty);
+
+  EXPECT_EQ(null_result, CARDANO_SUCCESS);
+  EXPECT_EQ(empty_result, CARDANO_SUCCESS);
+  EXPECT_STREQ(null_body_hex, empty_body_hex);
+  EXPECT_TRUE(is_batch_balanced(tx_with_null, protocol, sub_tx_inputs, available_utxo));
+  EXPECT_TRUE(is_batch_balanced(tx_with_empty, protocol, sub_tx_inputs, available_utxo));
+
+  // Cleanup
+  free(null_body_hex);
+  free(empty_body_hex);
+  cardano_transaction_unref(&tx_with_null);
+  cardano_transaction_unref(&tx_with_empty);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, fundsTheDeficitOfTheSubTransactionsWithTopLevelInputs)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), 3000000);
+  EXPECT_EQ(get_policy_count(top_level_imbalance), 0);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsTheSurplusOfTheSubTransactionsAsChange)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), -2000000);
+  EXPECT_EQ(get_policy_count(top_level_imbalance), 0);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsASurplusLargerThanTheTopLevelRequirementAsChange)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 1000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), -11000000);
+  EXPECT_EQ(get_policy_count(top_level_imbalance), 0);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesTheAssetDeficitAndSurplusOfTheSubTransactions)
+{
+  // Arrange
+  cardano_utxo_t*                asset_utxo       = new_utxo_with_output(CBOR_DIFFERENT_VAL1, CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                coin_utxo        = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_default_sub_transaction();
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_sub_transaction_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  add_asset(get_utxo_value(asset_utxo), BURN_POLICY_ID, "TSLA", 10);
+
+  cardano_utxo_list_t* available_utxo = new_utxo_list_of(asset_utxo, coin_utxo);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+  EXPECT_TRUE(transaction_spends(tx, asset_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), -1000015);
+  EXPECT_EQ(get_policy_count(top_level_imbalance), 2);
+  EXPECT_EQ(get_asset_amount(top_level_imbalance, MINT_POLICY_ID, ""), -5);
+  EXPECT_EQ(get_asset_amount(top_level_imbalance, BURN_POLICY_ID, "TSLA"), 3);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&asset_utxo);
+  cardano_utxo_unref(&coin_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesABatchWithTheRandomImproveSelector)
+{
+  // Arrange
+  cardano_utxo_t*                asset_utxo       = new_utxo_with_output(CBOR_DIFFERENT_VAL1, CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                coin_utxo        = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_default_sub_transaction();
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_sub_transaction_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  add_asset(get_utxo_value(asset_utxo), BURN_POLICY_ID, "TSLA", 10);
+
+  cardano_utxo_list_t* available_utxo = new_utxo_list_of(asset_utxo, coin_utxo);
+
+  EXPECT_EQ(cardano_random_improve_coin_selector_new_with_seed(42U, &coin_selector), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    sub_tx_inputs,
+    NULL,
+    available_utxo,
+    coin_selector,
+    change_address,
+    NULL,
+    change_address,
+    NULL,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  // Cleanup
+  cardano_utxo_unref(&asset_utxo);
+  cardano_utxo_unref(&coin_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, paysOnlyTheFeeIfTheSubTransactionsCancelOut)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                counterpart_utxo = new_counterpart_utxo();
+  cardano_utxo_t*                nft_utxo         = new_default_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                coin_utxo        = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_default_sub_transaction();
+  cardano_sub_transaction_t*     counterpart      = new_counterpart_sub_transaction();
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, counterpart);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_utxo_list_of(nft_utxo, coin_utxo);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, counterpart_utxo);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_TRUE(cardano_value_is_zero(top_level_imbalance));
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&counterpart_utxo);
+  cardano_utxo_unref(&nft_utxo);
+  cardano_utxo_unref(&coin_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_transaction_unref(&counterpart);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, neverSelectsAUtxoSpentByASubTransaction)
+{
+  // Arrange
+  cardano_utxo_t*                largest_utxo     = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(largest_utxo, cardano_value_get_coin(get_utxo_value(largest_utxo)));
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(largest_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_FALSE(transaction_spends(tx, largest_utxo));
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+  EXPECT_EQ(cardano_utxo_list_get_length(available_utxo), 3U);
+
+  // Cleanup
+  cardano_utxo_unref(&largest_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheOnlyFundsAreSpentByASubTransaction)
+{
+  // Arrange
+  cardano_utxo_t*                largest_utxo     = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(largest_utxo, cardano_value_get_coin(get_utxo_value(largest_utxo)));
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_utxo_list_of(largest_utxo, NULL);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(largest_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+
+  // Cleanup
+  cardano_utxo_unref(&largest_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheFundsDoNotCoverTheDeficitOfTheSubTransactions)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 412000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheSubTransactionInputsAreNull)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, NULL, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The resolved inputs of the sub transactions are required to balance a transaction that carries sub transactions.");
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfASubTransactionInputIsNotResolved)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_empty_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "Failed to compute the imbalance of the sub transactions for transaction balancing.");
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfAPreSelectedUtxoIsSpentByASubTransaction)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                other_utxo       = new_default_utxo(REF_SCRIPT_NATIVE);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, cardano_value_get_coin(get_utxo_value(sub_tx_utxo)));
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           pre_selected     = new_utxo_list_of(other_utxo, sub_tx_utxo);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch_with_pre_selected(tx, protocol, reference_inputs, pre_selected, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "A pre selected input is already spent by a sub transaction. The inputs of the top level transaction must be disjoint from the inputs spent by its sub transactions.");
+  EXPECT_FALSE(transaction_spends(tx, sub_tx_utxo));
+  EXPECT_FALSE(transaction_spends(tx, other_utxo));
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&other_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesABatchWithAPreSelectedUtxoNotSpentByTheSubTransactions)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                other_utxo       = new_default_utxo(REF_SCRIPT_NATIVE);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           pre_selected     = new_utxo_list_of(other_utxo, NULL);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_utxo_list_t*           top_level_utxo   = cardano_utxo_list_concat(pre_selected, available_utxo);
+
+  // Act
+  cardano_error_t result = balance_batch_with_pre_selected(tx, protocol, reference_inputs, pre_selected, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(transaction_spends(tx, other_utxo));
+  EXPECT_FALSE(transaction_spends(tx, sub_tx_utxo));
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, top_level_utxo));
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&other_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_utxo_list_unref(&top_level_utxo);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndTheWitnessSetHasAPlutusV1Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  add_plutus_script(tx, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndTheWitnessSetHasAPlutusV2Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  add_plutus_script(tx, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndTheWitnessSetHasAPlutusV3Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  add_plutus_script(tx, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndAReferenceInputHasAPlutusV1Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V1_UTXO);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndAReferenceInputHasAPlutusV2Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V2_UTXO);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndAReferenceInputHasAPlutusV3Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V3_UTXO);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndAPreSelectedInputHasAPlutusV2Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                script_utxo      = new_default_utxo(REF_SCRIPT_V2_UTXO);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           pre_selected     = new_utxo_list_of(script_utxo, NULL);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  // Act
+  cardano_error_t result = balance_batch_with_pre_selected(tx, protocol, reference_inputs, pre_selected, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&script_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesUnbalancedSubTransactionsIfAReferenceInputHasANativeScript)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_NATIVE);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesUnbalancedSubTransactionsIfAReferenceInputHasAPlutusV4Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V4_UTXO);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, balancesTheTopLevelByItselfInLegacyModeIfTheSubTransactionsCancelOut)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                counterpart_utxo = new_counterpart_utxo();
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V2_UTXO);
+  cardano_utxo_t*                nft_utxo         = new_default_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                coin_utxo        = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_sub_transaction_t*     sub_tx           = new_default_sub_transaction();
+  cardano_sub_transaction_t*     counterpart      = new_counterpart_sub_transaction();
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, counterpart);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_utxo_list_of(nft_utxo, coin_utxo);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, counterpart_utxo);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  add_plutus_script(tx, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_TRUE(cardano_value_is_zero(top_level_imbalance));
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&counterpart_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_unref(&nft_utxo);
+  cardano_utxo_unref(&coin_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_transaction_unref(&counterpart);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailureForABatch)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_NATIVE);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 15000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  // Act
+  for (int i = 0; i < 150; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_balance_transaction(
+      tx,
+      1,
+      protocol,
+      reference_inputs,
+      NULL,
+      sub_tx_inputs,
+      NULL,
+      available_utxo,
+      coin_selector,
+      change_address,
+      NULL,
+      change_address,
+      NULL,
+      nullptr);
+
+    EXPECT_NE(result, CARDANO_SUCCESS);
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_set_allocators(malloc, realloc, free);
+
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
   cardano_address_unref(&change_address);
 }
 
