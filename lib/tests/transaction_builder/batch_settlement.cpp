@@ -25,6 +25,7 @@
 
 #include <cardano/address/address.h>
 #include <cardano/address/enterprise_address.h>
+#include <cardano/address/reward_address.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/common/credential.h>
@@ -39,6 +40,9 @@
 #include <cardano/protocol_params/protocol_parameters.h>
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/account_balance_interval.h>
+#include <cardano/transaction_body/account_balance_intervals_map.h>
+#include <cardano/transaction_body/direct_deposit_map.h>
 #include <cardano/transaction_body/required_guards_map.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_input.h>
@@ -144,6 +148,17 @@ struct party_t
     cardano_credential_t*          credential;
     cardano_address_t*             address;
     cardano_utxo_list_t*           utxos;
+};
+
+/**
+ * \brief An intent as the batcher holds it: the party that signed it, the signed sub transaction and the bytes of the
+ * sub transaction at the time it was signed.
+ */
+struct signed_intent_t
+{
+    const party_t*             party;
+    cardano_sub_transaction_t* sub_transaction;
+    std::string                cbor;
 };
 
 /**
@@ -506,25 +521,24 @@ sign_with_party(const party_t& party, cardano_blake2b_hash_t* message)
 }
 
 /**
- * Builds and signs the intent of a party as a sub transaction. The party spends all its UTXOs, pays a value back to
- * itself and only lets a transaction guarded by the batcher carry the intent. Whatever the party does not pay back to
- * itself is what it offers, and whatever it pays back above what it spends is what it asks for.
+ * Starts the intent of a party. The party spends all its UTXOs, pays a value back to itself and only lets a
+ * transaction guarded by the batcher carry the intent. Whatever the party does not pay back to itself is what it
+ * offers, and whatever it pays back above what it spends is what it asks for.
  * \param params the protocol parameters.
  * \param party the party that expresses the intent.
  * \param batcher the batcher the intent is pinned to.
  * \param kept the value the party pays back to itself.
- * \return A new instance of the signed sub transaction.
+ * \return A new instance of the sub transaction builder, to which the party can add further terms.
  */
-static cardano_sub_transaction_t*
-build_signed_intent(
+static cardano_sub_tx_builder_t*
+new_intent_builder(
   cardano_protocol_parameters_t* params,
   const party_t&                 party,
   const party_t&                 batcher,
   const amounts_t&               kept)
 {
-  cardano_sub_tx_builder_t*  builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
-  cardano_value_t*           value           = new_value(kept);
-  cardano_sub_transaction_t* sub_transaction = NULL;
+  cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*          value   = new_value(kept);
 
   for (size_t i = 0U; i < cardano_utxo_list_get_length(party.utxos); ++i)
   {
@@ -539,7 +553,24 @@ build_signed_intent(
   cardano_sub_tx_builder_send_value(builder, party.address, value);
   cardano_sub_tx_builder_require_top_level_guard(builder, batcher.credential, NULL);
 
-  EXPECT_EQ(cardano_sub_tx_builder_build(builder, &sub_transaction), CARDANO_SUCCESS);
+  cardano_value_unref(&value);
+
+  return builder;
+}
+
+/**
+ * Builds the sub transaction of an intent and signs it with the key of its party. The signature covers the id of the
+ * sub transaction, which attaching the witness must leave unchanged.
+ * \param builder the sub transaction builder that holds the terms of the intent. It is released.
+ * \param party the party that expresses the intent.
+ * \return A new instance of the signed sub transaction.
+ */
+static cardano_sub_transaction_t*
+sign_intent(cardano_sub_tx_builder_t* builder, const party_t& party)
+{
+  cardano_sub_transaction_t* sub_transaction = NULL;
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(builder, &sub_transaction), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(builder);
 
   cardano_blake2b_hash_t*     unsigned_id = cardano_sub_transaction_get_id(sub_transaction);
   cardano_vkey_witness_set_t* witnesses   = sign_with_party(party, unsigned_id);
@@ -553,10 +584,28 @@ build_signed_intent(
   cardano_blake2b_hash_unref(&unsigned_id);
   cardano_blake2b_hash_unref(&signed_id);
   cardano_vkey_witness_set_unref(&witnesses);
-  cardano_value_unref(&value);
   cardano_sub_tx_builder_unref(&builder);
 
   return sub_transaction;
+}
+
+/**
+ * Builds and signs the intent of a party as a sub transaction whose only terms are the UTXOs the party spends and the
+ * value it pays back to itself.
+ * \param params the protocol parameters.
+ * \param party the party that expresses the intent.
+ * \param batcher the batcher the intent is pinned to.
+ * \param kept the value the party pays back to itself.
+ * \return A new instance of the signed sub transaction.
+ */
+static cardano_sub_transaction_t*
+build_signed_intent(
+  cardano_protocol_parameters_t* params,
+  const party_t&                 party,
+  const party_t&                 batcher,
+  const amounts_t&               kept)
+{
+  return sign_intent(new_intent_builder(params, party, batcher, kept), party);
 }
 
 /**
@@ -603,6 +652,24 @@ encode_sub_transaction(cardano_sub_transaction_t* sub_transaction)
   cardano_cbor_writer_unref(&writer);
 
   return hex;
+}
+
+/**
+ * Decodes a sub transaction from a CBOR hex string, which is how a batcher receives the intent of a party.
+ * \param hex the CBOR hex string.
+ * \return A new instance of the sub transaction.
+ */
+static cardano_sub_transaction_t*
+decode_sub_transaction(const std::string& hex)
+{
+  cardano_sub_transaction_t* sub_transaction = NULL;
+  cardano_cbor_reader_t*     reader          = cardano_cbor_reader_from_hex(hex.c_str(), hex.size());
+
+  EXPECT_EQ(cardano_sub_transaction_from_cbor(reader, &sub_transaction), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return sub_transaction;
 }
 
 /**
@@ -869,12 +936,108 @@ read_top_level_flows(cardano_transaction_t* tx, const party_t& party, amounts_t&
 }
 
 /**
+ * Expects a transaction built and signed by a batcher to be a valid settlement of the intents it carries: the batch is
+ * balanced, both as built and once decoded from its bytes, the fee pays for more than the size of the batch before the
+ * batcher signs, the sub transactions are carried exactly as they were signed, the batcher guards the transaction as
+ * the intents require, the transaction round trips byte exact, and the batcher pays the fee plus the given
+ * contribution out of its own UTXOs and nothing else.
+ * \param params the protocol parameters.
+ * \param tx the transaction built and signed by the batcher.
+ * \param all_utxos the UTXOs that resolve every input of the batch.
+ * \param batcher the batcher that built and signed the transaction.
+ * \param intents the signed intents the batcher added to the transaction.
+ * \param unsigned_min_fee the minimum fee of the transaction before the batcher signed it.
+ * \param batcher_contribution the value the batcher is expected to put into the settlement on top of the fee, negative
+ *                             amounts are what the batcher takes out of it.
+ */
+static void
+expect_valid_settlement(
+  cardano_protocol_parameters_t*      params,
+  cardano_transaction_t*              tx,
+  cardano_utxo_list_t*                all_utxos,
+  const party_t&                      batcher,
+  const std::vector<signed_intent_t>& intents,
+  const uint64_t                      unsigned_min_fee,
+  const amounts_t&                    batcher_contribution)
+{
+  bool             is_balanced     = false;
+  cardano_value_t* batch_imbalance = NULL;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  EXPECT_EQ(cardano_compute_transaction_batch_imbalance(tx, all_utxos, params, &batch_imbalance), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_value_is_zero(batch_imbalance));
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  const int64_t fee = (int64_t)cardano_transaction_body_get_fee(body);
+
+  EXPECT_GT(fee, (int64_t)unsigned_min_fee);
+
+  EXPECT_EQ(cardano_sub_transaction_set_get_length(get_sub_transactions(tx)), intents.size());
+
+  for (const signed_intent_t& intent: intents)
+  {
+    expect_carries_as_signed(tx, *intent.party, intent.sub_transaction, intent.cbor);
+  }
+
+  expect_required_guards_are_present(tx, batcher.credential);
+
+  const std::string      tx_cbor = encode_transaction(tx);
+  cardano_transaction_t* decoded = decode_transaction(tx_cbor);
+
+  ASSERT_NE(decoded, nullptr);
+  EXPECT_EQ(encode_transaction(decoded), tx_cbor);
+
+  cardano_blake2b_hash_t*     tx_id               = cardano_transaction_get_id(tx);
+  cardano_blake2b_hash_t*     decoded_id          = cardano_transaction_get_id(decoded);
+  cardano_witness_set_t*      decoded_witness_set = cardano_transaction_get_witness_set(decoded);
+  cardano_vkey_witness_set_t* decoded_witnesses   = cardano_witness_set_get_vkeys(decoded_witness_set);
+
+  EXPECT_TRUE(cardano_blake2b_hash_equals(decoded_id, tx_id));
+  EXPECT_TRUE(is_signed_by(decoded_witnesses, batcher, decoded_id));
+
+  bool is_decoded_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(decoded, all_utxos, params, &is_decoded_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_decoded_balanced);
+
+  for (const signed_intent_t& intent: intents)
+  {
+    expect_carries_as_signed(decoded, *intent.party, intent.sub_transaction, intent.cbor);
+  }
+
+  expect_required_guards_are_present(decoded, batcher.credential);
+
+  cardano_transaction_clear_cbor_cache(decoded);
+
+  EXPECT_EQ(encode_transaction(decoded), tx_cbor);
+
+  amounts_t spent;
+  amounts_t received;
+
+  EXPECT_TRUE(read_top_level_flows(tx, batcher, spent, received));
+  EXPECT_EQ(spent.coin - received.coin - fee, batcher_contribution.coin);
+
+  for (size_t i = 0U; i < ASSET_POOL_SIZE; ++i)
+  {
+    EXPECT_EQ(spent.assets[i] - received.assets[i], batcher_contribution.assets[i]);
+  }
+
+  cardano_vkey_witness_set_unref(&decoded_witnesses);
+  cardano_witness_set_unref(&decoded_witness_set);
+  cardano_blake2b_hash_unref(&decoded_id);
+  cardano_blake2b_hash_unref(&tx_id);
+  cardano_transaction_unref(&decoded);
+  cardano_value_unref(&batch_imbalance);
+}
+
+/**
  * Settles the intents of a buyer and a seller the way a batcher does: it adds both signed sub transactions and its
  * own guard to a transaction funded by its UTXOs, builds it and signs it. It then expects the result to be a valid
- * settlement: the batch is balanced, the fee pays for more than the size of the batch before the batcher signs, the
- * sub transactions are carried exactly as they were signed, the batcher guards the transaction as the intents
- * require, the transaction round trips byte exact, and the batcher pays the fee plus the given contribution out of
- * its own UTXOs and nothing else.
+ * settlement in which the top level body is out of balance by exactly what the batcher contributes.
  * \param buyer_kept the value the buyer pays back to itself.
  * \param seller_kept the value the seller pays back to itself.
  * \param buyer_intent the imbalance the sub transaction of the buyer is expected to have.
@@ -906,8 +1069,10 @@ expect_settlement(
   cardano_sub_transaction_t* buyer_sub_tx  = build_signed_intent(params, buyer, batcher, buyer_kept);
   cardano_sub_transaction_t* seller_sub_tx = build_signed_intent(params, seller, batcher, seller_kept);
 
-  const std::string buyer_cbor  = encode_sub_transaction(buyer_sub_tx);
-  const std::string seller_cbor = encode_sub_transaction(seller_sub_tx);
+  const std::vector<signed_intent_t> intents = {
+    { &buyer, buyer_sub_tx, encode_sub_transaction(buyer_sub_tx) },
+    { &seller, seller_sub_tx, encode_sub_transaction(seller_sub_tx) }
+  };
 
   expect_intent(params, buyer, buyer_sub_tx, buyer_intent);
   expect_intent(params, seller, seller_sub_tx, seller_intent);
@@ -936,59 +1101,7 @@ expect_settlement(
   EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
 
   // Assert
-  bool             is_balanced     = false;
-  cardano_value_t* batch_imbalance = NULL;
-
-  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
-  EXPECT_TRUE(is_balanced);
-
-  EXPECT_EQ(cardano_compute_transaction_batch_imbalance(tx, all_utxos, params, &batch_imbalance), CARDANO_SUCCESS);
-  EXPECT_TRUE(cardano_value_is_zero(batch_imbalance));
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
-  const int64_t fee = (int64_t)cardano_transaction_body_get_fee(body);
-
-  EXPECT_GT(fee, (int64_t)unsigned_min_fee);
-
-  EXPECT_EQ(cardano_sub_transaction_set_get_length(get_sub_transactions(tx)), 2U);
-
-  expect_carries_as_signed(tx, buyer, buyer_sub_tx, buyer_cbor);
-  expect_carries_as_signed(tx, seller, seller_sub_tx, seller_cbor);
-  expect_required_guards_are_present(tx, batcher.credential);
-
-  const std::string      tx_cbor = encode_transaction(tx);
-  cardano_transaction_t* decoded = decode_transaction(tx_cbor);
-
-  ASSERT_NE(decoded, nullptr);
-  EXPECT_EQ(encode_transaction(decoded), tx_cbor);
-
-  cardano_blake2b_hash_t*     decoded_id          = cardano_transaction_get_id(decoded);
-  cardano_witness_set_t*      decoded_witness_set = cardano_transaction_get_witness_set(decoded);
-  cardano_vkey_witness_set_t* decoded_witnesses   = cardano_witness_set_get_vkeys(decoded_witness_set);
-
-  EXPECT_TRUE(cardano_blake2b_hash_equals(decoded_id, tx_id));
-  EXPECT_TRUE(is_signed_by(decoded_witnesses, batcher, decoded_id));
-
-  expect_carries_as_signed(decoded, buyer, buyer_sub_tx, buyer_cbor);
-  expect_carries_as_signed(decoded, seller, seller_sub_tx, seller_cbor);
-  expect_required_guards_are_present(decoded, batcher.credential);
-
-  cardano_transaction_clear_cbor_cache(decoded);
-
-  EXPECT_EQ(encode_transaction(decoded), tx_cbor);
-
-  amounts_t spent;
-  amounts_t received;
-
-  EXPECT_TRUE(read_top_level_flows(tx, batcher, spent, received));
-  EXPECT_EQ(spent.coin - received.coin, fee + batcher_contribution.coin);
-
-  for (size_t i = 0U; i < ASSET_POOL_SIZE; ++i)
-  {
-    EXPECT_EQ(spent.assets[i] - received.assets[i], batcher_contribution.assets[i]);
-  }
+  expect_valid_settlement(params, tx, all_utxos, batcher, intents, unsigned_min_fee, batcher_contribution);
 
   cardano_value_t* top_level_imbalance = NULL;
 
@@ -998,11 +1111,6 @@ expect_settlement(
 
   // Cleanup
   cardano_value_unref(&top_level_imbalance);
-  cardano_vkey_witness_set_unref(&decoded_witnesses);
-  cardano_witness_set_unref(&decoded_witness_set);
-  cardano_blake2b_hash_unref(&decoded_id);
-  cardano_transaction_unref(&decoded);
-  cardano_value_unref(&batch_imbalance);
   cardano_vkey_witness_set_unref(&batcher_witnesses);
   cardano_blake2b_hash_unref(&tx_id);
   cardano_transaction_unref(&tx);
@@ -1119,6 +1227,139 @@ TEST(cardano_batch_settlement, settlesIntentsThatLeaveASurplusAndTheBatcherKeeps
   const amounts_t batcher_contribution(-2000000, -100);
 
   expect_settlement(buyer_kept, seller_kept, buyer_intent, seller_intent, batcher_funds, batcher_contribution);
+}
+
+/**
+ * A staker hands its signed intent to the batcher as CBOR bytes, and the intent moves funds through its reward
+ * account. The key deposit of the protocol parameters of these tests is 2000000 lovelace.
+ *
+ * The staker spends 100000000 lovelace, pays 90000000 back to itself, deposits 3000000 straight into its reward
+ * account, registers the account and withdraws 1200000 from it, so the imbalance of its sub transaction is
+ * 100000000 - 90000000 - 3000000 - 2000000 + 1200000 = 6200000 lovelace. No ledger state accepts this intent as it
+ * stands, since an account that can be withdrawn from is already registered, and its terms are combined only so that a
+ * single sub transaction exercises every value conservation term, which the library balances without looking at the
+ * ledger state.
+ *
+ * The batcher deposits 8000000 lovelace into the same reward account from the top level body, which the intent only
+ * covers in part, so on top of the fee the batcher contributes 8000000 - 6200000 = 1800000 lovelace, and the top
+ * level body alone is out of balance by -6200000 lovelace, the intent it absorbs.
+ *
+ * Every term of the intent survives the handover: once its cached bytes are dropped, the sub transaction the batcher
+ * received still encodes to the bytes the staker signed.
+ */
+TEST(cardano_batch_settlement, settlesAnIntentHandedOverAsBytesThatDepositsRegistersAndWithdraws)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params         = new_protocol_parameters();
+  party_t                             staker         = new_party(BUYER_KEY_HEX);
+  party_t                             batcher        = new_party(BATCHER_KEY_HEX);
+  cardano_reward_address_t*           reward_address = NULL;
+  cardano_account_balance_interval_t* interval       = NULL;
+  const uint64_t                      lower_bound    = 1200000U;
+
+  ASSERT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, staker.credential, &reward_address), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_account_balance_interval_new(&lower_bound, NULL, &interval), CARDANO_SUCCESS);
+
+  fund_party(staker, 1U, amounts_t(100000000, 0));
+  fund_party(batcher, 2U, amounts_t(20000000, 0));
+
+  cardano_utxo_list_t*      all_utxos      = join_utxos({ &staker, &batcher });
+  cardano_sub_tx_builder_t* intent_builder = new_intent_builder(params, staker, batcher, amounts_t(90000000, 0));
+
+  cardano_sub_tx_builder_add_direct_deposit(intent_builder, reward_address, 3000000U);
+  cardano_sub_tx_builder_register_reward_address(intent_builder, reward_address);
+  cardano_sub_tx_builder_withdraw_rewards(intent_builder, reward_address, 1200000);
+  cardano_sub_tx_builder_add_account_balance_interval(intent_builder, reward_address, interval);
+
+  cardano_sub_transaction_t* signed_sub_tx = sign_intent(intent_builder, staker);
+
+  ASSERT_NE(signed_sub_tx, nullptr);
+
+  expect_intent(params, staker, signed_sub_tx, amounts_t(6200000, 0));
+
+  cardano_blake2b_hash_t* signed_id   = cardano_sub_transaction_get_id(signed_sub_tx);
+  const std::string       signed_cbor = encode_sub_transaction(signed_sub_tx);
+
+  cardano_sub_transaction_unref(&signed_sub_tx);
+
+  ASSERT_EQ(signed_sub_tx, nullptr);
+
+  cardano_sub_transaction_t* received_sub_tx = decode_sub_transaction(signed_cbor);
+
+  ASSERT_NE(received_sub_tx, nullptr);
+
+  cardano_blake2b_hash_t* received_id = cardano_sub_transaction_get_id(received_sub_tx);
+
+  EXPECT_TRUE(cardano_blake2b_hash_equals(received_id, signed_id));
+  EXPECT_EQ(encode_sub_transaction(received_sub_tx), signed_cbor);
+
+  expect_intent(params, staker, received_sub_tx, amounts_t(6200000, 0));
+
+  const std::vector<signed_intent_t> intents = { { &staker, received_sub_tx, signed_cbor } };
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_change_address(tx_builder, batcher.address);
+  cardano_tx_builder_set_utxos(tx_builder, batcher.utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, received_sub_tx, staker.utxos);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 8000000U);
+  cardano_tx_builder_add_guard(tx_builder, batcher.credential);
+
+  cardano_transaction_t* tx = NULL;
+
+  ASSERT_EQ(cardano_tx_builder_build(tx_builder, &tx), CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+
+  uint64_t unsigned_min_fee = 0U;
+
+  EXPECT_EQ(cardano_compute_transaction_fee(tx, all_utxos, params, &unsigned_min_fee), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t*     tx_id             = cardano_transaction_get_id(tx);
+  cardano_vkey_witness_set_t* batcher_witnesses = sign_with_party(batcher, tx_id);
+
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
+
+  // Assert
+  expect_valid_settlement(params, tx, all_utxos, batcher, intents, unsigned_min_fee, amounts_t(1800000, 0));
+
+  cardano_value_t* top_level_imbalance = NULL;
+
+  EXPECT_EQ(cardano_compute_transaction_imbalance(tx, batcher.utxos, params, &top_level_imbalance), CARDANO_SUCCESS);
+
+  expect_amounts(top_level_imbalance, amounts_t(-6200000, 0));
+
+  cardano_sub_transaction_clear_cbor_cache(received_sub_tx);
+
+  EXPECT_EQ(encode_sub_transaction(received_sub_tx), signed_cbor);
+
+  cardano_sub_transaction_body_t* received_body = cardano_sub_transaction_get_body(received_sub_tx);
+  cardano_sub_transaction_body_unref(&received_body);
+
+  cardano_account_balance_intervals_map_t* received_intervals = cardano_sub_transaction_body_get_account_balance_intervals(received_body);
+  cardano_account_balance_intervals_map_unref(&received_intervals);
+
+  cardano_direct_deposit_map_t* received_deposits = cardano_sub_transaction_body_get_direct_deposits(received_body);
+  cardano_direct_deposit_map_unref(&received_deposits);
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(received_intervals), 1U);
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(received_deposits), 1U);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_vkey_witness_set_unref(&batcher_witnesses);
+  cardano_blake2b_hash_unref(&tx_id);
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_blake2b_hash_unref(&received_id);
+  cardano_blake2b_hash_unref(&signed_id);
+  cardano_sub_transaction_unref(&received_sub_tx);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&reward_address);
+  cardano_protocol_parameters_unref(&params);
+  free_party(staker);
+  free_party(batcher);
 }
 
 TEST(cardano_batch_settlement_properties, randomIntentsBuildIntoABalancedBatchOrFailForLackOfFunds)
