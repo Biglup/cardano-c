@@ -491,7 +491,7 @@ cardano_builder_propose_hardfork_ex(
   }
 
   cardano_protocol_version_t* version = NULL;
-  result                              = cardano_protocol_version_new(minor_protocol_version, major_protocol_version, &version);
+  result                              = cardano_protocol_version_new(major_protocol_version, minor_protocol_version, &version);
 
   if (result != CARDANO_SUCCESS)
   {

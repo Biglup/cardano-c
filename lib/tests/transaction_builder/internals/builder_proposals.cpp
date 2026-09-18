@@ -27,6 +27,7 @@
 
 #include "../../../src/transaction_builder/internals/builder_proposals.h"
 
+#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
 
@@ -44,6 +45,10 @@ static const char* ANCHOR_CBOR               = "827668747470733a2f2f7777772e736f
 static const char* GOVERNANCE_ACTION_ID_CBOR = "825820000000000000000000000000000000000000000000000000000000000000000003";
 static const char* HASH_HEX                  = "00000000000000000000000000000000000000000000000000000000";
 static const char* WITHDRAWAL_MAP_CBOR       = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005";
+static const char* ANCHOR_URL                = "https://storage.googleapis.com/biglup/Angel_Castillo.jsonld";
+static const char* ANCHOR_HASH               = "26ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
+static const char* GOVERNANCE_ACTION_ID      = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
+static const char* HARDFORK_PROPOSALS_CBOR   = "d90102818400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64548301825820000000000000000000000000000000000000000000000000000000000000000011820c0082783b68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f6269676c75702f416e67656c5f43617374696c6c6f2e6a736f6e6c64582026ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -92,6 +97,71 @@ get_witness_redeemers(cardano_builder_state_t* state)
   cardano_redeemer_list_unref(&redeemers);
 
   return redeemers;
+}
+
+/**
+ * Gets a borrowed reference to the proposal procedures of the transaction body.
+ * @param state The builder state holding the transaction.
+ * @return The proposal procedures of the body, or NULL when none was proposed.
+ */
+static cardano_proposal_procedure_set_t*
+get_proposal_procedures(cardano_builder_state_t* state)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&proposals);
+
+  return proposals;
+}
+
+/**
+ * Encodes the proposal procedures of the transaction body to a CBOR hex string.
+ * @param state The builder state holding the transaction.
+ * @return The CBOR hex string. The caller must free the returned string.
+ */
+static char*
+encode_proposal_procedures(cardano_builder_state_t* state)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_proposal_procedure_set_to_cbor(get_proposal_procedures(state), writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size      = cardano_cbor_writer_get_hex_size(writer);
+  char*        proposals_hex = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, proposals_hex, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return proposals_hex;
+}
+
+/**
+ * Gets the protocol version proposed by a hard fork initiation proposal of the transaction body.
+ * @param state The builder state holding the transaction.
+ * @param index The index of the proposal.
+ * @return The proposed protocol version. The caller must release it.
+ */
+static cardano_protocol_version_t*
+get_hardfork_proposal_version(cardano_builder_state_t* state, const size_t index)
+{
+  cardano_proposal_procedure_t*          proposal = NULL;
+  cardano_hard_fork_initiation_action_t* action   = NULL;
+
+  EXPECT_EQ(cardano_proposal_procedure_set_get(get_proposal_procedures(state), index, &proposal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_to_hard_fork_initiation_action(proposal, &action), CARDANO_SUCCESS);
+
+  cardano_protocol_version_t* version = cardano_hard_fork_initiation_action_get_protocol_version(action);
+
+  cardano_hard_fork_initiation_action_unref(&action);
+  cardano_proposal_procedure_unref(&proposal);
+
+  return version;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -239,6 +309,83 @@ TEST(cardano_builder_propose_parameter_change, doesNotAttachRedeemerWhenProposal
   cardano_governance_action_id_unref(&action_id);
   cardano_blake2b_hash_unref(&policy_hash);
   cardano_protocol_param_update_unref(&pparam_update);
+}
+
+TEST(cardano_builder_propose_hardfork_ex, proposesTheGivenMajorAndMinorProtocolVersion)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  const char* error_message = NULL;
+
+  // Act
+  const cardano_error_t result = cardano_builder_propose_hardfork_ex(&state, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_ID, strlen(GOVERNANCE_ACTION_ID), 0, 12, &error_message);
+
+  char*                       proposals_hex = encode_proposal_procedures(&state);
+  cardano_protocol_version_t* version       = get_hardfork_proposal_version(&state, 0);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+  EXPECT_EQ(cardano_protocol_version_get_major(version), 12U);
+  EXPECT_EQ(cardano_protocol_version_get_minor(version), 0U);
+  EXPECT_STREQ(proposals_hex, HARDFORK_PROPOSALS_CBOR);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_protocol_version_unref(&version);
+  free(proposals_hex);
+}
+
+TEST(cardano_builder_propose_hardfork_ex, producesTheSameProposalAsTheObjectVariant)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_protocol_parameters();
+  cardano_builder_state_t        object_state = {};
+  cardano_builder_state_t        string_state = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&object_state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_state_init(&string_state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_anchor_t* anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_hash_hex(ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), &anchor), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(GOVERNANCE_ACTION_ID, strlen(GOVERNANCE_ACTION_ID), &action_id), CARDANO_SUCCESS);
+
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(12, 0, &version), CARDANO_SUCCESS);
+
+  const char* error_message = NULL;
+
+  // Act
+  EXPECT_EQ(cardano_builder_propose_hardfork(&object_state, reward_address, anchor, version, action_id, &error_message), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_propose_hardfork_ex(&string_state, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_ID, strlen(GOVERNANCE_ACTION_ID), 0, 12, &error_message), CARDANO_SUCCESS);
+
+  char* object_proposals_hex = encode_proposal_procedures(&object_state);
+  char* string_proposals_hex = encode_proposal_procedures(&string_state);
+
+  // Assert
+  EXPECT_STREQ(string_proposals_hex, object_proposals_hex);
+  EXPECT_STREQ(object_proposals_hex, HARDFORK_PROPOSALS_CBOR);
+
+  // Cleanup
+  cardano_builder_state_release(&object_state);
+  cardano_builder_state_release(&string_state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_protocol_version_unref(&version);
+  free(object_proposals_hex);
+  free(string_proposals_hex);
 }
 
 TEST(cardano_builder_propose_treasury_withdrawals, doesNotAttachRedeemerWhenProposalCannotBeAdded)

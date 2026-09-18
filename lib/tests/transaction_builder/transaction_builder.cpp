@@ -27,6 +27,7 @@
 
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
+#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 #include <cardano/transaction_builder/transaction_builder.h>
 
 #include "../../src/transaction_builder/internals/blake2b_hash_to_redeemer_map.h"
@@ -101,6 +102,7 @@ static const char* COMITTEE_MEMBERS_MAP_CBOR   = "a48200581c00000000000000000000
 static const char* CONSTITUTION_CBOR           = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
 static const char* CIP129_BECH32_1             = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
 static const char* CBOR_YES_WITHOUT_ANCHOR     = "8201f6";
+static const char* HARDFORK_PROPOSALS_CBOR     = "d90102818400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64548301825820000000000000000000000000000000000000000000000000000000000000000011820c0082783b68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f6269676c75702f416e67656c5f43617374696c6c6f2e6a736f6e6c64582026ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -494,6 +496,71 @@ encode_body(cardano_tx_builder_t* tx_builder)
   cardano_cbor_writer_unref(&writer);
 
   return body_hex;
+}
+
+/**
+ * Gets a borrowed reference to the proposal procedures of the transaction under construction.
+ * \param tx_builder the transaction builder.
+ * \return The proposal procedures of the transaction body.
+ */
+static cardano_proposal_procedure_set_t*
+get_proposal_procedures(cardano_tx_builder_t* tx_builder)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&proposals);
+
+  return proposals;
+}
+
+/**
+ * Encodes the proposal procedures of the transaction under construction to a CBOR hex string.
+ * \param tx_builder the transaction builder.
+ * \return The CBOR hex string. The caller must free the returned string.
+ */
+static char*
+encode_proposal_procedures(cardano_tx_builder_t* tx_builder)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_proposal_procedure_set_to_cbor(get_proposal_procedures(tx_builder), writer);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size      = cardano_cbor_writer_get_hex_size(writer);
+  char*        proposals_hex = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, proposals_hex, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return proposals_hex;
+}
+
+/**
+ * Gets the protocol version proposed by a hard fork initiation proposal of the transaction under construction.
+ * \param tx_builder the transaction builder.
+ * \param index the index of the proposal.
+ * \return The proposed protocol version. The caller must release it.
+ */
+static cardano_protocol_version_t*
+get_hardfork_proposal_version(cardano_tx_builder_t* tx_builder, const size_t index)
+{
+  cardano_proposal_procedure_t*          proposal = NULL;
+  cardano_hard_fork_initiation_action_t* action   = NULL;
+
+  EXPECT_EQ(cardano_proposal_procedure_set_get(get_proposal_procedures(tx_builder), index, &proposal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_to_hard_fork_initiation_action(proposal, &action), CARDANO_SUCCESS);
+
+  cardano_protocol_version_t* version = cardano_hard_fork_initiation_action_get_protocol_version(action);
+
+  cardano_hard_fork_initiation_action_unref(&action);
+  cardano_proposal_procedure_unref(&proposal);
+
+  return version;
 }
 
 /**
@@ -8084,6 +8151,74 @@ TEST(cardano_tx_builder_propose_hardfork_ex, doesntCrashIfGivenNull)
   // clang-format on
 
   cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_propose_hardfork_ex, canProposeHardfork)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_propose_hardfork_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), 0, 12);
+
+  char*                       proposals_hex = encode_proposal_procedures(tx_builder);
+  cardano_protocol_version_t* version       = get_hardfork_proposal_version(tx_builder, 0);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(tx_builder)), 1);
+  EXPECT_EQ(cardano_protocol_version_get_major(version), 12U);
+  EXPECT_EQ(cardano_protocol_version_get_minor(version), 0U);
+  EXPECT_STREQ(proposals_hex, HARDFORK_PROPOSALS_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_protocol_version_unref(&version);
+  free(proposals_hex);
+}
+
+TEST(cardano_tx_builder_propose_hardfork_ex, producesTheSameProposalAsTheObjectVariant)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params           = init_protocol_parameters();
+  cardano_reward_address_t*       reward_address   = nullptr;
+  cardano_governance_action_id_t* action_id        = nullptr;
+  cardano_anchor_t*               anchor           = nullptr;
+  cardano_protocol_version_t*     protocol_version = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_anchor_from_hash_hex(ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), &anchor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_governance_action_id_from_bech32(CIP129_BECH32_1, strlen(CIP129_BECH32_1), &action_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_version_new(12, 0, &protocol_version), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* object_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_tx_builder_t* string_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_propose_hardfork(object_builder, reward_address, anchor, protocol_version, action_id);
+  cardano_tx_builder_propose_hardfork_ex(string_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), CIP129_BECH32_1, strlen(CIP129_BECH32_1), 0, 12);
+
+  char* object_proposals_hex = encode_proposal_procedures(object_builder);
+  char* string_proposals_hex = encode_proposal_procedures(string_builder);
+
+  // Assert
+  EXPECT_EQ(object_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(string_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_STREQ(string_proposals_hex, object_proposals_hex);
+  EXPECT_STREQ(object_proposals_hex, HARDFORK_PROPOSALS_CBOR);
+
+  // Cleanup
+  cardano_tx_builder_unref(&object_builder);
+  cardano_tx_builder_unref(&string_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_anchor_unref(&anchor);
+  cardano_protocol_version_unref(&protocol_version);
+  free(object_proposals_hex);
+  free(string_proposals_hex);
 }
 
 TEST(cardano_tx_builder_propose_hardfork_ex, returnsErrorIfMemoryAllocationFails)
