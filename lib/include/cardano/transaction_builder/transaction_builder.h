@@ -1482,6 +1482,11 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * otherwise building fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub
  * transaction.
  *
+ * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
+ * redeemers and the reference scripts of their resolved reference inputs, counted once per sub transaction that
+ * references them. When a sub transaction carries redeemers the transaction posts the collateral, even if it runs no
+ * script itself, so the collateral change address and the collateral UTXOs must be set before building.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
  * \param[in] resolved_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs behind the inputs of the sub

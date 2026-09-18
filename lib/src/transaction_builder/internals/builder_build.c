@@ -34,6 +34,8 @@
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
 
+#include "../balancing/internals/collateral.h"
+
 #include <assert.h>
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -269,7 +271,16 @@ cardano_builder_build(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (cardano_transaction_has_script_data(state->transaction))
+  bool is_collateral_required = false;
+
+  cardano_error_t result = _cardano_is_collateral_required(state->transaction, &is_collateral_required);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (cardano_transaction_has_script_data(state->transaction) || is_collateral_required)
   {
     if (state->collateral_address == NULL)
     {
@@ -288,7 +299,7 @@ cardano_builder_build(
 
   cardano_transaction_t* tx = state->transaction;
 
-  cardano_error_t result = set_dummy_script_data_hash(tx);
+  result = set_dummy_script_data_hash(tx);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -302,6 +313,7 @@ cardano_builder_build(
     state->reference_inputs,
     state->pre_selected_inputs,
     state->sub_transaction_inputs,
+    state->sub_transaction_reference_inputs,
     state->input_to_redeemer_map,
     state->available_utxos,
     state->coin_selector,

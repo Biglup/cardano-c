@@ -115,10 +115,27 @@ _cardano_update_transaction_body_collateral(
   cardano_utxo_list_t*          selection);
 
 /**
+ * \brief Checks whether a transaction must post collateral.
+ *
+ * Collateral is only posted by the top level transaction and covers the whole batch, so it is required when a redeemer
+ * exists in the witness set of the transaction or in the witness set of any of the sub transactions it carries.
+ *
+ * \param[in]  tx          A pointer to the \ref cardano_transaction_t to inspect.
+ * \param[out] is_required Set to true if the transaction or one of its sub transactions carries a redeemer.
+ *
+ * \return \ref CARDANO_SUCCESS if the transaction was inspected, or an appropriate error code.
+ */
+cardano_error_t
+_cardano_is_collateral_required(cardano_transaction_t* tx, bool* is_required);
+
+/**
  * \brief Sets the collateral output in a Cardano transaction.
  *
  * This function selects collateral outputs from a list of available collateral UTXOs to meet the required collateral amount
  * for the transaction. If the total collateral exceeds the required amount, a change collateral output is created and added to the transaction.
+ *
+ * Collateral is set when the transaction or any of the sub transactions it carries has redeemers, and it is sized from the
+ * fee of the transaction, which pays for the whole batch.
  *
  * \param[in,out] tx                           A pointer to the \ref cardano_transaction_t where the collateral output will be set.
  * \param[in]     protocol_params              A pointer to the \ref cardano_protocol_parameters_t containing protocol parameters for collateral calculations.
