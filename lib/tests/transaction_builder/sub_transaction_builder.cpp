@@ -27,6 +27,7 @@
 
 #include "../../src/transaction_builder/internals/builder_state.h"
 #include <allocators.h>
+#include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 #include <cardano/transaction_body/account_balance_intervals_map.h>
 #include <cardano/transaction_body/direct_deposit_map.h>
 #include <cardano/transaction_body/required_guards_map.h>
@@ -699,6 +700,29 @@ get_proposal_deposit(cardano_proposal_procedure_set_t* proposals, const size_t i
   cardano_proposal_procedure_unref(&proposal);
 
   return deposit;
+}
+
+/**
+ * Gets the protocol version proposed by a hard fork initiation proposal of a proposal procedure set.
+ * \param proposals The proposal procedure set.
+ * \param index The index of the proposal.
+ * \return The proposed protocol version. The caller must release it.
+ */
+static cardano_protocol_version_t*
+get_hardfork_proposal_version(cardano_proposal_procedure_set_t* proposals, const size_t index)
+{
+  cardano_proposal_procedure_t*          proposal = NULL;
+  cardano_hard_fork_initiation_action_t* action   = NULL;
+
+  EXPECT_EQ(cardano_proposal_procedure_set_get(proposals, index, &proposal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_to_hard_fork_initiation_action(proposal, &action), CARDANO_SUCCESS);
+
+  cardano_protocol_version_t* version = cardano_hard_fork_initiation_action_get_protocol_version(action);
+
+  cardano_hard_fork_initiation_action_unref(&action);
+  cardano_proposal_procedure_unref(&proposal);
+
+  return version;
 }
 
 /**
@@ -5850,20 +5874,28 @@ TEST(cardano_sub_tx_builder_propose_hardfork_ex, canProposeHardfork)
   // Act
   cardano_sub_tx_builder_propose_hardfork_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), GOVERNANCE_ACTION_ID, strlen(GOVERNANCE_ACTION_ID), 0, 12);
 
-  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  char*                      body_hex = encode_body(sub_tx);
 
   cardano_proposal_procedure_set_t* proposals = cardano_sub_transaction_body_get_proposal_procedures(get_body(sub_tx));
   cardano_proposal_procedure_set_unref(&proposals);
+
+  cardano_protocol_version_t* version = get_hardfork_proposal_version(proposals, 0);
 
   // Assert
   EXPECT_EQ(cardano_proposal_procedure_set_get_length(proposals), 1);
   EXPECT_EQ(get_proposal_type(proposals, 0), CARDANO_GOVERNANCE_ACTION_TYPE_HARD_FORK_INITIATION);
   EXPECT_EQ(get_proposal_deposit(proposals, 0), GOVERNANCE_ACTION_DEPOSIT);
+  EXPECT_EQ(cardano_protocol_version_get_major(version), 12U);
+  EXPECT_EQ(cardano_protocol_version_get_minor(version), 0U);
+  EXPECT_STREQ(body_hex, HARDFORK_BODY_CBOR);
 
   // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
   cardano_sub_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
+  cardano_protocol_version_unref(&version);
+  free(body_hex);
 }
 
 TEST(cardano_sub_tx_builder_propose_hardfork_ex, keepsTheFirstErrorIfBuilderIsInErrorState)
