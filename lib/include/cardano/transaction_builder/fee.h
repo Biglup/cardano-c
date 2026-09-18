@@ -46,8 +46,14 @@ extern "C" {
  * the resolved inputs and protocol parameters. The calculated fee considers factors such as the transaction
  * size, execution units consumed by plutus scripts and size of included reference scripts.
  *
+ * A transaction that carries sub transactions pays the fee of the whole batch. The size of the sub transactions is part
+ * of the size of the transaction, and the execution units of the redeemers of every sub transaction are added to the ones
+ * of the transaction. To also pay for the reference scripts of the sub transactions, include their resolved reference
+ * inputs in \p resolved_ref_inputs.
+ *
  * \param[in] transaction The pointer to the \ref cardano_transaction_t object representing the transaction.
- * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing the resolved UTXOs that will be referenced by the transaction.
+ * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing the resolved UTXOs that will be referenced by the transaction
+ *                                and by its sub transactions. Every entry is priced, so a UTXO referenced by several bodies must be listed once per body.
  * \param[in] protocol_params The pointer to the \ref cardano_protocol_parameters_t structure that contains protocol-related parameters for fee calculation.
  * \param[out] fee A pointer to a uint64_t that will hold the computed transaction fee upon success.
  *
@@ -132,9 +138,14 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * - The prices of execution units.
  * - The size of the reference scripts and the cost per reference script byte.
  *
+ * The execution units are the total of the whole batch: the redeemers of the witness set of the transaction plus the
+ * redeemers of the witness set of every sub transaction it carries, since the transaction that carries the sub
+ * transactions pays for their script execution. A transaction without sub transactions only accounts for its own redeemers.
+ *
  * \param[in] tx The pointer to the \ref cardano_transaction_t object representing the transaction for which the script fee is being calculated.
  * \param[in] prices The pointer to the \ref cardano_ex_unit_prices_t object containing the prices for execution units (memory and steps).
- * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object representing the resolved UTXOs that the transaction reference inputs are using.
+ * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object representing the resolved UTXOs that the reference inputs of the transaction
+ *                                      and of its sub transactions are using.
  * \param[in] coins_per_ref_script_byte The pointer to the \ref cardano_unit_interval_t object representing the cost per byte of reference scripts.
  * \param[out] min_fee A pointer to a uint64_t where the calculated minimum fee for the transaction will be stored.
  *
@@ -216,6 +227,10 @@ cardano_compute_min_fee_without_scripts(
  *
  * This function calculates the fee component that is contributed by reference scripts on the inputs of a transaction.
  * The fee is computed based on the size of the reference scripts and the protocol parameter `coins_per_ref_script_byte`.
+ *
+ * The total size is not distinct: every entry of the list is counted, so a reference script that appears in several entries
+ * is priced once per entry. This matches how the ledger measures the reference scripts of a batch, where a UTXO referenced
+ * by the transaction and by one of its sub transactions counts twice.
  *
  * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object representing the resolved reference inputs of the transaction,
  *                            which may include reference scripts.

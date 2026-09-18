@@ -865,6 +865,49 @@ is_legacy_mode_transaction(
 }
 
 /**
+ * \brief Creates the list of resolved reference inputs whose reference scripts are paid for by the fee.
+ *
+ * The top level transaction pays the fee of the whole batch, so the reference scripts of its own reference inputs are
+ * priced together with the ones of the reference inputs of every sub transaction. The list is not distinct: a UTXO
+ * referenced by several bodies is listed, and priced, once per body. This list must only be used to price reference
+ * scripts, the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top
+ * level transaction.
+ *
+ * \param[in]  reference_inputs                 The resolved reference inputs of the top level transaction.
+ * \param[in]  sub_transaction_reference_inputs The resolved reference inputs of the sub transactions, or NULL when
+ *                                              there are none.
+ * \param[out] priced_reference_inputs          A pointer to store the list, which is \p reference_inputs itself when
+ *                                              the sub transactions have no resolved reference inputs.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `priced_reference_inputs` when it is no longer needed.
+ */
+static cardano_error_t
+get_priced_reference_inputs(
+  cardano_utxo_list_t*  reference_inputs,
+  cardano_utxo_list_t*  sub_transaction_reference_inputs,
+  cardano_utxo_list_t** priced_reference_inputs)
+{
+  if ((reference_inputs == NULL) || (cardano_utxo_list_get_length(sub_transaction_reference_inputs) == 0U))
+  {
+    cardano_utxo_list_ref(reference_inputs);
+    *priced_reference_inputs = reference_inputs;
+
+    return CARDANO_SUCCESS;
+  }
+
+  *priced_reference_inputs = cardano_utxo_list_concat(reference_inputs, sub_transaction_reference_inputs);
+
+  if (*priced_reference_inputs == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Sets the transaction inputs for a transaction body.
  *
  * This function takes a list of selected UTXOs and sets them as inputs in the provided transaction body.
@@ -1132,6 +1175,8 @@ compute_vk_witnesses_cost(const size_t signature_count, const uint64_t min_fee_c
  * \param[in]     foreign_signature_count         The number of expected extra signatures, not specified in the transaction.
  * \param[in]     protocol_params                 The protocol parameters.
  * \param[in]     reference_inputs                The resolved reference inputs of the transaction.
+ * \param[in]     priced_reference_inputs         The resolved reference inputs whose reference scripts the fee pays for:
+ *                                                the ones of the transaction and the ones of its sub transactions.
  * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
  * \param[in]     sub_transaction_resolved_inputs The resolved inputs spent by the sub transactions, or NULL when the
  *                                                transaction carries none.
@@ -1154,6 +1199,7 @@ balance_transaction(
   const size_t                      foreign_signature_count,
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              priced_reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
   cardano_utxo_list_t*              sub_transaction_resolved_inputs,
   cardano_value_t*                  sub_transactions_imbalance,
@@ -1504,7 +1550,7 @@ balance_transaction(
       return result;
     }
 
-    result = cardano_compute_transaction_fee(unbalanced_tx, reference_inputs, protocol_params, &computed_fee);
+    result = cardano_compute_transaction_fee(unbalanced_tx, priced_reference_inputs, protocol_params, &computed_fee);
 
     const uint64_t signer_count      = foreign_signature_count + cardano_blake2b_hash_set_get_length(unique_signers);
     const int64_t  vk_witnesses_cost = compute_vk_witnesses_cost(signer_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
@@ -1638,6 +1684,7 @@ cardano_balance_transaction(
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
   cardano_utxo_list_t*              sub_transaction_resolved_inputs,
+  cardano_utxo_list_t*              sub_transaction_reference_inputs,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,
@@ -1740,11 +1787,24 @@ cardano_balance_transaction(
     return result;
   }
 
+  cardano_utxo_list_t* priced_reference_inputs = NULL;
+
+  result = get_priced_reference_inputs(reference_inputs, sub_transaction_reference_inputs, &priced_reference_inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_value_unref(&sub_transactions_imbalance);
+    cardano_utxo_list_unref(&selectable_utxo);
+
+    return result;
+  }
+
   result = balance_transaction(
     unbalanced_tx,
     foreign_signature_count,
     protocol_params,
     reference_inputs,
+    priced_reference_inputs,
     pre_selected_utxo,
     sub_transaction_resolved_inputs,
     sub_transactions_imbalance,
@@ -1759,6 +1819,7 @@ cardano_balance_transaction(
 
   cardano_value_unref(&sub_transactions_imbalance);
   cardano_utxo_list_unref(&selectable_utxo);
+  cardano_utxo_list_unref(&priced_reference_inputs);
 
   return result;
 }

@@ -24,6 +24,8 @@
 #include "collateral.h"
 
 #include <cardano/common/utxo.h>
+#include <cardano/transaction/sub_transaction.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 
 #include <cardano/transaction_builder/fee.h>
@@ -225,6 +227,56 @@ _cardano_update_transaction_body_collateral(
 }
 
 cardano_error_t
+_cardano_is_collateral_required(cardano_transaction_t* tx, bool* is_required)
+{
+  if ((tx == NULL) || (is_required == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witnesses);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
+  cardano_redeemer_list_unref(&redeemers);
+
+  bool found = cardano_redeemer_list_get_length(redeemers) > 0U;
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; (i < num_sub_transactions) && !found; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    const cardano_error_t result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_witness_set_t* sub_tx_witnesses = cardano_sub_transaction_get_witness_set(sub_tx);
+    cardano_witness_set_unref(&sub_tx_witnesses);
+
+    cardano_redeemer_list_t* sub_tx_redeemers = cardano_witness_set_get_redeemers(sub_tx_witnesses);
+    cardano_redeemer_list_unref(&sub_tx_redeemers);
+
+    found = cardano_redeemer_list_get_length(sub_tx_redeemers) > 0U;
+  }
+
+  *is_required = found;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 _cardano_set_collateral_output(
   cardano_transaction_t*         tx,
   cardano_protocol_parameters_t* protocol_params,
@@ -238,15 +290,16 @@ _cardano_set_collateral_output(
 
   const size_t collateral_count = cardano_utxo_list_get_length(available_collateral_outputs);
 
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
-  cardano_witness_set_unref(&witnesses);
+  bool is_collateral_required = false;
 
-  cardano_redeemer_list_t* current_redeemers = cardano_witness_set_get_redeemers(witnesses);
-  cardano_redeemer_list_unref(&current_redeemers);
+  cardano_error_t result = _cardano_is_collateral_required(tx, &is_collateral_required);
 
-  const bool has_plutus_scripts = cardano_redeemer_list_get_length(current_redeemers) > 0U;
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
 
-  if ((collateral_count == 0U) || (!has_plutus_scripts))
+  if ((collateral_count == 0U) || (!is_collateral_required))
   {
     return CARDANO_SUCCESS;
   }
@@ -261,7 +314,8 @@ _cardano_set_collateral_output(
   bool           is_balanced           = false;
 
   cardano_coin_selector_t* coin_selector = NULL;
-  cardano_error_t          result        = cardano_large_first_coin_selector_new(&coin_selector);
+
+  result = cardano_large_first_coin_selector_new(&coin_selector);
 
   if (result != CARDANO_SUCCESS)
   {

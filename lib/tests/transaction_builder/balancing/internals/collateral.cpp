@@ -31,6 +31,10 @@ extern "C" {
 
 #include <allocators.h>
 #include <cardano/common/utxo.h>
+#include <cardano/transaction/sub_transaction.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
+#include <cardano/witness_set/redeemer.h>
+#include <cardano/witness_set/redeemer_list.h>
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
@@ -306,6 +310,81 @@ create_address(const char* address)
   return payment_address;
 }
 
+static void
+add_sub_transaction(cardano_transaction_t* tx, const uint64_t input_index, const bool has_redeemer)
+{
+  static const char* input_id = "0f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+
+  cardano_transaction_input_t*       input            = NULL;
+  cardano_transaction_input_set_t*   inputs           = NULL;
+  cardano_transaction_output_list_t* outputs          = NULL;
+  cardano_sub_transaction_body_t*    sub_body         = NULL;
+  cardano_witness_set_t*             witness_set      = NULL;
+  cardano_sub_transaction_t*         sub_transaction  = NULL;
+  cardano_transaction_body_t*        body             = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_set_t*     sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+
+  EXPECT_EQ(cardano_transaction_input_from_hex(input_id, strlen(input_id), input_index, &input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_set_new(&inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_set_add(inputs, input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_list_new(&outputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, NULL, &sub_body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+  if (has_redeemer)
+  {
+    cardano_redeemer_list_t* redeemers = NULL;
+    cardano_redeemer_t*      redeemer  = NULL;
+    cardano_plutus_data_t*   data      = NULL;
+    cardano_ex_units_t*      ex_units  = NULL;
+
+    EXPECT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(42, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_ex_units_new(1000000, 200000000, &ex_units), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_redeemer_new(CARDANO_REDEEMER_TAG_SPEND, 0, data, ex_units, &redeemer), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_redeemer_list_add(redeemers, redeemer), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_redeemers(witness_set, redeemers), CARDANO_SUCCESS);
+
+    cardano_plutus_data_unref(&data);
+    cardano_ex_units_unref(&ex_units);
+    cardano_redeemer_unref(&redeemer);
+    cardano_redeemer_list_unref(&redeemers);
+  }
+
+  EXPECT_EQ(cardano_sub_transaction_new(sub_body, witness_set, NULL, &sub_transaction), CARDANO_SUCCESS);
+
+  if (sub_transactions == NULL)
+  {
+    EXPECT_EQ(cardano_sub_transaction_set_new(&sub_transactions), CARDANO_SUCCESS);
+  }
+
+  EXPECT_EQ(cardano_sub_transaction_set_add(sub_transactions, sub_transaction), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_sub_transactions(body, sub_transactions), CARDANO_SUCCESS);
+
+  cardano_transaction_input_unref(&input);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+  cardano_transaction_body_unref(&body);
+}
+
+static bool
+has_collateral(cardano_transaction_t* tx)
+{
+  cardano_transaction_body_t*      body       = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* collateral = cardano_transaction_body_get_collateral(body);
+
+  const bool is_set = cardano_transaction_input_set_get_length(collateral) > 0U;
+
+  cardano_transaction_input_set_unref(&collateral);
+  cardano_transaction_body_unref(&body);
+
+  return is_set;
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(xxx_cardano_coalesce_all_utxos, coalseceAllValues)
@@ -512,6 +591,151 @@ TEST(xxx_cardano_update_transaction_body_collateral, returnsErrorIfBodyIsNull)
   cardano_utxo_list_unref(&utxos);
   cardano_address_unref(&change_address);
   cardano_transaction_output_unref(&change_output);
+}
+
+TEST(xxx_cardano_is_collateral_required, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(BALANCED_TX_CBOR);
+  bool                   is_required = false;
+
+  // Act & Assert
+  EXPECT_EQ(_cardano_is_collateral_required(NULL, &is_required), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_is_collateral_required(transaction, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(xxx_cardano_is_collateral_required, returnsFalseIfTheTransactionHasNoRedeemers)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(BALANCED_TX_CBOR);
+  bool                   is_required = true;
+
+  // Act
+  cardano_error_t result = _cardano_is_collateral_required(transaction, &is_required);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_FALSE(is_required);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(xxx_cardano_is_collateral_required, returnsFalseIfTheSubTransactionsHaveNoRedeemers)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(BALANCED_TX_CBOR);
+  bool                   is_required = true;
+
+  add_sub_transaction(transaction, 1, false);
+  add_sub_transaction(transaction, 2, false);
+
+  // Act
+  cardano_error_t result = _cardano_is_collateral_required(transaction, &is_required);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_FALSE(is_required);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(xxx_cardano_is_collateral_required, returnsTrueIfTheTransactionHasRedeemers)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(COMPLEX_TX_CBOR);
+  bool                   is_required = false;
+
+  // Act
+  cardano_error_t result = _cardano_is_collateral_required(transaction, &is_required);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_required);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(xxx_cardano_is_collateral_required, returnsTrueIfOnlyASubTransactionHasRedeemers)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(BALANCED_TX_CBOR);
+  bool                   is_required = false;
+
+  add_sub_transaction(transaction, 1, false);
+  add_sub_transaction(transaction, 2, true);
+
+  // Act
+  cardano_error_t result = _cardano_is_collateral_required(transaction, &is_required);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_required);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(xxx_cardano_set_collateral_output, setsCollateralIfOnlyASubTransactionHasRedeemers)
+{
+  // Arrange
+  cardano_transaction_t*         transaction     = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos           = new_default_utxo_list();
+
+  EXPECT_EQ(cardano_protocol_parameters_set_collateral_percentage(protocol_params, 150), CARDANO_SUCCESS);
+
+  add_sub_transaction(transaction, 1, true);
+
+  // Act
+  cardano_error_t result = _cardano_set_collateral_output(transaction, protocol_params, utxos, change_address);
+
+  // Assert
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  const uint64_t* total_collateral = cardano_transaction_body_get_total_collateral(body);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(has_collateral(transaction));
+  ASSERT_NE(total_collateral, nullptr);
+  EXPECT_EQ(*total_collateral, (uint64_t)ceil(((double)cardano_transaction_body_get_fee(body) * 150.0) / 100.0));
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&change_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(xxx_cardano_set_collateral_output, doesNotSetCollateralIfTheBatchHasNoRedeemers)
+{
+  // Arrange
+  cardano_transaction_t*         transaction     = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos           = new_default_utxo_list();
+
+  add_sub_transaction(transaction, 1, false);
+
+  // Act
+  cardano_error_t result = _cardano_set_collateral_output(transaction, protocol_params, utxos, change_address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_FALSE(has_collateral(transaction));
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&change_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_utxo_list_unref(&utxos);
 }
 
 TEST(xxx_cardano_set_collateral_output, setCollateralOutput)
