@@ -40,11 +40,12 @@ extern "C" {
  *
  * This function verifies that a change address and an available UTXO list were configured, that the
  * transaction carries every top level guard its sub transactions require, and that a collateral
- * change address and collateral UTXOs were configured when the transaction interacts with Plutus
- * validators. It then sets a placeholder script data hash for fee calculation when the transaction
- * carries script data, balances the transaction using the configured protocol parameters, coin
- * selector and transaction evaluator, recomputes the script data hash from the final redeemers,
- * datums and cost models, and returns the finalized transaction with a new reference.
+ * change address and collateral UTXOs were configured when the transaction carries script data or a
+ * redeemer exists anywhere in the batch, including one carried only by a sub transaction. It then
+ * sets a placeholder script data hash for fee calculation when the transaction carries script data,
+ * balances the transaction using the configured protocol parameters, coin selector and transaction
+ * evaluator, recomputes the script data hash from the final redeemers, datums and cost models, and
+ * returns the finalized transaction with a new reference.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
