@@ -38,13 +38,13 @@ extern "C" {
 /**
  * \brief Balances and finalizes the transaction under construction.
  *
- * This function verifies that a change address and an available UTXO list were configured, and that
- * a collateral change address and collateral UTXOs were configured when the transaction interacts
- * with Plutus validators. It then sets a placeholder script data hash for fee calculation when the
- * transaction carries script data, balances the transaction using the configured protocol
- * parameters, coin selector and transaction evaluator, recomputes the script data hash from the
- * final redeemers, datums and cost models, and returns the finalized transaction with a new
- * reference.
+ * This function verifies that a change address and an available UTXO list were configured, that the
+ * transaction carries every top level guard its sub transactions require, and that a collateral
+ * change address and collateral UTXOs were configured when the transaction interacts with Plutus
+ * validators. It then sets a placeholder script data hash for fee calculation when the transaction
+ * carries script data, balances the transaction using the configured protocol parameters, coin
+ * selector and transaction evaluator, recomputes the script data hash from the final redeemers,
+ * datums and cost models, and returns the finalized transaction with a new reference.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -57,8 +57,9 @@ extern "C" {
  *                           either static or owned by the transaction held by the state. It is left
  *                           untouched on success. This parameter must not be NULL.
  *
- * \return \ref CARDANO_SUCCESS if the transaction was balanced and finalized, or an appropriate
- *         error code indicating the failure reason.
+ * \return \ref CARDANO_SUCCESS if the transaction was balanced and finalized,
+ *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the transaction lacks a guard required by one of its
+ *         sub transactions, or an appropriate error code indicating the failure reason.
  */
 cardano_error_t
 cardano_builder_build(

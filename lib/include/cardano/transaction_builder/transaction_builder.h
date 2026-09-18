@@ -1488,6 +1488,12 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * script itself, so the collateral change address and the collateral UTXOs must be set before building. The scripts
  * of the sub transactions are not evaluated, the execution units their redeemers declare are taken as final.
  *
+ * A sub transaction can require guards from the transaction that carries it, and the batch is only valid when every
+ * one of those credentials is among the guards of the transaction. The batcher must add each of them with
+ * `cardano_tx_builder_add_guard`, before or after adding the sub transaction. The builder never adds them by itself,
+ * since a key hash guard is also a required signer, and building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when
+ * one is missing.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
  * \param[in] resolved_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs behind the inputs of the sub

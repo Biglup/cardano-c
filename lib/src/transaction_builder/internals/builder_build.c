@@ -23,10 +23,16 @@
 
 #include "builder_build.h"
 
+#include <cardano/common/credential.h>
+#include <cardano/common/guard_set.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/protocol_params/cost_model.h>
 #include <cardano/protocol_params/costmdls.h>
 #include <cardano/scripts/plutus_scripts/plutus_language_version.h>
+#include <cardano/transaction/sub_transaction.h>
+#include <cardano/transaction_body/required_guards_map.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/script_data_hash.h>
@@ -249,6 +255,140 @@ update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* t
   return result;
 }
 
+/**
+ * \brief Checks whether a guard set holds a credential.
+ *
+ * Two credentials are the same guard only when both their type and their hash match.
+ *
+ * \param[in] guards A pointer to the \ref cardano_guard_set_t to search, or NULL when the transaction
+ *                   carries no guards.
+ * \param[in] credential A pointer to the \ref cardano_credential_t to look up.
+ *
+ * \return true if the guard set holds the credential, false otherwise.
+ */
+static bool
+has_guard(const cardano_guard_set_t* guards, const cardano_credential_t* credential)
+{
+  const size_t length = cardano_guard_set_get_length(guards);
+  bool         found  = false;
+
+  for (size_t i = 0U; (i < length) && !found; ++i)
+  {
+    cardano_credential_t* guard = NULL;
+
+    const cardano_error_t result = cardano_guard_set_get(guards, i, &guard);
+    cardano_credential_unref(&guard);
+
+    found = (result == CARDANO_SUCCESS) && cardano_credential_equals(guard, credential);
+  }
+
+  return found;
+}
+
+/**
+ * \brief Checks that a guard set holds every top level guard a sub transaction requires.
+ *
+ * \param[in] guards A pointer to the \ref cardano_guard_set_t of the top level transaction, or NULL
+ *                   when it carries no guards.
+ * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t whose required top level
+ *                            guards are checked.
+ * \param[out] error_message A pointer that receives a static string describing the failure when a
+ *                           required guard is missing.
+ *
+ * \return \ref CARDANO_SUCCESS if every required guard is present or the sub transaction requires
+ *         none, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if a required guard is missing, or an appropriate
+ *         error code indicating the failure reason.
+ */
+static cardano_error_t
+check_sub_transaction_required_guards(
+  const cardano_guard_set_t* guards,
+  cardano_sub_transaction_t* sub_transaction,
+  const char**               error_message)
+{
+  cardano_sub_transaction_body_t* sub_body = cardano_sub_transaction_get_body(sub_transaction);
+  cardano_sub_transaction_body_unref(&sub_body);
+
+  cardano_required_guards_map_t* required_guards = cardano_sub_transaction_body_get_required_top_level_guards(sub_body);
+  cardano_required_guards_map_unref(&required_guards);
+
+  const size_t length = cardano_required_guards_map_get_length(required_guards);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_credential_t* credential = NULL;
+
+    const cardano_error_t result = cardano_required_guards_map_get_key_at(required_guards, i, &credential);
+    cardano_credential_unref(&credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    if (!has_guard(guards, credential))
+    {
+      *error_message = "A sub transaction requires a top level guard that the transaction does not carry. You must add it with `cardano_tx_builder_add_guard` before calling `build`.";
+
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks that the transaction carries every top level guard its sub transactions require.
+ *
+ * A sub transaction can list the guards it requires from the transaction that carries it, and the
+ * batch is only valid when each of them is among the guards of that transaction. Guards are never
+ * added on behalf of the batcher, since a key hash guard is also a required signer. Transactions
+ * without sub transactions always pass.
+ *
+ * \param[in] tx A pointer to the \ref cardano_transaction_t to check.
+ * \param[out] error_message A pointer that receives a static string describing the failure when a
+ *                           required guard is missing.
+ *
+ * \return \ref CARDANO_SUCCESS if no required guard is missing, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the transaction lacks a guard required by one of its sub transactions, or an appropriate
+ *         error code indicating the failure reason.
+ */
+static cardano_error_t
+check_required_top_level_guards(cardano_transaction_t* tx, const char** error_message)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+  cardano_guard_set_unref(&guards);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  const size_t length = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_sub_transaction_t* sub_transaction = NULL;
+
+    cardano_error_t result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_transaction);
+    cardano_sub_transaction_unref(&sub_transaction);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = check_sub_transaction_required_guards(guards, sub_transaction, error_message);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -271,9 +411,16 @@ cardano_builder_build(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  cardano_error_t result = check_required_top_level_guards(state->transaction, error_message);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   bool is_collateral_required = false;
 
-  cardano_error_t result = _cardano_is_collateral_required(state->transaction, &is_collateral_required);
+  result = _cardano_is_collateral_required(state->transaction, &is_collateral_required);
 
   if (result != CARDANO_SUCCESS)
   {
