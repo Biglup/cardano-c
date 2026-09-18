@@ -30,6 +30,7 @@
 #include <cardano/witness_set/witness_set.h>
 
 #include "builder_redeemers.h"
+#include "builder_sub_transactions.h"
 
 /* IMPLEMENTATION ************************************************************/
 
@@ -61,6 +62,15 @@ cardano_builder_add_input(
   {
     *error_message = "Failed to get address type";
     return result;
+  }
+
+  cardano_transaction_input_t* spent_input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&spent_input);
+
+  if (cardano_builder_is_input_spent_by_sub_transaction(state, spent_input))
+  {
+    *error_message = "Input is already spent by a sub transaction";
+    return CARDANO_ERROR_DUPLICATED_KEY;
   }
 
   result = cardano_utxo_list_add(state->pre_selected_inputs, utxo);

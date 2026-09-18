@@ -36,6 +36,7 @@
 #include "./internals/builder_proposals.h"
 #include "./internals/builder_redeemers.h"
 #include "./internals/builder_state.h"
+#include "./internals/builder_sub_transactions.h"
 #include "./internals/builder_votes.h"
 #include "./internals/builder_withdrawals.h"
 #include "./internals/builder_witnesses.h"
@@ -982,6 +983,24 @@ cardano_tx_builder_add_starting_account_balance_interval_ex(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_add_starting_account_balance_interval_ex(&builder->state, reward_address, address_size, interval, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_tx_builder_add_sub_transaction(
+  cardano_tx_builder_t*      builder,
+  cardano_sub_transaction_t* sub_transaction,
+  cardano_utxo_list_t*       resolved_utxos)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_sub_transaction(&builder->state, sub_transaction, resolved_utxos, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

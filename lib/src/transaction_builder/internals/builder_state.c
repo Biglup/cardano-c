@@ -116,26 +116,28 @@ cardano_builder_state_init(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  state->transaction                 = NULL;
-  state->params                      = NULL;
-  state->slot_config                 = *slot_config;
-  state->coin_selector               = NULL;
-  state->tx_evaluator                = NULL;
-  state->change_address              = NULL;
-  state->collateral_address          = NULL;
-  state->available_utxos             = NULL;
-  state->collateral_utxos            = NULL;
-  state->pre_selected_inputs         = NULL;
-  state->reference_inputs            = NULL;
-  state->input_to_redeemer_map       = NULL;
-  state->withdrawals_to_redeemer_map = NULL;
-  state->mints_to_redeemer_map       = NULL;
-  state->votes_to_redeemer_map       = NULL;
-  state->deferred_redeemers          = NULL;
-  state->has_plutus_v1               = false;
-  state->has_plutus_v2               = false;
-  state->has_plutus_v3               = false;
-  state->additional_signature_count  = 0U;
+  state->transaction                      = NULL;
+  state->params                           = NULL;
+  state->slot_config                      = *slot_config;
+  state->coin_selector                    = NULL;
+  state->tx_evaluator                     = NULL;
+  state->change_address                   = NULL;
+  state->collateral_address               = NULL;
+  state->available_utxos                  = NULL;
+  state->collateral_utxos                 = NULL;
+  state->pre_selected_inputs              = NULL;
+  state->reference_inputs                 = NULL;
+  state->sub_transaction_inputs           = NULL;
+  state->sub_transaction_reference_inputs = NULL;
+  state->input_to_redeemer_map            = NULL;
+  state->withdrawals_to_redeemer_map      = NULL;
+  state->mints_to_redeemer_map            = NULL;
+  state->votes_to_redeemer_map            = NULL;
+  state->deferred_redeemers               = NULL;
+  state->has_plutus_v1                    = false;
+  state->has_plutus_v2                    = false;
+  state->has_plutus_v3                    = false;
+  state->additional_signature_count       = 0U;
 
   cardano_protocol_parameters_ref(params);
   state->params = params;
@@ -162,6 +164,20 @@ cardano_builder_state_init(
   }
 
   result = cardano_utxo_list_new(&state->reference_inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_utxo_list_new(&state->sub_transaction_inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_utxo_list_new(&state->sub_transaction_reference_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -238,25 +254,29 @@ cardano_builder_state_release(cardano_builder_state_t* state)
   cardano_utxo_list_unref(&state->collateral_utxos);
   cardano_utxo_list_unref(&state->pre_selected_inputs);
   cardano_utxo_list_unref(&state->reference_inputs);
+  cardano_utxo_list_unref(&state->sub_transaction_inputs);
+  cardano_utxo_list_unref(&state->sub_transaction_reference_inputs);
   cardano_input_to_redeemer_map_unref(&state->input_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&state->withdrawals_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&state->mints_to_redeemer_map);
   cardano_blake2b_hash_to_redeemer_map_unref(&state->votes_to_redeemer_map);
   cardano_deferred_redeemer_list_unref(&state->deferred_redeemers);
 
-  state->transaction                 = NULL;
-  state->params                      = NULL;
-  state->coin_selector               = NULL;
-  state->tx_evaluator                = NULL;
-  state->change_address              = NULL;
-  state->collateral_address          = NULL;
-  state->available_utxos             = NULL;
-  state->collateral_utxos            = NULL;
-  state->pre_selected_inputs         = NULL;
-  state->reference_inputs            = NULL;
-  state->input_to_redeemer_map       = NULL;
-  state->withdrawals_to_redeemer_map = NULL;
-  state->mints_to_redeemer_map       = NULL;
-  state->votes_to_redeemer_map       = NULL;
-  state->deferred_redeemers          = NULL;
+  state->transaction                      = NULL;
+  state->params                           = NULL;
+  state->coin_selector                    = NULL;
+  state->tx_evaluator                     = NULL;
+  state->change_address                   = NULL;
+  state->collateral_address               = NULL;
+  state->available_utxos                  = NULL;
+  state->collateral_utxos                 = NULL;
+  state->pre_selected_inputs              = NULL;
+  state->reference_inputs                 = NULL;
+  state->sub_transaction_inputs           = NULL;
+  state->sub_transaction_reference_inputs = NULL;
+  state->input_to_redeemer_map            = NULL;
+  state->withdrawals_to_redeemer_map      = NULL;
+  state->mints_to_redeemer_map            = NULL;
+  state->votes_to_redeemer_map            = NULL;
+  state->deferred_redeemers               = NULL;
 }

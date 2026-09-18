@@ -30,6 +30,7 @@
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/providers/provider.h>
 #include <cardano/slot_config.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction_body/account_balance_interval.h>
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/coin_selection/coin_selector.h>
@@ -1458,6 +1459,44 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
   const char*                         reward_address,
   size_t                              address_size,
   cardano_account_balance_interval_t* interval);
+
+/**
+ * \brief Adds a finished sub transaction to the transaction being built.
+ *
+ * A sub transaction is an intent that an independent party builds and signs. The transaction that carries it
+ * pays the fee and posts the collateral for the whole batch, and the ledger checks value conservation over the
+ * transaction together with all its sub transactions. The sub transaction is treated as opaque: the builder keeps
+ * a reference to it and never modifies it, so its original bytes, its id and its signatures are preserved.
+ *
+ * The inputs spent by a batch must be disjoint and the ids of its sub transactions unique. The sub transaction is
+ * rejected when it was already added, or when it spends an input that is also spent by another sub transaction or
+ * by an input added with `cardano_tx_builder_add_input`. Likewise, `cardano_tx_builder_add_input` rejects an input
+ * that is already spent by a sub transaction.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
+ * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
+ * \param[in] resolved_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs behind the inputs of the sub
+ *                           transaction. It must resolve every input the sub transaction spends, since their value
+ *                           takes part in the value conservation of the batch. It may also resolve its reference
+ *                           inputs, which carry the reference scripts the fee accounts for; reference inputs that
+ *                           are not resolved are skipped.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t* tx_builder = ...;            // Initialized transaction builder
+ * cardano_sub_transaction_t* sub_transaction = ...;  // Sub transaction received from another party
+ * cardano_utxo_list_t* resolved_utxos = ...;         // UTXOs spent and referenced by the sub transaction
+ *
+ * cardano_tx_builder_add_sub_transaction(tx_builder, sub_transaction, resolved_utxos);
+ * \endcode
+ *
+ * \note Sub transactions are only valid from the Dijkstra era onwards. Errors related to adding a sub transaction
+ *       are deferred and will only be reported when `cardano_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_sub_transaction(
+  cardano_tx_builder_t*      builder,
+  cardano_sub_transaction_t* sub_transaction,
+  cardano_utxo_list_t*       resolved_utxos);
 
 /**
  * \brief Registers a staking reward address.
