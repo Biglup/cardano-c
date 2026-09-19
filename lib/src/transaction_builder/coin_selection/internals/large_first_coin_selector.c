@@ -39,6 +39,40 @@
 /* STATIC FUNCTIONS ************************************************************/
 
 /**
+ * \brief Moves the UTXO with the largest lovelace amount from the available UTXOs into the selection.
+ *
+ * A transaction must spend at least one input, so a selection must never be empty. This function is the fall back
+ * for a target that requires nothing from the available UTXOs, which happens when the target is already met or
+ * exceeded by implicit value (its lovelace and every one of its assets are zero or negative).
+ *
+ * \param[in,out] remaining_utxo The available UTXOs from which the UTXO is removed.
+ * \param[in,out] selection The selection to which the UTXO is added.
+ *
+ * \return \ref CARDANO_SUCCESS if a UTXO was selected, \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if no UTXO holding
+ *         lovelace is available, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+select_largest_lovelace_utxo(cardano_utxo_list_t* remaining_utxo, cardano_utxo_list_t* selection)
+{
+  cardano_asset_id_t* lovelace = NULL;
+  cardano_error_t     result   = cardano_asset_id_new_lovelace(&lovelace);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_value_t* accumulated_value = cardano_value_new_zero();
+
+  result = _cardano_large_fist_select_utxos(lovelace, 1, remaining_utxo, selection, &accumulated_value);
+
+  cardano_value_unref(&accumulated_value);
+  cardano_asset_id_unref(&lovelace);
+
+  return result;
+}
+
+/**
  * \brief Selects UTXOs from the available list and pre-selected UTXOs to meet the target value.
  *
  * This function selects UTXOs from both the pre-selected UTXO list and available UTXOs to meet a specified target value.
@@ -46,13 +80,18 @@
  * Any excess value is returned as min-ADA compliant change outputs in the `change_outputs` list, upholding the local
  * balance invariant: sum(selection) = target + sum(change_outputs).
  *
+ * The selection is never empty: when neither the pre-selected UTXOs nor the target require an input, the available UTXO
+ * with the largest lovelace amount is selected and its value is returned in the change outputs.
+ *
  * \param[in] coin_selector A pointer to the coin selector implementation object.
  * \param[in] request The selection request. The request's outputs_to_cover hint is unused by this selector.
  * \param[out] selection A pointer to the list of selected UTXOs that meet the target value.
  * \param[out] remaining_utxo A pointer to the list of UTXOs that were not selected and remain available for future transactions.
  * \param[out] change_outputs A pointer to the list of change outputs produced by the selection.
  *
- * \return \ref CARDANO_SUCCESS if UTXOs were successfully selected, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the target is covered and the selection is not empty,
+ *         \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if the available UTXOs can not cover the target or there is no UTXO
+ *         to select, or an appropriate error code indicating failure.
  */
 static cardano_error_t
 select(
@@ -156,50 +195,6 @@ select(
   cardano_asset_id_map_t* assets      = cardano_value_as_assets_map(target);
   size_t                  asset_count = cardano_asset_id_map_get_length(assets);
 
-  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(target);
-  cardano_multi_asset_unref(&multi_asset);
-
-  const int64_t coin_target         = cardano_value_get_coin(target);
-  const size_t  target_assets_count = cardano_multi_asset_get_policy_count(multi_asset);
-
-  if ((coin_target <= 0) && (target_assets_count == 0U))
-  {
-    const size_t current_selection_size = cardano_utxo_list_get_length(*selection);
-
-    if (current_selection_size == 0U)
-    {
-      cardano_asset_id_t* lovelace = NULL;
-      result                       = cardano_asset_id_new_lovelace(&lovelace);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_asset_id_map_unref(&assets);
-        cardano_utxo_list_unref(selection);
-        cardano_utxo_list_unref(remaining_utxo);
-        cardano_value_unref(&accumulated_value);
-
-        return result;
-      }
-
-      cardano_value_t* tmp_accum_value = cardano_value_new_zero();
-
-      result = _cardano_large_fist_select_utxos(lovelace, 1, *remaining_utxo, *selection, &tmp_accum_value);
-
-      cardano_value_unref(&tmp_accum_value);
-      cardano_asset_id_unref(&lovelace);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_asset_id_map_unref(&assets);
-        cardano_utxo_list_unref(selection);
-        cardano_utxo_list_unref(remaining_utxo);
-        cardano_value_unref(&accumulated_value);
-
-        return result;
-      }
-    }
-  }
-
   for (size_t i = 0U; i < asset_count; ++i)
   {
     cardano_asset_id_t* asset_id     = NULL;
@@ -245,6 +240,19 @@ select(
 
   cardano_asset_id_map_unref(&assets);
   cardano_value_unref(&accumulated_value);
+
+  if (cardano_utxo_list_get_length(*selection) == 0U)
+  {
+    result = select_largest_lovelace_utxo(*remaining_utxo, *selection);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(selection);
+      cardano_utxo_list_unref(remaining_utxo);
+
+      return result;
+    }
+  }
 
   result = _cardano_coin_selector_build_change(target, change_address, protocol_params, *selection, *remaining_utxo, change_outputs);
 
