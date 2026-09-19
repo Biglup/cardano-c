@@ -424,6 +424,31 @@ derive_target_from_outputs(prop_rng_t& rng, const std::vector<gen_value_t>& outp
   return target;
 }
 
+/**
+ * Generates a target that is already met or exceeded by implicit value, mirroring what the
+ * balancer computes when withdrawals, refunds, minting or the surplus of a batch outweigh the
+ * outputs: the coin and every asset are zero or negative, so the target requires no input.
+ */
+static gen_value_t
+gen_covered_target(prop_rng_t& rng)
+{
+  gen_value_t target;
+
+  if ((rng.next() % 4U) != 0U)
+  {
+    target.coin = -gen_coin_amount(rng);
+  }
+
+  const size_t count = rng.next() % 4U;
+
+  for (size_t i = 0U; i < count; ++i)
+  {
+    target.assets[rng.next() % ASSET_POOL_SIZE] = -gen_asset_amount(rng);
+  }
+
+  return target;
+}
+
 static std::string
 gen_value_to_string(const gen_value_t& value)
 {
@@ -831,6 +856,111 @@ TEST(cardano_coin_selector_properties, largeFirstSatisfiesInputSelectionProperti
     cardano_utxo_list_unref(&available_utxo);
     cardano_utxo_list_unref(&pre_selected_utxo);
     cardano_transaction_output_list_unref(&outputs_to_cover);
+
+    for (cardano_utxo_t* utxo: pool_utxos)
+    {
+      cardano_utxo_unref(&utxo);
+    }
+
+    if (::testing::Test::HasFailure())
+    {
+      break;
+    }
+  }
+
+  cardano_address_unref(&change_address);
+  cardano_address_unref(&wallet_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_coin_selector_unref(&selector);
+}
+
+TEST(cardano_coin_selector_properties, largeFirstNeverReturnsAnEmptySelection)
+{
+  cardano_address_t*             change_address  = make_address(CHANGE_ADDRESS);
+  cardano_address_t*             wallet_address  = make_address(WALLET_ADDRESS);
+  cardano_protocol_parameters_t* protocol_params = make_protocol_parameters();
+  cardano_coin_selector_t*       selector        = NULL;
+
+  ASSERT_EQ(cardano_large_first_coin_selector_new(&selector), CARDANO_SUCCESS);
+
+  prop_rng_t rng(PROPERTY_SEED);
+  uint64_t   utxo_ordinal = 2000000U;
+
+  for (size_t iteration = 0U; iteration < ITERATIONS; ++iteration)
+  {
+    const size_t available_count = rng.next() % 6U;
+
+    std::vector<gen_value_t>     pool_values;
+    std::vector<cardano_utxo_t*> pool_utxos;
+    std::vector<cardano_utxo_t*> pre_selected;
+
+    cardano_utxo_list_t* available_utxo = NULL;
+
+    ASSERT_EQ(cardano_utxo_list_new(&available_utxo), CARDANO_SUCCESS);
+
+    for (size_t i = 0U; i < available_count; ++i)
+    {
+      const gen_value_t value = gen_utxo_value(rng);
+      cardano_utxo_t*   utxo  = build_utxo(++utxo_ordinal, value, wallet_address);
+
+      ASSERT_EQ(cardano_utxo_list_add(available_utxo, utxo), CARDANO_SUCCESS);
+
+      pool_values.push_back(value);
+      pool_utxos.push_back(utxo);
+    }
+
+    const gen_value_t target_gen = gen_covered_target(rng);
+    cardano_value_t*  target     = build_value(target_gen);
+
+    std::ostringstream scenario;
+    scenario << "seed=" << PROPERTY_SEED << " iteration=" << iteration << " target=" << gen_value_to_string(target_gen) << " pool=[";
+    for (const gen_value_t& value: pool_values)
+    {
+      scenario << gen_value_to_string(value);
+    }
+    scenario << "]";
+    SCOPED_TRACE(scenario.str());
+
+    cardano_utxo_list_t*               selection      = NULL;
+    cardano_utxo_list_t*               remaining_utxo = NULL;
+    cardano_transaction_output_list_t* change_outputs = NULL;
+
+    const cardano_error_t result = do_select(
+      selector,
+      NULL,
+      available_utxo,
+      target,
+      NULL,
+      change_address,
+      protocol_params,
+      &selection,
+      &remaining_utxo,
+      &change_outputs);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      assert_input_selection_properties(
+        pool_utxos,
+        pre_selected,
+        pool_values,
+        pool_utxos,
+        target_gen,
+        selection,
+        remaining_utxo,
+        change_outputs,
+        change_address,
+        1U);
+    }
+    else
+    {
+      assert_failure_properties(result, pool_values, target_gen, change_address);
+    }
+
+    cardano_utxo_list_unref(&selection);
+    cardano_utxo_list_unref(&remaining_utxo);
+    cardano_transaction_output_list_unref(&change_outputs);
+    cardano_value_unref(&target);
+    cardano_utxo_list_unref(&available_utxo);
 
     for (cardano_utxo_t* utxo: pool_utxos)
     {
