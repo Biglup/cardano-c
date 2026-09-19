@@ -30,6 +30,7 @@
 #include <cardano/key_handlers/derivation_path.h>
 #include <cardano/key_handlers/secure_key_handler_type.h>
 #include <cardano/object.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/witness_set/vkey_witness_set.h>
 
@@ -93,6 +94,39 @@ typedef cardano_error_t (*cardano_bip32_sign_transaction_func_t)(
   cardano_vkey_witness_set_t**       vkey_witness_set);
 
 /**
+ * \brief Callback function type for signing a sub transaction using BIP32 Hierarchical Deterministic (HD) keys.
+ *
+ * The `cardano_bip32_sign_sub_transaction_func_t` typedef defines the signature for a callback function responsible for
+ * signing a sub transaction using BIP32 (HD) keys within the context of the secure key handler implementation.
+ *
+ * A party of a batch of nested transactions signs the id of its sub transaction (the hash of the sub transaction body),
+ * exactly as a transaction signature is over the transaction id.
+ *
+ * This function is expected to:
+ * - Use the provided `secure_key_handler_impl` to securely handle the cryptographic key operations required for signing.
+ * - Derive the appropriate private keys based on the provided `derivation_paths` and sign the id of the `sub_tx` (sub transaction).
+ * - Generate a set of `vkey_witness_set` containing the necessary verification keys and signatures, representing
+ *   the sub transaction witnesses.
+ *
+ * \param secure_key_handler_impl A pointer to the secure key handler implementation that manages cryptographic operations.
+ * \param sub_tx The sub transaction object to be signed.
+ * \param derivation_paths An array of BIP32 derivation paths used to derive the private keys for signing the sub transaction.
+ * \param num_paths The number of derivation paths provided in the `derivation_paths` array.
+ * \param vkey_witness_set A pointer to the verification key witness set that will be populated with the generated signatures.
+ *                         This set will contain the signatures and associated verification keys required for the sub transaction.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during signing.
+ *
+ * \note The `vkey_witness_set` must be properly managed and released by the caller to avoid memory leaks.
+ */
+typedef cardano_error_t (*cardano_bip32_sign_sub_transaction_func_t)(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_sub_transaction_t*         sub_tx,
+  const cardano_derivation_path_t*   derivation_paths,
+  size_t                             num_paths,
+  cardano_vkey_witness_set_t**       vkey_witness_set);
+
+/**
  * \brief Callback function type for retrieving a BIP32 extended account public key.
  *
  * The `cardano_bip32_get_extended_account_public_key_func_t` typedef defines the signature for a callback function that is
@@ -142,6 +176,35 @@ typedef cardano_error_t (*cardano_bip32_get_extended_account_public_key_func_t)(
 typedef cardano_error_t (*cardano_ed25519_sign_transaction_func_t)(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
   cardano_transaction_t*             tx,
+  cardano_vkey_witness_set_t**       vkey_witness_set);
+
+/**
+ * \brief Callback function type for signing a sub transaction using an Ed25519 key.
+ *
+ * The `cardano_ed25519_sign_sub_transaction_func_t` typedef defines the signature for a callback function that is responsible
+ * for signing a given sub transaction using an Ed25519 private key. This function interacts with the secure key handler
+ * implementation to ensure the private key is securely accessed and used for signing.
+ *
+ * A party of a batch of nested transactions signs the id of its sub transaction (the hash of the sub transaction body),
+ * exactly as a transaction signature is over the transaction id.
+ *
+ * This function is expected to:
+ * - Use the provided `secure_key_handler_impl` to handle the Ed25519 key operations required to sign the sub transaction.
+ * - Sign the id of the given sub transaction (`sub_tx`) and produce a `vkey_witness_set` containing the verification key and signature.
+ *
+ * \param secure_key_handler_impl A pointer to the secure key handler implementation responsible for key management and signing operations.
+ * \param sub_tx A pointer to the sub transaction that needs to be signed.
+ * \param vkey_witness_set A pointer to the location where the signature and verification key set will be stored after signing.
+ *                         The caller is responsible for managing the lifecycle of this object, ensuring proper cleanup after use.
+ *
+ * \returns `cardano_error_t` indicating success or providing details on any errors encountered during the process.
+ *
+ * \note The signing process is done securely, ensuring the private key is not exposed beyond the scope of the cryptographic operation.
+ * The caller must manage and release the `vkey_witness_set` object to avoid memory leaks.
+ */
+typedef cardano_error_t (*cardano_ed25519_sign_sub_transaction_func_t)(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_sub_transaction_t*         sub_tx,
   cardano_vkey_witness_set_t**       vkey_witness_set);
 
 /**
@@ -199,8 +262,8 @@ typedef cardano_error_t (*cardano_serialize_secure_key_handler_func_t)(
  * to securely manage and perform cryptographic actions using both BIP32 Hierarchical Deterministic (HD) keys and Ed25519 keys.
  *
  * Implementers are responsible for providing the specific functionality of these cryptographic operations through
- * the defined function pointers. These operations include signing transactions, retrieving public keys, and
- * performing key derivation.
+ * the defined function pointers. These operations include signing transactions and sub transactions, retrieving
+ * public keys, and performing key derivation.
  *
  * This structure does not directly implement any cryptographic logic but instead serves as a collection of callbacks
  * to be defined by the implementers based on their secure key handling strategy.
@@ -262,6 +325,17 @@ typedef struct cardano_secure_key_handler_impl_t
     cardano_bip32_sign_transaction_func_t bip32_sign_transaction;
 
     /**
+     * \brief Callback function to sign a sub transaction using BIP32 keys.
+     *
+     * \note
+     * This function is only applicable to key handlers of type `CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32`. For other key types,
+     * this field should not be used. Implementations that do not support sub transactions must set this field to `NULL`.
+     *
+     * \see cardano_bip32_sign_sub_transaction_func_t for more details on the function signature.
+     */
+    cardano_bip32_sign_sub_transaction_func_t bip32_sign_sub_transaction;
+
+    /**
      * \brief Callback function to retrieve a BIP32 extended account public key.
      *
      * \note
@@ -282,6 +356,17 @@ typedef struct cardano_secure_key_handler_impl_t
      * \see cardano_ed25519_sign_transaction_func_t for more details on the function signature.
      */
     cardano_ed25519_sign_transaction_func_t ed25519_sign_transaction;
+
+    /**
+     * \brief Callback function to sign a sub transaction using an Ed25519 key.
+     *
+     * \note
+     * This function is only applicable to key handlers of type `CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519`. For other key types,
+     * this field should not be used. Implementations that do not support sub transactions must set this field to `NULL`.
+     *
+     * \see cardano_ed25519_sign_sub_transaction_func_t for more details on the function signature.
+     */
+    cardano_ed25519_sign_sub_transaction_func_t ed25519_sign_sub_transaction;
 
     /**
      * \brief Callback function to retrieve an Ed25519 public key.

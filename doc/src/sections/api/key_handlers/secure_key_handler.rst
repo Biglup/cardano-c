@@ -17,11 +17,19 @@ Secure Key Handler
 
 ------------
 
+.. doxygenfunction:: cardano_secure_key_handler_bip32_sign_sub_transaction
+
+------------
+
 .. doxygenfunction:: cardano_secure_key_handler_bip32_get_extended_account_public_key
 
 ------------
 
 .. doxygenfunction:: cardano_secure_key_handler_ed25519_sign_transaction
+
+------------
+
+.. doxygenfunction:: cardano_secure_key_handler_ed25519_sign_sub_transaction
 
 ------------
 

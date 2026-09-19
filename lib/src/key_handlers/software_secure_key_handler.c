@@ -342,18 +342,17 @@ bip32_get_extended_account_public_key(
 }
 
 /**
- * \brief Signs a transaction using BIP32 Hierarchical Deterministic (HD) keys.
+ * \brief Signs a hash using BIP32 Hierarchical Deterministic (HD) keys.
  *
- * The `bip32_sign_transaction` function is responsible for signing a transaction by deriving the appropriate
- * BIP32 private keys using the provided derivation paths. It generates a verification key witness set that contains
- * the necessary signatures for the transaction.
- *
- * This function uses the secure key handler to access and manage the cryptographic operations necessary for deriving
- * private keys and signing the transaction.
+ * The `bip32_sign_hash` function is the signing path shared by every BIP32 signing entry point. It decrypts the key
+ * material, derives the BIP32 private keys of the provided derivation paths, signs the given hash with each of them and
+ * generates a verification key witness set that contains the resulting signatures. The decrypted key material is wiped
+ * from memory as soon as it is no longer needed.
  *
  * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages cryptographic operations.
- * \param[in]  tx The transaction object to be signed.
- * \param[in]  derivation_paths An array of derivation paths specifying the private keys used to sign the transaction.
+ * \param[in]  hash The hash to be signed, the id of a transaction or of a sub transaction. The hash is borrowed: this
+ *                   function never releases it and the caller retains ownership.
+ * \param[in]  derivation_paths An array of derivation paths specifying the private keys used to sign the hash.
  * \param[in]  num_paths The number of derivation paths provided in the `derivation_paths` array.
  * \param[out] vkey_witness_set A pointer to the verification key witness set, which will be populated with the
  *                              signatures generated during the signing process. The caller is responsible for managing
@@ -361,20 +360,17 @@ bip32_get_extended_account_public_key(
  *
  * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
  *
- * \note The function assumes that the necessary private keys are securely stored and managed by the key handler.
- *       The caller is responsible for ensuring that the `vkey_witness_set` is unreferenced properly to prevent memory leaks.
- *
  * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
  */
 static cardano_error_t
-bip32_sign_transaction(
+bip32_sign_hash(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
-  cardano_transaction_t*             tx,
+  const cardano_blake2b_hash_t*      hash,
   const cardano_derivation_path_t*   derivation_paths,
   const size_t                       num_paths,
   cardano_vkey_witness_set_t**       vkey_witness_set)
 {
-  if ((secure_key_handler_impl == NULL) || (tx == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
+  if ((secure_key_handler_impl == NULL) || (hash == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -428,20 +424,10 @@ bip32_sign_transaction(
     return result;
   }
 
-  cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
-
-  if (hash == NULL)
-  {
-    cardano_bip32_private_key_unref(&root_private_key);
-
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   result = cardano_vkey_witness_set_new(vkey_witness_set);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_blake2b_hash_unref(&hash);
     cardano_bip32_private_key_unref(&root_private_key);
 
     return result;
@@ -464,7 +450,6 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
@@ -477,7 +462,6 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
@@ -493,7 +477,6 @@ bip32_sign_transaction(
     if (result != CARDANO_SUCCESS)
     {
       cardano_ed25519_private_key_unref(&ed25519_private_key);
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
@@ -507,7 +490,6 @@ bip32_sign_transaction(
     if (result != CARDANO_SUCCESS)
     {
       cardano_ed25519_signature_unref(&signature);
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
@@ -521,7 +503,6 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_unref(&witness);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
@@ -533,7 +514,6 @@ bip32_sign_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
-      cardano_blake2b_hash_unref(&hash);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
@@ -543,10 +523,113 @@ bip32_sign_transaction(
     cardano_vkey_witness_unref(&witness);
   }
 
-  cardano_blake2b_hash_unref(&hash);
   cardano_bip32_private_key_unref(&root_private_key);
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Signs a transaction using BIP32 Hierarchical Deterministic (HD) keys.
+ *
+ * The `bip32_sign_transaction` function is responsible for signing a transaction by deriving the appropriate
+ * BIP32 private keys using the provided derivation paths. It generates a verification key witness set that contains
+ * the necessary signatures for the transaction.
+ *
+ * This function uses the secure key handler to access and manage the cryptographic operations necessary for deriving
+ * private keys and signing the transaction.
+ *
+ * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages cryptographic operations.
+ * \param[in]  tx The transaction object to be signed.
+ * \param[in]  derivation_paths An array of derivation paths specifying the private keys used to sign the transaction.
+ * \param[in]  num_paths The number of derivation paths provided in the `derivation_paths` array.
+ * \param[out] vkey_witness_set A pointer to the verification key witness set, which will be populated with the
+ *                              signatures generated during the signing process. The caller is responsible for managing
+ *                              the lifecycle of the witness set by calling `cardano_vkey_witness_set_unref` when it is no longer needed.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
+ *
+ * \note The function assumes that the necessary private keys are securely stored and managed by the key handler.
+ *       The caller is responsible for ensuring that the `vkey_witness_set` is unreferenced properly to prevent memory leaks.
+ *
+ * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
+ */
+static cardano_error_t
+bip32_sign_transaction(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_transaction_t*             tx,
+  const cardano_derivation_path_t*   derivation_paths,
+  const size_t                       num_paths,
+  cardano_vkey_witness_set_t**       vkey_witness_set)
+{
+  if ((secure_key_handler_impl == NULL) || (tx == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
+
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = bip32_sign_hash(secure_key_handler_impl, hash, derivation_paths, num_paths, vkey_witness_set);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+/**
+ * \brief Signs a sub transaction using BIP32 Hierarchical Deterministic (HD) keys.
+ *
+ * The `bip32_sign_sub_transaction` function is responsible for signing a sub transaction by deriving the appropriate
+ * BIP32 private keys using the provided derivation paths. It generates a verification key witness set that contains
+ * the necessary signatures for the sub transaction. What is signed is the id of the sub transaction, the hash of its body.
+ *
+ * This function uses the secure key handler to access and manage the cryptographic operations necessary for deriving
+ * private keys and signing the sub transaction.
+ *
+ * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages cryptographic operations.
+ * \param[in]  sub_tx The sub transaction object to be signed.
+ * \param[in]  derivation_paths An array of derivation paths specifying the private keys used to sign the sub transaction.
+ * \param[in]  num_paths The number of derivation paths provided in the `derivation_paths` array.
+ * \param[out] vkey_witness_set A pointer to the verification key witness set, which will be populated with the
+ *                              signatures generated during the signing process. The caller is responsible for managing
+ *                              the lifecycle of the witness set by calling `cardano_vkey_witness_set_unref` when it is no longer needed.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
+ *
+ * \note The function assumes that the necessary private keys are securely stored and managed by the key handler.
+ *       The caller is responsible for ensuring that the `vkey_witness_set` is unreferenced properly to prevent memory leaks.
+ *
+ * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
+ */
+static cardano_error_t
+bip32_sign_sub_transaction(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_sub_transaction_t*         sub_tx,
+  const cardano_derivation_path_t*   derivation_paths,
+  const size_t                       num_paths,
+  cardano_vkey_witness_set_t**       vkey_witness_set)
+{
+  if ((secure_key_handler_impl == NULL) || (sub_tx == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* hash = cardano_sub_transaction_get_id(sub_tx);
+
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = bip32_sign_hash(secure_key_handler_impl, hash, derivation_paths, num_paths, vkey_witness_set);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
 }
 
 /**
@@ -645,35 +728,34 @@ ed25519_get_public_key(
 }
 
 /**
- * \brief Signs a transaction using the Ed25519 private key.
+ * \brief Signs a hash using the Ed25519 private key.
  *
- * The `ed25519_sign_transaction` function signs the provided transaction using the Ed25519 private key
- * managed by the secure key handler implementation. The function generates the necessary verification
- * key witness set, which contains the public keys and signatures required for transaction validation.
+ * The `ed25519_sign_hash` function is the signing path shared by every Ed25519 signing entry point. It decrypts the
+ * Ed25519 private key managed by the secure key handler implementation, signs the given hash with it and generates a
+ * verification key witness set that contains the public key and the resulting signature. The decrypted key material is
+ * wiped from memory as soon as it is no longer needed.
  *
  * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages
  *                                     the Ed25519 key operations.
- * \param[in]  tx                      The transaction object to be signed.
+ * \param[in]  hash                    The hash to be signed, the id of a transaction or of a sub transaction.
+ *                                     The hash is borrowed: this function never releases it and the caller retains
+ *                                     ownership.
  * \param[out] vkey_witness_set        A pointer to the verification key witness set, which will be populated by the
- *                                     function with the signatures and associated public keys required for the transaction.
+ *                                     function with the signature and the associated public key.
  *                                     The caller is responsible for managing the lifecycle of this witness set and releasing
  *                                     it when no longer needed.
  *
  * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
  *
- * \note The Ed25519 private key is securely accessed to sign the transaction. The public key and signature generated
- *       are added to the `vkey_witness_set`. The caller must ensure that the `vkey_witness_set` is properly released
- *       after use to avoid memory leaks.
- *
  * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
  */
 static cardano_error_t
-ed25519_sign_transaction(
+ed25519_sign_hash(
   cardano_secure_key_handler_impl_t* secure_key_handler_impl,
-  cardano_transaction_t*             tx,
+  const cardano_blake2b_hash_t*      hash,
   cardano_vkey_witness_set_t**       vkey_witness_set)
 {
-  if ((secure_key_handler_impl == NULL) || (tx == NULL) || (vkey_witness_set == NULL))
+  if ((secure_key_handler_impl == NULL) || (hash == NULL) || (vkey_witness_set == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
@@ -739,27 +821,16 @@ ed25519_sign_transaction(
     return result;
   }
 
-  cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
-
-  if (hash == NULL)
-  {
-    cardano_ed25519_private_key_unref(&private_key);
-
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   result = cardano_vkey_witness_set_new(vkey_witness_set);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_blake2b_hash_unref(&hash);
     cardano_ed25519_private_key_unref(&private_key);
 
     return result;
   }
 
   result = cardano_ed25519_private_key_sign(private_key, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash), &signature);
-  cardano_blake2b_hash_unref(&hash);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -807,6 +878,102 @@ ed25519_sign_transaction(
   cardano_vkey_witness_unref(&witness);
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Signs a transaction using the Ed25519 private key.
+ *
+ * The `ed25519_sign_transaction` function signs the provided transaction using the Ed25519 private key
+ * managed by the secure key handler implementation. The function generates the necessary verification
+ * key witness set, which contains the public keys and signatures required for transaction validation.
+ *
+ * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages
+ *                                     the Ed25519 key operations.
+ * \param[in]  tx                      The transaction object to be signed.
+ * \param[out] vkey_witness_set        A pointer to the verification key witness set, which will be populated by the
+ *                                     function with the signatures and associated public keys required for the transaction.
+ *                                     The caller is responsible for managing the lifecycle of this witness set and releasing
+ *                                     it when no longer needed.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
+ *
+ * \note The Ed25519 private key is securely accessed to sign the transaction. The public key and signature generated
+ *       are added to the `vkey_witness_set`. The caller must ensure that the `vkey_witness_set` is properly released
+ *       after use to avoid memory leaks.
+ *
+ * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
+ */
+static cardano_error_t
+ed25519_sign_transaction(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_transaction_t*             tx,
+  cardano_vkey_witness_set_t**       vkey_witness_set)
+{
+  if ((secure_key_handler_impl == NULL) || (tx == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* hash = cardano_transaction_get_id(tx);
+
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = ed25519_sign_hash(secure_key_handler_impl, hash, vkey_witness_set);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+/**
+ * \brief Signs a sub transaction using the Ed25519 private key.
+ *
+ * The `ed25519_sign_sub_transaction` function signs the id of the provided sub transaction (the hash of its body)
+ * using the Ed25519 private key managed by the secure key handler implementation. The function generates the necessary
+ * verification key witness set, which contains the public keys and signatures required for sub transaction validation.
+ *
+ * \param[in]  secure_key_handler_impl A pointer to the secure key handler implementation that securely manages
+ *                                     the Ed25519 key operations.
+ * \param[in]  sub_tx                  The sub transaction object to be signed.
+ * \param[out] vkey_witness_set        A pointer to the verification key witness set, which will be populated by the
+ *                                     function with the signatures and associated public keys required for the sub transaction.
+ *                                     The caller is responsible for managing the lifecycle of this witness set and releasing
+ *                                     it when no longer needed.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during the signing process.
+ *
+ * \note The Ed25519 private key is securely accessed to sign the sub transaction. The public key and signature generated
+ *       are added to the `vkey_witness_set`. The caller must ensure that the `vkey_witness_set` is properly released
+ *       after use to avoid memory leaks.
+ *
+ * \see cardano_vkey_witness_set_unref for proper memory cleanup of the witness set.
+ */
+static cardano_error_t
+ed25519_sign_sub_transaction(
+  cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+  cardano_sub_transaction_t*         sub_tx,
+  cardano_vkey_witness_set_t**       vkey_witness_set)
+{
+  if ((secure_key_handler_impl == NULL) || (sub_tx == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* hash = cardano_sub_transaction_get_id(sub_tx);
+
+  if (hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = ed25519_sign_hash(secure_key_handler_impl, hash, vkey_witness_set);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -873,8 +1040,10 @@ cardano_software_secure_key_handler_new(
 
   impl.bip32_get_extended_account_public_key = bip32_get_extended_account_public_key;
   impl.bip32_sign_transaction                = bip32_sign_transaction;
+  impl.bip32_sign_sub_transaction            = bip32_sign_sub_transaction;
   impl.ed25519_get_public_key                = NULL;
   impl.ed25519_sign_transaction              = NULL;
+  impl.ed25519_sign_sub_transaction          = NULL;
   impl.serialize                             = serialize;
   impl.type                                  = CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32;
 
@@ -948,8 +1117,10 @@ cardano_software_secure_key_handler_ed25519_new(
 
   impl.bip32_get_extended_account_public_key = NULL;
   impl.bip32_sign_transaction                = NULL;
+  impl.bip32_sign_sub_transaction            = NULL;
   impl.ed25519_get_public_key                = ed25519_get_public_key;
   impl.ed25519_sign_transaction              = ed25519_sign_transaction;
+  impl.ed25519_sign_sub_transaction          = ed25519_sign_sub_transaction;
   impl.serialize                             = serialize;
   impl.type                                  = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
 
@@ -1133,8 +1304,10 @@ cardano_software_secure_key_handler_deserialize(
       cardano_safe_memcpy(impl.name, sizeof(impl.name), ed25519_handler_name, cardano_safe_strlen(ed25519_handler_name, sizeof(impl.name)));
       impl.bip32_get_extended_account_public_key = NULL;
       impl.bip32_sign_transaction                = NULL;
+      impl.bip32_sign_sub_transaction            = NULL;
       impl.ed25519_get_public_key                = ed25519_get_public_key;
       impl.ed25519_sign_transaction              = ed25519_sign_transaction;
+      impl.ed25519_sign_sub_transaction          = ed25519_sign_sub_transaction;
       impl.serialize                             = serialize;
 
       context->get_passphrase = get_passphrase;
@@ -1152,8 +1325,10 @@ cardano_software_secure_key_handler_deserialize(
 
       impl.bip32_get_extended_account_public_key = bip32_get_extended_account_public_key;
       impl.bip32_sign_transaction                = bip32_sign_transaction;
+      impl.bip32_sign_sub_transaction            = bip32_sign_sub_transaction;
       impl.ed25519_get_public_key                = NULL;
       impl.ed25519_sign_transaction              = NULL;
+      impl.ed25519_sign_sub_transaction          = NULL;
       impl.serialize                             = serialize;
 
       context->get_passphrase = get_passphrase;

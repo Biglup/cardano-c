@@ -108,7 +108,8 @@ cardano_sub_tx_builder_send_value(sub_tx_builder, party_address, wanted_value);
 cardano_sub_tx_builder_require_top_level_guard(sub_tx_builder, batcher_credential, NULL);
 cardano_sub_tx_builder_build(sub_tx_builder, &sub_transaction);
 
-// The party signs the sub transaction id.
+// The party signs the sub transaction id with the key held by its secure key handler.
+cardano_secure_key_handler_ed25519_sign_sub_transaction(party_key_handler, sub_transaction, &party_witnesses);
 cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, party_witnesses);
 
 // The batcher aggregates the sub transactions and the builder balances the whole batch.
@@ -117,7 +118,7 @@ cardano_tx_builder_add_guard(tx_builder, batcher_credential);
 cardano_tx_builder_build(tx_builder, &transaction);
 ```
 
-The sub transactions are carried untouched, so their ids and the signatures of the parties are preserved. A net deficit of the sub transactions is funded by the inputs of the batcher and a net surplus ends up in its change. See the [sub transaction batch](examples/src/sub_transaction_batch_example.c) example for a complete trade between two parties that runs offline.
+The sub transactions are carried untouched, so their ids and the signatures of the parties are preserved. A net deficit of the sub transactions is funded by the inputs of the batcher and a net surplus ends up in its change. A party whose keys live in a secure key handler signs with `cardano_secure_key_handler_bip32_sign_sub_transaction` or `cardano_secure_key_handler_ed25519_sign_sub_transaction`, the counterparts of the functions that sign a transaction. See the [sub transaction batch](examples/src/sub_transaction_batch_example.c) example for a complete trade between two parties that runs offline.
 
 ## Basic Example
 

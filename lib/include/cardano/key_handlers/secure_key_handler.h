@@ -146,6 +146,52 @@ CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_sign_transaction
   cardano_vkey_witness_set_t**     vkey_witness_set);
 
 /**
+ * \brief Signs a sub transaction using BIP32 Hierarchical Deterministic (HD) keys.
+ *
+ * This function uses the `cardano_secure_key_handler_t` to securely manage the cryptographic key operations needed to
+ * sign a sub transaction using BIP32 (HD) keys. It derives the necessary private keys based on the provided `derivation_paths`
+ * and signs the id of the sub transaction `sub_tx` (the hash of its body), generating a set of verification key
+ * witnesses (`vkey_witness_set`).
+ *
+ * The sub transaction is not modified. The witnesses can be attached to it with \ref cardano_sub_transaction_apply_vkey_witnesses,
+ * which never changes the body nor the id of the sub transaction.
+ *
+ * \param[in] secure_key_handler A pointer to the secure key handler managing the cryptographic key operations.
+ * \param[in] sub_tx The sub transaction object to be signed.
+ * \param[in] derivation_paths An array of BIP32 derivation paths used to derive the private keys for signing the sub transaction.
+ * \param[in] num_paths The number of derivation paths provided in the `derivation_paths` array.
+ * \param[out] vkey_witness_set A pointer to the verification key witness set that will be populated with the generated signatures.
+ *                         This set will contain the signatures and associated verification keys required for the sub transaction.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during signing. If the secure key handler
+ *          implementation does not support signing sub transactions, \ref CARDANO_ERROR_NOT_IMPLEMENTED is returned.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t*     vkey_witness_set = NULL;
+ * const cardano_derivation_path_t path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+ *
+ * cardano_error_t result = cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, sub_tx, &path, 1, &vkey_witness_set);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   result = cardano_sub_transaction_apply_vkey_witnesses(sub_tx, vkey_witness_set);
+ * }
+ *
+ * cardano_vkey_witness_set_unref(&vkey_witness_set);
+ * \endcode
+ *
+ * \note The caller is responsible for managing and releasing the `vkey_witness_set` to avoid memory leaks.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_bip32_sign_sub_transaction(
+  cardano_secure_key_handler_t*    secure_key_handler,
+  cardano_sub_transaction_t*       sub_tx,
+  const cardano_derivation_path_t* derivation_paths,
+  size_t                           num_paths,
+  cardano_vkey_witness_set_t**     vkey_witness_set);
+
+/**
  * \brief Retrieves the extended BIP32 account public key for a given derivation path.
  *
  * This function securely derives and retrieves the extended BIP32 account public key for the `cardano_secure_key_handler_t`. The extended
@@ -187,6 +233,47 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_ed25519_sign_transaction(
   cardano_secure_key_handler_t* secure_key_handler,
   cardano_transaction_t*        tx,
+  cardano_vkey_witness_set_t**  vkey_witness_set);
+
+/**
+ * \brief Signs a sub transaction using Ed25519 keys.
+ *
+ * This function securely signs the id of the provided `sub_tx` (the hash of the sub transaction body) using the Ed25519 keys
+ * managed by the `cardano_secure_key_handler_t`. The resulting witness set, containing the verification keys and signatures,
+ * is returned in the `vkey_witness_set`.
+ *
+ * The sub transaction is not modified. The witnesses can be attached to it with \ref cardano_sub_transaction_apply_vkey_witnesses,
+ * which never changes the body nor the id of the sub transaction.
+ *
+ * \param[in] secure_key_handler A pointer to the secure key handler managing the Ed25519 cryptographic operations.
+ * \param[in] sub_tx The sub transaction object to be signed.
+ * \param[out] vkey_witness_set A pointer to the verification key witness set that will be populated with the generated signatures.
+ *                         The caller must manage the lifecycle of the `vkey_witness_set` to avoid memory leaks.
+ *
+ * \returns `cardano_error_t` indicating success or the type of error encountered during signing. If the secure key handler
+ *          implementation does not support signing sub transactions, \ref CARDANO_ERROR_NOT_IMPLEMENTED is returned.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t* vkey_witness_set = NULL;
+ *
+ * cardano_error_t result = cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, sub_tx, &vkey_witness_set);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   result = cardano_sub_transaction_apply_vkey_witnesses(sub_tx, vkey_witness_set);
+ * }
+ *
+ * cardano_vkey_witness_set_unref(&vkey_witness_set);
+ * \endcode
+ *
+ * \note This function does not support BIP32 hierarchical deterministic keys. It is intended for use with Ed25519 keys only.
+ * \note The caller is responsible for managing the lifecycle of the `vkey_witness_set` to ensure proper memory management.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_secure_key_handler_ed25519_sign_sub_transaction(
+  cardano_secure_key_handler_t* secure_key_handler,
+  cardano_sub_transaction_t*    sub_tx,
   cardano_vkey_witness_set_t**  vkey_witness_set);
 
 /**

@@ -68,6 +68,14 @@ static const char* VK_WITNESS_KEYS[] = {
 
 static const char* SERIALIZED_BIP32_KEY_HANDLER = "0a0a0a0a01010000005c97db5e09b3a4919ec75ed1126056241a1e5278731c2e0b01bea0a5f42c22db4131e0a4bbe75633677eb0e60e2ecd3520178f85c7e0d4be77a449087fe9674ee52f946b07c1b56d228c496ec0d36dd44212ba8af0f6eed1a82194dd69f479c603";
 
+static const char* SUB_TX_CBOR                    = "83a200d90102818258200000000000000000000000000000000000000000000000000000000000000000000180a0f6";
+static const char* SUB_TX_ID                      = "36b3d193b4da918d96d97d5a6a4cf857b7855bdda9a297b63c94ef0b86b3edef";
+static const char* SUB_TX_BODY_CBOR               = "a200d90102818258200000000000000000000000000000000000000000000000000000000000000000000180";
+static const char* NON_CANONICAL_SUB_TX_CBOR      = "83a201800081825820000000000000000000000000000000000000000000000000000000000000000000a0f6";
+static const char* NON_CANONICAL_SUB_TX_ID        = "4f263f08c7088114791db8af7a5cb3342e8881bac857c0c1a48f5edcc44fdaad";
+static const char* NON_CANONICAL_SUB_TX_BODY_CBOR = "a201800081825820000000000000000000000000000000000000000000000000000000000000000000";
+static const char* WRONG_PASSWORD                 = "wrong password";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -119,6 +127,197 @@ from_hex_to_buffer(const char* hex, byte_t* buffer, const size_t buffer_length)
     sscanf(&hex[2 * i], "%2hhx", &buffer[i]);
 #endif
   }
+}
+
+/**
+ * \brief Retrieves a password that does not match the one the key material was encrypted with.
+ *
+ * \param buffer The buffer where to write the password.
+ * \param buffer_len The size of the buffer.
+ *
+ * \return The length of the password, -1 otherwise.
+ */
+static int32_t
+get_wrong_passphrase(byte_t* buffer, const size_t buffer_len)
+{
+  if (buffer_len < strlen(WRONG_PASSWORD))
+  {
+    return -1;
+  }
+
+  (void)memcpy(buffer, WRONG_PASSWORD, strlen(WRONG_PASSWORD));
+
+  return (int32_t)strlen(WRONG_PASSWORD);
+}
+
+/**
+ * \brief Creates a sub transaction from its CBOR hex string.
+ *
+ * \param cbor The CBOR hex string of the sub transaction.
+ *
+ * \return The sub transaction. The caller is responsible for releasing it.
+ */
+static cardano_sub_transaction_t*
+new_default_sub_transaction(const char* cbor)
+{
+  cardano_sub_transaction_t* sub_transaction = nullptr;
+  cardano_cbor_reader_t*     reader          = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  EXPECT_EQ(cardano_sub_transaction_from_cbor(reader, &sub_transaction), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return sub_transaction;
+}
+
+/**
+ * \brief Creates a BIP32 software secure key handler from the test entropy.
+ *
+ * \param get_passphrase_func The callback the handler uses to get the passphrase.
+ *
+ * \return The secure key handler. The caller is responsible for releasing it.
+ */
+static cardano_secure_key_handler_t*
+new_bip32_key_handler(cardano_get_passphrase_func_t get_passphrase_func)
+{
+  cardano_secure_key_handler_t* key_handler = nullptr;
+
+  byte_t entropy_bytes[1024];
+  from_hex_to_buffer(ENTROPY_BYTES, entropy_bytes, strlen(ENTROPY_BYTES) / 2);
+
+  EXPECT_EQ(cardano_software_secure_key_handler_new(entropy_bytes, strlen(ENTROPY_BYTES) / 2, (const byte_t*)&PASSWORD[0], strlen(PASSWORD), get_passphrase_func, &key_handler), CARDANO_SUCCESS);
+
+  return key_handler;
+}
+
+/**
+ * \brief Creates an Ed25519 software secure key handler from a private key.
+ *
+ * \param private_key_hex The private key as a hex string, either a normal or an extended key.
+ * \param get_passphrase_func The callback the handler uses to get the passphrase.
+ *
+ * \return The secure key handler. The caller is responsible for releasing it.
+ */
+static cardano_secure_key_handler_t*
+new_ed25519_key_handler(const char* private_key_hex, cardano_get_passphrase_func_t get_passphrase_func)
+{
+  cardano_secure_key_handler_t*  key_handler = nullptr;
+  cardano_ed25519_private_key_t* private_key = nullptr;
+
+  if (strlen(private_key_hex) == 128U)
+  {
+    EXPECT_EQ(cardano_ed25519_private_key_from_extended_hex(private_key_hex, strlen(private_key_hex), &private_key), CARDANO_SUCCESS);
+  }
+  else
+  {
+    EXPECT_EQ(cardano_ed25519_private_key_from_normal_hex(private_key_hex, strlen(private_key_hex), &private_key), CARDANO_SUCCESS);
+  }
+
+  EXPECT_EQ(cardano_software_secure_key_handler_ed25519_new(private_key, (const byte_t*)&PASSWORD[0], strlen(PASSWORD), get_passphrase_func, &key_handler), CARDANO_SUCCESS);
+
+  cardano_ed25519_private_key_unref(&private_key);
+
+  return key_handler;
+}
+
+/**
+ * \brief Gets the public key a BIP32 secure key handler reports for a derivation path.
+ *
+ * The key is derived from the extended account public key of the handler, so it does not depend on the signing path.
+ *
+ * \param key_handler The secure key handler.
+ * \param path The derivation path of the key.
+ *
+ * \return The public key. The caller is responsible for releasing it.
+ */
+static cardano_ed25519_public_key_t*
+get_bip32_public_key(cardano_secure_key_handler_t* key_handler, const cardano_derivation_path_t& path)
+{
+  cardano_bip32_public_key_t*   account_public_key = nullptr;
+  cardano_bip32_public_key_t*   derived_public_key = nullptr;
+  cardano_ed25519_public_key_t* public_key         = nullptr;
+  const uint32_t                indices[2]         = { (uint32_t)path.role, (uint32_t)path.index };
+
+  EXPECT_EQ(cardano_secure_key_handler_bip32_get_extended_account_public_key(key_handler, { path.purpose, path.coin_type, path.account }, &account_public_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bip32_public_key_derive(account_public_key, indices, 2, &derived_public_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bip32_public_key_to_ed25519_key(derived_public_key, &public_key), CARDANO_SUCCESS);
+
+  cardano_bip32_public_key_unref(&account_public_key);
+  cardano_bip32_public_key_unref(&derived_public_key);
+
+  return public_key;
+}
+
+/**
+ * \brief Expects a vkey witness to carry the given public key and a signature of the given id that verifies with it.
+ *
+ * \param vkey_witness_set The vkey witness set that holds the witness.
+ * \param index The index of the witness in the set.
+ * \param public_key The public key the witness is expected to carry.
+ * \param public_key_hex The same public key, pinned as a hex string.
+ * \param id The id that was signed.
+ */
+static void
+expect_witness_signs(
+  const cardano_vkey_witness_set_t*   vkey_witness_set,
+  const size_t                        index,
+  const cardano_ed25519_public_key_t* public_key,
+  const char*                         public_key_hex,
+  const cardano_blake2b_hash_t*       id)
+{
+  cardano_vkey_witness_t* witness = nullptr;
+
+  ASSERT_EQ(cardano_vkey_witness_set_get(vkey_witness_set, index, &witness), CARDANO_SUCCESS);
+
+  cardano_ed25519_signature_t*  signature = cardano_vkey_witness_get_signature(witness);
+  cardano_ed25519_public_key_t* vkey      = cardano_vkey_witness_get_vkey(witness);
+
+  char vkey_hex[128]     = { 0 };
+  char expected_hex[128] = { 0 };
+
+  EXPECT_EQ(cardano_ed25519_public_key_to_hex(vkey, vkey_hex, cardano_ed25519_public_key_get_hex_size(vkey)), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_public_key_to_hex(public_key, expected_hex, cardano_ed25519_public_key_get_hex_size(public_key)), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(vkey_hex, expected_hex);
+  EXPECT_STREQ(vkey_hex, public_key_hex);
+  EXPECT_TRUE(cardano_ed25519_public_verify(public_key, signature, cardano_blake2b_hash_get_data(id), cardano_blake2b_hash_get_bytes_size(id)));
+
+  cardano_ed25519_signature_unref(&signature);
+  cardano_ed25519_public_key_unref(&vkey);
+  cardano_vkey_witness_unref(&witness);
+}
+
+/**
+ * \brief Expects a sub transaction to have the given id and the given body bytes.
+ *
+ * \param sub_transaction The sub transaction to check.
+ * \param id_hex The expected id as a hex string.
+ * \param body_cbor The expected CBOR hex string of the body.
+ */
+static void
+expect_id_and_body(cardano_sub_transaction_t* sub_transaction, const char* id_hex, const char* body_cbor)
+{
+  cardano_blake2b_hash_t*         id     = cardano_sub_transaction_get_id(sub_transaction);
+  cardano_sub_transaction_body_t* body   = cardano_sub_transaction_get_body(sub_transaction);
+  cardano_cbor_writer_t*          writer = cardano_cbor_writer_new();
+
+  char actual_id_hex[128] = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(id, actual_id_hex, cardano_blake2b_hash_get_hex_size(id)), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_id_hex, id_hex);
+
+  EXPECT_EQ(cardano_sub_transaction_body_to_cbor(body, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, body_cbor);
+
+  free(hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_sub_transaction_body_unref(&body);
+  cardano_blake2b_hash_unref(&id);
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -1553,5 +1752,462 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnM
 
   cardano_vkey_witness_set_unref(&vkey_witness_set);
   cardano_transaction_unref(&transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, canSignSubTransactionWithBip32SecureKeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path[]           = {
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 2U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 3U, 0U },
+    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 4U, 0U }
+  };
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path[0], 4, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 4);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  for (size_t i = 0; i < 4; ++i)
+  {
+    cardano_ed25519_public_key_t* public_key = get_bip32_public_key(key_handler, path[i]);
+
+    expect_witness_signs(vkey_witness_set, i, public_key, VK_WITNESS_KEYS[i], id);
+
+    cardano_ed25519_public_key_unref(&public_key);
+  }
+
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  expect_id_and_body(sub_transaction, SUB_TX_ID, SUB_TX_BODY_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, canSignSubTransactionWithADeserializedSecureKeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = nullptr;
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  byte_t serialized[1024];
+  from_hex_to_buffer(SERIALIZED_BIP32_KEY_HANDLER, serialized, strlen(SERIALIZED_BIP32_KEY_HANDLER) / 2);
+
+  ASSERT_EQ(cardano_software_secure_key_handler_deserialize(serialized, strlen(SERIALIZED_BIP32_KEY_HANDLER) / 2, &get_passphrase, &key_handler), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+  cardano_blake2b_hash_t*       id         = cardano_sub_transaction_get_id(sub_transaction);
+  cardano_ed25519_public_key_t* public_key = get_bip32_public_key(key_handler, path);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, VK_WITNESS_KEY_0, id);
+
+  // Cleanup
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_blake2b_hash_unref(&id);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, preservesTheIdAndBodyBytesOfANonCanonicalSubTransaction)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(NON_CANONICAL_SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t*       id         = cardano_sub_transaction_get_id(sub_transaction);
+  cardano_ed25519_public_key_t* public_key = get_bip32_public_key(key_handler, path);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, VK_WITNESS_KEY_0, id);
+  expect_id_and_body(sub_transaction, NON_CANONICAL_SUB_TX_ID, NON_CANONICAL_SUB_TX_BODY_CBOR);
+
+  // Cleanup
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_blake2b_hash_unref(&id);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, failsWithInvalidPassword)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_invalid_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PASSPHRASE);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, failsWithWrongPassword)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_wrong_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  // Assert
+  EXPECT_NE(error, CARDANO_SUCCESS);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  // Act & Assert
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(nullptr, sub_transaction, &path, 1, &vkey_witness_set), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, nullptr, &path, 1, &vkey_witness_set), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, nullptr, 1, &vkey_witness_set), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, returnsErrorIfTheKeyHandlerIsAnEd25519KeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, returnsErrorOnMemoryAllocationFailAroundTheSubTransactionId)
+{
+  // Arrange
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  for (int i = 0; i < 12; ++i)
+  {
+    cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(SUB_TX_CBOR);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    EXPECT_NE(error, CARDANO_SUCCESS);
+    EXPECT_EQ(vkey_witness_set, nullptr);
+
+    cardano_sub_transaction_unref(&sub_transaction);
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, canSignSubTransactionWithEd25519ExtendedSecureKeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_ed25519_public_key_t* public_key       = nullptr;
+
+  ASSERT_EQ(cardano_secure_key_handler_ed25519_get_public_key(key_handler, &public_key), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, ED25519_PUBLIC_KEY_HEX, id);
+
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  expect_id_and_body(sub_transaction, SUB_TX_ID, SUB_TX_BODY_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, canSignSubTransactionWithEd25519NormalSecureKeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_NOR_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_ed25519_public_key_t* public_key       = nullptr;
+
+  ASSERT_EQ(cardano_secure_key_handler_ed25519_get_public_key(key_handler, &public_key), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, ED25519_NOR_PUBLIC_KEY_HEX, id);
+
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  expect_id_and_body(sub_transaction, SUB_TX_ID, SUB_TX_BODY_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, canSignSubTransactionWithADeserializedSecureKeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* original_handler = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_secure_key_handler_t* key_handler      = nullptr;
+  cardano_buffer_t*             serialized       = nullptr;
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_ed25519_public_key_t* public_key       = nullptr;
+
+  ASSERT_EQ(cardano_secure_key_handler_serialize(original_handler, &serialized), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_software_secure_key_handler_deserialize(cardano_buffer_get_data(serialized), cardano_buffer_get_size(serialized), &get_passphrase, &key_handler), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_secure_key_handler_ed25519_get_public_key(key_handler, &public_key), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, ED25519_PUBLIC_KEY_HEX, id);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_buffer_unref(&serialized);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&original_handler);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, preservesTheIdAndBodyBytesOfANonCanonicalSubTransaction)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(NON_CANONICAL_SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_ed25519_public_key_t* public_key       = nullptr;
+
+  ASSERT_EQ(cardano_secure_key_handler_ed25519_get_public_key(key_handler, &public_key), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, vkey_witness_set), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  expect_witness_signs(vkey_witness_set, 0, public_key, ED25519_PUBLIC_KEY_HEX, id);
+  expect_id_and_body(sub_transaction, NON_CANONICAL_SUB_TX_ID, NON_CANONICAL_SUB_TX_BODY_CBOR);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_ed25519_public_key_unref(&public_key);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, failsWhenPasswordIsInvalid)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_invalid_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PASSPHRASE);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, failsWithWrongPassword)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_wrong_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  EXPECT_NE(error, CARDANO_SUCCESS);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  // Act & Assert
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(nullptr, sub_transaction, &vkey_witness_set), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, nullptr, &vkey_witness_set), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, returnsErrorIfTheKeyHandlerIsABip32KeyHandler)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, returnsErrorOnMemoryAllocationFail)
+{
+  // Arrange
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  for (int i = 0; i < 24; ++i)
+  {
+    cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(SUB_TX_CBOR);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    EXPECT_NE(error, CARDANO_SUCCESS);
+    EXPECT_EQ(vkey_witness_set, nullptr);
+
+    cardano_sub_transaction_unref(&sub_transaction);
+  }
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
   cardano_secure_key_handler_unref(&key_handler);
 }

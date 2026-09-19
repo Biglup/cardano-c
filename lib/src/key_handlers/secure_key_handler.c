@@ -145,6 +145,34 @@ cardano_secure_key_handler_bip32_sign_transaction(
 }
 
 cardano_error_t
+cardano_secure_key_handler_bip32_sign_sub_transaction(
+  cardano_secure_key_handler_t*    secure_key_handler,
+  cardano_sub_transaction_t*       sub_tx,
+  const cardano_derivation_path_t* derivation_paths,
+  size_t                           num_paths,
+  cardano_vkey_witness_set_t**     vkey_witness_set)
+{
+  if ((secure_key_handler == NULL) || (sub_tx == NULL) || (derivation_paths == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (secure_key_handler->impl.bip32_sign_sub_transaction == NULL)
+  {
+    return CARDANO_ERROR_NOT_IMPLEMENTED;
+  }
+
+  cardano_error_t result = secure_key_handler->impl.bip32_sign_sub_transaction(&secure_key_handler->impl, sub_tx, derivation_paths, num_paths, vkey_witness_set);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
+  }
+
+  return result;
+}
+
+cardano_error_t
 cardano_secure_key_handler_bip32_get_extended_account_public_key(
   cardano_secure_key_handler_t*           secure_key_handler,
   const cardano_account_derivation_path_t derivation_path,
@@ -187,6 +215,32 @@ cardano_secure_key_handler_ed25519_sign_transaction(
   }
 
   cardano_error_t result = secure_key_handler->impl.ed25519_sign_transaction(&secure_key_handler->impl, tx, vkey_witness_set);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_secure_key_handler_set_last_error(secure_key_handler, secure_key_handler->impl.error_message);
+  }
+
+  return result;
+}
+
+cardano_error_t
+cardano_secure_key_handler_ed25519_sign_sub_transaction(
+  cardano_secure_key_handler_t* secure_key_handler,
+  cardano_sub_transaction_t*    sub_tx,
+  cardano_vkey_witness_set_t**  vkey_witness_set)
+{
+  if ((secure_key_handler == NULL) || (sub_tx == NULL) || (vkey_witness_set == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (secure_key_handler->impl.ed25519_sign_sub_transaction == NULL)
+  {
+    return CARDANO_ERROR_NOT_IMPLEMENTED;
+  }
+
+  cardano_error_t result = secure_key_handler->impl.ed25519_sign_sub_transaction(&secure_key_handler->impl, sub_tx, vkey_witness_set);
 
   if (result != CARDANO_SUCCESS)
   {

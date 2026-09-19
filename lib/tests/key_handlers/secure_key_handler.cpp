@@ -79,6 +79,16 @@ cardano_secure_key_handler_impl_new()
     return CARDANO_SUCCESS;
   };
 
+  impl.bip32_sign_sub_transaction = [](
+                                      cardano_secure_key_handler_impl_t*,
+                                      cardano_sub_transaction_t*,
+                                      const cardano_derivation_path_t*,
+                                      size_t,
+                                      cardano_vkey_witness_set_t**) -> cardano_error_t
+  {
+    return CARDANO_SUCCESS;
+  };
+
   impl.bip32_get_extended_account_public_key = [](
                                                  cardano_secure_key_handler_impl_t*,
                                                  cardano_account_derivation_path_t,
@@ -91,6 +101,14 @@ cardano_secure_key_handler_impl_new()
                                     cardano_secure_key_handler_impl_t*,
                                     cardano_transaction_t*,
                                     cardano_vkey_witness_set_t**) -> cardano_error_t
+  {
+    return CARDANO_SUCCESS;
+  };
+
+  impl.ed25519_sign_sub_transaction = [](
+                                        cardano_secure_key_handler_impl_t*,
+                                        cardano_sub_transaction_t*,
+                                        cardano_vkey_witness_set_t**) -> cardano_error_t
   {
     return CARDANO_SUCCESS;
   };
@@ -138,8 +156,43 @@ cardano_empty_secure_key_handler_impl_new()
 
   impl.bip32_get_extended_account_public_key = NULL;
   impl.bip32_sign_transaction                = NULL;
+  impl.bip32_sign_sub_transaction            = NULL;
   impl.ed25519_get_public_key                = NULL;
   impl.ed25519_sign_transaction              = NULL;
+  impl.ed25519_sign_sub_transaction          = NULL;
+
+  return impl;
+}
+
+/**
+ * \brief Creates a secure_key_handler implementation whose sub transaction signing callbacks fail.
+ */
+static cardano_secure_key_handler_impl_t
+cardano_failing_sub_transaction_secure_key_handler_impl_new()
+{
+  cardano_secure_key_handler_impl_t impl = cardano_secure_key_handler_impl_new();
+
+  impl.bip32_sign_sub_transaction = [](
+                                      cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+                                      cardano_sub_transaction_t*,
+                                      const cardano_derivation_path_t*,
+                                      size_t,
+                                      cardano_vkey_witness_set_t**) -> cardano_error_t
+  {
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&secure_key_handler_impl->error_message[0], sizeof(secure_key_handler_impl->error_message), "bip32 failure", sizeof("bip32 failure")));
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  };
+
+  impl.ed25519_sign_sub_transaction = [](
+                                        cardano_secure_key_handler_impl_t* secure_key_handler_impl,
+                                        cardano_sub_transaction_t*,
+                                        cardano_vkey_witness_set_t**) -> cardano_error_t
+  {
+    CARDANO_UNUSED(cardano_safe_memcpy((void*)&secure_key_handler_impl->error_message[0], sizeof(secure_key_handler_impl->error_message), "ed25519 failure", sizeof("ed25519 failure")));
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  };
 
   return impl;
 }
@@ -388,6 +441,136 @@ TEST(cardano_secure_key_handler_bip32_sign_transaction, returnsSuccessIfBip32Sig
   cardano_secure_key_handler_unref(&secure_key_handler);
 }
 
+TEST(cardano_secure_key_handler_bip32_sign_sub_transaction, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_secure_key_handler_t*   secure_key_handler = nullptr;
+  const cardano_derivation_path_t path               = { .purpose = 0, .coin_type = 0, .account = 0, .role = 0, .index = 0 };
+  size_t                          path_len           = 0;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act & Assert
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(nullptr, (cardano_sub_transaction_t*)"", &path, path_len, (cardano_vkey_witness_set_t**)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, nullptr, &path, path_len, (cardano_vkey_witness_set_t**)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", nullptr, path_len, (cardano_vkey_witness_set_t**)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", &path, path_len, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_bip32_sign_sub_transaction, returnsErrorIfBip32SignSubTransactionIsNotImplemented)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+  size_t                        path_len           = 0;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_empty_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_derivation_path_t*)"", path_len, (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_bip32_sign_sub_transaction, returnsSuccessIfBip32SignSubTransactionIsImplemented)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+  size_t                        path_len           = 0;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_derivation_path_t*)"", path_len, (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_bip32_sign_sub_transaction, forwardsTheArgumentsToTheImplementation)
+{
+  // Arrange
+  static cardano_sub_transaction_t*       received_sub_tx      = nullptr;
+  static const cardano_derivation_path_t* received_paths       = nullptr;
+  static size_t                           received_num_paths   = 0;
+  static cardano_vkey_witness_set_t**     received_witness_set = nullptr;
+
+  cardano_secure_key_handler_impl_t impl = cardano_secure_key_handler_impl_new();
+
+  impl.bip32_sign_sub_transaction = [](
+                                      cardano_secure_key_handler_impl_t*,
+                                      cardano_sub_transaction_t*       sub_tx,
+                                      const cardano_derivation_path_t* derivation_paths,
+                                      size_t                           num_paths,
+                                      cardano_vkey_witness_set_t**     vkey_witness_set) -> cardano_error_t
+  {
+    received_sub_tx      = sub_tx;
+    received_paths       = derivation_paths;
+    received_num_paths   = num_paths;
+    received_witness_set = vkey_witness_set;
+
+    return CARDANO_SUCCESS;
+  };
+
+  cardano_secure_key_handler_t*   secure_key_handler = nullptr;
+  cardano_sub_transaction_t*      sub_tx             = (cardano_sub_transaction_t*)"";
+  const cardano_derivation_path_t paths[2]           = { { 1852U, 1815U, 0U, 0U, 0U }, { 1852U, 1815U, 0U, 2U, 0U } };
+  cardano_vkey_witness_set_t*     witness_set        = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(impl, &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, sub_tx, &paths[0], 2, &witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(received_sub_tx, sub_tx);
+  EXPECT_EQ(received_paths, &paths[0]);
+  EXPECT_EQ(received_num_paths, 2U);
+  EXPECT_EQ(received_witness_set, &witness_set);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_bip32_sign_sub_transaction, setsTheLastErrorIfTheImplementationFails)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+  size_t                        path_len           = 0;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_failing_sub_transaction_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_bip32_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_derivation_path_t*)"", path_len, (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_secure_key_handler_get_last_error(secure_key_handler), "bip32 failure");
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
 TEST(cardano_secure_key_handler_bip32_get_extended_account_public_key, returnsErrorIfGivenANullPtr)
 {
   // Arrange
@@ -492,6 +675,121 @@ TEST(cardano_secure_key_handler_ed25519_sign_transaction, returnsSuccessIfEd2551
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_ed25519_sign_sub_transaction, returnsErrorIfGivenANullPtr)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act & Assert
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(nullptr, (cardano_sub_transaction_t*)"", (cardano_vkey_witness_set_t**)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, nullptr, (cardano_vkey_witness_set_t**)""), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_ed25519_sign_sub_transaction, returnsErrorIfEd25519SignSubTransactionIsNotImplemented)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_empty_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_NOT_IMPLEMENTED);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_ed25519_sign_sub_transaction, returnsSuccessIfEd25519SignSubTransactionIsImplemented)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_ed25519_sign_sub_transaction, forwardsTheArgumentsToTheImplementation)
+{
+  // Arrange
+  static cardano_sub_transaction_t*   received_sub_tx      = nullptr;
+  static cardano_vkey_witness_set_t** received_witness_set = nullptr;
+
+  cardano_secure_key_handler_impl_t impl = cardano_secure_key_handler_impl_new();
+
+  impl.ed25519_sign_sub_transaction = [](
+                                        cardano_secure_key_handler_impl_t*,
+                                        cardano_sub_transaction_t*   sub_tx,
+                                        cardano_vkey_witness_set_t** vkey_witness_set) -> cardano_error_t
+  {
+    received_sub_tx      = sub_tx;
+    received_witness_set = vkey_witness_set;
+
+    return CARDANO_SUCCESS;
+  };
+
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+  cardano_sub_transaction_t*    sub_tx             = (cardano_sub_transaction_t*)"";
+  cardano_vkey_witness_set_t*   witness_set        = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(impl, &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, sub_tx, &witness_set);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(received_sub_tx, sub_tx);
+  EXPECT_EQ(received_witness_set, &witness_set);
+
+  // Cleanup
+  cardano_secure_key_handler_unref(&secure_key_handler);
+}
+
+TEST(cardano_secure_key_handler_ed25519_sign_sub_transaction, setsTheLastErrorIfTheImplementationFails)
+{
+  // Arrange
+  cardano_secure_key_handler_t* secure_key_handler = nullptr;
+
+  cardano_error_t error = cardano_secure_key_handler_new(cardano_failing_sub_transaction_secure_key_handler_impl_new(), &secure_key_handler);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_secure_key_handler_ed25519_sign_sub_transaction(secure_key_handler, (cardano_sub_transaction_t*)"", (cardano_vkey_witness_set_t**)"");
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_secure_key_handler_get_last_error(secure_key_handler), "ed25519 failure");
 
   // Cleanup
   cardano_secure_key_handler_unref(&secure_key_handler);
