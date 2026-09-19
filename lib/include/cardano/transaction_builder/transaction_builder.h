@@ -1483,9 +1483,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * transaction.
  *
  * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
- * redeemers and, when reference scripts are priced (a redeemer exists in the batch), the reference scripts of their
- * resolved reference inputs, counted once per sub transaction that references them, as the ledger does when it measures
- * the reference script size of a batch. Including them in the fee is deliberate and may exceed the current ledger
+ * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved
+ * reference inputs, counted once per sub transaction that references them, as the ledger does when it measures the
+ * reference script size of a batch. Including them in the fee is deliberate and may exceed the current ledger
  * minimum, which does not charge for the reference scripts of sub transactions yet. When a sub transaction carries
  * redeemers the transaction posts the collateral, even if it runs no script itself, so the collateral change address
  * and the collateral UTXOs must be set before building. The scripts of the sub transactions are not evaluated, the
@@ -1501,9 +1501,10 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
  * \param[in] resolved_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs behind the inputs of the sub
  *                           transaction. It must resolve every input the sub transaction spends, since their value
- *                           takes part in the value conservation of the batch. It may also resolve its reference
- *                           inputs, which carry the reference scripts the fee accounts for when reference scripts
- *                           are priced; reference inputs that are not resolved are skipped.
+ *                           takes part in the value conservation of the batch and the reference scripts they carry
+ *                           are priced in the fee. It may also resolve its reference inputs, which carry the
+ *                           reference scripts the fee accounts for; reference inputs that are not resolved are
+ *                           skipped.
  *
  * Usage Example:
  * \code{.c}

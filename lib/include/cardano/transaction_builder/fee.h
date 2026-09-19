@@ -46,23 +46,27 @@ extern "C" {
  * the resolved inputs and protocol parameters. The calculated fee considers factors such as the transaction
  * size, execution units consumed by plutus scripts and size of included reference scripts.
  *
+ * Reference scripts are always priced, whatever their language and whether or not the transaction has redeemers: the
+ * ledger charges for every reference script found on the outputs behind the reference inputs and the spend inputs of a
+ * transaction, even if the script never runs. \p resolved_ref_inputs must therefore resolve both kinds of inputs.
+ *
  * A transaction that carries sub transactions pays the fee of the whole batch. The size of the sub transactions is part
  * of the size of the transaction, and the execution units of the redeemers of every sub transaction are added to the ones
- * of the transaction. Reference scripts are only priced when a redeemer exists in the batch. When they are, the ones of the
- * sub transactions are included if their resolved reference inputs are given in \p resolved_ref_inputs. Including them is
- * deliberate and may exceed the current ledger minimum, which does not charge for the reference scripts of sub
- * transactions yet.
+ * of the transaction. The reference scripts of the sub transactions are included if the resolved UTXOs of their reference
+ * inputs and spend inputs are given in \p resolved_ref_inputs. Including them is deliberate and may exceed the current
+ * ledger minimum, which does not charge for the reference scripts of sub transactions yet.
  *
  * \param[in] transaction The pointer to the \ref cardano_transaction_t object representing the transaction.
- * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing the resolved UTXOs that will be referenced by the transaction
- *                                and by its sub transactions. Every entry is priced, so a UTXO referenced by several bodies must be listed once per body.
+ * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing every resolved UTXO whose reference script is priced: the ones behind
+ *                                the reference inputs and the spend inputs of the transaction and of its sub transactions. Every entry is priced, so a UTXO
+ *                                that a body both references and spends must be listed once, and a UTXO used by several bodies once per body.
  * \param[in] protocol_params The pointer to the \ref cardano_protocol_parameters_t structure that contains protocol-related parameters for fee calculation.
  * \param[out] fee A pointer to a uint64_t that will hold the computed transaction fee upon success.
  *
  * \return \ref CARDANO_SUCCESS if the fee was successfully computed, or an appropriate error code indicating failure.
  *
  * \note The transaction size and the execution unit requirements for Plutus scripts influence the final fee.
- *       Ensure that the resolved reference inputs match the reference inputs specified in the transaction to compute accurate fees.
+ *       Ensure that the resolved UTXOs match the reference inputs and the spend inputs specified in the transaction to compute accurate fees.
  *
  * Usage Example:
  * \code{.c}
@@ -144,21 +148,24 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * redeemers of the witness set of every sub transaction it carries, since the transaction that carries the sub
  * transactions pays for their script execution. A transaction without sub transactions only accounts for its own redeemers.
  *
- * Reference scripts are only priced when at least one redeemer exists in the batch, otherwise the computed fee is zero. When
- * they are priced, the reference scripts of the sub transactions resolved in \p resolved_reference_inputs are included. This
- * is deliberate and may exceed the current ledger minimum, which does not charge for the reference scripts of sub
- * transactions yet.
+ * Reference scripts are always priced, whatever their language: when the batch has no redeemers the execution unit part of
+ * the fee is zero and the computed fee is the reference script fee alone. The reference scripts of the sub transactions
+ * resolved in \p resolved_reference_inputs are included. This is deliberate and may exceed the current ledger minimum, which
+ * does not charge for the reference scripts of sub transactions yet.
  *
  * \param[in] tx The pointer to the \ref cardano_transaction_t object representing the transaction for which the script fee is being calculated.
  * \param[in] prices The pointer to the \ref cardano_ex_unit_prices_t object containing the prices for execution units (memory and steps).
- * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object representing the resolved UTXOs that the reference inputs of the transaction
- *                                      and of its sub transactions are using.
+ * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object holding every resolved UTXO whose reference script is priced: the ones
+ *                                      behind the reference inputs and the spend inputs of the transaction and of its sub transactions. Every entry
+ *                                      is priced, so a UTXO that a body both references and spends must be listed once, and a UTXO used by several
+ *                                      bodies once per body.
  * \param[in] coins_per_ref_script_byte The pointer to the \ref cardano_unit_interval_t object representing the cost per byte of reference scripts.
  * \param[out] min_fee A pointer to a uint64_t where the calculated minimum fee for the transaction will be stored.
  *
  * \return \ref CARDANO_SUCCESS if the minimum script fee was successfully computed, or an appropriate error code indicating failure.
  *
- * \note The calculated fee ensures that the transaction covers the costs for all the Plutus scripts included, based on their execution requirements and the size of any reference scripts used.
+ * \note The calculated fee ensures that the transaction covers the costs for all the Plutus scripts included, based on their execution requirements, and the size of every reference
+ *       script reachable from its inputs.
  *
  * Usage Example:
  * \code{.c}
@@ -234,15 +241,22 @@ cardano_compute_min_fee_without_scripts(
  *
  * This function calculates the fee component that is contributed by reference scripts on the inputs of a transaction.
  * The fee is computed based on the size of the reference scripts and the protocol parameter `coins_per_ref_script_byte`.
+ * The total size is priced in tiers of 25600 bytes, and every tier costs 1.2 times as much per byte as the previous one.
+ *
+ * The ledger charges for every reference script found on the outputs behind the reference inputs and the spend inputs of a
+ * transaction, whatever the language of the script (native scripts included) and whether or not the script runs. The size
+ * of each script is the one reported by \ref cardano_get_serialized_script_size, which documents how that size compares
+ * to the one the ledger prices.
  *
  * The total size is not distinct: every entry of the list is counted, so a reference script that appears in several entries
- * is priced once per entry. This matches how the ledger measures the reference script size of a batch, where a UTXO referenced
- * by the transaction and by one of its sub transactions counts twice. For the sub transactions the ledger only applies that
- * measure to the reference script size limit of the transaction and does not charge for their reference scripts yet.
- * Including them in the list is deliberate and may exceed the current ledger minimum.
+ * is priced once per entry. The ledger takes the inputs of a body as a set, so a UTXO that a body both references and
+ * spends must be listed once. Counting every entry matches how the ledger measures the reference script size of a batch, where
+ * a UTXO referenced by the transaction and by one of its sub transactions counts twice. For the sub transactions the ledger only
+ * applies that measure to the reference script size limit of the transaction and does not charge for their reference scripts
+ * yet. Including them in the list is deliberate and may exceed the current ledger minimum.
  *
- * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object representing the resolved reference inputs of the transaction,
- *                            which may include reference scripts.
+ * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object holding every resolved UTXO whose reference script is priced: the
+ *                            ones behind the reference inputs and the spend inputs of the transaction. Entries without a reference script add nothing.
  * \param[in] coins_per_ref_script_byte The fee cost per byte of reference script data, as defined by the protocol parameters.
  * \param[out] script_ref_fee A pointer to a uint64_t where the computed reference script fee will be stored.
  *
@@ -367,7 +381,18 @@ cardano_get_serialized_output_size(cardano_transaction_output_t* output, size_t*
 /**
  * \brief Computes the serialized size of a given script.
  *
- * This function calculates the size in bytes required to serialize a given script.
+ * This function calculates the size in bytes required to serialize a given script. The size is the one of the two element
+ * array that holds the language tag followed by the script, as a script reference carries it: the CBOR of the native
+ * script, or the byte string with the bytes of the Plutus script. The script is encoded again from its fields, it is not
+ * measured from the bytes it was stored with on chain.
+ *
+ * The ledger prices the size of the script alone: the bytes inside the byte string for a Plutus script, and the bytes the
+ * script was stored with on chain for a native script. The size computed here is a few bytes larger than that for a Plutus
+ * script and for a native script in the encoding this library produces, so a fee computed from it covers what the ledger
+ * charges for those scripts. A native script that was stored on chain with a longer, non minimal encoding (for example a
+ * slot written as an 8 byte integer) can be measured smaller than the ledger measures it, because this library does not keep the
+ * original bytes of a native script and encodes its integers with the minimal length. A fee computed from the size of such
+ * a script can be lower than the minimum the ledger requires for it.
  *
  * \param[in] script A pointer to the \ref cardano_script_t object for which the serialized size is to be calculated.
  * \param[out] size_in_bytes A pointer to a \c size_t where the size of the serialized script in bytes will be stored.

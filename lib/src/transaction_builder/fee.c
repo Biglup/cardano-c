@@ -59,10 +59,9 @@ max(const double a, const double b)
 /**
  * \brief Adds the execution units of the redeemers of a witness set to a running total.
  *
- * \param[in]     witness_set    The witness set whose redeemers are added.
- * \param[in,out] cpu_steps      The running total of CPU steps.
- * \param[in,out] memory         The running total of memory units.
- * \param[in,out] redeemer_count The running count of redeemers.
+ * \param[in]     witness_set The witness set whose redeemers are added.
+ * \param[in,out] cpu_steps   The running total of CPU steps.
+ * \param[in,out] memory      The running total of memory units.
  *
  * \return \ref CARDANO_SUCCESS if the execution units were added, or an appropriate error code.
  */
@@ -70,15 +69,12 @@ static cardano_error_t
 add_witness_set_ex_units(
   cardano_witness_set_t* witness_set,
   uint64_t*              cpu_steps,
-  uint64_t*              memory,
-  size_t*                redeemer_count)
+  uint64_t*              memory)
 {
   cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
   cardano_redeemer_list_unref(&redeemers);
 
-  const size_t num_redeemers = cardano_redeemer_list_get_length(redeemers);
-
-  if (num_redeemers == 0U)
+  if (cardano_redeemer_list_get_length(redeemers) == 0U)
   {
     return CARDANO_SUCCESS;
   }
@@ -92,9 +88,8 @@ add_witness_set_ex_units(
     return result;
   }
 
-  *cpu_steps      += cardano_ex_units_get_cpu_steps(total_ex_units);
-  *memory         += cardano_ex_units_get_memory(total_ex_units);
-  *redeemer_count += num_redeemers;
+  *cpu_steps += cardano_ex_units_get_cpu_steps(total_ex_units);
+  *memory    += cardano_ex_units_get_memory(total_ex_units);
 
   cardano_ex_units_unref(&total_ex_units);
 
@@ -107,10 +102,9 @@ add_witness_set_ex_units(
  * The transaction that carries sub transactions pays for the script execution of the whole batch, so the execution
  * units of the redeemers of its witness set are added to the ones of the witness set of every sub transaction.
  *
- * \param[in]  tx             The transaction.
- * \param[out] cpu_steps      The total CPU steps of the batch.
- * \param[out] memory         The total memory units of the batch.
- * \param[out] redeemer_count The number of redeemers in the batch.
+ * \param[in]  tx        The transaction.
+ * \param[out] cpu_steps The total CPU steps of the batch, zero when the batch has no redeemers.
+ * \param[out] memory    The total memory units of the batch, zero when the batch has no redeemers.
  *
  * \return \ref CARDANO_SUCCESS if the execution units were computed, or an appropriate error code.
  */
@@ -118,17 +112,15 @@ static cardano_error_t
 get_batch_ex_units(
   cardano_transaction_t* tx,
   uint64_t*              cpu_steps,
-  uint64_t*              memory,
-  size_t*                redeemer_count)
+  uint64_t*              memory)
 {
-  *cpu_steps      = 0U;
-  *memory         = 0U;
-  *redeemer_count = 0U;
+  *cpu_steps = 0U;
+  *memory    = 0U;
 
   cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
   cardano_witness_set_unref(&witness_set);
 
-  cardano_error_t result = add_witness_set_ex_units(witness_set, cpu_steps, memory, redeemer_count);
+  cardano_error_t result = add_witness_set_ex_units(witness_set, cpu_steps, memory);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -158,7 +150,7 @@ get_batch_ex_units(
     cardano_witness_set_t* sub_tx_witness_set = cardano_sub_transaction_get_witness_set(sub_tx);
     cardano_witness_set_unref(&sub_tx_witness_set);
 
-    result = add_witness_set_ex_units(sub_tx_witness_set, cpu_steps, memory, redeemer_count);
+    result = add_witness_set_ex_units(sub_tx_witness_set, cpu_steps, memory);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -433,22 +425,6 @@ cardano_compute_script_ref_fee(
       continue;
     }
 
-    cardano_script_language_t language;
-
-    result = cardano_script_get_language(script, &language);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      *script_ref_fee = 0U;
-
-      return result;
-    }
-
-    if (language == CARDANO_SCRIPT_LANGUAGE_NATIVE)
-    {
-      continue;
-    }
-
     size_t script_size = 0U;
 
     result = cardano_get_serialized_script_size(script, &script_size);
@@ -513,22 +489,14 @@ cardano_compute_min_script_fee(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  uint64_t cpu_steps      = 0U;
-  uint64_t memory         = 0U;
-  size_t   redeemer_count = 0U;
+  uint64_t cpu_steps = 0U;
+  uint64_t memory    = 0U;
 
-  cardano_error_t result = get_batch_ex_units(tx, &cpu_steps, &memory, &redeemer_count);
+  cardano_error_t result = get_batch_ex_units(tx, &cpu_steps, &memory);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
-  }
-
-  if (redeemer_count == 0U)
-  {
-    *min_fee = 0U;
-
-    return CARDANO_SUCCESS;
   }
 
   cardano_unit_interval_t* cpu_steps_prices = NULL;
