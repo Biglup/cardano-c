@@ -30,11 +30,23 @@
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 
 #include <allocators.h>
+#include <cardano/address/enterprise_address.h>
+#include <cardano/common/credential.h>
+#include <cardano/crypto/ed25519_private_key.h>
+#include <cardano/crypto/ed25519_public_key.h>
+#include <cardano/crypto/ed25519_signature.h>
+#include <cardano/scripts/native_scripts/native_script.h>
+#include <cardano/scripts/native_scripts/script_pubkey.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 #include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 #include <cardano/transaction_builder/fee.h>
+#include <cardano/witness_set/native_script_set.h>
 #include <cardano/witness_set/redeemer.h>
+#include <cardano/witness_set/vkey_witness.h>
+#include <cardano/witness_set/vkey_witness_set.h>
 #include <gmock/gmock.h>
+
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -62,6 +74,45 @@ static const char* REF_SCRIPT_V4_UTXO  = "82825820bb287abaca60fc0ca68c1555eca6a9
 static const char* REF_SCRIPT_NATIVE   = "82825820bb277abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e003a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d818582282008200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
 static const char* BATCH_CHANGE_ADDR   = "addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk";
 static const char* LEGACY_MODE_ERROR   = "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.";
+
+/**
+ * \brief Signing key seeds of the owners of the UTXOs spent by the transactions that get signed. They are the public
+ * RFC 8032 test vectors, known to everyone, and must never hold funds.
+ */
+static const char* FIRST_SIGNER_KEY_HEX  = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
+static const char* SECOND_SIGNER_KEY_HEX = "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb";
+static const char* THIRD_SIGNER_KEY_HEX  = "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7";
+
+/**
+ * \brief Hash of the script that controls the UTXO spent by the transaction that nobody signs.
+ */
+static const char* SCRIPT_HASH_HEX = "b275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
+
+/**
+ * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee. The estimate of the VK
+ * witnesses is exact, so the bound only leaves room for an amount that takes fewer bytes once the fee converges.
+ */
+static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
+
+/**
+ * \brief Size in bytes of the tag and the list header of a VK witness set. The fee always reserves them, so they are
+ * paid on top of the minimum fee when signing does not add them: nobody signs, or the witness set already holds VK
+ * witnesses.
+ */
+static const int64_t VKEY_WITNESS_SET_HEADER_SIZE = 4;
+
+/* STRUCTURES ****************************************************************/
+
+/**
+ * \brief The owner of a UTXO: the key it signs with and the enterprise address that key controls.
+ */
+struct signer_t
+{
+    cardano_ed25519_private_key_t* private_key;
+    cardano_ed25519_public_key_t*  public_key;
+    cardano_blake2b_hash_t*        key_hash;
+    cardano_address_t*             address;
+};
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -1169,6 +1220,288 @@ add_plutus_script(cardano_transaction_t* tx, const cardano_script_language_t lan
   }
 
   cardano_witness_set_unref(&witness_set);
+}
+
+/**
+ * Creates a signer from its private key. The signer controls the enterprise address of its key hash.
+ * \param private_key_hex the Ed25519 private key of the signer.
+ * \return The new signer. The caller must release it with \ref free_signer.
+ */
+static signer_t
+new_signer(const char* private_key_hex)
+{
+  signer_t signer = { NULL, NULL, NULL, NULL };
+
+  cardano_credential_t*         credential         = NULL;
+  cardano_enterprise_address_t* enterprise_address = NULL;
+
+  EXPECT_EQ(cardano_ed25519_private_key_from_normal_hex(private_key_hex, strlen(private_key_hex), &signer.private_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_private_key_get_public_key(signer.private_key, &signer.public_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_public_key_to_hash(signer.public_key, &signer.key_hash), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_credential_new(signer.key_hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &enterprise_address), CARDANO_SUCCESS);
+
+  signer.address = cardano_enterprise_address_to_address(enterprise_address);
+
+  cardano_credential_unref(&credential);
+  cardano_enterprise_address_unref(&enterprise_address);
+
+  return signer;
+}
+
+/**
+ * Releases everything a signer holds.
+ * \param signer the signer to release.
+ */
+static void
+free_signer(signer_t& signer)
+{
+  cardano_ed25519_private_key_unref(&signer.private_key);
+  cardano_ed25519_public_key_unref(&signer.public_key);
+  cardano_blake2b_hash_unref(&signer.key_hash);
+  cardano_address_unref(&signer.address);
+}
+
+/**
+ * Creates the enterprise address controlled by a script, which no key signs for.
+ * \param script_hash_hex the hash of the script.
+ * \return A new instance of the address.
+ */
+static cardano_address_t*
+new_script_address(const char* script_hash_hex)
+{
+  cardano_credential_t*         credential         = NULL;
+  cardano_enterprise_address_t* enterprise_address = NULL;
+
+  EXPECT_EQ(cardano_credential_from_hash_hex(script_hash_hex, strlen(script_hash_hex), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &enterprise_address), CARDANO_SUCCESS);
+
+  cardano_address_t* address = cardano_enterprise_address_to_address(enterprise_address);
+
+  cardano_credential_unref(&credential);
+  cardano_enterprise_address_unref(&enterprise_address);
+
+  return address;
+}
+
+/**
+ * Creates a UTXO that holds only lovelace.
+ * \param ordinal a number that makes the transaction id of the UTXO unique.
+ * \param address the address that owns the UTXO.
+ * \param coin the lovelace held by the UTXO.
+ * \return A new instance of the UTXO.
+ */
+static cardano_utxo_t*
+new_coin_utxo(const uint64_t ordinal, cardano_address_t* address, const int64_t coin)
+{
+  char hex[65] = { 0 };
+
+  EXPECT_EQ(snprintf(hex, sizeof(hex), "%064llx", (unsigned long long)ordinal), 64);
+
+  cardano_blake2b_hash_t*       id     = NULL;
+  cardano_transaction_input_t*  input  = NULL;
+  cardano_transaction_output_t* output = NULL;
+  cardano_utxo_t*               utxo   = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hex, 64, &id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_new(id, 0, &input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_new(address, (uint64_t)coin, &output), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_new(input, output, &utxo), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&id);
+  cardano_transaction_input_unref(&input);
+  cardano_transaction_output_unref(&output);
+
+  return utxo;
+}
+
+/**
+ * Creates the VK witness of a signer over a message.
+ * \param signer the signer that signs.
+ * \param message the hash to sign, a transaction id.
+ * \return A new instance of the VK witness.
+ */
+static cardano_vkey_witness_t*
+new_vkey_witness(const signer_t& signer, cardano_blake2b_hash_t* message)
+{
+  cardano_ed25519_signature_t* signature = NULL;
+  cardano_vkey_witness_t*      witness   = NULL;
+
+  EXPECT_EQ(cardano_ed25519_private_key_sign(signer.private_key, cardano_blake2b_hash_get_data(message), cardano_blake2b_hash_get_bytes_size(message), &signature), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_new(signer.public_key, signature, &witness), CARDANO_SUCCESS);
+
+  cardano_ed25519_signature_unref(&signature);
+
+  return witness;
+}
+
+/**
+ * Signs a transaction with the keys of the given signers and applies their VK witnesses to it.
+ * \param tx the transaction to sign.
+ * \param signers the signers of the transaction.
+ */
+static void
+sign_transaction(cardano_transaction_t* tx, const std::vector<const signer_t*>& signers)
+{
+  cardano_blake2b_hash_t*     tx_id     = cardano_transaction_get_id(tx);
+  cardano_vkey_witness_set_t* witnesses = NULL;
+
+  EXPECT_EQ(cardano_vkey_witness_set_new(&witnesses), CARDANO_SUCCESS);
+
+  for (const signer_t* signer: signers)
+  {
+    cardano_vkey_witness_t* witness = new_vkey_witness(*signer, tx_id);
+
+    EXPECT_EQ(cardano_vkey_witness_set_add(witnesses, witness), CARDANO_SUCCESS);
+
+    cardano_vkey_witness_unref(&witness);
+  }
+
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, witnesses), CARDANO_SUCCESS);
+
+  cardano_vkey_witness_set_unref(&witnesses);
+  cardano_blake2b_hash_unref(&tx_id);
+}
+
+/**
+ * Gets the number of VK witnesses held by the witness set of a transaction.
+ * \param tx the transaction.
+ * \return The number of VK witnesses.
+ */
+static size_t
+get_vkey_witness_count(cardano_transaction_t* tx)
+{
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_vkey_witness_set_t* witnesses   = cardano_witness_set_get_vkeys(witness_set);
+
+  const size_t count = cardano_vkey_witness_set_get_length(witnesses);
+
+  cardano_vkey_witness_set_unref(&witnesses);
+  cardano_witness_set_unref(&witness_set);
+
+  return count;
+}
+
+/**
+ * Adds to the witness set of a transaction a native script that requires the signature of a signer.
+ * \param tx the transaction.
+ * \param signer the signer the native script requires.
+ */
+static void
+add_native_script(cardano_transaction_t* tx, const signer_t& signer)
+{
+  cardano_witness_set_t*       witness_set   = cardano_transaction_get_witness_set(tx);
+  cardano_script_pubkey_t*     script_pubkey = NULL;
+  cardano_native_script_t*     script        = NULL;
+  cardano_native_script_set_t* scripts       = NULL;
+
+  EXPECT_EQ(cardano_script_pubkey_new(signer.key_hash, &script_pubkey), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_new_pubkey(script_pubkey, &script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_set_new(&scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_set_add(scripts, script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_set_native_scripts(witness_set, scripts), CARDANO_SUCCESS);
+
+  cardano_script_pubkey_unref(&script_pubkey);
+  cardano_native_script_unref(&script);
+  cardano_native_script_set_unref(&scripts);
+  cardano_witness_set_unref(&witness_set);
+}
+
+/**
+ * Adds to the witness set of a transaction the VK witness of a signer, as a transaction that was handed over already
+ * signed by another party carries it.
+ * \param tx the transaction.
+ * \param signer the signer whose VK witness is added.
+ */
+static void
+add_vkey_witness(cardano_transaction_t* tx, const signer_t& signer)
+{
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_blake2b_hash_t*     tx_id       = cardano_transaction_get_id(tx);
+  cardano_vkey_witness_t*     witness     = new_vkey_witness(signer, tx_id);
+  cardano_vkey_witness_set_t* witnesses   = NULL;
+
+  EXPECT_EQ(cardano_vkey_witness_set_new(&witnesses), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_set_add(witnesses, witness), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_set_vkeys(witness_set, witnesses), CARDANO_SUCCESS);
+
+  cardano_vkey_witness_set_unref(&witnesses);
+  cardano_vkey_witness_unref(&witness);
+  cardano_blake2b_hash_unref(&tx_id);
+  cardano_witness_set_unref(&witness_set);
+}
+
+/**
+ * Balances a transaction that expects no other signatures than the ones of the owners of the UTXOs it spends.
+ * \param tx the transaction to balance.
+ * \param protocol the protocol parameters.
+ * \param available_utxo the UTXOs coin selection may spend.
+ * \param change_address the address that receives the change.
+ * \return The result of balancing the transaction.
+ */
+static cardano_error_t
+balance_without_foreign_signatures(
+  cardano_transaction_t*         tx,
+  cardano_protocol_parameters_t* protocol,
+  cardano_utxo_list_t*           available_utxo,
+  cardano_address_t*             change_address)
+{
+  cardano_coin_selector_t* coin_selector    = NULL;
+  cardano_utxo_list_t*     reference_inputs = new_empty_utxo_list();
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    0,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    available_utxo,
+    coin_selector,
+    change_address,
+    NULL,
+    change_address,
+    NULL,
+    nullptr);
+
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_utxo_list_unref(&reference_inputs);
+
+  return result;
+}
+
+/**
+ * Computes how much the fee of a transaction exceeds the minimum fee the ledger asks for the transaction as it is,
+ * which is only the minimum fee the ledger enforces once the transaction carries all its signatures.
+ * \param tx the transaction.
+ * \param protocol the protocol parameters.
+ * \param resolved_inputs the UTXOs that resolve the inputs of the transaction.
+ * \return The fee excess in lovelace, negative if the fee is below the minimum fee.
+ */
+static int64_t
+get_fee_excess(cardano_transaction_t* tx, cardano_protocol_parameters_t* protocol, cardano_utxo_list_t* resolved_inputs)
+{
+  uint64_t min_fee = 0U;
+
+  EXPECT_EQ(cardano_compute_transaction_fee(tx, resolved_inputs, protocol, &min_fee), CARDANO_SUCCESS);
+
+  return (int64_t)get_fee(tx) - (int64_t)min_fee;
+}
+
+/**
+ * Computes the fee the ledger asks for a number of bytes of transaction.
+ * \param protocol the protocol parameters.
+ * \param bytes the number of bytes.
+ * \return The fee in lovelace.
+ */
+static int64_t
+get_fee_of_bytes(cardano_protocol_parameters_t* protocol, const int64_t bytes)
+{
+  return bytes * (int64_t)cardano_protocol_parameters_get_min_fee_a(protocol);
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -2856,6 +3189,160 @@ TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailureForABatch
   cardano_utxo_list_unref(&sub_tx_ref_inputs);
   cardano_coin_selector_unref(&coin_selector);
   cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOneSigner)
+{
+  // Arrange
+  cardano_transaction_t*         tx       = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol = init_protocol_parameters();
+  signer_t                       signer   = new_signer(FIRST_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo     = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos    = new_utxo_list_of(utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 1U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithTwoSigners)
+{
+  // Arrange
+  cardano_transaction_t*         tx          = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol    = init_protocol_parameters();
+  signer_t                       first       = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       second      = new_signer(SECOND_SIGNER_KEY_HEX);
+  cardano_utxo_t*                first_utxo  = new_coin_utxo(1U, first.address, 4000000);
+  cardano_utxo_t*                second_utxo = new_coin_utxo(2U, second.address, 4000000);
+  cardano_utxo_list_t*           utxos       = new_utxo_list_of(first_utxo, second_utxo);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, first.address);
+
+  sign_transaction(tx, { &first, &second });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(transaction_spends(tx, first_utxo));
+  EXPECT_TRUE(transaction_spends(tx, second_utxo));
+  EXPECT_EQ(get_vkey_witness_count(tx), 2U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&first_utxo);
+  cardano_utxo_unref(&second_utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(first);
+  free_signer(second);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionIfTheWitnessSetHoldsANativeScript)
+{
+  // Arrange
+  cardano_transaction_t*         tx       = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol = init_protocol_parameters();
+  signer_t                       signer   = new_signer(FIRST_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo     = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos    = new_utxo_list_of(utxo, NULL);
+
+  add_native_script(tx, signer);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 1U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+}
+
+TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheTransactionHasNoSigners)
+{
+  // Arrange
+  cardano_transaction_t*         tx             = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol       = init_protocol_parameters();
+  cardano_address_t*             script_address = new_script_address(SCRIPT_HASH_HEX);
+  cardano_utxo_t*                utxo           = new_coin_utxo(1U, script_address, 20000000);
+  cardano_utxo_list_t*           utxos          = new_utxo_list_of(utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, script_address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 0U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), get_fee_of_bytes(protocol, VKEY_WITNESS_SET_HEADER_SIZE));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_address_unref(&script_address);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheWitnessSetAlreadyHoldsVkeyWitnesses)
+{
+  // Arrange
+  cardano_transaction_t*         tx             = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol       = init_protocol_parameters();
+  signer_t                       signer         = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       foreign_signer = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo           = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos          = new_utxo_list_of(utxo, NULL);
+
+  add_vkey_witness(tx, foreign_signer);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 2U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), get_fee_of_bytes(protocol, VKEY_WITNESS_SET_HEADER_SIZE));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+  free_signer(foreign_signer);
 }
 
 TEST(cardano_is_transaction_balanced, returnsTrueIfTheTransactionIsBalanced)

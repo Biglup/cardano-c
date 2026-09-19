@@ -104,6 +104,11 @@ static const int64_t MAX_BATCH_FEE = 1000000;
  */
 static const int64_t MAX_CHANGE_COST = 2000000;
 
+/**
+ * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee.
+ */
+static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
+
 static const size_t TOKEN           = 0U;
 static const size_t ASSET_POOL_SIZE = 3U;
 
@@ -936,17 +941,43 @@ read_top_level_flows(cardano_transaction_t* tx, const party_t& party, amounts_t&
 }
 
 /**
+ * Expects the fee of a signed transaction to pay for the transaction as it is submitted. The ledger computes the
+ * minimum fee over the signed bytes, so the fee set while the transaction was still unsigned must already cover the
+ * witnesses added on signing, without exceeding that minimum fee by more than a few bytes of fee.
+ * \param params the protocol parameters.
+ * \param tx the signed transaction.
+ * \param all_utxos the UTXOs that resolve every input of the transaction.
+ */
+static void
+expect_fee_covers_signed_transaction(
+  cardano_protocol_parameters_t* params,
+  cardano_transaction_t*         tx,
+  cardano_utxo_list_t*           all_utxos)
+{
+  uint64_t signed_min_fee = 0U;
+
+  EXPECT_EQ(cardano_compute_transaction_fee(tx, all_utxos, params, &signed_min_fee), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  const int64_t fee_excess = (int64_t)cardano_transaction_body_get_fee(body) - (int64_t)signed_min_fee;
+
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, MAX_FEE_EXCESS_IN_BYTES * (int64_t)cardano_protocol_parameters_get_min_fee_a(params));
+}
+
+/**
  * Expects a transaction built and signed by a batcher to be a valid settlement of the intents it carries: the batch is
- * balanced, both as built and once decoded from its bytes, the fee pays for more than the size of the batch before the
- * batcher signs, the sub transactions are carried exactly as they were signed, the batcher guards the transaction as
- * the intents require, the transaction round trips byte exact, and the batcher pays the fee plus the given
- * contribution out of its own UTXOs and nothing else.
+ * balanced, both as built and once decoded from its bytes, the fee pays for the size of the batch once the batcher has
+ * signed it, the sub transactions are carried exactly as they were signed, the batcher guards the transaction as the
+ * intents require, the transaction round trips byte exact, and the batcher pays the fee plus the given contribution
+ * out of its own UTXOs and nothing else.
  * \param params the protocol parameters.
  * \param tx the transaction built and signed by the batcher.
  * \param all_utxos the UTXOs that resolve every input of the batch.
  * \param batcher the batcher that built and signed the transaction.
  * \param intents the signed intents the batcher added to the transaction.
- * \param unsigned_min_fee the minimum fee of the transaction before the batcher signed it.
  * \param batcher_contribution the value the batcher is expected to put into the settlement on top of the fee, negative
  *                             amounts are what the batcher takes out of it.
  */
@@ -957,7 +988,6 @@ expect_valid_settlement(
   cardano_utxo_list_t*                all_utxos,
   const party_t&                      batcher,
   const std::vector<signed_intent_t>& intents,
-  const uint64_t                      unsigned_min_fee,
   const amounts_t&                    batcher_contribution)
 {
   bool             is_balanced     = false;
@@ -974,7 +1004,7 @@ expect_valid_settlement(
 
   const int64_t fee = (int64_t)cardano_transaction_body_get_fee(body);
 
-  EXPECT_GT(fee, (int64_t)unsigned_min_fee);
+  expect_fee_covers_signed_transaction(params, tx, all_utxos);
 
   EXPECT_EQ(cardano_sub_transaction_set_get_length(get_sub_transactions(tx)), intents.size());
 
@@ -1091,17 +1121,13 @@ expect_settlement(
 
   ASSERT_EQ(cardano_tx_builder_build(tx_builder, &tx), CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
 
-  uint64_t unsigned_min_fee = 0U;
-
-  EXPECT_EQ(cardano_compute_transaction_fee(tx, all_utxos, params, &unsigned_min_fee), CARDANO_SUCCESS);
-
   cardano_blake2b_hash_t*     tx_id             = cardano_transaction_get_id(tx);
   cardano_vkey_witness_set_t* batcher_witnesses = sign_with_party(batcher, tx_id);
 
   EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
 
   // Assert
-  expect_valid_settlement(params, tx, all_utxos, batcher, intents, unsigned_min_fee, batcher_contribution);
+  expect_valid_settlement(params, tx, all_utxos, batcher, intents, batcher_contribution);
 
   cardano_value_t* top_level_imbalance = NULL;
 
@@ -1311,17 +1337,13 @@ TEST(cardano_batch_settlement, settlesAnIntentHandedOverAsBytesThatDepositsRegis
 
   ASSERT_EQ(cardano_tx_builder_build(tx_builder, &tx), CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
 
-  uint64_t unsigned_min_fee = 0U;
-
-  EXPECT_EQ(cardano_compute_transaction_fee(tx, all_utxos, params, &unsigned_min_fee), CARDANO_SUCCESS);
-
   cardano_blake2b_hash_t*     tx_id             = cardano_transaction_get_id(tx);
   cardano_vkey_witness_set_t* batcher_witnesses = sign_with_party(batcher, tx_id);
 
   EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
 
   // Assert
-  expect_valid_settlement(params, tx, all_utxos, batcher, intents, unsigned_min_fee, amounts_t(1800000, 0));
+  expect_valid_settlement(params, tx, all_utxos, batcher, intents, amounts_t(1800000, 0));
 
   cardano_value_t* top_level_imbalance = NULL;
 
@@ -1496,6 +1518,15 @@ TEST(cardano_batch_settlement_properties, randomIntentsBuildIntoABalancedBatchOr
         EXPECT_EQ(spent.assets[i] - received.assets[i], -net_intent.assets[i]);
       }
 
+      cardano_blake2b_hash_t*     tx_id             = cardano_transaction_get_id(tx);
+      cardano_vkey_witness_set_t* batcher_witnesses = sign_with_party(batcher, tx_id);
+
+      EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
+
+      expect_fee_covers_signed_transaction(params, tx, all_utxos);
+
+      cardano_vkey_witness_set_unref(&batcher_witnesses);
+      cardano_blake2b_hash_unref(&tx_id);
       cardano_value_unref(&batch_imbalance);
     }
     else
