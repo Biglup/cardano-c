@@ -865,41 +865,238 @@ is_legacy_mode_transaction(
 }
 
 /**
- * \brief Creates the list of resolved reference inputs whose reference scripts the fee includes when they are priced.
+ * \brief Adds to a list the UTXOs of another list whose input the list does not hold yet.
  *
- * The top level transaction pays the fee of the whole batch, so the reference scripts of its own reference inputs are
- * priced together with the ones of the reference inputs of every sub transaction. The list is not distinct: a UTXO
- * referenced by several bodies is listed, and priced, once per body. This list must only be used to price reference
- * scripts, the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top
- * level transaction.
+ * \param[in,out] list  The list that receives the UTXOs.
+ * \param[in]     utxos The UTXOs to add, or NULL when there are none.
  *
- * \param[in]  reference_inputs                 The resolved reference inputs of the top level transaction.
+ * \return \ref CARDANO_SUCCESS if the UTXOs were added, or an appropriate error code.
+ */
+static cardano_error_t
+add_utxos_with_new_inputs(cardano_utxo_list_t* list, cardano_utxo_list_t* utxos)
+{
+  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
+
+  for (size_t i = 0U; i < num_utxos; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+    cardano_transaction_input_unref(&input);
+
+    cardano_utxo_t* listed_utxo = cardano_utxo_list_find(list, find_utxo, (void*)input);
+    cardano_utxo_unref(&listed_utxo);
+
+    if (listed_utxo == NULL)
+    {
+      result = cardano_utxo_list_add(list, utxo);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds to a list the UTXOs of another list that are spent by a sub transaction of a set.
+ *
+ * \param[in,out] list             The list that receives the UTXOs.
+ * \param[in]     utxos            The UTXOs to add, or NULL when there are none.
+ * \param[in]     sub_transactions The sub transactions whose spend inputs are searched, or NULL when the body has none.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were added, or an appropriate error code.
+ */
+static cardano_error_t
+add_utxos_spent_by_sub_transactions(
+  cardano_utxo_list_t*           list,
+  cardano_utxo_list_t*           utxos,
+  cardano_sub_transaction_set_t* sub_transactions)
+{
+  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
+
+  for (size_t i = 0U; i < num_utxos; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+    cardano_transaction_input_unref(&input);
+
+    bool is_spent = false;
+
+    result = is_spent_by_sub_transactions(sub_transactions, input, &is_spent);
+
+    if ((result == CARDANO_SUCCESS) && is_spent)
+    {
+      result = cardano_utxo_list_add(list, utxo);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Creates the list of resolved UTXOs of the sub transactions whose reference scripts the fee includes.
+ *
+ * The top level transaction pays the fee of the whole batch, so the reference scripts reachable from its sub
+ * transactions are priced too: the ones of their resolved reference inputs and the ones that sit on the UTXOs they
+ * spend. The reference inputs are not distinct: a UTXO referenced by several sub transactions is listed, and priced,
+ * once per sub transaction. Including them is deliberate and may exceed the current ledger minimum, which does not
+ * charge for the reference scripts of sub transactions yet. This list must only be used to price reference scripts,
+ * the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top level
+ * transaction.
+ *
+ * \param[in]  sub_transactions                 The sub transactions carried by the transaction, or NULL when it has none.
  * \param[in]  sub_transaction_reference_inputs The resolved reference inputs of the sub transactions, or NULL when
  *                                              there are none.
- * \param[out] priced_reference_inputs          A pointer to store the list, which is \p reference_inputs itself when
- *                                              the sub transactions have no resolved reference inputs.
+ * \param[in]  sub_transaction_resolved_inputs  The resolved inputs spent by the sub transactions, or NULL when the
+ *                                              transaction carries none. UTXOs that no sub transaction spends are
+ *                                              left out.
+ * \param[out] priced_inputs                    A pointer to store the list.
  *
  * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
  *
- * \note The caller is responsible for freeing `priced_reference_inputs` when it is no longer needed.
+ * \note The caller is responsible for freeing `priced_inputs` when it is no longer needed.
  */
 static cardano_error_t
-get_priced_reference_inputs(
-  cardano_utxo_list_t*  reference_inputs,
-  cardano_utxo_list_t*  sub_transaction_reference_inputs,
-  cardano_utxo_list_t** priced_reference_inputs)
+get_sub_transaction_priced_inputs(
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_utxo_list_t*           sub_transaction_reference_inputs,
+  cardano_utxo_list_t*           sub_transaction_resolved_inputs,
+  cardano_utxo_list_t**          priced_inputs)
 {
-  if ((reference_inputs == NULL) || (cardano_utxo_list_get_length(sub_transaction_reference_inputs) == 0U))
+  cardano_utxo_list_t* priced_list = NULL;
+
+  if (sub_transaction_reference_inputs == NULL)
   {
-    cardano_utxo_list_ref(reference_inputs);
-    *priced_reference_inputs = reference_inputs;
+    const cardano_error_t new_result = cardano_utxo_list_new(&priced_list);
+
+    if (new_result != CARDANO_SUCCESS)
+    {
+      return new_result;
+    }
+  }
+  else
+  {
+    priced_list = cardano_utxo_list_clone(sub_transaction_reference_inputs);
+
+    if (priced_list == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+  }
+
+  const cardano_error_t result = add_utxos_spent_by_sub_transactions(priced_list, sub_transaction_resolved_inputs, sub_transactions);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&priced_list);
+
+    return result;
+  }
+
+  *priced_inputs = priced_list;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Creates the list of resolved UTXOs whose reference scripts the fee of a balancing iteration includes.
+ *
+ * The ledger charges for every reference script found on the outputs behind the reference inputs and the spend
+ * inputs of a transaction, whatever its language and whether or not it runs. The inputs are taken as a set, so a UTXO
+ * that is both referenced and spent is priced once, while the same script sitting on two different UTXOs is priced
+ * twice. The spend inputs change with every coin selection, so the list is created again on every iteration. The
+ * priced UTXOs of the sub transactions are appended as they are.
+ *
+ * \param[in]  reference_inputs              The resolved reference inputs of the top level transaction.
+ * \param[in]  pre_selected_utxo             The UTXOs that must be included in the transaction inputs, or NULL when
+ *                                           there are none.
+ * \param[in]  selection                     The UTXOs spent by the transaction on this iteration.
+ * \param[in]  sub_transaction_priced_inputs The priced UTXOs of the sub transactions.
+ * \param[out] priced_inputs                 A pointer to store the list.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `priced_inputs` when it is no longer needed.
+ */
+static cardano_error_t
+get_priced_inputs(
+  cardano_utxo_list_t*  reference_inputs,
+  cardano_utxo_list_t*  pre_selected_utxo,
+  cardano_utxo_list_t*  selection,
+  cardano_utxo_list_t*  sub_transaction_priced_inputs,
+  cardano_utxo_list_t** priced_inputs)
+{
+  if (reference_inputs == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_utxo_list_t* top_level_inputs = NULL;
+
+  cardano_error_t result = cardano_utxo_list_new(&top_level_inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_utxos_with_new_inputs(top_level_inputs, reference_inputs);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxos_with_new_inputs(top_level_inputs, pre_selected_utxo);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxos_with_new_inputs(top_level_inputs, selection);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&top_level_inputs);
+
+    return result;
+  }
+
+  if (cardano_utxo_list_get_length(sub_transaction_priced_inputs) == 0U)
+  {
+    *priced_inputs = top_level_inputs;
 
     return CARDANO_SUCCESS;
   }
 
-  *priced_reference_inputs = cardano_utxo_list_concat(reference_inputs, sub_transaction_reference_inputs);
+  *priced_inputs = cardano_utxo_list_concat(top_level_inputs, sub_transaction_priced_inputs);
 
-  if (*priced_reference_inputs == NULL)
+  cardano_utxo_list_unref(&top_level_inputs);
+
+  if (*priced_inputs == NULL)
   {
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
@@ -1193,9 +1390,8 @@ compute_vk_witnesses_cost(
  * \param[in]     foreign_signature_count         The number of expected extra signatures, not specified in the transaction.
  * \param[in]     protocol_params                 The protocol parameters.
  * \param[in]     reference_inputs                The resolved reference inputs of the transaction.
- * \param[in]     priced_reference_inputs         The resolved reference inputs whose reference scripts the fee includes
- *                                                when they are priced: the ones of the transaction and the ones of its
- *                                                sub transactions.
+ * \param[in]     sub_transaction_priced_inputs   The resolved UTXOs of the sub transactions whose reference scripts the
+ *                                                fee includes.
  * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
  * \param[in]     sub_transaction_resolved_inputs The resolved inputs spent by the sub transactions, or NULL when the
  *                                                transaction carries none.
@@ -1218,7 +1414,7 @@ balance_transaction(
   const size_t                      foreign_signature_count,
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
-  cardano_utxo_list_t*              priced_reference_inputs,
+  cardano_utxo_list_t*              sub_transaction_priced_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
   cardano_utxo_list_t*              sub_transaction_resolved_inputs,
   cardano_value_t*                  sub_transactions_imbalance,
@@ -1569,7 +1765,24 @@ balance_transaction(
       return result;
     }
 
-    result = cardano_compute_transaction_fee(unbalanced_tx, priced_reference_inputs, protocol_params, &computed_fee);
+    cardano_utxo_list_t* priced_inputs = NULL;
+
+    result = get_priced_inputs(reference_inputs, pre_selected_utxo, selection, sub_transaction_priced_inputs, &priced_inputs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_utxo_list_unref(&resolved_inputs);
+      cardano_utxo_list_unref(&selection);
+      cardano_utxo_list_unref(&remaining_utxo);
+      cardano_blake2b_hash_set_unref(&unique_signers);
+
+      return result;
+    }
+
+    result = cardano_compute_transaction_fee(unbalanced_tx, priced_inputs, protocol_params, &computed_fee);
+
+    cardano_utxo_list_unref(&priced_inputs);
 
     const uint64_t signer_count      = foreign_signature_count + cardano_blake2b_hash_set_get_length(unique_signers);
     const int64_t  vk_witnesses_cost = compute_vk_witnesses_cost(witnesses, signer_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
@@ -1806,9 +2019,13 @@ cardano_balance_transaction(
     return result;
   }
 
-  cardano_utxo_list_t* priced_reference_inputs = NULL;
+  cardano_utxo_list_t* sub_transaction_priced_inputs = NULL;
 
-  result = get_priced_reference_inputs(reference_inputs, sub_transaction_reference_inputs, &priced_reference_inputs);
+  result = get_sub_transaction_priced_inputs(
+    sub_transactions,
+    sub_transaction_reference_inputs,
+    sub_transaction_resolved_inputs,
+    &sub_transaction_priced_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1823,7 +2040,7 @@ cardano_balance_transaction(
     foreign_signature_count,
     protocol_params,
     reference_inputs,
-    priced_reference_inputs,
+    sub_transaction_priced_inputs,
     pre_selected_utxo,
     sub_transaction_resolved_inputs,
     sub_transactions_imbalance,
@@ -1838,7 +2055,7 @@ cardano_balance_transaction(
 
   cardano_value_unref(&sub_transactions_imbalance);
   cardano_utxo_list_unref(&selectable_utxo);
-  cardano_utxo_list_unref(&priced_reference_inputs);
+  cardano_utxo_list_unref(&sub_transaction_priced_inputs);
 
   return result;
 }

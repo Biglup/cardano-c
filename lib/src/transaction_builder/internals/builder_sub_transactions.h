@@ -50,11 +50,11 @@ extern "C" {
  * spent by a sub transaction added before or by an input explicitly added to the transaction.
  *
  * \p resolved_utxos must resolve every spend input of the sub transaction, since the value they hold
- * takes part in the value conservation of the whole batch. It may also resolve its reference inputs,
- * which carry the reference scripts the fee accounts for when reference scripts are priced. The
- * resolved spend inputs are appended to the state sub transaction inputs and the resolved
- * reference inputs to the state sub transaction reference inputs. Reference inputs that are not
- * resolved are skipped, and any other UTXO of the list is ignored.
+ * takes part in the value conservation of the whole batch and the reference scripts they carry are
+ * priced in the fee. It may also resolve its reference inputs, which carry the reference scripts the
+ * fee accounts for. The resolved spend inputs are appended to the state sub transaction inputs and
+ * the resolved reference inputs to the state sub transaction reference inputs. Reference inputs that
+ * are not resolved are skipped, and any other UTXO of the list is ignored.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.

@@ -65,22 +65,32 @@ extern "C" {
  * function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction,
  * since top level change can not absorb the imbalance.
  *
+ * The fee always pays for the reference scripts the ledger charges for, whatever their language and whether or not the
+ * transaction has redeemers: every reference script found on the UTXOs of \p reference_inputs and on the UTXOs the
+ * transaction spends, pre selected or coin selected. A UTXO that is both referenced and spent is priced once, while the same
+ * script sitting on two different UTXOs is priced twice.
+ *
  * The top level transaction also pays the fee and posts the collateral of the whole batch. The fee covers the size of the
- * sub transactions, the execution units of the redeemers of every sub transaction and, when reference scripts are priced (a
- * redeemer exists in the batch), the reference scripts of the resolved reference inputs given in
- * \p sub_transaction_reference_inputs. Including them is deliberate and may exceed the current ledger minimum, which does not
- * charge for the reference scripts of sub transactions yet. Collateral is added when a redeemer exists in the transaction or
- * in any of its sub transactions, and it is sized from the fee of the top level transaction. The scripts of the sub
- * transactions are not evaluated, the execution units their redeemers declare are taken as final.
+ * sub transactions, the execution units of the redeemers of every sub transaction and the reference scripts of the sub
+ * transactions: the ones on the resolved reference inputs given in \p sub_transaction_reference_inputs and the ones on the
+ * UTXOs of \p sub_transaction_resolved_inputs that a sub transaction spends. Including them is deliberate and may exceed the
+ * current ledger minimum, which does not charge for the reference scripts of sub transactions yet. Collateral is added when
+ * a redeemer exists in the transaction or in any of its sub transactions, and it is sized from the fee of the top level
+ * transaction. The scripts of the sub transactions are not evaluated, the execution units their redeemers declare are taken
+ * as final.
  *
  * \param[in, out] unbalanced_tx              A pointer to the transaction that needs balancing.
  * \param[in]      foreign_signature_count    The number of expected extra signatures, not specified in the transaction.
  * \param[in]      protocol_params            A pointer to the protocol parameters required for fee calculation and balancing.
- * \param[in]      reference_inputs           A list of resolved reference inputs that have already been included in the transaction.
+ * \param[in]      reference_inputs           A list of resolved reference inputs that have already been included in the transaction. The reference
+ *                                            scripts they carry are priced in the fee.
  * \param[in]      pre_selected_utxo          A list of UTXOs that must be included in the transaction inputs. They must be disjoint from the inputs
- *                                            spent by the sub transactions the transaction carries, an overlap is rejected.
+ *                                            spent by the sub transactions the transaction carries, an overlap is rejected. The reference scripts
+ *                                            they carry are priced in the fee.
  * \param[in]      sub_transaction_resolved_inputs
- *                                            A list of UTXOs that resolves every input spent by the sub transactions the transaction carries.
+ *                                            A list of UTXOs that resolves every input spent by the sub transactions the transaction carries. The
+ *                                            reference scripts carried by the UTXOs that a sub transaction spends are priced in the fee. These scripts
+ *                                            take no part in script evaluation or in the validation mode of the top level transaction.
  *                                            Can be NULL if the transaction carries no sub transactions.
  * \param[in]      sub_transaction_reference_inputs
  *                                            A list of resolved reference inputs of the sub transactions the transaction carries. It is only used to
@@ -92,7 +102,8 @@ extern "C" {
  * \param[in]      input_to_redeemer_map      A map of inputs to redeemers. This map associates specific references of inputs to redeemers in the witness set. Balancing the transaction can add
  *                                            additional inputs and this can make inputs change positions in the input set. Redeemers must be updated to point to the correct input.
  *                                            If you provide redeemers for any pre-selected input, you must specify this association in this map.
- * \param[in]      available_utxo             A list of available UTXOs to select from, if additional inputs are needed.
+ * \param[in]      available_utxo             A list of available UTXOs to select from, if additional inputs are needed. The reference scripts
+ *                                            carried by the ones that end up selected are priced in the fee.
  * \param[in]      coin_selector              A pointer to the coin selector used for choosing appropriate UTXOs.
  * \param[in]      change_address             The address where any remaining balance (change) will be sent.
  * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if the transaction or any of its sub transactions has scripts.
