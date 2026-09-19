@@ -36,6 +36,9 @@ static const char* BUYER_PRIVATE_KEY   = "9d61b19deffd5a60ba844af492ec2cc44449c5
 static const char* SELLER_PRIVATE_KEY  = "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb";
 static const char* BATCHER_PRIVATE_KEY = "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7";
 
+// The passphrase that encrypts the keys of the parties inside their secure key handlers.
+static const char* PASSPHRASE = "password";
+
 // The UTXOs of this example are hardcoded, so it runs without a provider.
 static const char* BUYER_UTXO_TX_ID   = "0000000000000000000000000000000000000000000000000000000000000001";
 static const char* SELLER_UTXO_TX_ID  = "0000000000000000000000000000000000000000000000000000000000000002";
@@ -54,17 +57,16 @@ static const int64_t TOKENS_TO_TRADE   = 1000;
 /* STRUCTS *******************************************************************/
 
 /**
- * \brief A participant of the batch: the key it signs with, the credential and the address that key
- * controls, and the UTXO it owns.
+ * \brief A participant of the batch: the secure key handler that holds the key it signs with, the
+ * credential and the address that key controls, and the UTXO it owns.
  */
 typedef struct party_t
 {
-    cardano_ed25519_private_key_t* private_key;
-    cardano_ed25519_public_key_t*  public_key;
-    cardano_credential_t*          credential;
-    cardano_address_t*             address;
-    cardano_utxo_t*                utxo;
-    cardano_utxo_list_t*           utxos;
+    cardano_secure_key_handler_t* key_handler;
+    cardano_credential_t*         credential;
+    cardano_address_t*            address;
+    cardano_utxo_t*               utxo;
+    cardano_utxo_list_t*          utxos;
 } party_t;
 
 /* DECLARATIONS **************************************************************/
@@ -85,6 +87,32 @@ exit_on_error(const cardano_error_t result, const char* message)
 
     exit(result);
   }
+}
+
+/**
+ * \brief Retrieves the passphrase that decrypts the key of a party.
+ *
+ * A real application asks the user for the passphrase, this example hardcodes it so that it can run
+ * unattended.
+ *
+ * \param[out] buffer The buffer where to write the passphrase.
+ * \param[in] buffer_len The size of the buffer.
+ *
+ * \return The length of the passphrase (or -1 on error).
+ */
+static int32_t
+get_passphrase(byte_t* buffer, const size_t buffer_len)
+{
+  const size_t passphrase_len = cardano_utils_safe_strlen(PASSPHRASE, 128);
+
+  if (buffer_len < passphrase_len)
+  {
+    return -1;
+  }
+
+  cardano_utils_safe_memcpy(buffer, buffer_len, PASSPHRASE, passphrase_len);
+
+  return (int32_t)passphrase_len;
 }
 
 /**
@@ -148,7 +176,8 @@ create_value(const int64_t lovelace, const int64_t tokens)
 /**
  * \brief Creates a party from its private key and gives it a single UTXO.
  *
- * The party controls the enterprise address derived from its key hash.
+ * The private key is handed to a software secure key handler, which keeps it encrypted and only
+ * decrypts it while signing. The party controls the enterprise address derived from its key hash.
  *
  * \param[in] private_key_hex The Ed25519 private key of the party.
  * \param[in] utxo_tx_id_hex The id of the transaction that created the UTXO of the party.
@@ -162,16 +191,19 @@ create_party(const char* private_key_hex, const char* utxo_tx_id_hex, const int6
 {
   party_t party = { 0 };
 
-  cardano_blake2b_hash_t*       key_hash           = NULL;
-  cardano_enterprise_address_t* enterprise_address = NULL;
-  cardano_blake2b_hash_t*       utxo_tx_id         = NULL;
-  cardano_transaction_output_t* output             = NULL;
-  cardano_value_t*              value              = create_value(lovelace, tokens);
+  cardano_ed25519_private_key_t* private_key        = NULL;
+  cardano_ed25519_public_key_t*  public_key         = NULL;
+  cardano_blake2b_hash_t*        key_hash           = NULL;
+  cardano_enterprise_address_t*  enterprise_address = NULL;
+  cardano_blake2b_hash_t*        utxo_tx_id         = NULL;
+  cardano_transaction_output_t*  output             = NULL;
+  cardano_value_t*               value              = create_value(lovelace, tokens);
 
-  exit_on_error(cardano_ed25519_private_key_from_normal_hex(private_key_hex, cardano_utils_safe_strlen(private_key_hex, 128), &party.private_key), "Failed to create private key");
-  exit_on_error(cardano_ed25519_private_key_get_public_key(party.private_key, &party.public_key), "Failed to get public key");
+  exit_on_error(cardano_ed25519_private_key_from_normal_hex(private_key_hex, cardano_utils_safe_strlen(private_key_hex, 128), &private_key), "Failed to create private key");
+  exit_on_error(cardano_software_secure_key_handler_ed25519_new(private_key, (const byte_t*)PASSPHRASE, cardano_utils_safe_strlen(PASSPHRASE, 128), get_passphrase, &party.key_handler), "Failed to create secure key handler");
+  exit_on_error(cardano_secure_key_handler_ed25519_get_public_key(party.key_handler, &public_key), "Failed to get public key");
 
-  exit_on_error(cardano_ed25519_public_key_to_hash(party.public_key, &key_hash), "Failed to hash public key");
+  exit_on_error(cardano_ed25519_public_key_to_hash(public_key, &key_hash), "Failed to hash public key");
   exit_on_error(cardano_credential_new(key_hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &party.credential), "Failed to create credential");
   exit_on_error(cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, party.credential, &enterprise_address), "Failed to create address");
 
@@ -186,6 +218,8 @@ create_party(const char* private_key_hex, const char* utxo_tx_id_hex, const int6
   exit_on_error(cardano_utxo_list_new(&party.utxos), "Failed to create UTXO list");
   exit_on_error(cardano_utxo_list_add(party.utxos, party.utxo), "Failed to add UTXO to list");
 
+  cardano_ed25519_private_key_unref(&private_key);
+  cardano_ed25519_public_key_unref(&public_key);
   cardano_blake2b_hash_unref(&key_hash);
   cardano_enterprise_address_unref(&enterprise_address);
   cardano_blake2b_hash_unref(&utxo_tx_id);
@@ -203,41 +237,11 @@ create_party(const char* private_key_hex, const char* utxo_tx_id_hex, const int6
 static void
 release_party(party_t* party)
 {
-  cardano_ed25519_private_key_unref(&party->private_key);
-  cardano_ed25519_public_key_unref(&party->public_key);
+  cardano_secure_key_handler_unref(&party->key_handler);
   cardano_credential_unref(&party->credential);
   cardano_address_unref(&party->address);
   cardano_utxo_unref(&party->utxo);
   cardano_utxo_list_unref(&party->utxos);
-}
-
-/**
- * \brief Signs a hash with the key of a party.
- *
- * A party signs the id of what it authorizes: the sub transaction id for a sub transaction and the
- * transaction id for the transaction that carries the batch.
- *
- * \param[in] party The party that signs.
- * \param[in] id The id to sign.
- *
- * \return A vkey witness set with the witness of the party. The caller is responsible for releasing it.
- */
-static cardano_vkey_witness_set_t*
-sign_id(const party_t* party, cardano_blake2b_hash_t* id)
-{
-  cardano_ed25519_signature_t* signature = NULL;
-  cardano_vkey_witness_t*      witness   = NULL;
-  cardano_vkey_witness_set_t*  witnesses = NULL;
-
-  exit_on_error(cardano_ed25519_private_key_sign(party->private_key, cardano_blake2b_hash_get_data(id), cardano_blake2b_hash_get_bytes_size(id), &signature), "Failed to sign");
-  exit_on_error(cardano_vkey_witness_new(party->public_key, signature, &witness), "Failed to create vkey witness");
-  exit_on_error(cardano_vkey_witness_set_new(&witnesses), "Failed to create vkey witness set");
-  exit_on_error(cardano_vkey_witness_set_add(witnesses, witness), "Failed to add vkey witness");
-
-  cardano_ed25519_signature_unref(&signature);
-  cardano_vkey_witness_unref(&witness);
-
-  return witnesses;
 }
 
 /**
@@ -312,10 +316,12 @@ build_signed_sub_transaction(
     exit(result);
   }
 
-  // The id of a sub transaction is the hash of its body, so attaching witnesses does not change it.
+  // A party signs the id of its sub transaction. The id is the hash of the body, so attaching the
+  // witnesses does not change it.
   cardano_blake2b_hash_t*     id        = cardano_sub_transaction_get_id(sub_transaction);
-  cardano_vkey_witness_set_t* witnesses = sign_id(party, id);
+  cardano_vkey_witness_set_t* witnesses = NULL;
 
+  exit_on_error(cardano_secure_key_handler_ed25519_sign_sub_transaction(party->key_handler, sub_transaction, &witnesses), "Failed to sign sub transaction");
   exit_on_error(cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, witnesses), "Failed to apply vkey witnesses");
 
   // The imbalance is what the sub transaction consumes minus what it produces: a positive amount is
@@ -425,8 +431,9 @@ main(void)
   // 3.- The batcher signs the transaction. The sub transactions are carried untouched, so the
   // signatures of the parties remain valid.
   cardano_blake2b_hash_t*     transaction_id    = cardano_transaction_get_id(transaction);
-  cardano_vkey_witness_set_t* batcher_witnesses = sign_id(&batcher, transaction_id);
+  cardano_vkey_witness_set_t* batcher_witnesses = NULL;
 
+  exit_on_error(cardano_secure_key_handler_ed25519_sign_transaction(batcher.key_handler, transaction, &batcher_witnesses), "Failed to sign transaction");
   exit_on_error(cardano_transaction_apply_vkey_witnesses(transaction, batcher_witnesses), "Failed to apply vkey witnesses");
 
   // 4.- Verify that the batch conserves value. The check needs the UTXOs that resolve the inputs of

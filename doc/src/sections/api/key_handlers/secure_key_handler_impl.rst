@@ -9,11 +9,19 @@ Secure Key Handler Implentation
 
 ------------
 
+.. doxygentypedef:: cardano_bip32_sign_sub_transaction_func_t
+
+------------
+
 .. doxygentypedef:: cardano_bip32_get_extended_account_public_key_func_t
 
 ------------
 
 .. doxygentypedef:: cardano_ed25519_sign_transaction_func_t
+
+------------
+
+.. doxygentypedef:: cardano_ed25519_sign_sub_transaction_func_t
 
 ------------
 
