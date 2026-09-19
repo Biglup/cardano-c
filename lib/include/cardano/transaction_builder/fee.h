@@ -164,8 +164,8 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  *
  * \return \ref CARDANO_SUCCESS if the minimum script fee was successfully computed, or an appropriate error code indicating failure.
  *
- * \note The calculated fee ensures that the transaction covers the costs for all the Plutus scripts included, based on their execution requirements, and the size of every reference
- *       script reachable from its inputs.
+ * \note The calculated fee accounts for the execution requirements of all the Plutus scripts included and for the size of every reference script listed in
+ *       \p resolved_reference_inputs, measured as \ref cardano_get_serialized_script_size documents.
  *
  * Usage Example:
  * \code{.c}
