@@ -36,6 +36,7 @@ Next (V1.2.3)
 - Fixed `cardano_utxo_list_clone` returning `NULL` for an empty list, which caused coin selection to report `CARDANO_ERROR_MEMORY_ALLOCATION_FAILED` instead of `CARDANO_ERROR_BALANCE_INSUFFICIENT` when the available UTxO list was empty.
 - Fixed `cardano_governance_action_id_new` leaking the new object when the CIP-129 encoding of the id fails under memory pressure, which also affected `cardano_governance_action_id_from_bech32` and the builder proposal functions that take the governance action id as a string.
 - Fixed `cardano_tx_builder_propose_hardfork_ex` building the hard fork initiation action with the major and minor protocol version swapped, so a proposal for version 12.0 was encoded as 0.12. It now produces the same governance action as `cardano_tx_builder_propose_hardfork` given the same protocol version; its signature does not change.
+- Fixed `cardano_balance_transaction` and `cardano_tx_builder_build` paying one byte less than the minimum fee of the signed transaction. The fee estimate of the vkey witnesses that signing adds left out the one byte key under which the witness set stores them, so with a `min_fee_a` of 44 the fee ended up 44 lovelace below what the ledger asks for once the transaction is signed and the transaction was rejected. The key is now part of the estimate whenever the witness set of the transaction does not already hold vkey witnesses.
 
 V1.2.2
 ---------------------
