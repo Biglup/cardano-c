@@ -542,19 +542,62 @@ add_sub_transactions_imbalance(
 }
 
 /**
- * \brief Checks whether a sub transaction spends a transaction input.
+ * \brief Checks whether a set of transaction inputs holds a transaction input.
  *
- * \param[in]  sub_tx   The sub transaction whose spend inputs are searched.
- * \param[in]  input    The transaction input to look up.
- * \param[out] is_spent Set to true if the sub transaction spends the input.
+ * \param[in]  inputs    The transaction inputs to search, or NULL when there are none.
+ * \param[in]  input     The transaction input to look up.
+ * \param[out] has_input Set to true if the set holds the input.
  *
  * \return \ref CARDANO_SUCCESS if the inputs were searched, or an appropriate error code.
  */
 static cardano_error_t
-is_spent_by_sub_transaction(
+has_transaction_input(
+  cardano_transaction_input_set_t*   inputs,
+  const cardano_transaction_input_t* input,
+  bool*                              has_input)
+{
+  const size_t num_inputs = cardano_transaction_input_set_get_length(inputs);
+
+  bool found = false;
+
+  for (size_t i = 0U; (i < num_inputs) && !found; ++i)
+  {
+    cardano_transaction_input_t* current_input = NULL;
+
+    cardano_error_t result = cardano_transaction_input_set_get(inputs, i, &current_input);
+    cardano_transaction_input_unref(&current_input);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    found = cardano_transaction_input_equals(current_input, input);
+  }
+
+  *has_input = found;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether a sub transaction uses a transaction input.
+ *
+ * A sub transaction uses the inputs it spends and, if \p include_references is set, the inputs it references.
+ *
+ * \param[in]  sub_tx             The sub transaction whose inputs are searched.
+ * \param[in]  input              The transaction input to look up.
+ * \param[in]  include_references Whether the reference inputs of the sub transaction are searched too.
+ * \param[out] is_used            Set to true if the sub transaction uses the input.
+ *
+ * \return \ref CARDANO_SUCCESS if the inputs were searched, or an appropriate error code.
+ */
+static cardano_error_t
+is_used_by_sub_transaction(
   cardano_sub_transaction_t*         sub_tx,
   const cardano_transaction_input_t* input,
-  bool*                              is_spent)
+  const bool                         include_references,
+  bool*                              is_used)
 {
   cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
   cardano_sub_transaction_body_unref(&body);
@@ -562,44 +605,37 @@ is_spent_by_sub_transaction(
   cardano_transaction_input_set_t* inputs = cardano_sub_transaction_body_get_inputs(body);
   cardano_transaction_input_set_unref(&inputs);
 
-  const size_t num_inputs = cardano_transaction_input_set_get_length(inputs);
+  const cardano_error_t result = has_transaction_input(inputs, input, is_used);
 
-  bool found = false;
-
-  for (size_t i = 0U; (i < num_inputs) && !found; ++i)
+  if ((result != CARDANO_SUCCESS) || *is_used || !include_references)
   {
-    cardano_transaction_input_t* spent_input = NULL;
-
-    cardano_error_t result = cardano_transaction_input_set_get(inputs, i, &spent_input);
-    cardano_transaction_input_unref(&spent_input);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    found = cardano_transaction_input_equals(spent_input, input);
+    return result;
   }
 
-  *is_spent = found;
+  cardano_transaction_input_set_t* reference_inputs = cardano_sub_transaction_body_get_reference_inputs(body);
+  cardano_transaction_input_set_unref(&reference_inputs);
 
-  return CARDANO_SUCCESS;
+  return has_transaction_input(reference_inputs, input, is_used);
 }
 
 /**
- * \brief Checks whether any sub transaction of a set spends a transaction input.
+ * \brief Checks whether any sub transaction of a set uses a transaction input.
  *
- * \param[in]  sub_transactions The sub transactions whose spend inputs are searched.
- * \param[in]  input            The transaction input to look up.
- * \param[out] is_spent         Set to true if one of the sub transactions spends the input.
+ * A sub transaction uses the inputs it spends and, if \p include_references is set, the inputs it references.
+ *
+ * \param[in]  sub_transactions   The sub transactions whose inputs are searched.
+ * \param[in]  input              The transaction input to look up.
+ * \param[in]  include_references Whether the reference inputs of the sub transactions are searched too.
+ * \param[out] is_used            Set to true if one of the sub transactions uses the input.
  *
  * \return \ref CARDANO_SUCCESS if the sub transactions were searched, or an appropriate error code.
  */
 static cardano_error_t
-is_spent_by_sub_transactions(
+is_used_by_sub_transactions(
   cardano_sub_transaction_set_t*     sub_transactions,
   const cardano_transaction_input_t* input,
-  bool*                              is_spent)
+  const bool                         include_references,
+  bool*                              is_used)
 {
   const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
 
@@ -617,7 +653,7 @@ is_spent_by_sub_transactions(
       return result;
     }
 
-    result = is_spent_by_sub_transaction(sub_tx, input, &found);
+    result = is_used_by_sub_transaction(sub_tx, input, include_references, &found);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -625,7 +661,7 @@ is_spent_by_sub_transactions(
     }
   }
 
-  *is_spent = found;
+  *is_used = found;
 
   return CARDANO_SUCCESS;
 }
@@ -664,7 +700,7 @@ has_utxo_spent_by_sub_transactions(
     cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
     cardano_transaction_input_unref(&input);
 
-    result = is_spent_by_sub_transactions(sub_transactions, input, &found);
+    result = is_used_by_sub_transactions(sub_transactions, input, false, &found);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -680,9 +716,9 @@ has_utxo_spent_by_sub_transactions(
 /**
  * \brief Creates the list of UTXOs that coin selection may spend at the top level of a batch.
  *
- * The inputs of the top level transaction must be disjoint from the inputs spent by its sub transactions, so
- * every available UTXO that a sub transaction already spends is left out. The order of the remaining UTXOs is
- * preserved.
+ * The available UTXOs also hold the resolved UTXOs of the sub transactions, which belong to the parties of the batch
+ * and to the holders of the scripts they use, so every available UTXO that a sub transaction spends or references is
+ * left out. The order of the remaining UTXOs is preserved.
  *
  * \param[in]  available_utxo   The list of available UTXOs.
  * \param[in]  sub_transactions The sub transactions carried by the transaction, or NULL when it has none.
@@ -734,11 +770,11 @@ exclude_sub_transaction_inputs(
     cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
     cardano_transaction_input_unref(&input);
 
-    bool is_spent = false;
+    bool is_used = false;
 
-    result = is_spent_by_sub_transactions(sub_transactions, input, &is_spent);
+    result = is_used_by_sub_transactions(sub_transactions, input, true, &is_used);
 
-    if ((result == CARDANO_SUCCESS) && !is_spent)
+    if ((result == CARDANO_SUCCESS) && !is_used)
     {
       result = cardano_utxo_list_add(utxos, utxo);
     }
@@ -910,42 +946,95 @@ add_utxos_with_new_inputs(cardano_utxo_list_t* list, cardano_utxo_list_t* utxos)
 }
 
 /**
- * \brief Adds to a list the UTXOs of another list that are spent by a sub transaction of a set.
+ * \brief Looks up the resolved UTXO of a transaction input among the lists of UTXOs given to the balancer.
  *
- * \param[in,out] list             The list that receives the UTXOs.
- * \param[in]     utxos            The UTXOs to add, or NULL when there are none.
- * \param[in]     sub_transactions The sub transactions whose spend inputs are searched, or NULL when the body has none.
+ * The available UTXOs are searched first, then the resolved reference inputs of the top level transaction and then the
+ * pre selected UTXOs, since a UTXO may be shared between the top level transaction and its sub transactions.
  *
- * \return \ref CARDANO_SUCCESS if the UTXOs were added, or an appropriate error code.
+ * \param[in] input             The transaction input to resolve.
+ * \param[in] available_utxo    The list of available UTXOs, or NULL when there are none.
+ * \param[in] reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
+ * \param[in] pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ *
+ * \return A new reference to the resolved UTXO, or NULL if none of the lists resolves the input.
+ *
+ * \note The caller is responsible for releasing the returned UTXO with \ref cardano_utxo_unref.
+ */
+static cardano_utxo_t*
+find_resolved_utxo(
+  const cardano_transaction_input_t* input,
+  cardano_utxo_list_t*               available_utxo,
+  cardano_utxo_list_t*               reference_inputs,
+  cardano_utxo_list_t*               pre_selected_utxo)
+{
+  cardano_utxo_t* utxo = cardano_utxo_list_find(available_utxo, find_utxo, input);
+
+  if (utxo == NULL)
+  {
+    utxo = cardano_utxo_list_find(reference_inputs, find_utxo, input);
+  }
+
+  if (utxo == NULL)
+  {
+    utxo = cardano_utxo_list_find(pre_selected_utxo, find_utxo, input);
+  }
+
+  return utxo;
+}
+
+/**
+ * \brief Adds to a list the resolved UTXOs of a set of transaction inputs whose input the list does not hold yet.
+ *
+ * \param[in,out] list              The list that receives the UTXOs.
+ * \param[in]     inputs            The transaction inputs to resolve, or NULL when there are none.
+ * \param[in]     available_utxo    The list of available UTXOs, or NULL when there are none.
+ * \param[in]     reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
+ * \param[in]     pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[in]     skip_unresolved   Whether an input that is not resolved is skipped instead of reported as an error.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were added, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input is not
+ *         resolved and \p skip_unresolved is not set, or an appropriate error code.
  */
 static cardano_error_t
-add_utxos_spent_by_sub_transactions(
-  cardano_utxo_list_t*           list,
-  cardano_utxo_list_t*           utxos,
-  cardano_sub_transaction_set_t* sub_transactions)
+add_resolved_inputs(
+  cardano_utxo_list_t*             list,
+  cardano_transaction_input_set_t* inputs,
+  cardano_utxo_list_t*             available_utxo,
+  cardano_utxo_list_t*             reference_inputs,
+  cardano_utxo_list_t*             pre_selected_utxo,
+  const bool                       skip_unresolved)
 {
-  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
+  const size_t num_inputs = cardano_transaction_input_set_get_length(inputs);
 
-  for (size_t i = 0U; i < num_utxos; ++i)
+  for (size_t i = 0U; i < num_inputs; ++i)
   {
-    cardano_utxo_t* utxo = NULL;
+    cardano_transaction_input_t* input = NULL;
 
-    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
-    cardano_utxo_unref(&utxo);
+    cardano_error_t result = cardano_transaction_input_set_get(inputs, i, &input);
+    cardano_transaction_input_unref(&input);
 
     if (result != CARDANO_SUCCESS)
     {
       return result;
     }
 
-    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
-    cardano_transaction_input_unref(&input);
+    cardano_utxo_t* listed_utxo = cardano_utxo_list_find(list, find_utxo, input);
+    cardano_utxo_unref(&listed_utxo);
 
-    bool is_spent = false;
+    if (listed_utxo != NULL)
+    {
+      continue;
+    }
 
-    result = is_spent_by_sub_transactions(sub_transactions, input, &is_spent);
+    cardano_utxo_t* utxo = find_resolved_utxo(input, available_utxo, reference_inputs, pre_selected_utxo);
+    cardano_utxo_unref(&utxo);
 
-    if ((result == CARDANO_SUCCESS) && is_spent)
+    if ((utxo == NULL) && !skip_unresolved)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    if (utxo != NULL)
     {
       result = cardano_utxo_list_add(list, utxo);
     }
@@ -960,23 +1049,171 @@ add_utxos_spent_by_sub_transactions(
 }
 
 /**
+ * \brief Creates the list of resolved UTXOs spent by the sub transactions of a set.
+ *
+ * The value of these UTXOs takes part in the value conservation of the whole batch, so every spend input of every sub
+ * transaction must be resolved.
+ *
+ * \param[in]  sub_transactions  The sub transactions carried by the transaction, or NULL when it has none.
+ * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.
+ * \param[in]  reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[out] spent_utxos       A pointer to store the list.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if a sub transaction spends
+ *         an input that is not resolved, or an appropriate error code.
+ *
+ * \note The caller is responsible for freeing `spent_utxos` when it is no longer needed.
+ */
+static cardano_error_t
+get_sub_transaction_spent_utxos(
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_utxo_list_t*           available_utxo,
+  cardano_utxo_list_t*           reference_inputs,
+  cardano_utxo_list_t*           pre_selected_utxo,
+  cardano_utxo_list_t**          spent_utxos)
+{
+  cardano_utxo_list_t* spent_list = NULL;
+
+  cardano_error_t result = cardano_utxo_list_new(&spent_list);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; i < num_sub_transactions; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&spent_list);
+
+      return result;
+    }
+
+    cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+    cardano_sub_transaction_body_unref(&body);
+
+    cardano_transaction_input_set_t* inputs = cardano_sub_transaction_body_get_inputs(body);
+    cardano_transaction_input_set_unref(&inputs);
+
+    result = add_resolved_inputs(spent_list, inputs, available_utxo, reference_inputs, pre_selected_utxo, false);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&spent_list);
+
+      return result;
+    }
+  }
+
+  *spent_utxos = spent_list;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Appends the resolved UTXOs of a sub transaction whose reference scripts the fee includes to a running list.
+ *
+ * The reference inputs and the spend inputs of the sub transaction are taken as a set, so a UTXO that the sub
+ * transaction both references and spends is appended once. Reference inputs that are not resolved are skipped, since
+ * they are only needed to price their reference scripts.
+ *
+ * \param[in]     sub_tx            The sub transaction whose resolved UTXOs are appended.
+ * \param[in]     available_utxo    The list of available UTXOs, or NULL when there are none.
+ * \param[in]     reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
+ * \param[in]     pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[in,out] priced_inputs     The running list. On success it is replaced by a new list that also holds the UTXOs
+ *                                  of the sub transaction; on failure, or when the sub transaction has no resolved
+ *                                  UTXOs, it is left untouched.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were appended, or an appropriate error code.
+ */
+static cardano_error_t
+add_sub_transaction_priced_inputs(
+  cardano_sub_transaction_t* sub_tx,
+  cardano_utxo_list_t*       available_utxo,
+  cardano_utxo_list_t*       reference_inputs,
+  cardano_utxo_list_t*       pre_selected_utxo,
+  cardano_utxo_list_t**      priced_inputs)
+{
+  cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+  cardano_sub_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* body_reference_inputs = cardano_sub_transaction_body_get_reference_inputs(body);
+  cardano_transaction_input_set_t* body_inputs           = cardano_sub_transaction_body_get_inputs(body);
+
+  cardano_transaction_input_set_unref(&body_reference_inputs);
+  cardano_transaction_input_set_unref(&body_inputs);
+
+  cardano_utxo_list_t* body_utxos = NULL;
+
+  cardano_error_t result = cardano_utxo_list_new(&body_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_resolved_inputs(body_utxos, body_reference_inputs, available_utxo, reference_inputs, pre_selected_utxo, true);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_resolved_inputs(body_utxos, body_inputs, available_utxo, reference_inputs, pre_selected_utxo, false);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&body_utxos);
+
+    return result;
+  }
+
+  if (cardano_utxo_list_get_length(body_utxos) == 0U)
+  {
+    cardano_utxo_list_unref(&body_utxos);
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_utxo_list_t* updated_inputs = cardano_utxo_list_concat(*priced_inputs, body_utxos);
+
+  cardano_utxo_list_unref(&body_utxos);
+
+  if (updated_inputs == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_utxo_list_unref(priced_inputs);
+  *priced_inputs = updated_inputs;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Creates the list of resolved UTXOs of the sub transactions whose reference scripts the fee includes.
  *
  * The top level transaction pays the fee of the whole batch, so the reference scripts reachable from its sub
  * transactions are priced too: the ones of their resolved reference inputs and the ones that sit on the UTXOs they
- * spend. The reference inputs are not distinct: a UTXO referenced by several sub transactions is listed, and priced,
- * once per sub transaction. Including them is deliberate and may exceed the current ledger minimum, which does not
- * charge for the reference scripts of sub transactions yet. This list must only be used to price reference scripts,
- * the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top level
- * transaction.
+ * spend. The UTXOs are taken from the body of each sub transaction, as a set, so a UTXO that a sub transaction both
+ * references and spends is listed once, while a UTXO used by several sub transactions is listed, and priced, once per
+ * sub transaction. Including them is deliberate and may exceed the current ledger minimum, which does not charge for the
+ * reference scripts of sub transactions yet. This list must only be used to price reference scripts, the scripts of the
+ * sub transactions take no part in the evaluation or in the validation mode of the top level transaction.
  *
- * \param[in]  sub_transactions                 The sub transactions carried by the transaction, or NULL when it has none.
- * \param[in]  sub_transaction_reference_inputs The resolved reference inputs of the sub transactions, or NULL when
- *                                              there are none.
- * \param[in]  sub_transaction_resolved_inputs  The resolved inputs spent by the sub transactions, or NULL when the
- *                                              transaction carries none. UTXOs that no sub transaction spends are
- *                                              left out.
- * \param[out] priced_inputs                    A pointer to store the list.
+ * \param[in]  sub_transactions  The sub transactions carried by the transaction, or NULL when it has none.
+ * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.
+ * \param[in]  reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[out] priced_inputs     A pointer to store the list.
  *
  * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
  *
@@ -985,38 +1222,40 @@ add_utxos_spent_by_sub_transactions(
 static cardano_error_t
 get_sub_transaction_priced_inputs(
   cardano_sub_transaction_set_t* sub_transactions,
-  cardano_utxo_list_t*           sub_transaction_reference_inputs,
-  cardano_utxo_list_t*           sub_transaction_resolved_inputs,
+  cardano_utxo_list_t*           available_utxo,
+  cardano_utxo_list_t*           reference_inputs,
+  cardano_utxo_list_t*           pre_selected_utxo,
   cardano_utxo_list_t**          priced_inputs)
 {
   cardano_utxo_list_t* priced_list = NULL;
 
-  if (sub_transaction_reference_inputs == NULL)
-  {
-    const cardano_error_t new_result = cardano_utxo_list_new(&priced_list);
-
-    if (new_result != CARDANO_SUCCESS)
-    {
-      return new_result;
-    }
-  }
-  else
-  {
-    priced_list = cardano_utxo_list_clone(sub_transaction_reference_inputs);
-
-    if (priced_list == NULL)
-    {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-  }
-
-  const cardano_error_t result = add_utxos_spent_by_sub_transactions(priced_list, sub_transaction_resolved_inputs, sub_transactions);
+  cardano_error_t result = cardano_utxo_list_new(&priced_list);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_utxo_list_unref(&priced_list);
-
     return result;
+  }
+
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; i < num_sub_transactions; ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = add_sub_transaction_priced_inputs(sub_tx, available_utxo, reference_inputs, pre_selected_utxo, &priced_list);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&priced_list);
+
+      return result;
+    }
   }
 
   *priced_inputs = priced_list;
@@ -1393,7 +1632,7 @@ compute_vk_witnesses_cost(
  * \param[in]     sub_transaction_priced_inputs   The resolved UTXOs of the sub transactions whose reference scripts the
  *                                                fee includes.
  * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
- * \param[in]     sub_transaction_resolved_inputs The resolved inputs spent by the sub transactions, or NULL when the
+ * \param[in]     sub_transaction_spent_utxos     The resolved UTXOs spent by the sub transactions, empty when the
  *                                                transaction carries none.
  * \param[in]     sub_transactions_imbalance      The net imbalance of the sub transactions, zero when the transaction
  *                                                carries none.
@@ -1416,7 +1655,7 @@ balance_transaction(
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              sub_transaction_priced_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
-  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
+  cardano_utxo_list_t*              sub_transaction_spent_utxos,
   cardano_value_t*                  sub_transactions_imbalance,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
@@ -1870,9 +2109,9 @@ balance_transaction(
       continue;
     }
 
-    if (cardano_utxo_list_get_length(sub_transaction_resolved_inputs) > 0U)
+    if (cardano_utxo_list_get_length(sub_transaction_spent_utxos) > 0U)
     {
-      cardano_utxo_list_t* resolved_with_sub_transactions = cardano_utxo_list_concat(resolved_inputs, sub_transaction_resolved_inputs);
+      cardano_utxo_list_t* resolved_with_sub_transactions = cardano_utxo_list_concat(resolved_inputs, sub_transaction_spent_utxos);
 
       cardano_utxo_list_unref(&resolved_inputs);
       resolved_inputs = resolved_with_sub_transactions;
@@ -1915,8 +2154,6 @@ cardano_balance_transaction(
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
-  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
-  cardano_utxo_list_t*              sub_transaction_reference_inputs,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,
@@ -1931,15 +2168,6 @@ cardano_balance_transaction(
 
   cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
   cardano_sub_transaction_set_unref(&sub_transactions);
-
-  if ((cardano_sub_transaction_set_get_length(sub_transactions) > 0U) && (sub_transaction_resolved_inputs == NULL))
-  {
-    cardano_transaction_set_last_error(
-      unbalanced_tx,
-      "The resolved inputs of the sub transactions are required to balance a transaction that carries sub transactions.");
-
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
 
   bool has_spent_utxo = false;
 
@@ -1959,21 +2187,45 @@ cardano_balance_transaction(
     return CARDANO_ERROR_DUPLICATED_KEY;
   }
 
+  cardano_utxo_list_t* sub_transaction_spent_utxos = NULL;
+
+  result = get_sub_transaction_spent_utxos(
+    sub_transactions,
+    available_utxo,
+    reference_inputs,
+    pre_selected_utxo,
+    &sub_transaction_spent_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+    {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "A sub transaction spends an input that is not among the UTXOs given to the balancer. The resolved UTXOs of the sub transactions must be included in the available UTXOs.");
+    }
+
+    return result;
+  }
+
   cardano_value_t* sub_transactions_imbalance = cardano_value_new_zero();
 
   if (sub_transactions_imbalance == NULL)
   {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
+
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   result = add_sub_transactions_imbalance(
     sub_transactions,
-    sub_transaction_resolved_inputs,
+    sub_transaction_spent_utxos,
     protocol_params,
     &sub_transactions_imbalance);
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
     cardano_value_unref(&sub_transactions_imbalance);
 
     cardano_transaction_set_last_error(
@@ -1991,6 +2243,7 @@ cardano_balance_transaction(
 
     if (result != CARDANO_SUCCESS)
     {
+      cardano_utxo_list_unref(&sub_transaction_spent_utxos);
       cardano_value_unref(&sub_transactions_imbalance);
 
       return result;
@@ -1998,6 +2251,7 @@ cardano_balance_transaction(
 
     if (is_legacy_mode)
     {
+      cardano_utxo_list_unref(&sub_transaction_spent_utxos);
       cardano_value_unref(&sub_transactions_imbalance);
 
       cardano_transaction_set_last_error(
@@ -2014,6 +2268,7 @@ cardano_balance_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
     cardano_value_unref(&sub_transactions_imbalance);
 
     return result;
@@ -2023,12 +2278,14 @@ cardano_balance_transaction(
 
   result = get_sub_transaction_priced_inputs(
     sub_transactions,
-    sub_transaction_reference_inputs,
-    sub_transaction_resolved_inputs,
+    available_utxo,
+    reference_inputs,
+    pre_selected_utxo,
     &sub_transaction_priced_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
     cardano_value_unref(&sub_transactions_imbalance);
     cardano_utxo_list_unref(&selectable_utxo);
 
@@ -2042,7 +2299,7 @@ cardano_balance_transaction(
     reference_inputs,
     sub_transaction_priced_inputs,
     pre_selected_utxo,
-    sub_transaction_resolved_inputs,
+    sub_transaction_spent_utxos,
     sub_transactions_imbalance,
     input_to_redeemer_map,
     selectable_utxo,
@@ -2053,6 +2310,7 @@ cardano_balance_transaction(
     evaluator,
     deferred_redeemers);
 
+  cardano_utxo_list_unref(&sub_transaction_spent_utxos);
   cardano_value_unref(&sub_transactions_imbalance);
   cardano_utxo_list_unref(&selectable_utxo);
   cardano_utxo_list_unref(&sub_transaction_priced_inputs);

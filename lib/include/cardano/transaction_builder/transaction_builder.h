@@ -1476,20 +1476,22 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * transaction.
  *
  * `cardano_tx_builder_build` balances the whole batch: a net deficit of the sub transactions is funded by the inputs
- * selected for the transaction, a net surplus is returned in its change outputs, and the UTXOs spent by the sub
- * transactions are never selected as inputs of the transaction. When the transaction uses a PlutusV1, PlutusV2 or
- * PlutusV3 script it must also conserve value by itself, so the sub transactions must balance between themselves;
- * otherwise building fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub
- * transaction.
+ * selected for the transaction, a net surplus is returned in its change outputs, and the UTXOs that the sub
+ * transactions spend or reference are never selected as inputs of the transaction, even when they are also among the
+ * UTXOs set with `cardano_tx_builder_set_utxos`, as happens when the batcher is a party of the batch too. When the
+ * transaction uses a PlutusV1, PlutusV2 or PlutusV3 script it must also conserve value by itself, so the sub
+ * transactions must balance between themselves; otherwise building fails with
+ * \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction.
  *
  * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
  * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved
  * reference inputs, counted once per sub transaction that references them, as the ledger does when it measures the
- * reference script size of a batch. Including them in the fee is deliberate and may exceed the current ledger
- * minimum, which does not charge for the reference scripts of sub transactions yet. When a sub transaction carries
- * redeemers the transaction posts the collateral, even if it runs no script itself, so the collateral change address
- * and the collateral UTXOs must be set before building. The scripts of the sub transactions are not evaluated, the
- * execution units their redeemers declare are taken as final.
+ * reference script size of a batch, while a UTXO that a sub transaction both references and spends is counted once for
+ * that sub transaction. Including them in the fee is deliberate and may exceed the current ledger minimum, which does
+ * not charge for the reference scripts of sub transactions yet. When a sub transaction carries redeemers the
+ * transaction posts the collateral, even if it runs no script itself, so the collateral change address and the
+ * collateral UTXOs must be set before building. The scripts of the sub transactions are not evaluated, the execution
+ * units their redeemers declare are taken as final.
  *
  * A sub transaction can require guards from the transaction that carries it, and the batch is only valid when every
  * one of those credentials is among the guards of the transaction. The batcher must add each of them with
