@@ -461,12 +461,11 @@ cardano_sub_transaction_apply_vkey_witnesses(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t             result;
   cardano_vkey_witness_set_t* inner_vkeys = cardano_witness_set_get_vkeys(witness_set);
 
   if (inner_vkeys == NULL)
   {
-    result = cardano_vkey_witness_set_new(&inner_vkeys);
+    cardano_error_t result = cardano_vkey_witness_set_new(&inner_vkeys);
 
     if (result != CARDANO_SUCCESS)
     {
