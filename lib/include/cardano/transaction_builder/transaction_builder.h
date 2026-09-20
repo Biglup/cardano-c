@@ -1241,7 +1241,7 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
  * using a string format for the reward address. It uses the associated \ref cardano_provider_t to fetch the available
  * reward balance for the given address and includes the withdrawal in the transaction.
  *
- * The amount follows the same rules as in \ref cardano_tx_builder_withdraw_rewards: it must be the full available
+ * The amount follows the same rules as in \ref cardano_tx_builder_withdraw_rewards. It must be the full available
  * reward balance up to the Conway era and whenever the transaction uses a PlutusV1, PlutusV2 or PlutusV3 script, and
  * it may be a part of the balance otherwise from the Dijkstra era.
  *
