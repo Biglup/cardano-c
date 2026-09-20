@@ -56,8 +56,15 @@ extern "C" {
  * When the transaction carries CIP-118 sub transactions the ledger checks value conservation over the whole batch, so
  * the net imbalance of the sub transactions (see \ref cardano_compute_sub_transaction_imbalance) is part of the value
  * that coin selection must cover: a net deficit is funded by additional top level inputs and a net surplus ends up in
- * the change outputs. The UTXOs spent by the sub transactions are never selected as top level inputs, and the result is
- * verified with the whole batch check of \ref cardano_is_transaction_balanced.
+ * the change outputs, and the result is verified with the whole batch check of \ref cardano_is_transaction_balanced.
+ *
+ * The resolved UTXOs of the sub transactions, the ones they spend and optionally the ones they reference, are given in
+ * \p available_utxo, next to the UTXOs the top level transaction may spend. The role of each UTXO is taken from the
+ * bodies of the sub transactions: a UTXO that a sub transaction spends or references is never selected as a top level
+ * input. An input of a sub transaction is looked up in \p available_utxo first, then in \p reference_inputs and then in
+ * \p pre_selected_utxo, since a UTXO may be shared between the top level transaction and a sub transaction. Every input
+ * spent by a sub transaction must be resolved, while the reference inputs of the sub transactions that are not resolved
+ * are skipped.
  *
  * A top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script (in its witness set, as a reference script
  * of a resolved reference input or as a reference script of a pre selected input) must also conserve value by itself,
@@ -73,38 +80,33 @@ extern "C" {
  *
  * The top level transaction also pays the fee and posts the collateral of the whole batch. The fee covers the size of the
  * sub transactions, the execution units of the redeemers of every sub transaction and the reference scripts of the sub
- * transactions: the ones on the resolved reference inputs given in \p sub_transaction_reference_inputs and the ones on the
- * UTXOs of \p sub_transaction_resolved_inputs that a sub transaction spends. Including them is deliberate and may exceed the
- * current ledger minimum, which does not charge for the reference scripts of sub transactions yet. Collateral is added when
- * a redeemer exists in the transaction or in any of its sub transactions, and it is sized from the fee of the top level
- * transaction. The scripts of the sub transactions are not evaluated, the execution units their redeemers declare are taken
- * as final.
+ * transactions: the ones on the UTXOs each sub transaction spends and the ones on its resolved reference inputs. A UTXO that
+ * a sub transaction both references and spends is priced once, while a UTXO referenced by several sub transactions is priced
+ * once per sub transaction, as the ledger counts it when it measures the reference script size of a batch. Including them is
+ * deliberate and may exceed the current ledger minimum, which does not charge for the reference scripts of sub transactions
+ * yet. Collateral is added when a redeemer exists in the transaction or in any of its sub transactions, and it is sized from
+ * the fee of the top level transaction. The scripts of the sub transactions are not evaluated, the execution units their
+ * redeemers declare are taken as final.
  *
  * \param[in, out] unbalanced_tx              A pointer to the transaction that needs balancing.
  * \param[in]      foreign_signature_count    The number of expected extra signatures, not specified in the transaction.
  * \param[in]      protocol_params            A pointer to the protocol parameters required for fee calculation and balancing.
- * \param[in]      reference_inputs           A list of resolved reference inputs that have already been included in the transaction. The reference
- *                                            scripts they carry are priced in the fee.
+ * \param[in]      reference_inputs           A list of resolved reference inputs of the top level transaction that have already been included in the
+ *                                            transaction. The reference scripts they carry are priced in the fee. An input of a sub transaction that
+ *                                            is not found in \p available_utxo is also looked up in this list.
  * \param[in]      pre_selected_utxo          A list of UTXOs that must be included in the transaction inputs. They must be disjoint from the inputs
  *                                            spent by the sub transactions the transaction carries, an overlap is rejected. The reference scripts
- *                                            they carry are priced in the fee.
- * \param[in]      sub_transaction_resolved_inputs
- *                                            A list of UTXOs that resolves every input spent by the sub transactions the transaction carries. The
- *                                            reference scripts carried by the UTXOs that a sub transaction spends are priced in the fee. These scripts
- *                                            take no part in script evaluation or in the validation mode of the top level transaction.
- *                                            Can be NULL if the transaction carries no sub transactions.
- * \param[in]      sub_transaction_reference_inputs
- *                                            A list of resolved reference inputs of the sub transactions the transaction carries. It is only used to
- *                                            price their reference scripts in the fee: it takes no part in script evaluation and a PlutusV1, PlutusV2
- *                                            or PlutusV3 reference script in it does not make the top level transaction conserve value by itself.
- *                                            A UTXO referenced by several sub transactions must be listed once per sub transaction, as the ledger
- *                                            counts it when it measures the reference script size of a batch. Can be NULL if the sub transactions
- *                                            have no reference inputs.
+ *                                            they carry are priced in the fee. A reference input of a sub transaction that is not found in
+ *                                            \p available_utxo or in \p reference_inputs is also looked up in this list.
  * \param[in]      input_to_redeemer_map      A map of inputs to redeemers. This map associates specific references of inputs to redeemers in the witness set. Balancing the transaction can add
  *                                            additional inputs and this can make inputs change positions in the input set. Redeemers must be updated to point to the correct input.
  *                                            If you provide redeemers for any pre-selected input, you must specify this association in this map.
  * \param[in]      available_utxo             A list of available UTXOs to select from, if additional inputs are needed. The reference scripts
- *                                            carried by the ones that end up selected are priced in the fee.
+ *                                            carried by the ones that end up selected are priced in the fee. When the transaction carries sub
+ *                                            transactions it must also hold the UTXOs they spend, and it may hold the ones they reference: these are
+ *                                            never selected, the value of the spent ones takes part in the value conservation of the batch and the
+ *                                            reference scripts they carry are priced in the fee. The scripts of the UTXOs used only by sub transactions
+ *                                            take no part in script evaluation or in the validation mode of the top level transaction.
  * \param[in]      coin_selector              A pointer to the coin selector used for choosing appropriate UTXOs.
  * \param[in]      change_address             The address where any remaining balance (change) will be sent.
  * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if the transaction or any of its sub transactions has scripts.
@@ -114,9 +116,8 @@ extern "C" {
  *                                            input order, change outputs and fee of the draft transaction are known. Each entry's callback produces
  *                                            the redeemer payload from the balanced draft. Can be NULL if the transaction has no deferred redeemers.
  *
- * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_POINTER_IS_NULL if the transaction
- *         carries sub transactions and \p sub_transaction_resolved_inputs is NULL, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input of a
- *         sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
+ * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input spent
+ *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
  *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction uses a PlutusV1, PlutusV2 or PlutusV3 script and
  *         its sub transactions do not balance between themselves, or an appropriate error code indicating the type of failure.
  *
@@ -130,17 +131,15 @@ extern "C" {
  * cardano_protocol_parameters_t* params = ...;                   // Protocol parameters
  * cardano_utxo_list_t* ref_inputs = ...;                         // Resolved reference inputs
  * cardano_utxo_list_t* preselected = ...;                        // Pre-selected UTXOs
- * cardano_utxo_list_t* sub_tx_inputs = ...;                      // Resolved inputs of the sub transactions, or NULL
- * cardano_utxo_list_t* sub_tx_ref_inputs = ...;                  // Resolved reference inputs of the sub transactions, or NULL
  * cardano_input_to_redeemer_map_t* input_to_redeemer_map = ...;  // Input to redeemer map
- * cardano_utxo_list_t* available = ...;                          // Available UTXOs
+ * cardano_utxo_list_t* available = ...;                          // Available UTXOs, including the UTXOs of the sub transactions
  * cardano_coin_selector_t* selector = ...;                       // Coin selector instance
  * cardano_address_t* change_addr = ...;                          // Change address
  * cardano_utxo_list_t* collateral_utxo = ...;                    // Available collateral UTXOs
  * cardano_address_t* collateral_change_addr = ...;               // Collateral change address
  * cardano_tx_evaluator_t* eval = ...;                            // Evaluator instance
  *
- * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, sub_tx_inputs, sub_tx_ref_inputs, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval, NULL);
+ * cardano_error_t result = cardano_balance_transaction(tx, foreign_signature_count, params, ref_inputs, preselected, input_to_redeemer_map, available, selector, change_addr, collateral_utxo, collateral_change_addr, eval, NULL);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -156,8 +155,6 @@ cardano_balance_transaction(
   cardano_protocol_parameters_t*    protocol_params,
   cardano_utxo_list_t*              reference_inputs,
   cardano_utxo_list_t*              pre_selected_utxo,
-  cardano_utxo_list_t*              sub_transaction_resolved_inputs,
-  cardano_utxo_list_t*              sub_transaction_reference_inputs,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,

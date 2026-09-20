@@ -389,6 +389,131 @@ check_required_top_level_guards(cardano_transaction_t* tx, const char** error_me
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Callback that checks whether a UTXO belongs to a transaction input.
+ *
+ * \param[in] item A pointer to the \ref cardano_utxo_t to evaluate.
+ * \param[in] context A pointer to the \ref cardano_transaction_input_t to match against.
+ *
+ * \return true if the UTXO belongs to the transaction input, false otherwise.
+ */
+static bool
+find_utxo(cardano_utxo_t* item, const void* context)
+{
+  const cardano_transaction_input_t* input      = (const cardano_transaction_input_t*)context;
+  cardano_transaction_input_t*       utxo_input = cardano_utxo_get_input(item);
+
+  bool found = cardano_transaction_input_equals(utxo_input, input);
+
+  cardano_transaction_input_unref(&utxo_input);
+
+  return found;
+}
+
+/**
+ * \brief Adds to a list the UTXOs of another list whose input the list does not hold yet.
+ *
+ * \param[in,out] list A pointer to the \ref cardano_utxo_list_t that receives the UTXOs.
+ * \param[in] utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs to add.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were added, or an appropriate error code indicating the
+ *         failure reason.
+ */
+static cardano_error_t
+add_utxos_with_new_inputs(cardano_utxo_list_t* list, cardano_utxo_list_t* utxos)
+{
+  const size_t length = cardano_utxo_list_get_length(utxos);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+    cardano_transaction_input_unref(&input);
+
+    cardano_utxo_t* listed_utxo = cardano_utxo_list_find(list, find_utxo, input);
+    cardano_utxo_unref(&listed_utxo);
+
+    if (listed_utxo == NULL)
+    {
+      result = cardano_utxo_list_add(list, utxo);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Creates the list of available UTXOs the transaction is balanced with.
+ *
+ * The balancer takes the resolved UTXOs of the sub transactions from the available UTXOs, so the UTXOs
+ * the sub transactions spend and reference are added to the ones available for input selection. The
+ * batcher can also be a party of the batch, so a UTXO that is already available is not listed again.
+ * The list of the state is never modified.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[out] utxos On success, this will point to the list to balance the transaction with, which is
+ *                   the list of available UTXOs of the state itself when the transaction carries no sub
+ *                   transactions. The caller is responsible for releasing it with
+ *                   \ref cardano_utxo_list_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code indicating the
+ *         failure reason.
+ */
+static cardano_error_t
+get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
+{
+  const size_t sub_transaction_utxo_count = cardano_utxo_list_get_length(state->sub_transaction_inputs) +
+    cardano_utxo_list_get_length(state->sub_transaction_reference_inputs);
+
+  if (sub_transaction_utxo_count == 0U)
+  {
+    cardano_utxo_list_ref(state->available_utxos);
+    *utxos = state->available_utxos;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_utxo_list_t* balancing_utxos = cardano_utxo_list_clone(state->available_utxos);
+
+  if (balancing_utxos == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = add_utxos_with_new_inputs(balancing_utxos, state->sub_transaction_inputs);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxos_with_new_inputs(balancing_utxos, state->sub_transaction_reference_inputs);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&balancing_utxos);
+
+    return result;
+  }
+
+  *utxos = balancing_utxos;
+
+  return CARDANO_SUCCESS;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -453,22 +578,33 @@ cardano_builder_build(
     return result;
   }
 
+  cardano_utxo_list_t* balancing_utxos = NULL;
+
+  result = get_balancing_utxos(state, &balancing_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to gather the UTXOs of the sub transactions.";
+
+    return result;
+  }
+
   result = cardano_balance_transaction(
     tx,
     state->additional_signature_count,
     state->params,
     state->reference_inputs,
     state->pre_selected_inputs,
-    state->sub_transaction_inputs,
-    state->sub_transaction_reference_inputs,
     state->input_to_redeemer_map,
-    state->available_utxos,
+    balancing_utxos,
     state->coin_selector,
     state->change_address,
     state->collateral_utxos,
     state->collateral_address,
     state->tx_evaluator,
     state->deferred_redeemers);
+
+  cardano_utxo_list_unref(&balancing_utxos);
 
   if (result != CARDANO_SUCCESS)
   {

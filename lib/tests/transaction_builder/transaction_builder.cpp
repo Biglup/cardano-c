@@ -7177,6 +7177,66 @@ TEST(cardano_tx_builder_add_sub_transaction, neverSelectsAnAvailableUtxoSpentByA
   cardano_utxo_list_unref(&all_utxos);
 }
 
+TEST(cardano_tx_builder_add_sub_transaction, buildsTheSameBatchIfTheBatcherIsAlsoAParty)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_protocol_parameters();
+  cardano_utxo_list_t*           wallet_utxos = new_utxo_list();
+  cardano_utxo_t*                party_utxo   = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                first_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                second_utxo  = create_utxo(CBOR_DIFFERENT_VAL3);
+  cardano_utxo_list_t*           party_utxos  = new_single_utxo_list(party_utxo);
+  cardano_utxo_list_t*           other_utxos  = new_single_utxo_list(first_utxo);
+  cardano_sub_transaction_t*     party_sub_tx = build_party_sub_transaction(params, party_utxo, 224831727, 0);
+
+  EXPECT_EQ(cardano_utxo_list_add(other_utxos, second_utxo), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* party_builder = new_funded_tx_builder(params, wallet_utxos);
+  cardano_tx_builder_t* other_builder = new_funded_tx_builder(params, other_utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(party_builder, party_sub_tx, party_utxos);
+  cardano_tx_builder_add_sub_transaction(other_builder, party_sub_tx, party_utxos);
+
+  cardano_transaction_t* party_tx     = nullptr;
+  cardano_transaction_t* other_tx     = nullptr;
+  cardano_error_t        party_result = cardano_tx_builder_build(party_builder, &party_tx);
+  cardano_error_t        other_result = cardano_tx_builder_build(other_builder, &other_tx);
+
+  // Assert
+  EXPECT_EQ(party_result, CARDANO_SUCCESS);
+  EXPECT_EQ(other_result, CARDANO_SUCCESS);
+  ASSERT_NE(party_tx, nullptr);
+  ASSERT_NE(other_tx, nullptr);
+
+  bool  is_balanced  = false;
+  char* party_tx_hex = encode_transaction(party_tx);
+  char* other_tx_hex = encode_transaction(other_tx);
+
+  EXPECT_EQ(cardano_is_transaction_balanced(party_tx, wallet_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+  EXPECT_FALSE(transaction_spends(party_tx, party_utxo));
+  EXPECT_STREQ(party_tx_hex, other_tx_hex);
+  EXPECT_EQ(cardano_utxo_list_get_length(wallet_utxos), 3U);
+  EXPECT_EQ(party_builder->state.available_utxos, wallet_utxos);
+
+  // Cleanup
+  free(party_tx_hex);
+  free(other_tx_hex);
+  cardano_transaction_unref(&party_tx);
+  cardano_transaction_unref(&other_tx);
+  cardano_tx_builder_unref(&party_builder);
+  cardano_tx_builder_unref(&other_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&party_sub_tx);
+  cardano_utxo_unref(&party_utxo);
+  cardano_utxo_unref(&first_utxo);
+  cardano_utxo_unref(&second_utxo);
+  cardano_utxo_list_unref(&wallet_utxos);
+  cardano_utxo_list_unref(&party_utxos);
+  cardano_utxo_list_unref(&other_utxos);
+}
+
 TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInLegacyModeWhenBuilding)
 {
   // Arrange
