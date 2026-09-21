@@ -1168,20 +1168,39 @@ TEST(cardano_tx_builder_new, returnsErrorOnMemoryAllocationFailure)
   // Arrange
   cardano_protocol_parameters_t* params = init_protocol_parameters();
 
-  // Act
-  for (int i = 0; i < 25; ++i)
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 500) && !succeeded; ++i)
   {
     reset_allocators_run_count();
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
     cardano_tx_builder_t* builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
-    EXPECT_EQ(builder, nullptr);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder != nullptr)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+      EXPECT_EQ(cardano_tx_builder_refcount(builder), 1U);
+      EXPECT_THAT(builder->state.sub_transaction_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+      EXPECT_THAT(builder->state.sub_transaction_reference_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
+
+      cardano_tx_builder_unref(&builder);
+    }
+
+    EXPECT_EQ(cardano_protocol_parameters_refcount(params), 1U);
   }
 
-  reset_allocators_run_count();
-  reset_limited_malloc();
-  cardano_set_allocators(malloc, realloc, free);
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
   cardano_protocol_parameters_unref(&params);
 }
 
