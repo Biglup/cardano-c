@@ -64,10 +64,10 @@ cardano_builder_add_input(
     return result;
   }
 
-  cardano_transaction_input_t* spent_input = cardano_utxo_get_input(utxo);
-  cardano_transaction_input_unref(&spent_input);
+  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&input);
 
-  if (cardano_builder_is_input_spent_by_sub_transaction(state, spent_input))
+  if (cardano_builder_is_input_spent_by_sub_transaction(state, input))
   {
     *error_message = "Input is already spent by a sub transaction";
     return CARDANO_ERROR_DUPLICATED_KEY;
@@ -139,9 +139,6 @@ cardano_builder_add_input(
       *error_message = "Failed to add redeemer to list";
       return result;
     }
-
-    cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
-    cardano_transaction_input_unref(&input);
 
     result = cardano_input_to_redeemer_map_insert(state->input_to_redeemer_map, input, rdmer);
 

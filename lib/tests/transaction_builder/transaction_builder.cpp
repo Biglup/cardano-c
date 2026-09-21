@@ -7539,7 +7539,6 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsAMissingRequiredTopLevelGuar
 {
   // Arrange
   cardano_protocol_parameters_t* params        = init_protocol_parameters();
-  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
   cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
   cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL2);
   cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
@@ -7568,7 +7567,6 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsAMissingRequiredTopLevelGuar
   cardano_credential_unref(&guard);
   cardano_utxo_unref(&seller_utxo);
   cardano_utxo_unref(&batcher_utxo);
-  cardano_utxo_list_unref(&all_utxos);
   cardano_utxo_list_unref(&seller_utxos);
   cardano_utxo_list_unref(&batcher_utxos);
 }
@@ -7764,7 +7762,6 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsAMissingRequiredTopLevelGuar
 {
   // Arrange
   cardano_protocol_parameters_t* params        = init_protocol_parameters();
-  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
   cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
   cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL2);
   cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
@@ -7796,7 +7793,6 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsAMissingRequiredTopLevelGuar
   cardano_credential_unref(&other_type);
   cardano_utxo_unref(&seller_utxo);
   cardano_utxo_unref(&batcher_utxo);
-  cardano_utxo_list_unref(&all_utxos);
   cardano_utxo_list_unref(&seller_utxos);
   cardano_utxo_list_unref(&batcher_utxos);
 }
