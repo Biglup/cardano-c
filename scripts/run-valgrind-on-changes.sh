@@ -1,10 +1,51 @@
 #!/bin/bash
 
-# Make sure we fetch the main branch so we can compare the changes
-git fetch origin main
+# Runs the unit tests that cover the files changed on the current branch under
+# valgrind.
+#
+# Usage:
+#   scripts/run-valgrind-on-changes.sh [base-ref]
+#
+# base-ref is the ref the current branch is compared against. It defaults to
+# origin/main when that ref exists locally and to main otherwise, so the script
+# works without network access. Set CARDANO_VALGRIND_FETCH=1 to run
+# `git fetch origin main` before comparing; the script never fetches by default.
+#
+# The changed files are the files that differ from the merge base with base-ref
+# plus the untracked files that git does not ignore, so a new test file is
+# picked up before it is committed. Deleted files are skipped. Each changed file
+# is mapped to the unit test file under lib/tests with the same base name and
+# the tests found there run under valgrind. When no test file matches, the whole
+# test suite runs.
+#
+# Run it from the repository root after building the debug tree, the test
+# binary is located with find.
 
-script_folder="$(dirname $(readlink -f $0))"
-changed_files=$(git diff --name-status $(git merge-base origin/main HEAD) | awk '$1 != "D" {print $2}') # Exclude deleted files
+if [ "${CARDANO_VALGRIND_FETCH:-0}" = "1" ]; then
+    # Refresh the main branch so the comparison uses the latest remote state
+    git fetch origin main
+fi
+
+if [ -n "$1" ]; then
+    base_ref="$1"
+elif git rev-parse --verify --quiet origin/main > /dev/null; then
+    base_ref="origin/main"
+else
+    base_ref="main"
+fi
+
+merge_base=$(git merge-base "$base_ref" HEAD)
+
+if [ -z "$merge_base" ]; then
+    echo "Could not find a merge base between $base_ref and HEAD."
+    exit 1
+fi
+
+echo "Comparing against $base_ref ($merge_base)"
+
+changed_files=$(git diff --name-status "$merge_base" | awk '$1 != "D" {print $2}') # Exclude deleted files
+untracked_files=$(git ls-files --others --exclude-standard) # New files that are not committed yet
+changed_files=$(printf '%s\n%s\n' "$changed_files" "$untracked_files" | sed '/^$/d')
 
 # Extract file names without extensions
 changed_files_base=$(echo "$changed_files" | sed 's/\(.*\)\..*/\1/' | sort | uniq)
