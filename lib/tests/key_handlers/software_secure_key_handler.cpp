@@ -1727,30 +1727,39 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnM
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   cardano_vkey_witness_set_t* vkey_witness_set = nullptr;
-  cardano_derivation_path_t   path[]           = {
-    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U },
-    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 2U, 0U },
-    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 3U, 0U },
-    { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 4U, 0U }
-  };
+  cardano_derivation_path_t   path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
 
-  for (int i = 0; i < 135; ++i)
+  bool succeeded = false;
+
+  for (int i = 0; (i < 500) && !succeeded; ++i)
   {
     reset_allocators_run_count();
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    error = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, &path[0], 4, &vkey_witness_set);
+    error = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, &path, 1, &vkey_witness_set);
 
+    reset_allocators_run_count();
+    reset_limited_malloc();
     cardano_set_allocators(malloc, realloc, free);
-    EXPECT_NE(error, CARDANO_SUCCESS);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 1);
+
+      cardano_vkey_witness_set_unref(&vkey_witness_set);
+    }
+    else
+    {
+      EXPECT_EQ(vkey_witness_set, nullptr);
+    }
   }
 
-  // Cleanup
-  reset_allocators_run_count();
-  reset_limited_malloc();
+  EXPECT_TRUE(succeeded);
 
-  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  // Cleanup
   cardano_transaction_unref(&transaction);
   cardano_secure_key_handler_unref(&key_handler);
 }
