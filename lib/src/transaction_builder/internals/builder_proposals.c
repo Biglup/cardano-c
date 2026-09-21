@@ -200,8 +200,8 @@ cardano_builder_propose_parameter_change(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_parameter_change_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -380,8 +380,8 @@ cardano_builder_propose_hardfork(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_hard_fork_initiation_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -398,6 +398,14 @@ cardano_builder_propose_hardfork(
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   result = cardano_proposal_procedure_set_add(proposals, proposal);
   cardano_proposal_procedure_unref(&proposal);
@@ -539,8 +547,8 @@ cardano_builder_propose_treasury_withdrawals(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_treasury_withdrawals_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -693,8 +701,8 @@ cardano_builder_propose_no_confidence(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_no_confidence_action(deposit, reward_address, anchor, action, &proposal);
   cardano_no_confidence_action_unref(&action);
@@ -710,6 +718,14 @@ cardano_builder_propose_no_confidence(
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   result = cardano_proposal_procedure_set_add(proposals, proposal);
   cardano_proposal_procedure_unref(&proposal);
@@ -830,7 +846,7 @@ cardano_builder_propose_update_committee(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
+  cardano_proposal_procedure_t* proposal = NULL;
 
   const uint64_t deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
@@ -849,6 +865,14 @@ cardano_builder_propose_update_committee(
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   result = cardano_proposal_procedure_set_add(proposals, proposal);
   cardano_proposal_procedure_unref(&proposal);
@@ -985,8 +1009,8 @@ cardano_builder_propose_new_constitution(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_constitution_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -1003,6 +1027,14 @@ cardano_builder_propose_new_constitution(
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   result = cardano_proposal_procedure_set_add(proposals, proposal);
   cardano_proposal_procedure_unref(&proposal);
@@ -1121,8 +1153,8 @@ cardano_builder_propose_info(
     return result;
   }
 
-  cardano_proposal_procedure_t* proposal;
-  const uint64_t                deposit = cardano_protocol_parameters_get_governance_action_deposit(state->params);
+  cardano_proposal_procedure_t* proposal = NULL;
+  const uint64_t                deposit  = cardano_protocol_parameters_get_governance_action_deposit(state->params);
 
   result = cardano_proposal_procedure_new_info_action(deposit, reward_address, anchor, action, &proposal);
 
@@ -1139,6 +1171,14 @@ cardano_builder_propose_info(
   cardano_transaction_body_unref(&body);
 
   cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+
+  if (proposals == NULL)
+  {
+    cardano_proposal_procedure_unref(&proposal);
+    *error_message = "Failed to add proposal procedure.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   result = cardano_proposal_procedure_set_add(proposals, proposal);
 

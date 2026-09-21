@@ -40,15 +40,18 @@
 
 static const char* COSTMDLS_ALL_CBOR = "a30098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a0298b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
 
-static const char* REWARD_ADDRESS            = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
-static const char* ANCHOR_CBOR               = "827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000";
-static const char* GOVERNANCE_ACTION_ID_CBOR = "825820000000000000000000000000000000000000000000000000000000000000000003";
-static const char* HASH_HEX                  = "00000000000000000000000000000000000000000000000000000000";
-static const char* WITHDRAWAL_MAP_CBOR       = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005";
-static const char* ANCHOR_URL                = "https://storage.googleapis.com/biglup/Angel_Castillo.jsonld";
-static const char* ANCHOR_HASH               = "26ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
-static const char* GOVERNANCE_ACTION_ID      = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
-static const char* HARDFORK_PROPOSALS_CBOR   = "d90102818400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64548301825820000000000000000000000000000000000000000000000000000000000000000011820c0082783b68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f6269676c75702f416e67656c5f43617374696c6c6f2e6a736f6e6c64582026ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
+static const char* REWARD_ADDRESS             = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
+static const char* ANCHOR_CBOR                = "827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000";
+static const char* GOVERNANCE_ACTION_ID_CBOR  = "825820000000000000000000000000000000000000000000000000000000000000000003";
+static const char* HASH_HEX                   = "00000000000000000000000000000000000000000000000000000000";
+static const char* WITHDRAWAL_MAP_CBOR        = "a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005";
+static const char* ANCHOR_URL                 = "https://storage.googleapis.com/biglup/Angel_Castillo.jsonld";
+static const char* ANCHOR_HASH                = "26ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
+static const char* GOVERNANCE_ACTION_ID       = "gov_action1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpzklpgpf";
+static const char* HARDFORK_PROPOSALS_CBOR    = "d90102818400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64548301825820000000000000000000000000000000000000000000000000000000000000000011820c0082783b68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f6269676c75702f416e67656c5f43617374696c6c6f2e6a736f6e6c64582026ce09df4e6f64fe5cf248968ab78f4b8a0092580c234d78f68c079c0fce34f0";
+static const char* CREDENTIAL_SET_CBOR        = "d90102848200581c000000000000000000000000000000000000000000000000000000008200581c100000000000000000000000000000000000000000000000000000008200581c200000000000000000000000000000000000000000000000000000008200581c30000000000000000000000000000000000000000000000000000000";
+static const char* COMMITTEE_MEMBERS_MAP_CBOR = "a48200581c00000000000000000000000000000000000000000000000000000000008200581c10000000000000000000000000000000000000000000000000000000018200581c20000000000000000000000000000000000000000000000000000000028200581c3000000000000000000000000000000000000000000000000000000003";
+static const char* CONSTITUTION_CBOR          = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -311,6 +314,73 @@ TEST(cardano_builder_propose_parameter_change, doesNotAttachRedeemerWhenProposal
   cardano_protocol_param_update_unref(&pparam_update);
 }
 
+TEST(cardano_builder_propose_hardfork, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                    = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_protocol_version_t* version = NULL;
+  EXPECT_EQ(cardano_protocol_version_new(12, 0, &version), CARDANO_SUCCESS);
+
+  const char* error_message = NULL;
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_propose_hardfork(&state, reward_address, anchor, version, action_id, &error_message);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 0U);
+    }
+
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_protocol_version_unref(&version);
+}
+
 TEST(cardano_builder_propose_hardfork_ex, proposesTheGivenMajorAndMinorProtocolVersion)
 {
   // Arrange
@@ -453,4 +523,272 @@ TEST(cardano_builder_propose_treasury_withdrawals, doesNotAttachRedeemerWhenProp
   cardano_anchor_unref(&anchor);
   cardano_withdrawal_map_unref(&withdrawals);
   cardano_blake2b_hash_unref(&policy_hash);
+}
+
+TEST(cardano_builder_propose_no_confidence, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                    = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  const char* error_message = NULL;
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_propose_no_confidence(&state, reward_address, anchor, action_id, &error_message);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 0U);
+    }
+
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+}
+
+TEST(cardano_builder_propose_update_committee, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                    = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                          = cardano_cbor_reader_from_hex(CREDENTIAL_SET_CBOR, strlen(CREDENTIAL_SET_CBOR));
+  cardano_credential_set_t* members_to_be_removed = NULL;
+  EXPECT_EQ(cardano_credential_set_from_cbor(reader, &members_to_be_removed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                               = cardano_cbor_reader_from_hex(COMMITTEE_MEMBERS_MAP_CBOR, strlen(COMMITTEE_MEMBERS_MAP_CBOR));
+  cardano_committee_members_map_t* members_to_be_added = NULL;
+  EXPECT_EQ(cardano_committee_members_map_from_cbor(reader, &members_to_be_added), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_unit_interval_t* new_quorum = NULL;
+  EXPECT_EQ(cardano_unit_interval_from_double(0.5, &new_quorum), CARDANO_SUCCESS);
+
+  const char* error_message = NULL;
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_propose_update_committee(&state, reward_address, anchor, action_id, members_to_be_removed, members_to_be_added, new_quorum, &error_message);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 0U);
+    }
+
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_credential_set_unref(&members_to_be_removed);
+  cardano_committee_members_map_unref(&members_to_be_added);
+  cardano_unit_interval_unref(&new_quorum);
+}
+
+TEST(cardano_builder_propose_new_constitution, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                    = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                               = cardano_cbor_reader_from_hex(CONSTITUTION_CBOR, strlen(CONSTITUTION_CBOR));
+  cardano_constitution_t* constitution = NULL;
+  EXPECT_EQ(cardano_constitution_from_cbor(reader, &constitution), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  const char* error_message = NULL;
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_propose_new_constitution(&state, reward_address, anchor, action_id, constitution, &error_message);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 0U);
+    }
+
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_constitution_unref(&constitution);
+}
+
+TEST(cardano_builder_propose_info, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  const char* error_message = NULL;
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+
+    EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_builder_propose_info(&state, reward_address, anchor, &error_message);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 0U);
+    }
+
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
 }
