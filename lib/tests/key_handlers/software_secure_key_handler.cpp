@@ -1833,6 +1833,62 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsMemoryAl
   cardano_secure_key_handler_unref(&key_handler);
 }
 
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, canSignWithMoreDerivationPathsThanTheInitialCapacityOfTheWitnessSet)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction    = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler        = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set   = nullptr;
+  cardano_bip32_public_key_t*   account_public_key = nullptr;
+  cardano_derivation_path_t     paths[128]         = {};
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    paths[i] = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, i };
+  }
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &paths[0], 128, &vkey_witness_set);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_vkey_witness_set_get_length(vkey_witness_set), 128);
+  ASSERT_EQ(cardano_secure_key_handler_bip32_get_extended_account_public_key(key_handler, { paths[0].purpose, paths[0].coin_type, paths[0].account }, &account_public_key), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    cardano_bip32_public_key_t*   derived_public_key = nullptr;
+    cardano_ed25519_public_key_t* public_key         = nullptr;
+    cardano_vkey_witness_t*       witness            = nullptr;
+    const uint32_t                indices[2]         = { (uint32_t)paths[i].role, (uint32_t)paths[i].index };
+
+    ASSERT_EQ(cardano_bip32_public_key_derive(account_public_key, indices, 2, &derived_public_key), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_bip32_public_key_to_ed25519_key(derived_public_key, &public_key), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_vkey_witness_set_get(vkey_witness_set, i, &witness), CARDANO_SUCCESS);
+
+    cardano_ed25519_signature_t*  signature = cardano_vkey_witness_get_signature(witness);
+    cardano_ed25519_public_key_t* vkey      = cardano_vkey_witness_get_vkey(witness);
+
+    EXPECT_EQ(memcmp(cardano_ed25519_public_key_get_data(vkey), cardano_ed25519_public_key_get_data(public_key), cardano_ed25519_public_key_get_bytes_size(public_key)), 0);
+    EXPECT_TRUE(cardano_ed25519_public_verify(public_key, signature, cardano_blake2b_hash_get_data(id), cardano_blake2b_hash_get_bytes_size(id)));
+
+    cardano_ed25519_signature_unref(&signature);
+    cardano_ed25519_public_key_unref(&vkey);
+    cardano_vkey_witness_unref(&witness);
+    cardano_ed25519_public_key_unref(&public_key);
+    cardano_bip32_public_key_unref(&derived_public_key);
+  }
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&id);
+  cardano_bip32_public_key_unref(&account_public_key);
+  cardano_vkey_witness_set_unref(&vkey_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
 TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, canSignSubTransactionWithBip32SecureKeyHandler)
 {
   // Arrange

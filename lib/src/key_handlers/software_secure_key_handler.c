@@ -514,6 +514,7 @@ bip32_sign_hash(
 
     if (result != CARDANO_SUCCESS)
     {
+      cardano_vkey_witness_unref(&witness);
       cardano_vkey_witness_set_unref(vkey_witness_set);
       cardano_bip32_private_key_unref(&root_private_key);
 
