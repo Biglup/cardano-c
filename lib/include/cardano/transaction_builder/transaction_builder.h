@@ -1495,9 +1495,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  *
  * A sub transaction can require guards from the transaction that carries it, and the batch is only valid when every
  * one of those credentials is among the guards of the transaction. The batcher must add each of them with
- * `cardano_tx_builder_add_guard`, before or after adding the sub transaction. The builder never adds them by itself,
- * since a key hash guard is also a required signer, and building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when
- * one is missing.
+ * `cardano_tx_builder_add_guard` or `cardano_tx_builder_add_guard_ex`, before or after adding the sub transaction. The
+ * builder never adds them by itself, since a key hash guard is also a required signer, and building fails with
+ * \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when one is missing.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
@@ -1505,8 +1505,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  *                           transaction. It must resolve every input the sub transaction spends, since their value
  *                           takes part in the value conservation of the batch and the reference scripts they carry
  *                           are priced in the fee. It may also resolve its reference inputs, which carry the
- *                           reference scripts the fee accounts for; reference inputs that are not resolved are
- *                           skipped.
+ *                           reference scripts the fee accounts for; a reference input that is not resolved here is
+ *                           skipped, unless the same UTXO is among the available UTXOs, the reference inputs or the
+ *                           inputs of the transaction at build time, in which case its reference script is priced.
  *
  * Usage Example:
  * \code{.c}

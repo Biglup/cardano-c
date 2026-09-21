@@ -110,7 +110,13 @@ cardano_sub_tx_builder_build(sub_tx_builder, &sub_transaction);
 
 // The party signs the sub transaction id with the key held by its secure key handler.
 cardano_secure_key_handler_ed25519_sign_sub_transaction(party_key_handler, sub_transaction, &party_witnesses);
-cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, party_witnesses);
+
+cardano_error_t result = cardano_sub_transaction_apply_vkey_witnesses(sub_transaction, party_witnesses);
+
+if (result != CARDANO_SUCCESS)
+{
+  return result;
+}
 
 // The batcher aggregates the sub transactions and the builder balances the whole batch.
 cardano_tx_builder_add_sub_transaction(tx_builder, sub_transaction, party_utxos);
