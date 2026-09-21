@@ -137,7 +137,7 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
   uint64_t*                     lovelace_required);
 
 /**
- * \brief Computes the minimum fee required for a transaction with Plutus scripts.
+ * \brief Computes the script part of the minimum fee of a transaction: execution units and reference scripts.
  *
  * This function calculates the minimum fee required for a transaction that contains Plutus scripts. The fee is based on:
  * - The execution units required by the scripts.
@@ -175,7 +175,7 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * cardano_unit_interval_t* coins_per_ref_script_byte = ...;  // Cost per byte for reference scripts
  * uint64_t min_fee = 0;
  *
- * cardano_error_t result = cardano_compute_min_script_fee(tx, prices, resolved_ref_inputs, coins_per_ref_script_byte, &min_fee);
+ * cardano_error_t result = cardano_compute_min_script_fee(tx, prices, resolved_reference_inputs, coins_per_ref_script_byte, &min_fee);
  *
  * if (result == CARDANO_SUCCESS)
  * {

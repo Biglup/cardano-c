@@ -51,7 +51,7 @@ extern "C" {
  * - Adding additional inputs if the transaction does not meet the required balance.
  * - Computing the cost of script execution.
  * - Calculating the change output to ensure the transaction has the correct total ADA and assets.
- * - Adding collateral inputs if the transaction, or any of the sub transactions it carries, includes scripts.
+ * - Adding collateral inputs if a redeemer exists in the transaction or in any of the sub transactions it carries.
  *
  * When the transaction carries CIP-118 sub transactions the ledger checks value conservation over the whole batch, so
  * the net imbalance of the sub transactions (see \ref cardano_compute_sub_transaction_imbalance) is part of the value
@@ -95,7 +95,7 @@ extern "C" {
  *                                            transaction. The reference scripts they carry are priced in the fee. An input of a sub transaction that
  *                                            is not found in \p available_utxo is also looked up in this list.
  * \param[in]      pre_selected_utxo          A list of UTXOs that must be included in the transaction inputs. They must be disjoint from the inputs
- *                                            spent by the sub transactions the transaction carries, an overlap is rejected. The reference scripts
+ *                                            spent by the sub transactions the transaction carries. An overlap is rejected. The reference scripts
  *                                            they carry are priced in the fee. A reference input of a sub transaction that is not found in
  *                                            \p available_utxo or in \p reference_inputs is also looked up in this list.
  * \param[in]      input_to_redeemer_map      A map of inputs to redeemers. This map associates specific references of inputs to redeemers in the witness set. Balancing the transaction can add
@@ -103,13 +103,15 @@ extern "C" {
  *                                            If you provide redeemers for any pre-selected input, you must specify this association in this map.
  * \param[in]      available_utxo             A list of available UTXOs to select from, if additional inputs are needed. The reference scripts
  *                                            carried by the ones that end up selected are priced in the fee. When the transaction carries sub
- *                                            transactions it must also hold the UTXOs they spend, and it may hold the ones they reference: these are
- *                                            never selected, the value of the spent ones takes part in the value conservation of the batch and the
- *                                            reference scripts they carry are priced in the fee. The scripts of the UTXOs used only by sub transactions
- *                                            take no part in script evaluation or in the validation mode of the top level transaction.
+ *                                            transactions, the UTXOs they spend must be resolvable from this list or from \p reference_inputs, and
+ *                                            supplying them in this list is the recommended way. This list may also hold the UTXOs they reference.
+ *                                            The UTXOs a sub transaction spends or references are never selected, the value of the spent ones takes
+ *                                            part in the value conservation of the batch and the reference scripts they carry are priced in the fee.
+ *                                            The scripts of the UTXOs used only by sub transactions take no part in script evaluation or in the
+ *                                            validation mode of the top level transaction.
  * \param[in]      coin_selector              A pointer to the coin selector used for choosing appropriate UTXOs.
  * \param[in]      change_address             The address where any remaining balance (change) will be sent.
- * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if the transaction or any of its sub transactions has scripts.
+ * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if a redeemer exists in the transaction or in any of its sub transactions.
  * \param[in]      collateral_change_address  The address where any remaining collateral change will be sent, if applicable.
  * \param[in]      evaluator                  A transaction evaluator instance for determining the execution cost of scripts.
  * \param[in]      deferred_redeemers         An optional list of deferred redeemers to resolve on every balancing iteration, once the canonical
