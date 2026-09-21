@@ -36,6 +36,8 @@ jobs:
           make
 
       - name: Run Unit Tests
+        env:
+          CARDANO_VALGRIND_FETCH: 1
         run: |
           chmod +x ./scripts/run-valgrind-on-changes.sh
           dos2unix ./scripts/run-valgrind-on-changes.sh
