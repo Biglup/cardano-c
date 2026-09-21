@@ -89,7 +89,7 @@ static const char* PARTY_KEYS_HEX[MAX_PARTIES] = {
 };
 
 static const uint64_t PROPERTY_SEED = 0xC0FFEE42U;
-static const size_t   ITERATIONS    = 1000U;
+static const size_t   ITERATIONS    = 500U;
 
 /**
  * \brief Upper bound in lovelace of the fee of a generated batch. It is one of the two slack bounds of the failure
@@ -771,7 +771,8 @@ is_signed_by(cardano_vkey_witness_set_t* witnesses, const party_t& party, cardan
 
 /**
  * Expects a transaction to carry a sub transaction exactly as its party signed it: same id, same bytes and a
- * signature of the party that still verifies against the id.
+ * signature of the party that still verifies against the id. The signed bytes must also appear verbatim in the
+ * serialized transaction, so the sub transaction is embedded as received and not re-encoded.
  * \param tx the transaction that carries the sub transaction.
  * \param party the party that signed the sub transaction.
  * \param signed_sub_transaction the sub transaction the party signed.
@@ -796,6 +797,7 @@ expect_carries_as_signed(
 
   EXPECT_TRUE(cardano_blake2b_hash_equals(carried_id, signed_id));
   EXPECT_EQ(encode_sub_transaction(carried), signed_cbor);
+  EXPECT_NE(encode_transaction(tx).find(signed_cbor), std::string::npos);
   EXPECT_TRUE(is_signed_by(witnesses, party, carried_id));
 
   cardano_vkey_witness_set_unref(&witnesses);

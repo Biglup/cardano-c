@@ -897,6 +897,8 @@ TEST(cardano_builder_add_sub_transaction, leavesTheStateUnchangedWhenAllocationF
 
   for (int i = 0; (i < 100) && !succeeded; ++i)
   {
+    error_message = NULL;
+
     reset_allocators_run_count();
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);

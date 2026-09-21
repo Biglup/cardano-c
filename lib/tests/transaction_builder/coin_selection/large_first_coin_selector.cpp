@@ -388,6 +388,35 @@ do_select(
   return cardano_coin_selector_select(selector, &request, selection, remaining_utxo, change_outputs);
 }
 
+/**
+ * Asserts that a selection over the UTXOs of new_utxo_list_diff_vals spent exactly one input, the largest one, when
+ * the target needed no value or only its coin. The two other UTXOs remain, the surplus of the selected UTXO goes to a
+ * single change output and the selection balances the target.
+ * \param selection the selected UTXOs.
+ * \param remaining_utxo the UTXOs that were not selected.
+ * \param change_outputs the change outputs of the selection.
+ * \param target the target of the selection.
+ */
+static void
+assert_selects_only_the_largest_utxo(
+  cardano_utxo_list_t*               selection,
+  cardano_utxo_list_t*               remaining_utxo,
+  cardano_transaction_output_list_t* change_outputs,
+  cardano_value_t*                   target)
+{
+  ASSERT_NE(selection, nullptr);
+  ASSERT_NE(remaining_utxo, nullptr);
+  ASSERT_NE(change_outputs, nullptr);
+
+  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
+  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
+  EXPECT_EQ(get_largest_selected_coin(selection), 4027026466);
+  EXPECT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1);
+
+  assert_selection_is_locally_balanced(selection, target, change_outputs);
+  assert_change_outputs_are_min_ada_compliant(change_outputs);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_large_first_coin_selector_new, createsALargeFirstCoinSelector)
@@ -1312,17 +1341,8 @@ TEST(cardano_large_first_coin_selector_select, selectsAtLeastOneInputIfTheTarget
 
   // Assert
   ASSERT_EQ(error, CARDANO_SUCCESS);
-  ASSERT_NE(selection, nullptr);
-  ASSERT_NE(remaining_utxo, nullptr);
-  ASSERT_NE(change_outputs, nullptr);
 
-  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
-  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
-  EXPECT_EQ(get_largest_selected_coin(selection), 4027026466);
-  EXPECT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1);
-
-  assert_selection_is_locally_balanced(selection, target, change_outputs);
-  assert_change_outputs_are_min_ada_compliant(change_outputs);
+  assert_selects_only_the_largest_utxo(selection, remaining_utxo, change_outputs, target);
 
   // Cleanup
   cardano_utxo_list_unref(&selection);
@@ -1357,17 +1377,8 @@ TEST(cardano_large_first_coin_selector_select, selectsAtLeastOneInputIfOnlyTheTa
 
   // Assert
   ASSERT_EQ(error, CARDANO_SUCCESS);
-  ASSERT_NE(selection, nullptr);
-  ASSERT_NE(remaining_utxo, nullptr);
-  ASSERT_NE(change_outputs, nullptr);
 
-  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
-  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
-  EXPECT_EQ(get_largest_selected_coin(selection), 4027026466);
-  EXPECT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1);
-
-  assert_selection_is_locally_balanced(selection, target, change_outputs);
-  assert_change_outputs_are_min_ada_compliant(change_outputs);
+  assert_selects_only_the_largest_utxo(selection, remaining_utxo, change_outputs, target);
 
   // Cleanup
   cardano_utxo_list_unref(&selection);
@@ -1402,17 +1413,8 @@ TEST(cardano_large_first_coin_selector_select, selectsAtLeastOneInputIfTheTarget
 
   // Assert
   ASSERT_EQ(error, CARDANO_SUCCESS);
-  ASSERT_NE(selection, nullptr);
-  ASSERT_NE(remaining_utxo, nullptr);
-  ASSERT_NE(change_outputs, nullptr);
 
-  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
-  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
-  EXPECT_EQ(get_largest_selected_coin(selection), 4027026466);
-  EXPECT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1);
-
-  assert_selection_is_locally_balanced(selection, target, change_outputs);
-  assert_change_outputs_are_min_ada_compliant(change_outputs);
+  assert_selects_only_the_largest_utxo(selection, remaining_utxo, change_outputs, target);
 
   // Cleanup
   cardano_utxo_list_unref(&selection);
@@ -1447,17 +1449,8 @@ TEST(cardano_large_first_coin_selector_select, selectsOnlyTheRequiredInputIfTheT
 
   // Assert
   ASSERT_EQ(error, CARDANO_SUCCESS);
-  ASSERT_NE(selection, nullptr);
-  ASSERT_NE(remaining_utxo, nullptr);
-  ASSERT_NE(change_outputs, nullptr);
 
-  EXPECT_EQ(cardano_utxo_list_get_length(selection), 1);
-  EXPECT_EQ(cardano_utxo_list_get_length(remaining_utxo), 2);
-  EXPECT_EQ(get_largest_selected_coin(selection), 4027026466);
-  EXPECT_EQ(cardano_transaction_output_list_get_length(change_outputs), 1);
-
-  assert_selection_is_locally_balanced(selection, target, change_outputs);
-  assert_change_outputs_are_min_ada_compliant(change_outputs);
+  assert_selects_only_the_largest_utxo(selection, remaining_utxo, change_outputs, target);
 
   // Cleanup
   cardano_utxo_list_unref(&selection);

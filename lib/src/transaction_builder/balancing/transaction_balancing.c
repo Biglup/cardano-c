@@ -502,7 +502,8 @@ add_sub_transaction_imbalance(
  * \brief Adds the imbalance of every sub transaction of a set to a running total.
  *
  * \param[in]     sub_transactions The sub transactions whose imbalances are added, or NULL when the body has none.
- * \param[in]     resolved_inputs  The UTXO list containing resolved values for each input of the sub transactions.
+ * \param[in]     resolved_inputs  The UTXO list containing resolved values for each input of the sub transactions, or
+ *                                 NULL when the body has none.
  * \param[in]     protocol_params  The protocol parameters supplying the deposit amounts.
  * \param[in,out] total            The running total. On success it holds the sum; on failure the caller must still
  *                                 release it.
@@ -681,6 +682,13 @@ has_utxo_spent_by_sub_transactions(
   cardano_sub_transaction_set_t* sub_transactions,
   bool*                          has_spent_utxo)
 {
+  if (cardano_sub_transaction_set_get_length(sub_transactions) == 0U)
+  {
+    *has_spent_utxo = false;
+
+    return CARDANO_SUCCESS;
+  }
+
   const size_t num_utxos = cardano_utxo_list_get_length(utxos);
 
   bool found = false;
@@ -1058,7 +1066,8 @@ add_resolved_inputs(
  * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.
  * \param[in]  reference_inputs  The resolved reference inputs of the top level transaction, or NULL when it has none.
  * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
- * \param[out] spent_utxos       A pointer to store the list.
+ * \param[out] spent_utxos       A pointer to store the list, which is NULL when the transaction carries no sub
+ *                               transactions.
  *
  * \return \ref CARDANO_SUCCESS if the list was created, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if a sub transaction spends
  *         an input that is not resolved, or an appropriate error code.
@@ -1073,6 +1082,15 @@ get_sub_transaction_spent_utxos(
   cardano_utxo_list_t*           pre_selected_utxo,
   cardano_utxo_list_t**          spent_utxos)
 {
+  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  if (num_sub_transactions == 0U)
+  {
+    *spent_utxos = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
   cardano_utxo_list_t* spent_list = NULL;
 
   cardano_error_t result = cardano_utxo_list_new(&spent_list);
@@ -1081,8 +1099,6 @@ get_sub_transaction_spent_utxos(
   {
     return result;
   }
-
-  const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
 
   for (size_t i = 0U; i < num_sub_transactions; ++i)
   {
@@ -1632,7 +1648,7 @@ compute_vk_witnesses_cost(
  * \param[in]     sub_transaction_priced_inputs   The resolved UTXOs of the sub transactions whose reference scripts the
  *                                                fee includes.
  * \param[in]     pre_selected_utxo               The UTXOs that must be included in the transaction inputs.
- * \param[in]     sub_transaction_spent_utxos     The resolved UTXOs spent by the sub transactions, empty when the
+ * \param[in]     sub_transaction_spent_utxos     The resolved UTXOs spent by the sub transactions, or NULL when the
  *                                                transaction carries none.
  * \param[in]     sub_transactions_imbalance      The net imbalance of the sub transactions, zero when the transaction
  *                                                carries none.

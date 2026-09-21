@@ -604,6 +604,7 @@ TEST(cardano_builder_add_direct_deposit_ex, returnsErrorIfAmountIsZero)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(error_message, "Direct deposit amount must be greater than zero.");
   EXPECT_EQ(get_direct_deposits(&state), nullptr);
 
   // Cleanup
@@ -644,6 +645,7 @@ TEST(cardano_builder_add_direct_deposit_ex, leavesTheTransactionUnchangedWhenAll
     }
     else
     {
+      EXPECT_NE(result, CARDANO_SUCCESS);
       EXPECT_NE(error_message, nullptr);
       EXPECT_EQ(get_direct_deposits(&state), nullptr);
     }
@@ -982,6 +984,7 @@ TEST(cardano_builder_add_account_balance_interval_ex, leavesTheTransactionUnchan
     }
     else
     {
+      EXPECT_NE(result, CARDANO_SUCCESS);
       EXPECT_NE(error_message, nullptr);
       EXPECT_EQ(get_account_balance_intervals(&state), nullptr);
     }
@@ -1321,6 +1324,7 @@ TEST(cardano_builder_add_starting_account_balance_interval_ex, leavesTheTransact
     }
     else
     {
+      EXPECT_NE(result, CARDANO_SUCCESS);
       EXPECT_NE(error_message, nullptr);
       EXPECT_EQ(get_starting_account_balance_intervals(&state), nullptr);
     }
