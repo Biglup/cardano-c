@@ -89,6 +89,14 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_add_signer
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_signer_ex
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_add_guard
 
 ------------

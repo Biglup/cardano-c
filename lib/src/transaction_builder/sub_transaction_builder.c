@@ -510,6 +510,41 @@ cardano_sub_tx_builder_add_script(
 }
 
 void
+cardano_sub_tx_builder_add_signer(
+  cardano_sub_tx_builder_t* builder,
+  cardano_blake2b_hash_t*   pub_key_hash)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_signer(&builder->state, pub_key_hash, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_add_signer_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               pub_key_hash,
+  size_t                    hash_size)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_signer_ex(&builder->state, pub_key_hash, hash_size, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_add_guard(
   cardano_sub_tx_builder_t* builder,
   cardano_credential_t*     guard)
