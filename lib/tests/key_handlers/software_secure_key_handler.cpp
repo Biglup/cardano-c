@@ -1698,6 +1698,40 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, returnsErrorO
   cardano_ed25519_private_key_unref(&private_key);
 }
 
+TEST(cardano_software_secure_key_handler_ed25519_sign_transaction, returnsMemoryAllocationErrorIfTransactionIdCannotBeComputed)
+{
+  // Arrange
+  cardano_transaction_t* transaction = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, strlen(TX_CBOR));
+
+  EXPECT_EQ(cardano_transaction_from_cbor(reader, &transaction), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  reset_allocators_run_count();
+  set_malloc_limit(0);
+  cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_transaction(key_handler, transaction, &vkey_witness_set);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_transaction_unref(&transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
 TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnMemoryAllocationFail)
 {
   // Arrange
@@ -1760,6 +1794,41 @@ TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsErrorOnM
   EXPECT_TRUE(succeeded);
 
   // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_transaction, returnsMemoryAllocationErrorIfTransactionIdCannotBeComputed)
+{
+  // Arrange
+  cardano_transaction_t* transaction = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(TX_CBOR, strlen(TX_CBOR));
+
+  EXPECT_EQ(cardano_transaction_from_cbor(reader, &transaction), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  reset_allocators_run_count();
+  set_malloc_limit(0);
+  cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_transaction(key_handler, transaction, &path, 1, &vkey_witness_set);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
   cardano_transaction_unref(&transaction);
   cardano_secure_key_handler_unref(&key_handler);
 }
@@ -1979,6 +2048,35 @@ TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, returnsErro
   reset_allocators_run_count();
   reset_limited_malloc();
 
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_bip32_sign_sub_transaction, returnsMemoryAllocationErrorIfSubTransactionIdCannotBeComputed)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_bip32_key_handler(&get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+  cardano_derivation_path_t     path             = { CARDANO_CIP_1852_PURPOSE_STANDARD, CARDANO_CIP_1852_COIN_TYPE, 0U, 0U, 0U };
+
+  reset_allocators_run_count();
+  set_malloc_limit(0);
+  cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_bip32_sign_sub_transaction(key_handler, sub_transaction, &path, 1, &vkey_witness_set);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_sub_transaction_unref(&sub_transaction);
   cardano_secure_key_handler_unref(&key_handler);
 }
 
@@ -2218,5 +2316,33 @@ TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, returnsEr
   reset_allocators_run_count();
   reset_limited_malloc();
 
+  cardano_secure_key_handler_unref(&key_handler);
+}
+
+TEST(cardano_software_secure_key_handler_ed25519_sign_sub_transaction, returnsMemoryAllocationErrorIfSubTransactionIdCannotBeComputed)
+{
+  // Arrange
+  cardano_sub_transaction_t*    sub_transaction  = new_default_sub_transaction(SUB_TX_CBOR);
+  cardano_secure_key_handler_t* key_handler      = new_ed25519_key_handler(ED25519_PRIVATE_KEY_HEX, &get_passphrase);
+  cardano_vkey_witness_set_t*   vkey_witness_set = nullptr;
+
+  reset_allocators_run_count();
+  set_malloc_limit(0);
+  cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_secure_key_handler_ed25519_sign_sub_transaction(key_handler, sub_transaction, &vkey_witness_set);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(vkey_witness_set, nullptr);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_sub_transaction_unref(&sub_transaction);
   cardano_secure_key_handler_unref(&key_handler);
 }

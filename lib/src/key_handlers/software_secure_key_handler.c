@@ -570,7 +570,7 @@ bip32_sign_transaction(
 
   if (hash == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = bip32_sign_hash(secure_key_handler_impl, hash, derivation_paths, num_paths, vkey_witness_set);
@@ -622,7 +622,7 @@ bip32_sign_sub_transaction(
 
   if (hash == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = bip32_sign_hash(secure_key_handler_impl, hash, derivation_paths, num_paths, vkey_witness_set);
@@ -918,7 +918,7 @@ ed25519_sign_transaction(
 
   if (hash == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = ed25519_sign_hash(secure_key_handler_impl, hash, vkey_witness_set);
@@ -966,7 +966,7 @@ ed25519_sign_sub_transaction(
 
   if (hash == NULL)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = ed25519_sign_hash(secure_key_handler_impl, hash, vkey_witness_set);
