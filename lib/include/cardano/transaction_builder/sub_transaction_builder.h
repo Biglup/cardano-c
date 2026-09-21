@@ -650,6 +650,60 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_script(
   cardano_script_t*         script);
 
 /**
+ * \brief Adds a signer to the sub transaction being built.
+ *
+ * This function registers a specific signer for the sub transaction by providing their public key hash, so the sub
+ * transaction must carry a witness for that key. A required signer is a key hash guard: this function produces the
+ * same sub transaction as `cardano_sub_tx_builder_add_guard` with a key hash credential of the same hash. Adding a
+ * signer that is already present leaves the sub transaction unchanged.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
+ * \param[in] pub_key_hash A pointer to the \ref cardano_blake2b_hash_t structure representing the public
+ *                         key hash of the signer to be added.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_blake2b_hash_t* signer_hash = ...;       // Public key hash for the signer
+ *
+ * cardano_sub_tx_builder_add_signer(sub_tx_builder, signer_hash);
+ * \endcode
+ *
+ * \note Errors related to adding signers are deferred and will only be reported when
+ *       `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_signer(
+  cardano_sub_tx_builder_t* builder,
+  cardano_blake2b_hash_t*   pub_key_hash);
+
+/**
+ * \brief Adds a signer to the sub transaction by specifying their public key hash in hexadecimal format.
+ *
+ * This function registers a signer by accepting their public key hash as a hexadecimal string. See
+ * `cardano_sub_tx_builder_add_signer` for how a signer relates to a key hash guard.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
+ * \param[in] pub_key_hash A string representing the public key hash in hexadecimal format.
+ * \param[in] hash_size The size of the `pub_key_hash` string.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * const char* pub_key_hash = "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+ * size_t hash_size = strlen(pub_key_hash);
+ *
+ * cardano_sub_tx_builder_add_signer_ex(sub_tx_builder, pub_key_hash, hash_size);
+ * \endcode
+ *
+ * \note Errors associated with adding a signer are deferred and will only be reported when
+ *       `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_signer_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               pub_key_hash,
+  size_t                    hash_size);
+
+/**
  * \brief Adds a guard to the sub transaction being built.
  *
  * This function registers a guard credential for the sub transaction. Guards generalize required signers: a key hash
