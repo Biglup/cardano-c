@@ -119,6 +119,13 @@ add_proposing_redeemer(
   cardano_redeemer_t*      rdmer             = NULL;
   cardano_ex_units_t*      ex_units          = NULL;
 
+  if (empty_plutus_data == NULL)
+  {
+    cardano_redeemer_list_unref(&redeemers);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   cardano_error_t result = cardano_ex_units_new(0, 0, &ex_units);
 
   if (result != CARDANO_SUCCESS)

@@ -53,7 +53,53 @@ static const char* CREDENTIAL_SET_CBOR        = "d90102848200581c000000000000000
 static const char* COMMITTEE_MEMBERS_MAP_CBOR = "a48200581c00000000000000000000000000000000000000000000000000000000008200581c10000000000000000000000000000000000000000000000000000000018200581c20000000000000000000000000000000000000000000000000000000028200581c3000000000000000000000000000000000000000000000000000000003";
 static const char* CONSTITUTION_CBOR          = "82827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6";
 
+/**
+ * Zero based index, counted from the start of a propose call on a fresh builder state, of the first
+ * allocation made while creating the empty plutus data of the proposing redeemer.
+ */
+static const int EMPTY_PLUTUS_DATA_MALLOC_INDEX = 5;
+
+/* STATIC VARIABLES **********************************************************/
+
+static int malloc_call_index = 0;
+static int malloc_fail_index = -1;
+
 /* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * \brief Sets the zero based index of the malloc call that fail_malloc_at_exact_index fails.
+ * \param index The index of the malloc call to fail. A negative index never fails.
+ */
+static void
+set_malloc_fail_index(const int index)
+{
+  malloc_call_index = 0;
+  malloc_fail_index = index;
+}
+
+/**
+ * \brief A mock version of malloc that fails exactly one allocation.
+ *
+ * Unlike fail_malloc_at_limit, which fails every allocation from the limit on, this allocator
+ * fails only the call whose zero based index matches the one set with set_malloc_fail_index and
+ * lets every other call through, so a single failure deep inside a call chain can be reached.
+ *
+ * \param size The size of the memory allocation request.
+ * \return NULL for the selected call, a pointer to allocated memory otherwise.
+ */
+static void*
+fail_malloc_at_exact_index(const size_t size)
+{
+  const int current = malloc_call_index;
+  malloc_call_index++;
+
+  if (current == malloc_fail_index)
+  {
+    return NULL;
+  }
+
+  return malloc(size);
+}
 
 /**
  * Creates a new default instance of the protocol parameters.
@@ -306,6 +352,58 @@ TEST(cardano_builder_propose_parameter_change, doesNotAttachRedeemerWhenProposal
   EXPECT_TRUE(succeeded);
 
   // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_anchor_unref(&anchor);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_blake2b_hash_unref(&policy_hash);
+  cardano_protocol_param_update_unref(&pparam_update);
+}
+
+TEST(cardano_builder_propose_parameter_change, returnsErrorIfEmptyPlutusDataCannotBeCreated)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_address = NULL;
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(ANCHOR_CBOR, strlen(ANCHOR_CBOR));
+  cardano_anchor_t*      anchor = NULL;
+  EXPECT_EQ(cardano_anchor_from_cbor(reader, &anchor), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  reader                                    = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_governance_action_id_t* action_id = NULL;
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(reader, &action_id), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_blake2b_hash_t* policy_hash = NULL;
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_hash), CARDANO_SUCCESS);
+
+  cardano_protocol_param_update_t* pparam_update = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_new(&pparam_update), CARDANO_SUCCESS);
+
+  const char* error_message = NULL;
+
+  set_malloc_fail_index(EMPTY_PLUTUS_DATA_MALLOC_INDEX);
+  cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+  // Act
+  const cardano_error_t result = cardano_builder_propose_parameter_change(&state, reward_address, anchor, pparam_update, action_id, policy_hash, &error_message);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_STREQ(error_message, "Failed to add proposing redeemer.");
+  EXPECT_EQ(get_witness_redeemers(&state), nullptr);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
   cardano_protocol_parameters_unref(&params);
   cardano_reward_address_unref(&reward_address);
   cardano_anchor_unref(&anchor);
