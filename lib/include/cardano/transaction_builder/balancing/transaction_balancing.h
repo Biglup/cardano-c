@@ -82,7 +82,7 @@ extern "C" {
  * transaction has redeemers: every reference script found on the UTXOs of \p reference_inputs and on the UTXOs the
  * transaction spends, pre selected or coin selected. A UTXO that is both referenced and spent is priced once, while the same
  * script sitting on two different UTXOs is priced twice. The size of each script is the one reported by
- * \ref cardano_get_serialized_script_size, which documents how that size compares to the one the ledger prices.
+ * \ref cardano_get_serialized_script_size, which is the size the ledger prices.
  *
  * The top level transaction also pays the fee and posts the collateral of the whole batch. The fee covers the size of the
  * sub transactions, the execution units of the redeemers of every sub transaction and the reference scripts of the sub
