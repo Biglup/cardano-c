@@ -492,6 +492,8 @@ CARDANO_EXPORT void cardano_tx_builder_set_invalid_before_ex(cardano_tx_builder_
  *
  * This function appends a specified UTXO as a reference input to the transaction being built.
  * Reference inputs are utilized by Plutus scripts to access additional data without consuming the UTXO in the transaction.
+ * A reference input set cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already
+ * added as a reference input is rejected.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance in which to add the reference input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the UTXO to be used as a reference input.
@@ -503,7 +505,8 @@ CARDANO_EXPORT void cardano_tx_builder_set_invalid_before_ex(cardano_tx_builder_
  * cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
  * \endcode
  *
- * \note Any errors resulting from adding this input will be reported when `cardano_tx_builder_build` is called.
+ * \note Any errors resulting from adding this input will be reported when `cardano_tx_builder_build` is called. A
+ *       reference input added twice makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_reference_input(cardano_tx_builder_t* builder, cardano_utxo_t* utxo);
 
@@ -738,7 +741,9 @@ CARDANO_EXPORT void cardano_tx_builder_lock_value_ex(
  *
  * This function appends a specified UTXO as an input to the transaction being built. Optionally,
  * it allows attaching a redeemer and datum if the input is associated with a Plutus script. An input that is
- * already spent by a sub transaction added with `cardano_tx_builder_add_sub_transaction` is rejected.
+ * already spent by a sub transaction added with `cardano_tx_builder_add_sub_transaction` is rejected. An input set
+ * cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already added as an input,
+ * either through this function or through `cardano_tx_builder_add_input_with_deferred_redeemer`, is rejected as well.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance in which to add the input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the UTXO to be used as an input.
@@ -756,6 +761,8 @@ CARDANO_EXPORT void cardano_tx_builder_lock_value_ex(
  * \endcode
  *
  * \note Any errors resulting from adding this input will be deferred and reported when `cardano_tx_builder_build` is called.
+ *       An input that is already spent by a sub transaction or that was already added as an input makes
+ *       `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_input(
   cardano_tx_builder_t*  builder,

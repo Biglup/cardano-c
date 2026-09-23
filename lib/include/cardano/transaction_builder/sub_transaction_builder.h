@@ -273,6 +273,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_invalid_before_ex(cardano_sub_tx_
  * This function appends a specified UTXO as an input to the sub transaction being built. The builder never selects
  * inputs by itself, so the sub transaction spends exactly the UTXOs added through this function. Only inputs locked
  * by a key or by a native script can be spent, since this builder only supports native scripts and key witnesses.
+ * An input set cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already added
+ * as an input is rejected.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance in which to add the input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the resolved UTXO to be used as an input.
@@ -286,6 +288,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_invalid_before_ex(cardano_sub_tx_
  * \endcode
  *
  * \note Any errors resulting from adding this input will be deferred and reported when `cardano_sub_tx_builder_build` is called.
+ *       An input that was already added as an input makes `cardano_sub_tx_builder_build` return
+ *       \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_add_input(
   cardano_sub_tx_builder_t* builder,
@@ -295,7 +299,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_input(
  * \brief Adds a reference input to the sub transaction.
  *
  * This function appends a specified UTXO as a reference input to the sub transaction being built.
- * Reference inputs give access to the data and the reference script of a UTXO without consuming it.
+ * Reference inputs give access to the data and the reference script of a UTXO without consuming it. A reference input
+ * set cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already added as a
+ * reference input is rejected.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance in which to add the reference input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the UTXO to be used as a reference input.
@@ -307,7 +313,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_input(
  * cardano_sub_tx_builder_add_reference_input(sub_tx_builder, reference_utxo);
  * \endcode
  *
- * \note Any errors resulting from adding this input will be reported when `cardano_sub_tx_builder_build` is called.
+ * \note Any errors resulting from adding this input will be reported when `cardano_sub_tx_builder_build` is called. A
+ *       reference input added twice makes `cardano_sub_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_add_reference_input(cardano_sub_tx_builder_t* builder, cardano_utxo_t* utxo);
 

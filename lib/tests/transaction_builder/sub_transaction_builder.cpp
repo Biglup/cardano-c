@@ -1358,6 +1358,100 @@ TEST(cardano_sub_tx_builder_add_input, returnsErrorIfMemoryAllocationFails)
   cardano_utxo_unref(&utxo);
 }
 
+TEST(cardano_sub_tx_builder_add_input, returnsErrorWhenBuildingIfTheSameUtxoIsAddedTwice)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_utxo_t*                utxo    = create_utxo(UTXO_CBOR);
+
+  cardano_sub_tx_builder_add_input(builder, utxo);
+
+  EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_input(builder, utxo);
+
+  cardano_sub_transaction_t* sub_tx = NULL;
+  const cardano_error_t      result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Input is already added to the transaction");
+  EXPECT_EQ(sub_tx, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(builder->state.pre_selected_inputs), 1U);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_sub_tx_builder_add_input, returnsErrorWhenBuildingIfAnEqualUtxoIsAddedTwice)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_utxo_t*                utxo    = create_utxo(UTXO_CBOR);
+  cardano_utxo_t*                copy    = create_utxo(UTXO_CBOR);
+
+  cardano_sub_tx_builder_add_input(builder, utxo);
+
+  EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_input(builder, copy);
+
+  cardano_sub_transaction_t* sub_tx = NULL;
+  const cardano_error_t      result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_NE(utxo, copy);
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Input is already added to the transaction");
+  EXPECT_EQ(sub_tx, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(builder->state.pre_selected_inputs), 1U);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_unref(&copy);
+}
+
+TEST(cardano_sub_tx_builder_add_input, spendsAnInputAddedOnceExactlyOnce)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_utxo_t*                utxo    = create_utxo(UTXO_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_input(builder, utxo);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  cardano_transaction_input_set_t* inputs = cardano_sub_transaction_body_get_inputs(get_body(sub_tx));
+  cardano_transaction_input_set_unref(&inputs);
+
+  cardano_transaction_input_t* input = NULL;
+  EXPECT_EQ(cardano_transaction_input_set_get(inputs, 0, &input), CARDANO_SUCCESS);
+  cardano_transaction_input_unref(&input);
+
+  cardano_transaction_input_t* expected_input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&expected_input);
+
+  // Assert
+  EXPECT_EQ(cardano_transaction_input_set_get_length(inputs), 1U);
+  EXPECT_TRUE(cardano_transaction_input_equals(input, expected_input));
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+}
+
 TEST(cardano_sub_tx_builder_add_reference_input, doesntCrashIfGivenNull)
 {
   cardano_sub_tx_builder_add_reference_input(nullptr, nullptr);
@@ -1452,6 +1546,67 @@ TEST(cardano_sub_tx_builder_add_reference_input, returnsErrorIfMemoryAllocationF
   // Cleanup
   cardano_protocol_parameters_unref(&params);
   cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_sub_tx_builder_add_reference_input, returnsErrorWhenBuildingIfTheSameUtxoIsAddedTwice)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_utxo_t*                utxo    = create_utxo(UTXO_WITH_REF_SCRIPT_NATIVE);
+
+  cardano_sub_tx_builder_add_reference_input(builder, utxo);
+
+  EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, utxo);
+
+  cardano_sub_transaction_t* sub_tx = NULL;
+  const cardano_error_t      result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Reference input is already added to the transaction.");
+  EXPECT_EQ(sub_tx, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(builder->state.reference_inputs), 1U);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_sub_tx_builder_add_reference_input, returnsErrorWhenBuildingIfAnEqualUtxoIsAddedTwice)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_utxo_t*                utxo    = create_utxo(UTXO_WITH_REF_SCRIPT_NATIVE);
+  cardano_utxo_t*                copy    = create_utxo(UTXO_WITH_REF_SCRIPT_NATIVE);
+
+  cardano_sub_tx_builder_add_reference_input(builder, utxo);
+
+  EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, copy);
+
+  cardano_sub_transaction_t* sub_tx = NULL;
+  const cardano_error_t      result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_NE(utxo, copy);
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Reference input is already added to the transaction.");
+  EXPECT_EQ(sub_tx, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(builder->state.reference_inputs), 1U);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_unref(&copy);
 }
 
 TEST(cardano_sub_tx_builder_add_output, doesntCrashIfGivenNull)

@@ -46,7 +46,8 @@ extern "C" {
  * state input to redeemer map so its index can be resolved during balancing. When \p datum is not
  * NULL it is added to the witness set plutus data set. The inputs spent by a transaction and by its
  * sub transactions must be disjoint, so a UTXO that is already spent by a sub transaction added to the
- * transaction is rejected.
+ * transaction is rejected. An input set cannot hold the same input twice, so a UTXO whose input
+ * (transaction id and index) is already in the pre selected input list is rejected as well.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -60,8 +61,8 @@ extern "C" {
  *                           success. This parameter must not be NULL.
  *
  * \return \ref CARDANO_SUCCESS if the input was added, \ref CARDANO_ERROR_DUPLICATED_KEY if the input
- *         is already spent by a sub transaction, or an appropriate error code indicating the failure
- *         reason.
+ *         is already spent by a sub transaction or already added as an input, or an appropriate error
+ *         code indicating the failure reason.
  */
 cardano_error_t
 cardano_builder_add_input(
@@ -108,7 +109,9 @@ cardano_builder_add_input_with_deferred_redeemer(
  * This function appends the UTXO input to the transaction body reference input set, creating the set
  * when it is missing, and records the UTXO in the state reference input list. When the UTXO output
  * carries a Plutus script reference the matching script language flag is raised in the state so cost
- * models and collateral are accounted for during balancing.
+ * models and collateral are accounted for during balancing. A UTXO whose input (transaction id and
+ * index) is already in the state reference input list is rejected, since a reference input set
+ * cannot hold the same input twice.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -117,8 +120,9 @@ cardano_builder_add_input_with_deferred_redeemer(
  *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
  *                           success. This parameter must not be NULL.
  *
- * \return \ref CARDANO_SUCCESS if the reference input was added, or an appropriate error code
- *         indicating the failure reason.
+ * \return \ref CARDANO_SUCCESS if the reference input was added, \ref CARDANO_ERROR_DUPLICATED_KEY
+ *         if the input is already added as a reference input, or an appropriate error code indicating
+ *         the failure reason.
  */
 cardano_error_t
 cardano_builder_add_reference_input(

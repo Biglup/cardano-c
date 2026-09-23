@@ -32,6 +32,46 @@
 #include "builder_redeemers.h"
 #include "builder_sub_transactions.h"
 
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * \brief Predicate that checks whether a UTXO is the one a transaction input points to.
+ *
+ * \param[in] item The UTXO to evaluate.
+ * \param[in] context A pointer to the \ref cardano_transaction_input_t being looked up.
+ *
+ * \return true if the UTXO belongs to the transaction input, false otherwise.
+ */
+static bool
+find_utxo(cardano_utxo_t* item, const void* context)
+{
+  const cardano_transaction_input_t* input      = (const cardano_transaction_input_t*)context;
+  cardano_transaction_input_t*       utxo_input = cardano_utxo_get_input(item);
+
+  bool found = cardano_transaction_input_equals(utxo_input, input);
+
+  cardano_transaction_input_unref(&utxo_input);
+
+  return found;
+}
+
+/**
+ * \brief Checks whether a UTXO list resolves a transaction input.
+ *
+ * \param[in] utxos A pointer to the \ref cardano_utxo_list_t to search.
+ * \param[in] input A pointer to the \ref cardano_transaction_input_t to look up.
+ *
+ * \return true if the list holds the UTXO the input points to, false otherwise.
+ */
+static bool
+has_utxo(const cardano_utxo_list_t* utxos, const cardano_transaction_input_t* input)
+{
+  cardano_utxo_t* utxo = cardano_utxo_list_find(utxos, find_utxo, input);
+  cardano_utxo_unref(&utxo);
+
+  return utxo != NULL;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -70,6 +110,12 @@ cardano_builder_add_input(
   if (cardano_builder_is_input_spent_by_sub_transaction(state, input))
   {
     *error_message = "Input is already spent by a sub transaction";
+    return CARDANO_ERROR_DUPLICATED_KEY;
+  }
+
+  if (has_utxo(state->pre_selected_inputs, input))
+  {
+    *error_message = "Input is already added to the transaction";
     return CARDANO_ERROR_DUPLICATED_KEY;
   }
 
@@ -257,6 +303,15 @@ cardano_builder_add_reference_input(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&input);
+
+  if (has_utxo(state->reference_inputs, input))
+  {
+    *error_message = "Reference input is already added to the transaction.";
+    return CARDANO_ERROR_DUPLICATED_KEY;
+  }
+
   cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
   cardano_transaction_body_unref(&body);
 
@@ -284,9 +339,6 @@ cardano_builder_add_reference_input(
   }
 
   cardano_transaction_input_set_unref(&inputs);
-
-  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
-  cardano_transaction_input_unref(&input);
 
   cardano_error_t result = cardano_transaction_input_set_add(inputs, input);
 
