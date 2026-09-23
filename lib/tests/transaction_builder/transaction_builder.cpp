@@ -5636,7 +5636,7 @@ TEST(cardano_tx_builder_add_direct_deposit, reportsOverflowWhenBuilding)
   cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
 
   // Act
-  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, UINT64_MAX);
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, (uint64_t)INT64_MAX);
   cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 1);
   cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, 1);
 
@@ -5646,7 +5646,38 @@ TEST(cardano_tx_builder_add_direct_deposit, reportsOverflowWhenBuilding)
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
   EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INTEGER_OVERFLOW);
-  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Direct deposit amount overflows.");
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Accumulated direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(tx, nullptr);
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+
+  cardano_reward_address_unref(&reward_address);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(cardano_tx_builder_add_direct_deposit, reportsAnAmountAboveTheMaximumRepresentableAmountWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos          = new_utxo_list();
+  cardano_reward_address_t*      reward_address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  // Act
+  cardano_tx_builder_add_direct_deposit(tx_builder, reward_address, (uint64_t)INT64_MAX + 1U);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Direct deposit amount exceeds the maximum representable amount.");
   EXPECT_EQ(tx, nullptr);
 
   // Cleanup

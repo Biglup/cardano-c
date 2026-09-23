@@ -358,7 +358,7 @@ TEST(cardano_builder_add_direct_deposit, accumulatesAmountsOfTheSameRewardAccoun
   cardano_reward_address_unref(&reward_address2);
 }
 
-TEST(cardano_builder_add_direct_deposit, canAccumulateUpToTheMaximumAmount)
+TEST(cardano_builder_add_direct_deposit, canAddTheMaximumRepresentableAmount)
 {
   // Arrange
   cardano_protocol_parameters_t* params = init_protocol_parameters();
@@ -370,11 +370,12 @@ TEST(cardano_builder_add_direct_deposit, canAccumulateUpToTheMaximumAmount)
   const char*               error_message  = NULL;
 
   // Act
-  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, UINT64_MAX - 1U, &error_message), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, 1U, &error_message), CARDANO_SUCCESS);
+  const cardano_error_t result = cardano_builder_add_direct_deposit(&state, reward_address, (uint64_t)INT64_MAX, &error_message);
 
   // Assert
-  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), UINT64_MAX);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(get_direct_deposits(&state)), 1U);
+  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), (uint64_t)INT64_MAX);
 
   // Cleanup
   cardano_builder_state_release(&state);
@@ -382,7 +383,7 @@ TEST(cardano_builder_add_direct_deposit, canAccumulateUpToTheMaximumAmount)
   cardano_reward_address_unref(&reward_address);
 }
 
-TEST(cardano_builder_add_direct_deposit, returnsErrorIfAccumulatedAmountOverflows)
+TEST(cardano_builder_add_direct_deposit, returnsErrorIfAmountExceedsTheMaximumRepresentableAmount)
 {
   // Arrange
   cardano_protocol_parameters_t* params = init_protocol_parameters();
@@ -393,18 +394,135 @@ TEST(cardano_builder_add_direct_deposit, returnsErrorIfAccumulatedAmountOverflow
   cardano_reward_address_t* reward_address = new_reward_address(REWARD_ADDRESS);
   const char*               error_message  = NULL;
 
-  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, UINT64_MAX, &error_message), CARDANO_SUCCESS);
+  // Act
+  const cardano_error_t result = cardano_builder_add_direct_deposit(&state, reward_address, (uint64_t)INT64_MAX + 1U, &error_message);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(error_message, "Direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(get_direct_deposits(&state), nullptr);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_builder_add_direct_deposit, keepsThePreviousAmountsIfAmountExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_address  = new_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t* reward_address2 = new_reward_address(REWARD_ADDRESS2);
+  const char*               error_message   = NULL;
+
+  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, 1000U, &error_message), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t result = cardano_builder_add_direct_deposit(&state, reward_address2, UINT64_MAX, &error_message);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(error_message, "Direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(get_direct_deposits(&state)), 1U);
+  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), 1000U);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&reward_address2);
+}
+
+TEST(cardano_builder_add_direct_deposit, canAccumulateUpToTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_address = new_reward_address(REWARD_ADDRESS);
+  const char*               error_message  = NULL;
+
+  // Act
+  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, (uint64_t)INT64_MAX - 1U, &error_message), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, 1U, &error_message), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), (uint64_t)INT64_MAX);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_builder_add_direct_deposit, returnsErrorIfAccumulatedAmountExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* reward_address  = new_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t* reward_address2 = new_reward_address(REWARD_ADDRESS2);
+  const char*               error_message   = NULL;
+
+  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address, 1000U, &error_message), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_direct_deposit(&state, reward_address2, (uint64_t)INT64_MAX, &error_message), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t result = cardano_builder_add_direct_deposit(&state, reward_address2, 1U, &error_message);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(error_message, "Accumulated direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(cardano_direct_deposit_map_get_length(get_direct_deposits(&state)), 2U);
+  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), 1000U);
+  EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address2), (uint64_t)INT64_MAX);
+
+  // Cleanup
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&reward_address2);
+}
+
+TEST(cardano_builder_add_direct_deposit, returnsErrorIfTheDepositedAmountAlreadyExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+
+  EXPECT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+
+  cardano_reward_address_t*     reward_address  = new_reward_address(REWARD_ADDRESS);
+  cardano_transaction_body_t*   body            = cardano_transaction_get_body(state.transaction);
+  cardano_direct_deposit_map_t* direct_deposits = NULL;
+  const char*                   error_message   = NULL;
+
+  EXPECT_EQ(cardano_direct_deposit_map_new(&direct_deposits), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_direct_deposit_map_insert(direct_deposits, reward_address, UINT64_MAX), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_direct_deposits(body, direct_deposits), CARDANO_SUCCESS);
 
   // Act
   const cardano_error_t result = cardano_builder_add_direct_deposit(&state, reward_address, 1U, &error_message);
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
-  EXPECT_STREQ(error_message, "Direct deposit amount overflows.");
+  EXPECT_STREQ(error_message, "Accumulated direct deposit amount exceeds the maximum representable amount.");
   EXPECT_EQ(cardano_direct_deposit_map_get_length(get_direct_deposits(&state)), 1U);
   EXPECT_EQ(get_deposit(get_direct_deposits(&state), reward_address), UINT64_MAX);
 
   // Cleanup
+  cardano_direct_deposit_map_unref(&direct_deposits);
+  cardano_transaction_body_unref(&body);
   cardano_builder_state_release(&state);
   cardano_protocol_parameters_unref(&params);
   cardano_reward_address_unref(&reward_address);
