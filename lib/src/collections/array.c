@@ -34,6 +34,16 @@
 
 #include "../config.h"
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief Capacity of the arrays created empty by the operations that derive a new array from existing ones.
+ *
+ * An empty result is created with this capacity instead of a capacity of zero, so no zero size allocation is
+ * requested and the array can grow when items are pushed to it.
+ */
+static const size_t ARRAY_DEFAULT_CAPACITY = 128U;
+
 /* STRUCTS *******************************************************************/
 
 /**
@@ -203,6 +213,14 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
     return NULL;
   }
 
+  const size_t lhs_size = lhs->size;
+  const size_t rhs_size = rhs->size;
+
+  if ((lhs_size + rhs_size) == 0U)
+  {
+    return cardano_array_new(ARRAY_DEFAULT_CAPACITY);
+  }
+
   cardano_array_t* array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
 
   if (array == NULL)
@@ -210,16 +228,13 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
     return NULL;
   }
 
-  array->items = (cardano_object_t**)_cardano_malloc((lhs->size + rhs->size) * sizeof(cardano_object_t*));
+  array->items = (cardano_object_t**)_cardano_malloc((lhs_size + rhs_size) * sizeof(cardano_object_t*));
 
   if (array->items == NULL)
   {
     _cardano_free(array);
     return NULL;
   }
-
-  const size_t lhs_size = lhs->size;
-  const size_t rhs_size = rhs->size;
 
   for (size_t i = 0; i < lhs_size; ++i)
   {
@@ -235,7 +250,7 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
     array->items[lhs_size + i] = item;
   }
 
-  array->size               = lhs->size + rhs->size;
+  array->size               = lhs_size + rhs_size;
   array->head               = 0;
   array->capacity           = array->size;
   array->base.ref_count     = 1;
@@ -587,7 +602,9 @@ cardano_array_filter(const cardano_array_t* array, cardano_array_unary_predicate
     return NULL;
   }
 
-  cardano_array_t* filtered_array = cardano_array_new(array->size);
+  const size_t capacity = (array->size > 0U) ? array->size : ARRAY_DEFAULT_CAPACITY;
+
+  cardano_array_t* filtered_array = cardano_array_new(capacity);
 
   if (filtered_array == NULL)
   {

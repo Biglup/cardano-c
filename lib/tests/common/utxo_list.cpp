@@ -668,6 +668,65 @@ TEST(cardano_utxo_list_concat, returnsTheConcatenatedList)
   cardano_utxo_list_unref(&result);
 }
 
+TEST(cardano_utxo_list_concat, returnsAnEmptyUsableListIfBothListsAreEmptyAndZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_utxo_list_t* lhs  = NULL;
+  cardano_utxo_list_t* rhs  = NULL;
+  cardano_utxo_t*      utxo = new_default_utxo(CBOR);
+
+  EXPECT_EQ(cardano_utxo_list_new(&lhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&rhs), CARDANO_SUCCESS);
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_utxo_list_t* result = cardano_utxo_list_concat(lhs, rhs);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(result), 0);
+  EXPECT_EQ(cardano_utxo_list_add(result, utxo), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_get_length(result), 1);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_utxo_list_unref(&lhs);
+  cardano_utxo_list_unref(&rhs);
+  cardano_utxo_list_unref(&result);
+  cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_utxo_list_concat, canConcatenateAnEmptyListWithANonEmptyListIfZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_utxo_list_t* lhs  = NULL;
+  cardano_utxo_list_t* rhs  = new_default_utxo_list();
+  cardano_utxo_t*      utxo = new_default_utxo(CBOR);
+
+  EXPECT_EQ(cardano_utxo_list_new(&lhs), CARDANO_SUCCESS);
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_utxo_list_t* result = cardano_utxo_list_concat(lhs, rhs);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_utxo_list_get_length(result), 2);
+  EXPECT_EQ(cardano_utxo_list_add(result, utxo), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_get_length(result), 3);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_utxo_list_unref(&lhs);
+  cardano_utxo_list_unref(&rhs);
+  cardano_utxo_list_unref(&result);
+  cardano_utxo_unref(&utxo);
+}
+
 TEST(cardano_utxo_list_erase, returnsErrorIfListIsNull)
 {
   // Act

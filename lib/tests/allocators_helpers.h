@@ -255,6 +255,19 @@ void*
 fail_after_thirty_seven_malloc(size_t size);
 
 /**
+ * \brief A mock version of malloc that fails every request for zero bytes.
+ *
+ * This function allocates memory as malloc does, except that a request for zero bytes returns NULL,
+ * which the C standard allows an allocator to do. It is useful for testing that code never treats a
+ * zero size allocation as a memory allocation failure.
+ *
+ * \param size The size of the memory allocation request.
+ * \return NULL if the size is zero or the allocation fails, or a pointer to the allocated memory otherwise.
+ */
+void*
+fail_zero_size_malloc(size_t size);
+
+/**
  * \brief A mock version of realloc that simulates a reallocation failure on the first call.
  *
  * This function is useful for testing how code reacts when realloc fails immediately,
