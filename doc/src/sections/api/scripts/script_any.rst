@@ -41,6 +41,10 @@ Native Script - Require Any Of
 
 ------------
 
+.. doxygenfunction:: cardano_script_any_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_script_any_unref
 
 ------------

@@ -31,6 +31,7 @@
 #include <allocators.h>
 #include <cardano/scripts/native_scripts/native_script_list.h>
 #include <cardano/scripts/native_scripts/script_all.h>
+#include <cardano/scripts/native_scripts/script_invalid_before.h>
 #include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
 #include <gmock/gmock.h>
@@ -78,6 +79,68 @@ static const char* ALL_SCRIPT2 =
   "    }\n"
   "  ]\n"
   "}";
+
+static const char* NON_MINIMAL_ALL_CBOR = "82018282041b000000000000000582051b0000000000000007";
+static const char* MINIMAL_ALL_CBOR     = "820182820405820507";
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Serializes a script_all and returns its CBOR as a hex string.
+ *
+ * @param script The script_all to serialize.
+ *
+ * @return The CBOR hex string. The caller must release it with free.
+ */
+static char*
+script_all_to_cbor_hex(const cardano_script_all_t* script)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_script_all_to_cbor(script, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return hex;
+}
+
+/**
+ * Reads a script_all from a CBOR hex string.
+ *
+ * @param cbor_hex The CBOR hex string.
+ *
+ * @return The script_all object.
+ */
+static cardano_script_all_t*
+script_all_from_cbor_hex(const char* cbor_hex)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_script_all_t*  script = NULL;
+
+  EXPECT_EQ(cardano_script_all_from_cbor(reader, &script), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return script;
+}
+
+/**
+ * Releases a script_all and a hex string returned by script_all_to_cbor_hex.
+ *
+ * @param script The script_all to release.
+ * @param hex The hex string to release.
+ */
+static void
+script_all_unref_and_free(cardano_script_all_t** script, char* hex)
+{
+  cardano_script_all_unref(script);
+  free(hex);
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -653,4 +716,200 @@ TEST(cardano_script_all_to_cip116_json, returnsErrorIfNOfKIsNull)
 
   // Cleanup
   cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_script_all_from_cbor, preservesTheOriginalCborEncoding)
+{
+  // Arrange
+  cardano_script_all_t* script = script_all_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+
+  // Act
+  char* hex = script_all_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, NON_MINIMAL_ALL_CBOR);
+
+  // Cleanup
+  script_all_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_all_set_scripts, discardsTheCachedCbor)
+{
+  // Arrange
+  cardano_script_all_t* script = script_all_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+
+  // Act
+  cardano_native_script_list_t* scripts     = NULL;
+  cardano_native_script_list_t* new_scripts = NULL;
+  cardano_native_script_t*      first       = NULL;
+
+  EXPECT_EQ(cardano_script_all_get_scripts(script, &scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_list_get(scripts, 0, &first), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_list_new(&new_scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_list_add(new_scripts, first), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_all_set_scripts(script, new_scripts), CARDANO_SUCCESS);
+
+  cardano_native_script_unref(&first);
+  cardano_native_script_list_unref(&new_scripts);
+  cardano_native_script_list_unref(&scripts);
+
+  char* hex = script_all_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, "82018182041b0000000000000005");
+
+  // Cleanup
+  script_all_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_all_clear_cbor_cache, encodesTheScriptFromItsFields)
+{
+  // Arrange
+  cardano_script_all_t* script = script_all_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+
+  // Act
+  cardano_script_all_clear_cbor_cache(script);
+  char* hex = script_all_to_cbor_hex(script);
+
+  cardano_script_all_clear_cbor_cache(script);
+  char* hex_after_second_clear = script_all_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, MINIMAL_ALL_CBOR);
+  EXPECT_STREQ(hex_after_second_clear, MINIMAL_ALL_CBOR);
+
+  // Cleanup
+  free(hex_after_second_clear);
+  script_all_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_all_clear_cbor_cache, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_script_all_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_script_all_from_cbor, returnsErrorIfMemoryAllocationFailsWhileCachingTheCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(NON_MINIMAL_ALL_CBOR, strlen(NON_MINIMAL_ALL_CBOR));
+  bool                   succeeded = false;
+
+  // Act
+  for (int i = 0; (i < 500) && !succeeded; ++i)
+  {
+    cardano_cbor_reader_t* reader_copy = NULL;
+    ASSERT_EQ(cardano_cbor_reader_clone(reader, &reader_copy), CARDANO_SUCCESS);
+
+    cardano_script_all_t* script = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_script_all_from_cbor(reader_copy, &script);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      char* hex = script_all_to_cbor_hex(script);
+
+      EXPECT_STREQ(hex, NON_MINIMAL_ALL_CBOR);
+
+      free(hex);
+    }
+    else
+    {
+      EXPECT_EQ(script, nullptr);
+    }
+
+    cardano_script_all_unref(&script);
+    cardano_cbor_reader_unref(&reader_copy);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_script_all_from_cbor, keepsTheOriginalCborOfEachSubScript)
+{
+  // Arrange
+  cardano_script_all_t*         script  = script_all_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+  cardano_native_script_list_t* scripts = NULL;
+  cardano_native_script_t*      first   = NULL;
+  cardano_cbor_writer_t*        writer  = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_script_all_get_scripts(script, &scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_list_get(scripts, 0, &first), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_native_script_to_cbor(first, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(hex, "82041b0000000000000005");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+  cardano_native_script_unref(&first);
+  cardano_native_script_list_unref(&scripts);
+  script_all_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_all_get_scripts, changingASubScriptNeedsAClearOfTheCache)
+{
+  // Arrange
+  cardano_script_all_t*            script         = script_all_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+  cardano_native_script_list_t*    scripts        = NULL;
+  cardano_native_script_t*         first          = NULL;
+  cardano_script_invalid_before_t* invalid_before = NULL;
+
+  EXPECT_EQ(cardano_script_all_get_scripts(script, &scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_list_get(scripts, 0, &first), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_to_invalid_before(first, &invalid_before), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_script_invalid_before_set_slot(invalid_before, 9U), CARDANO_SUCCESS);
+  char* hex_before_clear = script_all_to_cbor_hex(script);
+
+  cardano_script_all_clear_cbor_cache(script);
+  char* hex = script_all_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex_before_clear, NON_MINIMAL_ALL_CBOR);
+  EXPECT_STREQ(hex, "820182820409820507");
+
+  // Cleanup
+  cardano_script_invalid_before_unref(&invalid_before);
+  cardano_native_script_unref(&first);
+  cardano_native_script_list_unref(&scripts);
+  free(hex_before_clear);
+  script_all_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_all_from_cbor, preservesANonMinimalListHeader)
+{
+  // Arrange
+  cardano_script_all_t* script = script_all_from_cbor_hex("82019802820405820507");
+
+  // Act
+  char* hex = script_all_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, "82019802820405820507");
+
+  // Cleanup
+  script_all_unref_and_free(&script, hex);
 }

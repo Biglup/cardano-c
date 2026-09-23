@@ -498,6 +498,23 @@ cardano_native_script_list_equals(const cardano_native_script_list_t* lhs, const
 }
 
 void
+cardano_native_script_list_clear_cbor_cache(cardano_native_script_list_t* native_script_list)
+{
+  if (native_script_list == NULL)
+  {
+    return;
+  }
+
+  for (size_t i = 0U; i < cardano_array_get_size(native_script_list->array); ++i)
+  {
+    cardano_native_script_t* element = (cardano_native_script_t*)((void*)cardano_array_get(native_script_list->array, i));
+
+    cardano_native_script_clear_cbor_cache(element);
+    cardano_native_script_unref(&element);
+  }
+}
+
+void
 cardano_native_script_list_unref(cardano_native_script_list_t** native_script_list)
 {
   if ((native_script_list == NULL) || (*native_script_list == NULL))

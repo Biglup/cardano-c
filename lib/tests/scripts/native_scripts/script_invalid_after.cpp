@@ -55,6 +55,68 @@ static const char* AFTER_SCRIPT2 =
   "  \"slot\": 4000\n"
   "}";
 
+static const char* NON_MINIMAL_INVALID_AFTER_CBOR = "82051b0000000000000007";
+static const char* MINIMAL_INVALID_AFTER_CBOR     = "820507";
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Serializes a script_invalid_after and returns its CBOR as a hex string.
+ *
+ * @param script The script_invalid_after to serialize.
+ *
+ * @return The CBOR hex string. The caller must release it with free.
+ */
+static char*
+script_invalid_after_to_cbor_hex(const cardano_script_invalid_after_t* script)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_script_invalid_after_to_cbor(script, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return hex;
+}
+
+/**
+ * Reads a script_invalid_after from a CBOR hex string.
+ *
+ * @param cbor_hex The CBOR hex string.
+ *
+ * @return The script_invalid_after object.
+ */
+static cardano_script_invalid_after_t*
+script_invalid_after_from_cbor_hex(const char* cbor_hex)
+{
+  cardano_cbor_reader_t*          reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_script_invalid_after_t* script = NULL;
+
+  EXPECT_EQ(cardano_script_invalid_after_from_cbor(reader, &script), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return script;
+}
+
+/**
+ * Releases a script_invalid_after and a hex string returned by script_invalid_after_to_cbor_hex.
+ *
+ * @param script The script_invalid_after to release.
+ * @param hex The hex string to release.
+ */
+static void
+script_invalid_after_unref_and_free(cardano_script_invalid_after_t** script, char* hex)
+{
+  cardano_script_invalid_after_unref(script);
+  free(hex);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_script_invalid_after_new, returnsErrorIfInvalidAfterIsNull)
@@ -562,4 +624,113 @@ TEST(cardano_script_invalid_after_to_cip116_json, returnsErrorIfInvalidAfterIsNu
 
   // Cleanup
   cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_script_invalid_after_from_cbor, preservesTheOriginalCborEncoding)
+{
+  // Arrange
+  cardano_script_invalid_after_t* script = script_invalid_after_from_cbor_hex(NON_MINIMAL_INVALID_AFTER_CBOR);
+
+  // Act
+  char* hex = script_invalid_after_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, NON_MINIMAL_INVALID_AFTER_CBOR);
+
+  // Cleanup
+  script_invalid_after_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_invalid_after_set_slot, discardsTheCachedCbor)
+{
+  // Arrange
+  cardano_script_invalid_after_t* script = script_invalid_after_from_cbor_hex(NON_MINIMAL_INVALID_AFTER_CBOR);
+
+  // Act
+  EXPECT_EQ(cardano_script_invalid_after_set_slot(script, 9U), CARDANO_SUCCESS);
+
+  char* hex = script_invalid_after_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, "820509");
+
+  // Cleanup
+  script_invalid_after_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_invalid_after_clear_cbor_cache, encodesTheScriptFromItsFields)
+{
+  // Arrange
+  cardano_script_invalid_after_t* script = script_invalid_after_from_cbor_hex(NON_MINIMAL_INVALID_AFTER_CBOR);
+
+  // Act
+  cardano_script_invalid_after_clear_cbor_cache(script);
+  char* hex = script_invalid_after_to_cbor_hex(script);
+
+  cardano_script_invalid_after_clear_cbor_cache(script);
+  char* hex_after_second_clear = script_invalid_after_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, MINIMAL_INVALID_AFTER_CBOR);
+  EXPECT_STREQ(hex_after_second_clear, MINIMAL_INVALID_AFTER_CBOR);
+
+  // Cleanup
+  free(hex_after_second_clear);
+  script_invalid_after_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_invalid_after_clear_cbor_cache, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_script_invalid_after_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_script_invalid_after_from_cbor, returnsErrorIfMemoryAllocationFailsWhileCachingTheCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(NON_MINIMAL_INVALID_AFTER_CBOR, strlen(NON_MINIMAL_INVALID_AFTER_CBOR));
+  bool                   succeeded = false;
+
+  // Act
+  for (int i = 0; (i < 500) && !succeeded; ++i)
+  {
+    cardano_cbor_reader_t* reader_copy = NULL;
+    ASSERT_EQ(cardano_cbor_reader_clone(reader, &reader_copy), CARDANO_SUCCESS);
+
+    cardano_script_invalid_after_t* script = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_script_invalid_after_from_cbor(reader_copy, &script);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      char* hex = script_invalid_after_to_cbor_hex(script);
+
+      EXPECT_STREQ(hex, NON_MINIMAL_INVALID_AFTER_CBOR);
+
+      free(hex);
+    }
+    else
+    {
+      EXPECT_EQ(script, nullptr);
+    }
+
+    cardano_script_invalid_after_unref(&script);
+    cardano_cbor_reader_unref(&reader_copy);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
 }

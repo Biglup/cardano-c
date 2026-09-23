@@ -37,6 +37,10 @@ Native Script - Require Guard
 
 ------------
 
+.. doxygenfunction:: cardano_script_require_guard_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_script_require_guard_unref
 
 ------------

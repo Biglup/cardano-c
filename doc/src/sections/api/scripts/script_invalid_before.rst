@@ -37,6 +37,10 @@ Native Script - Require Time After
 
 ------------
 
+.. doxygenfunction:: cardano_script_invalid_before_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_script_invalid_before_unref
 
 ------------

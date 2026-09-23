@@ -112,6 +112,13 @@ cardano_script_n_of_k_new(cardano_native_script_list_t* native_scripts, size_t r
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the script_n_of_k was successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a script_n_of_k object is created using \ref cardano_script_n_of_k_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_script_n_of_k_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_script_n_of_k_clear_cbor_cache after the object has been created.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_script_n_of_k_t object by calling
  *       \ref cardano_script_n_of_k_unref when it is no longer needed.
@@ -154,6 +161,18 @@ cardano_script_n_of_k_from_cbor(cardano_cbor_reader_t* reader, cardano_script_n_
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p script_n_of_k or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a script_n_of_k object is created using \ref cardano_script_n_of_k_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_script_n_of_k_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_script_n_of_k_clear_cbor_cache after the object has been created.
+ *
+ * \warning The sub-scripts keep the CBOR they were decoded with, and this object keeps its own. A change made to a sub-script,
+ *          or to the list returned by \ref cardano_script_n_of_k_get_scripts, after this object was decoded with
+ *          \ref cardano_script_n_of_k_from_cbor cannot discard the CBOR cached by this object, so \ref cardano_script_n_of_k_to_cbor would
+ *          still output the original bytes. Call \ref cardano_script_n_of_k_clear_cbor_cache after such a change so that it is serialized.
  *
  * Usage Example:
  * \code{.c}
@@ -315,6 +334,9 @@ CARDANO_EXPORT size_t cardano_script_n_of_k_get_required(const cardano_script_n_
  *
  * \return \ref CARDANO_SUCCESS if the required number was successfully set, or an appropriate error code indicating the failure reason.
  *
+ * \note A successful call discards the CBOR that the object cached when it was decoded with \ref cardano_script_n_of_k_from_cbor,
+ *       so the next call to \ref cardano_script_n_of_k_to_cbor encodes the script from its fields.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_script_n_of_k_t* script_n_of_k = ...; // Assume this is initialized
@@ -358,6 +380,11 @@ CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_set_required(cardano_script
  * \return \ref CARDANO_SUCCESS if the list of scripts was successfully retrieved, or an appropriate error code
  *         indicating the failure reason.
  *
+ * \warning The sub-scripts keep the CBOR they were decoded with, and this object keeps its own. A change made to a sub-script,
+ *          or to the list returned by \ref cardano_script_n_of_k_get_scripts, after this object was decoded with
+ *          \ref cardano_script_n_of_k_from_cbor cannot discard the CBOR cached by this object, so \ref cardano_script_n_of_k_to_cbor would
+ *          still output the original bytes. Call \ref cardano_script_n_of_k_clear_cbor_cache after such a change so that it is serialized.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_script_n_of_k_t* script_n_of_k = cardano_script_n_of_k_new(...);
@@ -397,6 +424,9 @@ CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_get_scripts(
  *
  * \return \ref CARDANO_SUCCESS if the scripts were successfully set, or an appropriate error code
  *         indicating the failure reason.
+ *
+ * \note A successful call discards the CBOR that the object cached when it was decoded with \ref cardano_script_n_of_k_from_cbor,
+ *       so the next call to \ref cardano_script_n_of_k_to_cbor encodes the script from its fields.
  *
  * Usage Example:
  * \code{.c}
@@ -455,6 +485,59 @@ CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_set_scripts(
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_script_n_of_k_equals(const cardano_script_n_of_k_t* lhs, const cardano_script_n_of_k_t* rhs);
+
+/**
+ * \brief Clears the cached CBOR representation from a script_n_of_k.
+ *
+ * This function removes the internally cached CBOR data from a \ref cardano_script_n_of_k_t object.
+ * It is useful when you have modified the script_n_of_k after it was created from CBOR using
+ * \ref cardano_script_n_of_k_from_cbor and you want to ensure that the next serialization reflects
+ * the current state of the script_n_of_k, rather than using the original cached CBOR.
+ * The cached CBOR of every sub-script in the list of the script_n_of_k is cleared as well, so the whole script is encoded from
+ * its fields.
+ *
+ * \param[in,out] script_n_of_k A pointer to an initialized \ref cardano_script_n_of_k_t object
+ *                         from which the CBOR cache will be cleared.
+ *
+ * \warning Clearing the CBOR cache may change the binary representation of the script when
+ *          serialized, which changes its hash, and with it the policy id, the address or the credential derived from it.
+ *          Use this function with caution, especially if the script is already on chain or if preserving
+ *          the exact CBOR encoding is important for your application.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume script_n_of_k was created using cardano_script_n_of_k_from_cbor
+ * cardano_script_n_of_k_t* script_n_of_k = ...;
+ * cardano_native_script_t* new_script = ...;
+ * cardano_native_script_list_t* scripts = NULL;
+ *
+ * cardano_error_t result = cardano_script_n_of_k_get_scripts(script_n_of_k, &scripts);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Modify the list of sub-scripts, this does not reach the cache of the script_n_of_k
+ *   result = cardano_native_script_list_add(scripts, new_script);
+ *   cardano_native_script_list_unref(&scripts);
+ * }
+ *
+ * // Clear the CBOR cache to ensure serialization uses the updated script_n_of_k
+ * cardano_script_n_of_k_clear_cbor_cache(script_n_of_k);
+ *
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * result = cardano_script_n_of_k_to_cbor(script_n_of_k, writer);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Process the CBOR data as needed
+ * }
+ *
+ * // Clean up resources
+ * cardano_cbor_writer_unref(&writer);
+ * cardano_script_n_of_k_unref(&script_n_of_k);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_script_n_of_k_clear_cbor_cache(cardano_script_n_of_k_t* script_n_of_k);
 
 /**
  * \brief Decrements the reference count of a script_n_of_k object.

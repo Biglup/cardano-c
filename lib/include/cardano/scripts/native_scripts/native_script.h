@@ -431,6 +431,14 @@ cardano_native_script_new_require_guard(
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the native_script was successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a native_script object is created using \ref cardano_native_script_from_cbor, the script it wraps
+ *         (and every sub-script of it) caches its original CBOR representation internally. When \ref cardano_native_script_to_cbor
+ *         is called, it will output the cached CBOR. If the cached CBOR representation is not needed, the client can call
+ *         \ref cardano_native_script_clear_cbor_cache after the object has been created.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_native_script_t object by calling
  *       \ref cardano_native_script_unref when it is no longer needed.
@@ -473,6 +481,19 @@ cardano_native_script_from_cbor(cardano_cbor_reader_t* reader, cardano_native_sc
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p native_script or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a native_script object is created using \ref cardano_native_script_from_cbor, the script it wraps
+ *         (and every sub-script of it) caches its original CBOR representation internally. When \ref cardano_native_script_to_cbor
+ *         is called, it will output the cached CBOR. If the cached CBOR representation is not needed, the client can call
+ *         \ref cardano_native_script_clear_cbor_cache after the object has been created.
+ *
+ * \note A native_script keeps no CBOR of its own, it writes the script it wraps. A setter called on the script returned by
+ *       \ref cardano_native_script_to_all or its siblings discards the cache of that script, so the change is serialized here.
+ *       A change made deeper in the tree, to a sub-script of an all, any or n of k script, is not; see
+ *       \ref cardano_script_all_to_cbor for the rule and call \ref cardano_native_script_clear_cbor_cache after such a change.
  *
  * Usage Example:
  * \code{.c}
@@ -922,6 +943,10 @@ CARDANO_EXPORT cardano_error_t cardano_native_script_to_require_guard(
  *         managing the lifecycle of this object, including releasing it with
  *         \ref cardano_blake2b_hash_unref.
  *
+ * \note The hash is computed over the bytes that \ref cardano_native_script_to_cbor outputs. For a script created with
+ *       \ref cardano_native_script_from_cbor these are the bytes it was decoded from, so the hash matches the hash of the
+ *       script on chain even when the script was stored with a non minimal encoding.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_native_script_t* original_native_script = cardano_native_script_new(...);
@@ -976,6 +1001,44 @@ CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_native_script_equals(
   const cardano_native_script_t* lhs,
   const cardano_native_script_t* rhs);
+
+/**
+ * \brief Clears the cached CBOR representation from a native_script.
+ *
+ * This function removes the internally cached CBOR data from the script wrapped by a \ref cardano_native_script_t object
+ * and from every sub-script of it. It is useful when you have modified the native_script after it was created from CBOR using
+ * \ref cardano_native_script_from_cbor and you want to ensure that the next serialization reflects
+ * the current state of the native_script, rather than using the original cached CBOR.
+ *
+ * \param[in,out] native_script A pointer to an initialized \ref cardano_native_script_t object
+ *                         from which the CBOR cache will be cleared.
+ *
+ * \warning Clearing the CBOR cache may change the binary representation of the script when
+ *          serialized, which changes its hash, and with it the policy id, the address or the credential derived from it.
+ *          Use this function with caution, especially if the script is already on chain or if preserving
+ *          the exact CBOR encoding is important for your application.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume native_script was created using cardano_native_script_from_cbor
+ * cardano_native_script_t* native_script = ...;
+ *
+ * // Clear the CBOR cache so that serialization encodes the script from its fields
+ * cardano_native_script_clear_cbor_cache(native_script);
+ *
+ * cardano_blake2b_hash_t* hash = cardano_native_script_get_hash(native_script);
+ *
+ * if (hash != NULL)
+ * {
+ *   // The hash of the script in the encoding this library produces
+ * }
+ *
+ * // Clean up resources
+ * cardano_blake2b_hash_unref(&hash);
+ * cardano_native_script_unref(&native_script);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_native_script_clear_cbor_cache(cardano_native_script_t* native_script);
 
 /**
  * \brief Decrements the reference count of a native_script object.

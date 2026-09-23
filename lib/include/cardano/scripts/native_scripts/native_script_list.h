@@ -142,6 +142,9 @@ cardano_native_script_list_from_cbor(cardano_cbor_reader_t* reader, cardano_nati
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p native_script_list or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
+ * \remark Every native script of the list that was decoded from CBOR is written with the bytes it was decoded from,
+ *         see \ref cardano_native_script_to_cbor. Call \ref cardano_native_script_list_clear_cbor_cache to encode them from their fields.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_native_script_list_t* native_script_list = ...;
@@ -376,6 +379,45 @@ CARDANO_EXPORT cardano_error_t cardano_native_script_list_add(cardano_native_scr
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_native_script_list_equals(const cardano_native_script_list_t* lhs, const cardano_native_script_list_t* rhs);
+
+/**
+ * \brief Clears the cached CBOR representation from every native script in a list.
+ *
+ * This function calls \ref cardano_native_script_clear_cbor_cache on every \ref cardano_native_script_t of the list, so that
+ * the next serialization of the list encodes each script from its fields rather than using the original cached CBOR.
+ * The list itself keeps no CBOR of its own.
+ *
+ * \param[in,out] native_script_list A pointer to an initialized \ref cardano_native_script_list_t object
+ *                         whose native scripts will have their CBOR cache cleared.
+ *
+ * \warning Clearing the CBOR cache may change the binary representation of the scripts when
+ *          serialized, which changes their hashes, and with them the policy ids, the addresses or the credentials derived from them.
+ *          Use this function with caution, especially if the scripts are already on chain or if preserving
+ *          the exact CBOR encoding is important for your application.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume native_script_list was created using cardano_native_script_list_from_cbor
+ * cardano_native_script_list_t* native_script_list = ...;
+ *
+ * // Clear the CBOR cache of every script so that serialization encodes them from their fields
+ * cardano_native_script_list_clear_cbor_cache(native_script_list);
+ *
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * cardano_error_t result = cardano_native_script_list_to_cbor(native_script_list, writer);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Process the CBOR data as needed
+ * }
+ *
+ * // Clean up resources
+ * cardano_cbor_writer_unref(&writer);
+ * cardano_native_script_list_unref(&native_script_list);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_native_script_list_clear_cbor_cache(cardano_native_script_list_t* native_script_list);
 
 /**
  * \brief Decrements the reference count of a native_script_list object.

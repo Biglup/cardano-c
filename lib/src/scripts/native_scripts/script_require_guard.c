@@ -21,6 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/scripts/native_scripts/native_script_list.h>
 #include <cardano/scripts/native_scripts/native_script_type.h>
@@ -49,6 +50,7 @@ typedef struct cardano_script_require_guard_t
     cardano_object_t             base;
     cardano_native_script_type_t type;
     cardano_credential_t*        credential;
+    cardano_buffer_t*            cbor_cache;
 
 } cardano_script_require_guard_t;
 
@@ -76,57 +78,26 @@ cardano_script_require_guard_deallocate(void* object)
 
   cardano_credential_unref(&data->credential);
 
+  cardano_buffer_unref(&data->cbor_cache);
+
   _cardano_free(data);
 }
 
-/* DEFINITIONS ****************************************************************/
-
-cardano_error_t
-cardano_script_require_guard_new(cardano_credential_t* credential, cardano_script_require_guard_t** script_require_guard)
+/**
+ * \brief Decodes the fields of a script_require_guard from a CBOR reader.
+ *
+ * This function reads the CBOR encoded script_require_guard at the current position of the reader and creates a new
+ * \ref cardano_script_require_guard_t object from its fields. It does not cache the original CBOR representation, that is done
+ * by \ref cardano_script_require_guard_from_cbor.
+ *
+ * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t positioned at the script_require_guard.
+ * \param[out] script_require_guard On success, set to the newly created \ref cardano_script_require_guard_t object.
+ *
+ * \return \ref CARDANO_SUCCESS if the script_require_guard was decoded, or an appropriate error code otherwise.
+ */
+static cardano_error_t
+cardano_script_require_guard_decode(cardano_cbor_reader_t* reader, cardano_script_require_guard_t** script_require_guard)
 {
-  if (credential == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (script_require_guard == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  cardano_script_require_guard_t* data = _cardano_malloc(sizeof(cardano_script_require_guard_t));
-
-  if (data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  cardano_credential_ref(credential);
-
-  data->base.ref_count     = 1;
-  data->base.last_error[0] = '\0';
-  data->base.deallocator   = cardano_script_require_guard_deallocate;
-  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD;
-  data->credential         = credential;
-
-  *script_require_guard = data;
-
-  return CARDANO_SUCCESS;
-}
-
-cardano_error_t
-cardano_script_require_guard_from_cbor(cardano_cbor_reader_t* reader, cardano_script_require_guard_t** script_require_guard)
-{
-  if (reader == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (script_require_guard == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   static const char* validator_name = "script_require_guard";
 
   const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, 2);
@@ -174,6 +145,88 @@ cardano_script_require_guard_from_cbor(cardano_cbor_reader_t* reader, cardano_sc
   return create_require_guard_new_result;
 }
 
+/* DEFINITIONS ****************************************************************/
+
+cardano_error_t
+cardano_script_require_guard_new(cardano_credential_t* credential, cardano_script_require_guard_t** script_require_guard)
+{
+  if (credential == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_require_guard == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_require_guard_t* data = _cardano_malloc(sizeof(cardano_script_require_guard_t));
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_credential_ref(credential);
+
+  data->base.ref_count     = 1;
+  data->base.last_error[0] = '\0';
+  data->base.deallocator   = cardano_script_require_guard_deallocate;
+  data->cbor_cache         = NULL;
+  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD;
+  data->credential         = credential;
+
+  *script_require_guard = data;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_script_require_guard_from_cbor(cardano_cbor_reader_t* reader, cardano_script_require_guard_t** script_require_guard)
+{
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_require_guard == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_cbor_reader_t* reader_copy = NULL;
+  cardano_error_t        result      = cardano_cbor_reader_clone(reader, &reader_copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_script_require_guard_decode(reader, script_require_guard);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_cbor_reader_unref(&reader_copy);
+    return result;
+  }
+
+  cardano_buffer_t* cbor_cache = NULL;
+
+  result = cardano_cbor_reader_read_encoded_value(reader_copy, &cbor_cache);
+  cardano_cbor_reader_unref(&reader_copy);
+
+  if ((result != CARDANO_SUCCESS) || (cbor_cache == NULL))
+  {
+    cardano_script_require_guard_unref(script_require_guard);
+
+    return (result != CARDANO_SUCCESS) ? result : CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  (*script_require_guard)->cbor_cache = cbor_cache;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_error_t
 cardano_script_require_guard_to_cbor(
   const cardano_script_require_guard_t* script_require_guard,
@@ -187,6 +240,11 @@ cardano_script_require_guard_to_cbor(
   if (writer == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_require_guard->cbor_cache != NULL)
+  {
+    return cardano_cbor_writer_write_encoded(writer, cardano_buffer_get_data(script_require_guard->cbor_cache), cardano_buffer_get_size(script_require_guard->cbor_cache));
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 2);
@@ -360,6 +418,8 @@ cardano_script_require_guard_set_credential(cardano_script_require_guard_t* scri
   cardano_credential_ref(credential);
   cardano_credential_unref(&script_require_guard->credential);
   script_require_guard->credential = credential;
+  cardano_buffer_unref(&script_require_guard->cbor_cache);
+  script_require_guard->cbor_cache = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -388,6 +448,18 @@ cardano_script_require_guard_equals(const cardano_script_require_guard_t* lhs, c
   }
 
   return cardano_credential_equals(lhs->credential, rhs->credential);
+}
+
+void
+cardano_script_require_guard_clear_cbor_cache(cardano_script_require_guard_t* script_require_guard)
+{
+  if (script_require_guard == NULL)
+  {
+    return;
+  }
+
+  cardano_buffer_unref(&script_require_guard->cbor_cache);
+  script_require_guard->cbor_cache = NULL;
 }
 
 void
