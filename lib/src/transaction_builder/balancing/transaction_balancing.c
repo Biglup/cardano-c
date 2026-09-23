@@ -27,6 +27,18 @@
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/fee.h>
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief The error message reported when the direct deposits of a transaction add up to more than INT64_MAX.
+ */
+static const char* DIRECT_DEPOSITS_OVERFLOW_ERROR = "The direct deposits of the transaction add up to more than the maximum amount the balancer can represent.";
+
+/**
+ * \brief The error message reported when the coin produced by a transaction adds up to more than INT64_MAX.
+ */
+static const char* PRODUCED_COIN_OVERFLOW_ERROR = "The coin produced by the transaction exceeds the maximum amount the balancer can represent.";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -196,10 +208,13 @@ coalesce_all_outputs(cardano_transaction_output_list_t* outputs, cardano_value_t
 /**
  * \brief Sums the lovelace amounts of a direct deposit map.
  *
+ * The balancer keeps lovelace amounts as signed 64 bit integers, so the total must not exceed INT64_MAX.
+ *
  * \param[in]  direct_deposits The direct deposit map of the body, or NULL when the body has none.
  * \param[out] total           A pointer to store the sum of all direct deposit amounts.
  *
- * \return \ref CARDANO_SUCCESS if the total was computed, or an appropriate error code.
+ * \return \ref CARDANO_SUCCESS if the total was computed, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the total
+ *         exceeds INT64_MAX, or an appropriate error code.
  */
 static cardano_error_t
 sum_direct_deposits(cardano_direct_deposit_map_t* direct_deposits, uint64_t* total)
@@ -219,8 +234,95 @@ sum_direct_deposits(cardano_direct_deposit_map_t* direct_deposits, uint64_t* tot
       return result;
     }
 
+    if (amount > ((uint64_t)INT64_MAX - *total))
+    {
+      return CARDANO_ERROR_INTEGER_OVERFLOW;
+    }
+
     *total += amount;
   }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds a lovelace amount to a signed coin accumulator.
+ *
+ * \param[in,out] accumulator A pointer to the accumulator. It must not be negative. On failure it is left untouched.
+ * \param[in]     amount      The lovelace amount to add.
+ *
+ * \return \ref CARDANO_SUCCESS if the amount was added, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the sum
+ *         exceeds INT64_MAX.
+ */
+static cardano_error_t
+add_coin(int64_t* accumulator, const uint64_t amount)
+{
+  const int64_t headroom = INT64_MAX - *accumulator;
+
+  if ((amount > (uint64_t)INT64_MAX) || (amount > (uint64_t)headroom))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *accumulator += (int64_t)amount;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Computes the coin produced by a transaction or sub transaction.
+ *
+ * The produced coin is the sum of the deposits, the fee, the donation and the direct deposits. The balancer keeps
+ * lovelace amounts as signed 64 bit integers, so the sum must not exceed INT64_MAX.
+ *
+ * \param[in]  deposits             The deposits of the certificates and proposals.
+ * \param[in]  fee                  The fee, or zero for a sub transaction.
+ * \param[in]  donation             The treasury donation.
+ * \param[in]  direct_deposit_total The sum of the direct deposits.
+ * \param[out] produced_coin        A pointer to store the produced coin. It is left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS if the produced coin was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if it
+ *         exceeds INT64_MAX.
+ */
+static cardano_error_t
+compute_produced_coin(
+  const uint64_t deposits,
+  const uint64_t fee,
+  const uint64_t donation,
+  const uint64_t direct_deposit_total,
+  int64_t*       produced_coin)
+{
+  int64_t total = 0;
+
+  cardano_error_t result = add_coin(&total, deposits);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_coin(&total, fee);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_coin(&total, donation);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_coin(&total, direct_deposit_total);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *produced_coin = total;
 
   return CARDANO_SUCCESS;
 }
@@ -507,6 +609,11 @@ add_sub_transaction_imbalance(
  * \param[in]     protocol_params  The protocol parameters supplying the deposit amounts.
  * \param[in,out] total            The running total. On success it holds the sum; on failure the caller must still
  *                                 release it.
+ * \param[out]    error_message    An optional pointer that receives the last error of the sub transaction whose
+ *                                 imbalance could not be computed. It is set to an empty string when that sub
+ *                                 transaction reports no error, and left untouched on success. When it is not NULL
+ *                                 the last error of each sub transaction is cleared before its imbalance is computed.
+ *                                 It can be NULL.
  *
  * \return \ref CARDANO_SUCCESS if every imbalance was added, or an appropriate error code.
  */
@@ -515,7 +622,8 @@ add_sub_transactions_imbalance(
   cardano_sub_transaction_set_t* sub_transactions,
   cardano_utxo_list_t*           resolved_inputs,
   cardano_protocol_parameters_t* protocol_params,
-  cardano_value_t**              total)
+  cardano_value_t**              total,
+  const char**                   error_message)
 {
   const size_t num_sub_transactions = cardano_sub_transaction_set_get_length(sub_transactions);
 
@@ -531,10 +639,20 @@ add_sub_transactions_imbalance(
       return result;
     }
 
+    if (error_message != NULL)
+    {
+      cardano_sub_transaction_set_last_error(sub_tx, "");
+    }
+
     result = add_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol_params, total);
 
     if (result != CARDANO_SUCCESS)
     {
+      if (error_message != NULL)
+      {
+        *error_message = cardano_sub_transaction_get_last_error(sub_tx);
+      }
+
       return result;
     }
   }
@@ -1712,9 +1830,16 @@ balance_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_transaction_set_last_error(
-      unbalanced_tx,
-      "Failed to compute direct deposits for transaction balancing.");
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_transaction_set_last_error(unbalanced_tx, DIRECT_DEPOSITS_OVERFLOW_ERROR);
+    }
+    else
+    {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "Failed to compute direct deposits for transaction balancing.");
+    }
 
     return result;
   }
@@ -1760,11 +1885,24 @@ balance_transaction(
       return result;
     }
 
+    int64_t produced_coin = 0;
+
+    result = compute_produced_coin(implicit_coin.deposits, fee, donation, direct_deposit_total, &produced_coin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_value_unref(&total_output_value);
+
+      cardano_transaction_set_last_error(unbalanced_tx, PRODUCED_COIN_OVERFLOW_ERROR);
+
+      return result;
+    }
+
     cardano_value_t* top_level_implicit_value = NULL;
 
     result = cardano_value_new(
-      ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) -
-        ((int64_t)implicit_coin.deposits + (int64_t)fee + (int64_t)donation + (int64_t)direct_deposit_total),
+      ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) - produced_coin,
       mint,
       &top_level_implicit_value);
 
@@ -2233,20 +2371,30 @@ cardano_balance_transaction(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
+  const char* sub_transaction_error = NULL;
+
   result = add_sub_transactions_imbalance(
     sub_transactions,
     sub_transaction_spent_utxos,
     protocol_params,
-    &sub_transactions_imbalance);
+    &sub_transactions_imbalance,
+    &sub_transaction_error);
 
   if (result != CARDANO_SUCCESS)
   {
     cardano_utxo_list_unref(&sub_transaction_spent_utxos);
     cardano_value_unref(&sub_transactions_imbalance);
 
-    cardano_transaction_set_last_error(
-      unbalanced_tx,
-      "Failed to compute the imbalance of the sub transactions for transaction balancing.");
+    if ((sub_transaction_error != NULL) && (sub_transaction_error[0] != '\0'))
+    {
+      cardano_transaction_set_last_error(unbalanced_tx, sub_transaction_error);
+    }
+    else
+    {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "Failed to compute the imbalance of the sub transactions for transaction balancing.");
+    }
 
     return result;
   }
@@ -2429,6 +2577,11 @@ cardano_compute_transaction_imbalance(
 
   if (result != CARDANO_SUCCESS)
   {
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_transaction_set_last_error(tx, DIRECT_DEPOSITS_OVERFLOW_ERROR);
+    }
+
     return result;
   }
 
@@ -2445,7 +2598,16 @@ cardano_compute_transaction_imbalance(
   const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
   const uint64_t  fee           = cardano_transaction_body_get_fee(body);
   const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
-  const int64_t   produced_coin = (int64_t)fee + (int64_t)implicit_coin.deposits + (int64_t)donation + (int64_t)direct_deposit_total;
+  int64_t         produced_coin = 0;
+
+  result = compute_produced_coin(implicit_coin.deposits, fee, donation, direct_deposit_total, &produced_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_set_last_error(tx, PRODUCED_COIN_OVERFLOW_ERROR);
+
+    return result;
+  }
 
   return compute_imbalance(inputs, resolved_inputs, outputs, mint, consumed_coin, produced_coin, imbalance);
 }
@@ -2500,6 +2662,11 @@ cardano_compute_sub_transaction_imbalance(
 
   if (result != CARDANO_SUCCESS)
   {
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_sub_transaction_set_last_error(sub_tx, "The direct deposits of a sub transaction add up to more than the maximum amount the balancer can represent.");
+    }
+
     return result;
   }
 
@@ -2515,7 +2682,16 @@ cardano_compute_sub_transaction_imbalance(
   const uint64_t* donation_ptr  = cardano_sub_transaction_body_get_donation(body);
   const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
   const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
-  const int64_t   produced_coin = (int64_t)implicit_coin.deposits + (int64_t)donation + (int64_t)direct_deposit_total;
+  int64_t         produced_coin = 0;
+
+  result = compute_produced_coin(implicit_coin.deposits, 0U, donation, direct_deposit_total, &produced_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_sub_transaction_set_last_error(sub_tx, "The coin produced by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+    return result;
+  }
 
   return compute_imbalance(inputs, resolved_inputs, outputs, mint, consumed_coin, produced_coin, imbalance);
 }
@@ -2564,7 +2740,7 @@ cardano_compute_transaction_batch_imbalance(
   cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
   cardano_sub_transaction_set_unref(&sub_transactions);
 
-  result = add_sub_transactions_imbalance(sub_transactions, resolved_inputs, protocol_params, &total);
+  result = add_sub_transactions_imbalance(sub_transactions, resolved_inputs, protocol_params, &total, NULL);
 
   if (result != CARDANO_SUCCESS)
   {

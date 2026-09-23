@@ -3282,6 +3282,57 @@ TEST(cardano_sub_tx_builder_add_direct_deposit, canAddDirectDeposit)
   free(body_hex);
 }
 
+TEST(cardano_sub_tx_builder_add_direct_deposit, reportsAnAmountAboveTheMaximumRepresentableAmountWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
+  cardano_sub_transaction_t*     sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_direct_deposit(builder, reward_address, (uint64_t)INT64_MAX + 1U);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
+TEST(cardano_sub_tx_builder_add_direct_deposit, reportsAnAccumulatedAmountAboveTheMaximumRepresentableAmountWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
+  cardano_sub_transaction_t*     sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_direct_deposit(builder, reward_address, (uint64_t)INT64_MAX);
+  cardano_sub_tx_builder_add_direct_deposit(builder, reward_address, 1);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Accumulated direct deposit amount exceeds the maximum representable amount.");
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+}
+
 TEST(cardano_sub_tx_builder_add_direct_deposit, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange

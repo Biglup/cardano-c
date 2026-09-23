@@ -48,14 +48,16 @@ extern "C" {
  *                      construction. This parameter must not be NULL.
  * \param[in] reward_address A pointer to the \ref cardano_reward_address_t of the reward account that
  *                           receives the deposit. This parameter must not be NULL.
- * \param[in] amount The amount of lovelace to deposit. It must be greater than zero.
+ * \param[in] amount The amount of lovelace to deposit. It must be greater than zero and at most
+ *                   INT64_MAX, the largest amount the balancer can represent.
  * \param[out] error_message A pointer that receives a static string describing the failure when the
  *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
  *                           success. This parameter must not be NULL.
  *
  * \return \ref CARDANO_SUCCESS if the direct deposit was recorded, \ref CARDANO_ERROR_INTEGER_OVERFLOW
- *         if the accumulated amount of the reward account does not fit in 64 bits, or an appropriate
- *         error code indicating the failure reason. The transaction is left unchanged on failure.
+ *         if \p amount, or the accumulated amount of the reward account, exceeds INT64_MAX, or an
+ *         appropriate error code indicating the failure reason. The transaction is left unchanged on
+ *         failure.
  */
 cardano_error_t
 cardano_builder_add_direct_deposit(

@@ -303,6 +303,13 @@ cardano_builder_add_direct_deposit(
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
+  if (amount > (uint64_t)INT64_MAX)
+  {
+    *error_message = "Direct deposit amount exceeds the maximum representable amount.";
+
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
   cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
   cardano_transaction_body_unref(&body);
 
@@ -314,9 +321,9 @@ cardano_builder_add_direct_deposit(
 
   if (cardano_direct_deposit_map_get(current, reward_address, &deposited) == CARDANO_SUCCESS)
   {
-    if (amount > (UINT64_MAX - deposited))
+    if ((deposited > (uint64_t)INT64_MAX) || (amount > ((uint64_t)INT64_MAX - deposited)))
     {
-      *error_message = "Direct deposit amount overflows.";
+      *error_message = "Accumulated direct deposit amount exceeds the maximum representable amount.";
 
       return CARDANO_ERROR_INTEGER_OVERFLOW;
     }

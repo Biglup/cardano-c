@@ -1282,7 +1282,8 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_ex(
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] reward_address A pointer to the \ref cardano_reward_address_t representing the reward account that
  *                           receives the deposit.
- * \param[in] amount The amount of lovelace to deposit. It must be greater than zero.
+ * \param[in] amount The amount of lovelace to deposit. It must be greater than zero and at most INT64_MAX, the
+ *                   largest amount the balancer can represent.
  *
  * Usage Example:
  * \code{.c}
@@ -1293,7 +1294,7 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_ex(
  * \endcode
  *
  * \note Direct deposits are only valid from the Dijkstra era onwards. Errors related to adding a direct deposit,
- *       including an accumulated amount that does not fit in 64 bits, are deferred and will only be reported when
+ *       including an amount or an accumulated amount above INT64_MAX, are deferred and will only be reported when
  *       `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_direct_deposit(
@@ -1310,7 +1311,8 @@ CARDANO_EXPORT void cardano_tx_builder_add_direct_deposit(
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] reward_address A string representing the reward account that receives the deposit.
  * \param[in] address_size The size of the reward address string in bytes.
- * \param[in] amount The amount of lovelace to deposit. It must be greater than zero.
+ * \param[in] amount The amount of lovelace to deposit. It must be greater than zero and at most INT64_MAX, the
+ *                   largest amount the balancer can represent.
  *
  * Usage Example:
  * \code{.c}
