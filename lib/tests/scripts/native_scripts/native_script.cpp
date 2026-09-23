@@ -2696,7 +2696,7 @@ TEST(cardano_native_script_from_cbor, preservesTheOriginalCborThroughTheScriptWr
     // Assert
     EXPECT_STREQ(hex, script_cbor.c_str());
     EXPECT_EQ(cardano_cbor_writer_get_encode_size(writer), script_cbor.size() / 2U);
-    EXPECT_EQ(script_size, script_cbor.size() / 2U);
+    EXPECT_EQ(script_size, strlen(cbor_hexes[i]) / 2U);
     expect_hash_hex(cardano_script_get_hash(script), hash_hexes[i]);
 
     // Cleanup
@@ -2719,7 +2719,7 @@ TEST(cardano_native_script_from_cbor, keepsTheOriginalCborWhenWrappedInANewScrip
   EXPECT_EQ(cardano_get_serialized_script_size(script, &script_size), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(script_size, 13U);
+  EXPECT_EQ(script_size, 11U);
   expect_hash_hex(cardano_script_get_hash(script), NON_MINIMAL_INVALID_BEFORE_HASH);
 
   // Cleanup

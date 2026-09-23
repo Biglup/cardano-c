@@ -126,10 +126,10 @@ static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
 
 /**
  * The fee of the native reference script that requires one signature, with the reference script price per byte set by
- * \ref init_protocol_parameters (15 lovelace): a native script of 32 bytes plus the two bytes of the array that holds
- * the language tag and the script, all of it inside the first pricing tier.
+ * \ref init_protocol_parameters (15 lovelace): the 32 bytes of the CBOR of the native script, without the two bytes of
+ * the array that holds the language tag and the script, all of them inside the first pricing tier.
  */
-static const uint64_t NATIVE_REFERENCE_SCRIPT_FEE = 34U * 15U;
+static const uint64_t NATIVE_REFERENCE_SCRIPT_FEE = 32U * 15U;
 
 /* STATIC FUNCTIONS **********************************************************/
 

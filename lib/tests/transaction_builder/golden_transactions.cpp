@@ -70,7 +70,6 @@
 
 #include <gmock/gmock.h>
 
-#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -179,10 +178,10 @@ static const golden_t PLAIN_PAYMENT = {
  * Built by the pinsAMintUnderANativeScriptSuppliedByReference test.
  */
 static const golden_t MINT_BY_REFERENCE = {
-  "84a600d90102818258200000000000000000000000000000000000000000000000000000000000000002000181a200581d6035dedd2982a03cf39e7dce03c839994ffdec2ec6b04f1cf2d40e61a301821a01c72adda1581cb5c02fe2b3cd5339561bb9b9fbb2b88295bbd1848116d53d99ccfe0ca144474f4c4401021a000298a3031a08f0d18009a1581cb5c02fe2b3cd5339561bb9b9fbb2b88295bbd1848116d53d99ccfe0ca144474f4c440112d9010281825820000000000000000000000000000000000000000000000000000000000000000a00a100d9010281825820d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a58408e22c815dc8d9583c9c78d02b411b4e1b0faa3ca32d6e729c20538d472ebe6bfcd7a4d7e7ebbe78c60573d0bd29b18cbb69abf5fac3f54b382eaf90a43b05b01f5f6",
-  "c8c846426f6127633fdbefc1e86111b1068c78c37f1259507ebb53b49efde0f1",
-  170147U,
-  34U,
+  "84a600d90102818258200000000000000000000000000000000000000000000000000000000000000002000181a200581d6035dedd2982a03cf39e7dce03c839994ffdec2ec6b04f1cf2d40e61a301821a01c72afba1581cb5c02fe2b3cd5339561bb9b9fbb2b88295bbd1848116d53d99ccfe0ca144474f4c4401021a00029885031a08f0d18009a1581cb5c02fe2b3cd5339561bb9b9fbb2b88295bbd1848116d53d99ccfe0ca144474f4c440112d9010281825820000000000000000000000000000000000000000000000000000000000000000a00a100d9010281825820d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a5840a4e8484ffebf854d3d8f89e3645c898f3b5dea4929a3aeb1769d08007d4278809f664b4649c09cea283ed880125893d7fcf2b99624aa22ac01af36f481f03f02f5f6",
+  "83eab41f2a77f4000312a4c809a36cbaa60aac23b3b89fe1cb3ed565663daad5",
+  170117U,
+  32U,
   1U,
   1U,
   { 2U, 0U, 0U, 0U }
@@ -745,7 +744,8 @@ expect_change_output(cardano_transaction_t* tx, cardano_address_t* change_addres
  * signed bytes: the size fee of the signed transaction plus the fee of the reference scripts it carries, exceeded by
  * no more than a few bytes of fee. Both terms are checked against the ledger arithmetic over the pinned quantities:
  * the size fee is the coefficient times the number of pinned bytes plus the constant, and the reference script fee
- * is the cost per reference script byte times the pinned size of the reference scripts.
+ * is the floor of the cost per reference script byte times the pinned size of the reference scripts, which fit in the
+ * first pricing tier.
  * \param params the protocol parameters.
  * \param tx the signed transaction.
  * \param all_utxos the UTXOs that resolve every input and every reference input of the transaction.
@@ -775,11 +775,12 @@ expect_ledger_minimum_fee(
   EXPECT_EQ(cardano_compute_min_fee_without_scripts(tx, min_fee_b, min_fee_a, &signed_size_fee), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_compute_script_ref_fee(reference_utxos, script_ref_cost, &script_ref_fee), CARDANO_SUCCESS);
 
-  const uint64_t expected_script_ref_fee = (uint64_t)ceil(cardano_unit_interval_to_double(script_ref_cost) * (double)golden.reference_script_size);
+  const uint64_t expected_script_ref_fee = (cardano_unit_interval_get_numerator(script_ref_cost) * (uint64_t)golden.reference_script_size) / cardano_unit_interval_get_denominator(script_ref_cost);
   const int64_t  fee_excess              = (int64_t)fee - (int64_t)signed_min_fee;
 
   EXPECT_EQ(fee, golden.fee);
   EXPECT_EQ(signed_size_fee, (min_fee_a * signed_size) + min_fee_b);
+  EXPECT_LE(golden.reference_script_size, 25600U);
   EXPECT_EQ(script_ref_fee, expected_script_ref_fee);
   EXPECT_EQ(signed_min_fee, signed_size_fee + script_ref_fee);
   EXPECT_GE(fee_excess, 0);
