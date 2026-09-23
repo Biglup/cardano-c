@@ -1792,6 +1792,104 @@ compute_vk_witnesses_cost(
 }
 
 /**
+ * \brief Computes the cost for the bootstrap witnesses the owners of the Byron inputs of a transaction add to it.
+ *
+ * Each bootstrap witness is a structure with 4 fields (public key, signature, chain code, attributes): an array header
+ * of 1 byte, the public key of 34 bytes, the signature of 66 bytes, the chain code of 34 bytes and the attributes of
+ * the Byron address of its owner, a byte string holding the CBOR encoded attributes map as the address encodes it,
+ * whose header has the size of an array header of the same length. When the witness set already holds bootstrap
+ * witnesses, its map key, the tag and the list header are part of the unsigned transaction, so only the new witnesses
+ * and the growth of the list header are added to the estimate. Otherwise signing introduces the entry, and the estimate
+ * adds its map key of 1 byte, the list header and, when the set signing fills is tagged, the 3 bytes of its tag. That
+ * set is the bootstrap witness set the witness set already carries, even if empty, or a new set, which is tagged. No
+ * cost is added when there are no Byron owners.
+ *
+ * \param[in] witness_set The witness set of the transaction as it is before the bootstrap witnesses are added.
+ * \param[in] bootstrap_signers One resolved UTXO per distinct Byron owner, as \ref _cardano_get_bootstrap_signers
+ *                              returns them.
+ * \param[in] min_fee_coefficient The coefficient used to compute fees based on transaction size.
+ * \param[out] cost On success, the computed cost for including the bootstrap witnesses.
+ *
+ * \return \ref CARDANO_SUCCESS if the cost was computed, or an appropriate error code if the attributes of a Byron
+ *         address could not be read.
+ */
+static cardano_error_t
+compute_bootstrap_witnesses_cost(
+  cardano_witness_set_t* witness_set,
+  cardano_utxo_list_t*   bootstrap_signers,
+  const uint64_t         min_fee_coefficient,
+  int64_t*               cost)
+{
+  *cost = 0;
+
+  const size_t signer_count = cardano_utxo_list_get_length(bootstrap_signers);
+
+  if (signer_count == 0U)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  size_t bootstrap_witness_set_size = 0U;
+
+  for (size_t i = 0U; i < signer_count; ++i)
+  {
+    cardano_utxo_t* utxo   = NULL;
+    cardano_error_t result = cardano_utxo_list_get(bootstrap_signers, i, &utxo);
+
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+    cardano_transaction_output_unref(&output);
+
+    cardano_address_t* address = cardano_transaction_output_get_address(output);
+    cardano_address_unref(&address);
+
+    cardano_buffer_t* attributes = NULL;
+
+    result = _cardano_get_bootstrap_witness_attributes(address, &attributes);
+
+    const size_t attributes_size = cardano_buffer_get_size(attributes);
+
+    cardano_buffer_unref(&attributes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    bootstrap_witness_set_size += 135U + cbor_array_header_size(attributes_size) + attributes_size;
+  }
+
+  cardano_bootstrap_witness_set_t* bootstrap_witnesses = cardano_witness_set_get_bootstrap(witness_set);
+  cardano_bootstrap_witness_set_unref(&bootstrap_witnesses);
+
+  const size_t current_count = cardano_bootstrap_witness_set_get_length(bootstrap_witnesses);
+
+  if (current_count > 0U)
+  {
+    bootstrap_witness_set_size += cbor_array_header_size(current_count + signer_count) - cbor_array_header_size(current_count);
+  }
+  else
+  {
+    bootstrap_witness_set_size += 1U + cbor_array_header_size(signer_count);
+
+    if ((bootstrap_witnesses == NULL) || cardano_bootstrap_witness_set_get_use_tag(bootstrap_witnesses))
+    {
+      bootstrap_witness_set_size += 3U;
+    }
+  }
+
+  *cost = (int64_t)bootstrap_witness_set_size * (int64_t)min_fee_coefficient;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Runs the balancing loop of a transaction until the fee converges and the whole batch is balanced.
  *
  * On every iteration the value that coin selection must cover is the value of the outputs minus the implicit value of
@@ -2209,9 +2307,9 @@ balance_transaction(
       return result;
     }
 
-    cardano_utxo_list_t* priced_inputs = NULL;
+    cardano_utxo_list_t* bootstrap_signers = NULL;
 
-    result = get_priced_inputs(reference_inputs, pre_selected_utxo, selection, sub_transaction_priced_inputs, &priced_inputs);
+    result = _cardano_get_bootstrap_signers(unbalanced_tx, resolved_inputs, &bootstrap_signers);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2224,18 +2322,41 @@ balance_transaction(
       return result;
     }
 
+    cardano_utxo_list_t* priced_inputs = NULL;
+
+    result = get_priced_inputs(reference_inputs, pre_selected_utxo, selection, sub_transaction_priced_inputs, &priced_inputs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_utxo_list_unref(&resolved_inputs);
+      cardano_utxo_list_unref(&selection);
+      cardano_utxo_list_unref(&remaining_utxo);
+      cardano_blake2b_hash_set_unref(&unique_signers);
+      cardano_utxo_list_unref(&bootstrap_signers);
+
+      return result;
+    }
+
     result = cardano_compute_transaction_fee(unbalanced_tx, priced_inputs, protocol_params, &computed_fee);
 
     cardano_utxo_list_unref(&priced_inputs);
 
-    const uint64_t signer_count      = foreign_signature_count + cardano_blake2b_hash_set_get_length(unique_signers);
-    const int64_t  vk_witnesses_cost = compute_vk_witnesses_cost(witnesses, signer_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
+    const uint64_t signer_count             = foreign_signature_count + cardano_blake2b_hash_set_get_length(unique_signers);
+    const int64_t  vk_witnesses_cost        = compute_vk_witnesses_cost(witnesses, signer_count, cardano_protocol_parameters_get_min_fee_a(protocol_params));
+    int64_t        bootstrap_witnesses_cost = 0;
 
-    computed_fee += (uint64_t)vk_witnesses_cost;
+    if (result == CARDANO_SUCCESS)
+    {
+      result = compute_bootstrap_witnesses_cost(witnesses, bootstrap_signers, cardano_protocol_parameters_get_min_fee_a(protocol_params), &bootstrap_witnesses_cost);
+    }
+
+    computed_fee += (uint64_t)vk_witnesses_cost + (uint64_t)bootstrap_witnesses_cost;
 
     cardano_utxo_list_unref(&selection);
     cardano_utxo_list_unref(&remaining_utxo);
     cardano_blake2b_hash_set_unref(&unique_signers);
+    cardano_utxo_list_unref(&bootstrap_signers);
 
     if (result != CARDANO_SUCCESS)
     {

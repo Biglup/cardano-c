@@ -24,8 +24,11 @@
 #include "unique_signers.h"
 
 #include <cardano/address/base_address.h>
+#include <cardano/address/byron_address.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/address/pointer_address.h>
+#include <cardano/buffer.h>
+#include <cardano/cbor/cbor_reader.h>
 #include <cardano/certs/auth_committee_hot_cert.h>
 #include <cardano/certs/pool_registration_cert.h>
 #include <cardano/certs/pool_retirement_cert.h>
@@ -291,6 +294,199 @@ _cardano_add_input_signers(
     }
 
     cardano_blake2b_hash_unref(&pub_key_hash);
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_cardano_get_bootstrap_key_hash(cardano_address_t* address, cardano_blake2b_hash_t** root)
+{
+  if ((address == NULL) || (root == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *root = NULL;
+
+  cardano_address_type_t type;
+
+  cardano_error_t result = cardano_address_get_type(address, &type);
+
+  if ((result != CARDANO_SUCCESS) || (type != CARDANO_ADDRESS_TYPE_BYRON))
+  {
+    return result;
+  }
+
+  cardano_byron_address_t* byron_address = NULL;
+
+  result = cardano_byron_address_from_address(address, &byron_address);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_byron_address_get_root(byron_address, root);
+
+  cardano_byron_address_unref(&byron_address);
+
+  return result;
+}
+
+cardano_error_t
+_cardano_get_bootstrap_witness_attributes(cardano_address_t* address, cardano_buffer_t** attributes)
+{
+  if ((address == NULL) || (attributes == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_address_type_t type;
+
+  cardano_error_t result = cardano_address_get_type(address, &type);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (type != CARDANO_ADDRESS_TYPE_BYRON)
+  {
+    return CARDANO_ERROR_INVALID_ADDRESS_TYPE;
+  }
+
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cardano_address_get_bytes(address), cardano_address_get_bytes_size(address));
+
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  int64_t            array_size = 0;
+  cardano_cbor_tag_t tag        = CARDANO_ENCODED_CBOR_DATA_ITEM;
+  cardano_buffer_t*  payload    = NULL;
+
+  result = cardano_cbor_reader_read_start_array(reader, &array_size);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_reader_read_tag(reader, &tag);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (tag != CARDANO_ENCODED_CBOR_DATA_ITEM))
+  {
+    result = CARDANO_ERROR_INVALID_CBOR_VALUE;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_reader_read_bytestring(reader, &payload);
+  }
+
+  cardano_cbor_reader_unref(&reader);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  reader = cardano_cbor_reader_new(cardano_buffer_get_data(payload), cardano_buffer_get_size(payload));
+
+  cardano_buffer_unref(&payload);
+
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  result = cardano_cbor_reader_read_start_array(reader, &array_size);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_reader_skip_value(reader);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_reader_read_encoded_value(reader, attributes);
+  }
+
+  cardano_cbor_reader_unref(&reader);
+
+  return result;
+}
+
+cardano_error_t
+_cardano_add_input_bootstrap_signers(
+  cardano_blake2b_hash_set_t*      roots,
+  cardano_utxo_list_t*             bootstrap_signers,
+  cardano_transaction_input_set_t* set,
+  cardano_utxo_list_t*             resolved_inputs)
+{
+  if ((roots == NULL) || (bootstrap_signers == NULL) || (set == NULL) || (resolved_inputs == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const size_t size = cardano_transaction_input_set_get_length(set);
+
+  for (size_t i = 0U; i < size; ++i)
+  {
+    cardano_transaction_input_t* input  = NULL;
+    cardano_error_t              result = cardano_transaction_input_set_get(set, i, &input);
+    cardano_transaction_input_unref(&input);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_utxo_t* utxo = cardano_utxo_list_find(resolved_inputs, find_utxo, (void*)input);
+    cardano_utxo_unref(&utxo);
+
+    if (utxo == NULL)
+    {
+      return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+    cardano_transaction_output_unref(&output);
+
+    cardano_address_t* address = cardano_transaction_output_get_address(output);
+    cardano_address_unref(&address);
+
+    cardano_blake2b_hash_t* root = NULL;
+
+    result = _cardano_get_bootstrap_key_hash(address, &root);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    if (root == NULL)
+    {
+      continue;
+    }
+
+    if (!_cardano_blake2b_hash_set_has(roots, root))
+    {
+      result = cardano_blake2b_hash_set_add(roots, root);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_utxo_list_add(bootstrap_signers, utxo);
+      }
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_blake2b_hash_unref(&root);
+        return result;
+      }
+    }
+
+    cardano_blake2b_hash_unref(&root);
   }
 
   return CARDANO_SUCCESS;
@@ -1139,4 +1335,59 @@ _cardano_get_unique_signers(
   }
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_cardano_get_bootstrap_signers(
+  cardano_transaction_t* tx,
+  cardano_utxo_list_t*   resolved_inputs,
+  cardano_utxo_list_t**  bootstrap_signers)
+{
+  if ((tx == NULL) || (bootstrap_signers == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t*      body              = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* inputs            = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_t* collateral_inputs = cardano_transaction_body_get_collateral(body);
+
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_input_set_unref(&collateral_inputs);
+
+  if (inputs == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_error_t result = cardano_utxo_list_new(bootstrap_signers);
+
+  if ((result != CARDANO_SUCCESS) || (resolved_inputs == NULL))
+  {
+    return result;
+  }
+
+  cardano_blake2b_hash_set_t* roots = NULL;
+
+  result = cardano_blake2b_hash_set_new(&roots);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = _cardano_add_input_bootstrap_signers(roots, *bootstrap_signers, inputs, resolved_inputs);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (collateral_inputs != NULL))
+  {
+    result = _cardano_add_input_bootstrap_signers(roots, *bootstrap_signers, collateral_inputs, resolved_inputs);
+  }
+
+  cardano_blake2b_hash_set_unref(&roots);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(bootstrap_signers);
+  }
+
+  return result;
 }

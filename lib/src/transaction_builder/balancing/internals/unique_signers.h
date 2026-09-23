@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/error.h>
 #include <cardano/transaction/transaction.h>
@@ -111,6 +112,72 @@ _cardano_get_payment_pub_key_hash(cardano_address_t* address);
 cardano_error_t
 _cardano_add_input_signers(
   cardano_blake2b_hash_set_t*      unique_signers,
+  cardano_transaction_input_set_t* set,
+  cardano_utxo_list_t*             resolved_inputs);
+
+/**
+ * \brief Retrieves the hash that identifies the owner of a Byron address, the key that signs for it with a bootstrap witness.
+ *
+ * A Byron address embeds its root, the hash of its type, the spending data (the extended public key of its owner) and
+ * its attributes. The ledger identifies the witness a Byron input needs by this root, so two inputs held by the same
+ * Byron address are covered by a single bootstrap witness.
+ *
+ * \param[in] address A pointer to an initialized \ref cardano_address_t object representing the Cardano address
+ *                    whose root will be retrieved. This parameter is required and must not be NULL.
+ * \param[out] root On success, a new reference to the root of the Byron address, or NULL if the address is not a Byron
+ *                  address. The caller must release it by calling \ref cardano_blake2b_hash_unref once it is no longer
+ *                  needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the address was
+ *         inspected, whether or not it is a Byron address, \ref CARDANO_ERROR_POINTER_IS_NULL if `address` or `root` is
+ *         NULL, or an appropriate error code if the root of a Byron address could not be retrieved.
+ */
+cardano_error_t
+_cardano_get_bootstrap_key_hash(cardano_address_t* address, cardano_blake2b_hash_t** root);
+
+/**
+ * \brief Retrieves the attributes a bootstrap witness for a Byron address carries.
+ *
+ * The bootstrap witness of a Byron address holds the attributes of the address, as the address encodes them, so the
+ * ledger can recompute the root of the address from the witness. This function returns the CBOR encoded attributes
+ * map, exactly as it appears in the payload of the address.
+ *
+ * \param[in] address A pointer to an initialized \ref cardano_address_t object representing a Byron address. This
+ *                    parameter is required and must not be NULL.
+ * \param[out] attributes On success, a new buffer holding the CBOR encoded attributes of the address. The caller must
+ *                        release it by calling \ref cardano_buffer_unref once it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the attributes
+ *         were retrieved, \ref CARDANO_ERROR_POINTER_IS_NULL if `address` or `attributes` is NULL, or an appropriate
+ *         error code if the address is not a Byron address.
+ */
+cardano_error_t
+_cardano_get_bootstrap_witness_attributes(cardano_address_t* address, cardano_buffer_t** attributes);
+
+/**
+ * \brief Adds the owners of the Byron inputs of a set of Cardano transaction inputs to a list of bootstrap signers.
+ *
+ * This function processes a set of Cardano transaction inputs and their corresponding resolved UTXOs and, for each
+ * input held by a Byron address whose root is not yet in `roots`, adds the root to `roots` and the resolved UTXO to
+ * `bootstrap_signers`. Inputs held by any other kind of address are ignored.
+ *
+ * \param[in,out] roots A pointer to an initialized \ref cardano_blake2b_hash_set_t object holding the roots of the Byron
+ *                      owners already found. This parameter must not be NULL.
+ * \param[in,out] bootstrap_signers A pointer to an initialized \ref cardano_utxo_list_t object that receives one resolved
+ *                                  UTXO per new Byron owner. This parameter must not be NULL.
+ * \param[in] set A pointer to an initialized \ref cardano_transaction_input_set_t object representing the set of transaction
+ *                inputs to be processed. This parameter is required and must not be NULL.
+ * \param[in] resolved_inputs A pointer to an initialized \ref cardano_utxo_list_t object containing the list of resolved UTXOs
+ *                            (inputs) corresponding to the transaction inputs. This parameter is required and must not be NULL.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the Byron owners
+ *         were added, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if a required parameter is NULL or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input is not resolved.
+ */
+cardano_error_t
+_cardano_add_input_bootstrap_signers(
+  cardano_blake2b_hash_set_t*      roots,
+  cardano_utxo_list_t*             bootstrap_signers,
   cardano_transaction_input_set_t* set,
   cardano_utxo_list_t*             resolved_inputs);
 
@@ -342,5 +409,34 @@ _cardano_get_unique_signers(
   cardano_transaction_t*       tx,
   cardano_utxo_list_t*         resolved_inputs,
   cardano_blake2b_hash_set_t** unique_signers);
+
+/**
+ * \brief Extracts the owners of the Byron inputs of a Cardano transaction, which sign it with bootstrap witnesses.
+ *
+ * The inputs and collateral inputs held by Byron addresses are not signed with VK witnesses, and are therefore not
+ * part of the set \ref _cardano_get_unique_signers returns: each distinct Byron owner, identified by the root of its
+ * address, signs with a single bootstrap witness. This function returns one resolved UTXO per distinct Byron owner, in
+ * the order the inputs and then the collateral inputs list them. The number of elements of the list is the number of
+ * bootstrap witnesses the transaction needs, and the address of each UTXO holds the attributes the bootstrap witness of
+ * its owner carries.
+ *
+ * \param[in] tx A pointer to an initialized \ref cardano_transaction_t object that represents the Cardano transaction
+ *               for which the bootstrap signers are to be determined. This parameter is required and must not be NULL.
+ * \param[in] resolved_inputs A pointer to an initialized \ref cardano_utxo_list_t object containing the list of resolved UTXOs
+ *                            (inputs) referenced in the transaction. If this parameter is NULL, the function returns an
+ *                            empty list.
+ * \param[out] bootstrap_signers On successful execution, this will point to a newly created \ref cardano_utxo_list_t object
+ *                               holding one resolved UTXO per distinct Byron owner. The caller must release it by calling
+ *                               \ref cardano_utxo_list_unref once it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the bootstrap signers
+ *         were successfully computed, or an appropriate error code indicating the failure reason, such as
+ *         \ref CARDANO_ERROR_POINTER_IS_NULL if `tx` or `bootstrap_signers` is NULL.
+ */
+cardano_error_t
+_cardano_get_bootstrap_signers(
+  cardano_transaction_t* tx,
+  cardano_utxo_list_t*   resolved_inputs,
+  cardano_utxo_list_t**  bootstrap_signers);
 
 #endif // BIGLUP_LABS_INCLUDE_CARDANO_SIGNERS_COUNT_H

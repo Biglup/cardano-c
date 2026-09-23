@@ -98,7 +98,7 @@ cardano_byron_address_from_credentials(
 
   if (encoding_result != CARDANO_SUCCESS)
   {
-    _cardano_address_deallocate(&address);
+    _cardano_address_deallocate(address);
     return encoding_result;
   }
 
