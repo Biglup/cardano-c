@@ -139,7 +139,7 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
 /**
  * \brief Computes the script part of the minimum fee of a transaction: execution units and reference scripts.
  *
- * This function calculates the minimum fee required for a transaction that contains Plutus scripts. The fee is based on:
+ * This function calculates the script part of the minimum fee of a transaction. The fee is based on:
  * - The execution units required by the scripts.
  * - The prices of execution units.
  * - The size of the reference scripts and the cost per reference script byte.
