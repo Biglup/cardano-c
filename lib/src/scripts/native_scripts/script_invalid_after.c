@@ -21,6 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/scripts/native_scripts/native_script_list.h>
 #include <cardano/scripts/native_scripts/native_script_type.h>
@@ -50,6 +51,7 @@ typedef struct cardano_script_invalid_after_t
     cardano_object_t             base;
     cardano_native_script_type_t type;
     uint64_t                     slot;
+    cardano_buffer_t*            cbor_cache;
 
 } cardano_script_invalid_after_t;
 
@@ -75,50 +77,26 @@ cardano_script_invalid_after_deallocate(void* object)
 
   cardano_script_invalid_after_t* data = (cardano_script_invalid_after_t*)object;
 
+  cardano_buffer_unref(&data->cbor_cache);
+
   _cardano_free(data);
 }
 
-/* DEFINITIONS ****************************************************************/
-
-cardano_error_t
-cardano_script_invalid_after_new(const uint64_t slot, cardano_script_invalid_after_t** script_invalid_after)
+/**
+ * \brief Decodes the fields of a script_invalid_after from a CBOR reader.
+ *
+ * This function reads the CBOR encoded script_invalid_after at the current position of the reader and creates a new
+ * \ref cardano_script_invalid_after_t object from its fields. It does not cache the original CBOR representation, that is done
+ * by \ref cardano_script_invalid_after_from_cbor.
+ *
+ * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t positioned at the script_invalid_after.
+ * \param[out] script_invalid_after On success, set to the newly created \ref cardano_script_invalid_after_t object.
+ *
+ * \return \ref CARDANO_SUCCESS if the script_invalid_after was decoded, or an appropriate error code otherwise.
+ */
+static cardano_error_t
+cardano_script_invalid_after_decode(cardano_cbor_reader_t* reader, cardano_script_invalid_after_t** script_invalid_after)
 {
-  if (script_invalid_after == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  cardano_script_invalid_after_t* data = _cardano_malloc(sizeof(cardano_script_invalid_after_t));
-
-  if (data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  data->base.ref_count     = 1;
-  data->base.last_error[0] = '\0';
-  data->base.deallocator   = cardano_script_invalid_after_deallocate;
-  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER;
-  data->slot               = slot;
-
-  *script_invalid_after = data;
-
-  return CARDANO_SUCCESS;
-}
-
-cardano_error_t
-cardano_script_invalid_after_from_cbor(cardano_cbor_reader_t* reader, cardano_script_invalid_after_t** script_invalid_after)
-{
-  if (reader == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (script_invalid_after == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   static const char* validator_name = "script_invalid_after";
 
   const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, 2);
@@ -163,6 +141,81 @@ cardano_script_invalid_after_from_cbor(cardano_cbor_reader_t* reader, cardano_sc
   return cardano_script_invalid_after_new(slot, script_invalid_after);
 }
 
+/* DEFINITIONS ****************************************************************/
+
+cardano_error_t
+cardano_script_invalid_after_new(const uint64_t slot, cardano_script_invalid_after_t** script_invalid_after)
+{
+  if (script_invalid_after == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_invalid_after_t* data = _cardano_malloc(sizeof(cardano_script_invalid_after_t));
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  data->base.ref_count     = 1;
+  data->base.last_error[0] = '\0';
+  data->base.deallocator   = cardano_script_invalid_after_deallocate;
+  data->cbor_cache         = NULL;
+  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER;
+  data->slot               = slot;
+
+  *script_invalid_after = data;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_script_invalid_after_from_cbor(cardano_cbor_reader_t* reader, cardano_script_invalid_after_t** script_invalid_after)
+{
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_invalid_after == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_cbor_reader_t* reader_copy = NULL;
+  cardano_error_t        result      = cardano_cbor_reader_clone(reader, &reader_copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_script_invalid_after_decode(reader, script_invalid_after);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_cbor_reader_unref(&reader_copy);
+    return result;
+  }
+
+  cardano_buffer_t* cbor_cache = NULL;
+
+  result = cardano_cbor_reader_read_encoded_value(reader_copy, &cbor_cache);
+  cardano_cbor_reader_unref(&reader_copy);
+
+  if ((result != CARDANO_SUCCESS) || (cbor_cache == NULL))
+  {
+    cardano_script_invalid_after_unref(script_invalid_after);
+
+    return (result != CARDANO_SUCCESS) ? result : CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  (*script_invalid_after)->cbor_cache = cbor_cache;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_error_t
 cardano_script_invalid_after_to_cbor(
   const cardano_script_invalid_after_t* script_invalid_after,
@@ -176,6 +229,11 @@ cardano_script_invalid_after_to_cbor(
   if (writer == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_invalid_after->cbor_cache != NULL)
+  {
+    return cardano_cbor_writer_write_encoded(writer, cardano_buffer_get_data(script_invalid_after->cbor_cache), cardano_buffer_get_size(script_invalid_after->cbor_cache));
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 2);
@@ -327,6 +385,8 @@ cardano_script_invalid_after_set_slot(cardano_script_invalid_after_t* script_inv
   }
 
   script_invalid_after->slot = slot;
+  cardano_buffer_unref(&script_invalid_after->cbor_cache);
+  script_invalid_after->cbor_cache = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -360,6 +420,18 @@ cardano_script_invalid_after_equals(const cardano_script_invalid_after_t* lhs, c
   }
 
   return true;
+}
+
+void
+cardano_script_invalid_after_clear_cbor_cache(cardano_script_invalid_after_t* script_invalid_after)
+{
+  if (script_invalid_after == NULL)
+  {
+    return;
+  }
+
+  cardano_buffer_unref(&script_invalid_after->cbor_cache);
+  script_invalid_after->cbor_cache = NULL;
 }
 
 void

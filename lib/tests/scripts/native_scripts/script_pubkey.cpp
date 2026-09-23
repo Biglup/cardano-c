@@ -60,6 +60,69 @@ static const char* AFTER_SCRIPT =
   "  \"slot\": 3000\n"
   "}";
 
+static const char* NON_MINIMAL_PUBKEY_CBOR = "820059001c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* MINIMAL_PUBKEY_CBOR     = "8200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37";
+static const char* OTHER_KEY_HASH          = "b275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Serializes a script_pubkey and returns its CBOR as a hex string.
+ *
+ * @param script The script_pubkey to serialize.
+ *
+ * @return The CBOR hex string. The caller must release it with free.
+ */
+static char*
+script_pubkey_to_cbor_hex(const cardano_script_pubkey_t* script)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_script_pubkey_to_cbor(script, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return hex;
+}
+
+/**
+ * Reads a script_pubkey from a CBOR hex string.
+ *
+ * @param cbor_hex The CBOR hex string.
+ *
+ * @return The script_pubkey object.
+ */
+static cardano_script_pubkey_t*
+script_pubkey_from_cbor_hex(const char* cbor_hex)
+{
+  cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_script_pubkey_t* script = NULL;
+
+  EXPECT_EQ(cardano_script_pubkey_from_cbor(reader, &script), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return script;
+}
+
+/**
+ * Releases a script_pubkey and a hex string returned by script_pubkey_to_cbor_hex.
+ *
+ * @param script The script_pubkey to release.
+ * @param hex The hex string to release.
+ */
+static void
+script_pubkey_unref_and_free(cardano_script_pubkey_t** script, char* hex)
+{
+  cardano_script_pubkey_unref(script);
+  free(hex);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_script_pubkey_new, returnsErrorIfPubKeyIsNull)
@@ -649,4 +712,118 @@ TEST(cardano_script_pubkey_set_key_hash, setsTheKeyHash)
   cardano_script_pubkey_unref(&pubkey);
   cardano_blake2b_hash_unref(&new_hash);
   cardano_blake2b_hash_unref(&retrieved);
+}
+
+TEST(cardano_script_pubkey_from_cbor, preservesTheOriginalCborEncoding)
+{
+  // Arrange
+  cardano_script_pubkey_t* script = script_pubkey_from_cbor_hex(NON_MINIMAL_PUBKEY_CBOR);
+
+  // Act
+  char* hex = script_pubkey_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, NON_MINIMAL_PUBKEY_CBOR);
+
+  // Cleanup
+  script_pubkey_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_pubkey_set_key_hash, discardsTheCachedCbor)
+{
+  // Arrange
+  cardano_script_pubkey_t* script = script_pubkey_from_cbor_hex(NON_MINIMAL_PUBKEY_CBOR);
+
+  // Act
+  cardano_blake2b_hash_t* key_hash = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(OTHER_KEY_HASH, strlen(OTHER_KEY_HASH), &key_hash), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_pubkey_set_key_hash(script, key_hash), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&key_hash);
+
+  char* hex = script_pubkey_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, "8200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538");
+
+  // Cleanup
+  script_pubkey_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_pubkey_clear_cbor_cache, encodesTheScriptFromItsFields)
+{
+  // Arrange
+  cardano_script_pubkey_t* script = script_pubkey_from_cbor_hex(NON_MINIMAL_PUBKEY_CBOR);
+
+  // Act
+  cardano_script_pubkey_clear_cbor_cache(script);
+  char* hex = script_pubkey_to_cbor_hex(script);
+
+  cardano_script_pubkey_clear_cbor_cache(script);
+  char* hex_after_second_clear = script_pubkey_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, MINIMAL_PUBKEY_CBOR);
+  EXPECT_STREQ(hex_after_second_clear, MINIMAL_PUBKEY_CBOR);
+
+  // Cleanup
+  free(hex_after_second_clear);
+  script_pubkey_unref_and_free(&script, hex);
+}
+
+TEST(cardano_script_pubkey_clear_cbor_cache, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_script_pubkey_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_script_pubkey_from_cbor, returnsErrorIfMemoryAllocationFailsWhileCachingTheCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(NON_MINIMAL_PUBKEY_CBOR, strlen(NON_MINIMAL_PUBKEY_CBOR));
+  bool                   succeeded = false;
+
+  // Act
+  for (int i = 0; (i < 500) && !succeeded; ++i)
+  {
+    cardano_cbor_reader_t* reader_copy = NULL;
+    ASSERT_EQ(cardano_cbor_reader_clone(reader, &reader_copy), CARDANO_SUCCESS);
+
+    cardano_script_pubkey_t* script = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_script_pubkey_from_cbor(reader_copy, &script);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      char* hex = script_pubkey_to_cbor_hex(script);
+
+      EXPECT_STREQ(hex, NON_MINIMAL_PUBKEY_CBOR);
+
+      free(hex);
+    }
+    else
+    {
+      EXPECT_EQ(script, nullptr);
+    }
+
+    cardano_script_pubkey_unref(&script);
+    cardano_cbor_reader_unref(&reader_copy);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
 }

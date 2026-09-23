@@ -37,6 +37,10 @@ Native Script - Require Signature
 
 ------------
 
+.. doxygenfunction:: cardano_script_pubkey_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_script_pubkey_unref
 
 ------------

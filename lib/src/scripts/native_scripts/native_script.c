@@ -1129,6 +1129,43 @@ cardano_native_script_equals(
 }
 
 void
+cardano_native_script_clear_cbor_cache(cardano_native_script_t* native_script)
+{
+  if (native_script == NULL)
+  {
+    return;
+  }
+
+  switch (native_script->type)
+  {
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ALL_OF:
+      cardano_script_all_clear_cbor_cache(native_script->all);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ANY_OF:
+      cardano_script_any_clear_cbor_cache(native_script->any);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_N_OF_K:
+      cardano_script_n_of_k_clear_cbor_cache(native_script->n_of_k);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_PUBKEY:
+      cardano_script_pubkey_clear_cbor_cache(native_script->pubkey);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_AFTER:
+      cardano_script_invalid_after_clear_cbor_cache(native_script->invalid_after);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_INVALID_BEFORE:
+      cardano_script_invalid_before_clear_cbor_cache(native_script->invalid_before);
+      break;
+    case CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_GUARD:
+      cardano_script_require_guard_clear_cbor_cache(native_script->require_guard);
+      break;
+
+    default:
+      break;
+  }
+}
+
+void
 cardano_native_script_unref(cardano_native_script_t** native_script)
 {
   if ((native_script == NULL) || (*native_script == NULL))

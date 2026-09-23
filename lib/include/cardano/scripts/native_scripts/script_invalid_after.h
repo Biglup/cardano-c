@@ -106,6 +106,13 @@ cardano_script_invalid_after_new(uint64_t slot, cardano_script_invalid_after_t**
  * \return A \ref cardano_error_t value indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
  *         if the script_invalid_after was successfully created, or an appropriate error code if an error occurred.
  *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a script_invalid_after object is created using \ref cardano_script_invalid_after_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_script_invalid_after_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_script_invalid_after_clear_cbor_cache after the object has been created.
+ *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_script_invalid_after_t object by calling
  *       \ref cardano_script_invalid_after_unref when it is no longer needed.
@@ -148,6 +155,13 @@ cardano_script_invalid_after_from_cbor(cardano_cbor_reader_t* reader, cardano_sc
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p script_invalid_after or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
+ *         does not enforce a canonical CBOR representation, and the hash and the size of a native script are computed over the bytes
+ *         it was encoded with, so encoding a decoded script again with other bytes would change its hash and its size.
+ *         To prevent this, when a script_invalid_after object is created using \ref cardano_script_invalid_after_from_cbor, it caches the original
+ *         CBOR representation internally. When \ref cardano_script_invalid_after_to_cbor is called, it will output the cached CBOR.
+ *         If the cached CBOR representation is not needed, the client can call \ref cardano_script_invalid_after_clear_cbor_cache after the object has been created.
  *
  * Usage Example:
  * \code{.c}
@@ -300,6 +314,9 @@ cardano_script_invalid_after_get_slot(const cardano_script_invalid_after_t* scri
  * \return \ref CARDANO_SUCCESS if the slot number was successfully set, or an appropriate error code
  *         indicating the failure reason.
  *
+ * \note A successful call discards the CBOR that the object cached when it was decoded with \ref cardano_script_invalid_after_from_cbor,
+ *       so the next call to \ref cardano_script_invalid_after_to_cbor encodes the script from its fields.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_script_invalid_after_t* script_invalid_after = ...; // Assume script_invalid_after is initialized
@@ -358,6 +375,51 @@ cardano_script_invalid_after_set_slot(cardano_script_invalid_after_t* script_inv
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_script_invalid_after_equals(const cardano_script_invalid_after_t* lhs, const cardano_script_invalid_after_t* rhs);
+
+/**
+ * \brief Clears the cached CBOR representation from a script_invalid_after.
+ *
+ * This function removes the internally cached CBOR data from a \ref cardano_script_invalid_after_t object.
+ * It is useful when you have modified the script_invalid_after after it was created from CBOR using
+ * \ref cardano_script_invalid_after_from_cbor and you want to ensure that the next serialization reflects
+ * the current state of the script_invalid_after, rather than using the original cached CBOR.
+ *
+ * \param[in,out] script_invalid_after A pointer to an initialized \ref cardano_script_invalid_after_t object
+ *                         from which the CBOR cache will be cleared.
+ *
+ * \warning Clearing the CBOR cache may change the binary representation of the script when
+ *          serialized, which changes its hash, and with it the policy id, the address or the credential derived from it.
+ *          Use this function with caution, especially if the script is already on chain or if preserving
+ *          the exact CBOR encoding is important for your application.
+ *
+ * Usage Example:
+ * \code{.c}
+ * // Assume script_invalid_after was created using cardano_script_invalid_after_from_cbor
+ * cardano_script_invalid_after_t* script_invalid_after = ...;
+ *
+ * // Clear the CBOR cache so that serialization encodes the script from its fields
+ * cardano_script_invalid_after_clear_cbor_cache(script_invalid_after);
+ *
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * cardano_error_t result = cardano_script_invalid_after_to_cbor(script_invalid_after, writer);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Process the CBOR data as needed
+ * }
+ * else
+ * {
+ *   const char* error_message = cardano_cbor_writer_get_last_error(writer);
+ *   printf("Serialization failed: %s\n", error_message);
+ * }
+ *
+ * // Clean up resources
+ * cardano_cbor_writer_unref(&writer);
+ * cardano_script_invalid_after_unref(&script_invalid_after);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_script_invalid_after_clear_cbor_cache(cardano_script_invalid_after_t* script_invalid_after);
 
 /**
  * \brief Decrements the reference count of a script_invalid_after object.

@@ -36,6 +36,8 @@
 #include <cardano/scripts/native_scripts/script_invalid_before.h>
 #include <cardano/scripts/native_scripts/script_n_of_k.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
+#include <cardano/scripts/script.h>
+#include <cardano/transaction_builder/fee.h>
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
@@ -154,6 +156,84 @@ static const char* AT_LEAST_SCRIPT =
   "    }\n"
   "  ]\n"
   "}";
+
+static const char* NON_MINIMAL_INVALID_BEFORE_CBOR = "82041b0000000000000005";
+static const char* NON_MINIMAL_INVALID_BEFORE_HASH = "66fe0f56d67240d8e509ffe0d088d411991b196cbe8ae6aba6a608e5";
+static const char* MINIMAL_INVALID_BEFORE_CBOR     = "820405";
+static const char* MINIMAL_INVALID_BEFORE_HASH     = "7789659c6184299a248e40ed68e6329d09f3839c556f546c42f042d6";
+static const char* MUTATED_INVALID_BEFORE_CBOR     = "820409";
+static const char* MUTATED_INVALID_BEFORE_HASH     = "efb71ab2623a7db07c9e08116ea1247f1f341778add9049d68d35c43";
+static const char* NON_MINIMAL_ALL_CBOR            = "82018282041b000000000000000582051b0000000000000007";
+static const char* NON_MINIMAL_ALL_HASH            = "7312a64a200ca57d03a9f8124b237a91e4b1ac8221eb6b0d768a3809";
+static const char* MINIMAL_ALL_CBOR                = "820182820405820507";
+static const char* MINIMAL_ALL_HASH                = "0d74e9aec1fa7e635ea86fd0e7f4a13365ed1f4600613941621025f4";
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Reads a native script from a CBOR hex string.
+ *
+ * @param cbor_hex The CBOR hex string.
+ *
+ * @return The native script object.
+ */
+static cardano_native_script_t*
+native_script_from_cbor_hex(const char* cbor_hex)
+{
+  cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_native_script_t* script = NULL;
+
+  EXPECT_EQ(cardano_native_script_from_cbor(reader, &script), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return script;
+}
+
+/**
+ * Serializes a native script and returns its CBOR as a hex string.
+ *
+ * @param script The native script to serialize.
+ *
+ * @return The CBOR hex string. The caller must release it with free.
+ */
+static char*
+native_script_to_cbor_hex(const cardano_native_script_t* script)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_native_script_to_cbor(script, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return hex;
+}
+
+/**
+ * Checks that a blake2b hash has the expected hex representation.
+ *
+ * @param hash The hash to check. It is released by this function.
+ * @param expected_hex The expected hex representation.
+ */
+static void
+expect_hash_hex(cardano_blake2b_hash_t* hash, const char* expected_hex)
+{
+  ASSERT_NE(hash, nullptr);
+
+  const size_t hex_size = cardano_blake2b_hash_get_hex_size(hash);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, expected_hex);
+
+  free(hex);
+  cardano_blake2b_hash_unref(&hash);
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -2552,4 +2632,265 @@ TEST(cardano_native_script_to_cip116_json, canSerializeAll)
   // Cleanup
   cardano_json_writer_unref(&writer);
   cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_from_cbor, preservesTheOriginalCborAndHashOfANonMinimalScript)
+{
+  // Arrange
+  cardano_native_script_t* script = native_script_from_cbor_hex(NON_MINIMAL_INVALID_BEFORE_CBOR);
+
+  // Act
+  char* hex = native_script_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, NON_MINIMAL_INVALID_BEFORE_CBOR);
+  expect_hash_hex(cardano_native_script_get_hash(script), NON_MINIMAL_INVALID_BEFORE_HASH);
+
+  // Cleanup
+  free(hex);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_from_cbor, preservesTheOriginalCborAndHashOfANonMinimalNestedScript)
+{
+  // Arrange
+  cardano_native_script_t* script = native_script_from_cbor_hex(NON_MINIMAL_ALL_CBOR);
+
+  // Act
+  char* hex = native_script_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, NON_MINIMAL_ALL_CBOR);
+  expect_hash_hex(cardano_native_script_get_hash(script), NON_MINIMAL_ALL_HASH);
+
+  // Cleanup
+  free(hex);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_from_cbor, preservesTheOriginalCborThroughTheScriptWrapper)
+{
+  // Arrange
+  const char* cbor_hexes[]  = { NON_MINIMAL_INVALID_BEFORE_CBOR, NON_MINIMAL_ALL_CBOR };
+  const char* hash_hexes[]  = { NON_MINIMAL_INVALID_BEFORE_HASH, NON_MINIMAL_ALL_HASH };
+  const char* script_prefix = "8200";
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    std::string            script_cbor = std::string(script_prefix) + cbor_hexes[i];
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(script_cbor.c_str(), script_cbor.size());
+    cardano_script_t*      script      = NULL;
+    cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
+    size_t                 script_size = 0U;
+
+    // Act
+    EXPECT_EQ(cardano_script_from_cbor(reader, &script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_script_to_cbor(script, writer), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_get_serialized_script_size(script, &script_size), CARDANO_SUCCESS);
+
+    const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+    char*        hex      = (char*)malloc(hex_size);
+
+    EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+    // Assert
+    EXPECT_STREQ(hex, script_cbor.c_str());
+    EXPECT_EQ(cardano_cbor_writer_get_encode_size(writer), script_cbor.size() / 2U);
+    EXPECT_EQ(script_size, script_cbor.size() / 2U);
+    expect_hash_hex(cardano_script_get_hash(script), hash_hexes[i]);
+
+    // Cleanup
+    free(hex);
+    cardano_cbor_writer_unref(&writer);
+    cardano_script_unref(&script);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_native_script_from_cbor, keepsTheOriginalCborWhenWrappedInANewScript)
+{
+  // Arrange
+  cardano_native_script_t* native_script = native_script_from_cbor_hex(NON_MINIMAL_INVALID_BEFORE_CBOR);
+  cardano_script_t*        script        = NULL;
+  size_t                   script_size   = 0U;
+
+  // Act
+  EXPECT_EQ(cardano_script_new_native(native_script, &script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_get_serialized_script_size(script, &script_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(script_size, 13U);
+  expect_hash_hex(cardano_script_get_hash(script), NON_MINIMAL_INVALID_BEFORE_HASH);
+
+  // Cleanup
+  cardano_script_unref(&script);
+  cardano_native_script_unref(&native_script);
+}
+
+TEST(cardano_native_script_get_hash, changesWhenADecodedScriptIsMutated)
+{
+  // Arrange
+  cardano_native_script_t*         script         = native_script_from_cbor_hex(NON_MINIMAL_INVALID_BEFORE_CBOR);
+  cardano_script_invalid_before_t* invalid_before = NULL;
+
+  EXPECT_EQ(cardano_native_script_to_invalid_before(script, &invalid_before), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_script_invalid_before_set_slot(invalid_before, 9U), CARDANO_SUCCESS);
+  char* hex = native_script_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, MUTATED_INVALID_BEFORE_CBOR);
+  expect_hash_hex(cardano_native_script_get_hash(script), MUTATED_INVALID_BEFORE_HASH);
+
+  // Cleanup
+  free(hex);
+  cardano_script_invalid_before_unref(&invalid_before);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_get_hash, isTheHashOfTheMinimalEncodingForAProgrammaticScript)
+{
+  // Arrange
+  cardano_script_invalid_before_t* invalid_before = NULL;
+  cardano_native_script_t*         script         = NULL;
+
+  EXPECT_EQ(cardano_script_invalid_before_new(5U, &invalid_before), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_new_invalid_before(invalid_before, &script), CARDANO_SUCCESS);
+
+  // Act
+  char* hex = native_script_to_cbor_hex(script);
+
+  // Assert
+  EXPECT_STREQ(hex, MINIMAL_INVALID_BEFORE_CBOR);
+  expect_hash_hex(cardano_native_script_get_hash(script), MINIMAL_INVALID_BEFORE_HASH);
+
+  // Cleanup
+  free(hex);
+  cardano_script_invalid_before_unref(&invalid_before);
+  cardano_native_script_unref(&script);
+}
+
+TEST(cardano_native_script_clear_cbor_cache, encodesTheScriptFromItsFields)
+{
+  // Arrange
+  const char* cbor_hexes[]    = { NON_MINIMAL_INVALID_BEFORE_CBOR, NON_MINIMAL_ALL_CBOR };
+  const char* minimal_hexes[] = { MINIMAL_INVALID_BEFORE_CBOR, MINIMAL_ALL_CBOR };
+  const char* hash_hexes[]    = { MINIMAL_INVALID_BEFORE_HASH, MINIMAL_ALL_HASH };
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    cardano_native_script_t* script = native_script_from_cbor_hex(cbor_hexes[i]);
+
+    // Act
+    cardano_native_script_clear_cbor_cache(script);
+    char* hex = native_script_to_cbor_hex(script);
+
+    // Assert
+    EXPECT_STREQ(hex, minimal_hexes[i]);
+    expect_hash_hex(cardano_native_script_get_hash(script), hash_hexes[i]);
+
+    // Cleanup
+    free(hex);
+    cardano_native_script_unref(&script);
+  }
+}
+
+TEST(cardano_native_script_clear_cbor_cache, clearsTheCacheOfEveryScriptType)
+{
+  // Arrange
+  const char* cbor_hexes[] = {
+    "82018282041b000000000000000582051b0000000000000007",
+    "82028282041b000000000000000582051b0000000000000007",
+    "83031b000000000000000182820405820507",
+    "820059001c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37",
+    "82051b0000000000000007",
+    "82041b0000000000000005",
+    "8206820059001c00112233445566778899aabbccddeeff00112233445566778899aabb"
+  };
+  const char* minimal_hexes[] = {
+    "820182820405820507",
+    "820282820405820507",
+    "83030182820405820507",
+    "8200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37",
+    "820507",
+    "820405",
+    "82068200581c00112233445566778899aabbccddeeff00112233445566778899aabb"
+  };
+
+  for (size_t i = 0U; i < (sizeof(cbor_hexes) / sizeof(cbor_hexes[0])); ++i)
+  {
+    cardano_native_script_t* script = native_script_from_cbor_hex(cbor_hexes[i]);
+    char*                    cached = native_script_to_cbor_hex(script);
+
+    // Act
+    cardano_native_script_clear_cbor_cache(script);
+    char* hex = native_script_to_cbor_hex(script);
+
+    // Assert
+    EXPECT_STREQ(cached, cbor_hexes[i]);
+    EXPECT_STREQ(hex, minimal_hexes[i]);
+
+    // Cleanup
+    free(cached);
+    free(hex);
+    cardano_native_script_unref(&script);
+  }
+}
+
+TEST(cardano_native_script_clear_cbor_cache, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_native_script_clear_cbor_cache(nullptr);
+}
+
+TEST(cardano_native_script_from_cbor, returnsErrorIfMemoryAllocationFailsWhileCachingTheCbor)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(NON_MINIMAL_ALL_CBOR, strlen(NON_MINIMAL_ALL_CBOR));
+  bool                   succeeded = false;
+
+  // Act
+  for (int i = 0; (i < 500) && !succeeded; ++i)
+  {
+    cardano_cbor_reader_t* reader_copy = NULL;
+    ASSERT_EQ(cardano_cbor_reader_clone(reader, &reader_copy), CARDANO_SUCCESS);
+
+    cardano_native_script_t* script = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_native_script_from_cbor(reader_copy, &script);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+
+      char* hex = native_script_to_cbor_hex(script);
+
+      EXPECT_STREQ(hex, NON_MINIMAL_ALL_CBOR);
+      expect_hash_hex(cardano_native_script_get_hash(script), NON_MINIMAL_ALL_HASH);
+
+      free(hex);
+    }
+    else
+    {
+      EXPECT_EQ(script, nullptr);
+    }
+
+    cardano_native_script_unref(&script);
+    cardano_cbor_reader_unref(&reader_copy);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
 }

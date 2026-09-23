@@ -41,6 +41,10 @@ Native Script List
 
 ------------
 
+.. doxygenfunction:: cardano_native_script_list_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_native_script_list_unref
 
 ------------

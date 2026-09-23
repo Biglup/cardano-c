@@ -383,16 +383,14 @@ cardano_get_serialized_output_size(cardano_transaction_output_t* output, size_t*
  *
  * This function calculates the size in bytes required to serialize a given script. The size is the one of the two element
  * array that holds the language tag followed by the script, as a script reference carries it: the CBOR of the native
- * script, or the byte string with the bytes of the Plutus script. The script is encoded again from its fields, it is not
- * measured from the bytes it was stored with on chain.
+ * script, or the byte string with the bytes of the Plutus script. A native script decoded from CBOR is measured with the
+ * bytes it was decoded from, while the language tag array and the byte string header of a Plutus script are encoded again.
  *
  * The ledger prices the size of the script alone: the bytes inside the byte string for a Plutus script, and the bytes the
  * script was stored with on chain for a native script. The size computed here is a few bytes larger than that for a Plutus
  * script and for a native script in the encoding this library produces, so a fee computed from it covers what the ledger
  * charges for those scripts. A native script that was stored on chain with a longer, non minimal encoding (for example a
- * slot written as an 8 byte integer) can be measured smaller than the ledger measures it, because this library does not keep the
- * original bytes of a native script and encodes its integers with the minimal length. A fee computed from the size of such
- * a script can be lower than the minimum the ledger requires for it.
+ * slot written as an 8 byte integer) is measured with those bytes when it was decoded from them, so the fee also covers it.
  *
  * \param[in] script A pointer to the \ref cardano_script_t object for which the serialized size is to be calculated.
  * \param[out] size_in_bytes A pointer to a \c size_t where the size of the serialized script in bytes will be stored.

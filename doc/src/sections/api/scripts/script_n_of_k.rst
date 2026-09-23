@@ -49,6 +49,10 @@ Native Script - Require M Of N
 
 ------------
 
+.. doxygenfunction:: cardano_script_n_of_k_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_script_n_of_k_unref
 
 ------------

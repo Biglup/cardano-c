@@ -21,6 +21,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
 #include <cardano/error.h>
 #include <cardano/scripts/native_scripts/native_script_list.h>
 #include <cardano/scripts/native_scripts/native_script_type.h>
@@ -47,6 +48,7 @@ typedef struct cardano_script_any_t
     cardano_object_t              base;
     cardano_native_script_type_t  type;
     cardano_native_script_list_t* scripts;
+    cardano_buffer_t*             cbor_cache;
 
 } cardano_script_any_t;
 
@@ -74,57 +76,26 @@ cardano_script_any_deallocate(void* object)
 
   cardano_native_script_list_unref(&data->scripts);
 
+  cardano_buffer_unref(&data->cbor_cache);
+
   _cardano_free(data);
 }
 
-/* DEFINITIONS ****************************************************************/
-
-cardano_error_t
-cardano_script_any_new(cardano_native_script_list_t* native_scripts, cardano_script_any_t** script_any)
+/**
+ * \brief Decodes the fields of a script_any from a CBOR reader.
+ *
+ * This function reads the CBOR encoded script_any at the current position of the reader and creates a new
+ * \ref cardano_script_any_t object from its fields. It does not cache the original CBOR representation, that is done
+ * by \ref cardano_script_any_from_cbor.
+ *
+ * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t positioned at the script_any.
+ * \param[out] script_any On success, set to the newly created \ref cardano_script_any_t object.
+ *
+ * \return \ref CARDANO_SUCCESS if the script_any was decoded, or an appropriate error code otherwise.
+ */
+static cardano_error_t
+cardano_script_any_decode(cardano_cbor_reader_t* reader, cardano_script_any_t** script_any)
 {
-  if (native_scripts == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (script_any == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  cardano_script_any_t* data = _cardano_malloc(sizeof(cardano_script_any_t));
-
-  if (data == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  cardano_native_script_list_ref(native_scripts);
-
-  data->base.ref_count     = 1;
-  data->base.last_error[0] = '\0';
-  data->base.deallocator   = cardano_script_any_deallocate;
-  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ANY_OF;
-  data->scripts            = native_scripts;
-
-  *script_any = data;
-
-  return CARDANO_SUCCESS;
-}
-
-cardano_error_t
-cardano_script_any_from_cbor(cardano_cbor_reader_t* reader, cardano_script_any_t** script_any)
-{
-  if (reader == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  if (script_any == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   static const char* validator_name = "script_any";
 
   const cardano_error_t expect_array_result = cardano_cbor_validate_array_of_n_elements(validator_name, reader, 2);
@@ -172,6 +143,88 @@ cardano_script_any_from_cbor(cardano_cbor_reader_t* reader, cardano_script_any_t
   return create_any_new_result;
 }
 
+/* DEFINITIONS ****************************************************************/
+
+cardano_error_t
+cardano_script_any_new(cardano_native_script_list_t* native_scripts, cardano_script_any_t** script_any)
+{
+  if (native_scripts == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_any == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_any_t* data = _cardano_malloc(sizeof(cardano_script_any_t));
+
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_native_script_list_ref(native_scripts);
+
+  data->base.ref_count     = 1;
+  data->base.last_error[0] = '\0';
+  data->base.deallocator   = cardano_script_any_deallocate;
+  data->cbor_cache         = NULL;
+  data->type               = CARDANO_NATIVE_SCRIPT_TYPE_REQUIRE_ANY_OF;
+  data->scripts            = native_scripts;
+
+  *script_any = data;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_script_any_from_cbor(cardano_cbor_reader_t* reader, cardano_script_any_t** script_any)
+{
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_any == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_cbor_reader_t* reader_copy = NULL;
+  cardano_error_t        result      = cardano_cbor_reader_clone(reader, &reader_copy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_script_any_decode(reader, script_any);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_cbor_reader_unref(&reader_copy);
+    return result;
+  }
+
+  cardano_buffer_t* cbor_cache = NULL;
+
+  result = cardano_cbor_reader_read_encoded_value(reader_copy, &cbor_cache);
+  cardano_cbor_reader_unref(&reader_copy);
+
+  if ((result != CARDANO_SUCCESS) || (cbor_cache == NULL))
+  {
+    cardano_script_any_unref(script_any);
+
+    return (result != CARDANO_SUCCESS) ? result : CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  (*script_any)->cbor_cache = cbor_cache;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_error_t
 cardano_script_any_to_cbor(
   const cardano_script_any_t* script_any,
@@ -185,6 +238,11 @@ cardano_script_any_to_cbor(
   if (writer == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (script_any->cbor_cache != NULL)
+  {
+    return cardano_cbor_writer_write_encoded(writer, cardano_buffer_get_data(script_any->cbor_cache), cardano_buffer_get_size(script_any->cbor_cache));
   }
 
   cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 2);
@@ -347,6 +405,8 @@ cardano_script_any_set_scripts(
   cardano_native_script_list_unref(&script_any->scripts);
 
   script_any->scripts = list;
+  cardano_buffer_unref(&script_any->cbor_cache);
+  script_any->cbor_cache = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -378,6 +438,19 @@ cardano_script_any_equals(const cardano_script_any_t* lhs, const cardano_script_
   assert(rhs->scripts);
 
   return cardano_native_script_list_equals(lhs->scripts, rhs->scripts);
+}
+
+void
+cardano_script_any_clear_cbor_cache(cardano_script_any_t* script_any)
+{
+  if (script_any == NULL)
+  {
+    return;
+  }
+
+  cardano_buffer_unref(&script_any->cbor_cache);
+  script_any->cbor_cache = NULL;
+  cardano_native_script_list_clear_cbor_cache(script_any->scripts);
 }
 
 void

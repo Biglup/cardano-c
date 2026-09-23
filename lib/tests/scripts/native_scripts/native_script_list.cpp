@@ -737,3 +737,44 @@ TEST(cardano_native_script_list_to_cip116_json, returnsErrorIfGivenANullPtr)
   // Cleanup
   cardano_json_writer_unref(&json);
 }
+
+TEST(cardano_native_script_list_clear_cbor_cache, encodesEveryScriptFromItsFields)
+{
+  // Arrange
+  const char*                   cbor   = "8282041b000000000000000582051b0000000000000007";
+  cardano_cbor_reader_t*        reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_native_script_list_t* list   = NULL;
+
+  EXPECT_EQ(cardano_native_script_list_from_cbor(reader, &list), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* cached_writer = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* writer        = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_native_script_list_to_cbor(list, cached_writer), CARDANO_SUCCESS);
+
+  // Act
+  cardano_native_script_list_clear_cbor_cache(list);
+  EXPECT_EQ(cardano_native_script_list_to_cbor(list, writer), CARDANO_SUCCESS);
+
+  // Assert
+  char cached_hex[128] = { 0 };
+  char hex[128]        = { 0 };
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(cached_writer, cached_hex, sizeof(cached_hex)), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(cached_hex, cbor);
+  EXPECT_STREQ(hex, "82820405820507");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&cached_writer);
+  cardano_cbor_writer_unref(&writer);
+  cardano_native_script_list_unref(&list);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_native_script_list_clear_cbor_cache, doesntCrashIfGivenANullPtr)
+{
+  // Act
+  cardano_native_script_list_clear_cbor_cache(nullptr);
+}
