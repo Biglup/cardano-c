@@ -1499,8 +1499,11 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * that sub transaction. Including them in the fee is deliberate and may exceed the current ledger minimum, which does
  * not charge for the reference scripts of sub transactions yet. When a sub transaction carries redeemers the
  * transaction posts the collateral, even if it runs no script itself, so the collateral change address and the
- * collateral UTXOs must be set before building. The scripts of the sub transactions are not evaluated, the execution
- * units their redeemers declare are taken as final.
+ * collateral UTXOs must be set before building. The UTXOs that the sub transactions spend or reference are never used
+ * as collateral, even when they are also among the UTXOs set with `cardano_tx_builder_set_collateral_utxos`, and
+ * building fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT when every collateral UTXO is used by a sub transaction.
+ * The scripts of the sub transactions are not evaluated, the execution units their redeemers declare are taken as
+ * final.
  *
  * A sub transaction can require guards from the transaction that carries it, and the batch is only valid when every
  * one of those credentials is among the guards of the transaction. The batcher must add each of them with
@@ -2799,7 +2802,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  * This function finalizes the transaction by aggregating all previously added inputs, outputs, certificates, and other data.
  * If any required data is missing or incorrect, this function will report the errors encountered during the build process.
  * See \ref cardano_tx_builder_add_sub_transaction for the failures that are specific to a transaction that carries
- * sub transactions, such as a missing required top level guard or sub transactions that do not balance.
+ * sub transactions, such as a missing required top level guard, sub transactions that do not balance or collateral
+ * UTXOs that are all used by the sub transactions.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that manages the transaction details.
  * \param[out] transaction A pointer to a \ref cardano_transaction_t pointer where the created transaction will be stored upon success.

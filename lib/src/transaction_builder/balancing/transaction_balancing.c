@@ -840,16 +840,16 @@ has_utxo_spent_by_sub_transactions(
 }
 
 /**
- * \brief Creates the list of UTXOs that coin selection may spend at the top level of a batch.
+ * \brief Creates the list of UTXOs that coin selection or collateral selection may use at the top level of a batch.
  *
- * The available UTXOs also hold the resolved UTXOs of the sub transactions, which belong to the parties of the batch
- * and to the holders of the scripts they use, so every available UTXO that a sub transaction spends or references is
- * left out. The order of the remaining UTXOs is preserved.
+ * The available UTXOs, and the collateral UTXOs when the batcher is also a party of the batch, may hold the resolved
+ * UTXOs of the sub transactions, which belong to the parties of the batch and to the holders of the scripts they use,
+ * so every UTXO that a sub transaction spends or references is left out. The order of the remaining UTXOs is preserved.
  *
- * \param[in]  available_utxo   The list of available UTXOs.
+ * \param[in]  available_utxo   The list of available UTXOs, or NULL when there are none.
  * \param[in]  sub_transactions The sub transactions carried by the transaction, or NULL when it has none.
- * \param[out] selectable_utxo  A pointer to store the selectable UTXOs, which is \p available_utxo itself when the
- *                              transaction carries no sub transactions.
+ * \param[out] selectable_utxo  A pointer to store the selectable UTXOs, which is \p available_utxo itself when it is
+ *                              NULL or when the transaction carries no sub transactions.
  *
  * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code.
  *
@@ -2455,6 +2455,45 @@ cardano_balance_transaction(
     return result;
   }
 
+  cardano_utxo_list_t* collateral_utxo = NULL;
+
+  result = exclude_sub_transaction_inputs(available_collateral_utxo, sub_transactions, &collateral_utxo);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
+    cardano_value_unref(&sub_transactions_imbalance);
+    cardano_utxo_list_unref(&selectable_utxo);
+
+    return result;
+  }
+
+  if ((cardano_utxo_list_get_length(available_collateral_utxo) > 0U) && (cardano_utxo_list_get_length(collateral_utxo) == 0U))
+  {
+    bool is_collateral_required = false;
+
+    result = _cardano_is_collateral_required(unbalanced_tx, &is_collateral_required);
+
+    if ((result == CARDANO_SUCCESS) && is_collateral_required)
+    {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "Every collateral UTXO given to the balancer is spent or referenced by a sub transaction. The collateral of the top level transaction must come from UTXOs that its sub transactions do not use.");
+
+      result = CARDANO_ERROR_BALANCE_INSUFFICIENT;
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&sub_transaction_spent_utxos);
+      cardano_value_unref(&sub_transactions_imbalance);
+      cardano_utxo_list_unref(&selectable_utxo);
+      cardano_utxo_list_unref(&collateral_utxo);
+
+      return result;
+    }
+  }
+
   cardano_utxo_list_t* sub_transaction_priced_inputs = NULL;
 
   result = get_sub_transaction_priced_inputs(
@@ -2469,6 +2508,7 @@ cardano_balance_transaction(
     cardano_utxo_list_unref(&sub_transaction_spent_utxos);
     cardano_value_unref(&sub_transactions_imbalance);
     cardano_utxo_list_unref(&selectable_utxo);
+    cardano_utxo_list_unref(&collateral_utxo);
 
     return result;
   }
@@ -2486,7 +2526,7 @@ cardano_balance_transaction(
     selectable_utxo,
     coin_selector,
     change_address,
-    available_collateral_utxo,
+    collateral_utxo,
     collateral_change_address,
     evaluator,
     deferred_redeemers);
@@ -2494,6 +2534,7 @@ cardano_balance_transaction(
   cardano_utxo_list_unref(&sub_transaction_spent_utxos);
   cardano_value_unref(&sub_transactions_imbalance);
   cardano_utxo_list_unref(&selectable_utxo);
+  cardano_utxo_list_unref(&collateral_utxo);
   cardano_utxo_list_unref(&sub_transaction_priced_inputs);
 
   return result;
