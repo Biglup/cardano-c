@@ -1107,3 +1107,62 @@ TEST(cardano_guard_set_set_last_error, doesNothingWhenWhenMessageIsNull)
   // Cleanup
   cardano_guard_set_unref(&guard_set);
 }
+
+TEST(cardano_guard_set_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_guard_set_t* set = nullptr;
+
+  EXPECT_EQ(cardano_guard_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    cardano_credential_t* credential = nullptr;
+
+    EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_guard_set_add(set, credential), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+  }
+
+  const size_t i = 127U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  cardano_credential_t* credential = nullptr;
+
+  EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+  const size_t credential_ref_count = cardano_credential_refcount(credential);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_guard_set_add(set, credential);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_guard_set_get_length(set), 127U);
+  EXPECT_EQ(cardano_credential_refcount(credential), credential_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_guard_set_unref(&set);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_credential_unref(&credential);
+}

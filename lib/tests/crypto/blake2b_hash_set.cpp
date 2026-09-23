@@ -839,3 +839,80 @@ TEST(cardano_blake2b_hash_set_to_cip116_json, returnsErrorIfGivenNull)
   // Cleanup
   cardano_json_writer_unref(&json);
 }
+
+TEST(cardano_blake2b_hash_set_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_blake2b_hash_set_t* set     = nullptr;
+  cardano_blake2b_hash_t*     element = new_default_blake2b_hash(BLAKE2B_HASH1_CBOR);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_blake2b_hash_set_add(set, element), CARDANO_SUCCESS);
+  }
+
+  const size_t ref_count = cardano_blake2b_hash_refcount(element);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_blake2b_hash_set_add(set, element);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(set), 127U);
+  EXPECT_EQ(cardano_blake2b_hash_refcount(element), ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_blake2b_hash_set_unref(&set);
+  cardano_blake2b_hash_unref(&element);
+}
+
+TEST(cardano_blake2b_hash_set_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_blake2b_hash_set_t* set     = nullptr;
+  cardano_blake2b_hash_t*     element = new_default_blake2b_hash(BLAKE2B_HASH1_CBOR);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    EXPECT_EQ(cardano_blake2b_hash_set_add(set, element), CARDANO_SUCCESS);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_set_to_cbor(set, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*      reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_blake2b_hash_set_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_blake2b_hash_set_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_blake2b_hash_set_unref(&set);
+  cardano_blake2b_hash_unref(&element);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

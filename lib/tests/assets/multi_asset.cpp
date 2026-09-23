@@ -2462,3 +2462,65 @@ TEST(cardano_multi_asset_to_cip116_json_ex, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_multi_asset_unref(&multi_asset);
 }
+
+TEST(cardano_multi_asset_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_multi_asset_t* lhs    = nullptr;
+  cardano_multi_asset_t* rhs    = nullptr;
+  cardano_multi_asset_t* result = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+
+  EXPECT_EQ(cardano_multi_asset_from_cbor(reader, &lhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_multi_asset_new(&rhs), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t error = cardano_multi_asset_add(lhs, rhs, &result);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(cardano_multi_asset_get_policy_count(lhs), 2U);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_multi_asset_unref(&lhs);
+  cardano_multi_asset_unref(&rhs);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_multi_asset_subtract, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_multi_asset_t* lhs    = nullptr;
+  cardano_multi_asset_t* rhs    = nullptr;
+  cardano_multi_asset_t* result = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+
+  EXPECT_EQ(cardano_multi_asset_from_cbor(reader, &lhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_multi_asset_new(&rhs), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t error = cardano_multi_asset_subtract(lhs, rhs, &result);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(cardano_multi_asset_get_policy_count(lhs), 2U);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_multi_asset_unref(&lhs);
+  cardano_multi_asset_unref(&rhs);
+  cardano_cbor_reader_unref(&reader);
+}

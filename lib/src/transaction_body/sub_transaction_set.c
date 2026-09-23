@@ -374,10 +374,10 @@ cardano_sub_transaction_set_add(cardano_sub_transaction_set_t* sub_transaction_s
   const size_t original_size = cardano_array_get_size(sub_transaction_set->array);
   const size_t new_size      = cardano_array_push(sub_transaction_set->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

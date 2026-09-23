@@ -315,7 +315,10 @@ cardano_get_entries(cardano_set_t* set)
   {
     for (cardano_set_entry_t* entry = set->buckets[i]; entry != NULL; entry = entry->next)
     {
-      if (!cardano_array_push(array, entry->object))
+      const size_t old_size = cardano_array_get_size(array);
+      const size_t new_size = cardano_array_push(array, entry->object);
+
+      if (new_size != (old_size + 1U))
       {
         cardano_array_unref(&array);
         return NULL;

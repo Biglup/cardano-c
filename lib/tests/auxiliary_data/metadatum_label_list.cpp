@@ -285,3 +285,34 @@ TEST(cardano_metadatum_label_list_add, returnsErrorIfListIsNull)
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_metadatum_label_list_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_metadatum_label_list_t* list = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_label_list_new(&list), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_metadatum_label_list_add(list, (uint64_t)i), CARDANO_SUCCESS);
+  }
+
+  const size_t i = 127U;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_metadatum_label_list_add(list, (uint64_t)i);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_metadatum_label_list_get_length(list), 127U);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_metadatum_label_list_unref(&list);
+}

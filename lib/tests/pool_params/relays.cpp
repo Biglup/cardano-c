@@ -731,3 +731,92 @@ TEST(cardano_relays_to_cip116_json, returnsErrorIfWriterIsNull)
   // Cleanup
   cardano_relays_unref(&relays);
 }
+
+TEST(cardano_relays_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_relays_t*                 relays  = nullptr;
+  cardano_single_host_name_relay_t* data    = nullptr;
+  cardano_relay_t*                  element = nullptr;
+
+  EXPECT_EQ(cardano_single_host_name_relay_new(NULL, "example.com", strlen("example.com"), &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_relay_new_single_host_name(data, &element), CARDANO_SUCCESS);
+
+  cardano_single_host_name_relay_unref(&data);
+
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_relays_add(relays, element), CARDANO_SUCCESS);
+  }
+
+  const size_t ref_count = cardano_relay_refcount(element);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_relays_add(relays, element);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_relays_get_length(relays), 127U);
+  EXPECT_EQ(cardano_relay_refcount(element), ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_relays_unref(&relays);
+  cardano_relay_unref(&element);
+}
+
+TEST(cardano_relays_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_relays_t*                 relays  = nullptr;
+  cardano_single_host_name_relay_t* data    = nullptr;
+  cardano_relay_t*                  element = nullptr;
+
+  EXPECT_EQ(cardano_single_host_name_relay_new(NULL, "example.com", strlen("example.com"), &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_relay_new_single_host_name(data, &element), CARDANO_SUCCESS);
+
+  cardano_single_host_name_relay_unref(&data);
+
+  EXPECT_EQ(cardano_relays_new(&relays), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    EXPECT_EQ(cardano_relays_add(relays, element), CARDANO_SUCCESS);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_relays_to_cbor(relays, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_relays_t*      decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_relays_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_relays_unref(&relays);
+  cardano_relay_unref(&element);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

@@ -254,10 +254,13 @@ cardano_transaction_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_tr
     const size_t old_size = cardano_array_get_size(map->array);
     const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
-    assert((old_size + 1U) == new_size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_transaction_metadata_kvp_deallocate(kvp);
+      cardano_transaction_metadata_unref(&map);
 
-    CARDANO_UNUSED(old_size);
-    CARDANO_UNUSED(new_size);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
 
     cardano_array_sort(map->array, compare_by_value, NULL);
   }
@@ -465,10 +468,11 @@ cardano_transaction_metadata_insert(
   const size_t old_size = cardano_array_get_size(transaction_metadata->array);
   const size_t new_size = cardano_array_push(transaction_metadata->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_transaction_metadata_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(transaction_metadata->array, compare_by_value, NULL);
 

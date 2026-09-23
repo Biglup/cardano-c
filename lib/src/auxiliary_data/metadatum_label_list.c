@@ -203,10 +203,11 @@ cardano_metadatum_label_list_add(cardano_metadatum_label_list_t* metadatum_label
   const size_t original_size = cardano_array_get_size(metadatum_label_list->array);
   const size_t new_size      = cardano_array_push(metadatum_label_list->array, (cardano_object_t*)((void*)metadatum_label));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    _cardano_free(metadatum_label);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(metadatum_label_list->array, compare_by_value, NULL);
 

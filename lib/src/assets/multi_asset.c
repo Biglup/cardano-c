@@ -913,6 +913,12 @@ cardano_multi_asset_add(
 
   cardano_array_t* filtered = cardano_array_filter(map->array, different_than_empty, NULL);
 
+  if (filtered == NULL)
+  {
+    cardano_multi_asset_unref(&map);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   cardano_array_unref(&map->array);
   map->array = filtered;
 
@@ -1044,6 +1050,12 @@ cardano_multi_asset_subtract(
   }
 
   cardano_array_t* filtered = cardano_array_filter(map->array, different_than_empty, NULL);
+
+  if (filtered == NULL)
+  {
+    cardano_multi_asset_unref(&map);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_unref(&map->array);
   map->array = filtered;

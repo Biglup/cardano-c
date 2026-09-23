@@ -824,3 +824,37 @@ TEST(cardano_utxo_list_clone, returnsAnEmptyListIfListIsEmpty)
   cardano_utxo_list_unref(&list);
   cardano_utxo_list_unref(&result);
 }
+
+TEST(cardano_utxo_list_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_utxo_list_t* list    = nullptr;
+  cardano_utxo_t*      element = new_default_utxo(CBOR);
+
+  EXPECT_EQ(cardano_utxo_list_new(&list), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_utxo_list_add(list, element), CARDANO_SUCCESS);
+  }
+
+  const size_t ref_count = cardano_utxo_refcount(element);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_utxo_list_add(list, element);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_utxo_list_get_length(list), 127U);
+  EXPECT_EQ(cardano_utxo_refcount(element), ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_unref(&element);
+}

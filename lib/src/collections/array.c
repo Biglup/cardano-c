@@ -617,8 +617,14 @@ cardano_array_filter(const cardano_array_t* array, cardano_array_unary_predicate
 
     if (predicate(item, context))
     {
-      size_t new_size = cardano_array_push(filtered_array, item);
-      CARDANO_UNUSED(new_size);
+      const size_t old_size = cardano_array_get_size(filtered_array);
+      const size_t new_size = cardano_array_push(filtered_array, item);
+
+      if (new_size != (old_size + 1U))
+      {
+        cardano_array_unref(&filtered_array);
+        return NULL;
+      }
     }
   }
 

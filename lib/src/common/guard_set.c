@@ -461,10 +461,10 @@ cardano_guard_set_add(cardano_guard_set_t* guard_set, cardano_credential_t* elem
   const size_t original_size = cardano_array_get_size(guard_set->array);
   const size_t new_size      = cardano_array_push(guard_set->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

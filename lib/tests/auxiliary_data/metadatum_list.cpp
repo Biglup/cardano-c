@@ -910,3 +910,84 @@ TEST(cardano_metadatum_list_to_cip116_json, returnErrorIfNullPointer)
 
   cardano_json_writer_unref(&writer);
 }
+
+TEST(cardano_metadatum_list_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_metadatum_list_t* list    = nullptr;
+  cardano_metadatum_t*      element = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &element), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_metadatum_list_new(&list), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_metadatum_list_add(list, element), CARDANO_SUCCESS);
+  }
+
+  const size_t ref_count = cardano_metadatum_refcount(element);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_metadatum_list_add(list, element);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_metadatum_list_get_length(list), 127U);
+  EXPECT_EQ(cardano_metadatum_refcount(element), ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_metadatum_list_unref(&list);
+  cardano_metadatum_unref(&element);
+}
+
+TEST(cardano_metadatum_list_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_metadatum_list_t* list    = nullptr;
+  cardano_metadatum_t*      element = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &element), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_metadatum_list_new(&list), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    EXPECT_EQ(cardano_metadatum_list_add(list, element), CARDANO_SUCCESS);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_list_to_cbor(list, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*    reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_metadatum_list_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_metadatum_list_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_metadatum_list_unref(&list);
+  cardano_metadatum_unref(&element);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

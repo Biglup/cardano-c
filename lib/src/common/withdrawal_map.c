@@ -313,10 +313,13 @@ cardano_withdrawal_map_from_cbor(cardano_cbor_reader_t* reader, cardano_withdraw
     const size_t old_size = cardano_array_get_size(map->array);
     const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
-    assert((old_size + 1U) == new_size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_withdrawal_map_kvp_deallocate(kvp);
+      cardano_withdrawal_map_unref(&map);
 
-    CARDANO_UNUSED(old_size);
-    CARDANO_UNUSED(new_size);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
 
     cardano_array_sort(map->array, compare_by_bytes, NULL);
   }
@@ -527,10 +530,11 @@ cardano_withdrawal_map_insert(
   const size_t old_size = cardano_array_get_size(withdrawal_map->array);
   const size_t new_size = cardano_array_push(withdrawal_map->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_withdrawal_map_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(withdrawal_map->array, compare_by_bytes, NULL);
 

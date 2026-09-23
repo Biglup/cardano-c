@@ -642,11 +642,21 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     cardano_json_object_unref(&key);
 
-    kvp->value            = val;
+    kvp->value = val;
+
+    const size_t old_size = cardano_array_get_size(pairs);
     const size_t new_size = cardano_array_push(pairs, (cardano_object_t*)((void*)kvp));
-    CARDANO_UNUSED(new_size);
 
     cardano_object_unref((cardano_object_t**)((void*)&kvp));
+
+    if (new_size != (old_size + 1U))
+    {
+      cardano_array_unref(&pairs);
+
+      set_last_error(ctx, "Memory allocation failed");
+
+      return NULL;
+    }
 
     cardano_skip_whitespace(ctx);
 
@@ -773,10 +783,19 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
       return NULL;
     }
 
-    size_t size = cardano_array_push(arr, ((cardano_object_t*)(void*)val));
+    const size_t old_size = cardano_array_get_size(arr);
+    const size_t new_size = cardano_array_push(arr, ((cardano_object_t*)(void*)val));
+
     cardano_json_object_unref(&val);
 
-    CARDANO_UNUSED(size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_array_unref(&arr);
+
+      set_last_error(ctx, "Memory allocation failed");
+
+      return NULL;
+    }
 
     cardano_skip_whitespace(ctx);
 

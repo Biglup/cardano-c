@@ -297,9 +297,13 @@ cardano_mir_to_stake_creds_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
     const size_t old_size = cardano_array_get_size(map->array);
     const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
-    assert((old_size + 1U) == new_size);
-    CARDANO_UNUSED(old_size);
-    CARDANO_UNUSED(new_size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_mir_to_stake_creds_cert_kvp_deallocate(kvp);
+      cardano_mir_to_stake_creds_cert_unref(&map);
+
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
   result = cardano_cbor_validate_end_map("mir_to_stake_creds_cert", reader);
@@ -525,10 +529,11 @@ cardano_mir_to_stake_creds_cert_insert(
   const size_t old_size = cardano_array_get_size(mir_to_stake_creds_cert->array);
   const size_t new_size = cardano_array_push(mir_to_stake_creds_cert->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_mir_to_stake_creds_cert_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(mir_to_stake_creds_cert->array, compare_by_credential, NULL);
 

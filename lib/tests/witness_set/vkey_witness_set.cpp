@@ -970,3 +970,125 @@ TEST(cardano_vkey_witness_set_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_vkey_witness_set_unref(&set);
 }
+
+TEST(cardano_vkey_witness_set_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_vkey_witness_set_t* set = nullptr;
+
+  EXPECT_EQ(cardano_vkey_witness_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    byte_t key_bytes[32]             = { 0 };
+    key_bytes[0]                     = (byte_t)i;
+    const byte_t signature_bytes[64] = { 0 };
+
+    cardano_ed25519_public_key_t* vkey      = nullptr;
+    cardano_ed25519_signature_t*  signature = nullptr;
+    cardano_vkey_witness_t*       witness   = nullptr;
+
+    EXPECT_EQ(cardano_ed25519_public_key_from_bytes(key_bytes, sizeof(key_bytes), &vkey), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), &signature), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_vkey_witness_new(vkey, signature, &witness), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_vkey_witness_set_add(set, witness), CARDANO_SUCCESS);
+
+    cardano_ed25519_public_key_unref(&vkey);
+    cardano_ed25519_signature_unref(&signature);
+    cardano_vkey_witness_unref(&witness);
+  }
+
+  const size_t i = 127U;
+
+  byte_t key_bytes[32]             = { 0 };
+  key_bytes[0]                     = (byte_t)i;
+  const byte_t signature_bytes[64] = { 0 };
+
+  cardano_ed25519_public_key_t* vkey      = nullptr;
+  cardano_ed25519_signature_t*  signature = nullptr;
+  cardano_vkey_witness_t*       witness   = nullptr;
+
+  EXPECT_EQ(cardano_ed25519_public_key_from_bytes(key_bytes, sizeof(key_bytes), &vkey), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), &signature), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_new(vkey, signature, &witness), CARDANO_SUCCESS);
+
+  const size_t witness_ref_count = cardano_vkey_witness_refcount(witness);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_vkey_witness_set_add(set, witness);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_vkey_witness_set_get_length(set), 127U);
+  EXPECT_EQ(cardano_vkey_witness_refcount(witness), witness_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_vkey_witness_set_unref(&set);
+  cardano_ed25519_public_key_unref(&vkey);
+  cardano_ed25519_signature_unref(&signature);
+  cardano_vkey_witness_unref(&witness);
+}
+
+TEST(cardano_vkey_witness_set_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_vkey_witness_set_t* set = nullptr;
+
+  EXPECT_EQ(cardano_vkey_witness_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    byte_t key_bytes[32]             = { 0 };
+    key_bytes[0]                     = (byte_t)i;
+    const byte_t signature_bytes[64] = { 0 };
+
+    cardano_ed25519_public_key_t* vkey      = nullptr;
+    cardano_ed25519_signature_t*  signature = nullptr;
+    cardano_vkey_witness_t*       witness   = nullptr;
+
+    EXPECT_EQ(cardano_ed25519_public_key_from_bytes(key_bytes, sizeof(key_bytes), &vkey), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_ed25519_signature_from_bytes(signature_bytes, sizeof(signature_bytes), &signature), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_vkey_witness_new(vkey, signature, &witness), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_vkey_witness_set_add(set, witness), CARDANO_SUCCESS);
+
+    cardano_ed25519_public_key_unref(&vkey);
+    cardano_ed25519_signature_unref(&signature);
+    cardano_vkey_witness_unref(&witness);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_vkey_witness_set_to_cbor(set, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*      reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_vkey_witness_set_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_vkey_witness_set_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_vkey_witness_set_unref(&set);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

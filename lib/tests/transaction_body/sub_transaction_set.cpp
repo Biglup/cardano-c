@@ -1072,3 +1072,52 @@ TEST(cardano_sub_transaction_set_set_last_error, doesNothingWhenWhenMessageIsNul
   // Cleanup
   cardano_sub_transaction_set_unref(&sub_transaction_set);
 }
+
+TEST(cardano_sub_transaction_set_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_sub_transaction_set_t* set = nullptr;
+
+  EXPECT_EQ(cardano_sub_transaction_set_new(&set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    char sub_transaction_hex[64] = { 0 };
+
+    EXPECT_GT(snprintf(sub_transaction_hex, sizeof(sub_transaction_hex), "83a300d901028001800318%02xa0f6", (unsigned int)i + 24U), 0);
+
+    cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(sub_transaction_hex);
+
+    EXPECT_EQ(cardano_sub_transaction_set_add(set, sub_transaction), CARDANO_SUCCESS);
+
+    cardano_sub_transaction_unref(&sub_transaction);
+  }
+
+  const size_t i = 127U;
+
+  char sub_transaction_hex[64] = { 0 };
+
+  EXPECT_GT(snprintf(sub_transaction_hex, sizeof(sub_transaction_hex), "83a300d901028001800318%02xa0f6", (unsigned int)i + 24U), 0);
+
+  cardano_sub_transaction_t* sub_transaction = new_default_sub_transaction(sub_transaction_hex);
+
+  const size_t sub_transaction_ref_count = cardano_sub_transaction_refcount(sub_transaction);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_sub_transaction_set_add(set, sub_transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_sub_transaction_set_get_length(set), 127U);
+  EXPECT_EQ(cardano_sub_transaction_refcount(sub_transaction), sub_transaction_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_sub_transaction_set_unref(&set);
+  cardano_sub_transaction_unref(&sub_transaction);
+}

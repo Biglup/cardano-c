@@ -162,10 +162,10 @@ cardano_utxo_list_add(cardano_utxo_list_t* utxo_list, cardano_utxo_t* element)
   // cppcheck-suppress misra-c2012-11.1; Reason: We need this so we can have typesafe parameters.
   const size_t new_size = cardano_array_push(utxo_list->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }
