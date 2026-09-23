@@ -46,6 +46,7 @@
 #include <cardano/witness_set/vkey_witness_set.h>
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <vector>
 
 /* CONSTANTS *****************************************************************/
@@ -99,13 +100,6 @@ static const char* SCRIPT_HASH_HEX = "b275b08c999097247f7c17e77007c7010cd19f20cc
  * witnesses is exact, so the bound only leaves room for an amount that takes fewer bytes once the fee converges.
  */
 static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
-
-/**
- * \brief Size in bytes of the tag and the list header of a VK witness set. The fee always reserves them, so they are
- * paid on top of the minimum fee when signing does not add them: nobody signs, or the witness set already holds VK
- * witnesses.
- */
-static const int64_t VKEY_WITNESS_SET_HEADER_SIZE = 4;
 
 /**
  * The fee of the native reference script that requires one signature, with the reference script price per byte set by
@@ -1585,6 +1579,39 @@ add_native_script(cardano_transaction_t* tx, const signer_t& signer)
 }
 
 /**
+ * Sets on the witness set of a transaction the VK witnesses of the given signers, as a transaction that was handed over
+ * already signed by other parties carries them.
+ * \param tx the transaction.
+ * \param signers the signers whose VK witnesses are added, possibly none.
+ * \param use_tag whether the VK witness set is encoded with the set tag, false for a legacy untagged set.
+ */
+static void
+set_vkey_witnesses(cardano_transaction_t* tx, const std::vector<const signer_t*>& signers, const bool use_tag)
+{
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_blake2b_hash_t*     tx_id       = cardano_transaction_get_id(tx);
+  cardano_vkey_witness_set_t* witnesses   = NULL;
+
+  EXPECT_EQ(cardano_vkey_witness_set_new(&witnesses), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_vkey_witness_set_set_use_tag(witnesses, use_tag), CARDANO_SUCCESS);
+
+  for (const signer_t* signer: signers)
+  {
+    cardano_vkey_witness_t* witness = new_vkey_witness(*signer, tx_id);
+
+    EXPECT_EQ(cardano_vkey_witness_set_add(witnesses, witness), CARDANO_SUCCESS);
+
+    cardano_vkey_witness_unref(&witness);
+  }
+
+  EXPECT_EQ(cardano_witness_set_set_vkeys(witness_set, witnesses), CARDANO_SUCCESS);
+
+  cardano_vkey_witness_set_unref(&witnesses);
+  cardano_blake2b_hash_unref(&tx_id);
+  cardano_witness_set_unref(&witness_set);
+}
+
+/**
  * Adds to the witness set of a transaction the VK witness of a signer, as a transaction that was handed over already
  * signed by another party carries it.
  * \param tx the transaction.
@@ -1593,19 +1620,51 @@ add_native_script(cardano_transaction_t* tx, const signer_t& signer)
 static void
 add_vkey_witness(cardano_transaction_t* tx, const signer_t& signer)
 {
-  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
-  cardano_blake2b_hash_t*     tx_id       = cardano_transaction_get_id(tx);
-  cardano_vkey_witness_t*     witness     = new_vkey_witness(signer, tx_id);
-  cardano_vkey_witness_set_t* witnesses   = NULL;
+  set_vkey_witnesses(tx, { &signer }, true);
+}
 
-  EXPECT_EQ(cardano_vkey_witness_set_new(&witnesses), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_vkey_witness_set_add(witnesses, witness), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_witness_set_set_vkeys(witness_set, witnesses), CARDANO_SUCCESS);
+/**
+ * Creates signers whose private keys are derived from their position, so each one holds a distinct key.
+ * \param count the number of signers.
+ * \return The new signers. The caller must release each one with \ref free_signer.
+ */
+static std::vector<signer_t>
+new_signers(const size_t count)
+{
+  std::vector<signer_t> signers;
 
-  cardano_vkey_witness_set_unref(&witnesses);
-  cardano_vkey_witness_unref(&witness);
-  cardano_blake2b_hash_unref(&tx_id);
-  cardano_witness_set_unref(&witness_set);
+  for (size_t i = 0U; i < count; ++i)
+  {
+    char private_key_hex[65] = { 0 };
+
+    for (size_t j = 0U; j < 32U; ++j)
+    {
+      (void)snprintf(&private_key_hex[j * 2U], 3U, "%02x", (unsigned int)((i + 1U) * (j + 7U)) & 0xFFU);
+    }
+
+    signers.push_back(new_signer(private_key_hex));
+  }
+
+  return signers;
+}
+
+/**
+ * Computes the size of a transaction once encoded as CBOR.
+ * \param tx the transaction.
+ * \return The size of the transaction in bytes.
+ */
+static size_t
+get_transaction_size(cardano_transaction_t* tx)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_to_cbor(tx, writer), CARDANO_SUCCESS);
+
+  const size_t size = cardano_cbor_writer_get_encode_size(writer);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return size;
 }
 
 /**
@@ -4001,7 +4060,7 @@ TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheTransacti
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_vkey_witness_count(tx), 0U);
-  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), get_fee_of_bytes(protocol, VKEY_WITNESS_SET_HEADER_SIZE));
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -4031,7 +4090,7 @@ TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheWitnessSe
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_vkey_witness_count(tx), 2U);
-  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), get_fee_of_bytes(protocol, VKEY_WITNESS_SET_HEADER_SIZE));
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -4040,6 +4099,145 @@ TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheWitnessSe
   cardano_utxo_list_unref(&utxos);
   free_signer(signer);
   free_signer(foreign_signer);
+}
+
+TEST(cardano_balance_transaction, paysForTheGrowthOfTheVkeyWitnessesHeaderIfSigningCrossesTheCborSizeBoundary)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  signer_t                       signer          = new_signer(FIRST_SIGNER_KEY_HEX);
+  std::vector<signer_t>          foreign_signers = new_signers(23U);
+  cardano_utxo_t*                utxo            = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos           = new_utxo_list_of(utxo, NULL);
+
+  std::vector<const signer_t*> foreign_signer_refs(foreign_signers.size());
+
+  std::transform(foreign_signers.begin(), foreign_signers.end(), foreign_signer_refs.begin(), [](const signer_t& foreign_signer)
+                 { return &foreign_signer; });
+
+  set_vkey_witnesses(tx, foreign_signer_refs, true);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  const size_t unsigned_size = get_transaction_size(tx);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 24U);
+  EXPECT_EQ(get_transaction_size(tx), unsigned_size + 101U + 1U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+
+  for (signer_t& foreign_signer: foreign_signers)
+  {
+    free_signer(foreign_signer);
+  }
+}
+
+TEST(cardano_balance_transaction, doesNotPayForATagIfTheWitnessSetAlreadyHoldsUntaggedVkeyWitnesses)
+{
+  // Arrange
+  cardano_transaction_t*         tx             = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol       = init_protocol_parameters();
+  signer_t                       signer         = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       foreign_signer = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo           = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos          = new_utxo_list_of(utxo, NULL);
+
+  set_vkey_witnesses(tx, { &foreign_signer }, false);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  const size_t unsigned_size = get_transaction_size(tx);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 2U);
+  EXPECT_EQ(get_transaction_size(tx), unsigned_size + 101U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+  free_signer(foreign_signer);
+}
+
+TEST(cardano_balance_transaction, doesNotPayForATagIfSigningFillsAnEmptyUntaggedVkeyWitnessSet)
+{
+  // Arrange
+  cardano_transaction_t*         tx       = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol = init_protocol_parameters();
+  signer_t                       signer   = new_signer(FIRST_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo     = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos    = new_utxo_list_of(utxo, NULL);
+
+  set_vkey_witnesses(tx, {}, false);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  const size_t unsigned_size = get_transaction_size(tx);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 1U);
+  EXPECT_EQ(get_transaction_size(tx), unsigned_size + 1U + 1U + 101U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
+}
+
+TEST(cardano_balance_transaction, paysForTheTagIfSigningCreatesTheVkeyWitnessSet)
+{
+  // Arrange
+  cardano_transaction_t*         tx       = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol = init_protocol_parameters();
+  signer_t                       signer   = new_signer(FIRST_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo     = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos    = new_utxo_list_of(utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  const size_t unsigned_size = get_transaction_size(tx);
+
+  sign_transaction(tx, { &signer });
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 1U);
+  EXPECT_EQ(get_transaction_size(tx), unsigned_size + 1U + 3U + 1U + 101U);
+  EXPECT_EQ(get_fee_excess(tx, protocol, utxos), 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(signer);
 }
 
 TEST(cardano_balance_transaction, paysForAReferenceScriptOnAPreSelectedInput)
