@@ -41,6 +41,8 @@
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 #include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 #include <cardano/transaction_builder/fee.h>
+#include <cardano/witness_set/bootstrap_witness.h>
+#include <cardano/witness_set/bootstrap_witness_set.h>
 #include <cardano/witness_set/native_script_set.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/vkey_witness.h>
@@ -108,6 +110,15 @@ static const char* SCRIPT_HASH_HEX = "b275b08c999097247f7c17e77007c7010cd19f20cc
 static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
 
 /**
+ * \brief Byron addresses, the CBOR encoded attributes their bootstrap witnesses carry and a chain code to sign with.
+ */
+static const char* BYRON_YOROI_ADDRESS           = "Ae2tdPwUPEZFRbyhz3cpfC2CumGzNkFBN2L42rcUc2yjQpEkxDbkPodpMAi";
+static const char* BYRON_YOROI_ATTRIBUTES_HEX    = "a0";
+static const char* BYRON_DAEDALUS_ADDRESS        = "37btjrVyb4KEB2STADSsj3MYSAdj52X5FrFWpw2r7Wmj2GDzXjFRsHWuZqrw7zSkwopv8Ci3VWeg6bisU9dgJxW5hb2MZYeduNKbQJrqz3zVBsu9nT";
+static const char* BYRON_DAEDALUS_ATTRIBUTES_HEX = "a201581e581c9c1722f7e446689256e1a30260f3510d558d99d0c391f2ba89cb697702451a4170cb17";
+static const char* BYRON_CHAIN_CODE_HEX          = "7e4ebd21ec7cd6a9a4e1e5a7e1f76fc4b8c3fb5d6ed83d2a9f1e6c5b4a392817";
+
+/**
  * The fee of the native reference script that requires one signature, with the reference script price per byte set by
  * \ref init_protocol_parameters (15 lovelace): the 32 bytes of the CBOR of the native script, without the two
  * bytes of the array that holds the language tag and the script, all of it inside the first pricing tier.
@@ -131,6 +142,19 @@ struct signer_t
     cardano_ed25519_private_key_t* private_key;
     cardano_ed25519_public_key_t*  public_key;
     cardano_blake2b_hash_t*        key_hash;
+    cardano_address_t*             address;
+};
+
+/**
+ * \brief The owner of a Byron UTXO: the key it signs with, the chain code of its extended key, the Byron address it
+ * holds and the attributes of that address, which its bootstrap witness carries.
+ */
+struct byron_signer_t
+{
+    cardano_ed25519_private_key_t* private_key;
+    cardano_ed25519_public_key_t*  public_key;
+    cardano_buffer_t*              chain_code;
+    cardano_buffer_t*              attributes;
     cardano_address_t*             address;
 };
 
@@ -1713,6 +1737,101 @@ static void
 add_vkey_witness(cardano_transaction_t* tx, const signer_t& signer)
 {
   set_vkey_witnesses(tx, { &signer }, true);
+}
+
+/**
+ * Creates the owner of a Byron address from a private key.
+ * \param private_key_hex the Ed25519 private key of the signer.
+ * \param address the base58 representation of the Byron address the signer holds.
+ * \param attributes_hex the CBOR encoded attributes of the address.
+ * \return The new signer. The caller must release it with \ref free_byron_signer.
+ */
+static byron_signer_t
+new_byron_signer(const char* private_key_hex, const char* address, const char* attributes_hex)
+{
+  byron_signer_t signer = { NULL, NULL, NULL, NULL, NULL };
+
+  EXPECT_EQ(cardano_ed25519_private_key_from_normal_hex(private_key_hex, strlen(private_key_hex), &signer.private_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ed25519_private_key_get_public_key(signer.private_key, &signer.public_key), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_address_from_string(address, strlen(address), &signer.address), CARDANO_SUCCESS);
+
+  signer.chain_code = cardano_buffer_from_hex(BYRON_CHAIN_CODE_HEX, strlen(BYRON_CHAIN_CODE_HEX));
+  signer.attributes = cardano_buffer_from_hex(attributes_hex, strlen(attributes_hex));
+
+  EXPECT_NE(signer.chain_code, nullptr);
+  EXPECT_NE(signer.attributes, nullptr);
+
+  return signer;
+}
+
+/**
+ * Releases everything a Byron signer holds.
+ * \param signer the signer to release.
+ */
+static void
+free_byron_signer(byron_signer_t& signer)
+{
+  cardano_ed25519_private_key_unref(&signer.private_key);
+  cardano_ed25519_public_key_unref(&signer.public_key);
+  cardano_buffer_unref(&signer.chain_code);
+  cardano_buffer_unref(&signer.attributes);
+  cardano_address_unref(&signer.address);
+}
+
+/**
+ * Adds to the witness set of a transaction the bootstrap witnesses of the given Byron signers, over the id of the
+ * transaction, creating the bootstrap witness set as a new set if the witness set carries none.
+ * \param tx the transaction.
+ * \param signers the Byron signers whose bootstrap witnesses are added.
+ */
+static void
+add_bootstrap_witnesses(cardano_transaction_t* tx, const std::vector<const byron_signer_t*>& signers)
+{
+  cardano_blake2b_hash_t*          tx_id       = cardano_transaction_get_id(tx);
+  cardano_witness_set_t*           witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_bootstrap_witness_set_t* witnesses   = cardano_witness_set_get_bootstrap(witness_set);
+
+  if (witnesses == NULL)
+  {
+    EXPECT_EQ(cardano_bootstrap_witness_set_new(&witnesses), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_bootstrap(witness_set, witnesses), CARDANO_SUCCESS);
+  }
+
+  for (const byron_signer_t* signer: signers)
+  {
+    cardano_ed25519_signature_t* signature = NULL;
+    cardano_bootstrap_witness_t* witness   = NULL;
+
+    EXPECT_EQ(cardano_ed25519_private_key_sign(signer->private_key, cardano_blake2b_hash_get_data(tx_id), cardano_blake2b_hash_get_bytes_size(tx_id), &signature), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_bootstrap_witness_new(signer->public_key, signature, signer->chain_code, signer->attributes, &witness), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_bootstrap_witness_set_add(witnesses, witness), CARDANO_SUCCESS);
+
+    cardano_ed25519_signature_unref(&signature);
+    cardano_bootstrap_witness_unref(&witness);
+  }
+
+  cardano_bootstrap_witness_set_unref(&witnesses);
+  cardano_witness_set_unref(&witness_set);
+  cardano_blake2b_hash_unref(&tx_id);
+}
+
+/**
+ * Gets the number of bootstrap witnesses held by the witness set of a transaction.
+ * \param tx the transaction.
+ * \return The number of bootstrap witnesses.
+ */
+static size_t
+get_bootstrap_witness_count(cardano_transaction_t* tx)
+{
+  cardano_witness_set_t*           witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_bootstrap_witness_set_t* witnesses   = cardano_witness_set_get_bootstrap(witness_set);
+
+  const size_t count = cardano_bootstrap_witness_set_get_length(witnesses);
+
+  cardano_bootstrap_witness_set_unref(&witnesses);
+  cardano_witness_set_unref(&witness_set);
+
+  return count;
 }
 
 /**
@@ -4713,6 +4832,237 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionIfTheWi
   cardano_utxo_unref(&utxo);
   cardano_utxo_list_unref(&utxos);
   free_signer(signer);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOneByronSigner)
+{
+  // Arrange
+  cardano_transaction_t*         tx       = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol = init_protocol_parameters();
+  byron_signer_t                 signer   = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  cardano_utxo_t*                utxo     = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos    = new_utxo_list_of(utxo, NULL);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  add_bootstrap_witnesses(tx, { &signer });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 0U);
+  EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_byron_signer(signer);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithTwoByronSigners)
+{
+  // Arrange
+  cardano_transaction_t*         tx          = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol    = init_protocol_parameters();
+  byron_signer_t                 first       = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_YOROI_ADDRESS, BYRON_YOROI_ATTRIBUTES_HEX);
+  byron_signer_t                 second      = new_byron_signer(SECOND_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  cardano_utxo_t*                first_utxo  = new_coin_utxo(1U, first.address, 4000000);
+  cardano_utxo_t*                second_utxo = new_coin_utxo(2U, second.address, 4000000);
+  cardano_utxo_list_t*           utxos       = new_utxo_list_of(first_utxo, second_utxo);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, first.address);
+
+  add_bootstrap_witnesses(tx, { &first, &second });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(transaction_spends(tx, first_utxo));
+  EXPECT_TRUE(transaction_spends(tx, second_utxo));
+  EXPECT_EQ(get_bootstrap_witness_count(tx), 2U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&first_utxo);
+  cardano_utxo_unref(&second_utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_byron_signer(first);
+  free_byron_signer(second);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOneByronSignerForTwoInputsOfTheSameAddress)
+{
+  // Arrange
+  cardano_transaction_t*         tx          = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol    = init_protocol_parameters();
+  byron_signer_t                 signer      = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  cardano_utxo_t*                first_utxo  = new_coin_utxo(1U, signer.address, 4000000);
+  cardano_utxo_t*                second_utxo = new_coin_utxo(2U, signer.address, 4000000);
+  cardano_utxo_list_t*           utxos       = new_utxo_list_of(first_utxo, second_utxo);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  add_bootstrap_witnesses(tx, { &signer });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(transaction_spends(tx, first_utxo));
+  EXPECT_TRUE(transaction_spends(tx, second_utxo));
+  EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&first_utxo);
+  cardano_utxo_unref(&second_utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_byron_signer(signer);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithByronAndShelleySigners)
+{
+  // Arrange
+  cardano_transaction_t*         tx           = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol     = init_protocol_parameters();
+  byron_signer_t                 byron        = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  signer_t                       shelley      = new_signer(SECOND_SIGNER_KEY_HEX);
+  cardano_utxo_t*                byron_utxo   = new_coin_utxo(1U, byron.address, 4000000);
+  cardano_utxo_t*                shelley_utxo = new_coin_utxo(2U, shelley.address, 4000000);
+  cardano_utxo_list_t*           utxos        = new_utxo_list_of(byron_utxo, shelley_utxo);
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, shelley.address);
+
+  sign_transaction(tx, { &shelley });
+  add_bootstrap_witnesses(tx, { &byron });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(transaction_spends(tx, byron_utxo));
+  EXPECT_TRUE(transaction_spends(tx, shelley_utxo));
+  EXPECT_EQ(get_vkey_witness_count(tx), 1U);
+  EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&byron_utxo);
+  cardano_utxo_unref(&shelley_utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_byron_signer(byron);
+  free_signer(shelley);
+}
+
+TEST(cardano_balance_transaction, doesNotPayForTheBootstrapWitnessesKeyIfTheWitnessSetAlreadyHoldsBootstrapWitnesses)
+{
+  // Arrange
+  cardano_transaction_t*         tx             = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol       = init_protocol_parameters();
+  byron_signer_t                 signer         = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  byron_signer_t                 foreign_signer = new_byron_signer(THIRD_SIGNER_KEY_HEX, BYRON_YOROI_ADDRESS, BYRON_YOROI_ATTRIBUTES_HEX);
+  cardano_utxo_t*                utxo           = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos          = new_utxo_list_of(utxo, NULL);
+
+  add_bootstrap_witnesses(tx, { &foreign_signer });
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, signer.address);
+
+  add_bootstrap_witnesses(tx, { &signer });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_bootstrap_witness_count(tx), 2U);
+  EXPECT_GE(fee_excess, 0);
+  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_byron_signer(signer);
+  free_byron_signer(foreign_signer);
+}
+
+TEST(cardano_balance_transaction, recoversFromMemoryAllocationFailuresWithAByronInput)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  byron_signer_t                 signer           = new_byron_signer(FIRST_SIGNER_KEY_HEX, BYRON_DAEDALUS_ADDRESS, BYRON_DAEDALUS_ATTRIBUTES_HEX);
+  cardano_utxo_t*                utxo             = new_coin_utxo(1U, signer.address, 20000000);
+  cardano_utxo_list_t*           utxos            = new_utxo_list_of(utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  bool                           balanced         = false;
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  // Act
+  for (int i = 0; !balanced && (i < 5000); ++i)
+  {
+    cardano_transaction_t* tx = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_balance_transaction(
+      tx,
+      0,
+      protocol,
+      reference_inputs,
+      NULL,
+      NULL,
+      utxos,
+      coin_selector,
+      signer.address,
+      NULL,
+      signer.address,
+      NULL,
+      nullptr);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    balanced = (result == CARDANO_SUCCESS);
+
+    cardano_transaction_unref(&tx);
+  }
+
+  // Assert
+  EXPECT_TRUE(balanced);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  free_byron_signer(signer);
 }
 
 TEST(cardano_balance_transaction, doesNotPayForTheVkeyWitnessesKeyIfTheTransactionHasNoSigners)
