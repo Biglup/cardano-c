@@ -124,6 +124,9 @@ cardano_transaction_body_new(
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_transaction_body_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a transaction body.
  *
+ * Keys 0 (inputs), 1 (outputs) and 2 (fee) are required; decoding fails with \ref CARDANO_ERROR_DECODING if any of
+ * them is absent. An empty outputs list under key 1 is accepted.
+ *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] transaction_body A pointer to a pointer of \ref cardano_transaction_body_t that will be set to the address
  *                        of the newly created transaction body object upon successful decoding.

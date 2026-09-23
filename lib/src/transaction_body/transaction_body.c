@@ -1887,6 +1887,14 @@ cardano_transaction_body_from_cbor(cardano_cbor_reader_t* reader, cardano_transa
     }
   }
 
+  if ((body->inputs == NULL) || (body->outputs == NULL) || (body->fee == NULL))
+  {
+    cardano_cbor_reader_set_last_error(reader, "There was an error decoding 'transaction_body', 'inputs' (key 0), 'outputs' (key 1) and 'fee' (key 2) must be present.");
+    cardano_transaction_body_unref(&body);
+
+    return CARDANO_ERROR_DECODING;
+  }
+
   *transaction_body = body;
 
   cardano_error_t validation_result = cardano_cbor_validate_end_map("transaction_body", reader);

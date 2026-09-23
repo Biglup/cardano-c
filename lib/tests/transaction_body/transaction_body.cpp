@@ -2937,6 +2937,89 @@ TEST(cardano_transaction_body_from_cbor, rejectsUnusedKeys)
   expect_decode_failure("a10c00", CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
 }
 
+TEST(cardano_transaction_body_from_cbor, rejectsAnEmptyBody)
+{
+  // Act & Assert
+  expect_decode_failure("a0", CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_transaction_body_from_cbor, rejectsABodyWithOnlyAFee)
+{
+  // Act & Assert
+  expect_decode_failure("a1020a", CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_transaction_body_from_cbor, rejectsMissingInputs)
+{
+  // Act & Assert
+  expect_decode_failure("a20180020a", CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_transaction_body_from_cbor, rejectsMissingOutputs)
+{
+  // Act & Assert
+  expect_decode_failure("a200d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500020a", CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_transaction_body_from_cbor, rejectsMissingFee)
+{
+  // Act & Assert
+  expect_decode_failure("a200d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180", CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_transaction_body_from_cbor, setsTheLastErrorWhenARequiredKeyIsMissing)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex("a1020a", strlen("a1020a"));
+
+  // Act
+  cardano_error_t result = cardano_transaction_body_from_cbor(reader, &transaction_body);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(transaction_body, (cardano_transaction_body_t*)nullptr);
+  EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'transaction_body', 'inputs' (key 0), 'outputs' (key 1) and 'fee' (key 2) must be present.");
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_body_from_cbor, acceptsAnEmptyOutputsList)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(MINIMAL_DIJKSTRA_BODY, strlen(MINIMAL_DIJKSTRA_BODY));
+  cardano_cbor_writer_t*      writer           = cardano_cbor_writer_new();
+
+  // Act
+  cardano_error_t result = cardano_transaction_body_from_cbor(reader, &transaction_body);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(transaction_body);
+
+  EXPECT_EQ(cardano_transaction_output_list_get_length(outputs), 0U);
+  EXPECT_EQ(cardano_transaction_body_get_fee(transaction_body), 10U);
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, MINIMAL_DIJKSTRA_BODY);
+
+  expect_byte_exact_round_trip(MINIMAL_DIJKSTRA_BODY);
+
+  // Cleanup
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
 TEST(cardano_transaction_body_from_cbor, returnsErrorIfMemoryAllocationFailsOnDijkstraKeys)
 {
   // Arrange
