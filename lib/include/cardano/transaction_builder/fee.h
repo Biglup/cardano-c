@@ -241,12 +241,19 @@ cardano_compute_min_fee_without_scripts(
  *
  * This function calculates the fee component that is contributed by reference scripts on the inputs of a transaction.
  * The fee is computed based on the size of the reference scripts and the protocol parameter `coins_per_ref_script_byte`.
- * The total size is priced in tiers of 25600 bytes, and every tier costs 1.2 times as much per byte as the previous one.
+ * The total size is priced in tiers of 25600 bytes, the last one possibly partial, and every tier costs 1.2 times as much
+ * per byte as the previous one. As the ledger does, the prices are exact fractions: the price of every tier is added
+ * exactly and the fee is the floor of the total, taken once, so no tier is rounded on its own. The tier size and the
+ * multiplier are the Conway values of the reference script cost stride and multiplier protocol parameters.
+ *
+ * The fee is exact whenever the intermediate values of that computation fit in 64 bits. A price with a very large
+ * denominator, such as one built with \ref cardano_unit_interval_from_double, or a very large price can make them
+ * exceed 64 bits; the fee is then a conservative upper bound of the exact fee, which never falls below it and, for prices
+ * up to about 50 lovelace per byte, is within a lovelace of it.
  *
  * The ledger charges for every reference script found on the outputs behind the reference inputs and the spend inputs of a
  * transaction, whatever the language of the script (native scripts included) and whether or not the script runs. The size
- * of each script is the one reported by \ref cardano_get_serialized_script_size, which documents how that size compares
- * to the one the ledger prices.
+ * of each script is the one reported by \ref cardano_get_serialized_script_size, which is the size the ledger prices.
  *
  * The total size is not distinct: every entry of the list is counted, so a reference script that appears in several entries
  * is priced once per entry. The ledger takes the inputs of a body as a set, so a UTXO that a body both references and
@@ -260,7 +267,10 @@ cardano_compute_min_fee_without_scripts(
  * \param[in] coins_per_ref_script_byte The fee cost per byte of reference script data, as defined by the protocol parameters.
  * \param[out] script_ref_fee A pointer to a uint64_t where the computed reference script fee will be stored.
  *
- * \return \ref CARDANO_SUCCESS if the reference script fee was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the reference script fee was successfully computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if there
+ *         are reference scripts to price and \p coins_per_ref_script_byte has a zero denominator, \ref CARDANO_ERROR_INTEGER_OVERFLOW
+ *         if the fee, or the upper bound computed in its place, does not fit in 64 bits, or another appropriate error code
+ *         indicating failure. On failure \p script_ref_fee is set to zero.
  *
  * \note This function helps determine the additional cost of including reference scripts in a transaction's inputs based on the
  *       protocol's fee model.
@@ -379,18 +389,17 @@ CARDANO_EXPORT cardano_error_t
 cardano_get_serialized_output_size(cardano_transaction_output_t* output, size_t* size_in_bytes);
 
 /**
- * \brief Computes the serialized size of a given script.
+ * \brief Computes the serialized size of a given script, the size the ledger prices for a reference script.
  *
- * This function calculates the size in bytes required to serialize a given script. The size is the one of the two element
- * array that holds the language tag followed by the script, as a script reference carries it: the CBOR of the native
- * script, or the byte string with the bytes of the Plutus script. A native script decoded from CBOR is measured with the
- * bytes it was decoded from, while the language tag array and the byte string header of a Plutus script are encoded again.
+ * This function calculates the size in bytes of the serialized script alone, without the two element array that holds the
+ * language tag followed by the script in a script reference: for a Plutus script, the bytes of the script, the ones its
+ * byte string holds, without the header of the byte string; for a native script, the bytes of its CBOR. A native script
+ * decoded from CBOR is measured with the bytes it was decoded from, so a script stored on chain with a longer, non minimal
+ * encoding (for example a slot written as an 8 byte integer) is measured with those bytes, as the ledger measures it.
  *
- * The ledger prices the size of the script alone: the bytes inside the byte string for a Plutus script, and the bytes the
- * script was stored with on chain for a native script. The size computed here is a few bytes larger than that for a Plutus
- * script and for a native script in the encoding this library produces, so a fee computed from it covers what the ledger
- * charges for those scripts. A native script that was stored on chain with a longer, non minimal encoding (for example a
- * slot written as an 8 byte integer) is measured with those bytes when it was decoded from them, so the fee also covers it.
+ * This is the size the ledger prices for a reference script, and the one \ref cardano_compute_script_ref_fee prices. The
+ * encoding of the script with its language tag, as a script reference carries it, is the one \ref cardano_script_to_cbor
+ * writes, which is 2 bytes larger for a native script and 3 to 7 bytes larger for a Plutus script.
  *
  * \param[in] script A pointer to the \ref cardano_script_t object for which the serialized size is to be calculated.
  * \param[out] size_in_bytes A pointer to a \c size_t where the size of the serialized script in bytes will be stored.

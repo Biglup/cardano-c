@@ -21,39 +21,486 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/buffer.h>
+#include <cardano/scripts/native_scripts/native_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v4_script.h>
+#include <cardano/scripts/script.h>
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_builder/fee.h>
 #include <math.h>
 
+/* STRUCTURES ****************************************************************/
+
+/**
+ * \brief The tiered pricing model of the reference scripts: the size of a tier and the factor that scales the per byte
+ * price from one tier to the next, as the fraction multiplier_numerator / multiplier_denominator.
+ */
+typedef struct
+{
+    uint64_t stride;
+    uint64_t multiplier_numerator;
+    uint64_t multiplier_denominator;
+} ref_script_tiers_t;
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * \brief Gets the minimum of two values.
+ * \brief Computes the greatest common divisor of two integers with Euclid's algorithm.
  *
- * \param a The first value.
- * \param b The second value.
+ * \param[in] a The first integer.
+ * \param[in] b The second integer.
  *
- * \return The minimum of the two values.
+ * \return The greatest common divisor of the two integers, or \p a when \p b is zero.
  */
-static double
-min(const double a, const double b)
+static uint64_t
+compute_greatest_common_divisor(const uint64_t a, const uint64_t b)
 {
-  return (a < b) ? a : b;
+  uint64_t dividend = a;
+  uint64_t divisor  = b;
+
+  while (divisor != 0U)
+  {
+    const uint64_t remainder = dividend % divisor;
+
+    dividend = divisor;
+    divisor  = remainder;
+  }
+
+  return dividend;
 }
 
 /**
- * \brief Gets the maximum of two values.
+ * \brief Multiplies two integers and reports whether the product fits in 64 bits.
  *
- * \param a The first value.
- * \param b The second value.
+ * \param[in]  a       The first factor.
+ * \param[in]  b       The second factor.
+ * \param[out] product The product of the two factors. It is only written when the product fits.
  *
- * \return The maximum of the two values.
+ * \return \ref CARDANO_SUCCESS if the product fits in 64 bits, or \ref CARDANO_ERROR_INTEGER_OVERFLOW otherwise.
  */
-static double
-max(const double a, const double b)
+static cardano_error_t
+checked_multiply(const uint64_t a, const uint64_t b, uint64_t* product)
 {
-  return (a > b) ? a : b;
+  if ((b != 0U) && (a > (UINT64_MAX / b)))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *product = a * b;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds two integers and reports whether the sum fits in 64 bits.
+ *
+ * \param[in]  a   The first term.
+ * \param[in]  b   The second term.
+ * \param[out] sum The sum of the two terms. It is only written when the sum fits.
+ *
+ * \return \ref CARDANO_SUCCESS if the sum fits in 64 bits, or \ref CARDANO_ERROR_INTEGER_OVERFLOW otherwise.
+ */
+static cardano_error_t
+checked_add(const uint64_t a, const uint64_t b, uint64_t* sum)
+{
+  if (a > (UINT64_MAX - b))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *sum = a + b;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Divides two integers, rounding the quotient up.
+ *
+ * \param[in] dividend The dividend.
+ * \param[in] divisor  The divisor, not zero.
+ *
+ * \return The smallest integer that is not lower than \p dividend / \p divisor.
+ */
+static uint64_t
+divide_rounding_up(const uint64_t dividend, const uint64_t divisor)
+{
+  return (dividend / divisor) + (((dividend % divisor) != 0U) ? 1U : 0U);
+}
+
+/**
+ * \brief Prices a total size of reference scripts with the tiered model of the ledger, in exact arithmetic.
+ *
+ * The size is split in tiers of \p tiers stride bytes, the last one possibly partial. The bytes of the first tier cost
+ * \p price_numerator / \p price_denominator each and the price of every further tier is the one of the previous tier
+ * scaled by the multiplier of \p tiers. The prices are kept as exact fractions and the fee is the floor of the exact
+ * sum, taken once.
+ *
+ * The sum is kept as an integer part and a remainder over the denominator of the price of the current tier, which
+ * grows by the denominator of the multiplier per tier, so the remainder always stays below that denominator.
+ *
+ * \param[in]  tiers             The tiered pricing model.
+ * \param[in]  total_size        The total size of the reference scripts, in bytes.
+ * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
+ * \param[in]  price_denominator The denominator of the price of a byte in the first tier, not zero.
+ * \param[out] fee               The floor of the exact price of \p total_size bytes. It is only written on success.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if an intermediate value
+ *         or the fee does not fit in 64 bits.
+ */
+static cardano_error_t
+compute_exact_tiered_fee(
+  const ref_script_tiers_t* tiers,
+  const uint64_t            total_size,
+  const uint64_t            price_numerator,
+  const uint64_t            price_denominator,
+  uint64_t*                 fee)
+{
+  uint64_t        tier_numerator   = price_numerator;
+  uint64_t        tier_denominator = price_denominator;
+  uint64_t        whole            = 0U;
+  uint64_t        remainder        = 0U;
+  uint64_t        remaining        = total_size;
+  cardano_error_t result           = CARDANO_SUCCESS;
+
+  while ((remaining > 0U) && (result == CARDANO_SUCCESS))
+  {
+    const uint64_t tier_size  = (remaining < tiers->stride) ? remaining : tiers->stride;
+    uint64_t       tier_price = 0U;
+
+    result = checked_multiply(tier_size, tier_numerator, &tier_price);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = checked_add(whole, tier_price / tier_denominator, &whole);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      const uint64_t tier_remainder = tier_price % tier_denominator;
+      const uint64_t carry_limit    = tier_denominator - tier_remainder;
+
+      if (remainder >= carry_limit)
+      {
+        remainder -= carry_limit;
+        result    = checked_add(whole, 1U, &whole);
+      }
+      else
+      {
+        remainder += tier_remainder;
+      }
+    }
+
+    remaining -= tier_size;
+
+    if ((result == CARDANO_SUCCESS) && (remaining > 0U))
+    {
+      result = checked_multiply(tier_numerator, tiers->multiplier_numerator, &tier_numerator);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = checked_multiply(tier_denominator, tiers->multiplier_denominator, &tier_denominator);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        remainder *= tiers->multiplier_denominator;
+      }
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *fee = whole;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Prices a total size of reference scripts with the tiered model, rounding the per byte price of every tier up to
+ * a whole number of lovelace.
+ *
+ * The price of the first tier is \p price_numerator / \p price_denominator rounded up, and the price of every further
+ * tier is the price of the previous one scaled by the multiplier of \p tiers and rounded up. Every price is at least the
+ * exact price of its tier, so the fee is an upper bound of the exact fee. Its intermediate values are the prices and the
+ * fee, which do not grow with the denominator of the price.
+ *
+ * \param[in]  tiers             The tiered pricing model.
+ * \param[in]  total_size        The total size of the reference scripts, in bytes.
+ * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
+ * \param[in]  price_denominator The denominator of the price of a byte in the first tier, not zero.
+ * \param[out] fee               The upper bound of the price of \p total_size bytes. It is only written on success.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee or the price of
+ *         a tier does not fit in 64 bits.
+ */
+static cardano_error_t
+compute_rounded_up_tiered_fee(
+  const ref_script_tiers_t* tiers,
+  const uint64_t            total_size,
+  const uint64_t            price_numerator,
+  const uint64_t            price_denominator,
+  uint64_t*                 fee)
+{
+  uint64_t        tier_price = divide_rounding_up(price_numerator, price_denominator);
+  uint64_t        total      = 0U;
+  uint64_t        remaining  = total_size;
+  cardano_error_t result     = CARDANO_SUCCESS;
+
+  while ((remaining > 0U) && (result == CARDANO_SUCCESS))
+  {
+    const uint64_t tier_size = (remaining < tiers->stride) ? remaining : tiers->stride;
+    uint64_t       tier_fee  = 0U;
+
+    result = checked_multiply(tier_size, tier_price, &tier_fee);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = checked_add(total, tier_fee, &total);
+    }
+
+    remaining -= tier_size;
+
+    if ((result == CARDANO_SUCCESS) && (remaining > 0U))
+    {
+      uint64_t scaled_price = 0U;
+
+      result = checked_multiply(tier_price, tiers->multiplier_numerator, &scaled_price);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        tier_price = divide_rounding_up(scaled_price, tiers->multiplier_denominator);
+      }
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *fee = total;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Prices a total size of reference scripts with the tiered model of the ledger.
+ *
+ * The size is split in tiers of 25600 bytes, the last one possibly partial, and the price of every tier is the one of
+ * the previous tier multiplied by 6/5: the Conway values of the reference script cost stride and multiplier protocol
+ * parameters. The fee is computed exactly as the ledger does, the floor of the exact sum of the price of every tier
+ * taken once, whenever the intermediate values of that computation fit in 64 bits.
+ *
+ * When they do not, which happens with a price whose denominator is large (for example a price converted from a
+ * floating point value) or with a very large price, the fee is a conservative upper bound instead, the lower of two
+ * bounds. The first one replaces the price by a price that is not lower and has a denominator half as large, repeatedly,
+ * until the exact computation fits, which keeps the fee within a lovelace of the exact one for prices up to about 50
+ * lovelace per byte. The second one rounds the per byte price of every tier up to a whole number of lovelace, which stays close to
+ * the exact fee when the price is large. The fee never falls below the exact one.
+ *
+ * \param[in]  total_size        The total size of the reference scripts, in bytes.
+ * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
+ * \param[in]  price_denominator The denominator of the price of a byte in the first tier.
+ * \param[out] fee               The price of \p total_size bytes, or zero on failure.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if there are bytes to price
+ *         and \p price_denominator is zero, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee, or the upper bound computed
+ *         in its place, does not fit in 64 bits.
+ */
+static cardano_error_t
+compute_tiered_ref_script_fee(
+  const uint64_t total_size,
+  const uint64_t price_numerator,
+  const uint64_t price_denominator,
+  uint64_t*      fee)
+{
+  static const ref_script_tiers_t conway_tiers = { 25600U, 6U, 5U };
+
+  *fee = 0U;
+
+  if (total_size == 0U)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  if (price_denominator == 0U)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  const uint64_t divisor     = compute_greatest_common_divisor(price_numerator, price_denominator);
+  const uint64_t numerator   = price_numerator / divisor;
+  const uint64_t denominator = price_denominator / divisor;
+  uint64_t       exact_fee   = 0U;
+
+  cardano_error_t result = compute_exact_tiered_fee(&conway_tiers, total_size, numerator, denominator, &exact_fee);
+
+  if (result != CARDANO_ERROR_INTEGER_OVERFLOW)
+  {
+    *fee = exact_fee;
+
+    return result;
+  }
+
+  uint64_t        halved_numerator   = numerator;
+  uint64_t        halved_denominator = denominator;
+  uint64_t        halved_fee         = 0U;
+  cardano_error_t halved_result      = CARDANO_ERROR_INTEGER_OVERFLOW;
+
+  while ((halved_result == CARDANO_ERROR_INTEGER_OVERFLOW) && (halved_denominator > 1U))
+  {
+    halved_numerator   = (halved_numerator / 2U) + (halved_numerator % 2U);
+    halved_denominator = halved_denominator / 2U;
+    halved_result      = compute_exact_tiered_fee(&conway_tiers, total_size, halved_numerator, halved_denominator, &halved_fee);
+  }
+
+  uint64_t              rounded_fee    = 0U;
+  const cardano_error_t rounded_result = compute_rounded_up_tiered_fee(&conway_tiers, total_size, numerator, denominator, &rounded_fee);
+
+  if ((halved_result == CARDANO_SUCCESS) && (rounded_result == CARDANO_SUCCESS))
+  {
+    *fee   = (halved_fee < rounded_fee) ? halved_fee : rounded_fee;
+    result = CARDANO_SUCCESS;
+  }
+  else if (halved_result == CARDANO_SUCCESS)
+  {
+    *fee   = halved_fee;
+    result = CARDANO_SUCCESS;
+  }
+  else if (rounded_result == CARDANO_SUCCESS)
+  {
+    *fee   = rounded_fee;
+    result = CARDANO_SUCCESS;
+  }
+  else
+  {
+    result = CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Computes the size of the bytes of a Plutus script: the ones the byte string of the script holds.
+ *
+ * \param[in]  script        The script, of a Plutus language.
+ * \param[in]  language      The language of \p script.
+ * \param[out] size_in_bytes The number of bytes of the script.
+ *
+ * \return \ref CARDANO_SUCCESS if the size was computed, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+get_plutus_script_size(
+  cardano_script_t*               script,
+  const cardano_script_language_t language,
+  size_t*                         size_in_bytes)
+{
+  cardano_plutus_v1_script_t* plutus_v1 = NULL;
+  cardano_plutus_v2_script_t* plutus_v2 = NULL;
+  cardano_plutus_v3_script_t* plutus_v3 = NULL;
+  cardano_plutus_v4_script_t* plutus_v4 = NULL;
+  cardano_buffer_t*           bytes     = NULL;
+  cardano_error_t             result    = CARDANO_SUCCESS;
+
+  switch (language)
+  {
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
+      result = cardano_script_to_plutus_v1(script, &plutus_v1);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_v1_script_to_raw_bytes(plutus_v1, &bytes);
+      }
+
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
+      result = cardano_script_to_plutus_v2(script, &plutus_v2);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_v2_script_to_raw_bytes(plutus_v2, &bytes);
+      }
+
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+      result = cardano_script_to_plutus_v3(script, &plutus_v3);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_v3_script_to_raw_bytes(plutus_v3, &bytes);
+      }
+
+      break;
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      result = cardano_script_to_plutus_v4(script, &plutus_v4);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_v4_script_to_raw_bytes(plutus_v4, &bytes);
+      }
+
+      break;
+    default:
+      result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+      break;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *size_in_bytes = cardano_buffer_get_size(bytes);
+  }
+
+  cardano_buffer_unref(&bytes);
+  cardano_plutus_v1_script_unref(&plutus_v1);
+  cardano_plutus_v2_script_unref(&plutus_v2);
+  cardano_plutus_v3_script_unref(&plutus_v3);
+  cardano_plutus_v4_script_unref(&plutus_v4);
+
+  return result;
+}
+
+/**
+ * \brief Computes the size of the CBOR of a native script, the bytes it was decoded from when it was decoded.
+ *
+ * \param[in]  script        The script, of the native language.
+ * \param[out] size_in_bytes The size of the CBOR of the native script.
+ *
+ * \return \ref CARDANO_SUCCESS if the size was computed, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+get_native_script_size(cardano_script_t* script, size_t* size_in_bytes)
+{
+  cardano_native_script_t* native_script = NULL;
+  cardano_error_t          result        = cardano_script_to_native(script, &native_script);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    cardano_native_script_unref(&native_script);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  result = cardano_native_script_to_cbor(native_script, writer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
+  }
+
+  cardano_cbor_writer_unref(&writer);
+  cardano_native_script_unref(&native_script);
+
+  return result;
 }
 
 /**
@@ -241,26 +688,20 @@ cardano_get_serialized_script_size(cardano_script_t* script, size_t* size_in_byt
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
-
-  if (writer == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  cardano_error_t result = cardano_script_to_cbor(script, writer);
+  cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
+  cardano_error_t           result   = cardano_script_get_language(script, &language);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_cbor_writer_unref(&writer);
-
     return result;
   }
 
-  *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
-  cardano_cbor_writer_unref(&writer);
+  if (language == CARDANO_SCRIPT_LANGUAGE_NATIVE)
+  {
+    return get_native_script_size(script, size_in_bytes);
+  }
 
-  return result;
+  return get_plutus_script_size(script, language, size_in_bytes);
 }
 
 cardano_error_t
@@ -439,21 +880,18 @@ cardano_compute_script_ref_fee(
     total_ref_scripts_size += script_size;
   }
 
-  // Starting in the Conway era, the min fee calculation is given by the total size (in bytes) of
-  // reference scripts priced according to a different, growing tiered pricing model.
-  // See https://github.com/CardanoSolutions/ogmios/releases/tag/v6.5.0
-  double       base       = cardano_unit_interval_to_double(coins_per_ref_script_byte);
-  const double range      = 25600.0;
-  const double multiplier = 1.2;
+  cardano_error_t result = compute_tiered_ref_script_fee(
+    (uint64_t)total_ref_scripts_size,
+    cardano_unit_interval_get_numerator(coins_per_ref_script_byte),
+    cardano_unit_interval_get_denominator(coins_per_ref_script_byte),
+    script_ref_fee);
 
-  while (total_ref_scripts_size > 0U)
+  if (result != CARDANO_SUCCESS)
   {
-    *script_ref_fee        += (size_t)ceil(min(range, (double)total_ref_scripts_size) * base);
-    total_ref_scripts_size = (size_t)max((double)total_ref_scripts_size - range, 0.0);
-    base                   *= multiplier;
+    *script_ref_fee = 0U;
   }
 
-  return CARDANO_SUCCESS;
+  return result;
 }
 
 cardano_error_t

@@ -28,11 +28,17 @@
 #include <cardano/transaction_builder/fee.h>
 
 #include <allocators.h>
+#include <cardano/scripts/native_scripts/native_script.h>
+#include <cardano/scripts/native_scripts/script_invalid_before.h>
+#include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
+#include <cardano/scripts/script.h>
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <gmock/gmock.h>
 #include <tests/allocators_helpers.h>
+
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -63,8 +69,8 @@ static const fee_vector_t min_ada_required_vectors[] = {
 
 static const fee_vector_t tx_fee_vectors[] = {
   { 176193, "84a500818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e8081864a200818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c89187550281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a0f5f6" },
-  { 257254, "84af00818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500a700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d8668200810182190bb8191b58840201d86682008102821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626" },
-  { 326472, "84ab0081825820fbecbe69bc3ee617653b95893f50b0362cbaff3e27b01a936969a25bfc100a7c000182835839319068a7a3f008803edac87af1619860f2cdcde40c26987325ace138ad2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6d1a093d1cc0582057ad45489e9d4e3d7df98fb6b273d647cbed6990125dc51815bdee9abbc3a84a82583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00eef6fe021a00052d02031a082ee80007582026e4e8217ceb7c9eee2dffc410d77bbe3efd952288573f1c9a19fe62979634bc0b5820fe1f0d446610edf6890cbce2c3e69ad4052c557fd6d044b1f195a4f916c3e0fe0d8182582047754bf3cb4adf7374496b17fa41c197043533355c7a31a1776207fe627f5a5d010e81581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2111082583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00461558111a0007c38312818258209a32459bd4ef6bbafdeb8cf3b909d0e3e2ec806e4cc6268529280b0fc1d06f5b00a3008182582005e884ca7c466df47785af770be8495ec0998e60ebe63e4cd187cd17eeac5e9258402cdcec5c4ba1ea76c558554dea99f472b67488be18f1f7085bac4cc55376ca8f4ed61b23565ddbffcd85a4e84963c36c98272314d2637b238e65def639969f0b0481d8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2119fd8799fd8799fd87a9f581c84cc25ea4c29951d40b443b95bbc5676bc425470f96376d1984af9abffd8799fd8799fd87a9f581c2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6dffffffffa140d8799f00a1401a00342f60ffffd8799fd8799fd8799f581cf437291791dda80d0bba9f3616f8b7533c8a8db2f788b8468a26bd5affd8799fd8799fd8799f581ce3c9536e2947e33703d5793a02b593a8d32b49aaaef03ea0b2b03c87ffffffffa140d8799f00a1401a0104ece0ffffd8799fd8799fd8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211ffd8799fd8799fd8799f581cb91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a5ffffffffa1581cb2d25f829ebb7f4c97b5e847923a1115b23ebf78000722c229c9c9f7d8799f01a0ffffffff0581840000d87980821a000af3301a0b01ca09f5ae181e613518327840643837393966353831636536643334313062653062336435316135326238373439383362633666306534386263663432373433353235353265363833653163321833784031313966643837393966643837393966643837613966353831633834636332356561346332393935316434306234343362393562626335363736626334323534183478403730663936333736643139383461663961626666643837393966643837393966643837613966353831633263393637663462643238393434623036343632653118357840336335653366356435666136653033663835363735363934333863643833336536646666666666666666613134306438373939663030613134303161303032661836784034643630666666666438373939666438373939666438373939663538316366343337323931373931646461383064306262613966333631366638623735333363183778403861386462326637383862383436386132366264356166666438373939666438373939666438373939663538316365336339353336653239343765333337303318387840643537393361303262353933613864333262343961616165663033656130623262303363383766666666666666666131343064383739396630306131343031611839784030306563383265306666666664383739396664383739396664383739396635383163653664333431306265306233643531613532623837343938336263366630183a784065343862636634323734333532353532653638336531633231316666643837393966643837393966643837393966353831636239316431666538323230336465183b784034633064653263313530373436333833613839336364323165623130383235363532353261663633613566666666666666666131353831636232643235663832183c784039656262376634633937623565383437393233613131313562323365626637383030303732326332323963396339663764383739396630316130666666666666183d6366662c183e783c62326432356638323965626237663463393762356538343739323361313131356232336562663738303030373232633232396339633966373a3a3030" }
+  { 257179, "84af00818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500a700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d8668200810182190bb8191b58840201d86682008102821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626" },
+  { 326397, "84ab0081825820fbecbe69bc3ee617653b95893f50b0362cbaff3e27b01a936969a25bfc100a7c000182835839319068a7a3f008803edac87af1619860f2cdcde40c26987325ace138ad2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6d1a093d1cc0582057ad45489e9d4e3d7df98fb6b273d647cbed6990125dc51815bdee9abbc3a84a82583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00eef6fe021a00052d02031a082ee80007582026e4e8217ceb7c9eee2dffc410d77bbe3efd952288573f1c9a19fe62979634bc0b5820fe1f0d446610edf6890cbce2c3e69ad4052c557fd6d044b1f195a4f916c3e0fe0d8182582047754bf3cb4adf7374496b17fa41c197043533355c7a31a1776207fe627f5a5d010e81581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2111082583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00461558111a0007c38312818258209a32459bd4ef6bbafdeb8cf3b909d0e3e2ec806e4cc6268529280b0fc1d06f5b00a3008182582005e884ca7c466df47785af770be8495ec0998e60ebe63e4cd187cd17eeac5e9258402cdcec5c4ba1ea76c558554dea99f472b67488be18f1f7085bac4cc55376ca8f4ed61b23565ddbffcd85a4e84963c36c98272314d2637b238e65def639969f0b0481d8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2119fd8799fd8799fd87a9f581c84cc25ea4c29951d40b443b95bbc5676bc425470f96376d1984af9abffd8799fd8799fd87a9f581c2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6dffffffffa140d8799f00a1401a00342f60ffffd8799fd8799fd8799f581cf437291791dda80d0bba9f3616f8b7533c8a8db2f788b8468a26bd5affd8799fd8799fd8799f581ce3c9536e2947e33703d5793a02b593a8d32b49aaaef03ea0b2b03c87ffffffffa140d8799f00a1401a0104ece0ffffd8799fd8799fd8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211ffd8799fd8799fd8799f581cb91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a5ffffffffa1581cb2d25f829ebb7f4c97b5e847923a1115b23ebf78000722c229c9c9f7d8799f01a0ffffffff0581840000d87980821a000af3301a0b01ca09f5ae181e613518327840643837393966353831636536643334313062653062336435316135326238373439383362633666306534386263663432373433353235353265363833653163321833784031313966643837393966643837393966643837613966353831633834636332356561346332393935316434306234343362393562626335363736626334323534183478403730663936333736643139383461663961626666643837393966643837393966643837613966353831633263393637663462643238393434623036343632653118357840336335653366356435666136653033663835363735363934333863643833336536646666666666666666613134306438373939663030613134303161303032661836784034643630666666666438373939666438373939666438373939663538316366343337323931373931646461383064306262613966333631366638623735333363183778403861386462326637383862383436386132366264356166666438373939666438373939666438373939663538316365336339353336653239343765333337303318387840643537393361303262353933613864333262343961616165663033656130623262303363383766666666666666666131343064383739396630306131343031611839784030306563383265306666666664383739396664383739396664383739396635383163653664333431306265306233643531613532623837343938336263366630183a784065343862636634323734333532353532653638336531633231316666643837393966643837393966643837393966353831636239316431666538323230336465183b784034633064653263313530373436333833613839336364323165623130383235363532353261663633613566666666666666666131353831636232643235663832183c784039656262376634633937623565383437393233613131313562323365626637383030303732326332323963396339663764383739396630316130666666666666183d6366662c183e783c62326432356638323965626237663463393762356538343739323361313131356232336562663738303030373232633232396339633966373a3a3030" }
 };
 
 static const char* SUB_TX_INPUT_ID                      = "0f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
@@ -76,6 +82,7 @@ static const char* PLUTUS_V2_REFERENCE_SCRIPT_UTXO      = "82825820bb257abaca60f
 static const char* PLUTUS_V3_REFERENCE_SCRIPT_UTXO      = "82825820bb267abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e003a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182034e4d03000033222220051200120011";
 static const char* PLUTUS_V4_REFERENCE_SCRIPT_UTXO      = "82825820bb287abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e004a300583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a03d8185182044e4d04000033222220051200120011";
 static const char* NATIVE_SCRIPT_CBOR                   = "82008200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
+static const char* NON_MINIMAL_NATIVE_SCRIPT_CBOR       = "820082041b0000000000000005";
 static const char* PLUTUS_SCRIPT_CBORS[]                = {
   "82014e4d01000033222220051200120011",
   "82024e4d02000033222220051200120011",
@@ -84,22 +91,22 @@ static const char* PLUTUS_SCRIPT_CBORS[]                = {
 };
 
 /**
- * The size of the script that \ref RESOLVED_INPUT_WITH_REFERENCE_SCRIPT carries: a PlutusV2 script of 2561 bytes, the three
- * bytes of the header of its byte string and the two bytes of the array that holds the language tag and the script.
+ * The size of the script that \ref RESOLVED_INPUT_WITH_REFERENCE_SCRIPT carries: the 2561 bytes of a PlutusV2 script, without
+ * the three bytes of the header of its byte string and the two bytes of the array that holds the language tag and the script.
  */
-static const uint64_t LARGE_REFERENCE_SCRIPT_SIZE = 2566U;
+static const uint64_t LARGE_REFERENCE_SCRIPT_SIZE = 2561U;
 
 /**
- * The size of the script that \ref NATIVE_REFERENCE_SCRIPT_UTXO carries: a native script of 32 bytes that requires one
- * signature and the two bytes of the array that holds the language tag and the script.
+ * The size of the script that \ref NATIVE_REFERENCE_SCRIPT_UTXO carries: the 32 bytes of the CBOR of a native script that
+ * requires one signature, without the two bytes of the array that holds the language tag and the script.
  */
-static const uint64_t NATIVE_REFERENCE_SCRIPT_SIZE = 34U;
+static const uint64_t NATIVE_REFERENCE_SCRIPT_SIZE = 32U;
 
 /**
- * The size of the script that each Plutus reference script UTXO carries: a Plutus script of 14 bytes, the byte of the
- * header of its byte string and the two bytes of the array that holds the language tag and the script.
+ * The size of the script that each Plutus reference script UTXO carries: the 14 bytes of a Plutus script, without the byte
+ * of the header of its byte string and the two bytes of the array that holds the language tag and the script.
  */
-static const uint64_t PLUTUS_REFERENCE_SCRIPT_SIZE = 17U;
+static const uint64_t PLUTUS_REFERENCE_SCRIPT_SIZE = 14U;
 
 /**
  * The size of the first pricing tier of the reference scripts, in bytes. Every further tier costs 1.2 times as much per
@@ -111,6 +118,42 @@ static const uint64_t REFERENCE_SCRIPT_TIER_SIZE = 25600U;
  * The price of a byte of reference script in the first tier, the one set by \ref create_protocol_parameters.
  */
 static const uint64_t REFERENCE_SCRIPT_BYTE_COST = 15U;
+
+/**
+ * \brief A total size of reference scripts, a price per byte and the fee the ledger charges for them.
+ */
+typedef struct
+{
+    uint64_t size;
+    uint64_t cost_numerator;
+    uint64_t cost_denominator;
+    uint64_t fee;
+    uint64_t per_tier_ceiling_fee;
+} tiered_fee_vector_t;
+
+/**
+ * The fee the ledger charges for a total size of reference scripts: the floor, taken once, of the exact sum of the price
+ * of every tier, where the tiers are 25600 bytes long and each costs 6/5 as much per byte as the previous one. The last
+ * column is the fee obtained by rounding every tier up instead, which is never lower.
+ */
+static const tiered_fee_vector_t tiered_fee_vectors[] = {
+  { 0U, 15U, 1U, 0U, 0U },
+  { 1U, 15U, 1U, 15U, 15U },
+  { 25599U, 15U, 1U, 383985U, 383985U },
+  { 25600U, 15U, 1U, 384000U, 384000U },
+  { 25601U, 15U, 1U, 384018U, 384018U },
+  { 51200U, 15U, 1U, 844800U, 844800U },
+  { 60000U, 15U, 1U, 1034880U, 1034880U },
+  { 204800U, 15U, 1U, 6335648U, 6335650U },
+  { 0U, 44U, 3U, 0U, 0U },
+  { 1U, 44U, 3U, 14U, 15U },
+  { 25599U, 44U, 3U, 375452U, 375452U },
+  { 25600U, 44U, 3U, 375466U, 375467U },
+  { 25601U, 44U, 3U, 375484U, 375485U },
+  { 51200U, 44U, 3U, 826026U, 826027U },
+  { 60000U, 44U, 3U, 1011882U, 1011883U },
+  { 204800U, 44U, 3U, 6194856U, 6194859U },
+};
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -515,6 +558,98 @@ create_mixed_language_reference_script_inputs()
   return utxo_list;
 }
 
+/**
+ * \brief Builds a list with a utxo whose reference script is a PlutusV1 script with a given number of bytes.
+ *
+ * \param size The number of bytes of the script, or zero for an empty list.
+ * \return The list of utxos.
+ */
+static cardano_utxo_list_t*
+create_sized_reference_script_inputs(const size_t size)
+{
+  cardano_utxo_list_t* utxo_list = NULL;
+
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  if (size == 0U)
+  {
+    return utxo_list;
+  }
+
+  const std::vector<byte_t>     bytes(size, 0x01U);
+  cardano_cbor_reader_t*        reader        = cardano_cbor_reader_from_hex(PLUTUS_V1_REFERENCE_SCRIPT_UTXO, strlen(PLUTUS_V1_REFERENCE_SCRIPT_UTXO));
+  cardano_utxo_t*               utxo          = NULL;
+  cardano_plutus_v1_script_t*   plutus_script = NULL;
+  cardano_script_t*             script        = NULL;
+  cardano_transaction_output_t* output        = NULL;
+
+  EXPECT_EQ(cardano_utxo_from_cbor(reader, &utxo), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_v1_script_new_bytes(bytes.data(), bytes.size(), &plutus_script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_new_plutus_v1(plutus_script, &script), CARDANO_SUCCESS);
+
+  output = cardano_utxo_get_output(utxo);
+
+  EXPECT_EQ(cardano_transaction_output_set_script_ref(output, script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_add(utxo_list, utxo), CARDANO_SUCCESS);
+
+  cardano_transaction_output_unref(&output);
+  cardano_script_unref(&script);
+  cardano_plutus_v1_script_unref(&plutus_script);
+  cardano_utxo_unref(&utxo);
+  cardano_cbor_reader_unref(&reader);
+
+  return utxo_list;
+}
+
+/**
+ * \brief Computes the price of a total size of reference scripts with the tiered model, in exact arithmetic over a
+ * common denominator: the denominator of the price times 5 to the power of the index of the last tier.
+ *
+ * \param size The total size of the reference scripts, in bytes.
+ * \param numerator The numerator of the price of a byte in the first tier.
+ * \param denominator The denominator of the price of a byte in the first tier.
+ * \param round_every_tier Whether the price of every tier is rounded up, instead of flooring the exact sum once.
+ * \return The fee.
+ */
+static uint64_t
+compute_exact_tiered_fee(const uint64_t size, const uint64_t numerator, const uint64_t denominator, const bool round_every_tier)
+{
+  std::vector<uint64_t> tier_sizes;
+  uint64_t              remaining = size;
+
+  while (remaining > 0U)
+  {
+    const uint64_t tier_size = (remaining < 25600U) ? remaining : 25600U;
+
+    tier_sizes.push_back(tier_size);
+    remaining -= tier_size;
+  }
+
+  unsigned __int128 sum_numerator   = 0U;
+  unsigned __int128 sum_denominator = denominator;
+  unsigned __int128 rounded_fee     = 0U;
+  unsigned __int128 six_power       = 1U;
+  unsigned __int128 five_power      = 1U;
+
+  for (size_t i = 1U; i < tier_sizes.size(); ++i)
+  {
+    sum_denominator *= 5U;
+  }
+
+  for (size_t k = 0U; k < tier_sizes.size(); ++k)
+  {
+    const unsigned __int128 tier_numerator   = (unsigned __int128)tier_sizes[k] * numerator * six_power;
+    const unsigned __int128 tier_denominator = (unsigned __int128)denominator * five_power;
+
+    rounded_fee   += (tier_numerator + tier_denominator - 1U) / tier_denominator;
+    sum_numerator += tier_numerator * (sum_denominator / tier_denominator);
+    six_power     *= 6U;
+    five_power    *= 5U;
+  }
+
+  return (uint64_t)(round_every_tier ? rounded_fee : (sum_numerator / sum_denominator));
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_fee_compute_min_ada_required, correctlyCorrectMinAdaFromVectors)
@@ -653,19 +788,23 @@ TEST(cardano_fee_gget_serialized_script_size, returnsErrorIfScriptIsNull)
 
 TEST(cardano_fee_get_serialized_script_size, returnsErrorIfMemoryAllocationFails)
 {
+  cardano_script_t* script = create_script(NATIVE_SCRIPT_CBOR);
+
   reset_allocators_run_count();
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   size_t size = 0U;
 
-  cardano_error_t result = cardano_get_serialized_script_size((cardano_script_t*)"", &size);
+  cardano_error_t result = cardano_get_serialized_script_size(script, &size);
 
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(size, 0U);
 
   cardano_set_allocators(malloc, realloc, free);
+  cardano_script_unref(&script);
 }
 
-TEST(cardano_fee_get_serialized_script_size, measuresANativeScriptTogetherWithItsLanguageTag)
+TEST(cardano_fee_get_serialized_script_size, measuresANativeScriptWithoutItsLanguageTag)
 {
   // Arrange
   cardano_script_t* script = create_script(NATIVE_SCRIPT_CBOR);
@@ -676,14 +815,79 @@ TEST(cardano_fee_get_serialized_script_size, measuresANativeScriptTogetherWithIt
 
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(size, strlen(NATIVE_SCRIPT_CBOR) / 2U);
+  EXPECT_EQ(size, (strlen(NATIVE_SCRIPT_CBOR) / 2U) - 2U);
   EXPECT_EQ(size, NATIVE_REFERENCE_SCRIPT_SIZE);
 
   // Cleanup
   cardano_script_unref(&script);
 }
 
-TEST(cardano_fee_get_serialized_script_size, measuresAPlutusScriptOfEveryVersionTogetherWithItsLanguageTag)
+TEST(cardano_fee_get_serialized_script_size, measuresADecodedNativeScriptWithTheNonMinimalBytesItWasDecodedFrom)
+{
+  // Arrange
+  cardano_script_t*                script         = create_script(NON_MINIMAL_NATIVE_SCRIPT_CBOR);
+  cardano_script_invalid_before_t* invalid_before = NULL;
+  cardano_native_script_t*         native_script  = NULL;
+  cardano_script_t*                rebuilt        = NULL;
+  size_t                           size           = 0U;
+  size_t                           rebuilt_size   = 0U;
+
+  EXPECT_EQ(cardano_script_invalid_before_new(5U, &invalid_before), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_native_script_new_invalid_before(invalid_before, &native_script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_new_native(native_script, &rebuilt), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result         = cardano_get_serialized_script_size(script, &size);
+  cardano_error_t rebuilt_result = cardano_get_serialized_script_size(rebuilt, &rebuilt_size);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(rebuilt_result, CARDANO_SUCCESS);
+  EXPECT_EQ(size, (strlen(NON_MINIMAL_NATIVE_SCRIPT_CBOR) / 2U) - 2U);
+  EXPECT_EQ(size, 11U);
+  EXPECT_EQ(rebuilt_size, 3U);
+
+  // Cleanup
+  cardano_script_unref(&script);
+  cardano_script_unref(&rebuilt);
+  cardano_native_script_unref(&native_script);
+  cardano_script_invalid_before_unref(&invalid_before);
+}
+
+TEST(cardano_fee_get_serialized_script_size, measuresTheBytesOfALargePlutusScriptWithoutTheHeaderOfItsByteString)
+{
+  // Arrange
+  cardano_utxo_list_t*          utxo_list = create_reference_script_inputs(1);
+  cardano_utxo_t*               utxo      = NULL;
+  cardano_transaction_output_t* output    = NULL;
+  cardano_script_t*             script    = NULL;
+  cardano_cbor_writer_t*        writer    = cardano_cbor_writer_new();
+  size_t                        size      = 0U;
+
+  EXPECT_EQ(cardano_utxo_list_get(utxo_list, 0U, &utxo), CARDANO_SUCCESS);
+
+  output = cardano_utxo_get_output(utxo);
+  script = cardano_transaction_output_get_script_ref(output);
+
+  EXPECT_EQ(cardano_script_to_cbor(script, writer), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_get_serialized_script_size(script, &size);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(size, LARGE_REFERENCE_SCRIPT_SIZE);
+  EXPECT_EQ(size, cardano_cbor_writer_get_encode_size(writer) - 5U);
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+  cardano_script_unref(&script);
+  cardano_transaction_output_unref(&output);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_get_serialized_script_size, measuresAPlutusScriptOfEveryVersionWithoutItsLanguageTag)
 {
   for (size_t i = 0; i < sizeof(PLUTUS_SCRIPT_CBORS) / sizeof(PLUTUS_SCRIPT_CBORS[0]); ++i)
   {
@@ -696,7 +900,7 @@ TEST(cardano_fee_get_serialized_script_size, measuresAPlutusScriptOfEveryVersion
 
     // Assert
     EXPECT_EQ(result, CARDANO_SUCCESS);
-    EXPECT_EQ(size, strlen(PLUTUS_SCRIPT_CBORS[i]) / 2U);
+    EXPECT_EQ(size, (strlen(PLUTUS_SCRIPT_CBORS[i]) / 2U) - 3U);
     EXPECT_EQ(size, PLUTUS_REFERENCE_SCRIPT_SIZE);
 
     // Cleanup
@@ -859,7 +1063,7 @@ TEST(cardano_fee_compute_min_script_fee, pricesTheReferenceScriptsIfTheBatchHasN
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(fee, LARGE_REFERENCE_SCRIPT_SIZE * REFERENCE_SCRIPT_BYTE_COST);
-  EXPECT_EQ(fee, 38490U);
+  EXPECT_EQ(fee, 38415U);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -911,7 +1115,7 @@ TEST(cardano_fee_compute_min_script_fee, pricesANativeReferenceScriptIfTheTransa
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(fee, NATIVE_REFERENCE_SCRIPT_SIZE * REFERENCE_SCRIPT_BYTE_COST);
-  EXPECT_EQ(fee, 510U);
+  EXPECT_EQ(fee, 480U);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -1126,7 +1330,7 @@ TEST(cardano_fee_compute_script_ref_fee, countsAReferenceScriptListedTwiceTwice)
   EXPECT_EQ(cardano_compute_script_ref_fee(listed_twice, script_ref_cost, &fee_twice), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(fee_once, 2566U * 15U);
+  EXPECT_EQ(fee_once, 2561U * 15U);
   EXPECT_EQ(fee_twice, 2U * fee_once);
 
   // Cleanup
@@ -1153,7 +1357,7 @@ TEST(cardano_fee_compute_script_ref_fee, pricesANativeReferenceScript)
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(fee, NATIVE_REFERENCE_SCRIPT_SIZE * REFERENCE_SCRIPT_BYTE_COST);
-  EXPECT_EQ(fee, 510U);
+  EXPECT_EQ(fee, 480U);
 
   // Cleanup
   cardano_unit_interval_unref(&script_ref_cost);
@@ -1176,9 +1380,9 @@ TEST(cardano_fee_compute_script_ref_fee, pricesTheReferenceScriptsOfEveryLanguag
   const uint64_t total_size = NATIVE_REFERENCE_SCRIPT_SIZE + (4U * PLUTUS_REFERENCE_SCRIPT_SIZE) + LARGE_REFERENCE_SCRIPT_SIZE;
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(total_size, 2668U);
+  EXPECT_EQ(total_size, 2649U);
   EXPECT_EQ(fee, total_size * REFERENCE_SCRIPT_BYTE_COST);
-  EXPECT_EQ(fee, 40020U);
+  EXPECT_EQ(fee, 39735U);
 
   // Cleanup
   cardano_unit_interval_unref(&script_ref_cost);
@@ -1202,11 +1406,284 @@ TEST(cardano_fee_compute_script_ref_fee, pricesTheBytesOfTheSecondTierAtAHigherR
   const uint64_t second_tier_size = total_size - REFERENCE_SCRIPT_TIER_SIZE;
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_EQ(second_tier_size, 2626U);
+  EXPECT_EQ(second_tier_size, 2571U);
   EXPECT_EQ(fee, (REFERENCE_SCRIPT_TIER_SIZE * REFERENCE_SCRIPT_BYTE_COST) + (second_tier_size * 18U));
-  EXPECT_EQ(fee, 431268U);
+  EXPECT_EQ(fee, 430278U);
 
   // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, floorsTheExactSumOfTheTiersOnce)
+{
+  for (size_t i = 0U; i < sizeof(tiered_fee_vectors) / sizeof(tiered_fee_vectors[0]); ++i)
+  {
+    // Arrange
+    const tiered_fee_vector_t* vector          = &tiered_fee_vectors[i];
+    cardano_unit_interval_t*   script_ref_cost = NULL;
+    cardano_utxo_list_t*       utxo_list       = create_sized_reference_script_inputs(vector->size);
+    uint64_t                   fee             = 1U;
+
+    EXPECT_EQ(cardano_unit_interval_new(vector->cost_numerator, vector->cost_denominator, &script_ref_cost), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(fee, vector->fee);
+    EXPECT_EQ(fee, compute_exact_tiered_fee(vector->size, vector->cost_numerator, vector->cost_denominator, false));
+    EXPECT_EQ(vector->per_tier_ceiling_fee, compute_exact_tiered_fee(vector->size, vector->cost_numerator, vector->cost_denominator, true));
+    EXPECT_LE(fee, vector->per_tier_ceiling_fee);
+
+    // Cleanup
+    cardano_unit_interval_unref(&script_ref_cost);
+    cardano_utxo_list_unref(&utxo_list);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee, chargesLessThanRoundingEveryTierUpWhenTheTiersHaveFractions)
+{
+  // Arrange
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(204800U);
+  uint64_t                 fee             = 0U;
+
+  EXPECT_EQ(cardano_unit_interval_new(15U, 1U, &script_ref_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, 6335648U);
+  EXPECT_EQ(compute_exact_tiered_fee(204800U, 15U, 1U, true), 6335650U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, reducesThePriceBeforePricingTheTiers)
+{
+  // Arrange
+  cardano_unit_interval_t* reduced_cost    = NULL;
+  cardano_unit_interval_t* unreduced_cost  = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(204800U);
+  uint64_t                 reduced_fee     = 0U;
+  uint64_t                 unreduced_fee   = 0U;
+  const uint64_t           large_divisor   = 1000000000000U;
+  const uint64_t           large_numerator = 15U * large_divisor;
+
+  EXPECT_EQ(cardano_unit_interval_new(15U, 1U, &reduced_cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(large_numerator, large_divisor, &unreduced_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t reduced_result   = cardano_compute_script_ref_fee(utxo_list, reduced_cost, &reduced_fee);
+  cardano_error_t unreduced_result = cardano_compute_script_ref_fee(utxo_list, unreduced_cost, &unreduced_fee);
+
+  // Assert
+  EXPECT_EQ(reduced_result, CARDANO_SUCCESS);
+  EXPECT_EQ(unreduced_result, CARDANO_SUCCESS);
+  EXPECT_EQ(unreduced_fee, reduced_fee);
+
+  // Cleanup
+  cardano_unit_interval_unref(&reduced_cost);
+  cardano_unit_interval_unref(&unreduced_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, returnsErrorIfTheFeeOfASingleTierOverflows)
+{
+  // Arrange
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = NULL;
+  uint64_t                 fee             = 1U;
+
+  EXPECT_EQ(cardano_unit_interval_new(UINT64_MAX, 1U, &script_ref_cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  add_utxo(utxo_list, NATIVE_REFERENCE_SCRIPT_UTXO);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, returnsErrorIfTheFeeOverflows)
+{
+  // Arrange
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(REFERENCE_SCRIPT_TIER_SIZE + 1U);
+  uint64_t                 fee             = 1U;
+
+  EXPECT_EQ(cardano_unit_interval_new(UINT64_MAX / REFERENCE_SCRIPT_TIER_SIZE, 1U, &script_ref_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeIfThePriceDenominatorOfTheNextTierOverflows)
+{
+  // Arrange
+  const uint64_t           denominator     = UINT64_MAX / 2U;
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(REFERENCE_SCRIPT_TIER_SIZE + 1U);
+  uint64_t                 fee             = 1U;
+
+  EXPECT_EQ(cardano_unit_interval_new(1U, denominator, &script_ref_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_GE(fee, compute_exact_tiered_fee(REFERENCE_SCRIPT_TIER_SIZE + 1U, 1U, denominator, false));
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeOfAPriceConvertedFromAFloatingPointValue)
+{
+  // Arrange
+  const uint64_t numerator   = 7333333333333333U;
+  const uint64_t denominator = 500000000000000U;
+  const uint64_t sizes[]     = { 60000U, 204800U };
+  const uint64_t fees[]      = { 1011882U, 6194856U };
+
+  for (size_t i = 0U; i < sizeof(sizes) / sizeof(sizes[0]); ++i)
+  {
+    cardano_unit_interval_t* script_ref_cost = NULL;
+    cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(sizes[i]);
+    uint64_t                 fee             = 0U;
+
+    EXPECT_EQ(cardano_unit_interval_new(numerator, denominator, &script_ref_cost), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+    // Assert
+    const uint64_t exact_fee = compute_exact_tiered_fee(sizes[i], numerator, denominator, false);
+
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_GE(fee, exact_fee);
+    EXPECT_LE(fee - exact_fee, 2U);
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_unit_interval_unref(&script_ref_cost);
+    cardano_utxo_list_unref(&utxo_list);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeIfThePriceOfATierOverflowsWithASmallDenominator)
+{
+  // Arrange
+  const uint64_t numerators[]   = { 1099511627777U, 17179869184U };
+  const uint64_t denominators[] = { 3U, 1U };
+  const uint64_t fees[]         = { 154802650328422400U, 7256374234700800U };
+  const uint64_t size           = 8U * REFERENCE_SCRIPT_TIER_SIZE;
+
+  for (size_t i = 0U; i < sizeof(numerators) / sizeof(numerators[0]); ++i)
+  {
+    cardano_unit_interval_t* script_ref_cost = NULL;
+    cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(size);
+    uint64_t                 fee             = 0U;
+
+    EXPECT_EQ(cardano_unit_interval_new(numerators[i], denominators[i], &script_ref_cost), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+    // Assert
+    const uint64_t exact_fee = compute_exact_tiered_fee(size, numerators[i], denominators[i], false);
+
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_GE(fee, exact_fee);
+    EXPECT_LT(fee - exact_fee, exact_fee / 1000000000U);
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_unit_interval_unref(&script_ref_cost);
+    cardano_utxo_list_unref(&utxo_list);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee, returnsErrorIfThePriceHasAZeroDenominator)
+{
+  // Arrange
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = NULL;
+  cardano_utxo_list_t*     no_scripts      = NULL;
+  uint64_t                 fee             = 1U;
+  uint64_t                 no_scripts_fee  = 1U;
+
+  EXPECT_EQ(cardano_unit_interval_new(15U, 0U, &script_ref_cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&no_scripts), CARDANO_SUCCESS);
+
+  add_utxo(utxo_list, NATIVE_REFERENCE_SCRIPT_UTXO);
+  add_utxo(no_scripts, RESOLVED_INPUT);
+
+  // Act
+  cardano_error_t result            = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+  cardano_error_t no_scripts_result = cardano_compute_script_ref_fee(no_scripts, script_ref_cost, &no_scripts_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(fee, 0U);
+  EXPECT_EQ(no_scripts_result, CARDANO_SUCCESS);
+  EXPECT_EQ(no_scripts_fee, 0U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_utxo_list_unref(&no_scripts);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, returnsErrorIfMemoryAllocationFailsWhileMeasuringANativeScript)
+{
+  // Arrange
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = NULL;
+  uint64_t                 fee             = 1U;
+
+  EXPECT_EQ(cardano_unit_interval_new(15U, 1U, &script_ref_cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  add_utxo(utxo_list, NATIVE_REFERENCE_SCRIPT_UTXO);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
   cardano_unit_interval_unref(&script_ref_cost);
   cardano_utxo_list_unref(&utxo_list);
 }
@@ -1231,7 +1708,7 @@ TEST(cardano_fee_compute_transaction_fee, pricesTheReferenceScriptsOfATransactio
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(no_script_result, CARDANO_SUCCESS);
   EXPECT_EQ(no_script_fee, tx_fee_vectors[0].fee);
-  EXPECT_EQ(fee, tx_fee_vectors[0].fee + 40020U);
+  EXPECT_EQ(fee, tx_fee_vectors[0].fee + 39735U);
 
   // Cleanup
   cardano_transaction_unref(&tx);

@@ -108,16 +108,17 @@ static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
 
 /**
  * The fee of the native reference script that requires one signature, with the reference script price per byte set by
- * \ref init_protocol_parameters (15 lovelace): a native script of 32 bytes plus the two bytes of the array that holds
- * the language tag and the script, all of it inside the first pricing tier.
+ * \ref init_protocol_parameters (15 lovelace): the 32 bytes of the CBOR of the native script, without the two
+ * bytes of the array that holds the language tag and the script, all of it inside the first pricing tier.
  */
-static const uint64_t NATIVE_REFERENCE_SCRIPT_FEE = 34U * 15U;
+static const uint64_t NATIVE_REFERENCE_SCRIPT_FEE = 32U * 15U;
 
 /**
- * The fee of the Plutus reference script \ref PLUTUS_SCRIPT_HEX, with the same price per byte: a script of 14 bytes,
- * the byte of the header of its byte string and the two bytes of the array that holds the language tag and the script.
+ * The fee of the Plutus reference script \ref PLUTUS_SCRIPT_HEX, with the same price per byte: the 14 bytes of the
+ * script, without the byte of the header of its byte string and the two bytes of the array that holds the language tag
+ * and the script.
  */
-static const uint64_t PLUTUS_REFERENCE_SCRIPT_FEE = 17U * 15U;
+static const uint64_t PLUTUS_REFERENCE_SCRIPT_FEE = 14U * 15U;
 
 /* STRUCTURES ****************************************************************/
 
@@ -4049,7 +4050,7 @@ TEST(cardano_balance_transaction, paysForTheReferenceScriptsOfTheSubTransactions
 
   EXPECT_EQ(result_without_refs, CARDANO_SUCCESS);
   EXPECT_EQ(result_with_refs, CARDANO_SUCCESS);
-  EXPECT_EQ(reference_script_fee, 2U * 17U * 15U);
+  EXPECT_EQ(reference_script_fee, 2U * 14U * 15U);
   EXPECT_TRUE(is_batch_balanced(tx_with_refs, protocol, sub_tx_inputs, available_utxo));
   EXPECT_GE(get_fee(tx_with_refs), batch_min_fee);
   EXPECT_EQ(get_fee(tx_with_refs), get_fee(tx_without_refs) + reference_script_fee);
