@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "internals/collateral.h"
+#include "internals/scripts_needed.h"
 #include "internals/unique_signers.h"
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
@@ -919,73 +920,20 @@ exclude_sub_transaction_inputs(
 }
 
 /**
- * \brief Checks whether a list of resolved UTXOs carries a PlutusV1, PlutusV2 or PlutusV3 reference script.
- *
- * \param[in]  utxos             The resolved UTXOs to inspect, or NULL when there are none.
- * \param[out] has_legacy_script Set to true if one of the reference scripts is a PlutusV1, PlutusV2 or PlutusV3 script.
- *
- * \return \ref CARDANO_SUCCESS if the UTXOs were inspected, or an appropriate error code.
- */
-static cardano_error_t
-has_legacy_reference_script(cardano_utxo_list_t* utxos, bool* has_legacy_script)
-{
-  const size_t num_utxos = cardano_utxo_list_get_length(utxos);
-
-  bool found = false;
-
-  for (size_t i = 0U; (i < num_utxos) && !found; ++i)
-  {
-    cardano_utxo_t* utxo = NULL;
-
-    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
-    cardano_utxo_unref(&utxo);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
-    cardano_transaction_output_unref(&output);
-
-    cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
-    cardano_script_unref(&script);
-
-    if (script == NULL)
-    {
-      continue;
-    }
-
-    cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
-
-    result = cardano_script_get_language(script, &language);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-
-    found = (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1) ||
-      (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2) ||
-      (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
-  }
-
-  *has_legacy_script = found;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
  * \brief Checks whether the ledger validates a transaction in legacy mode.
  *
- * A top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
- * its sub transactions removed. The scripts of the top level witness set, the reference scripts of the resolved top
- * level reference inputs and the reference scripts of the pre selected inputs are inspected.
+ * A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
+ * its sub transactions removed. The scripts the body needs are collected from the spent inputs, the mint field, the
+ * withdrawals, the certificates, the voters, the guardrails scripts of the proposals and the guards, and each one is
+ * looked up among the scripts provided by the witness set and by the reference scripts of the resolved reference
+ * inputs, the pre selected inputs and the inputs chosen by coin selection. A needed script that none of them provides
+ * has an unknown language and does not make the transaction legacy.
  *
- * \param[in]  tx                The top level transaction.
+ * \param[in]  tx                The top level transaction, whose inputs are the ones of the current iteration.
  * \param[in]  reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
  * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
- * \param[out] is_legacy_mode    Set to true if the transaction uses a PlutusV1, PlutusV2 or PlutusV3 script.
+ * \param[in]  selection         The UTXOs spent by the transaction on this iteration.
+ * \param[out] is_legacy_mode    Set to true if the transaction needs a PlutusV1, PlutusV2 or PlutusV3 script.
  *
  * \return \ref CARDANO_SUCCESS if the transaction was inspected, or an appropriate error code.
  */
@@ -994,36 +942,111 @@ is_legacy_mode_transaction(
   cardano_transaction_t* tx,
   cardano_utxo_list_t*   reference_inputs,
   cardano_utxo_list_t*   pre_selected_utxo,
+  cardano_utxo_list_t*   selection,
   bool*                  is_legacy_mode)
 {
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
-  cardano_witness_set_unref(&witnesses);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
 
-  cardano_plutus_v1_script_set_t* plutus_v1_scripts = cardano_witness_set_get_plutus_v1_scripts(witnesses);
-  cardano_plutus_v2_script_set_t* plutus_v2_scripts = cardano_witness_set_get_plutus_v2_scripts(witnesses);
-  cardano_plutus_v3_script_set_t* plutus_v3_scripts = cardano_witness_set_get_plutus_v3_scripts(witnesses);
+  cardano_utxo_list_t* spent_utxos = selection;
+  cardano_utxo_list_ref(selection);
 
-  cardano_plutus_v1_script_set_unref(&plutus_v1_scripts);
-  cardano_plutus_v2_script_set_unref(&plutus_v2_scripts);
-  cardano_plutus_v3_script_set_unref(&plutus_v3_scripts);
-
-  *is_legacy_mode = (cardano_plutus_v1_script_set_get_length(plutus_v1_scripts) > 0U) ||
-    (cardano_plutus_v2_script_set_get_length(plutus_v2_scripts) > 0U) ||
-    (cardano_plutus_v3_script_set_get_length(plutus_v3_scripts) > 0U);
-
-  if (*is_legacy_mode)
+  if (pre_selected_utxo != NULL)
   {
-    return CARDANO_SUCCESS;
+    cardano_utxo_list_unref(&spent_utxos);
+    spent_utxos = cardano_utxo_list_concat(pre_selected_utxo, selection);
+
+    if (spent_utxos == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
-  const cardano_error_t result = has_legacy_reference_script(reference_inputs, is_legacy_mode);
+  cardano_blake2b_hash_set_t* needed_scripts = NULL;
 
-  if ((result != CARDANO_SUCCESS) || *is_legacy_mode)
+  cardano_error_t result = _cardano_get_script_hashes_needed(body, spent_utxos, &needed_scripts);
+
+  cardano_utxo_list_unref(&spent_utxos);
+
+  if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  return has_legacy_reference_script(pre_selected_utxo, is_legacy_mode);
+  bool has_plutus_v1       = false;
+  bool has_plutus_v2       = false;
+  bool has_plutus_v3       = false;
+  bool has_plutus_v4       = false;
+  bool has_missing_scripts = false;
+
+  result = _cardano_get_plutus_languages_used(
+    tx,
+    needed_scripts,
+    reference_inputs,
+    pre_selected_utxo,
+    selection,
+    &has_plutus_v1,
+    &has_plutus_v2,
+    &has_plutus_v3,
+    &has_plutus_v4,
+    &has_missing_scripts);
+
+  cardano_blake2b_hash_set_unref(&needed_scripts);
+
+  *is_legacy_mode = has_plutus_v1 || has_plutus_v2 || has_plutus_v3;
+
+  return result;
+}
+
+/**
+ * \brief Rejects an iteration of the balancing loop whose sub transactions must, but do not, balance between themselves.
+ *
+ * When the top level transaction of the current iteration is validated in legacy mode it must conserve value by itself,
+ * so a net imbalance of its sub transactions can not be absorbed by top level inputs or change.
+ *
+ * \param[in] tx                         The top level transaction, whose inputs are the ones of the current iteration.
+ * \param[in] sub_transactions_imbalance The net imbalance of the sub transactions.
+ * \param[in] reference_inputs           The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in] pre_selected_utxo          The UTXOs that must be included in the transaction inputs, or NULL when there
+ *                                       are none.
+ * \param[in] selection                  The UTXOs spent by the transaction on this iteration.
+ *
+ * \return \ref CARDANO_SUCCESS if the iteration may go on, \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the
+ *         transaction is validated in legacy mode and its sub transactions do not balance between themselves, or an
+ *         appropriate error code.
+ */
+static cardano_error_t
+check_legacy_mode_sub_transactions(
+  cardano_transaction_t* tx,
+  cardano_value_t*       sub_transactions_imbalance,
+  cardano_utxo_list_t*   reference_inputs,
+  cardano_utxo_list_t*   pre_selected_utxo,
+  cardano_utxo_list_t*   selection)
+{
+  if (cardano_value_is_zero(sub_transactions_imbalance))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  bool is_legacy_mode = false;
+
+  const cardano_error_t result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, &is_legacy_mode);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (!is_legacy_mode)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_transaction_set_last_error(
+    tx,
+    "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
+
+  return CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS;
 }
 
 /**
@@ -2023,6 +2046,17 @@ balance_transaction(
       return result;
     }
 
+    result = check_legacy_mode_sub_transactions(unbalanced_tx, sub_transactions_imbalance, reference_inputs, pre_selected_utxo, selection);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_utxo_list_unref(&selection);
+      cardano_utxo_list_unref(&remaining_utxo);
+
+      return result;
+    }
+
     // Deferred redeemers are resolved once the canonical input order and the change outputs are
     // final, and before evaluation, so that payloads are priced within the same iteration.
     result = cardano_deferred_redeemer_list_resolve(deferred_redeemers, unbalanced_tx, selection);
@@ -2414,33 +2448,6 @@ cardano_balance_transaction(
     }
 
     return result;
-  }
-
-  if (!cardano_value_is_zero(sub_transactions_imbalance))
-  {
-    bool is_legacy_mode = false;
-
-    result = is_legacy_mode_transaction(unbalanced_tx, reference_inputs, pre_selected_utxo, &is_legacy_mode);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      cardano_utxo_list_unref(&sub_transaction_spent_utxos);
-      cardano_value_unref(&sub_transactions_imbalance);
-
-      return result;
-    }
-
-    if (is_legacy_mode)
-    {
-      cardano_utxo_list_unref(&sub_transaction_spent_utxos);
-      cardano_value_unref(&sub_transactions_imbalance);
-
-      cardano_transaction_set_last_error(
-        unbalanced_tx,
-        "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
-
-      return CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS;
-    }
   }
 
   cardano_utxo_list_t* selectable_utxo = NULL;

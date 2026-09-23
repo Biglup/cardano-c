@@ -574,13 +574,19 @@ _process_auth_committee_hot(
 }
 
 cardano_error_t
-_process_certificate_with_credential(
-  cardano_blake2b_hash_set_t* unique_signers,
-  cardano_certificate_t*      certificate,
-  cardano_cert_type_t         type)
+_cardano_get_certificate_credential(
+  cardano_certificate_t* certificate,
+  cardano_cert_type_t    type,
+  cardano_credential_t** credential)
 {
-  cardano_error_t       result;
-  cardano_credential_t* credential = NULL;
+  if (credential == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *credential = NULL;
+
+  cardano_error_t result;
 
   switch (type)
   {
@@ -594,7 +600,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_stake_deregistration_cert_get_credential(deregistration);
+      *credential = cardano_stake_deregistration_cert_get_credential(deregistration);
       cardano_stake_deregistration_cert_unref(&deregistration);
 
       break;
@@ -609,7 +615,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_stake_delegation_cert_get_credential(delegation);
+      *credential = cardano_stake_delegation_cert_get_credential(delegation);
       cardano_stake_delegation_cert_unref(&delegation);
 
       break;
@@ -624,7 +630,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_registration_cert_get_stake_credential(registration);
+      *credential = cardano_registration_cert_get_stake_credential(registration);
       cardano_registration_cert_unref(&registration);
 
       break;
@@ -639,7 +645,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_unregistration_cert_get_credential(unregistration);
+      *credential = cardano_unregistration_cert_get_credential(unregistration);
       cardano_unregistration_cert_unref(&unregistration);
 
       break;
@@ -654,7 +660,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_vote_delegation_cert_get_credential(vote_delegation);
+      *credential = cardano_vote_delegation_cert_get_credential(vote_delegation);
       cardano_vote_delegation_cert_unref(&vote_delegation);
 
       break;
@@ -669,7 +675,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_stake_vote_delegation_cert_get_credential(stake_vote_delegation);
+      *credential = cardano_stake_vote_delegation_cert_get_credential(stake_vote_delegation);
       cardano_stake_vote_delegation_cert_unref(&stake_vote_delegation);
 
       break;
@@ -684,7 +690,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_stake_registration_delegation_cert_get_credential(stake_registration_delegation);
+      *credential = cardano_stake_registration_delegation_cert_get_credential(stake_registration_delegation);
       cardano_stake_registration_delegation_cert_unref(&stake_registration_delegation);
 
       break;
@@ -699,7 +705,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_vote_registration_delegation_cert_get_credential(vote_registration_delegation);
+      *credential = cardano_vote_registration_delegation_cert_get_credential(vote_registration_delegation);
       cardano_vote_registration_delegation_cert_unref(&vote_registration_delegation);
 
       break;
@@ -714,7 +720,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_stake_vote_registration_delegation_cert_get_credential(stake_vote_registration_delegation);
+      *credential = cardano_stake_vote_registration_delegation_cert_get_credential(stake_vote_registration_delegation);
       cardano_stake_vote_registration_delegation_cert_unref(&stake_vote_registration_delegation);
 
       break;
@@ -729,7 +735,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_resign_committee_cold_cert_get_credential(resign_committee);
+      *credential = cardano_resign_committee_cold_cert_get_credential(resign_committee);
       cardano_resign_committee_cold_cert_unref(&resign_committee);
 
       break;
@@ -744,7 +750,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_register_drep_cert_get_credential(register_drep);
+      *credential = cardano_register_drep_cert_get_credential(register_drep);
       cardano_register_drep_cert_unref(&register_drep);
 
       break;
@@ -759,7 +765,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_unregister_drep_cert_get_credential(unregister_drep);
+      *credential = cardano_unregister_drep_cert_get_credential(unregister_drep);
       cardano_unregister_drep_cert_unref(&unregister_drep);
 
       break;
@@ -774,7 +780,7 @@ _process_certificate_with_credential(
         return result;
       }
 
-      credential = cardano_update_drep_cert_get_credential(update_drep);
+      *credential = cardano_update_drep_cert_get_credential(update_drep);
       cardano_update_drep_cert_unref(&update_drep);
 
       break;
@@ -783,9 +789,26 @@ _process_certificate_with_credential(
       return CARDANO_SUCCESS;
   }
 
-  if (credential == NULL)
+  if (*credential == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_process_certificate_with_credential(
+  cardano_blake2b_hash_set_t* unique_signers,
+  cardano_certificate_t*      certificate,
+  cardano_cert_type_t         type)
+{
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = _cardano_get_certificate_credential(certificate, type, &credential);
+
+  if ((result != CARDANO_SUCCESS) || (credential == NULL))
+  {
+    return result;
   }
 
   result = _process_credential(unique_signers, credential);

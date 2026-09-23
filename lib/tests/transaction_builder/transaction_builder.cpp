@@ -7521,11 +7521,18 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInL
   cardano_utxo_list_t*           seller_utxos   = new_single_utxo_list(seller_utxo);
   cardano_utxo_list_t*           batcher_utxos  = new_single_utxo_list(batcher_utxo);
   cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+  cardano_transaction_output_t*  ref_output     = cardano_utxo_get_output(reference_utxo);
+  cardano_script_t*              ref_script     = cardano_transaction_output_get_script_ref(ref_output);
+  cardano_blake2b_hash_t*        ref_hash       = cardano_script_get_hash(ref_script);
+  cardano_credential_t*          script_guard   = nullptr;
+
+  EXPECT_EQ(cardano_credential_new(ref_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_guard), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
 
   // Act
   cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
+  cardano_tx_builder_add_guard(tx_builder, script_guard);
   cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
 
   cardano_transaction_t* tx     = nullptr;
@@ -7534,9 +7541,13 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInL
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
   EXPECT_EQ(tx, nullptr);
-  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction uses PlutusV1, PlutusV2 or PlutusV3 scripts, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
 
   // Cleanup
+  cardano_credential_unref(&script_guard);
+  cardano_blake2b_hash_unref(&ref_hash);
+  cardano_script_unref(&ref_script);
+  cardano_transaction_output_unref(&ref_output);
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
   cardano_sub_transaction_unref(&seller_sub_tx);
@@ -7561,11 +7572,18 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfT
   cardano_utxo_list_t*           buyer_utxos    = new_single_utxo_list(buyer_utxo);
   cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
   cardano_sub_transaction_t*     buyer_sub_tx   = build_party_sub_transaction(params, buyer_utxo, 224831727, 1);
+  cardano_transaction_output_t*  ref_output     = cardano_utxo_get_output(reference_utxo);
+  cardano_script_t*              ref_script     = cardano_transaction_output_get_script_ref(ref_output);
+  cardano_blake2b_hash_t*        ref_hash       = cardano_script_get_hash(ref_script);
+  cardano_credential_t*          script_guard   = nullptr;
+
+  EXPECT_EQ(cardano_credential_new(ref_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_guard), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
 
   // Act
   cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
+  cardano_tx_builder_add_guard(tx_builder, script_guard);
   cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
   cardano_tx_builder_add_sub_transaction(tx_builder, buyer_sub_tx, buyer_utxos);
 
@@ -7587,6 +7605,10 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfT
   EXPECT_TRUE(cardano_value_is_zero(top_level_imbalance));
 
   // Cleanup
+  cardano_credential_unref(&script_guard);
+  cardano_blake2b_hash_unref(&ref_hash);
+  cardano_script_unref(&ref_script);
+  cardano_transaction_output_unref(&ref_output);
   cardano_value_unref(&top_level_imbalance);
   cardano_transaction_unref(&tx);
   cardano_tx_builder_unref(&tx_builder);

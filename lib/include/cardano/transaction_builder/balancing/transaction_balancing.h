@@ -66,11 +66,17 @@ extern "C" {
  * spent by a sub transaction must be resolved, while the reference inputs of the sub transactions that are not resolved
  * are skipped.
  *
- * A top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script (in its witness set, as a reference script
- * of a resolved reference input or as a reference script of a pre selected input) must also conserve value by itself,
- * with the sub transactions removed. In that case the sub transactions must balance between themselves, otherwise the
- * function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction,
- * since top level change can not absorb the imbalance.
+ * A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
+ * the sub transactions removed. As the ledger does, the decision follows the scripts that run, not the scripts that are
+ * present: a script is needed when the transaction spends an input it locks, mints under its policy, withdraws from a
+ * reward account it controls, carries a certificate it must authorize, votes with it as the voter, carries a parameter
+ * change or treasury withdrawals proposal it guards as the guardrails script or lists it among its guards, and its
+ * language is taken from whatever source provides it: the witness set or a reference script of a resolved reference
+ * input, of a pre selected input or of an input chosen by coin selection. A script that is only present and that the
+ * transaction does not need never triggers this rule, and a needed native or PlutusV4 script does not either. The check
+ * is made on every balancing iteration, with the inputs of that iteration. When the rule applies the sub transactions
+ * must balance between themselves, otherwise the function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and
+ * the fix is to add a balancing sub transaction, since top level change can not absorb the imbalance.
  *
  * The fee always includes the reference scripts the ledger charges for, whatever their language and whether or not the
  * transaction has redeemers: every reference script found on the UTXOs of \p reference_inputs and on the UTXOs the
@@ -123,7 +129,7 @@ extern "C" {
  *
  * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input spent
  *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
- *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction uses a PlutusV1, PlutusV2 or PlutusV3 script and
+ *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and
  *         its sub transactions do not balance between themselves, or an appropriate error code indicating the type of failure.
  *
  * \note This function assumes that the `unbalanced_tx` is a valid but incomplete transaction, missing necessary inputs to meet the target balance.

@@ -964,7 +964,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_account_balance_interval_ex(
  * A sub transaction can withdraw part of the balance of an account: the ledger only requires that the withdrawals
  * of an account, added over the top level transaction and every sub transaction of the batch, do not exceed the
  * balance the account had before the batch. The rule that a withdrawal must drain the account exactly only
- * applies to the withdrawals of a top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script.
+ * applies to the withdrawals of a top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address

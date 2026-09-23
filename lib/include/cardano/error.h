@@ -354,8 +354,8 @@ typedef enum
 
   /**
    * \brief The sub transactions of a transaction do not balance between themselves. A top level transaction
-   * that uses a PlutusV1, PlutusV2 or PlutusV3 script must conserve value by itself, so the net imbalance of its
-   * sub transactions must be zero and can not be absorbed by top level inputs or change.
+   * that needs a PlutusV1, PlutusV2 or PlutusV3 script, whatever source provides it, must conserve value by itself,
+   * so the net imbalance of its sub transactions must be zero and can not be absorbed by top level inputs or change.
    */
   CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS = 1104,
 
