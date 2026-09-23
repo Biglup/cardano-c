@@ -1640,3 +1640,148 @@ TEST(cardano_asset_id_map_equals, bothHaveLovelaceAsset)
   cardano_asset_id_map_unref(&rhs_asset_id_map);
   cardano_asset_id_unref(&lovelace);
 }
+
+TEST(cardano_asset_id_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_asset_id_map_t* map = nullptr;
+
+  EXPECT_EQ(cardano_asset_id_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 31U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    const byte_t          name_bytes[1] = { (byte_t)i };
+    cardano_asset_name_t* name          = nullptr;
+    cardano_asset_id_t*   key           = nullptr;
+
+    EXPECT_EQ(cardano_asset_name_from_bytes(name_bytes, sizeof(name_bytes), &name), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_asset_id_new(hash, name, &key), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_asset_id_map_insert(map, key, 1), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_asset_name_unref(&name);
+    cardano_asset_id_unref(&key);
+  }
+
+  const size_t i = 31U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  const byte_t          name_bytes[1] = { (byte_t)i };
+  cardano_asset_name_t* name          = nullptr;
+  cardano_asset_id_t*   key           = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_bytes(name_bytes, sizeof(name_bytes), &name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_new(hash, name, &key), CARDANO_SUCCESS);
+
+  const size_t key_ref_count = cardano_asset_id_refcount(key);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_asset_id_map_insert(map, key, 1);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_asset_id_map_get_length(map), 31U);
+  EXPECT_EQ(cardano_asset_id_refcount(key), key_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_asset_id_map_unref(&map);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_asset_name_unref(&name);
+  cardano_asset_id_unref(&key);
+}
+
+TEST(cardano_asset_id_map_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_asset_id_map_t* lhs    = nullptr;
+  cardano_asset_id_map_t* rhs    = nullptr;
+  cardano_asset_id_map_t* result = nullptr;
+  cardano_asset_id_t*     key1   = new_default_asset_id(ASSET_ID_HEX_1);
+  cardano_asset_id_t*     key2   = new_default_asset_id(ASSET_ID_HEX_2);
+
+  EXPECT_EQ(cardano_asset_id_map_new(&lhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_new(&rhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_insert(lhs, key1, 1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_insert(lhs, key2, 2), CARDANO_SUCCESS);
+
+  const size_t key1_ref_count = cardano_asset_id_refcount(key1);
+  const size_t key2_ref_count = cardano_asset_id_refcount(key2);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t error = cardano_asset_id_map_add(lhs, rhs, &result);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(cardano_asset_id_refcount(key1), key1_ref_count);
+  EXPECT_EQ(cardano_asset_id_refcount(key2), key2_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_asset_id_map_unref(&lhs);
+  cardano_asset_id_map_unref(&rhs);
+  cardano_asset_id_unref(&key1);
+  cardano_asset_id_unref(&key2);
+}
+
+TEST(cardano_asset_id_map_subtract, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_asset_id_map_t* lhs    = nullptr;
+  cardano_asset_id_map_t* rhs    = nullptr;
+  cardano_asset_id_map_t* result = nullptr;
+  cardano_asset_id_t*     key1   = new_default_asset_id(ASSET_ID_HEX_1);
+  cardano_asset_id_t*     key2   = new_default_asset_id(ASSET_ID_HEX_2);
+
+  EXPECT_EQ(cardano_asset_id_map_new(&lhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_new(&rhs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_insert(lhs, key1, 1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_map_insert(lhs, key2, 2), CARDANO_SUCCESS);
+
+  const size_t key1_ref_count = cardano_asset_id_refcount(key1);
+  const size_t key2_ref_count = cardano_asset_id_refcount(key2);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t error = cardano_asset_id_map_subtract(lhs, rhs, &result);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(cardano_asset_id_refcount(key1), key1_ref_count);
+  EXPECT_EQ(cardano_asset_id_refcount(key2), key2_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_asset_id_map_unref(&lhs);
+  cardano_asset_id_map_unref(&rhs);
+  cardano_asset_id_unref(&key1);
+  cardano_asset_id_unref(&key2);
+}

@@ -1099,3 +1099,111 @@ TEST(cardano_proposed_param_updates_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_proposed_param_updates_unref(&updates);
 }
+
+TEST(cardano_proposed_param_updates_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_proposed_param_updates_t* updates = nullptr;
+  cardano_protocol_param_update_t*  update  = nullptr;
+
+  EXPECT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_proposed_param_updates_new(&updates), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_proposed_param_updates_insert(updates, hash, update), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+  }
+
+  const size_t i = 127U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  const size_t hash_ref_count   = cardano_blake2b_hash_refcount(hash);
+  const size_t update_ref_count = cardano_protocol_param_update_refcount(update);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_proposed_param_updates_insert(updates, hash, update);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_proposed_param_updates_get_size(updates), 127U);
+  EXPECT_EQ(cardano_blake2b_hash_refcount(hash), hash_ref_count);
+  EXPECT_EQ(cardano_protocol_param_update_refcount(update), update_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_proposed_param_updates_unref(&updates);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_proposed_param_updates_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_proposed_param_updates_t* updates = nullptr;
+  cardano_protocol_param_update_t*  update  = nullptr;
+
+  EXPECT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_proposed_param_updates_new(&updates), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_proposed_param_updates_insert(updates, hash, update), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_proposed_param_updates_to_cbor(updates, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*            reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_proposed_param_updates_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_proposed_param_updates_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_proposed_param_updates_unref(&updates);
+  cardano_protocol_param_update_unref(&update);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

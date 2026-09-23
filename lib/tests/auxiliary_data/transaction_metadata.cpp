@@ -1125,3 +1125,86 @@ TEST(cardano_transaction_metadata_to_cip116_json, returnErrorIfNullPointer)
   cardano_json_writer_unref(&writer);
   cardano_transaction_metadata_unref(&transaction_metadata);
 }
+
+TEST(cardano_transaction_metadata_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_transaction_metadata_t* map   = nullptr;
+  cardano_metadatum_t*            value = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &value), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_transaction_metadata_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 31U; ++i)
+  {
+    EXPECT_EQ(cardano_transaction_metadata_insert(map, (uint64_t)i, value), CARDANO_SUCCESS);
+  }
+
+  const size_t i = 31U;
+
+  const size_t value_ref_count = cardano_metadatum_refcount(value);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_transaction_metadata_insert(map, (uint64_t)i, value);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_transaction_metadata_get_length(map), 31U);
+  EXPECT_EQ(cardano_metadatum_refcount(value), value_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_transaction_metadata_unref(&map);
+  cardano_metadatum_unref(&value);
+}
+
+TEST(cardano_transaction_metadata_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_transaction_metadata_t* map   = nullptr;
+  cardano_metadatum_t*            value = nullptr;
+
+  EXPECT_EQ(cardano_metadatum_new_integer_from_int(1, &value), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_transaction_metadata_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 32U; ++i)
+  {
+    EXPECT_EQ(cardano_transaction_metadata_insert(map, (uint64_t)i, value), CARDANO_SUCCESS);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_transaction_metadata_to_cbor(map, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*          reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_transaction_metadata_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_transaction_metadata_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_transaction_metadata_unref(&map);
+  cardano_metadatum_unref(&value);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

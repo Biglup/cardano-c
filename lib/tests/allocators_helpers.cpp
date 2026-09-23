@@ -31,7 +31,8 @@ static int malloc_run_count  = 0;
 static int realloc_run_count = 0;
 static int free_run_count    = 0;
 
-static int malloc_limit = 0;
+static int malloc_limit  = 0;
+static int realloc_limit = 0;
 
 /* DEFINITIONS ***************************************************************/
 
@@ -53,6 +54,18 @@ void
 reset_limited_malloc()
 {
   malloc_limit = 0;
+}
+
+void
+set_realloc_limit(const int limit)
+{
+  realloc_limit = limit;
+}
+
+void
+reset_limited_realloc()
+{
+  realloc_limit = 0;
 }
 
 void*
@@ -241,5 +254,17 @@ fail_zero_size_malloc(const size_t size)
 void*
 fail_right_away_realloc(void* const ptr, const size_t size)
 {
+  return NULL;
+}
+
+void*
+fail_realloc_at_limit(void* const ptr, const size_t size)
+{
+  if (realloc_run_count < realloc_limit)
+  {
+    realloc_run_count++;
+    return realloc(ptr, size);
+  }
+
   return NULL;
 }

@@ -1249,3 +1249,131 @@ TEST(cardano_withdrawal_map_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_withdrawal_map_unref(&map);
 }
+
+TEST(cardano_withdrawal_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_withdrawal_map_t* map = nullptr;
+
+  EXPECT_EQ(cardano_withdrawal_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 31U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    cardano_credential_t* credential = nullptr;
+
+    EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+    cardano_reward_address_t* address = nullptr;
+
+    EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &address), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_withdrawal_map_insert(map, address, 1), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    cardano_reward_address_unref(&address);
+  }
+
+  const size_t i = 31U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  cardano_credential_t* credential = nullptr;
+
+  EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &address), CARDANO_SUCCESS);
+
+  const size_t address_ref_count = cardano_reward_address_refcount(address);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_withdrawal_map_insert(map, address, 1);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_withdrawal_map_get_length(map), 31U);
+  EXPECT_EQ(cardano_reward_address_refcount(address), address_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_withdrawal_map_unref(&map);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_credential_unref(&credential);
+  cardano_reward_address_unref(&address);
+}
+
+TEST(cardano_withdrawal_map_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_withdrawal_map_t* map = nullptr;
+
+  EXPECT_EQ(cardano_withdrawal_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 32U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    cardano_credential_t* credential = nullptr;
+
+    EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+    cardano_reward_address_t* address = nullptr;
+
+    EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &address), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_withdrawal_map_insert(map, address, 1), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    cardano_reward_address_unref(&address);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_withdrawal_map_to_cbor(map, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t*    reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_withdrawal_map_t* decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_withdrawal_map_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_withdrawal_map_unref(&map);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

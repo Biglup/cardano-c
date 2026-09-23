@@ -195,10 +195,10 @@ cardano_reward_address_list_add(cardano_reward_address_list_t* reward_address_li
   const size_t original_size = cardano_array_get_size(reward_address_list->array);
   const size_t new_size      = cardano_array_push(reward_address_list->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(reward_address_list->array, compare_by_bytes, NULL);
 

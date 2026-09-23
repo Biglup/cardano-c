@@ -1596,3 +1596,95 @@ TEST(cardano_plutus_map_to_cip116_json_contents, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_plutus_map_unref(&map);
 }
+
+TEST(cardano_plutus_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_plutus_map_t* map = nullptr;
+
+  EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    cardano_plutus_data_t* key = nullptr;
+
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int((int64_t)i, &key), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_plutus_map_insert(map, key, key), CARDANO_SUCCESS);
+
+    cardano_plutus_data_unref(&key);
+  }
+
+  const size_t i = 127U;
+
+  cardano_plutus_data_t* key = nullptr;
+
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int((int64_t)i, &key), CARDANO_SUCCESS);
+
+  const size_t key_ref_count = cardano_plutus_data_refcount(key);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_plutus_map_insert(map, key, key);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_plutus_map_get_length(map), 127U);
+  EXPECT_EQ(cardano_plutus_data_refcount(key), key_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_plutus_map_unref(&map);
+  cardano_plutus_data_unref(&key);
+}
+
+TEST(cardano_plutus_map_from_cbor, returnsErrorIfGrowingTheArrayFailsWhileDecoding)
+{
+  // Arrange
+  cardano_plutus_map_t* map = nullptr;
+
+  EXPECT_EQ(cardano_plutus_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 128U; ++i)
+  {
+    cardano_plutus_data_t* key = nullptr;
+
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int((int64_t)i, &key), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_plutus_map_insert(map, key, key), CARDANO_SUCCESS);
+
+    cardano_plutus_data_unref(&key);
+  }
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = nullptr;
+
+  EXPECT_EQ(cardano_plutus_map_to_cbor(map, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_t* reader  = cardano_cbor_reader_new(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer));
+  cardano_plutus_map_t*  decoded = nullptr;
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_plutus_map_from_cbor(reader, &decoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(decoded, nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_plutus_map_unref(&map);
+  cardano_cbor_writer_unref(&writer);
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_reader_unref(&reader);
+}

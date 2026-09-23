@@ -243,9 +243,13 @@ cardano_metadatum_map_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum
     const size_t old_size = cardano_array_get_size(map->array);
     const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
-    assert((old_size + 1U) == new_size);
-    CARDANO_UNUSED(old_size);
-    CARDANO_UNUSED(new_size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_metadatum_map_kvp_deallocate(kvp);
+      cardano_metadatum_map_unref(&map);
+
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
   result = cardano_cbor_validate_end_map("metadatum_map", reader);
@@ -534,10 +538,11 @@ cardano_metadatum_map_insert(
   const size_t old_size = cardano_array_get_size(metadatum_map->array);
   const size_t new_size = cardano_array_push(metadatum_map->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_metadatum_map_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

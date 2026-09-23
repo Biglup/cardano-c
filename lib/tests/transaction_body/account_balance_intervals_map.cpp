@@ -1432,3 +1432,76 @@ TEST(cardano_account_balance_intervals_map_set_last_error, doesNothingWhenWhenMe
   // Cleanup
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
 }
+
+TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* map      = nullptr;
+  cardano_account_balance_interval_t*      interval = new_default_account_balance_interval(EXACT_INTERVAL_CBOR);
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 31U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    cardano_credential_t* credential = nullptr;
+
+    EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+    cardano_reward_address_t* address = nullptr;
+
+    EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &address), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_account_balance_intervals_map_insert(map, address, interval), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_credential_unref(&credential);
+    cardano_reward_address_unref(&address);
+  }
+
+  const size_t i = 31U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  cardano_credential_t* credential = nullptr;
+
+  EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+
+  cardano_reward_address_t* address = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &address), CARDANO_SUCCESS);
+
+  const size_t address_ref_count  = cardano_reward_address_refcount(address);
+  const size_t interval_ref_count = cardano_account_balance_interval_refcount(interval);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_account_balance_intervals_map_insert(map, address, interval);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_length(map), 31U);
+  EXPECT_EQ(cardano_reward_address_refcount(address), address_ref_count);
+  EXPECT_EQ(cardano_account_balance_interval_refcount(interval), interval_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_account_balance_intervals_map_unref(&map);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_credential_unref(&credential);
+  cardano_reward_address_unref(&address);
+  cardano_account_balance_interval_unref(&interval);
+}

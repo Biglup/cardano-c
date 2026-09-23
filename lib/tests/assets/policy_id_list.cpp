@@ -338,3 +338,37 @@ TEST(cardano_policy_id_list_add, returnsErrorIfScriptIsNull)
   // Assert
   ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_policy_id_list_add, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_policy_id_list_t* list    = nullptr;
+  cardano_blake2b_hash_t*   element = new_default_blake2b_hash(POLICY_ID_HEX_1);
+
+  EXPECT_EQ(cardano_policy_id_list_new(&list), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    EXPECT_EQ(cardano_policy_id_list_add(list, element), CARDANO_SUCCESS);
+  }
+
+  const size_t ref_count = cardano_blake2b_hash_refcount(element);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_policy_id_list_add(list, element);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_policy_id_list_get_length(list), 127U);
+  EXPECT_EQ(cardano_blake2b_hash_refcount(element), ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_policy_id_list_unref(&list);
+  cardano_blake2b_hash_unref(&element);
+}

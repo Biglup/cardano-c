@@ -194,7 +194,7 @@ cardano_plutus_v2_script_set_from_cbor(cardano_cbor_reader_t* reader, cardano_pl
     if ((old_size + 1U) != new_size)
     {
       cardano_plutus_v2_script_set_unref(&list);
-      return result;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
   }
 
@@ -362,10 +362,10 @@ cardano_plutus_v2_script_set_add(cardano_plutus_v2_script_set_t* plutus_v2_scrip
   const size_t original_size = cardano_array_get_size(plutus_v2_script_set->array);
   const size_t new_size      = cardano_array_push(plutus_v2_script_set->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

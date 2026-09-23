@@ -1496,6 +1496,43 @@ TEST(cardano_array_filter, returnsNullWhenMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_array_filter, returnsNullIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_array_t*      array    = cardano_array_new(3);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+  ref_counted_string_t* ref_str3 = ref_counted_string_new("Hello, World! - 3");
+
+  EXPECT_EQ(cardano_array_push(array, &ref_str1->base), 1);
+  EXPECT_EQ(cardano_array_push(array, &ref_str2->base), 2);
+  EXPECT_EQ(cardano_array_push(array, &ref_str3->base), 3);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_array_t* result = cardano_array_filter(
+    array, [](const cardano_object_t* a, const void*) -> bool
+    { return true; },
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(cardano_object_refcount(&ref_str1->base), 2);
+  EXPECT_EQ(cardano_object_refcount(&ref_str2->base), 2);
+  EXPECT_EQ(cardano_object_refcount(&ref_str3->base), 2);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_array_unref(&array);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+  cardano_object_unref((cardano_object_t**)&ref_str3);
+}
+
 TEST(cardano_array_set_last_error, doesNothingWhenObjectIsNull)
 {
   // Arrange

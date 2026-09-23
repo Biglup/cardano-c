@@ -51,6 +51,19 @@ void
 reset_limited_malloc();
 
 /**
+ * \brief Sets a limit on the number of times the mock memory reallocator can be called before failing.
+ * \param limit The limit on the number of times the mock memory reallocator can be called.
+ */
+void
+set_realloc_limit(int limit);
+
+/**
+ * \brief Resets the limit on the number of times the mock memory reallocator can be called before failing.
+ */
+void
+reset_limited_realloc();
+
+/**
  * \brief A mock version of malloc that simulates an allocation failure when a limit is reached.
  *
  * This function can be used to test the behavior of code when malloc fails after a certain number
@@ -279,5 +292,18 @@ fail_zero_size_malloc(size_t size);
  */
 void*
 fail_right_away_realloc(void* const ptr, size_t size);
+
+/**
+ * \brief A mock version of realloc that simulates a reallocation failure when a limit is reached.
+ *
+ * This function can be used to test the behavior of code when realloc fails after a certain number
+ * of calls.
+ *
+ * \param ptr Pointer to the memory block to be reallocated.
+ * \param size The new size for the memory block.
+ * \return NULL to simulate reallocation failure when the limit is reached.
+ */
+void*
+fail_realloc_at_limit(void* const ptr, size_t size);
 
 #endif // BIGLUP_LABS_INCLUDE_CARDANO_ALLOCATORS_HELPERS

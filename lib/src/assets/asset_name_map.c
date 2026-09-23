@@ -322,10 +322,13 @@ cardano_asset_name_map_from_cbor(cardano_cbor_reader_t* reader, cardano_asset_na
     const size_t old_size = cardano_array_get_size(map->array);
     const size_t new_size = cardano_array_push(map->array, (cardano_object_t*)((void*)kvp));
 
-    assert((old_size + 1U) == new_size);
+    if (new_size != (old_size + 1U))
+    {
+      cardano_asset_name_map_kvp_deallocate(kvp);
+      cardano_asset_name_map_unref(&map);
 
-    CARDANO_UNUSED(old_size);
-    CARDANO_UNUSED(new_size);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
   cardano_array_sort(map->array, compare_by_bytes, NULL);
@@ -587,10 +590,11 @@ cardano_asset_name_map_insert(
   const size_t old_size = cardano_array_get_size(asset_name_map->array);
   const size_t new_size = cardano_array_push(asset_name_map->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_asset_name_map_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_sort(asset_name_map->array, compare_by_bytes, NULL);
 
@@ -826,6 +830,12 @@ cardano_asset_name_map_add(
 
   cardano_array_t* filtered = cardano_array_filter(map->array, different_than_zero, NULL);
 
+  if (filtered == NULL)
+  {
+    cardano_asset_name_map_unref(&map);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   cardano_array_unref(&map->array);
   map->array = filtered;
 
@@ -914,6 +924,12 @@ cardano_asset_name_map_subtract(
   }
 
   cardano_array_t* filtered = cardano_array_filter(map->array, different_than_zero, NULL);
+
+  if (filtered == NULL)
+  {
+    cardano_asset_name_map_unref(&map);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   cardano_array_unref(&map->array);
   map->array = filtered;

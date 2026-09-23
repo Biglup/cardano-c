@@ -458,10 +458,11 @@ cardano_direct_deposit_map_insert(
   const size_t old_size = cardano_array_get_size(direct_deposit_map->array);
   const size_t new_size = cardano_array_push(direct_deposit_map->array, (cardano_object_t*)((void*)kvp));
 
-  assert((old_size + 1U) == new_size);
-
-  CARDANO_UNUSED(old_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (old_size + 1U))
+  {
+    cardano_direct_deposit_map_kvp_deallocate(kvp);
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

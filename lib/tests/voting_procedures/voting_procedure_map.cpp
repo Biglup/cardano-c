@@ -970,3 +970,66 @@ TEST(cardano_voting_procedure_map_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_voting_procedure_map_unref(&map);
 }
+
+TEST(cardano_voting_procedure_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_voting_procedure_map_t* map       = nullptr;
+  cardano_voting_procedure_t*     procedure = new_default_voting_procedure(VOTING_PROCEDURE_CBOR_1);
+
+  EXPECT_EQ(cardano_voting_procedure_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 127U; ++i)
+  {
+    byte_t hash_bytes[32]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    cardano_governance_action_id_t* action_id = nullptr;
+
+    EXPECT_EQ(cardano_governance_action_id_new(hash, 0U, &action_id), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_voting_procedure_map_insert(map, action_id, procedure), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+    cardano_governance_action_id_unref(&action_id);
+  }
+
+  const size_t i = 127U;
+
+  byte_t hash_bytes[32]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = nullptr;
+
+  EXPECT_EQ(cardano_governance_action_id_new(hash, 0U, &action_id), CARDANO_SUCCESS);
+
+  const size_t action_id_ref_count = cardano_governance_action_id_refcount(action_id);
+  const size_t procedure_ref_count = cardano_voting_procedure_refcount(procedure);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_voting_procedure_map_insert(map, action_id, procedure);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_voting_procedure_map_get_length(map), 127U);
+  EXPECT_EQ(cardano_governance_action_id_refcount(action_id), action_id_ref_count);
+  EXPECT_EQ(cardano_voting_procedure_refcount(procedure), procedure_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_voting_procedure_map_unref(&map);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_voting_procedure_unref(&procedure);
+}

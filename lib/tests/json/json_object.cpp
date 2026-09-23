@@ -32,6 +32,7 @@
 
 #include <cardano/json/json_writer.h>
 #include <gmock/gmock.h>
+#include <string>
 
 extern "C" {
 #include "../src/json/internals/json_parser.h"
@@ -1302,6 +1303,62 @@ TEST(cardano_parse_object_value, returnsErrorIfOffsetIsGreaterThanLength)
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_parse_array_value, returnsNullIfGrowingTheArrayFails)
+{
+  // Arrange
+  std::string json = "[";
+
+  for (size_t i = 0U; i < 32U; ++i)
+  {
+    json += (i == 0U) ? "0" : ",0";
+  }
+
+  json += "]";
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_json_object_t* object = cardano_json_object_parse(json.c_str(), json.size());
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+}
+
+TEST(cardano_parse_object_value, returnsNullIfGrowingTheArrayFails)
+{
+  // Arrange
+  std::string json = "{";
+
+  for (size_t i = 0U; i < 32U; ++i)
+  {
+    json += (i == 0U) ? "\"" : ",\"";
+    json += std::to_string(i);
+    json += "\":0";
+  }
+
+  json += "}";
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_json_object_t* object = cardano_json_object_parse(json.c_str(), json.size());
+
+  // Assert
+  EXPECT_EQ(object, (cardano_json_object_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
 }
 
 TEST(cardano_handle_utf8_sequence, returnsErrorIfBufferIsNull)

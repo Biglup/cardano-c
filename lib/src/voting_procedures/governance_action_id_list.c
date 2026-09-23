@@ -159,10 +159,10 @@ cardano_governance_action_id_list_add(cardano_governance_action_id_list_t* gover
   const size_t original_size = cardano_array_get_size(governance_action_id_list->array);
   const size_t new_size      = cardano_array_push(governance_action_id_list->array, (cardano_object_t*)((void*)element));
 
-  assert((original_size + 1U) == new_size);
-
-  CARDANO_UNUSED(original_size);
-  CARDANO_UNUSED(new_size);
+  if (new_size != (original_size + 1U))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   return CARDANO_SUCCESS;
 }

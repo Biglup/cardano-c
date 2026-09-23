@@ -140,10 +140,13 @@ clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
     const size_t current_size = cardano_array_get_size(cloned_array);
     const size_t new_size     = cardano_array_push(cloned_array, clone_item);
 
-    assert(new_size == (current_size + 1U));
+    if (new_size != (current_size + 1U))
+    {
+      _cardano_free(cloned_frame);
+      cardano_array_unref(&cloned_array);
 
-    CARDANO_UNUSED(new_size);
-    CARDANO_UNUSED(current_size);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
 
   *clone = cloned_array;

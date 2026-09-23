@@ -764,6 +764,41 @@ TEST(cardano_get_entries, returnsAnArrayContainingAllSetEntries)
   cardano_object_unref(&object2);
 }
 
+TEST(cardano_get_entries, returnsNullIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_set_t*        set                 = cardano_set_new(compare, hash);
+  ref_counted_string_t* ref_counted_string1 = ref_counted_string_new("Hello, World!");
+  ref_counted_string_t* ref_counted_string2 = ref_counted_string_new("Goodbye, World!");
+  cardano_object_t*     object1             = (cardano_object_t*)ref_counted_string1;
+  cardano_object_t*     object2             = (cardano_object_t*)ref_counted_string2;
+
+  EXPECT_EQ(cardano_set_add(set, object1), 1);
+  EXPECT_EQ(cardano_set_add(set, object2), 2);
+
+  const size_t ref_count1 = cardano_object_refcount(object1);
+  const size_t ref_count2 = cardano_object_refcount(object2);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_array_t* array = cardano_get_entries(set);
+
+  // Assert
+  EXPECT_EQ(array, nullptr);
+  EXPECT_EQ(cardano_object_refcount(object1), ref_count1);
+  EXPECT_EQ(cardano_object_refcount(object2), ref_count2);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_set_unref(&set);
+  cardano_object_unref(&object1);
+  cardano_object_unref(&object2);
+}
+
 TEST(cardano_get_entries, returnsAnEmptyArrayIfSetIsEmpty)
 {
   // Arrange

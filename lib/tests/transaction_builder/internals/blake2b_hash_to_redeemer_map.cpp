@@ -778,3 +778,56 @@ TEST(cardano_blake2b_hash_to_redeemer_map_update_redeemer_index, updatesIndexIfF
   cardano_blake2b_hash_unref(&hash);
   cardano_redeemer_unref(&redeemer);
 }
+
+TEST(cardano_blake2b_hash_to_redeemer_map_insert, returnsErrorIfGrowingTheArrayFails)
+{
+  // Arrange
+  cardano_blake2b_hash_to_redeemer_map_t* map      = nullptr;
+  cardano_redeemer_t*                     redeemer = new_default_redeemer();
+
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_new(&map), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < 31U; ++i)
+  {
+    byte_t hash_bytes[28]        = { 0 };
+    hash_bytes[0]                = (byte_t)i;
+    cardano_blake2b_hash_t* hash = nullptr;
+
+    EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+    EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_insert(map, hash, redeemer), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+  }
+
+  const size_t i = 31U;
+
+  byte_t hash_bytes[28]        = { 0 };
+  hash_bytes[0]                = (byte_t)i;
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(hash_bytes, sizeof(hash_bytes), &hash), CARDANO_SUCCESS);
+
+  const size_t hash_ref_count     = cardano_blake2b_hash_refcount(hash);
+  const size_t redeemer_ref_count = cardano_redeemer_refcount(redeemer);
+
+  reset_allocators_run_count();
+  set_realloc_limit(0);
+  cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+
+  // Act
+  cardano_error_t result = cardano_blake2b_hash_to_redeemer_map_insert(map, hash, redeemer);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(map), 31U);
+  EXPECT_EQ(cardano_blake2b_hash_refcount(hash), hash_ref_count);
+  EXPECT_EQ(cardano_redeemer_refcount(redeemer), redeemer_ref_count);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  reset_limited_realloc();
+  cardano_blake2b_hash_to_redeemer_map_unref(&map);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_redeemer_unref(&redeemer);
+}
