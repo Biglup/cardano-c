@@ -112,6 +112,9 @@ extern "C" {
  * \param[in]      coin_selector              A pointer to the coin selector used for choosing appropriate UTXOs.
  * \param[in]      change_address             The address where any remaining balance (change) will be sent.
  * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if a redeemer exists in the transaction or in any of its sub transactions.
+ *                                            The UTXOs a sub transaction spends or references are never used as collateral, even when the batcher is
+ *                                            also a party of the batch and offers them here. When every UTXO of this list is used by a sub transaction
+ *                                            and collateral is required, the function fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT.
  * \param[in]      collateral_change_address  The address where any remaining collateral change will be sent, if applicable.
  * \param[in]      evaluator                  A transaction evaluator instance for determining the execution cost of scripts.
  * \param[in]      deferred_redeemers         An optional list of deferred redeemers to resolve on every balancing iteration, once the canonical
