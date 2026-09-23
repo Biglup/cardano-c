@@ -1720,11 +1720,13 @@ cbor_array_header_size(const size_t element_count)
  * This function calculates the cost required to include a specified number of VK witnesses in a transaction, based on the
  * minimum fee coefficient and an estimated size for each witness structure.
  *
- * The VK witness set takes 3 bytes for its tag, the header of the list and 101 bytes for each witness, a structure
- * with 2 fields (signature, public key). The witness set stores it under a map key of 1 byte. That key is only part of
- * the unsigned transaction when its witness set already holds VK witnesses, so it is added to the estimate when
- * signing is what introduces the entry. Any other entry of the witness set, such as native scripts or datums, keeps
- * its own key and does not change the estimate.
+ * Each VK witness takes 101 bytes, a structure with 2 fields (signature, public key). When the witness set already
+ * holds VK witnesses, its map key, the tag and the list header are part of the unsigned transaction, so only the new
+ * witnesses and the growth of the list header are added to the estimate. Otherwise signing introduces the entry, and
+ * the estimate adds its map key of 1 byte, the list header and, when the set signing fills is tagged, the 3 bytes of
+ * its tag. That set is the VK witness set the witness set already carries, even if empty, or a new set, which is
+ * tagged. No cost is added when there are no signatures. Any other entry of the witness set, such as native scripts or
+ * datums, keeps its own key and does not change the estimate.
  *
  * \param[in] witness_set The witness set of the transaction as it is before the VK witnesses are added.
  * \param[in] signature_count The number of VK witnesses to include.
@@ -1738,14 +1740,29 @@ compute_vk_witnesses_cost(
   const size_t           signature_count,
   const uint64_t         min_fee_coefficient)
 {
+  if (signature_count == 0U)
+  {
+    return 0;
+  }
+
   cardano_vkey_witness_set_t* vkey_witnesses = cardano_witness_set_get_vkeys(witness_set);
   cardano_vkey_witness_set_unref(&vkey_witnesses);
 
-  size_t vk_witness_set_size = 3U + cbor_array_header_size(signature_count) + (101U * signature_count);
+  const size_t current_count       = cardano_vkey_witness_set_get_length(vkey_witnesses);
+  size_t       vk_witness_set_size = 101U * signature_count;
 
-  if ((signature_count > 0U) && (cardano_vkey_witness_set_get_length(vkey_witnesses) == 0U))
+  if (current_count > 0U)
   {
-    vk_witness_set_size += 1U;
+    vk_witness_set_size += cbor_array_header_size(current_count + signature_count) - cbor_array_header_size(current_count);
+  }
+  else
+  {
+    vk_witness_set_size += 1U + cbor_array_header_size(signature_count);
+
+    if ((vkey_witnesses == NULL) || cardano_vkey_witness_set_get_use_tag(vkey_witnesses))
+    {
+      vk_witness_set_size += 3U;
+    }
   }
 
   return (int64_t)vk_witness_set_size * (int64_t)min_fee_coefficient;
