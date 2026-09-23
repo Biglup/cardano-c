@@ -90,7 +90,8 @@ CARDANO_EXPORT cardano_array_t* cardano_array_new(size_t capacity);
 /**
  * \brief Concatenates two arrays into a new one.
  *
- * Creates a new array containing the combined data of the provided arrays.
+ * Creates a new array containing the combined data of the provided arrays. If both arrays are empty, the result is
+ * a new empty array created with a default capacity, so it can grow when items are pushed to it.
  *
  * \param[in] lhs   The first array.
  * \param[in] rhs  The second array.
@@ -280,7 +281,8 @@ cardano_object_t* cardano_array_find(const cardano_array_t* array, cardano_array
  *
  * This function iterates over each element of the input array and applies the predicate function to it.
  * Elements for which the predicate returns true are included in the new array. The original array remains
- * unchanged. The caller is responsible for managing the unreferencing of the returned array to avoid memory leaks.
+ * unchanged. If the source array is empty, the result is a new empty array created with a default capacity.
+ * The caller is responsible for managing the unreferencing of the returned array to avoid memory leaks.
  *
  * @param[in] array The source array to filter.
  * @param[in] predicate The unary predicate function used to test each element. Elements that

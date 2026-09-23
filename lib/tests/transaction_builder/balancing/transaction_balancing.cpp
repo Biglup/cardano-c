@@ -1108,23 +1108,6 @@ new_sub_transaction_without_inputs(cardano_utxo_t* utxo, const int64_t output_co
   return sub_transaction;
 }
 
-/**
- * Allocates memory as malloc does, except that a request for zero bytes fails, which the C standard
- * allows an allocator to do.
- * \param size the number of bytes to allocate.
- * \return A pointer to the allocated memory, or NULL if the size is zero or the allocation fails.
- */
-static void*
-fail_zero_size_malloc(size_t size)
-{
-  if (size == 0U)
-  {
-    return NULL;
-  }
-
-  return malloc(size);
-}
-
 static cardano_error_t
 balance_batch_with_pre_selected(
   cardano_transaction_t*         tx,
@@ -1852,6 +1835,58 @@ TEST(cardano_balance_transaction, canBalanceATransaction)
   cardano_utxo_list_unref(&resolved_inputs);
   cardano_coin_selector_unref(&coin_selector);
   cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, balancesATransactionWithEmptyPreSelectedAndCollateralListsIfZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs(BALANCED_TX_CBOR, 15000000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_utxo_list_t*           pre_selected     = new_empty_utxo_list();
+  cardano_utxo_list_t*           collateral       = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    pre_selected,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    collateral,
+    change_address,
+    NULL,
+    nullptr);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  bool is_balanced = false;
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&collateral);
+  cardano_coin_selector_unref(&coin_selector);
   cardano_address_unref(&change_address);
 }
 

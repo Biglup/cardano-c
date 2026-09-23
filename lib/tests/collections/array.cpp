@@ -644,6 +644,75 @@ TEST(cardano_array_concat, canConcatenateTwoArraysOfDifferentSizes)
   cardano_object_unref((cardano_object_t**)&ref_str3);
 }
 
+TEST(cardano_array_concat, returnsAnEmptyUsableArrayIfBothArraysAreEmptyAndZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_array_t*      array1  = cardano_array_new(1);
+  cardano_array_t*      array2  = cardano_array_new(1);
+  ref_counted_string_t* ref_str = ref_counted_string_new("Hello, World! - 1");
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_array_t* result = cardano_array_concat(array1, array2);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_array_get_size(result), 0);
+  EXPECT_EQ(cardano_array_push(result, &ref_str->base), 1);
+
+  cardano_object_t* item = cardano_array_get(result, 0);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item)->string, "Hello, World! - 1");
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_object_unref((cardano_object_t**)&item);
+  cardano_array_unref(&array1);
+  cardano_array_unref(&array2);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str);
+}
+
+TEST(cardano_array_concat, canConcatenateAnEmptyArrayWithANonEmptyArrayIfZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_array_t*      array1   = cardano_array_new(1);
+  cardano_array_t*      array2   = cardano_array_new(1);
+  ref_counted_string_t* ref_str1 = ref_counted_string_new("Hello, World! - 1");
+  ref_counted_string_t* ref_str2 = ref_counted_string_new("Hello, World! - 2");
+
+  EXPECT_EQ(cardano_array_push(array2, &ref_str1->base), 1);
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_array_t* result = cardano_array_concat(array1, array2);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_array_get_size(result), 1);
+  EXPECT_EQ(cardano_array_push(result, &ref_str2->base), 2);
+
+  cardano_object_t* item1 = cardano_array_get(result, 0);
+  cardano_object_t* item2 = cardano_array_get(result, 1);
+
+  EXPECT_STREQ(((ref_counted_string_t*)item1)->string, "Hello, World! - 1");
+  EXPECT_STREQ(((ref_counted_string_t*)item2)->string, "Hello, World! - 2");
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_object_unref((cardano_object_t**)&item1);
+  cardano_object_unref((cardano_object_t**)&item2);
+  cardano_array_unref(&array1);
+  cardano_array_unref(&array2);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str1);
+  cardano_object_unref((cardano_object_t**)&ref_str2);
+}
+
 TEST(cardano_array_slice, returnsNullIfArrayIsNull)
 {
   // Arrange
@@ -1285,6 +1354,33 @@ TEST(cardano_array_filter, returnsNullWhenArrayIsEmpty)
   // Cleanup
   cardano_array_unref(&array);
   cardano_array_unref(&result);
+}
+
+TEST(cardano_array_filter, returnsAnEmptyUsableArrayIfTheArrayIsEmptyAndZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_array_t*      array   = cardano_array_new(1);
+  ref_counted_string_t* ref_str = ref_counted_string_new("Hello, World! - 1");
+
+  // Act
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  cardano_array_t* result = cardano_array_filter(
+    array, [](const cardano_object_t* a, const void*) -> bool
+    { return true; },
+    nullptr);
+
+  // Assert
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_array_get_size(result), 0);
+  EXPECT_EQ(cardano_array_push(result, &ref_str->base), 1);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_array_unref(&array);
+  cardano_array_unref(&result);
+  cardano_object_unref((cardano_object_t**)&ref_str);
 }
 
 TEST(cardano_array_filter, returnsNullWhenNoItemsMatchPredicate)

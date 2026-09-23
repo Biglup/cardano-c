@@ -228,6 +228,17 @@ fail_after_thirty_seven_malloc(size_t size)
 }
 
 void*
+fail_zero_size_malloc(const size_t size)
+{
+  if (size == 0U)
+  {
+    return NULL;
+  }
+
+  return malloc(size);
+}
+
+void*
 fail_right_away_realloc(void* const ptr, const size_t size)
 {
   return NULL;
