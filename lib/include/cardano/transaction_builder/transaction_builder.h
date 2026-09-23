@@ -1194,8 +1194,8 @@ CARDANO_EXPORT void cardano_tx_builder_add_datum(
  * Up to the Conway era a withdrawal must drain the account, so the amount must be the full available reward balance.
  * From the Dijkstra era partial withdrawals are valid: the ledger only requires that the withdrawals of an account,
  * added over the top level transaction and every sub transaction of the batch, do not exceed the balance the account
- * had before the batch. The exception is a top level transaction that uses a PlutusV1, PlutusV2 or PlutusV3 script,
- * whose withdrawals must still drain the account exactly.
+ * had before the batch. The exception is a top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script,
+ * whatever source provides it, whose withdrawals must still drain the account exactly.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
@@ -1249,7 +1249,7 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
  * reward balance for the given address and includes the withdrawal in the transaction.
  *
  * The amount follows the same rules as in \ref cardano_tx_builder_withdraw_rewards. It must be the full available
- * reward balance up to the Conway era and whenever the transaction uses a PlutusV1, PlutusV2 or PlutusV3 script, and
+ * reward balance up to the Conway era and whenever the transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, and
  * it may be a part of the balance otherwise from the Dijkstra era.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
@@ -1488,9 +1488,14 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * selected for the transaction, a net surplus is returned in its change outputs, and the UTXOs that the sub
  * transactions spend or reference are never selected as inputs of the transaction, even when they are also among the
  * UTXOs set with `cardano_tx_builder_set_utxos`, as happens when the batcher is a party of the batch too. When the
- * transaction uses a PlutusV1, PlutusV2 or PlutusV3 script it must also conserve value by itself, so the sub
+ * transaction needs a PlutusV1, PlutusV2 or PlutusV3 script it must also conserve value by itself, so the sub
  * transactions must balance between themselves; otherwise building fails with
- * \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction.
+ * \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub transaction. A script is needed
+ * when the transaction spends an input it locks, mints under its policy, withdraws from a reward account it controls,
+ * carries a certificate it must authorize, votes with it as the voter, carries a parameter change or treasury
+ * withdrawals proposal it guards as the guardrails script or lists it among its guards. Its language is taken from
+ * whatever source provides it: the witness set, a reference input or a spent input, including the inputs chosen by coin
+ * selection. A script that is only present and that the transaction does not need does not trigger this rule.
  *
  * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
  * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved

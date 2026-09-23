@@ -538,6 +538,56 @@ TEST(_cardano_voting_procedures_pub_key_hashes, returnsErrorIfGivenNull)
   EXPECT_EQ(_cardano_voting_procedures_pub_key_hashes(nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 }
 
+TEST(_cardano_get_certificate_credential, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_certificate_t* certificate = new_default_certificate(CBOR_REGISTER_DREP);
+  cardano_credential_t*  credential  = nullptr;
+
+  // Act & Assert
+  EXPECT_EQ(_cardano_get_certificate_credential(certificate, CARDANO_CERT_TYPE_DREP_REGISTRATION, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_certificate_credential(nullptr, CARDANO_CERT_TYPE_DREP_REGISTRATION, &credential), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(credential, nullptr);
+
+  // Cleanup
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(_cardano_get_certificate_credential, returnsTheCredentialOfACertificate)
+{
+  // Arrange
+  cardano_certificate_t* certificate = new_default_certificate(CBOR_STAKE_DELEGATION);
+  cardano_credential_t*  credential  = nullptr;
+
+  // Act
+  cardano_error_t result = _cardano_get_certificate_credential(certificate, CARDANO_CERT_TYPE_STAKE_DELEGATION, &credential);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_NE(credential, nullptr);
+
+  // Cleanup
+  cardano_credential_unref(&credential);
+  cardano_certificate_unref(&certificate);
+}
+
+TEST(_cardano_get_certificate_credential, returnsNoCredentialForACertificateWithoutOne)
+{
+  // Arrange
+  cardano_certificate_t* certificate = new_default_certificate(CBOR_AUTHORIZE_COMMITTEE_HOT);
+  cardano_credential_t*  credential  = nullptr;
+
+  // Act
+  cardano_error_t result = _cardano_get_certificate_credential(certificate, CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT, &credential);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(credential, nullptr);
+
+  // Cleanup
+  cardano_certificate_unref(&certificate);
+}
+
 TEST(_process_certificate_with_credential, returnsErrorIfGivenNull)
 {
   EXPECT_EQ(_process_certificate_with_credential(nullptr, nullptr, CARDANO_CERT_TYPE_DREP_UNREGISTRATION), CARDANO_ERROR_POINTER_IS_NULL);

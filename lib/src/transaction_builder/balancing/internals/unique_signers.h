@@ -224,6 +224,31 @@ _process_auth_committee_hot(
   cardano_certificate_t*      certificate);
 
 /**
+ * \brief Retrieves the credential that must authorize a certificate of a given type.
+ *
+ * This function returns the stake credential of the stake deregistration, delegation, Conway registration and
+ * unregistration certificates, the DRep credential of the DRep certificates and the cold credential of the committee
+ * resignation certificate. The legacy stake registration certificate, which the ledger does not require a witness
+ * for, yields none, and so do the certificates of any other type.
+ *
+ * \param[in] certificate A pointer to an initialized \ref cardano_certificate_t object representing the certificate
+ *                        to be inspected. This parameter is required and must not be NULL.
+ * \param[in] type The type of the certificate (\ref cardano_cert_type_t) that selects the credential to retrieve.
+ * \param[out] credential On success, a new reference to the credential of the certificate, or NULL if a certificate
+ *                        of this type carries no such credential. The caller must release it by calling
+ *                        \ref cardano_credential_unref once it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the certificate
+ *         was inspected, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
+ *         if `credential` is NULL or if the credential of the certificate could not be retrieved.
+ */
+cardano_error_t
+_cardano_get_certificate_credential(
+  cardano_certificate_t* certificate,
+  cardano_cert_type_t    type,
+  cardano_credential_t** credential);
+
+/**
  * \brief Processes a Cardano certificate by extracting and adding the unique public key hash required
  * for a given certificate type.
  *
