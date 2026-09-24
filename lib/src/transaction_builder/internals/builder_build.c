@@ -25,6 +25,7 @@
 
 #include <cardano/common/credential.h>
 #include <cardano/common/guard_set.h>
+#include <cardano/common/protocol_version.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/protocol_params/cost_model.h>
 #include <cardano/protocol_params/costmdls.h>
@@ -457,30 +458,125 @@ add_utxos_with_new_inputs(cardano_utxo_list_t* list, cardano_utxo_list_t* utxos)
 }
 
 /**
- * \brief Creates the list of available UTXOs the transaction is balanced with.
+ * \brief Checks whether the protocol version forbids a transaction to spend one of its reference inputs.
  *
- * The balancer takes the resolved UTXOs of the sub transactions from the available UTXOs, so the UTXOs
- * the sub transactions spend and reference are added to the ones available for input selection. The
- * batcher can also be a party of the batch, so a UTXO that is already available is not listed again.
- * The list of the state is never modified.
+ * The ledger rejects a transaction that spends and references the same UTXO only under protocol
+ * versions 9 and 10. Earlier versions and the versions from 11 on allow the overlap.
+ *
+ * \param[in] params A pointer to the \ref cardano_protocol_parameters_t the transaction is built with.
+ *
+ * \return true if the major protocol version is 9 or 10, false otherwise.
+ */
+static bool
+are_spent_reference_inputs_forbidden(cardano_protocol_parameters_t* params)
+{
+  cardano_protocol_version_t* version = cardano_protocol_parameters_get_protocol_version(params);
+  cardano_protocol_version_unref(&version);
+
+  const uint64_t major = cardano_protocol_version_get_major(version);
+
+  return (major == 9U) || (major == 10U);
+}
+
+/**
+ * \brief Checks whether a UTXO is one of the top level reference inputs of the transaction.
  *
  * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                  construction.
- * \param[out] utxos On success, this will point to the list to balance the transaction with, which is
- *                   the list of available UTXOs of the state itself when the transaction carries no sub
- *                   transactions. The caller is responsible for releasing it with
- *                   \ref cardano_utxo_list_unref.
+ * \param[in] utxo A pointer to the \ref cardano_utxo_t to look up.
+ *
+ * \return true if the input of the UTXO was added as a reference input, false otherwise.
+ */
+static bool
+is_reference_input(const cardano_builder_state_t* state, cardano_utxo_t* utxo)
+{
+  cardano_transaction_input_t* input = cardano_utxo_get_input(utxo);
+  cardano_transaction_input_unref(&input);
+
+  cardano_utxo_t* reference_utxo = cardano_utxo_list_find(state->reference_inputs, find_utxo, input);
+  cardano_utxo_unref(&reference_utxo);
+
+  return reference_utxo != NULL;
+}
+
+/**
+ * \brief Checks whether a UTXO list holds one of the top level reference inputs of the transaction.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[in] utxos A pointer to the \ref cardano_utxo_list_t to search.
+ *
+ * \return true if the list holds a UTXO that was added as a reference input, false otherwise.
+ */
+static bool
+has_reference_input(const cardano_builder_state_t* state, const cardano_utxo_list_t* utxos)
+{
+  const size_t length = cardano_utxo_list_get_length(utxos);
+  bool         found  = false;
+
+  for (size_t i = 0U; (i < length) && !found; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    const cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    found = (result == CARDANO_SUCCESS) && is_reference_input(state, utxo);
+  }
+
+  return found;
+}
+
+/**
+ * \brief Checks that no explicitly added input of the transaction is also one of its reference inputs.
+ *
+ * Under protocol versions 9 and 10 the ledger rejects a transaction that spends and references the
+ * same UTXO, so a UTXO added both as an input and as a reference input makes the build fail. Only the
+ * top level is checked, since sub transactions exist only from protocol version 12.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[out] error_message A pointer that receives a static string describing the failure when a
+ *                           UTXO is both spent and referenced.
+ *
+ * \return \ref CARDANO_SUCCESS if the added inputs and the reference inputs are disjoint or the
+ *         protocol version allows the overlap, or \ref CARDANO_ERROR_DUPLICATED_KEY if a UTXO is both
+ *         spent and referenced under protocol versions 9 and 10.
+ */
+static cardano_error_t
+check_disjoint_reference_inputs(cardano_builder_state_t* state, const char** error_message)
+{
+  if (!are_spent_reference_inputs_forbidden(state->params) || !has_reference_input(state, state->pre_selected_inputs))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  *error_message = "A UTXO can not be both spent and referenced by the same transaction under protocol versions 9 and 10.";
+
+  return CARDANO_ERROR_DUPLICATED_KEY;
+}
+
+/**
+ * \brief Creates the list of available UTXOs coin selection may spend at the top level.
+ *
+ * Under protocol versions 9 and 10 the ledger rejects a transaction that spends one of its reference
+ * inputs, so the UTXOs added as reference inputs are left out of the available UTXOs. The order of the
+ * remaining UTXOs is preserved and the list of the state is never modified.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[out] utxos On success, this will point to the selectable UTXOs, which is the list of available
+ *                   UTXOs of the state itself when the protocol version allows the overlap or when no
+ *                   available UTXO is a reference input. The caller is responsible for releasing it
+ *                   with \ref cardano_utxo_list_unref.
  *
  * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code indicating the
  *         failure reason.
  */
 static cardano_error_t
-get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
+exclude_reference_inputs(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
 {
-  const size_t sub_transaction_utxo_count = cardano_utxo_list_get_length(state->sub_transaction_inputs) +
-    cardano_utxo_list_get_length(state->sub_transaction_reference_inputs);
-
-  if (sub_transaction_utxo_count == 0U)
+  if (!are_spent_reference_inputs_forbidden(state->params) || !has_reference_input(state, state->available_utxos))
   {
     cardano_utxo_list_ref(state->available_utxos);
     *utxos = state->available_utxos;
@@ -488,14 +584,92 @@ get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
     return CARDANO_SUCCESS;
   }
 
-  cardano_utxo_list_t* balancing_utxos = cardano_utxo_list_clone(state->available_utxos);
+  cardano_utxo_list_t* selectable_utxos = NULL;
+  cardano_error_t      result           = cardano_utxo_list_new(&selectable_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const size_t length = cardano_utxo_list_get_length(state->available_utxos);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    result = cardano_utxo_list_get(state->available_utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if ((result == CARDANO_SUCCESS) && !is_reference_input(state, utxo))
+    {
+      result = cardano_utxo_list_add(selectable_utxos, utxo);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_utxo_list_unref(&selectable_utxos);
+
+      return result;
+    }
+  }
+
+  *utxos = selectable_utxos;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Creates the list of available UTXOs the transaction is balanced with.
+ *
+ * The balancer takes the resolved UTXOs of the sub transactions from the available UTXOs, so the UTXOs
+ * the sub transactions spend and reference are added to the ones available for input selection. The
+ * batcher can also be a party of the batch, so a UTXO that is already available is not listed again.
+ * Under protocol versions 9 and 10 the UTXOs added as top level reference inputs are left out of the
+ * available UTXOs, since the ledger does not allow a transaction to spend them. The list of the state
+ * is never modified.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[out] utxos On success, this will point to the list to balance the transaction with, which is
+ *                   the list of available UTXOs of the state itself when the transaction carries no sub
+ *                   transactions and no available UTXO has to be left out. The caller is responsible for
+ *                   releasing it with \ref cardano_utxo_list_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the list was created, or an appropriate error code indicating the
+ *         failure reason.
+ */
+static cardano_error_t
+get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
+{
+  cardano_utxo_list_t* selectable_utxos = NULL;
+
+  cardano_error_t result = exclude_reference_inputs(state, &selectable_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const size_t sub_transaction_utxo_count = cardano_utxo_list_get_length(state->sub_transaction_inputs) +
+    cardano_utxo_list_get_length(state->sub_transaction_reference_inputs);
+
+  if (sub_transaction_utxo_count == 0U)
+  {
+    *utxos = selectable_utxos;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_utxo_list_t* balancing_utxos = cardano_utxo_list_clone(selectable_utxos);
+  cardano_utxo_list_unref(&selectable_utxos);
 
   if (balancing_utxos == NULL)
   {
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  cardano_error_t result = add_utxos_with_new_inputs(balancing_utxos, state->sub_transaction_inputs);
+  result = add_utxos_with_new_inputs(balancing_utxos, state->sub_transaction_inputs);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -576,6 +750,13 @@ cardano_builder_build(
     }
   }
 
+  result = check_disjoint_reference_inputs(state, error_message);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   cardano_transaction_t* tx = state->transaction;
 
   result = set_dummy_script_data_hash(tx);
@@ -591,7 +772,7 @@ cardano_builder_build(
 
   if (result != CARDANO_SUCCESS)
   {
-    *error_message = "Failed to gather the UTXOs of the sub transactions.";
+    *error_message = "Failed to gather the UTXOs the transaction is balanced with.";
 
     return result;
   }

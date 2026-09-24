@@ -43,6 +43,7 @@
 #include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
+#include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <cardano/transaction_builder/fee.h>
 #include <gmock/gmock.h>
@@ -92,6 +93,7 @@ static const char* OTHER_SUB_TX_CBOR           = "83a200d9010281825820027b68d4c1
 static const char* OVERLAPPING_SUB_TX_CBOR     = "83a200d9010282825820027b68d4c11e97d7e065cc2702912cb1a21b6d0e56c6a74dd605889a5561138500825820d3c887d17486d483a2b46b58b01cb9344745f15fdd8f8e70a57f854cdd88a633010180a0f6";
 static const char* SUB_TX_BODY_CBOR            = "a400d90102800180020017d901028183a20081825820d3c887d17486d483a2b46b58b01cb9344745f15fdd8f8e70a57f854cdd88a633010180a0f6";
 static const char* MISSING_GUARD_ERROR         = "A sub transaction requires a top level guard that the transaction does not carry. You must add it with `cardano_tx_builder_add_guard` before calling `build`.";
+static const char* SPENT_REFERENCE_INPUT_ERROR = "A UTXO can not be both spent and referenced by the same transaction under protocol versions 9 and 10.";
 static const char* NFT_ASSET_ID_HEX            = "0b0d621b5c26d0a1fd0893a4b04c19d860296a69ede1fbcfc51798824e46542d303031";
 static const char* ASSET_ID_HEX                = "0000000000000000000000000000000000000000000000000000000054455854";
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
@@ -1146,6 +1148,126 @@ build_mint_with_reference_input(
   cardano_asset_name_unref(&asset_name);
 
   return tx;
+}
+
+/**
+ * Creates protocol parameters with the given major protocol version.
+ * \param major the major protocol version.
+ * \return A new instance of the protocol parameters.
+ */
+static cardano_protocol_parameters_t*
+init_protocol_parameters_with_version(const uint64_t major)
+{
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_protocol_version_t*    version = NULL;
+
+  EXPECT_EQ(cardano_protocol_version_new(major, 0U, &version), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_protocol_version(params, version), CARDANO_SUCCESS);
+
+  cardano_protocol_version_unref(&version);
+
+  return params;
+}
+
+/**
+ * Creates a funded transaction builder that spends a UTXO and also adds it as a reference input.
+ * \param major the major protocol version of the protocol parameters of the builder.
+ * \param reference_first true to add the reference input before the spent input, false to add it after.
+ * \param utxo the UTXO that is both spent and referenced.
+ * \return A new instance of the transaction builder.
+ */
+static cardano_tx_builder_t*
+new_builder_spending_a_reference_input(const uint64_t major, const bool reference_first, cardano_utxo_t* utxo)
+{
+  cardano_protocol_parameters_t* params     = init_protocol_parameters_with_version(major);
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+
+  if (reference_first)
+  {
+    cardano_tx_builder_add_reference_input(tx_builder, utxo);
+    cardano_tx_builder_add_input(tx_builder, utxo, NULL, NULL);
+  }
+  else
+  {
+    cardano_tx_builder_add_input(tx_builder, utxo, NULL, NULL);
+    cardano_tx_builder_add_reference_input(tx_builder, utxo);
+  }
+
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_list_unref(&utxos);
+
+  return tx_builder;
+}
+
+/**
+ * Builds a transaction that spends a UTXO it also references and checks whether the build accepts it.
+ * \param major the major protocol version of the protocol parameters of the builder.
+ * \param reference_first true to add the reference input before the spent input, false to add it after.
+ * \param accepted true if the build is expected to succeed, false if it is expected to reject the overlap.
+ */
+static void
+expect_spending_a_reference_input(const uint64_t major, const bool reference_first, const bool accepted)
+{
+  cardano_utxo_t*        utxo       = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_tx_builder_t*  tx_builder = new_builder_spending_a_reference_input(major, reference_first, utxo);
+  cardano_transaction_t* tx         = nullptr;
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  if (accepted)
+  {
+    EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+    EXPECT_NE(tx, nullptr);
+    EXPECT_TRUE(transaction_spends(tx, utxo));
+  }
+  else
+  {
+    EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_KEY);
+    EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), SPENT_REFERENCE_INPUT_ERROR);
+    EXPECT_EQ(tx, nullptr);
+  }
+
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_unref(&utxo);
+}
+
+/**
+ * Builds a transaction that references the largest available UTXO and lets a large first coin selection fund it, then
+ * checks whether coin selection spent the referenced UTXO.
+ * \param major the major protocol version of the protocol parameters of the builder.
+ * \param spent true if coin selection is expected to spend the referenced UTXO, false otherwise.
+ */
+static void
+expect_coin_selection_of_a_reference_input(const uint64_t major, const bool spent)
+{
+  cardano_protocol_parameters_t* params        = init_protocol_parameters_with_version(major);
+  cardano_utxo_t*                utxo          = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           utxos         = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder    = new_funded_tx_builder(params, utxos);
+  cardano_coin_selector_t*       coin_selector = NULL;
+  cardano_transaction_t*         tx            = nullptr;
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+
+  cardano_tx_builder_set_coin_selector(tx_builder, coin_selector);
+  cardano_tx_builder_add_reference_input(tx_builder, utxo);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  EXPECT_EQ(transaction_spends(tx, utxo), spent);
+  EXPECT_EQ(cardano_utxo_list_get_length(utxos), 3U);
+
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_unref(&utxo);
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -3333,6 +3455,182 @@ TEST(cardano_tx_builder_build, returnsErrorIfCollateralIsRequiredAndTheCollatera
   cardano_plutus_data_unref(&datum);
   cardano_utxo_list_unref(&utxos);
   cardano_utxo_list_unref(&collateral_utxos);
+}
+
+TEST(cardano_tx_builder_build, rejectsSpendingAReferenceInputUnderProtocolVersion9)
+{
+  expect_spending_a_reference_input(9U, true, false);
+  expect_spending_a_reference_input(9U, false, false);
+}
+
+TEST(cardano_tx_builder_build, rejectsSpendingAReferenceInputUnderProtocolVersion10)
+{
+  expect_spending_a_reference_input(10U, true, false);
+  expect_spending_a_reference_input(10U, false, false);
+}
+
+TEST(cardano_tx_builder_build, allowsSpendingAReferenceInputUnderProtocolVersion8)
+{
+  expect_spending_a_reference_input(8U, true, true);
+  expect_spending_a_reference_input(8U, false, true);
+}
+
+TEST(cardano_tx_builder_build, allowsSpendingAReferenceInputUnderProtocolVersion11)
+{
+  expect_spending_a_reference_input(11U, true, true);
+  expect_spending_a_reference_input(11U, false, true);
+}
+
+TEST(cardano_tx_builder_build, allowsSpendingAReferenceInputUnderProtocolVersion12)
+{
+  expect_spending_a_reference_input(12U, true, true);
+  expect_spending_a_reference_input(12U, false, true);
+}
+
+TEST(cardano_tx_builder_build, allowsSpendingAReferenceInputUnderMajorProtocolVersion0)
+{
+  expect_spending_a_reference_input(0U, true, true);
+  expect_spending_a_reference_input(0U, false, true);
+}
+
+TEST(cardano_tx_builder_build, neverCoinSelectsAReferenceInputUnderProtocolVersions9And10)
+{
+  expect_coin_selection_of_a_reference_input(9U, false);
+  expect_coin_selection_of_a_reference_input(10U, false);
+}
+
+TEST(cardano_tx_builder_build, canCoinSelectAReferenceInputUnderOtherProtocolVersions)
+{
+  expect_coin_selection_of_a_reference_input(0U, true);
+  expect_coin_selection_of_a_reference_input(8U, true);
+  expect_coin_selection_of_a_reference_input(11U, true);
+  expect_coin_selection_of_a_reference_input(12U, true);
+}
+
+TEST(cardano_tx_builder_build, returnsInsufficientBalanceIfTheOnlyFundsAreAReferenceInputUnderProtocolVersions9And10)
+{
+  for (uint64_t major = 9U; major <= 10U; ++major)
+  {
+    // Arrange
+    cardano_protocol_parameters_t* params     = init_protocol_parameters_with_version(major);
+    cardano_utxo_t*                utxo       = create_utxo(CBOR_DIFFERENT_VAL2);
+    cardano_utxo_list_t*           utxos      = new_single_utxo_list(utxo);
+    cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_reference_input(tx_builder, utxo);
+
+    // Act
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+    EXPECT_EQ(tx, nullptr);
+
+    // Cleanup
+    cardano_tx_builder_unref(&tx_builder);
+    cardano_protocol_parameters_unref(&params);
+    cardano_utxo_list_unref(&utxos);
+    cardano_utxo_unref(&utxo);
+  }
+}
+
+TEST(cardano_tx_builder_build, canCoinSelectAReferenceInputThatIsTheOnlyFundsUnderProtocolVersions0And11)
+{
+  const uint64_t majors[] = { 0U, 11U };
+
+  for (const uint64_t major: majors)
+  {
+    // Arrange
+    cardano_protocol_parameters_t* params     = init_protocol_parameters_with_version(major);
+    cardano_utxo_t*                utxo       = create_utxo(CBOR_DIFFERENT_VAL2);
+    cardano_utxo_list_t*           utxos      = new_single_utxo_list(utxo);
+    cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_reference_input(tx_builder, utxo);
+
+    // Act
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+    EXPECT_TRUE(transaction_spends(tx, utxo));
+
+    // Cleanup
+    cardano_tx_builder_unref(&tx_builder);
+    cardano_protocol_parameters_unref(&params);
+    cardano_transaction_unref(&tx);
+    cardano_utxo_list_unref(&utxos);
+    cardano_utxo_unref(&utxo);
+  }
+}
+
+TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenExcludingReferenceInputsFromCoinSelection)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters_with_version(10U);
+  cardano_utxo_t*                utxo   = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           utxos  = new_utxo_list();
+
+  bool succeeded = false;
+
+  // Act & Assert
+  for (int i = 0; (i < 2000) && !succeeded; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_reference_input(tx_builder, utxo);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    succeeded = (result == CARDANO_SUCCESS);
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_unref(&utxo);
+}
+
+TEST(cardano_tx_builder_build, allowsReferencingAnInputThatIsNotSpentUnderProtocolVersion10)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters_with_version(10U);
+  cardano_utxo_t*                utxo       = create_utxo(UTXO_WITH_REF_SCRIPT_NATIVE);
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+
+  cardano_tx_builder_add_reference_input(tx_builder, utxo);
+
+  // Act
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  EXPECT_FALSE(transaction_spends(tx, utxo));
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_unref(&utxo);
 }
 
 TEST(cardano_tx_builder_lock_lovelace, doesntCrashIfGivenNull)
