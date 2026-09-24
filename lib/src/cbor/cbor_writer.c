@@ -590,8 +590,15 @@ cardano_cbor_writer_reset(cardano_cbor_writer_t* writer)
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  cardano_buffer_t* buffer = cardano_buffer_new(128);
+
+  if (buffer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   cardano_buffer_unref(&writer->buffer);
-  writer->buffer = cardano_buffer_new(128);
+  writer->buffer = buffer;
 
   return CARDANO_SUCCESS;
 }

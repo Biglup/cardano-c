@@ -385,7 +385,9 @@ CARDANO_EXPORT cardano_error_t cardano_reward_address_to_bytes(
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 data
- *         could not be decoded into a valid  reward address.
+ *         could not be decoded into a valid reward address. Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if
+ *         memory for the decoding buffers could not be allocated. Allocation failures inside the Bech32 decoder itself
+ *         are reported as \ref CARDANO_ERROR_DECODING.
  *
  * Usage Example:
  * \code{.c}

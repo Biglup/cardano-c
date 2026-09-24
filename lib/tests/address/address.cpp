@@ -33,6 +33,18 @@ extern "C" {
 
 #include <gmock/gmock.h>
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief Index of the first allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 3;
+
+/**
+ * \brief Index of the last allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 7;
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_address_from_bytes, canCreateAddressFromBaseAddressBytes)
@@ -884,6 +896,89 @@ TEST(cardano_address_from_string, returnsErrorWhenMemoryAllocationFails)
   EXPECT_EQ(address, nullptr);
 
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_address_from_string, returnsErrorOnEveryAllocationFailure)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_address_t* address = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_address_from_string(Cip19TestVectors::basePaymentKeyStakeKey.c_str(), Cip19TestVectors::basePaymentKeyStakeKey.size(), &address);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(address, nullptr);
+    }
+    else if ((i >= FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR) && (i <= LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR))
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+      EXPECT_EQ(address, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(address, nullptr);
+    }
+
+    // Cleanup
+    cardano_address_unref(&address);
+  }
+
+  EXPECT_TRUE(succeeded);
+}
+
+TEST(cardano_address_from_string, returnsErrorOnEveryAllocationFailureForByronAddress)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_address_t* address = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_address_from_string(Cip19TestVectors::byronTestnetDaedalus.c_str(), Cip19TestVectors::byronTestnetDaedalus.size(), &address);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(address, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(address, nullptr);
+    }
+
+    // Cleanup
+    cardano_address_unref(&address);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_address_get_string_size, canGetAddressStringSize)

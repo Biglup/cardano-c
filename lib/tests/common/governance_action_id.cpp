@@ -45,6 +45,16 @@ static const char* CIP129_BECH32_2           = "gov_action1zyg3zyg3zyg3zyg3zyg3z
 static const char* INVALID_CIP129_BECH32     = "gov_action1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyp6q4j5";
 static const char* INVALID_CIP129_BECH32_2   = "gox_action1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsqqjxekw";
 
+/**
+ * \brief Index of the first allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 3;
+
+/**
+ * \brief Index of the last allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 7;
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_governance_action_id_to_cbor, canSerializeGovernanceActionId)
@@ -1292,11 +1302,55 @@ TEST(cardano_governance_action_id_from_bech32, returnsErrorIfMemoryAllocationFai
     &governance_action_id);
 
   // Assert
-  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(governance_action_id, (cardano_governance_action_id_t*)nullptr);
 
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_governance_action_id_from_bech32, returnsErrorOnEveryAllocationFailure)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_governance_action_id_t* governance_action_id = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_governance_action_id_from_bech32(CIP129_BECH32_1, cardano_safe_strlen(CIP129_BECH32_1, 128), &governance_action_id);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(governance_action_id, nullptr);
+    }
+    else if ((i >= FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR) && (i <= LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR))
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+      EXPECT_EQ(governance_action_id, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(governance_action_id, nullptr);
+    }
+
+    // Cleanup
+    cardano_governance_action_id_unref(&governance_action_id);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_governance_action_id_from_bech32, returnsErrorIfGivenNull)

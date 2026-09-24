@@ -34,6 +34,18 @@ extern "C" {
 #include <cardano/address/address.h>
 #include <gmock/gmock.h>
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief Index of the first allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 3;
+
+/**
+ * \brief Index of the last allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 7;
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_reward_address_from_credentials, returnsErrorWhenPaymentIsNull)
@@ -425,9 +437,53 @@ TEST(cardano_reward_address_from_bech32, returnsErrorIfMemoryAllocationFails)
   cardano_error_t result = cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &reward_address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(reward_address, nullptr);
   cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_reward_address_from_bech32, returnsErrorOnEveryAllocationFailure)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_reward_address_t* reward_address = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_reward_address_from_bech32(Cip19TestVectors::rewardKey.c_str(), Cip19TestVectors::rewardKey.size(), &reward_address);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(reward_address, nullptr);
+    }
+    else if ((i >= FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR) && (i <= LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR))
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+      EXPECT_EQ(reward_address, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(reward_address, nullptr);
+    }
+
+    // Cleanup
+    cardano_reward_address_unref(&reward_address);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_reward_address_from_bech32, returnsErrorIfSizeIsZero)

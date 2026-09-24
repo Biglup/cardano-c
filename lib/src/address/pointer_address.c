@@ -270,8 +270,26 @@ cardano_pointer_address_from_bech32(
   size_t       hrp_size  = 0;
   const size_t data_size = cardano_encoding_bech32_get_decoded_length(data, size, &hrp_size);
 
-  char*   hrp          = _cardano_malloc(hrp_size);
+  if ((hrp_size == 0U) || (data_size == 0U))
+  {
+    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  char* hrp = _cardano_malloc(hrp_size);
+
+  if (hrp == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   byte_t* decoded_data = _cardano_malloc(data_size);
+
+  if (decoded_data == NULL)
+  {
+    _cardano_free(hrp);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   const cardano_error_t decode_result = cardano_encoding_bech32_decode(data, size, hrp, hrp_size, decoded_data, data_size);
 

@@ -420,6 +420,8 @@ CARDANO_EXPORT cardano_error_t cardano_base_address_to_bytes(
  * \return Returns \ref CARDANO_SUCCESS if the base address is successfully created from the Bech32 string.
  *         Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 string does not conform to the expected format or
  *         if the decoding fails. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if any of the input pointers are NULL.
+ *         Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory for the decoding buffers could not be allocated.
+ *         Allocation failures inside the Bech32 decoder itself are reported as \ref CARDANO_ERROR_DECODING.
  *
  * \note The caller is responsible for freeing the created \ref cardano_base_address_t object using the
  *       \ref cardano_base_address_unref function when it is no longer needed.

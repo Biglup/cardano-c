@@ -913,9 +913,9 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_encode_hex(const cardano_cbor
  * \param[in] writer The CBOR writer instance to reset.
  *
  * \return A cardano_error_t indicating the outcome of the operation. CARDANO_SUCCESS is returned if the writer is
- *         successfully reset. If the operation fails, an error code is returned that indicates the specific reason for
- *         failure. For detailed information on possible error codes and their meanings, consult the cardano_error_t
- *         documentation.
+ *         successfully reset. Returns \ref CARDANO_ERROR_POINTER_IS_NULL if \p writer is NULL. Returns
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the new internal buffer could not be allocated; in that case the
+ *         writer keeps its previously written data and remains usable.
  *
  * \code{.c}
  * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
