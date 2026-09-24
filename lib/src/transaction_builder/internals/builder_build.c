@@ -567,6 +567,13 @@ cardano_builder_build(
 
       return CARDANO_ERROR_POINTER_IS_NULL;
     }
+
+    if (cardano_utxo_list_get_length(state->collateral_utxos) == 0U)
+    {
+      *error_message = "This transaction interacts with plutus validators. You must set at least one collateral UTXO before calling `build`.";
+
+      return CARDANO_ERROR_BALANCE_INSUFFICIENT;
+    }
   }
 
   cardano_transaction_t* tx = state->transaction;

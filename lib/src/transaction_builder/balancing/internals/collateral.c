@@ -299,9 +299,14 @@ _cardano_set_collateral_output(
     return result;
   }
 
-  if ((collateral_count == 0U) || (!is_collateral_required))
+  if (!is_collateral_required)
   {
     return CARDANO_SUCCESS;
+  }
+
+  if (collateral_count == 0U)
+  {
+    return CARDANO_ERROR_BALANCE_INSUFFICIENT;
   }
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);

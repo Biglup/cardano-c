@@ -2693,7 +2693,7 @@ cardano_balance_transaction(
     return result;
   }
 
-  if ((cardano_utxo_list_get_length(available_collateral_utxo) > 0U) && (cardano_utxo_list_get_length(collateral_utxo) == 0U))
+  if (cardano_utxo_list_get_length(collateral_utxo) == 0U)
   {
     bool is_collateral_required = false;
 
@@ -2701,9 +2701,18 @@ cardano_balance_transaction(
 
     if ((result == CARDANO_SUCCESS) && is_collateral_required)
     {
-      cardano_transaction_set_last_error(
-        unbalanced_tx,
-        "Every collateral UTXO given to the balancer is spent or referenced by a sub transaction. The collateral of the top level transaction must come from UTXOs that its sub transactions do not use.");
+      if (cardano_utxo_list_get_length(available_collateral_utxo) > 0U)
+      {
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Every collateral UTXO given to the balancer is spent or referenced by a sub transaction. The collateral of the top level transaction must come from UTXOs that its sub transactions do not use.");
+      }
+      else
+      {
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Collateral UTXOs are required because the transaction or one of its sub transactions carries redeemers, but none were given to the balancer.");
+      }
 
       result = CARDANO_ERROR_BALANCE_INSUFFICIENT;
     }

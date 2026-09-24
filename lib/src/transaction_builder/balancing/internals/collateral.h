@@ -143,7 +143,8 @@ _cardano_is_collateral_required(cardano_transaction_t* tx, bool* is_required);
  * \param[in]     change_address               A pointer to the \ref cardano_address_t where any collateral change will be sent.
  *
  * \return \c cardano_error_t indicating the outcome of the operation. Returns \c CARDANO_SUCCESS if the collateral output was
- *         successfully set, or an appropriate error code indicating the failure reason.
+ *         successfully set or no collateral is required, \c CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
+ *         \p available_collateral_outputs is NULL or empty, or an appropriate error code indicating the failure reason.
  */
 cardano_error_t
 _cardano_set_collateral_output(

@@ -3297,6 +3297,44 @@ TEST(cardano_tx_builder_build, returnsErrorIfBalancingFails)
   cardano_utxo_list_unref(&utxos);
 }
 
+TEST(cardano_tx_builder_build, returnsErrorIfCollateralIsRequiredAndTheCollateralUtxosAreEmpty)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params           = init_protocol_parameters();
+  cardano_utxo_t*                utxo             = create_utxo(UTXO_WITH_REF_SCRIPT_PV1);
+  cardano_plutus_data_t*         redeemer         = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*         datum            = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_utxo_list_t*           utxos            = new_utxo_list();
+  cardano_utxo_list_t*           collateral_utxos = nullptr;
+
+  EXPECT_EQ(cardano_utxo_list_new(&collateral_utxos), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_set_collateral_utxos(tx_builder, collateral_utxos);
+
+  // Act
+  cardano_tx_builder_add_input(tx_builder, utxo, redeemer, datum);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "This transaction interacts with plutus validators. You must set at least one collateral UTXO before calling `build`.");
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_utxo_unref(&utxo);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_plutus_data_unref(&datum);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_list_unref(&collateral_utxos);
+}
+
 TEST(cardano_tx_builder_lock_lovelace, doesntCrashIfGivenNull)
 {
   cardano_tx_builder_lock_lovelace(nullptr, nullptr, 0, nullptr);
@@ -7694,6 +7732,47 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsMissingCollateralUtxosIfOnly
   cardano_utxo_unref(&reference_utxo);
   cardano_utxo_list_unref(&seller_utxos);
   cardano_utxo_list_unref(&batcher_utxos);
+}
+
+TEST(cardano_tx_builder_add_sub_transaction, reportsEmptyCollateralUtxosIfOnlyASubTransactionHasRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params           = init_protocol_parameters();
+  cardano_utxo_t*                seller_utxo      = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo     = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_t*                reference_utxo   = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_utxo_list_t*           seller_utxos     = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos    = new_single_utxo_list(batcher_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx    = build_script_party_sub_transaction(params, seller_utxo, reference_utxo, 11150770, 1000000, 200000000);
+  cardano_utxo_list_t*           collateral_utxos = nullptr;
+
+  EXPECT_EQ(cardano_utxo_list_new(&collateral_utxos), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
+
+  // Act
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_set_collateral_utxos(tx_builder, collateral_utxos);
+  cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
+
+  cardano_transaction_t* tx     = nullptr;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "This transaction interacts with plutus validators. You must set at least one collateral UTXO before calling `build`.");
+
+  // Cleanup
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_sub_transaction_unref(&seller_sub_tx);
+  cardano_utxo_unref(&seller_utxo);
+  cardano_utxo_unref(&batcher_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_list_unref(&seller_utxos);
+  cardano_utxo_list_unref(&batcher_utxos);
+  cardano_utxo_list_unref(&collateral_utxos);
 }
 
 TEST(cardano_tx_builder_add_sub_transaction, buildsABatchThatPaysForTheScriptsOfASubTransaction)
