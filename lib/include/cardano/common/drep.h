@@ -133,8 +133,9 @@ cardano_drep_new(
  * \param[out] drep            Pointer to the output cardano_drep_t object.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the drep was successfully created, or an appropriate error code
- *         indicating the failure reason.
+ *         if the drep was successfully created, \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED
+ *         if memory for the decoding buffers or the drep could not be allocated, or an
+ *         appropriate error code indicating the failure reason.
  *
  * \note The caller is responsible for freeing the memory associated with the returned
  *       cardano_drep_t object using `cardano_drep_unref`.

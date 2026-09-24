@@ -940,6 +940,12 @@ new_registration_certificate_set(const uint64_t deposit, const uint64_t deposit2
   return certificates;
 }
 
+/**
+ * Replaces the certificates of a transaction with two Conway registration certificates that pay the given deposits.
+ * \param tx the transaction.
+ * \param deposit the deposit the first certificate pays.
+ * \param deposit2 the deposit the second certificate pays.
+ */
 static void
 set_registration_deposits(cardano_transaction_t* tx, const uint64_t deposit, const uint64_t deposit2)
 {
@@ -952,6 +958,12 @@ set_registration_deposits(cardano_transaction_t* tx, const uint64_t deposit, con
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the certificates of a sub transaction with two Conway registration certificates that pay the given deposits.
+ * \param sub_tx the sub transaction.
+ * \param deposit the deposit the first certificate pays.
+ * \param deposit2 the deposit the second certificate pays.
+ */
 static void
 set_sub_transaction_registration_deposits(cardano_sub_transaction_t* sub_tx, const uint64_t deposit, const uint64_t deposit2)
 {
@@ -964,6 +976,12 @@ set_sub_transaction_registration_deposits(cardano_sub_transaction_t* sub_tx, con
   cardano_sub_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the withdrawals of a transaction with withdrawals from one or two reward accounts.
+ * \param tx the transaction.
+ * \param amount the amount withdrawn from the first reward account.
+ * \param amount2 the amount withdrawn from the second reward account, or zero to leave it out.
+ */
 static void
 set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t amount2)
 {
@@ -976,6 +994,11 @@ set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the certificates of a transaction with a single unregistration certificate that reclaims the given deposit.
+ * \param tx the transaction.
+ * \param deposit the deposit the certificate reclaims.
+ */
 static void
 set_reclaimed_deposit(cardano_transaction_t* tx, const uint64_t deposit)
 {
@@ -988,6 +1011,12 @@ set_reclaimed_deposit(cardano_transaction_t* tx, const uint64_t deposit)
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the withdrawals of a sub transaction with withdrawals from one or two reward accounts.
+ * \param sub_tx the sub transaction.
+ * \param amount the amount withdrawn from the first reward account.
+ * \param amount2 the amount withdrawn from the second reward account, or zero to leave it out.
+ */
 static void
 set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_t amount, const uint64_t amount2)
 {
@@ -1000,6 +1029,12 @@ set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_
   cardano_sub_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the certificates of a sub transaction with a single unregistration certificate that reclaims the given
+ * deposit.
+ * \param sub_tx the sub transaction.
+ * \param deposit the deposit the certificate reclaims.
+ */
 static void
 set_sub_transaction_reclaimed_deposit(cardano_sub_transaction_t* sub_tx, const uint64_t deposit)
 {
