@@ -34,16 +34,6 @@
 
 #include "../config.h"
 
-/* CONSTANTS *****************************************************************/
-
-/**
- * \brief Capacity of the arrays created empty by the operations that derive a new array from existing ones.
- *
- * An empty result is created with this capacity instead of a capacity of zero, so no zero size allocation is
- * requested and the array can grow when items are pushed to it.
- */
-static const size_t ARRAY_DEFAULT_CAPACITY = 128U;
-
 /* STRUCTS *******************************************************************/
 
 /**
@@ -175,6 +165,8 @@ insertion_sort(cardano_object_t** array, const size_t size, const cardano_array_
 cardano_array_t*
 cardano_array_new(const size_t capacity)
 {
+  static const size_t default_capacity = 128U;
+
   cardano_array_t* array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
 
   if (array == NULL)
@@ -182,7 +174,14 @@ cardano_array_new(const size_t capacity)
     return NULL;
   }
 
-  array->items = (cardano_object_t**)_cardano_malloc(capacity * sizeof(cardano_object_t*));
+  size_t effective_capacity = capacity;
+
+  if (effective_capacity == 0U)
+  {
+    effective_capacity = default_capacity;
+  }
+
+  array->items = (cardano_object_t**)_cardano_malloc(effective_capacity * sizeof(cardano_object_t*));
 
   if (array->items == NULL)
   {
@@ -192,7 +191,7 @@ cardano_array_new(const size_t capacity)
 
   array->size               = 0;
   array->head               = 0;
-  array->capacity           = capacity;
+  array->capacity           = effective_capacity;
   array->base.ref_count     = 1;
   array->base.last_error[0] = '\0';
   array->base.deallocator   = cardano_array_deallocate;
@@ -216,23 +215,10 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
   const size_t lhs_size = lhs->size;
   const size_t rhs_size = rhs->size;
 
-  if ((lhs_size + rhs_size) == 0U)
-  {
-    return cardano_array_new(ARRAY_DEFAULT_CAPACITY);
-  }
-
-  cardano_array_t* array = (cardano_array_t*)_cardano_malloc(sizeof(cardano_array_t));
+  cardano_array_t* array = cardano_array_new(lhs_size + rhs_size);
 
   if (array == NULL)
   {
-    return NULL;
-  }
-
-  array->items = (cardano_object_t**)_cardano_malloc((lhs_size + rhs_size) * sizeof(cardano_object_t*));
-
-  if (array->items == NULL)
-  {
-    _cardano_free(array);
     return NULL;
   }
 
@@ -250,12 +236,7 @@ cardano_array_concat(const cardano_array_t* lhs, const cardano_array_t* rhs)
     array->items[lhs_size + i] = item;
   }
 
-  array->size               = lhs_size + rhs_size;
-  array->head               = 0;
-  array->capacity           = array->size;
-  array->base.ref_count     = 1;
-  array->base.last_error[0] = '\0';
-  array->base.deallocator   = cardano_array_deallocate;
+  array->size = lhs_size + rhs_size;
 
   return array;
 }
@@ -602,9 +583,7 @@ cardano_array_filter(const cardano_array_t* array, cardano_array_unary_predicate
     return NULL;
   }
 
-  const size_t capacity = (array->size > 0U) ? array->size : ARRAY_DEFAULT_CAPACITY;
-
-  cardano_array_t* filtered_array = cardano_array_new(capacity);
+  cardano_array_t* filtered_array = cardano_array_new(array->size);
 
   if (filtered_array == NULL)
   {

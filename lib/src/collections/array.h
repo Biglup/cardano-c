@@ -77,8 +77,8 @@ typedef struct cardano_array_t cardano_array_t;
 /**
  * \brief Creates a new dynamic array with the specified initial capacity.
  *
- * \param[in] capacity   Initial capacity of the array. The capacity must be greater than 0.
- * If 0 is provided, this function will return NULL.
+ * \param[in] capacity   Initial capacity of the array. If 0 is provided, the array is created with a default
+ * capacity instead, so it can grow when items are pushed to it.
  *
  * \return The newly created array or NULL on memory allocation failure.
  * The caller assumes ownership of the returned array and is responsible for its lifecycle.
