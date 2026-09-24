@@ -771,6 +771,8 @@ CARDANO_EXPORT void cardano_tx_builder_lock_value_ex(
  * \note Any errors resulting from adding this input will be deferred and reported when `cardano_tx_builder_build` is called.
  *       An input that is already spent by a sub transaction or that was already added as an input makes
  *       `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
+ *
+ * \note Under protocol versions 9 and 10 a UTXO that is also added as a reference input makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_input(
   cardano_tx_builder_t*  builder,
@@ -795,6 +797,8 @@ CARDANO_EXPORT void cardano_tx_builder_add_input(
  * \param[in] callback     The callback producing the redeemer payload.
  * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
  * \param[in] datum        The datum of the UTXO, or NULL when the output holds an inline datum.
+ *
+ * \note Under protocol versions 9 and 10 a UTXO that is also added as a reference input makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_input_with_deferred_redeemer(
   cardano_tx_builder_t*          builder,

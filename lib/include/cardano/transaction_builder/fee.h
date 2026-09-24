@@ -329,7 +329,8 @@ cardano_compute_script_ref_fee(
  * \ref cardano_unit_interval_from_double, many tiers or a very large price can break that condition; the fee is then a
  * conservative upper bound of the exact fee, which never falls below it. The excess is a tiny fraction of the fee,
  * usually a few lovelace at most, when the denominators are small, and grows with them, up to about a thousandth of
- * the fee for a multiplier denominator around 10^15, as \ref cardano_unit_interval_from_double produces.
+ * the fee for a multiplier denominator around 10^15, as \ref cardano_unit_interval_from_double produces. With
+ * denominators close to 2^64 the bound can be several times the exact fee.
  *
  * Every entry of the list is counted, as \ref cardano_compute_script_ref_fee documents, and the size of each script is
  * the one reported by \ref cardano_get_serialized_script_size.

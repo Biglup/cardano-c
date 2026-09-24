@@ -67,7 +67,8 @@ typedef struct cardano_byron_address_t cardano_byron_address_t;
  *                     address object will be stored.
  *
  * \return A \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS on success
- *         or an appropriate error code on failure.
+ *         or an appropriate error code on failure. Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory for
+ *         the address could not be allocated.
  *
  * \note It is the caller's responsibility to manage the lifecycle of the created \ref cardano_byron_address_t object,
  *       including freeing it when it is no longer needed.

@@ -44,9 +44,11 @@ static const char* CBOR = "84b000818258200f3abbc8fc19c2e61bab6059bf8a466e6e75483
 // a Conway unregistration refunding 20, a pool retirement and two withdrawals of 10 and 5 lovelace.
 static const char* SUB_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181a200583900dc435fc2638f6684bd1f9f6f917d80c92ae642a4a33a412e516479e64245236ab8056760efceebbff57e8cab220182be3e36439e520a6454011a0098968004d901028482008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0148304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f05a0f6";
 
-// Certificates of two different stake credentials and pools, each moving half of the range of a 64 bit unsigned
-// integer, so two of them add up to more than UINT64_MAX. The Shelley era ones take their deposit from the protocol
-// parameters.
+/**
+ * Certificates of two different stake credentials and pools, each moving half of the range of a 64 bit unsigned
+ * integer, so two of them add up to more than UINT64_MAX. The Shelley era ones take their deposit from the protocol
+ * parameters.
+ */
 static const char*    REGISTRATION_CERT_CBOR        = "83078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01b8000000000000000";
 static const char*    REGISTRATION_CERT2_CBOR       = "83078200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1b8000000000000000";
 static const char*    UNREGISTRATION_CERT_CBOR      = "83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01b8000000000000000";
@@ -145,6 +147,12 @@ init_protocol_parameters()
   return parameters;
 }
 
+/**
+ * Creates a withdrawal map with a withdrawal from each of two different reward addresses.
+ * \param amount the amount withdrawn from the first reward address.
+ * \param amount2 the amount withdrawn from the second reward address.
+ * \return the withdrawal map.
+ */
 static cardano_withdrawal_map_t*
 new_withdrawal_map(const uint64_t amount, const uint64_t amount2)
 {
@@ -157,6 +165,12 @@ new_withdrawal_map(const uint64_t amount, const uint64_t amount2)
   return withdrawals;
 }
 
+/**
+ * Creates a certificate set with two certificates decoded from their CBOR hex strings.
+ * \param cbor the CBOR hex string of the first certificate.
+ * \param cbor2 the CBOR hex string of the second certificate.
+ * \return the certificate set.
+ */
 static cardano_certificate_set_t*
 new_certificate_set(const char* cbor, const char* cbor2)
 {
@@ -180,6 +194,12 @@ new_certificate_set(const char* cbor, const char* cbor2)
   return certificates;
 }
 
+/**
+ * Replaces the withdrawals of a transaction with a withdrawal from each of two different reward addresses.
+ * \param tx the transaction.
+ * \param amount the amount withdrawn from the first reward address.
+ * \param amount2 the amount withdrawn from the second reward address.
+ */
 static void
 set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t amount2)
 {
@@ -192,6 +212,12 @@ set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the certificates of a transaction with two certificates decoded from their CBOR hex strings.
+ * \param tx the transaction.
+ * \param cbor the CBOR hex string of the first certificate.
+ * \param cbor2 the CBOR hex string of the second certificate.
+ */
 static void
 set_certificates(cardano_transaction_t* tx, const char* cbor, const char* cbor2)
 {
@@ -204,6 +230,11 @@ set_certificates(cardano_transaction_t* tx, const char* cbor, const char* cbor2)
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Sets the deposit of the first proposal procedure of a transaction.
+ * \param tx the transaction.
+ * \param deposit the deposit the first proposal procedure pays.
+ */
 static void
 set_first_proposal_deposit(cardano_transaction_t* tx, const uint64_t deposit)
 {
@@ -219,6 +250,12 @@ set_first_proposal_deposit(cardano_transaction_t* tx, const uint64_t deposit)
   cardano_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the withdrawals of a sub transaction with a withdrawal from each of two different reward addresses.
+ * \param sub_tx the sub transaction.
+ * \param amount the amount withdrawn from the first reward address.
+ * \param amount2 the amount withdrawn from the second reward address.
+ */
 static void
 set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_t amount, const uint64_t amount2)
 {
@@ -231,6 +268,12 @@ set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_
   cardano_sub_transaction_body_unref(&body);
 }
 
+/**
+ * Replaces the certificates of a sub transaction with two certificates decoded from their CBOR hex strings.
+ * \param sub_tx the sub transaction.
+ * \param cbor the CBOR hex string of the first certificate.
+ * \param cbor2 the CBOR hex string of the second certificate.
+ */
 static void
 set_sub_transaction_certificates(cardano_sub_transaction_t* sub_tx, const char* cbor, const char* cbor2)
 {

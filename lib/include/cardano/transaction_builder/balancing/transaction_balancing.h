@@ -133,7 +133,9 @@ extern "C" {
  *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
  *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and
  *         its sub transactions do not balance between themselves, \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
- *         no collateral UTXO is available, or an appropriate error code indicating the type of failure.
+ *         no collateral UTXO is available, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals, deposits or reclaimed deposits add up
+ *         to more than UINT64_MAX or the direct deposits, the produced coin or the consumed coin exceed INT64_MAX, or an appropriate
+ *         error code indicating the type of failure.
  *
  * \note This function assumes that the `unbalanced_tx` is a valid but incomplete transaction, missing necessary inputs to meet the target balance.
  *       After calling this function, the `unbalanced_tx` will be updated with additional inputs, collateral, and, if necessary, a change output.
@@ -195,7 +197,9 @@ cardano_balance_transaction(
  * \param[in]  protocol_params  Protocol parameters needed for fee calculation, including min-fee coefficients and other constraints.
  * \param[out] is_balanced      A pointer to a boolean that will hold the result. Set to `true` if the transaction is balanced, or `false` otherwise.
  *
- * \return \ref CARDANO_SUCCESS if the balance check was performed successfully, or an appropriate error code indicating the type of failure.
+ * \return \ref CARDANO_SUCCESS if the balance check was performed successfully, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals,
+ *         deposits or reclaimed deposits of the transaction or of one of its sub transactions add up to more than UINT64_MAX or their
+ *         direct deposits, produced coin or consumed coin exceed INT64_MAX, or an appropriate error code indicating the type of failure.
  *
  * \note This function provides a quick way to verify that a transaction includes enough inputs to cover its outputs and all associated fees.
  *       It does not modify the transaction but provides a binary check on its balance state.
@@ -254,7 +258,9 @@ cardano_is_transaction_balanced(
  *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input has no
- *         resolved UTXO, or an appropriate error code indicating the type of failure.
+ *         resolved UTXO, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals, deposits or reclaimed deposits add up to more
+ *         than UINT64_MAX or the direct deposits, the produced coin or the consumed coin exceed INT64_MAX, or an appropriate
+ *         error code indicating the type of failure.
  *
  * Usage Example:
  * \code{.c}
@@ -303,7 +309,9 @@ cardano_compute_transaction_imbalance(
  *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input has no
- *         resolved UTXO, or an appropriate error code indicating the type of failure.
+ *         resolved UTXO, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals, deposits or reclaimed deposits add up to more
+ *         than UINT64_MAX or the direct deposits, the produced coin or the consumed coin exceed INT64_MAX, or an appropriate
+ *         error code indicating the type of failure.
  *
  * Usage Example:
  * \code{.c}
@@ -352,8 +360,10 @@ cardano_compute_sub_transaction_imbalance(
  *                              The caller must release it with \ref cardano_value_unref when it is no longer needed.
  *
  * \return \ref CARDANO_SUCCESS if the imbalance was computed, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input of the
- *         top level body or of a sub transaction has no resolved UTXO, or an appropriate error code indicating the
- *         type of failure.
+ *         top level body or of a sub transaction has no resolved UTXO, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals,
+ *         deposits or reclaimed deposits of the top level body or of a sub transaction add up to more than UINT64_MAX or
+ *         their direct deposits, produced coin or consumed coin exceed INT64_MAX, or an appropriate error code indicating
+ *         the type of failure.
  *
  * Usage Example:
  * \code{.c}
