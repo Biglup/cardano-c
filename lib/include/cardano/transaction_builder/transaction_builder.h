@@ -509,6 +509,12 @@ CARDANO_EXPORT void cardano_tx_builder_set_invalid_before_ex(cardano_tx_builder_
  *
  * \note Any errors resulting from adding this input will be reported when `cardano_tx_builder_build` is called. A
  *       reference input added twice makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY.
+ *
+ * \note Under protocol versions 9 and 10 the ledger rejects a transaction that spends and references the same UTXO.
+ *       When the major protocol version of the protocol parameters of the builder is 9 or 10, coin selection never
+ *       picks a UTXO added as a reference input, and a UTXO added both with `cardano_tx_builder_add_input` and as a
+ *       reference input makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_DUPLICATED_KEY. Other protocol
+ *       versions allow the overlap, so coin selection may spend a UTXO that is also referenced.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_reference_input(cardano_tx_builder_t* builder, cardano_utxo_t* utxo);
 
@@ -2815,6 +2821,11 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  * See \ref cardano_tx_builder_add_sub_transaction for the failures that are specific to a transaction that carries
  * sub transactions, such as a missing required top level guard, sub transactions that do not balance or collateral
  * UTXOs that are all used by the sub transactions.
+ * The ledger does not allow a UTXO to be both spent and referenced under protocol versions 9 and 10, so when the major
+ * protocol version of the protocol parameters is 9 or 10, coin selection never picks a UTXO added as a reference input,
+ * and a UTXO added both with \ref cardano_tx_builder_add_input and as a reference input makes this function return
+ * \ref CARDANO_ERROR_DUPLICATED_KEY. Other protocol versions, and protocol parameters whose major protocol version is 0,
+ * allow the overlap.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that manages the transaction details.
  * \param[out] transaction A pointer to a \ref cardano_transaction_t pointer where the created transaction will be stored upon success.
