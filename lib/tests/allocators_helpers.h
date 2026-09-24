@@ -281,6 +281,29 @@ void*
 fail_zero_size_malloc(size_t size);
 
 /**
+ * \brief Sets the zero based index of the malloc call that fail_malloc_at_exact_index fails.
+ *
+ * This function also restarts the count of malloc calls seen by fail_malloc_at_exact_index.
+ *
+ * \param index The index of the malloc call to fail. A negative index never fails.
+ */
+void
+set_malloc_fail_index(int index);
+
+/**
+ * \brief A mock version of malloc that fails exactly one allocation.
+ *
+ * Unlike fail_malloc_at_limit, which fails every allocation from the limit on, this allocator
+ * fails only the call whose zero based index matches the one set with set_malloc_fail_index and
+ * lets every other call through, so a single failure deep inside a call chain can be reached.
+ *
+ * \param size The size of the memory allocation request.
+ * \return NULL for the selected call, a pointer to allocated memory otherwise.
+ */
+void*
+fail_malloc_at_exact_index(size_t size);
+
+/**
  * \brief A mock version of realloc that simulates a reallocation failure on the first call.
  *
  * This function is useful for testing how code reacts when realloc fails immediately,

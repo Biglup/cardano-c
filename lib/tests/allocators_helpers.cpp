@@ -34,6 +34,9 @@ static int free_run_count    = 0;
 static int malloc_limit  = 0;
 static int realloc_limit = 0;
 
+static int malloc_call_index = 0;
+static int malloc_fail_index = -1;
+
 /* DEFINITIONS ***************************************************************/
 
 void
@@ -244,6 +247,27 @@ void*
 fail_zero_size_malloc(const size_t size)
 {
   if (size == 0U)
+  {
+    return NULL;
+  }
+
+  return malloc(size);
+}
+
+void
+set_malloc_fail_index(const int index)
+{
+  malloc_call_index = 0;
+  malloc_fail_index = index;
+}
+
+void*
+fail_malloc_at_exact_index(const size_t size)
+{
+  const int current = malloc_call_index;
+  malloc_call_index++;
+
+  if (current == malloc_fail_index)
   {
     return NULL;
   }
