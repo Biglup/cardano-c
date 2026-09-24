@@ -1231,11 +1231,14 @@ CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_max_ref_script_size_per_
  * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
  *                                This parameter must not be NULL.
  *
- * \return The reference script cost stride in bytes.
+ * \return The reference script cost stride in bytes, or 0 if it is not set. A fresh parameter set does not
+ *         carry it, as the parameters of the eras before Dijkstra do not.
  *         If the \p protocol_parameters pointer is NULL, the function returns 0.
  *
  * \note Together with the reference script cost multiplier, the stride defines the tiered pricing of
- *       reference script bytes: after each stride the per-byte price is scaled by the multiplier.
+ *       reference script bytes: after each stride the per-byte price is scaled by the multiplier. The fee
+ *       functions that take the protocol parameters price with the Conway value, 25600 bytes, when the
+ *       stride is not set.
  *
  * Usage Example:
  * \code{.c}
@@ -1259,11 +1262,14 @@ CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_ref_script_cost_stride(
  * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
  *                                This parameter must not be NULL.
  *
- * \return A pointer to a \ref cardano_unit_interval_t object representing the reference script cost multiplier.
- *         If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the reference script cost multiplier,
+ *         or NULL if it is not set. A fresh parameter set does not carry it, as the parameters of the eras before
+ *         Dijkstra do not. If the \p protocol_parameters pointer is NULL, the function returns NULL.
  *
  * \note The caller is responsible for managing the lifecycle of the returned \ref cardano_unit_interval_t object.
  *       Specifically, the caller must release the object by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *       The fee functions that take the protocol parameters price with the Conway value, 6/5, when the multiplier
+ *       is not set.
  *
  * Usage Example:
  * \code{.c}
@@ -3133,7 +3139,8 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_ref_script_cost_s
  *
  * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
  *                                    This parameter must not be NULL.
- * \param[in] ref_script_cost_multiplier A pointer to an initialized \ref cardano_unit_interval_t object representing the reference script cost multiplier.
+ * \param[in] ref_script_cost_multiplier A pointer to an initialized \ref cardano_unit_interval_t object representing the reference script cost multiplier,
+ *                                       or NULL to clear it.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
  *         the reference script cost multiplier was successfully set, or an appropriate error code if an error occurred.

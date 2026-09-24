@@ -602,8 +602,68 @@ create_sized_reference_script_inputs(const size_t size)
 }
 
 /**
- * \brief Computes the price of a total size of reference scripts with the tiered model, in exact arithmetic over a
- * common denominator: the denominator of the price times 5 to the power of the index of the last tier.
+ * \brief Computes the price of a total size of reference scripts with a tiered model of any stride and multiplier, in
+ * exact arithmetic over a common denominator: the denominator of the price times the denominator of the multiplier to
+ * the power of the index of the last tier.
+ *
+ * \param size The total size of the reference scripts, in bytes.
+ * \param numerator The numerator of the price of a byte in the first tier.
+ * \param denominator The denominator of the price of a byte in the first tier.
+ * \param stride The size of a tier, in bytes.
+ * \param multiplier_numerator The numerator of the factor that scales the price from one tier to the next.
+ * \param multiplier_denominator The denominator of the factor that scales the price from one tier to the next.
+ * \param round_every_tier Whether the price of every tier is rounded up, instead of flooring the exact sum once.
+ * \return The fee.
+ */
+static uint64_t
+compute_exact_fee_with_tiers(
+  const uint64_t size,
+  const uint64_t numerator,
+  const uint64_t denominator,
+  const uint64_t stride,
+  const uint64_t multiplier_numerator,
+  const uint64_t multiplier_denominator,
+  const bool     round_every_tier)
+{
+  std::vector<uint64_t> tier_sizes;
+  uint64_t              remaining = size;
+
+  while (remaining > 0U)
+  {
+    const uint64_t tier_size = (remaining < stride) ? remaining : stride;
+
+    tier_sizes.push_back(tier_size);
+    remaining -= tier_size;
+  }
+
+  unsigned __int128 sum_numerator     = 0U;
+  unsigned __int128 sum_denominator   = denominator;
+  unsigned __int128 rounded_fee       = 0U;
+  unsigned __int128 numerator_power   = 1U;
+  unsigned __int128 denominator_power = 1U;
+
+  for (size_t i = 1U; i < tier_sizes.size(); ++i)
+  {
+    sum_denominator *= multiplier_denominator;
+  }
+
+  for (size_t k = 0U; k < tier_sizes.size(); ++k)
+  {
+    const unsigned __int128 tier_numerator   = (unsigned __int128)tier_sizes[k] * numerator * numerator_power;
+    const unsigned __int128 tier_denominator = (unsigned __int128)denominator * denominator_power;
+
+    rounded_fee       += (tier_numerator + tier_denominator - 1U) / tier_denominator;
+    sum_numerator     += tier_numerator * (sum_denominator / tier_denominator);
+    numerator_power   *= multiplier_numerator;
+    denominator_power *= multiplier_denominator;
+  }
+
+  return (uint64_t)(round_every_tier ? rounded_fee : (sum_numerator / sum_denominator));
+}
+
+/**
+ * \brief Computes the price of a total size of reference scripts with the tiered model of Conway, in exact arithmetic:
+ * tiers of 25600 bytes, each of them 6/5 as expensive per byte as the previous one.
  *
  * \param size The total size of the reference scripts, in bytes.
  * \param numerator The numerator of the price of a byte in the first tier.
@@ -614,40 +674,48 @@ create_sized_reference_script_inputs(const size_t size)
 static uint64_t
 compute_exact_tiered_fee(const uint64_t size, const uint64_t numerator, const uint64_t denominator, const bool round_every_tier)
 {
-  std::vector<uint64_t> tier_sizes;
-  uint64_t              remaining = size;
+  return compute_exact_fee_with_tiers(size, numerator, denominator, 25600U, 6U, 5U, round_every_tier);
+}
 
-  while (remaining > 0U)
-  {
-    const uint64_t tier_size = (remaining < 25600U) ? remaining : 25600U;
+/**
+ * \brief Builds dummy protocol parameters that carry a reference script cost stride and multiplier.
+ *
+ * \param stride The reference script cost stride, in bytes.
+ * \param multiplier_numerator The numerator of the reference script cost multiplier.
+ * \param multiplier_denominator The denominator of the reference script cost multiplier.
+ * \return A pointer to the protocol parameters.
+ */
+static cardano_protocol_parameters_t*
+create_protocol_parameters_with_tiers(const uint64_t stride, const uint64_t multiplier_numerator, const uint64_t multiplier_denominator)
+{
+  cardano_protocol_parameters_t* params     = create_protocol_parameters();
+  cardano_unit_interval_t*       multiplier = NULL;
 
-    tier_sizes.push_back(tier_size);
-    remaining -= tier_size;
-  }
+  EXPECT_EQ(cardano_unit_interval_new(multiplier_numerator, multiplier_denominator, &multiplier), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_stride(params, stride), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_multiplier(params, multiplier), CARDANO_SUCCESS);
 
-  unsigned __int128 sum_numerator   = 0U;
-  unsigned __int128 sum_denominator = denominator;
-  unsigned __int128 rounded_fee     = 0U;
-  unsigned __int128 six_power       = 1U;
-  unsigned __int128 five_power      = 1U;
+  cardano_unit_interval_unref(&multiplier);
 
-  for (size_t i = 1U; i < tier_sizes.size(); ++i)
-  {
-    sum_denominator *= 5U;
-  }
+  return params;
+}
 
-  for (size_t k = 0U; k < tier_sizes.size(); ++k)
-  {
-    const unsigned __int128 tier_numerator   = (unsigned __int128)tier_sizes[k] * numerator * six_power;
-    const unsigned __int128 tier_denominator = (unsigned __int128)denominator * five_power;
+/**
+ * \brief Sets the price of a byte of reference script of dummy protocol parameters.
+ *
+ * \param params The protocol parameters.
+ * \param numerator The numerator of the price.
+ * \param denominator The denominator of the price.
+ */
+static void
+set_reference_script_byte_cost(cardano_protocol_parameters_t* params, const uint64_t numerator, const uint64_t denominator)
+{
+  cardano_unit_interval_t* cost = NULL;
 
-    rounded_fee   += (tier_numerator + tier_denominator - 1U) / tier_denominator;
-    sum_numerator += tier_numerator * (sum_denominator / tier_denominator);
-    six_power     *= 6U;
-    five_power    *= 5U;
-  }
+  EXPECT_EQ(cardano_unit_interval_new(numerator, denominator, &cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_per_byte(params, cost), CARDANO_SUCCESS);
 
-  return (uint64_t)(round_every_tier ? rounded_fee : (sum_numerator / sum_denominator));
+  cardano_unit_interval_unref(&cost);
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -1595,12 +1663,12 @@ TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeOfAPriceConvertedFromAFloat
   }
 }
 
-TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeIfThePriceOfATierOverflowsWithASmallDenominator)
+TEST(cardano_fee_compute_script_ref_fee, pricesExactlyIfTheScaledPriceOfATierOverflowsWithASmallDenominator)
 {
   // Arrange
   const uint64_t numerators[]   = { 1099511627777U, 17179869184U };
   const uint64_t denominators[] = { 3U, 1U };
-  const uint64_t fees[]         = { 154802650328422400U, 7256374234700800U };
+  const uint64_t fees[]         = { 154802650327712072U, 7256374234104903U };
   const uint64_t size           = 8U * REFERENCE_SCRIPT_TIER_SIZE;
 
   for (size_t i = 0U; i < sizeof(numerators) / sizeof(numerators[0]); ++i)
@@ -1618,14 +1686,65 @@ TEST(cardano_fee_compute_script_ref_fee, boundsTheFeeIfThePriceOfATierOverflowsW
     const uint64_t exact_fee = compute_exact_tiered_fee(size, numerators[i], denominators[i], false);
 
     EXPECT_EQ(result, CARDANO_SUCCESS);
-    EXPECT_GE(fee, exact_fee);
-    EXPECT_LT(fee - exact_fee, exact_fee / 1000000000U);
+    EXPECT_EQ(fee, exact_fee);
     EXPECT_EQ(fee, fees[i]);
 
     // Cleanup
     cardano_unit_interval_unref(&script_ref_cost);
     cardano_utxo_list_unref(&utxo_list);
   }
+}
+
+TEST(cardano_fee_compute_script_ref_fee, pricesExactlyAVeryLargePriceWithAnIntegerDenominator)
+{
+  // Arrange
+  const uint64_t           price           = 10000000000000U;
+  const uint64_t           size            = 8U * REFERENCE_SCRIPT_TIER_SIZE;
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(size);
+  uint64_t                 fee             = 0U;
+
+  EXPECT_EQ(cardano_unit_interval_new(price, 1U, &script_ref_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  const uint64_t exact_fee = compute_exact_tiered_fee(size, price, 1U, false);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(exact_fee, 4223765708800000000U);
+  EXPECT_GE(fee, exact_fee);
+  EXPECT_EQ(fee, 4223765708800000000U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+}
+
+TEST(cardano_fee_compute_script_ref_fee, pricesExactlyAPriceWhoseDenominatorIsBelowTheOneOfTheMultiplier)
+{
+  // Arrange
+  const uint64_t           size            = 466199U;
+  const uint64_t           halved_fee      = 65046994U;
+  cardano_unit_interval_t* script_ref_cost = NULL;
+  cardano_utxo_list_t*     utxo_list       = create_sized_reference_script_inputs(size);
+  uint64_t                 fee             = 0U;
+
+  EXPECT_EQ(cardano_unit_interval_new(37U, 2U, &script_ref_cost), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, compute_exact_tiered_fee(size, 37U, 2U, false));
+  EXPECT_EQ(fee, 63335231U);
+  EXPECT_LE(fee, halved_fee);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
 }
 
 TEST(cardano_fee_compute_script_ref_fee, returnsErrorIfThePriceHasAZeroDenominator)
@@ -1746,6 +1865,479 @@ TEST(cardano_fee_compute_transaction_fee, coversTheExecutionUnitsAndTheReference
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxo_list);
   cardano_unit_interval_unref(&script_ref_cost);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfFirstParamIsNull)
+{
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(NULL, (cardano_protocol_parameters_t*)"", (uint64_t*)"");
+
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfSecondParamIsNull)
+{
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params((cardano_utxo_list_t*)"", NULL, (uint64_t*)"");
+
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfThirdParamIsNull)
+{
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params((cardano_utxo_list_t*)"", (cardano_protocol_parameters_t*)"", NULL);
+
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfTheCostPerByteIsNotSet)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = create_protocol_parameters();
+  cardano_utxo_list_t*           utxo_list = create_reference_script_inputs(1);
+  uint64_t                       fee       = 1U;
+
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_per_byte(params, NULL), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, pricesWithTheStrideAndTheMultiplierOfTheParameters)
+{
+  // Arrange
+  const uint64_t sizes[]                   = { 0U, 1U, 10000U, 10001U, 25601U, 204800U };
+  const uint64_t price_numerators[]        = { 15U, 44U };
+  const uint64_t price_denominators[]      = { 1U, 3U };
+  const uint64_t multiplier_numerators[]   = { 3U, 1U, 1U };
+  const uint64_t multiplier_denominators[] = { 2U, 1U, 2U };
+
+  for (size_t m = 0U; m < sizeof(multiplier_numerators) / sizeof(multiplier_numerators[0]); ++m)
+  {
+    for (size_t p = 0U; p < sizeof(price_numerators) / sizeof(price_numerators[0]); ++p)
+    {
+      for (size_t i = 0U; i < sizeof(sizes) / sizeof(sizes[0]); ++i)
+      {
+        cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(10000U, multiplier_numerators[m], multiplier_denominators[m]);
+        cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(sizes[i]);
+        uint64_t                       fee       = 1U;
+
+        set_reference_script_byte_cost(params, price_numerators[p], price_denominators[p]);
+
+        // Act
+        cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+        // Assert
+        EXPECT_EQ(result, CARDANO_SUCCESS);
+        EXPECT_EQ(fee, compute_exact_fee_with_tiers(sizes[i], price_numerators[p], price_denominators[p], 10000U, multiplier_numerators[m], multiplier_denominators[m], false));
+
+        // Cleanup
+        cardano_utxo_list_unref(&utxo_list);
+        cardano_protocol_parameters_unref(&params);
+      }
+    }
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, matchesHandComputedFees)
+{
+  // Arrange
+  const uint64_t sizes[]                   = { 25601U, 204800U, 204800U, 204800U, 204800U };
+  const uint64_t price_numerators[]        = { 15U, 15U, 44U, 15U, 44U };
+  const uint64_t price_denominators[]      = { 1U, 1U, 3U, 1U, 3U };
+  const uint64_t multiplier_numerators[]   = { 3U, 3U, 3U, 1U, 1U };
+  const uint64_t multiplier_denominators[] = { 2U, 2U, 2U, 1U, 2U };
+  const uint64_t fees[]                    = { 564033U, 1236695503U, 1209213381U, 3072000U, 293333U };
+
+  for (size_t i = 0U; i < sizeof(sizes) / sizeof(sizes[0]); ++i)
+  {
+    cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(10000U, multiplier_numerators[i], multiplier_denominators[i]);
+    cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(sizes[i]);
+    uint64_t                       fee       = 0U;
+
+    set_reference_script_byte_cost(params, price_numerators[i], price_denominators[i]);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_utxo_list_unref(&utxo_list);
+    cardano_protocol_parameters_unref(&params);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, fallsBackToTheConwayValuesIfTheParametersDoNotCarryThem)
+{
+  for (size_t i = 0U; i < sizeof(tiered_fee_vectors) / sizeof(tiered_fee_vectors[0]); ++i)
+  {
+    // Arrange
+    const tiered_fee_vector_t*     vector    = &tiered_fee_vectors[i];
+    cardano_protocol_parameters_t* params    = create_protocol_parameters();
+    cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(vector->size);
+    uint64_t                       fee       = 1U;
+
+    set_reference_script_byte_cost(params, vector->cost_numerator, vector->cost_denominator);
+
+    cardano_unit_interval_t* multiplier = cardano_protocol_parameters_get_ref_script_cost_multiplier(params);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+    // Assert
+    EXPECT_EQ(cardano_protocol_parameters_get_ref_script_cost_stride(params), 0U);
+    EXPECT_EQ(multiplier, (cardano_unit_interval_t*)nullptr);
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(fee, vector->fee);
+
+    // Cleanup
+    cardano_utxo_list_unref(&utxo_list);
+    cardano_protocol_parameters_unref(&params);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, fallsBackToTheConwayValueOfTheParameterThatIsNotSet)
+{
+  // Arrange
+  cardano_protocol_parameters_t* stride_only     = create_protocol_parameters();
+  cardano_protocol_parameters_t* multiplier_only = create_protocol_parameters_with_tiers(10000U, 3U, 2U);
+  cardano_utxo_list_t*           utxo_list       = create_sized_reference_script_inputs(60000U);
+  uint64_t                       stride_fee      = 0U;
+  uint64_t                       multiplier_fee  = 0U;
+
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_stride(stride_only, 10000U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_multiplier(multiplier_only, NULL), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t stride_result     = cardano_compute_script_ref_fee_with_params(utxo_list, stride_only, &stride_fee);
+  cardano_error_t multiplier_result = cardano_compute_script_ref_fee_with_params(utxo_list, multiplier_only, &multiplier_fee);
+
+  // Assert
+  EXPECT_EQ(stride_result, CARDANO_SUCCESS);
+  EXPECT_EQ(multiplier_result, CARDANO_SUCCESS);
+  EXPECT_EQ(stride_fee, compute_exact_fee_with_tiers(60000U, 15U, 1U, 10000U, 6U, 5U, false));
+  EXPECT_EQ(stride_fee, 1489488U);
+  EXPECT_EQ(multiplier_fee, stride_fee);
+
+  // Cleanup
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&stride_only);
+  cardano_protocol_parameters_unref(&multiplier_only);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, pricesAMultiplierSetWithoutAStrideWithTheConwayStride)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = create_protocol_parameters();
+  cardano_unit_interval_t*       multiplier = NULL;
+  cardano_utxo_list_t*           utxo_list  = create_sized_reference_script_inputs(60000U);
+  uint64_t                       fee        = 0U;
+
+  EXPECT_EQ(cardano_unit_interval_new(3U, 2U, &multiplier), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_ref_script_cost_multiplier(params, multiplier), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, compute_exact_fee_with_tiers(60000U, 15U, 1U, 25600U, 3U, 2U, false));
+  EXPECT_EQ(fee, 1257000U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&multiplier);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, matchesTheConwayFeeWithTheConwayValues)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params          = create_protocol_parameters_with_tiers(25600U, 6U, 5U);
+  cardano_unit_interval_t*       script_ref_cost = cardano_protocol_parameters_get_ref_script_cost_per_byte(params);
+  cardano_utxo_list_t*           utxo_list       = create_sized_reference_script_inputs(204800U);
+  uint64_t                       fee             = 0U;
+  uint64_t                       conway_fee      = 1U;
+
+  // Act
+  cardano_error_t result        = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+  cardano_error_t conway_result = cardano_compute_script_ref_fee(utxo_list, script_ref_cost, &conway_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(conway_result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, conway_fee);
+  EXPECT_EQ(fee, 6335648U);
+
+  // Cleanup
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfTheMultiplierHasAZeroDenominator)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = create_protocol_parameters_with_tiers(10000U, 3U, 0U);
+  cardano_utxo_list_t*           utxo_list      = create_sized_reference_script_inputs(100U);
+  cardano_utxo_list_t*           no_scripts     = create_sized_reference_script_inputs(0U);
+  uint64_t                       fee            = 1U;
+  uint64_t                       no_scripts_fee = 1U;
+
+  // Act
+  cardano_error_t result            = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+  cardano_error_t no_scripts_result = cardano_compute_script_ref_fee_with_params(no_scripts, params, &no_scripts_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(fee, 0U);
+  EXPECT_EQ(no_scripts_result, CARDANO_SUCCESS);
+  EXPECT_EQ(no_scripts_fee, 0U);
+
+  // Cleanup
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_utxo_list_unref(&no_scripts);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, pricesExactlyAMultiplierWithALargeDenominator)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(25600U, 123456789U, 100000000U);
+  cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(60000U);
+  uint64_t                       fee       = 0U;
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+  // Assert
+  const uint64_t exact_fee = compute_exact_fee_with_tiers(60000U, 15U, 1U, 25600U, 123456789U, 100000000U, false);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(exact_fee, 1059262U);
+  EXPECT_GE(fee, exact_fee);
+  EXPECT_LE(fee - exact_fee, 2U);
+  EXPECT_EQ(fee, 1059262U);
+
+  // Cleanup
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, pricesExactlyAMultiplierWithALargeNumerator)
+{
+  // Arrange
+  const uint64_t                 multiplier_numerator   = 1234567890123456789U;
+  const uint64_t                 multiplier_denominator = 1000000000000000000U;
+  cardano_protocol_parameters_t* params                 = create_protocol_parameters_with_tiers(25600U, multiplier_numerator, multiplier_denominator);
+  cardano_utxo_list_t*           utxo_list              = create_sized_reference_script_inputs(30000U);
+  uint64_t                       fee                    = 0U;
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+  // Assert
+  const uint64_t exact_fee = compute_exact_fee_with_tiers(30000U, 15U, 1U, 25600U, multiplier_numerator, multiplier_denominator, false);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(exact_fee, 465481U);
+  EXPECT_GE(fee, exact_fee);
+  EXPECT_EQ(fee, 465481U);
+
+  // Cleanup
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, pricesExactlyManyTiersOfASmallStride)
+{
+  // Arrange
+  const uint64_t strides[]                 = { 10000U, 10000U };
+  const uint64_t multiplier_numerators[]   = { 6U, 11U };
+  const uint64_t multiplier_denominators[] = { 5U, 10U };
+  const uint64_t price_numerators[]        = { 15U, 44U };
+  const uint64_t price_denominators[]      = { 1U, 3U };
+  const uint64_t fees[]                    = { 30763507U, 8873949U };
+  const uint64_t size                      = 204800U;
+
+  for (size_t i = 0U; i < sizeof(fees) / sizeof(fees[0]); ++i)
+  {
+    cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(strides[i], multiplier_numerators[i], multiplier_denominators[i]);
+    cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(size);
+    uint64_t                       fee       = 0U;
+
+    set_reference_script_byte_cost(params, price_numerators[i], price_denominators[i]);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(fee, compute_exact_fee_with_tiers(size, price_numerators[i], price_denominators[i], strides[i], multiplier_numerators[i], multiplier_denominators[i], false));
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_utxo_list_unref(&utxo_list);
+    cardano_protocol_parameters_unref(&params);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, boundsTheFeeCloselyIfTheDenominatorsOfTheTierPricesDoNotFit)
+{
+  // Arrange
+  const uint64_t strides[]                 = { 10000U, 1291U };
+  const uint64_t multiplier_numerators[]   = { 101U, 1371U };
+  const uint64_t multiplier_denominators[] = { 100U, 859U };
+  const uint64_t price_numerators[]        = { 443U, 759U };
+  const uint64_t price_denominators[]      = { 100U, 29U };
+  const uint64_t sizes[]                   = { 204800U, 79714U };
+  const uint64_t exact_fees[]              = { 1001387U, 199042058512434346U };
+  const uint64_t fees[]                    = { 1001387U, 199042058512434347U };
+
+  for (size_t i = 0U; i < sizeof(fees) / sizeof(fees[0]); ++i)
+  {
+    cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(strides[i], multiplier_numerators[i], multiplier_denominators[i]);
+    cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(sizes[i]);
+    uint64_t                       fee       = 0U;
+
+    set_reference_script_byte_cost(params, price_numerators[i], price_denominators[i]);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_GE(fee, exact_fees[i]);
+    EXPECT_LE(fee - exact_fees[i], 1U);
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_utxo_list_unref(&utxo_list);
+    cardano_protocol_parameters_unref(&params);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, boundsTheFeeIfTheHalvedFractionsOfATierReachOne)
+{
+  // Arrange
+  const uint64_t multiplier_numerators[]   = { 1U, 3499778882U };
+  const uint64_t multiplier_denominators[] = { 7U, 3499778883U };
+  const uint64_t price_numerators[]        = { 42U, 1U };
+  const uint64_t sizes[]                   = { 38U, 83U };
+  const uint64_t exact_fees[]              = { 48U, 82U };
+  const uint64_t fees[]                    = { 49U, 82U };
+
+  for (size_t i = 0U; i < sizeof(fees) / sizeof(fees[0]); ++i)
+  {
+    cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(1U, multiplier_numerators[i], multiplier_denominators[i]);
+    cardano_utxo_list_t*           utxo_list = create_sized_reference_script_inputs(sizes[i]);
+    uint64_t                       fee       = 0U;
+
+    set_reference_script_byte_cost(params, price_numerators[i], 1U);
+
+    // Act
+    cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_GE(fee, exact_fees[i]);
+    EXPECT_LE(fee - exact_fees[i], 1U);
+    EXPECT_EQ(fee, fees[i]);
+
+    // Cleanup
+    cardano_utxo_list_unref(&utxo_list);
+    cardano_protocol_parameters_unref(&params);
+  }
+}
+
+TEST(cardano_fee_compute_script_ref_fee_with_params, returnsErrorIfMemoryAllocationFailsWhileMeasuringANativeScript)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(10000U, 3U, 2U);
+  cardano_utxo_list_t*           utxo_list = NULL;
+  uint64_t                       fee       = 1U;
+
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  add_utxo(utxo_list, NATIVE_REFERENCE_SCRIPT_UTXO);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_compute_script_ref_fee_with_params(utxo_list, params, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(fee, 0U);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_transaction_fee, pricesTheReferenceScriptsWithTheStrideAndTheMultiplierOfTheParameters)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = create_protocol_parameters_with_tiers(1000U, 3U, 2U);
+  cardano_protocol_parameters_t* conway_params  = create_protocol_parameters();
+  cardano_transaction_t*         tx             = create_transaction(tx_fee_vectors[0].cbor);
+  cardano_utxo_list_t*           utxo_list      = create_mixed_language_reference_script_inputs();
+  uint64_t                       fee            = 0U;
+  uint64_t                       conway_fee     = 0U;
+  uint64_t                       ref_script_fee = 0U;
+
+  // Act
+  cardano_error_t result        = cardano_compute_transaction_fee(tx, utxo_list, params, &fee);
+  cardano_error_t conway_result = cardano_compute_transaction_fee(tx, utxo_list, conway_params, &conway_fee);
+
+  // Assert
+  const uint64_t total_size = NATIVE_REFERENCE_SCRIPT_SIZE + (4U * PLUTUS_REFERENCE_SCRIPT_SIZE) + LARGE_REFERENCE_SCRIPT_SIZE;
+
+  EXPECT_EQ(cardano_compute_script_ref_fee_with_params(utxo_list, params, &ref_script_fee), CARDANO_SUCCESS);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(conway_result, CARDANO_SUCCESS);
+  EXPECT_EQ(total_size, 2649U);
+  EXPECT_EQ(ref_script_fee, compute_exact_fee_with_tiers(total_size, 15U, 1U, 1000U, 3U, 2U, false));
+  EXPECT_EQ(ref_script_fee, 59403U);
+  EXPECT_EQ(fee, tx_fee_vectors[0].fee + 59403U);
+  EXPECT_EQ(conway_fee, tx_fee_vectors[0].fee + 39735U);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_protocol_parameters_unref(&params);
+  cardano_protocol_parameters_unref(&conway_params);
+}
+
+TEST(cardano_fee_compute_transaction_fee, returnsErrorIfTheMultiplierHasAZeroDenominator)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = create_protocol_parameters_with_tiers(1000U, 3U, 0U);
+  cardano_transaction_t*         tx        = create_transaction(tx_fee_vectors[0].cbor);
+  cardano_utxo_list_t*           utxo_list = create_mixed_language_reference_script_inputs();
+  uint64_t                       fee       = 0U;
+
+  // Act
+  cardano_error_t result = cardano_compute_transaction_fee(tx, utxo_list, params, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxo_list);
   cardano_protocol_parameters_unref(&params);
 }
 

@@ -49,6 +49,9 @@ extern "C" {
  * Reference scripts are always priced, whatever their language and whether or not the transaction has redeemers: the
  * ledger charges for every reference script found on the outputs behind the reference inputs and the spend inputs of a
  * transaction, even if the script never runs. \p resolved_ref_inputs must therefore resolve both kinds of inputs.
+ * They are priced with the reference script cost per byte, stride and multiplier of \p protocol_params, as
+ * \ref cardano_compute_script_ref_fee_with_params documents: a stride or a multiplier that is not set, as in the
+ * parameters of the eras before Dijkstra, takes its Conway value.
  *
  * A transaction that carries sub transactions pays the fee of the whole batch. The size of the sub transactions is part
  * of the size of the transaction, and the execution units of the redeemers of every sub transaction are added to the ones
@@ -153,6 +156,10 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * resolved in \p resolved_reference_inputs are included. This is deliberate and may exceed the current ledger minimum, which
  * does not charge for the reference scripts of sub transactions yet.
  *
+ * The reference scripts are priced as \ref cardano_compute_script_ref_fee prices them, with the Conway values of the
+ * reference script cost stride and multiplier. \ref cardano_compute_transaction_fee prices them with the stride and the
+ * multiplier of its protocol parameters instead.
+ *
  * \param[in] tx The pointer to the \ref cardano_transaction_t object representing the transaction for which the script fee is being calculated.
  * \param[in] prices The pointer to the \ref cardano_ex_unit_prices_t object containing the prices for execution units (memory and steps).
  * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object holding every resolved UTXO whose reference script is priced: the ones
@@ -244,12 +251,15 @@ cardano_compute_min_fee_without_scripts(
  * The total size is priced in tiers of 25600 bytes, the last one possibly partial, and every tier costs 1.2 times as much
  * per byte as the previous one. As the ledger does, the prices are exact fractions: the price of every tier is added
  * exactly and the fee is the floor of the total, taken once, so no tier is rounded on its own. The tier size and the
- * multiplier are the Conway values of the reference script cost stride and multiplier protocol parameters.
+ * multiplier are the Conway values of the reference script cost stride and multiplier protocol parameters. To price
+ * with the stride and the multiplier of a parameter set, as the Dijkstra ledger does, use
+ * \ref cardano_compute_script_ref_fee_with_params.
  *
- * The fee is exact whenever the intermediate values of that computation fit in 64 bits. A price with a very large
- * denominator, such as one built with \ref cardano_unit_interval_from_double, or a very large price can make them
- * exceed 64 bits; the fee is then a conservative upper bound of the exact fee, which never falls below it and, for prices
- * up to about 50 lovelace per byte, is within a lovelace of it.
+ * The fee is exact when the denominator of the price in lowest terms times 5 to the power of the number of tiers minus
+ * one fits in 64 bits, and the integer parts of the prices of the tiers and the fee fit too. A price with a very large
+ * denominator, such as one built with \ref cardano_unit_interval_from_double, or a very large price can break that
+ * condition; the fee is then a conservative upper bound of the exact fee, which never falls below it and, for prices up
+ * to about 50 lovelace per byte, is within a lovelace of it.
  *
  * The ledger charges for every reference script found on the outputs behind the reference inputs and the spend inputs of a
  * transaction, whatever the language of the script (native scripts included) and whether or not the script runs. The size
@@ -296,6 +306,67 @@ cardano_compute_script_ref_fee(
   cardano_utxo_list_t*     resolved_reference_inputs,
   cardano_unit_interval_t* coins_per_ref_script_byte,
   uint64_t*                script_ref_fee);
+
+/**
+ * \brief Computes the script reference fee for transaction inputs with the reference script pricing of a set of
+ * protocol parameters.
+ *
+ * This function prices the reference scripts of \p resolved_reference_inputs as \ref cardano_compute_script_ref_fee
+ * does, with the tiered model of the ledger, but takes the price of a byte, the size of a tier and the multiplier from
+ * \p protocol_params: the reference script cost per byte, the reference script cost stride and the reference script
+ * cost multiplier. The ledger of Dijkstra reads the stride and the multiplier from its protocol parameters, while the
+ * earlier eras use the fixed values of 25600 bytes and 6/5, which is what \ref cardano_compute_script_ref_fee uses.
+ *
+ * A stride of 0 or a multiplier that is not set means the parameter set does not carry it, as the parameters of the eras
+ * before Dijkstra do not, and the Conway value is used in its place. When neither is set, the fee is the one
+ * \ref cardano_compute_script_ref_fee computes. The multiplier is priced as the exact fraction it holds: the ledger
+ * requires it to be positive, and a multiplier below 1 lowers the price of every further tier. A multiplier with a zero
+ * numerator, which the ledger never produces, is not rejected and makes every tier after the first free.
+ *
+ * The fee is exact when the denominator of the price in lowest terms times the denominator of the multiplier in lowest
+ * terms to the power of the number of tiers minus one fits in 64 bits, and the integer parts of the prices of the tiers
+ * and the fee fit too. A price or a multiplier with a large denominator, such as one built with
+ * \ref cardano_unit_interval_from_double, many tiers or a very large price can break that condition; the fee is then a
+ * conservative upper bound of the exact fee, which never falls below it. The excess is a tiny fraction of the fee,
+ * usually a few lovelace at most, when the denominators are small, and grows with them, up to about a thousandth of
+ * the fee for a multiplier denominator around 10^15, as \ref cardano_unit_interval_from_double produces.
+ *
+ * Every entry of the list is counted, as \ref cardano_compute_script_ref_fee documents, and the size of each script is
+ * the one reported by \ref cardano_get_serialized_script_size.
+ *
+ * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object holding every resolved UTXO whose reference script is priced: the
+ *                            ones behind the reference inputs and the spend inputs of the transaction. Entries without a reference script add nothing.
+ * \param[in] protocol_params The pointer to the \ref cardano_protocol_parameters_t object that holds the reference script cost per byte, stride and multiplier.
+ * \param[out] script_ref_fee A pointer to a uint64_t where the computed reference script fee will be stored.
+ *
+ * \return \ref CARDANO_SUCCESS if the reference script fee was successfully computed, \ref CARDANO_ERROR_POINTER_IS_NULL if an
+ *         argument is NULL or \p protocol_params has no reference script cost per byte, \ref CARDANO_ERROR_INVALID_ARGUMENT if
+ *         there are reference scripts to price and the cost per byte or the multiplier has a zero denominator,
+ *         \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee, or the upper bound computed in its place, does not fit in 64 bits, or
+ *         another appropriate error code indicating failure. On failure after the arguments are checked, \p script_ref_fee is
+ *         set to zero.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_utxo_list_t* resolved_ref_inputs = ...;  // Resolved UTXO inputs, potentially containing reference scripts
+ * cardano_protocol_parameters_t* protocol_params = ...;  // Protocol parameters of the current era
+ * uint64_t script_ref_fee = 0;
+ *
+ * cardano_error_t result = cardano_compute_script_ref_fee_with_params(resolved_ref_inputs, protocol_params, &script_ref_fee);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Successfully computed the script reference fee
+ *   // script_ref_fee now holds the calculated fee value
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_compute_script_ref_fee_with_params(
+  cardano_utxo_list_t*           resolved_reference_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  uint64_t*                      script_ref_fee);
 
 /**
  * \brief Computes the total execution units (exUnits) from a list of redeemers.

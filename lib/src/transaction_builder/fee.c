@@ -46,6 +46,17 @@ typedef struct
     uint64_t multiplier_denominator;
 } ref_script_tiers_t;
 
+/**
+ * \brief The per byte price of a tier of the tiered pricing model, kept as a mixed number: an integer part plus the
+ * fraction fraction / denominator, which is lower than one.
+ */
+typedef struct
+{
+    uint64_t integer;
+    uint64_t fraction;
+    uint64_t denominator;
+} tier_price_t;
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -132,6 +143,261 @@ divide_rounding_up(const uint64_t dividend, const uint64_t divisor)
 }
 
 /**
+ * \brief Replaces a fraction by a fraction that is not lower and has a denominator half as large.
+ *
+ * The numerator is halved rounding up and the denominator is halved rounding down, so the new fraction is at least
+ * the old one.
+ *
+ * \param[in,out] numerator   The numerator of the fraction.
+ * \param[in,out] denominator The denominator of the fraction, at least 2.
+ */
+static void
+halve_fraction(uint64_t* numerator, uint64_t* denominator)
+{
+  *numerator   = (*numerator / 2U) + (*numerator % 2U);
+  *denominator = *denominator / 2U;
+}
+
+/**
+ * \brief Adds a fraction below one to a running sum kept as a whole part and a remainder over the same denominator.
+ *
+ * \param[in]     value       The numerator of the fraction, lower than \p denominator.
+ * \param[in]     denominator The denominator of the fraction and of the remainder.
+ * \param[in,out] whole       The whole part of the running sum.
+ * \param[in,out] remainder   The remainder of the running sum, lower than \p denominator.
+ *
+ * \return \ref CARDANO_SUCCESS if the fraction was added, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the whole part does
+ *         not fit in 64 bits.
+ */
+static cardano_error_t
+add_fraction(
+  const uint64_t value,
+  const uint64_t denominator,
+  uint64_t*      whole,
+  uint64_t*      remainder)
+{
+  const uint64_t carry_limit = denominator - value;
+
+  if (*remainder >= carry_limit)
+  {
+    *remainder -= carry_limit;
+
+    return checked_add(*whole, 1U, whole);
+  }
+
+  *remainder += value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Multiplies a fraction below one by an integer, giving the integer part and the remainder of the product.
+ *
+ * The product is built bit by bit, doubling and adding over the denominator, so no intermediate value exceeds the
+ * denominator and the computation never overflows, whatever the size of the factor and of the denominator.
+ *
+ * \param[in]  value     The numerator of the fraction, lower than \p divisor.
+ * \param[in]  factor    The integer the fraction is multiplied by.
+ * \param[in]  divisor   The denominator of the fraction, not zero.
+ * \param[out] quotient  The integer part of \p value times \p factor over \p divisor, which is lower than \p factor when
+ *                       \p factor is not zero, and zero otherwise.
+ * \param[out] remainder The remainder of \p value times \p factor over \p divisor.
+ *
+ * \return \ref CARDANO_SUCCESS, since the quotient is never larger than \p factor and always fits in 64 bits.
+ */
+static cardano_error_t
+multiply_fraction(
+  const uint64_t value,
+  const uint64_t factor,
+  const uint64_t divisor,
+  uint64_t*      quotient,
+  uint64_t*      remainder)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  *quotient  = 0U;
+  *remainder = 0U;
+
+  for (uint64_t bit = 64U; (bit > 0U) && (result == CARDANO_SUCCESS); --bit)
+  {
+    *quotient *= 2U;
+    result    = add_fraction(*remainder, divisor, quotient, remainder);
+
+    if ((result == CARDANO_SUCCESS) && (((factor >> (bit - 1U)) & 1U) != 0U))
+    {
+      result = add_fraction(value, divisor, quotient, remainder);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Adds the price of the bytes of a tier to a running sum kept as a whole part and a remainder over the
+ * denominator of the price of the tier.
+ *
+ * \param[in]     tier_size The number of bytes of the tier.
+ * \param[in]     price     The per byte price of the tier.
+ * \param[in,out] whole     The whole part of the running sum.
+ * \param[in,out] remainder The remainder of the running sum, lower than the denominator of \p price.
+ *
+ * \return \ref CARDANO_SUCCESS if the price was added, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the price of the
+ *         integer part of the tier or the sum does not fit in 64 bits.
+ */
+static cardano_error_t
+add_tier_price(
+  const uint64_t      tier_size,
+  const tier_price_t* price,
+  uint64_t*           whole,
+  uint64_t*           remainder)
+{
+  uint64_t integer_part       = 0U;
+  uint64_t fraction_quotient  = 0U;
+  uint64_t fraction_remainder = 0U;
+
+  cardano_error_t result = checked_multiply(tier_size, price->integer, &integer_part);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(*whole, integer_part, whole);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = multiply_fraction(price->fraction, tier_size, price->denominator, &fraction_quotient, &fraction_remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(*whole, fraction_quotient, whole);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_fraction(fraction_remainder, price->denominator, whole, remainder);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Replaces the fraction of the per byte price of a tier and the remainder of the running sum by fractions that
+ * are not lower and have a denominator half as large.
+ *
+ * A fraction that reaches one after the halving is carried into the integer part of the price or into the whole part
+ * of the sum, so both fractions stay lower than one.
+ *
+ * \param[in,out] price     The per byte price of the tier, whose denominator is at least 2.
+ * \param[in,out] whole     The whole part of the running sum.
+ * \param[in,out] remainder The remainder of the running sum over the denominator of \p price.
+ *
+ * \return \ref CARDANO_SUCCESS if the fractions were replaced, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if a carry does
+ *         not fit in 64 bits.
+ */
+static cardano_error_t
+coarsen_tier_price(tier_price_t* price, uint64_t* whole, uint64_t* remainder)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  halve_fraction(&price->fraction, &price->denominator);
+  *remainder = (*remainder / 2U) + (*remainder % 2U);
+
+  if (price->fraction == price->denominator)
+  {
+    price->fraction = 0U;
+    result          = checked_add(price->integer, 1U, &price->integer);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (*remainder == price->denominator))
+  {
+    *remainder = 0U;
+    result     = checked_add(*whole, 1U, whole);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Scales the per byte price of a tier by the multiplier of the tiered model, giving the price of the next tier.
+ *
+ * With the price I + r / D and the multiplier n / d, the integer part I is split as q d + i with i lower than d, and
+ * the price of the next tier is q n + floor(i n / d) plus the fraction ((i n mod d) D + r n) / (D d), whose excess over
+ * one is carried into the integer part. The remainder of the running sum is moved to the new denominator, and the
+ * fraction, the denominator and the remainder are then divided by their greatest common divisor, so the denominator
+ * only grows as much as the exact prices require. Only the new integer part and the new denominator can overflow.
+ *
+ * \param[in]     tiers     The tiered pricing model, whose multiplier has a denominator that is not zero.
+ * \param[in,out] price     The per byte price of the tier, replaced by the one of the next tier.
+ * \param[in,out] remainder The remainder of the running sum over the denominator of \p price.
+ *
+ * \return \ref CARDANO_SUCCESS if the price was scaled, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the integer part or
+ *         the denominator of the next price does not fit in 64 bits. \p price and \p remainder are only written on
+ *         success.
+ */
+static cardano_error_t
+scale_tier_price(
+  const ref_script_tiers_t* tiers,
+  tier_price_t*             price,
+  uint64_t*                 remainder)
+{
+  const uint64_t multiplier_numerator   = tiers->multiplier_numerator;
+  const uint64_t multiplier_denominator = tiers->multiplier_denominator;
+  uint64_t       next_integer           = 0U;
+  uint64_t       next_denominator       = 0U;
+  uint64_t       integer_quotient       = 0U;
+  uint64_t       integer_remainder      = 0U;
+  uint64_t       fraction_quotient      = 0U;
+  uint64_t       fraction_remainder     = 0U;
+
+  cardano_error_t result = checked_multiply(price->denominator, multiplier_denominator, &next_denominator);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_multiply(price->integer / multiplier_denominator, multiplier_numerator, &next_integer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = multiply_fraction(price->integer % multiplier_denominator, multiplier_numerator, multiplier_denominator, &integer_quotient, &integer_remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(next_integer, integer_quotient, &next_integer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = multiply_fraction(price->fraction, multiplier_numerator, next_denominator, &fraction_quotient, &fraction_remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(next_integer, fraction_quotient, &next_integer);
+  }
+
+  uint64_t next_fraction = integer_remainder * price->denominator;
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_fraction(fraction_remainder, next_denominator, &next_integer, &next_fraction);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    const uint64_t next_remainder = *remainder * multiplier_denominator;
+    const uint64_t divisor        = compute_greatest_common_divisor(compute_greatest_common_divisor(next_denominator, next_fraction), next_remainder);
+
+    price->integer     = next_integer;
+    price->fraction    = next_fraction / divisor;
+    price->denominator = next_denominator / divisor;
+    *remainder         = next_remainder / divisor;
+  }
+
+  return result;
+}
+
+/**
  * \brief Prices a total size of reference scripts with the tiered model of the ledger, in exact arithmetic.
  *
  * The size is split in tiers of \p tiers stride bytes, the last one possibly partial. The bytes of the first tier cost
@@ -139,14 +405,23 @@ divide_rounding_up(const uint64_t dividend, const uint64_t divisor)
  * scaled by the multiplier of \p tiers. The prices are kept as exact fractions and the fee is the floor of the exact
  * sum, taken once.
  *
- * The sum is kept as an integer part and a remainder over the denominator of the price of the current tier, which
- * grows by the denominator of the multiplier per tier, so the remainder always stays below that denominator.
+ * The per byte price of every tier is kept as a mixed number, an integer part plus a fraction lower than one, and the
+ * sum as a whole part plus a remainder over the denominator of that fraction. The values that grow from tier to tier
+ * are therefore the integer part of the price, which is not larger than the price, and the denominator, which is the
+ * one of the exact price in lowest terms with the remainder of the sum. The products of a fraction by an integer are
+ * built without intermediate values larger than their denominator, so the computation stays exact whenever the
+ * integer parts, the denominators and the fee fit in 64 bits.
  *
- * \param[in]  tiers             The tiered pricing model.
+ * \param[in]  tiers             The tiered pricing model, whose multiplier has a denominator that is not zero.
  * \param[in]  total_size        The total size of the reference scripts, in bytes.
  * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
  * \param[in]  price_denominator The denominator of the price of a byte in the first tier, not zero.
- * \param[out] fee               The floor of the exact price of \p total_size bytes. It is only written on success.
+ * \param[in]  coarsen           Whether a denominator that would not fit in 64 bits is avoided by replacing the fraction
+ *                               of the price and the remainder of the sum by fractions that are not lower and have a
+ *                               denominator half as large, as often as needed. The fee is then an upper bound of the
+ *                               exact fee.
+ * \param[out] fee               The floor of the exact price of \p total_size bytes, or its upper bound when
+ *                               \p coarsen is true. It is only written on success.
  *
  * \return \ref CARDANO_SUCCESS if the fee was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if an intermediate value
  *         or the fee does not fit in 64 bits.
@@ -157,57 +432,32 @@ compute_exact_tiered_fee(
   const uint64_t            total_size,
   const uint64_t            price_numerator,
   const uint64_t            price_denominator,
+  const bool                coarsen,
   uint64_t*                 fee)
 {
-  uint64_t        tier_numerator   = price_numerator;
-  uint64_t        tier_denominator = price_denominator;
-  uint64_t        whole            = 0U;
-  uint64_t        remainder        = 0U;
-  uint64_t        remaining        = total_size;
-  cardano_error_t result           = CARDANO_SUCCESS;
+  tier_price_t    price     = { price_numerator / price_denominator, price_numerator % price_denominator, price_denominator };
+  uint64_t        whole     = 0U;
+  uint64_t        remainder = 0U;
+  uint64_t        remaining = total_size;
+  cardano_error_t result    = CARDANO_SUCCESS;
 
   while ((remaining > 0U) && (result == CARDANO_SUCCESS))
   {
-    const uint64_t tier_size  = (remaining < tiers->stride) ? remaining : tiers->stride;
-    uint64_t       tier_price = 0U;
+    const uint64_t tier_size = (remaining < tiers->stride) ? remaining : tiers->stride;
 
-    result = checked_multiply(tier_size, tier_numerator, &tier_price);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = checked_add(whole, tier_price / tier_denominator, &whole);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      const uint64_t tier_remainder = tier_price % tier_denominator;
-      const uint64_t carry_limit    = tier_denominator - tier_remainder;
-
-      if (remainder >= carry_limit)
-      {
-        remainder -= carry_limit;
-        result    = checked_add(whole, 1U, &whole);
-      }
-      else
-      {
-        remainder += tier_remainder;
-      }
-    }
-
+    result    = add_tier_price(tier_size, &price, &whole, &remainder);
     remaining -= tier_size;
 
     if ((result == CARDANO_SUCCESS) && (remaining > 0U))
     {
-      result = checked_multiply(tier_numerator, tiers->multiplier_numerator, &tier_numerator);
-
-      if (result == CARDANO_SUCCESS)
+      while (coarsen && (result == CARDANO_SUCCESS) && (price.denominator > (UINT64_MAX / tiers->multiplier_denominator)))
       {
-        result = checked_multiply(tier_denominator, tiers->multiplier_denominator, &tier_denominator);
+        result = coarsen_tier_price(&price, &whole, &remainder);
       }
 
       if (result == CARDANO_SUCCESS)
       {
-        remainder *= tiers->multiplier_denominator;
+        result = scale_tier_price(tiers, &price, &remainder);
       }
     }
   }
@@ -287,38 +537,155 @@ compute_rounded_up_tiered_fee(
 }
 
 /**
+ * \brief Prices a total size of reference scripts in exact arithmetic after replacing the price and the multiplier by
+ * fractions that are not lower, halving their denominators until the computation fits in 64 bits.
+ *
+ * Every step halves the fraction with the larger denominator, the price when both denominators are equal. Every
+ * halving replaces a fraction by one that is not lower, and the fee grows with the price and with the multiplier, so
+ * the fee is an upper bound of the exact fee.
+ *
+ * \param[in]  tiers             The tiered pricing model, whose multiplier has a denominator that is not zero.
+ * \param[in]  total_size        The total size of the reference scripts, in bytes.
+ * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
+ * \param[in]  price_denominator The denominator of the price of a byte in the first tier, not zero.
+ * \param[out] fee               The upper bound of the price of \p total_size bytes. It is only written on success.
+ *
+ * \return \ref CARDANO_SUCCESS if the bound was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if no halving made the
+ *         computation fit.
+ */
+static cardano_error_t
+compute_halved_tiered_fee(
+  const ref_script_tiers_t* tiers,
+  const uint64_t            total_size,
+  const uint64_t            price_numerator,
+  const uint64_t            price_denominator,
+  uint64_t*                 fee)
+{
+  ref_script_tiers_t halved_tiers       = *tiers;
+  uint64_t           halved_numerator   = price_numerator;
+  uint64_t           halved_denominator = price_denominator;
+  cardano_error_t    result             = CARDANO_ERROR_INTEGER_OVERFLOW;
+
+  while ((result == CARDANO_ERROR_INTEGER_OVERFLOW) && ((halved_denominator > 1U) || (halved_tiers.multiplier_denominator > 1U)))
+  {
+    if (halved_denominator >= halved_tiers.multiplier_denominator)
+    {
+      halve_fraction(&halved_numerator, &halved_denominator);
+    }
+    else
+    {
+      halve_fraction(&halved_tiers.multiplier_numerator, &halved_tiers.multiplier_denominator);
+    }
+
+    result = compute_exact_tiered_fee(&halved_tiers, total_size, halved_numerator, halved_denominator, false, fee);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Keeps the lower of a candidate fee and the best fee found so far, ignoring a candidate that was not computed.
+ *
+ * \param[in]     candidate_result The result of the computation of the candidate fee.
+ * \param[in]     candidate_fee    The candidate fee, only meaningful when \p candidate_result is \ref CARDANO_SUCCESS.
+ * \param[in,out] best_result      \ref CARDANO_SUCCESS once a fee was kept.
+ * \param[in,out] best_fee         The lowest fee kept so far.
+ */
+static void
+keep_lower_fee(
+  const cardano_error_t candidate_result,
+  const uint64_t        candidate_fee,
+  cardano_error_t*      best_result,
+  uint64_t*             best_fee)
+{
+  if (candidate_result != CARDANO_SUCCESS)
+  {
+    return;
+  }
+
+  if ((*best_result != CARDANO_SUCCESS) || (candidate_fee < *best_fee))
+  {
+    *best_fee    = candidate_fee;
+    *best_result = CARDANO_SUCCESS;
+  }
+}
+
+/**
+ * \brief Resolves the tiered pricing model of the reference scripts from the reference script cost stride and
+ * multiplier protocol parameters.
+ *
+ * A parameter that is not set takes its Conway value: a stride of 0 takes 25600 bytes and a missing multiplier takes
+ * 6/5. Parameter sets of the eras before Dijkstra do not carry them, and the ledger of those eras prices with these
+ * values.
+ *
+ * \param[in]  stride     The reference script cost stride in bytes, or 0 when it is not set.
+ * \param[in]  multiplier The reference script cost multiplier, or NULL when it is not set.
+ * \param[out] tiers      The tiered pricing model, whose stride is never zero.
+ */
+static void
+resolve_ref_script_tiers(
+  const uint64_t           stride,
+  cardano_unit_interval_t* multiplier,
+  ref_script_tiers_t*      tiers)
+{
+  static const ref_script_tiers_t conway_tiers = { 25600U, 6U, 5U };
+
+  *tiers = conway_tiers;
+
+  if (stride != 0U)
+  {
+    tiers->stride = stride;
+  }
+
+  if (multiplier != NULL)
+  {
+    tiers->multiplier_numerator   = cardano_unit_interval_get_numerator(multiplier);
+    tiers->multiplier_denominator = cardano_unit_interval_get_denominator(multiplier);
+  }
+}
+
+/**
  * \brief Prices a total size of reference scripts with the tiered model of the ledger.
  *
- * The size is split in tiers of 25600 bytes, the last one possibly partial, and the price of every tier is the one of
- * the previous tier multiplied by 6/5: the Conway values of the reference script cost stride and multiplier protocol
- * parameters. The fee is computed exactly as the ledger does, the floor of the exact sum of the price of every tier
- * taken once, whenever the intermediate values of that computation fit in 64 bits.
+ * The size is split in tiers of the stride of \p tiers bytes, the last one possibly partial, and the price of every
+ * tier is the one of the previous tier multiplied by the multiplier of \p tiers. The fee is computed exactly as the
+ * ledger does, the floor of the exact sum of the price of every tier taken once, whenever the denominator of the price
+ * in lowest terms times the denominator of the multiplier in lowest terms to the power of the number of tiers minus
+ * one fits in 64 bits, together with the integer parts of the prices of the tiers and the fee.
  *
- * When they do not, which happens with a price whose denominator is large (for example a price converted from a
- * floating point value) or with a very large price, the fee is a conservative upper bound instead, the lower of two
- * bounds. The first one replaces the price by a price that is not lower and has a denominator half as large, repeatedly,
- * until the exact computation fits, which keeps the fee within a lovelace of the exact one for prices up to about 50
- * lovelace per byte. The second one rounds the per byte price of every tier up to a whole number of lovelace, which stays close to
- * the exact fee when the price is large. The fee never falls below the exact one.
+ * When the exact computation does not fit, which happens with a price or a multiplier whose denominator is large (for
+ * example one converted from a floating point value), with many tiers or with a very large price, the fee is a
+ * conservative upper bound instead, the lowest of three bounds, none of which is lower than the exact fee:
+ * - the same computation, where a denominator that would not fit is avoided by replacing the fraction of the price
+ *   and the remainder of the sum by fractions that are not lower and have a denominator half as large. The excess is a
+ *   tiny fraction of the fee when the denominators are small and grows with them, up to about a thousandth of the fee
+ *   for a multiplier denominator around 10^15;
+ * - the exact computation with the price and the multiplier replaced, repeatedly, by fractions that are not lower,
+ *   halving the one with the larger denominator, and the price when both denominators are equal, until it fits;
+ * - the per byte price of every tier rounded up to a whole number of lovelace, which stays close to the exact fee when
+ *   the price is large.
  *
+ * Replacing the price or the multiplier by a fraction that is not lower cannot lower the fee, since the fee grows with
+ * both.
+ *
+ * \param[in]  tiers             The tiered pricing model, whose stride is not zero.
  * \param[in]  total_size        The total size of the reference scripts, in bytes.
  * \param[in]  price_numerator   The numerator of the price of a byte in the first tier.
  * \param[in]  price_denominator The denominator of the price of a byte in the first tier.
  * \param[out] fee               The price of \p total_size bytes, or zero on failure.
  *
  * \return \ref CARDANO_SUCCESS if the fee was computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if there are bytes to price
- *         and \p price_denominator is zero, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee, or the upper bound computed
- *         in its place, does not fit in 64 bits.
+ *         and \p price_denominator or the denominator of the multiplier is zero, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if
+ *         the fee, or the upper bound computed in its place, does not fit in 64 bits.
  */
 static cardano_error_t
 compute_tiered_ref_script_fee(
-  const uint64_t total_size,
-  const uint64_t price_numerator,
-  const uint64_t price_denominator,
-  uint64_t*      fee)
+  const ref_script_tiers_t* tiers,
+  const uint64_t            total_size,
+  const uint64_t            price_numerator,
+  const uint64_t            price_denominator,
+  uint64_t*                 fee)
 {
-  static const ref_script_tiers_t conway_tiers = { 25600U, 6U, 5U };
-
   *fee = 0U;
 
   if (total_size == 0U)
@@ -326,17 +693,22 @@ compute_tiered_ref_script_fee(
     return CARDANO_SUCCESS;
   }
 
-  if (price_denominator == 0U)
+  if ((price_denominator == 0U) || (tiers->multiplier_denominator == 0U))
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  const uint64_t divisor     = compute_greatest_common_divisor(price_numerator, price_denominator);
-  const uint64_t numerator   = price_numerator / divisor;
-  const uint64_t denominator = price_denominator / divisor;
-  uint64_t       exact_fee   = 0U;
+  const uint64_t     divisor            = compute_greatest_common_divisor(price_numerator, price_denominator);
+  const uint64_t     numerator          = price_numerator / divisor;
+  const uint64_t     denominator        = price_denominator / divisor;
+  const uint64_t     multiplier_divisor = compute_greatest_common_divisor(tiers->multiplier_numerator, tiers->multiplier_denominator);
+  ref_script_tiers_t reduced_tiers      = *tiers;
+  uint64_t           exact_fee          = 0U;
 
-  cardano_error_t result = compute_exact_tiered_fee(&conway_tiers, total_size, numerator, denominator, &exact_fee);
+  reduced_tiers.multiplier_numerator   = tiers->multiplier_numerator / multiplier_divisor;
+  reduced_tiers.multiplier_denominator = tiers->multiplier_denominator / multiplier_divisor;
+
+  cardano_error_t result = compute_exact_tiered_fee(&reduced_tiers, total_size, numerator, denominator, false, &exact_fee);
 
   if (result != CARDANO_ERROR_INTEGER_OVERFLOW)
   {
@@ -345,42 +717,25 @@ compute_tiered_ref_script_fee(
     return result;
   }
 
-  uint64_t        halved_numerator   = numerator;
-  uint64_t        halved_denominator = denominator;
-  uint64_t        halved_fee         = 0U;
-  cardano_error_t halved_result      = CARDANO_ERROR_INTEGER_OVERFLOW;
+  uint64_t        best_fee    = 0U;
+  cardano_error_t best_result = CARDANO_ERROR_INTEGER_OVERFLOW;
+  uint64_t        bound_fee   = 0U;
 
-  while ((halved_result == CARDANO_ERROR_INTEGER_OVERFLOW) && (halved_denominator > 1U))
-  {
-    halved_numerator   = (halved_numerator / 2U) + (halved_numerator % 2U);
-    halved_denominator = halved_denominator / 2U;
-    halved_result      = compute_exact_tiered_fee(&conway_tiers, total_size, halved_numerator, halved_denominator, &halved_fee);
-  }
+  cardano_error_t bound_result = compute_exact_tiered_fee(&reduced_tiers, total_size, numerator, denominator, true, &bound_fee);
+  keep_lower_fee(bound_result, bound_fee, &best_result, &best_fee);
 
-  uint64_t              rounded_fee    = 0U;
-  const cardano_error_t rounded_result = compute_rounded_up_tiered_fee(&conway_tiers, total_size, numerator, denominator, &rounded_fee);
+  bound_result = compute_halved_tiered_fee(&reduced_tiers, total_size, numerator, denominator, &bound_fee);
+  keep_lower_fee(bound_result, bound_fee, &best_result, &best_fee);
 
-  if ((halved_result == CARDANO_SUCCESS) && (rounded_result == CARDANO_SUCCESS))
+  bound_result = compute_rounded_up_tiered_fee(&reduced_tiers, total_size, numerator, denominator, &bound_fee);
+  keep_lower_fee(bound_result, bound_fee, &best_result, &best_fee);
+
+  if (best_result == CARDANO_SUCCESS)
   {
-    *fee   = (halved_fee < rounded_fee) ? halved_fee : rounded_fee;
-    result = CARDANO_SUCCESS;
-  }
-  else if (halved_result == CARDANO_SUCCESS)
-  {
-    *fee   = halved_fee;
-    result = CARDANO_SUCCESS;
-  }
-  else if (rounded_result == CARDANO_SUCCESS)
-  {
-    *fee   = rounded_fee;
-    result = CARDANO_SUCCESS;
-  }
-  else
-  {
-    result = CARDANO_ERROR_INTEGER_OVERFLOW;
+    *fee = best_fee;
   }
 
-  return result;
+  return best_result;
 }
 
 /**
@@ -608,6 +963,149 @@ get_batch_ex_units(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Prices the reference scripts of a list of resolved UTXOs with a tiered pricing model.
+ *
+ * \param[in]  resolved_reference_inputs Every resolved UTXO whose reference script is priced.
+ * \param[in]  coins_per_ref_script_byte The price of a byte in the first tier.
+ * \param[in]  tiers                     The tiered pricing model, whose stride is not zero.
+ * \param[out] script_ref_fee            The reference script fee, or zero on failure.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+compute_ref_script_fee_with_tiers(
+  cardano_utxo_list_t*      resolved_reference_inputs,
+  cardano_unit_interval_t*  coins_per_ref_script_byte,
+  const ref_script_tiers_t* tiers,
+  uint64_t*                 script_ref_fee)
+{
+  *script_ref_fee = 0U;
+
+  size_t total_ref_scripts_size = 0U;
+
+  for (size_t i = 0U; i < cardano_utxo_list_get_length(resolved_reference_inputs); ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(resolved_reference_inputs, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+    cardano_transaction_output_unref(&output);
+
+    if (output == NULL)
+    {
+      return CARDANO_ERROR_POINTER_IS_NULL;
+    }
+
+    cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
+    cardano_script_unref(&script);
+
+    if (script == NULL)
+    {
+      continue;
+    }
+
+    size_t script_size = 0U;
+
+    result = cardano_get_serialized_script_size(script, &script_size);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    total_ref_scripts_size += script_size;
+  }
+
+  return compute_tiered_ref_script_fee(
+    tiers,
+    (uint64_t)total_ref_scripts_size,
+    cardano_unit_interval_get_numerator(coins_per_ref_script_byte),
+    cardano_unit_interval_get_denominator(coins_per_ref_script_byte),
+    script_ref_fee);
+}
+
+/**
+ * \brief Computes the script part of the minimum fee of a transaction, pricing its reference scripts with a tiered
+ * pricing model.
+ *
+ * \param[in]  tx                        The transaction.
+ * \param[in]  prices                    The prices of the execution units.
+ * \param[in]  resolved_reference_inputs Every resolved UTXO whose reference script is priced.
+ * \param[in]  coins_per_ref_script_byte The price of a byte of reference script in the first tier.
+ * \param[in]  tiers                     The tiered pricing model, whose stride is not zero.
+ * \param[out] min_fee                   The script part of the minimum fee.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+compute_min_script_fee_with_tiers(
+  cardano_transaction_t*    tx,
+  cardano_ex_unit_prices_t* prices,
+  cardano_utxo_list_t*      resolved_reference_inputs,
+  cardano_unit_interval_t*  coins_per_ref_script_byte,
+  const ref_script_tiers_t* tiers,
+  uint64_t*                 min_fee)
+{
+  uint64_t cpu_steps = 0U;
+  uint64_t memory    = 0U;
+
+  cardano_error_t result = get_batch_ex_units(tx, &cpu_steps, &memory);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_unit_interval_t* cpu_steps_prices = NULL;
+  cardano_unit_interval_t* memory_prices    = NULL;
+
+  result = cardano_ex_unit_prices_get_steps_prices(prices, &cpu_steps_prices);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_ex_unit_prices_get_memory_prices(prices, &memory_prices);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_unit_interval_unref(&cpu_steps_prices);
+    return result;
+  }
+
+  const double cpu_price = cardano_unit_interval_to_double(cpu_steps_prices);
+  const double mem_price = cardano_unit_interval_to_double(memory_prices);
+
+  cardano_unit_interval_unref(&cpu_steps_prices);
+  cardano_unit_interval_unref(&memory_prices);
+
+  *min_fee = (uint64_t)ceil(((double)cpu_steps * cpu_price) + ((double)memory * mem_price));
+
+  uint64_t ref_script_size = 0U;
+
+  result = compute_ref_script_fee_with_tiers(resolved_reference_inputs, coins_per_ref_script_byte, tiers, &ref_script_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *min_fee = 0U;
+
+    return result;
+  }
+
+  *min_fee += ref_script_size;
+
+  return CARDANO_SUCCESS;
+}
+
 /* DEFINITIONS ***************************************************************/
 
 cardano_error_t
@@ -830,68 +1328,51 @@ cardano_compute_script_ref_fee(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  *script_ref_fee = 0U;
+  ref_script_tiers_t tiers = { 0U, 0U, 0U };
 
-  size_t total_ref_scripts_size = 0U;
+  resolve_ref_script_tiers(0U, NULL, &tiers);
 
-  for (size_t i = 0U; i < cardano_utxo_list_get_length(resolved_reference_inputs); ++i)
+  return compute_ref_script_fee_with_tiers(resolved_reference_inputs, coins_per_ref_script_byte, &tiers, script_ref_fee);
+}
+
+cardano_error_t
+cardano_compute_script_ref_fee_with_params(
+  cardano_utxo_list_t*           resolved_reference_inputs,
+  cardano_protocol_parameters_t* protocol_params,
+  uint64_t*                      script_ref_fee)
+{
+  if (resolved_reference_inputs == NULL)
   {
-    cardano_utxo_t* utxo = NULL;
-
-    cardano_error_t result = cardano_utxo_list_get(resolved_reference_inputs, i, &utxo);
-    cardano_utxo_unref(&utxo);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      *script_ref_fee = 0U;
-
-      return result;
-    }
-
-    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
-    cardano_transaction_output_unref(&output);
-
-    if (output == NULL)
-    {
-      *script_ref_fee = 0U;
-
-      return CARDANO_ERROR_POINTER_IS_NULL;
-    }
-
-    cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
-    cardano_script_unref(&script);
-
-    if (script == NULL)
-    {
-      continue;
-    }
-
-    size_t script_size = 0U;
-
-    result = cardano_get_serialized_script_size(script, &script_size);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      *script_ref_fee = 0U;
-
-      return result;
-    }
-
-    total_ref_scripts_size += script_size;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t result = compute_tiered_ref_script_fee(
-    (uint64_t)total_ref_scripts_size,
-    cardano_unit_interval_get_numerator(coins_per_ref_script_byte),
-    cardano_unit_interval_get_denominator(coins_per_ref_script_byte),
-    script_ref_fee);
+  if (protocol_params == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
 
-  if (result != CARDANO_SUCCESS)
+  if (script_ref_fee == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_t* coins_per_ref_script_byte = cardano_protocol_parameters_get_ref_script_cost_per_byte(protocol_params);
+  cardano_unit_interval_t* multiplier                = cardano_protocol_parameters_get_ref_script_cost_multiplier(protocol_params);
+  ref_script_tiers_t       tiers                     = { 0U, 0U, 0U };
+
+  cardano_unit_interval_unref(&coins_per_ref_script_byte);
+  cardano_unit_interval_unref(&multiplier);
+
+  if (coins_per_ref_script_byte == NULL)
   {
     *script_ref_fee = 0U;
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  return result;
+  resolve_ref_script_tiers(cardano_protocol_parameters_get_ref_script_cost_stride(protocol_params), multiplier, &tiers);
+
+  return compute_ref_script_fee_with_tiers(resolved_reference_inputs, coins_per_ref_script_byte, &tiers, script_ref_fee);
 }
 
 cardano_error_t
@@ -927,56 +1408,11 @@ cardano_compute_min_script_fee(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  uint64_t cpu_steps = 0U;
-  uint64_t memory    = 0U;
+  ref_script_tiers_t tiers = { 0U, 0U, 0U };
 
-  cardano_error_t result = get_batch_ex_units(tx, &cpu_steps, &memory);
+  resolve_ref_script_tiers(0U, NULL, &tiers);
 
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  cardano_unit_interval_t* cpu_steps_prices = NULL;
-  cardano_unit_interval_t* memory_prices    = NULL;
-
-  result = cardano_ex_unit_prices_get_steps_prices(prices, &cpu_steps_prices);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_ex_unit_prices_get_memory_prices(prices, &memory_prices);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_unit_interval_unref(&cpu_steps_prices);
-    return result;
-  }
-
-  const double cpu_price = cardano_unit_interval_to_double(cpu_steps_prices);
-  const double mem_price = cardano_unit_interval_to_double(memory_prices);
-
-  cardano_unit_interval_unref(&cpu_steps_prices);
-  cardano_unit_interval_unref(&memory_prices);
-
-  *min_fee = (uint64_t)ceil(((double)cpu_steps * cpu_price) + ((double)memory * mem_price));
-
-  uint64_t ref_script_size = 0U;
-
-  result = cardano_compute_script_ref_fee(resolved_reference_inputs, coins_per_ref_script_byte, &ref_script_size);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    *min_fee = 0U;
-
-    return result;
-  }
-
-  *min_fee += ref_script_size;
-
-  return CARDANO_SUCCESS;
+  return compute_min_script_fee_with_tiers(tx, prices, resolved_reference_inputs, coins_per_ref_script_byte, &tiers, min_fee);
 }
 
 cardano_error_t
@@ -1113,9 +1549,12 @@ cardano_compute_transaction_fee(
   const uint64_t            min_fee_coefficient       = cardano_protocol_parameters_get_min_fee_a(protocol_params);
   const uint64_t            min_fee_constant          = cardano_protocol_parameters_get_min_fee_b(protocol_params);
   cardano_unit_interval_t*  coins_per_ref_script_byte = cardano_protocol_parameters_get_ref_script_cost_per_byte(protocol_params);
+  cardano_unit_interval_t*  ref_script_multiplier     = cardano_protocol_parameters_get_ref_script_cost_multiplier(protocol_params);
+  ref_script_tiers_t        tiers                     = { 0U, 0U, 0U };
 
   cardano_ex_unit_prices_unref(&prices);
   cardano_unit_interval_unref(&coins_per_ref_script_byte);
+  cardano_unit_interval_unref(&ref_script_multiplier);
 
   if (prices == NULL)
   {
@@ -1127,8 +1566,10 @@ cardano_compute_transaction_fee(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  resolve_ref_script_tiers(cardano_protocol_parameters_get_ref_script_cost_stride(protocol_params), ref_script_multiplier, &tiers);
+
   uint64_t        min_script_fee = 0U;
-  cardano_error_t result         = cardano_compute_min_script_fee(transaction, prices, resolved_inputs, coins_per_ref_script_byte, &min_script_fee);
+  cardano_error_t result         = compute_min_script_fee_with_tiers(transaction, prices, resolved_inputs, coins_per_ref_script_byte, &tiers, &min_script_fee);
 
   if (result != CARDANO_SUCCESS)
   {
