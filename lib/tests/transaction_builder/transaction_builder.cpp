@@ -1476,7 +1476,7 @@ TEST(cardano_tx_builder_set_change_address_ex, returnErrorIfMemoryAllocationFail
   cardano_tx_builder_set_change_address_ex(builder, "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"));
 
   // Assert
-  EXPECT_THAT(builder->last_error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_THAT(builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -1587,7 +1587,7 @@ TEST(cardano_tx_builder_set_collateral_change_address_ex, returnErrorIfMemoryAll
   cardano_tx_builder_set_collateral_change_address_ex(builder, "addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg", strlen("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg"));
 
   // Assert
-  EXPECT_THAT(builder->last_error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_THAT(builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_tx_builder_unref(&builder);
@@ -3519,8 +3519,8 @@ TEST(cardano_tx_builder_lock_lovelace_ex, returnsErrorIfMemoryAllocationFails)
   const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
 
   // Assert
-  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
-  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);

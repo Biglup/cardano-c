@@ -438,7 +438,7 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bytes(
   size_t                           size);
 
 /**
- * \brief Creates an enterprise address from a Bech32-encoded string.
+ * \brief Creates a pointer address from a Bech32-encoded string.
  *
  * This function constructs a \ref cardano_pointer_address_t object by decoding the provided
  * Bech32-encoded string that represents the address data.
@@ -446,11 +446,13 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bytes(
  * \param[in] data A pointer to a character array containing the Bech32-encoded representation of the address.
  * \param[in] size The size of the Bech32 string in bytes.
  * \param[out] address A pointer to a pointer to \ref cardano_pointer_address_t that will be set to the address
- *                     of the newly created enterprise address object upon successful decoding.
+ *                     of the newly created pointer address object upon successful decoding.
  *
  * \return Returns \ref CARDANO_SUCCESS if the address was successfully created. Returns \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if the \p data or \p address pointer is NULL. Returns \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the Bech32 data
- *         could not be decoded into a valid enterprise address.
+ *         could not be decoded into a valid pointer address. Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if
+ *         memory for the decoding buffers could not be allocated. Allocation failures inside the Bech32 decoder itself
+ *         are reported as \ref CARDANO_ERROR_DECODING.
  *
  * Usage Example:
  * \code{.c}
@@ -462,14 +464,14 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bytes(
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   // Use the enterprise address
+ *   // Use the pointer address
  *
- *   // Once done, ensure to clean up and release the enterprise address
+ *   // Once done, ensure to clean up and release the pointer address
  *   cardano_pointer_address_unref(&cardano_pointer);
  * }
  * else
  * {
- *   printf("Failed to decode enterprise address from Bech32: %d\n", result);
+ *   printf("Failed to decode pointer address from Bech32: %d\n", result);
  * }
  * \endcode
  */
@@ -480,7 +482,7 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_from_bech32(
   cardano_pointer_address_t** address);
 
 /**
- * \brief Retrieves the size in bytes of the Bech32-encoded representation of an enterprise address.
+ * \brief Retrieves the size in bytes of the Bech32-encoded representation of a pointer address.
  *
  * This function calculates the size necessary to store the Bech32-encoded representation of a given
  * \ref cardano_pointer_address_t address object. This size includes the characters needed to represent
@@ -518,7 +520,7 @@ CARDANO_NODISCARD
 CARDANO_EXPORT size_t cardano_pointer_address_get_bech32_size(const cardano_pointer_address_t* address);
 
 /**
- * \brief Converts an enterprise address to a Bech32-encoded string.
+ * \brief Converts a pointer address to a Bech32-encoded string.
  *
  * This function takes a \ref cardano_pointer_address_t object and converts it into a Bech32 string,
  * writing the result into the provided \p data buffer. The buffer must be large enough to hold the entire
@@ -552,7 +554,7 @@ CARDANO_EXPORT size_t cardano_pointer_address_get_bech32_size(const cardano_poin
  *   }
  *   else
  *   {
- *     printf("Failed to convert enterprise address to Bech32: %d\n", result);
+ *     printf("Failed to convert pointer address to Bech32: %d\n", result);
  *   }
  *   free(bech32_string);
  * }
@@ -569,14 +571,14 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bech32(
   size_t                           size);
 
 /**
- * \brief Retrieves the string representation of an enterprise address.
+ * \brief Retrieves the string representation of a pointer address.
  *
  * This function provides access to the string form of a \ref cardano_pointer_address_t object. It allows for
  * easy display and logging of the address in a human-readable format.
  *
  * \param[in] address A pointer to the \ref cardano_pointer_address_t object whose string representation is to be retrieved.
  *
- * \return A pointer to a constant character string representing the enterprise address. Returns NULL if the \p address
+ * \return A pointer to a constant character string representing the pointer address. Returns NULL if the \p address
  *         pointer is NULL or if the address cannot be properly serialized into a string form.
  *
  * \note The returned string is managed internally and should not be freed or modified by the caller. It remains
@@ -590,11 +592,11 @@ CARDANO_EXPORT cardano_error_t cardano_pointer_address_to_bech32(
  *
  * if (address_string != NULL)
  * {
- *   printf("Enterprise Address: %s\n", address_string);
+ *   printf("Pointer Address: %s\n", address_string);
  * }
  * else
  * {
- *   printf("Failed to retrieve string representation of the enterprise address\n");
+ *   printf("Failed to retrieve string representation of the pointer address\n");
  * }
  * \endcode
  */

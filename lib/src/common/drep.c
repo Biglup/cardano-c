@@ -155,23 +155,26 @@ cardano_drep_from_string(
 
   size_t       hrp_size    = 0;
   const size_t data_length = cardano_encoding_bech32_get_decoded_length(bech32_string, string_length, &hrp_size);
-  char*        hrp         = (char*)_cardano_malloc(hrp_size);
 
-  if ((hrp_size == 0U) || (hrp == NULL))
+  if ((hrp_size == 0U) || (data_length == 0U))
   {
-    _cardano_free(hrp);
-
     return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+  }
+
+  char* hrp = (char*)_cardano_malloc(hrp_size);
+
+  if (hrp == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   byte_t* decoded_data = (byte_t*)_cardano_malloc(data_length);
 
-  if ((data_length == 0U) || (decoded_data == NULL))
+  if (decoded_data == NULL)
   {
     _cardano_free(hrp);
-    _cardano_free(decoded_data);
 
-    return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
   cardano_error_t result = cardano_encoding_bech32_decode(bech32_string, string_length, hrp, hrp_size, decoded_data, data_length);

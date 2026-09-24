@@ -48,6 +48,16 @@ static const char* DREP_INVALID_HASH_SIZE    = "drep1478q9x7ntsf3fv4wc7rvwdgw2uk
 static const char* DREP_INVALID_KEY_TYPE     = "drep1yqqzh0wlct5crvnkqpqy06l6lrszn0f4cyc5k2hv0pk8xhsx9kyk8";
 static const char* DREP_INVALID_GOV_KEY_TYPE = "drep1qgqzh0wlct5crvnkqpqy06l6lrszn0f4cyc5k2hv0pk8xhs5cw03f";
 
+/**
+ * \brief Index of the first allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 3;
+
+/**
+ * \brief Index of the last allocation made inside the bech32 decoder that it reports as a decoding error.
+ */
+static const int LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR = 7;
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_drep_to_cbor, canSerializeDrep)
@@ -1126,6 +1136,50 @@ TEST(cardano_drep_from_string, returnsErrorIfMemoryAllocationFailsCip129)
     reset_limited_malloc();
     cardano_set_allocators(malloc, realloc, free);
   }
+}
+
+TEST(cardano_drep_from_string, returnsErrorOnEveryAllocationFailure)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_drep_t* drep = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_drep_from_string(DREP_CIP105_KEY_HASH, strlen(DREP_CIP105_KEY_HASH), &drep);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(drep, nullptr);
+    }
+    else if ((i >= FIRST_ALLOCATION_REPORTED_AS_DECODING_ERROR) && (i <= LAST_ALLOCATION_REPORTED_AS_DECODING_ERROR))
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+      EXPECT_EQ(drep, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(drep, nullptr);
+    }
+
+    // Cleanup
+    cardano_drep_unref(&drep);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_drep_get_string_size, returnsZeroIfDrepIsNull)

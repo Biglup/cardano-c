@@ -255,8 +255,21 @@ cardano_enterprise_address_from_bech32(
     return CARDANO_ERROR_INVALID_ADDRESS_FORMAT;
   }
 
-  char*   hrp          = _cardano_malloc(hrp_size);
+  char* hrp = _cardano_malloc(hrp_size);
+
+  if (hrp == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   byte_t* decoded_data = _cardano_malloc(data_size);
+
+  if (decoded_data == NULL)
+  {
+    _cardano_free(hrp);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
 
   const cardano_error_t decode_result = cardano_encoding_bech32_decode(data, size, hrp, hrp_size, decoded_data, data_size);
 

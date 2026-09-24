@@ -102,7 +102,13 @@ _cardano_byron_address_encode_magic(cardano_cbor_writer_t* writer, const cardano
   assert(address != NULL);
 
   cardano_cbor_writer_t* magic_writer = cardano_cbor_writer_new();
-  cardano_error_t        result       = cardano_cbor_writer_write_uint(magic_writer, address->byron_content->attributes.magic);
+
+  if (magic_writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_cbor_writer_write_uint(magic_writer, address->byron_content->attributes.magic);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -136,7 +142,13 @@ _cardano_byron_address_encode_derivation_path(cardano_cbor_writer_t* writer, con
   assert(address != NULL);
 
   cardano_cbor_writer_t* attributes_writer = cardano_cbor_writer_new();
-  cardano_error_t        result            = cardano_cbor_writer_write_bytestring(
+
+  if (attributes_writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_cbor_writer_write_bytestring(
     attributes_writer,
     address->byron_content->attributes.derivation_path,
     address->byron_content->attributes.derivation_path_size);

@@ -1101,6 +1101,34 @@ TEST(cardano_cbor_writer_reset, returnsErrorIfGivenANullWriter)
   EXPECT_EQ(reset_result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
+TEST(cardano_cbor_writer_reset, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_cbor_writer_write_uint(writer, 1U), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t reset_result = cardano_cbor_writer_reset(writer);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(reset_result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_cbor_writer_write_uint(writer, 2U), CARDANO_SUCCESS);
+
+  char hex[16] = { 0 };
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, sizeof(hex)), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, "0102");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
 TEST(cardano_cbor_writer_encode, returnErrorWhenOutputBufferIsInsufficient)
 {
   // Arrange

@@ -257,7 +257,9 @@ CARDANO_EXPORT const byte_t* cardano_address_get_bytes(
  *
  * \return Returns \ref CARDANO_SUCCESS if the address is successfully created from the string. Returns
  *         \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the string is not a valid address format. If the \p data is
- *         NULL or \p address is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *         NULL or \p address is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL. Returns
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory for the decoding buffers could not be allocated.
+ *         Allocation failures inside the Bech32 decoder itself are reported as \ref CARDANO_ERROR_DECODING.
  *
  * Usage Example:
  * \code{.c}

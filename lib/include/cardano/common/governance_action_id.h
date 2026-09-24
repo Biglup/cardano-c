@@ -111,7 +111,10 @@ cardano_governance_action_id_new(
  * \return \ref CARDANO_SUCCESS if the parsing was successful and the governance action ID object was created.
  *         Returns an appropriate error code otherwise:
  *         - \ref CARDANO_ERROR_POINTER_IS_NULL if any input pointer is NULL.
- *         - \ref CARDANO_ERROR_INVALID_ARGUMENT if the input string is not a valid Bech32-encoded governance action ID.
+ *         - \ref CARDANO_ERROR_INVALID_ADDRESS_FORMAT if the input string is not a valid Bech32-encoded governance action ID.
+ *         - \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory for the decoding buffers could not be allocated.
+ *         - \ref CARDANO_ERROR_DECODING if the Bech32 string cannot be decoded, including allocation failures inside the
+ *           Bech32 decoder itself.
  *
  * Usage Example
  * \code{.c}

@@ -116,6 +116,59 @@ TEST(cardano_byron_address_from_credentials, returnErrorIfMemoryAllocationFails)
   cardano_byron_address_unref(&byron_address);
 }
 
+TEST(cardano_byron_address_from_credentials, returnsErrorOnEveryAllocationFailureWithDerivationPathAndMagic)
+{
+  // Arrange
+  cardano_blake2b_hash_t* hash = NULL;
+
+  EXPECT_EQ(
+    cardano_blake2b_hash_from_hex(
+      Cip19TestVectors::byronYoroiMainnetRootHex.c_str(),
+      Cip19TestVectors::byronYoroiMainnetRootHex.size(),
+      &hash),
+    CARDANO_SUCCESS);
+
+  cardano_byron_address_attributes_t attributes = { { 0x01, 0x02, 0x03, 0x04, 0x05 }, 5, 1097911063 };
+
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    cardano_byron_address_t* byron_address = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_byron_address_from_credentials(hash, attributes, CARDANO_BYRON_ADDRESS_TYPE_PUBKEY, &byron_address);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(byron_address, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(byron_address, nullptr);
+    }
+
+    // Cleanup
+    cardano_byron_address_unref(&byron_address);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+}
+
 TEST(cardano_byron_address_from_credentials, returnErrorIfEventualMemoryAllocationFails)
 {
   // Arrange
@@ -395,6 +448,45 @@ TEST(cardano_byron_address_from_base58, returnsErrorIfMemoryAllocationFails)
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
   EXPECT_EQ(byron_address, nullptr);
+}
+
+TEST(cardano_byron_address_from_base58, returnsErrorOnEveryAllocationFailure)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_byron_address_t* byron_address = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_byron_address_from_base58(Cip19TestVectors::byronTestnetDaedalus.c_str(), Cip19TestVectors::byronTestnetDaedalus.size(), &byron_address);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_NE(byron_address, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(byron_address, nullptr);
+    }
+
+    // Cleanup
+    cardano_byron_address_unref(&byron_address);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_byron_address_from_base58, returnsErrorIfSizeIsZero)
