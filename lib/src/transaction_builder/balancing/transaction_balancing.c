@@ -40,6 +40,16 @@ static const char* DIRECT_DEPOSITS_OVERFLOW_ERROR = "The direct deposits of the 
  */
 static const char* PRODUCED_COIN_OVERFLOW_ERROR = "The coin produced by the transaction exceeds the maximum amount the balancer can represent.";
 
+/**
+ * \brief The error message reported when the coin consumed by a transaction adds up to more than INT64_MAX.
+ */
+static const char* CONSUMED_COIN_OVERFLOW_ERROR = "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.";
+
+/**
+ * \brief The error message reported when the withdrawals, deposits or reclaimed deposits of a transaction add up to more than UINT64_MAX.
+ */
+static const char* IMPLICIT_COIN_OVERFLOW_ERROR = "The withdrawals, deposits or reclaimed deposits of the transaction add up to more than the maximum amount the balancer can represent.";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -266,6 +276,46 @@ add_coin(int64_t* accumulator, const uint64_t amount)
   }
 
   *accumulator += (int64_t)amount;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Computes the coin consumed by a transaction or sub transaction.
+ *
+ * The consumed coin is the sum of the reward withdrawals and the reclaimed deposits. The balancer keeps lovelace
+ * amounts as signed 64 bit integers, so the sum must not exceed INT64_MAX.
+ *
+ * \param[in]  withdrawals      The sum of the reward withdrawals.
+ * \param[in]  reclaim_deposits The deposits reclaimed by the certificates.
+ * \param[out] consumed_coin    A pointer to store the consumed coin. It is left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS if the consumed coin was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if it
+ *         exceeds INT64_MAX.
+ */
+static cardano_error_t
+compute_consumed_coin(
+  const uint64_t withdrawals,
+  const uint64_t reclaim_deposits,
+  int64_t*       consumed_coin)
+{
+  int64_t total = 0;
+
+  cardano_error_t result = add_coin(&total, withdrawals);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_coin(&total, reclaim_deposits);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *consumed_coin = total;
 
   return CARDANO_SUCCESS;
 }
@@ -1952,9 +2002,16 @@ balance_transaction(
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_transaction_set_last_error(
-      unbalanced_tx,
-      "Failed to compute implicit coin for transaction balancing.");
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_transaction_set_last_error(unbalanced_tx, IMPLICIT_COIN_OVERFLOW_ERROR);
+    }
+    else
+    {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "Failed to compute implicit coin for transaction balancing.");
+    }
 
     return result;
   }
@@ -2023,6 +2080,20 @@ balance_transaction(
       return result;
     }
 
+    int64_t consumed_coin = 0;
+
+    result = compute_consumed_coin(implicit_coin.withdrawals, implicit_coin.reclaim_deposits, &consumed_coin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+      cardano_value_unref(&total_output_value);
+
+      cardano_transaction_set_last_error(unbalanced_tx, CONSUMED_COIN_OVERFLOW_ERROR);
+
+      return result;
+    }
+
     int64_t produced_coin = 0;
 
     result = compute_produced_coin(implicit_coin.deposits, fee, donation, direct_deposit_total, &produced_coin);
@@ -2040,7 +2111,7 @@ balance_transaction(
     cardano_value_t* top_level_implicit_value = NULL;
 
     result = cardano_value_new(
-      ((int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits) - produced_coin,
+      consumed_coin - produced_coin,
       mint,
       &top_level_implicit_value);
 
@@ -2751,6 +2822,11 @@ cardano_compute_transaction_imbalance(
 
   if (result != CARDANO_SUCCESS)
   {
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_transaction_set_last_error(tx, IMPLICIT_COIN_OVERFLOW_ERROR);
+    }
+
     return result;
   }
 
@@ -2783,8 +2859,17 @@ cardano_compute_transaction_imbalance(
   const uint64_t* donation_ptr  = cardano_transaction_body_get_donation(body);
   const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
   const uint64_t  fee           = cardano_transaction_body_get_fee(body);
-  const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
+  int64_t         consumed_coin = 0;
   int64_t         produced_coin = 0;
+
+  result = compute_consumed_coin(implicit_coin.withdrawals, implicit_coin.reclaim_deposits, &consumed_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_set_last_error(tx, CONSUMED_COIN_OVERFLOW_ERROR);
+
+    return result;
+  }
 
   result = compute_produced_coin(implicit_coin.deposits, fee, donation, direct_deposit_total, &produced_coin);
 
@@ -2836,6 +2921,11 @@ cardano_compute_sub_transaction_imbalance(
 
   if (result != CARDANO_SUCCESS)
   {
+    if (result == CARDANO_ERROR_INTEGER_OVERFLOW)
+    {
+      cardano_sub_transaction_set_last_error(sub_tx, "The withdrawals, deposits or reclaimed deposits of a sub transaction add up to more than the maximum amount the balancer can represent.");
+    }
+
     return result;
   }
 
@@ -2867,8 +2957,17 @@ cardano_compute_sub_transaction_imbalance(
 
   const uint64_t* donation_ptr  = cardano_sub_transaction_body_get_donation(body);
   const uint64_t  donation      = (donation_ptr != NULL) ? *donation_ptr : 0U;
-  const int64_t   consumed_coin = (int64_t)implicit_coin.withdrawals + (int64_t)implicit_coin.reclaim_deposits;
+  int64_t         consumed_coin = 0;
   int64_t         produced_coin = 0;
+
+  result = compute_consumed_coin(implicit_coin.withdrawals, implicit_coin.reclaim_deposits, &consumed_coin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_sub_transaction_set_last_error(sub_tx, "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+    return result;
+  }
 
   result = compute_produced_coin(implicit_coin.deposits, 0U, donation, direct_deposit_total, &produced_coin);
 
