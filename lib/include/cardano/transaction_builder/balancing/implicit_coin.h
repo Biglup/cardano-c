@@ -68,7 +68,9 @@ typedef struct cardano_implicit_coin_t
  * \param[in] protocol_params A pointer to \ref cardano_protocol_parameters_t containing the protocol parameters necessary for accurate computation.
  * \param[out] implicit_coin A pointer to \ref cardano_implicit_coin_t where the computed implicit coin balance will be stored.
  *
- * \return \ref CARDANO_SUCCESS if the implicit coin balance was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the implicit coin balance was successfully computed, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the
+ *         withdrawals, the deposits or the reclaimed deposits add up to more than UINT64_MAX, or an appropriate error code
+ *         indicating failure.
  *
  * Usage Example:
  * \code{.c}
@@ -102,7 +104,9 @@ cardano_compute_implicit_coin(
  * \param[in] protocol_params A pointer to \ref cardano_protocol_parameters_t containing the protocol parameters necessary for accurate computation.
  * \param[out] implicit_coin A pointer to \ref cardano_implicit_coin_t where the computed implicit coin balance will be stored.
  *
- * \return \ref CARDANO_SUCCESS if the implicit coin balance was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the implicit coin balance was successfully computed, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the
+ *         withdrawals, the deposits or the reclaimed deposits add up to more than UINT64_MAX, or an appropriate error code
+ *         indicating failure.
  *
  * Usage Example:
  * \code{.c}

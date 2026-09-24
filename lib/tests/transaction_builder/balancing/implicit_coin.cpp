@@ -25,7 +25,12 @@
 
 #include "../../allocators_helpers.h"
 
+#include <cardano/certs/certificate.h>
+#include <cardano/certs/certificate_set.h>
 #include <cardano/common/utxo.h>
+#include <cardano/common/withdrawal_map.h>
+#include <cardano/proposal_procedures/proposal_procedure.h>
+#include <cardano/proposal_procedures/proposal_procedure_set.h>
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
 #include <cardano/witness_set/witness_set.h>
 
@@ -38,6 +43,21 @@ static const char* CBOR = "84b000818258200f3abbc8fc19c2e61bab6059bf8a466e6e75483
 // A sub transaction whose body carries a Shelley stake registration, a Conway registration with a deposit of 10,
 // a Conway unregistration refunding 20, a pool retirement and two withdrawals of 10 and 5 lovelace.
 static const char* SUB_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181a200583900dc435fc2638f6684bd1f9f6f917d80c92ae642a4a33a412e516479e64245236ab8056760efceebbff57e8cab220182be3e36439e520a6454011a0098968004d901028482008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0148304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f05a0f6";
+
+// Certificates of two different stake credentials and pools, each moving half of the range of a 64 bit unsigned
+// integer, so two of them add up to more than UINT64_MAX. The Shelley era ones take their deposit from the protocol
+// parameters.
+static const char*    REGISTRATION_CERT_CBOR        = "83078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01b8000000000000000";
+static const char*    REGISTRATION_CERT2_CBOR       = "83078200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1b8000000000000000";
+static const char*    UNREGISTRATION_CERT_CBOR      = "83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01b8000000000000000";
+static const char*    UNREGISTRATION_CERT2_CBOR     = "83088200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1b8000000000000000";
+static const char*    STAKE_REGISTRATION_CERT_CBOR  = "82008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0";
+static const char*    STAKE_REGISTRATION_CERT2_CBOR = "82008200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f";
+static const char*    POOL_RETIREMENT_CERT_CBOR     = "8304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f4";
+static const char*    POOL_RETIREMENT_CERT2_CBOR    = "8304581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1901f4";
+static const char*    REWARD_ADDRESS                = "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27";
+static const char*    REWARD_ADDRESS2               = "stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn";
+static const uint64_t HALF_OF_UINT64_RANGE          = 9223372036854775808U;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -125,6 +145,104 @@ init_protocol_parameters()
   return parameters;
 }
 
+static cardano_withdrawal_map_t*
+new_withdrawal_map(const uint64_t amount, const uint64_t amount2)
+{
+  cardano_withdrawal_map_t* withdrawals = NULL;
+
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert_ex(withdrawals, REWARD_ADDRESS, strlen(REWARD_ADDRESS), amount), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert_ex(withdrawals, REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), amount2), CARDANO_SUCCESS);
+
+  return withdrawals;
+}
+
+static cardano_certificate_set_t*
+new_certificate_set(const char* cbor, const char* cbor2)
+{
+  cardano_certificate_set_t* certificates = NULL;
+  const char*                items[]      = { cbor, cbor2 };
+
+  EXPECT_EQ(cardano_certificate_set_new(&certificates), CARDANO_SUCCESS);
+
+  for (const char* item: items)
+  {
+    cardano_certificate_t* certificate = NULL;
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(item, strlen(item));
+
+    EXPECT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_certificate_set_add(certificates, certificate), CARDANO_SUCCESS);
+
+    cardano_certificate_unref(&certificate);
+    cardano_cbor_reader_unref(&reader);
+  }
+
+  return certificates;
+}
+
+static void
+set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t amount2)
+{
+  cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
+  cardano_withdrawal_map_t*   withdrawals = new_withdrawal_map(amount, amount2);
+
+  EXPECT_EQ(cardano_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_certificates(cardano_transaction_t* tx, const char* cbor, const char* cbor2)
+{
+  cardano_transaction_body_t* body         = cardano_transaction_get_body(tx);
+  cardano_certificate_set_t*  certificates = new_certificate_set(cbor, cbor2);
+
+  EXPECT_EQ(cardano_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_first_proposal_deposit(cardano_transaction_t* tx, const uint64_t deposit)
+{
+  cardano_transaction_body_t*       body      = cardano_transaction_get_body(tx);
+  cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_t*     proposal  = NULL;
+
+  EXPECT_EQ(cardano_proposal_procedure_set_get(proposals, 0, &proposal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_deposit(proposal, deposit), CARDANO_SUCCESS);
+
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_proposal_procedure_set_unref(&proposals);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_t amount, const uint64_t amount2)
+{
+  cardano_sub_transaction_body_t* body        = cardano_sub_transaction_get_body(sub_tx);
+  cardano_withdrawal_map_t*       withdrawals = new_withdrawal_map(amount, amount2);
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_sub_transaction_body_unref(&body);
+}
+
+static void
+set_sub_transaction_certificates(cardano_sub_transaction_t* sub_tx, const char* cbor, const char* cbor2)
+{
+  cardano_sub_transaction_body_t* body         = cardano_sub_transaction_get_body(sub_tx);
+  cardano_certificate_set_t*      certificates = new_certificate_set(cbor, cbor2);
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
+  cardano_sub_transaction_body_unref(&body);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_compute_implicit_coin, canComputeImplicitCoin)
@@ -201,6 +319,149 @@ TEST(cardano_compute_implicit_coin, returnsErrorIfGivenNullImplicitCoin)
   cardano_protocol_parameters_unref(&protocol_params);
 }
 
+TEST(cardano_compute_implicit_coin, canComputeWithdrawalsThatAddUpToTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_withdrawals(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE - 1U);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.withdrawals, UINT64_MAX);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheWithdrawalsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_withdrawals(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheShelleyDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, STAKE_REGISTRATION_CERT_CBOR, STAKE_REGISTRATION_CERT2_CBOR);
+  EXPECT_EQ(cardano_protocol_parameters_set_key_deposit(protocol_params, HALF_OF_UINT64_RANGE), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheShelleyReclaimedDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, POOL_RETIREMENT_CERT_CBOR, POOL_RETIREMENT_CERT2_CBOR);
+  EXPECT_EQ(cardano_protocol_parameters_set_pool_deposit(protocol_params, HALF_OF_UINT64_RANGE), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheConwayDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, REGISTRATION_CERT_CBOR, REGISTRATION_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheConwayReclaimedDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, UNREGISTRATION_CERT_CBOR, UNREGISTRATION_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfTheProposalDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_first_proposal_deposit(tx, UINT64_MAX);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
 TEST(cardano_compute_sub_transaction_implicit_coin, canComputeImplicitCoin)
 {
   // Arrange
@@ -250,6 +511,46 @@ TEST(cardano_compute_sub_transaction_implicit_coin, matchesTopLevelResultForTheS
 
   // Cleanup
   cardano_transaction_unref(&tx);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfTheWithdrawalsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_sub_transaction_withdrawals(sub_tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfTheDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_sub_transaction_certificates(sub_tx, REGISTRATION_CERT_CBOR, REGISTRATION_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
   cardano_protocol_parameters_unref(&protocol_params);
 }

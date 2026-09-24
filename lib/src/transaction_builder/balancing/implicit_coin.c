@@ -36,6 +36,28 @@
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
+ * \brief Adds a lovelace amount to an implicit coin accumulator.
+ *
+ * \param[in,out] accumulator A pointer to the accumulator. On failure it is left untouched.
+ * \param[in]     amount      The lovelace amount to add.
+ *
+ * \return \ref CARDANO_SUCCESS if the amount was added, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the sum
+ *         exceeds UINT64_MAX.
+ */
+static cardano_error_t
+add_amount(uint64_t* accumulator, const uint64_t amount)
+{
+  if (amount > (UINT64_MAX - *accumulator))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *accumulator += amount;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Accumulates the reward withdrawals of a body into the implicit coin.
  *
  * \param[in]  withdrawals   The withdrawal map of the body, or NULL when the body has none.
@@ -61,7 +83,12 @@ compute_withdrawals(
       return result;
     }
 
-    implicit_coin->withdrawals += amount;
+    result = add_amount(&implicit_coin->withdrawals, amount);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
 
   return CARDANO_SUCCESS;
@@ -118,22 +145,22 @@ compute_shelley_deposits(
     {
       case CARDANO_CERT_TYPE_STAKE_REGISTRATION:
       {
-        implicit_coin->deposits += stake_deposit;
+        result = add_amount(&implicit_coin->deposits, stake_deposit);
         break;
       }
       case CARDANO_CERT_TYPE_STAKE_DEREGISTRATION:
       {
-        implicit_coin->reclaim_deposits += stake_deposit;
+        result = add_amount(&implicit_coin->reclaim_deposits, stake_deposit);
         break;
       }
       case CARDANO_CERT_TYPE_POOL_REGISTRATION:
       {
-        implicit_coin->deposits += pool_deposit;
+        result = add_amount(&implicit_coin->deposits, pool_deposit);
         break;
       }
       case CARDANO_CERT_TYPE_POOL_RETIREMENT:
       {
-        implicit_coin->reclaim_deposits += pool_deposit;
+        result = add_amount(&implicit_coin->reclaim_deposits, pool_deposit);
 
         break;
       }
@@ -141,6 +168,11 @@ compute_shelley_deposits(
       {
         continue;
       }
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
     }
   }
 
@@ -200,7 +232,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->deposits += cardano_registration_cert_get_deposit(registration);
+        result = add_amount(&implicit_coin->deposits, cardano_registration_cert_get_deposit(registration));
 
         break;
       }
@@ -215,7 +247,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->deposits += cardano_stake_registration_delegation_cert_get_deposit(stake_registration);
+        result = add_amount(&implicit_coin->deposits, cardano_stake_registration_delegation_cert_get_deposit(stake_registration));
 
         break;
       }
@@ -230,7 +262,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->deposits += cardano_vote_registration_delegation_cert_get_deposit(vote_registration);
+        result = add_amount(&implicit_coin->deposits, cardano_vote_registration_delegation_cert_get_deposit(vote_registration));
 
         break;
       }
@@ -245,7 +277,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->deposits += cardano_stake_vote_registration_delegation_cert_get_deposit(stake_vote_registration);
+        result = add_amount(&implicit_coin->deposits, cardano_stake_vote_registration_delegation_cert_get_deposit(stake_vote_registration));
 
         break;
       }
@@ -260,7 +292,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->reclaim_deposits += cardano_unregistration_cert_get_deposit(unregistration);
+        result = add_amount(&implicit_coin->reclaim_deposits, cardano_unregistration_cert_get_deposit(unregistration));
 
         break;
       }
@@ -275,7 +307,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->deposits += cardano_register_drep_cert_get_deposit(register_drep);
+        result = add_amount(&implicit_coin->deposits, cardano_register_drep_cert_get_deposit(register_drep));
 
         break;
       }
@@ -290,7 +322,7 @@ compute_conway_deposits(
           return result;
         }
 
-        implicit_coin->reclaim_deposits += cardano_unregister_drep_cert_get_deposit(unregister_drep);
+        result = add_amount(&implicit_coin->reclaim_deposits, cardano_unregister_drep_cert_get_deposit(unregister_drep));
 
         break;
       }
@@ -298,6 +330,11 @@ compute_conway_deposits(
       {
         continue;
       }
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
     }
   }
 
@@ -315,7 +352,12 @@ compute_conway_deposits(
       return result;
     }
 
-    implicit_coin->deposits += cardano_proposal_procedure_get_deposit(proposal_procedure);
+    result = add_amount(&implicit_coin->deposits, cardano_proposal_procedure_get_deposit(proposal_procedure));
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
 
   return CARDANO_SUCCESS;

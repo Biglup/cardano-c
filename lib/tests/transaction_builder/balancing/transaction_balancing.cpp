@@ -31,8 +31,13 @@
 
 #include <allocators.h>
 #include <cardano/address/enterprise_address.h>
+#include <cardano/certs/certificate.h>
+#include <cardano/certs/certificate_set.h>
+#include <cardano/certs/registration_cert.h>
+#include <cardano/certs/unregistration_cert.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/guard_set.h>
+#include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/ed25519_private_key.h>
 #include <cardano/crypto/ed25519_public_key.h>
 #include <cardano/crypto/ed25519_signature.h>
@@ -102,6 +107,23 @@ static const char* THIRD_SIGNER_KEY_HEX  = "c5aa8df43f9f837bedb7442f31dcb7b166d3
  * \brief Hash of the script that controls the UTXO spent by the transaction that nobody signs.
  */
 static const char* SCRIPT_HASH_HEX = "b275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
+
+/**
+ * \brief Key hashes of the stake credentials that the certificates of the hand assembled bodies register and unregister.
+ */
+static const char* STAKE_KEY_HASH_HEX  = "13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0";
+static const char* STAKE_KEY_HASH2_HEX = "c37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f";
+
+/**
+ * \brief The error messages reported when the withdrawals, deposits or reclaimed deposits of a body wrap past UINT64_MAX.
+ */
+static const char* IMPLICIT_COIN_OVERFLOW_ERROR        = "The withdrawals, deposits or reclaimed deposits of the transaction add up to more than the maximum amount the balancer can represent.";
+static const char* SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR = "The withdrawals, deposits or reclaimed deposits of a sub transaction add up to more than the maximum amount the balancer can represent.";
+
+/**
+ * \brief Half of the lovelace a 64 bit unsigned integer can hold, so two of them wrap past UINT64_MAX.
+ */
+static const uint64_t HALF_OF_UINT64_RANGE = 9223372036854775808U;
 
 /**
  * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee. The estimate of the VK
@@ -806,6 +828,168 @@ set_sub_transaction_donation(cardano_sub_transaction_t* sub_tx, const uint64_t d
 
   EXPECT_EQ(cardano_sub_transaction_body_set_donation(body, &donation), CARDANO_SUCCESS);
 
+  cardano_sub_transaction_body_unref(&body);
+}
+
+/**
+ * Creates a withdrawal map with one or two reward accounts.
+ * \param amount the amount withdrawn from the first reward account.
+ * \param amount2 the amount withdrawn from the second reward account, or zero to leave it out.
+ * \return the withdrawal map.
+ */
+static cardano_withdrawal_map_t*
+new_withdrawal_map(const uint64_t amount, const uint64_t amount2)
+{
+  cardano_withdrawal_map_t* withdrawals = NULL;
+
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert_ex(withdrawals, REWARD_ADDRESS, strlen(REWARD_ADDRESS), amount), CARDANO_SUCCESS);
+
+  if (amount2 > 0U)
+  {
+    EXPECT_EQ(cardano_withdrawal_map_insert_ex(withdrawals, REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), amount2), CARDANO_SUCCESS);
+  }
+
+  return withdrawals;
+}
+
+/**
+ * Creates a certificate set with a single unregistration certificate that reclaims the given deposit.
+ * \param deposit the deposit the certificate reclaims.
+ * \return the certificate set.
+ */
+static cardano_certificate_set_t*
+new_unregistration_certificate_set(const uint64_t deposit)
+{
+  cardano_credential_t*          credential     = NULL;
+  cardano_unregistration_cert_t* unregistration = NULL;
+  cardano_certificate_t*         certificate    = NULL;
+  cardano_certificate_set_t*     certificates   = NULL;
+
+  EXPECT_EQ(cardano_credential_from_hash_hex(STAKE_KEY_HASH_HEX, strlen(STAKE_KEY_HASH_HEX), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unregistration_cert_new(credential, deposit, &unregistration), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_new_unregistration(unregistration, &certificate), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_set_new(&certificates), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_set_add(certificates, certificate), CARDANO_SUCCESS);
+
+  cardano_certificate_unref(&certificate);
+  cardano_unregistration_cert_unref(&unregistration);
+  cardano_credential_unref(&credential);
+
+  return certificates;
+}
+
+/**
+ * Adds a Conway registration certificate that pays the given deposit to a certificate set.
+ * \param certificates the certificate set.
+ * \param key_hash_hex the key hash of the stake credential to register.
+ * \param deposit the deposit the certificate pays.
+ */
+static void
+add_registration_certificate(cardano_certificate_set_t* certificates, const char* key_hash_hex, const uint64_t deposit)
+{
+  cardano_credential_t*        credential   = NULL;
+  cardano_registration_cert_t* registration = NULL;
+  cardano_certificate_t*       certificate  = NULL;
+
+  EXPECT_EQ(cardano_credential_from_hash_hex(key_hash_hex, strlen(key_hash_hex), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_registration_cert_new(credential, deposit, &registration), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_new_registration(registration, &certificate), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_set_add(certificates, certificate), CARDANO_SUCCESS);
+
+  cardano_certificate_unref(&certificate);
+  cardano_registration_cert_unref(&registration);
+  cardano_credential_unref(&credential);
+}
+
+/**
+ * Creates a certificate set with two Conway registration certificates of two different stake credentials.
+ * \param deposit the deposit the first certificate pays.
+ * \param deposit2 the deposit the second certificate pays.
+ * \return the certificate set.
+ */
+static cardano_certificate_set_t*
+new_registration_certificate_set(const uint64_t deposit, const uint64_t deposit2)
+{
+  cardano_certificate_set_t* certificates = NULL;
+
+  EXPECT_EQ(cardano_certificate_set_new(&certificates), CARDANO_SUCCESS);
+
+  add_registration_certificate(certificates, STAKE_KEY_HASH_HEX, deposit);
+  add_registration_certificate(certificates, STAKE_KEY_HASH2_HEX, deposit2);
+
+  return certificates;
+}
+
+static void
+set_registration_deposits(cardano_transaction_t* tx, const uint64_t deposit, const uint64_t deposit2)
+{
+  cardano_transaction_body_t* body         = cardano_transaction_get_body(tx);
+  cardano_certificate_set_t*  certificates = new_registration_certificate_set(deposit, deposit2);
+
+  EXPECT_EQ(cardano_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_sub_transaction_registration_deposits(cardano_sub_transaction_t* sub_tx, const uint64_t deposit, const uint64_t deposit2)
+{
+  cardano_sub_transaction_body_t* body         = cardano_sub_transaction_get_body(sub_tx);
+  cardano_certificate_set_t*      certificates = new_registration_certificate_set(deposit, deposit2);
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
+  cardano_sub_transaction_body_unref(&body);
+}
+
+static void
+set_withdrawals(cardano_transaction_t* tx, const uint64_t amount, const uint64_t amount2)
+{
+  cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
+  cardano_withdrawal_map_t*   withdrawals = new_withdrawal_map(amount, amount2);
+
+  EXPECT_EQ(cardano_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_reclaimed_deposit(cardano_transaction_t* tx, const uint64_t deposit)
+{
+  cardano_transaction_body_t* body         = cardano_transaction_get_body(tx);
+  cardano_certificate_set_t*  certificates = new_unregistration_certificate_set(deposit);
+
+  EXPECT_EQ(cardano_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
+  cardano_transaction_body_unref(&body);
+}
+
+static void
+set_sub_transaction_withdrawals(cardano_sub_transaction_t* sub_tx, const uint64_t amount, const uint64_t amount2)
+{
+  cardano_sub_transaction_body_t* body        = cardano_sub_transaction_get_body(sub_tx);
+  cardano_withdrawal_map_t*       withdrawals = new_withdrawal_map(amount, amount2);
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_sub_transaction_body_unref(&body);
+}
+
+static void
+set_sub_transaction_reclaimed_deposit(cardano_sub_transaction_t* sub_tx, const uint64_t deposit)
+{
+  cardano_sub_transaction_body_t* body         = cardano_sub_transaction_get_body(sub_tx);
+  cardano_certificate_set_t*      certificates = new_unregistration_certificate_set(deposit);
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&certificates);
   cardano_sub_transaction_body_unref(&body);
 }
 
@@ -2652,6 +2836,299 @@ TEST(cardano_balance_transaction, returnsErrorIfTheProducedCoinExceedsTheMaximum
   cardano_coin_selector_unref(&coin_selector);
   cardano_tx_evaluator_unref(&evaluator);
   cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheWithdrawalsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX, 1U);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfASingleWithdrawalExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX + 1U, 0U);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheWithdrawalsAndReclaimedDepositsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX, 0U);
+  set_reclaimed_deposit(tx, 2000000U);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheConsumedCoinOfASubTransactionExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  set_sub_transaction_withdrawals(sub_tx, (uint64_t)INT64_MAX, 1U);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheWithdrawalsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  set_withdrawals(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), IMPLICIT_COIN_OVERFLOW_ERROR);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheDepositsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 234827000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address("addr_test1qqnqfr70emn3kyywffxja44znvdw0y4aeyh0vdc3s3rky48vlp50u6nrq5s7k6h89uqrjnmr538y6e50crvz6jdv3vqqxah5fk");
+
+  set_registration_deposits(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    reference_inputs,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), IMPLICIT_COIN_OVERFLOW_ERROR);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfTheDepositsOfASubTransactionWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_transaction_t*         tx               = new_top_level_transaction(sub_tx, NULL);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  set_sub_transaction_registration_deposits(sub_tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
 }
 
 TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailure)
@@ -6052,6 +6529,31 @@ TEST(cardano_is_transaction_balanced, returnsErrorIfTheDirectDepositsExceedTheMa
   cardano_utxo_list_unref(&resolved_inputs);
 }
 
+TEST(cardano_is_transaction_balanced, returnsErrorIfTheConsumedCoinExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX, 1U);
+
+  // Act
+  bool is_balanced = true;
+
+  cardano_error_t result = cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_FALSE(is_balanced);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
 TEST(cardano_compute_transaction_imbalance, returnsZeroIfTheTransactionIsBalanced)
 {
   // Arrange
@@ -6252,6 +6754,132 @@ TEST(cardano_compute_transaction_imbalance, returnsErrorIfTheProducedCoinExceeds
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
   EXPECT_EQ(imbalance, nullptr);
   EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin produced by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_imbalance, returnsErrorIfTheWithdrawalsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX, 1U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_imbalance, returnsErrorIfASingleWithdrawalExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX + 1U, 0U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_imbalance, returnsErrorIfTheWithdrawalsAndReclaimedDepositsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_withdrawals(tx, (uint64_t)INT64_MAX, 0U);
+  set_reclaimed_deposit(tx, 2000000U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), "The coin consumed by the transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_imbalance, returnsErrorIfTheWithdrawalsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_withdrawals(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), IMPLICIT_COIN_OVERFLOW_ERROR);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_imbalance, returnsErrorIfTheDepositsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_default_utxo_list();
+
+  set_registration_deposits(tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), IMPLICIT_COIN_OVERFLOW_ERROR);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6463,6 +7091,132 @@ TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfTheProducedCoinExc
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
   EXPECT_EQ(imbalance, nullptr);
   EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin produced by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfTheWithdrawalsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_sub_transaction_utxo_list();
+
+  set_sub_transaction_withdrawals(sub_tx, (uint64_t)INT64_MAX, 1U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfASingleWithdrawalExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_sub_transaction_utxo_list();
+
+  set_sub_transaction_withdrawals(sub_tx, (uint64_t)INT64_MAX + 1U, 0U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfTheWithdrawalsAndReclaimedDepositsExceedTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_sub_transaction_utxo_list();
+
+  set_sub_transaction_withdrawals(sub_tx, (uint64_t)INT64_MAX, 0U);
+  set_sub_transaction_reclaimed_deposit(sub_tx, 2000000U);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfTheWithdrawalsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_sub_transaction_utxo_list();
+
+  set_sub_transaction_withdrawals(sub_tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_sub_transaction_imbalance, returnsErrorIfTheDepositsWrapPastTheMaximumUnsignedAmount)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_sub_transaction_utxo_list();
+
+  set_sub_transaction_registration_deposits(sub_tx, HALF_OF_UINT64_RANGE, HALF_OF_UINT64_RANGE);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_sub_transaction_imbalance(sub_tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR);
 
   // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
@@ -7102,6 +7856,36 @@ TEST(cardano_compute_transaction_batch_imbalance, returnsErrorIfTheDirectDeposit
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
   EXPECT_EQ(imbalance, nullptr);
   EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The direct deposits of a sub transaction add up to more than the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&utxo);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_batch_imbalance, returnsErrorIfTheConsumedCoinOfASubTransactionExceedsTheMaximumRepresentableAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs = new_batch_utxo_list();
+  cardano_utxo_t*                utxo            = new_counterpart_utxo();
+  cardano_sub_transaction_t*     sub_tx          = new_coin_sub_transaction(utxo, cardano_value_get_coin(get_utxo_value(utxo)));
+
+  set_sub_transaction_withdrawals(sub_tx, (uint64_t)INT64_MAX, 1U);
+  add_sub_transaction(tx, sub_tx);
+
+  // Act
+  cardano_value_t* imbalance = NULL;
+
+  cardano_error_t result = cardano_compute_transaction_batch_imbalance(tx, resolved_inputs, protocol, &imbalance);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(imbalance, nullptr);
+  EXPECT_STREQ(cardano_sub_transaction_get_last_error(sub_tx), "The coin consumed by a sub transaction exceeds the maximum amount the balancer can represent.");
 
   // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
