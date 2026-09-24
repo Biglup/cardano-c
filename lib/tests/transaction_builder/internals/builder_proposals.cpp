@@ -59,47 +59,7 @@ static const char* CONSTITUTION_CBOR          = "82827668747470733a2f2f7777772e7
  */
 static const int EMPTY_PLUTUS_DATA_MALLOC_INDEX = 5;
 
-/* STATIC VARIABLES **********************************************************/
-
-static int malloc_call_index = 0;
-static int malloc_fail_index = -1;
-
 /* STATIC FUNCTIONS **********************************************************/
-
-/**
- * \brief Sets the zero based index of the malloc call that fail_malloc_at_exact_index fails.
- * \param index The index of the malloc call to fail. A negative index never fails.
- */
-static void
-set_malloc_fail_index(const int index)
-{
-  malloc_call_index = 0;
-  malloc_fail_index = index;
-}
-
-/**
- * \brief A mock version of malloc that fails exactly one allocation.
- *
- * Unlike fail_malloc_at_limit, which fails every allocation from the limit on, this allocator
- * fails only the call whose zero based index matches the one set with set_malloc_fail_index and
- * lets every other call through, so a single failure deep inside a call chain can be reached.
- *
- * \param size The size of the memory allocation request.
- * \return NULL for the selected call, a pointer to allocated memory otherwise.
- */
-static void*
-fail_malloc_at_exact_index(const size_t size)
-{
-  const int current = malloc_call_index;
-  malloc_call_index++;
-
-  if (current == malloc_fail_index)
-  {
-    return NULL;
-  }
-
-  return malloc(size);
-}
 
 /**
  * Creates a new default instance of the protocol parameters.

@@ -109,6 +109,20 @@ static const char* THIRD_SIGNER_KEY_HEX  = "c5aa8df43f9f837bedb7442f31dcb7b166d3
 static const char* SCRIPT_HASH_HEX = "b275b08c999097247f7c17e77007c7010cd19f20cc086ad99d398538";
 
 /**
+ * \brief Zero based index, counted from the start of the balancing done by
+ * balance_with_pre_selected_and_collateral_utxos, of the first allocation made while joining the
+ * pre selected UTXOs and the coin selection into the resolved inputs.
+ */
+static const int PRE_SELECTED_RESOLVED_INPUTS_MALLOC_INDEX = 587;
+
+/**
+ * \brief Zero based index, counted from the start of the balancing done by
+ * balance_with_pre_selected_and_collateral_utxos, of the first allocation made while adding the
+ * collateral UTXOs to the resolved inputs.
+ */
+static const int COLLATERAL_RESOLVED_INPUTS_MALLOC_INDEX = 592;
+
+/**
  * \brief Key hashes of the stake credentials that the certificates of the hand assembled bodies register and unregister.
  */
 static const char* STAKE_KEY_HASH_HEX  = "13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0";
@@ -2403,6 +2417,65 @@ new_script_locked_utxo(const uint64_t ordinal, cardano_utxo_t* script_utxo, cons
   return utxo;
 }
 
+/**
+ * Balances a transaction that has redeemers, pre selected UTXOs and collateral UTXOs, failing exactly one allocation,
+ * and checks the last error the balancer leaves on the transaction.
+ * \param malloc_fail_index the zero based index of the allocation to fail, counted from the start of the balancing.
+ * \param expected_error the last error the balancer must leave on the transaction.
+ * \return The result of the balancing.
+ */
+static cardano_error_t
+balance_with_pre_selected_and_collateral_utxos(const int malloc_fail_index, const char* expected_error)
+{
+  cardano_protocol_parameters_t* protocol          = init_protocol_parameters();
+  cardano_address_t*             change_address    = create_address(BATCH_CHANGE_ADDR);
+  cardano_utxo_t*                pre_selected_utxo = new_coin_utxo(1U, change_address, 5000000);
+  cardano_utxo_list_t*           pre_selected      = new_utxo_list_of(pre_selected_utxo, NULL);
+  cardano_utxo_list_t*           available_utxo    = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs  = new_empty_utxo_list();
+  cardano_transaction_t*         tx                = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+  cardano_coin_selector_t*       coin_selector     = NULL;
+  cardano_tx_evaluator_t*        evaluator         = NULL;
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_declared_units_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  set_malloc_fail_index(malloc_fail_index);
+  cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+  const cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    pre_selected,
+    NULL,
+    available_utxo,
+    coin_selector,
+    change_address,
+    available_utxo,
+    change_address,
+    evaluator,
+    nullptr);
+
+  cardano_set_allocators(malloc, realloc, free);
+  set_malloc_fail_index(-1);
+
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), expected_error);
+
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_address_unref(&change_address);
+  cardano_utxo_unref(&pre_selected_utxo);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_transaction_unref(&tx);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+
+  return result;
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_balance_transaction, canBalanceATransaction)
@@ -3281,6 +3354,119 @@ TEST(cardano_balance_transaction, canBalanceTxWithScripts)
   cardano_coin_selector_unref(&coin_selector);
   cardano_tx_evaluator_unref(&evaluator);
   cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, recoversFromMemoryAllocationFailuresWithPreSelectedAndCollateralUtxos)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol          = init_protocol_parameters();
+  cardano_address_t*             change_address    = create_address(BATCH_CHANGE_ADDR);
+  cardano_utxo_t*                pre_selected_utxo = new_coin_utxo(1U, change_address, 5000000);
+  cardano_utxo_list_t*           pre_selected      = new_utxo_list_of(pre_selected_utxo, NULL);
+  cardano_utxo_list_t*           available_utxo    = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs  = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector     = NULL;
+  cardano_tx_evaluator_t*        evaluator         = NULL;
+  cardano_transaction_t*         expected_tx       = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+  bool                           balanced          = false;
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_declared_units_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  EXPECT_EQ(
+    cardano_balance_transaction(
+      expected_tx,
+      1,
+      protocol,
+      reference_inputs,
+      pre_selected,
+      NULL,
+      available_utxo,
+      coin_selector,
+      change_address,
+      available_utxo,
+      change_address,
+      evaluator,
+      nullptr),
+    CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* expected_body = cardano_transaction_get_body(expected_tx);
+  cardano_transaction_body_unref(&expected_body);
+
+  const uint64_t expected_fee = cardano_transaction_body_get_fee(expected_body);
+
+  // Act
+  for (int i = 0; !balanced && (i < 20000); ++i)
+  {
+    cardano_transaction_t* tx = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t result = cardano_balance_transaction(
+      tx,
+      1,
+      protocol,
+      reference_inputs,
+      pre_selected,
+      NULL,
+      available_utxo,
+      coin_selector,
+      change_address,
+      available_utxo,
+      change_address,
+      evaluator,
+      nullptr);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    balanced = (result == CARDANO_SUCCESS);
+
+    if (balanced)
+    {
+      cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+      cardano_transaction_body_unref(&body);
+
+      EXPECT_EQ(cardano_transaction_body_get_fee(body), expected_fee);
+    }
+
+    cardano_transaction_unref(&tx);
+  }
+
+  // Assert
+  EXPECT_TRUE(balanced);
+
+  // Cleanup
+  cardano_transaction_unref(&expected_tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_address_unref(&change_address);
+  cardano_utxo_unref(&pre_selected_utxo);
+  cardano_utxo_list_unref(&pre_selected);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfJoiningThePreSelectedUtxosAndTheSelectionFails)
+{
+  // Act
+  const cardano_error_t result = balance_with_pre_selected_and_collateral_utxos(PRE_SELECTED_RESOLVED_INPUTS_MALLOC_INDEX, "Joining the pre selected UTXOs and the coin selection into the resolved inputs ran out of memory.");
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfAddingTheCollateralUtxosToTheResolvedInputsFails)
+{
+  // Act
+  const cardano_error_t result = balance_with_pre_selected_and_collateral_utxos(COLLATERAL_RESOLVED_INPUTS_MALLOC_INDEX, "Adding the collateral UTXOs to the resolved inputs ran out of memory.");
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 }
 
 TEST(cardano_balance_transaction, forwardsReferenceInputsToTheEvaluator)

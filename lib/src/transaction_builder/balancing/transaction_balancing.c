@@ -2354,6 +2354,19 @@ balance_transaction(
     {
       cardano_utxo_list_unref(&resolved_inputs);
       resolved_inputs = cardano_utxo_list_concat(pre_selected_utxo, selection);
+
+      if (resolved_inputs == NULL)
+      {
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Joining the pre selected UTXOs and the coin selection into the resolved inputs ran out of memory.");
+
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        cardano_utxo_list_unref(&selection);
+        cardano_utxo_list_unref(&remaining_utxo);
+
+        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
     }
 
     if (available_collateral_utxo != NULL)
@@ -2362,6 +2375,19 @@ balance_transaction(
 
       cardano_utxo_list_unref(&resolved_inputs);
       resolved_inputs = resolved_with_collateral;
+
+      if (resolved_inputs == NULL)
+      {
+        cardano_transaction_set_last_error(
+          unbalanced_tx,
+          "Adding the collateral UTXOs to the resolved inputs ran out of memory.");
+
+        cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+        cardano_utxo_list_unref(&selection);
+        cardano_utxo_list_unref(&remaining_utxo);
+
+        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
     }
 
     cardano_blake2b_hash_set_t* unique_signers = NULL;
