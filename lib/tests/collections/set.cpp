@@ -815,6 +815,35 @@ TEST(cardano_get_entries, returnsAnEmptyArrayIfSetIsEmpty)
   cardano_array_unref(&array);
 }
 
+TEST(cardano_get_entries, returnsAnEmptyUsableArrayIfSetIsEmptyAndZeroSizeAllocationsFail)
+{
+  // Arrange
+  cardano_set_t*        set                 = cardano_set_new(compare, hash);
+  ref_counted_string_t* ref_counted_string1 = ref_counted_string_new("Hello, World!");
+  ref_counted_string_t* ref_counted_string2 = ref_counted_string_new("Goodbye, World!");
+  cardano_object_t*     object1             = (cardano_object_t*)ref_counted_string1;
+  cardano_object_t*     object2             = (cardano_object_t*)ref_counted_string2;
+
+  cardano_set_allocators(fail_zero_size_malloc, realloc, free);
+
+  // Act
+  cardano_array_t* array = cardano_get_entries(set);
+
+  // Assert
+  ASSERT_NE(array, nullptr);
+  EXPECT_EQ(cardano_array_get_size(array), 0);
+  EXPECT_EQ(cardano_array_push(array, object1), 1);
+  EXPECT_EQ(cardano_array_push(array, object2), 2);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Cleanup
+  cardano_set_unref(&set);
+  cardano_array_unref(&array);
+  cardano_object_unref(&object1);
+  cardano_object_unref(&object2);
+}
+
 TEST(cardano_get_entries, returnsNullIfAllocationFails)
 {
   // Arrange
