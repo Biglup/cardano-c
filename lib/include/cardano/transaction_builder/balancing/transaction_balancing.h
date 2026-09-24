@@ -118,9 +118,11 @@ extern "C" {
  * \param[in]      coin_selector              A pointer to the coin selector used for choosing appropriate UTXOs.
  * \param[in]      change_address             The address where any remaining balance (change) will be sent.
  * \param[in]      available_collateral_utxo  A list of available UTXOs to select from as collateral if a redeemer exists in the transaction or in any of its sub transactions.
+ *                                            Collateral is required exactly when such a redeemer exists. This list can be NULL or empty only when
+ *                                            collateral is not required, otherwise the function fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT.
  *                                            The UTXOs a sub transaction spends or references are never used as collateral, even when the batcher is
  *                                            also a party of the batch and offers them here. When every UTXO of this list is used by a sub transaction
- *                                            and collateral is required, the function fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT.
+ *                                            and collateral is required, the function also fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT.
  * \param[in]      collateral_change_address  The address where any remaining collateral change will be sent, if applicable.
  * \param[in]      evaluator                  A transaction evaluator instance for determining the execution cost of scripts.
  * \param[in]      deferred_redeemers         An optional list of deferred redeemers to resolve on every balancing iteration, once the canonical
@@ -130,7 +132,8 @@ extern "C" {
  * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input spent
  *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
  *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and
- *         its sub transactions do not balance between themselves, or an appropriate error code indicating the type of failure.
+ *         its sub transactions do not balance between themselves, \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
+ *         no collateral UTXO is available, or an appropriate error code indicating the type of failure.
  *
  * \note This function assumes that the `unbalanced_tx` is a valid but incomplete transaction, missing necessary inputs to meet the target balance.
  *       After calling this function, the `unbalanced_tx` will be updated with additional inputs, collateral, and, if necessary, a change output.

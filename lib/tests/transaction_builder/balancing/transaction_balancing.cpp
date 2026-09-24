@@ -96,6 +96,11 @@ static const char* UNRESOLVED_SUB_TX_INPUT_ERROR = "A sub transaction spends an 
 static const char* SUB_TX_COLLATERAL_ERROR = "Every collateral UTXO given to the balancer is spent or referenced by a sub transaction. The collateral of the top level transaction must come from UTXOs that its sub transactions do not use.";
 
 /**
+ * \brief Error reported when collateral is required and no collateral UTXO is given to the balancer.
+ */
+static const char* MISSING_COLLATERAL_ERROR = "Collateral UTXOs are required because the transaction or one of its sub transactions carries redeemers, but none were given to the balancer.";
+
+/**
  * \brief Signing key seeds of the owners of the UTXOs spent by the transactions that get signed. They are the public
  * RFC 8032 test vectors, known to everyone, and must never hold funds.
  */
@@ -3356,6 +3361,144 @@ TEST(cardano_balance_transaction, canBalanceTxWithScripts)
   cardano_address_unref(&change_address);
 }
 
+TEST(cardano_balance_transaction, returnsErrorIfCollateralIsRequiredAndTheCollateralUtxosAreEmpty)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_utxo_list_t*           collateral_utxo  = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    collateral_utxo,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), MISSING_COLLATERAL_ERROR);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_utxo_list_unref(&collateral_utxo);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, returnsErrorIfCollateralIsRequiredAndTheCollateralUtxosAreNull)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs(COMPLEX_TX_CBOR, 15000000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    NULL,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), MISSING_COLLATERAL_ERROR);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
+TEST(cardano_balance_transaction, balancesWithoutCollateralIfNoRedeemerExistsAndTheCollateralUtxosAreNull)
+{
+  // Arrange
+  cardano_transaction_t*         tx               = new_transaction_without_inputs(BALANCED_TX_CBOR, 15000000);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           resolved_inputs  = new_default_utxo_list();
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+  cardano_coin_selector_t*       coin_selector    = NULL;
+  cardano_tx_evaluator_t*        evaluator        = NULL;
+  cardano_address_t*             change_address   = create_address(BATCH_CHANGE_ADDR);
+
+  EXPECT_EQ(cardano_large_first_coin_selector_new(&coin_selector), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new(cardano_evaluator_impl_new(), &evaluator), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_balance_transaction(
+    tx,
+    1,
+    protocol,
+    reference_inputs,
+    NULL,
+    NULL,
+    resolved_inputs,
+    coin_selector,
+    change_address,
+    NULL,
+    change_address,
+    evaluator,
+    nullptr);
+
+  // Assert
+  bool is_balanced = false;
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+  EXPECT_EQ(get_collateral_count(tx), 0U);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  cardano_coin_selector_unref(&coin_selector);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_address_unref(&change_address);
+}
+
 TEST(cardano_balance_transaction, recoversFromMemoryAllocationFailuresWithPreSelectedAndCollateralUtxos)
 {
   // Arrange
@@ -4897,7 +5040,7 @@ TEST(cardano_balance_transaction, doesNotAddCollateralIfTheBatchHasNoRedeemers)
   cardano_utxo_list_unref(&reference_inputs);
 }
 
-TEST(cardano_balance_transaction, doesNotAddCollateralForASubTransactionRedeemerIfNoCollateralUtxosAreGiven)
+TEST(cardano_balance_transaction, returnsErrorForASubTransactionRedeemerIfNoCollateralUtxosAreGiven)
 {
   // Arrange
   cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
@@ -4915,8 +5058,8 @@ TEST(cardano_balance_transaction, doesNotAddCollateralForASubTransactionRedeemer
   cardano_error_t result = balance_batch_with_collateral(tx, protocol, reference_inputs, sub_tx_inputs, NULL, available_utxo, NULL);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_SUCCESS);
-  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+  EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), MISSING_COLLATERAL_ERROR);
   EXPECT_EQ(get_collateral_count(tx), 0U);
 
   // Cleanup
@@ -5149,7 +5292,7 @@ TEST(cardano_balance_transaction, paysForTheExecutionUnitsOfTheSubTransactions)
 
   // Act
   cardano_error_t plain_result  = balance_batch(plain_tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
-  cardano_error_t script_result = balance_batch(script_tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+  cardano_error_t script_result = balance_batch_with_collateral(script_tx, protocol, reference_inputs, sub_tx_inputs, NULL, available_utxo, available_utxo);
 
   // Assert
   const uint64_t ex_units_fee = compute_ex_units_fee(protocol, 1000000, 200000000);

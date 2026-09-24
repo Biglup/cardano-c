@@ -382,8 +382,10 @@ CARDANO_EXPORT void cardano_tx_builder_set_utxos(cardano_tx_builder_t* builder, 
  * \brief Sets the UTXO list for collateral when scripts are included in the transaction.
  *
  * This function assigns a specific list of UTXOs (`cardano_utxo_list_t`) for use as collateral if the transaction
- * involves script execution. If this collateral UTXO list is not set, the transaction builder will default to using
- * the general UTXO list provided via \ref cardano_tx_builder_set_utxos.
+ * involves script execution. The builder asks for collateral when the transaction has script data (datums or
+ * redeemers) or when any of the sub transactions it carries has redeemers. In that case building fails with
+ * \ref CARDANO_ERROR_POINTER_IS_NULL if this list is not set, and with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if it
+ * is empty.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that will utilize the specified UTXOs for collateral.
  * \param[in] utxos A pointer to the \ref cardano_utxo_list_t containing the UTXOs designated for collateral.
@@ -395,8 +397,8 @@ CARDANO_EXPORT void cardano_tx_builder_set_utxos(cardano_tx_builder_t* builder, 
  * cardano_tx_builder_set_collateral_utxos(tx_builder, collateral_utxos);
  * \endcode
  *
- * \note Only necessary if the transaction contains scripts that require collateral. Without this setting,
- *       the transaction builder defaults to the general UTXO set.
+ * \note Only necessary if the transaction has script data or one of its sub transactions has redeemers. The collateral
+ *       change address must also be set with \ref cardano_tx_builder_set_collateral_change_address in that case.
  */
 CARDANO_EXPORT void cardano_tx_builder_set_collateral_utxos(cardano_tx_builder_t* builder, cardano_utxo_list_t* utxos);
 
@@ -1504,7 +1506,8 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * that sub transaction. Including them in the fee is deliberate and may exceed the current ledger minimum, which does
  * not charge for the reference scripts of sub transactions yet. When a sub transaction carries redeemers the
  * transaction posts the collateral, even if it runs no script itself, so the collateral change address and the
- * collateral UTXOs must be set before building. The UTXOs that the sub transactions spend or reference are never used
+ * collateral UTXOs must be set before building, and building fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT when the
+ * collateral UTXOs are empty. The UTXOs that the sub transactions spend or reference are never used
  * as collateral, even when they are also among the UTXOs set with `cardano_tx_builder_set_collateral_utxos`, and
  * building fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT when every collateral UTXO is used by a sub transaction.
  * The scripts of the sub transactions are not evaluated, the execution units their redeemers declare are taken as
@@ -2806,6 +2809,9 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  *
  * This function finalizes the transaction by aggregating all previously added inputs, outputs, certificates, and other data.
  * If any required data is missing or incorrect, this function will report the errors encountered during the build process.
+ * When the transaction has script data (datums or redeemers) or one of its sub transactions has redeemers, the
+ * collateral change address and a non empty list of collateral UTXOs must be set, see
+ * \ref cardano_tx_builder_set_collateral_utxos.
  * See \ref cardano_tx_builder_add_sub_transaction for the failures that are specific to a transaction that carries
  * sub transactions, such as a missing required top level guard, sub transactions that do not balance or collateral
  * UTXOs that are all used by the sub transactions.

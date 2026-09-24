@@ -770,6 +770,32 @@ TEST(xxx_cardano_set_collateral_output, doesNothingWhenNoCollateralInputsAreGive
   cardano_utxo_list_unref(&utxos);
 }
 
+TEST(xxx_cardano_set_collateral_output, returnsBalanceInsufficientIfCollateralIsRequiredAndNoCollateralInputsAreGiven)
+{
+  // Arrange
+  cardano_transaction_t*         transaction     = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos           = new_empty_utxo_list();
+
+  add_sub_transaction(transaction, 1, true);
+
+  // Act
+  cardano_error_t empty_result = _cardano_set_collateral_output(transaction, protocol_params, utxos, change_address);
+  cardano_error_t null_result  = _cardano_set_collateral_output(transaction, protocol_params, NULL, change_address);
+
+  // Assert
+  EXPECT_EQ(empty_result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_EQ(null_result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_FALSE(has_collateral(transaction));
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&change_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_utxo_list_unref(&utxos);
+}
+
 TEST(xxx_cardano_set_collateral_output, doesntCrashOnMemoryAllocationFail)
 {
   cardano_transaction_t*         transaction     = new_default_transaction(COMPLEX_TX_CBOR);
