@@ -21,6 +21,10 @@ Fee
 
 ------------
 
+.. doxygenfunction:: cardano_compute_script_ref_fee_with_params
+
+------------
+
 .. doxygenfunction:: cardano_get_total_ex_units_in_redeemers
 
 ------------

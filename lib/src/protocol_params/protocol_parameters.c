@@ -405,8 +405,8 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->ref_script_cost_per_byte               = cardano_get_one_interval();
   (*protocol_parameters)->max_ref_script_size_per_block          = 0;
   (*protocol_parameters)->max_ref_script_size_per_tx             = 0;
-  (*protocol_parameters)->ref_script_cost_stride                 = 1;
-  (*protocol_parameters)->ref_script_cost_multiplier             = cardano_get_one_interval();
+  (*protocol_parameters)->ref_script_cost_stride                 = 0;
+  (*protocol_parameters)->ref_script_cost_multiplier             = NULL;
   (*protocol_parameters)->max_pledge_leverage                    = NULL;
   (*protocol_parameters)->min_pool_margin                        = cardano_get_zero_interval();
   (*protocol_parameters)->leios_announcement_period_length       = 0;
@@ -419,7 +419,7 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->max_endorser_block_execution_units     = cardano_get_ex_unit();
   (*protocol_parameters)->max_ref_script_size_per_endorser_block = 0;
 
-  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->ref_script_cost_multiplier == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL))
+  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL))
   {
     cardano_protocol_parameters_unref(protocol_parameters);
 

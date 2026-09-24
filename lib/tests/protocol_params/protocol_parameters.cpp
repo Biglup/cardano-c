@@ -3144,6 +3144,23 @@ TEST(cardano_protocol_parameters_new, initializesTheDijkstraParametersToTheirDef
   cardano_protocol_parameters_unref(&protocol_parameters);
 }
 
+TEST(cardano_protocol_parameters_new, doesNotSetTheReferenceScriptCostStrideAndMultiplier)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol_parameters = init_protocol_parameters();
+
+  // Act
+  const uint64_t           stride     = cardano_protocol_parameters_get_ref_script_cost_stride(protocol_parameters);
+  cardano_unit_interval_t* multiplier = cardano_protocol_parameters_get_ref_script_cost_multiplier(protocol_parameters);
+
+  // Assert
+  EXPECT_EQ(stride, 0U);
+  EXPECT_EQ(multiplier, (cardano_unit_interval_t*)0);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&protocol_parameters);
+}
+
 TEST(cardano_protocol_parameters_new, returnErrorIfGivenNull)
 {
   // Act
