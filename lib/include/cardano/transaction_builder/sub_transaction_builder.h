@@ -966,6 +966,11 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_account_balance_interval_ex(
  * balance the account had before the batch. The rule that a withdrawal must drain the account exactly only
  * applies to the withdrawals of a top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script.
  *
+ * The account must also be registered before the batch, so the ledger rejects a batch whose sub transaction
+ * withdraws from an account the batch registers, even one funded by a direct deposit of the batch, or from an
+ * account an earlier sub transaction of the batch unregisters. The builder has no view of account state, so it
+ * does not check this.
+ *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
  *                    from which rewards should be withdrawn. The account must be controlled by a key or by a
@@ -991,7 +996,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards(
  * \brief Withdraws rewards from a specified reward account using a string address in the sub transaction builder.
  *
  * This function behaves like `cardano_sub_tx_builder_withdraw_rewards` but accepts the reward account as a Bech32
- * string.
+ * string. The same rules apply, including that the account must be registered before the batch, which the builder
+ * does not check.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
  * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.

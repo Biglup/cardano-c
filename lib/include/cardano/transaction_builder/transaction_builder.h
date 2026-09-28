@@ -1209,6 +1209,10 @@ CARDANO_EXPORT void cardano_tx_builder_add_datum(
  * had before the batch. The exception is a top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script,
  * whatever source provides it, whose withdrawals must still drain the account exactly.
  *
+ * In a batch the account must also be registered before the batch, so the ledger rejects a batch that withdraws from
+ * an account the batch registers, even one funded by a direct deposit of the batch, or from an account a sub
+ * transaction of the batch unregisters. The builder has no view of account state, so it does not check this.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
  *                    from which rewards should be withdrawn.
@@ -1262,7 +1266,8 @@ CARDANO_EXPORT void cardano_tx_builder_withdraw_rewards_with_deferred_redeemer(
  *
  * The amount follows the same rules as in \ref cardano_tx_builder_withdraw_rewards. It must be the full available
  * reward balance up to the Conway era and whenever the transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, and
- * it may be a part of the balance otherwise from the Dijkstra era.
+ * it may be a part of the balance otherwise from the Dijkstra era. In a batch the account must also be registered
+ * before the batch, which the builder does not check.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.
