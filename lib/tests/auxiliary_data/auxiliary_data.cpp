@@ -24,6 +24,7 @@
 #include <cardano/error.h>
 
 #include <cardano/auxiliary_data/auxiliary_data.h>
+#include <cardano/auxiliary_data/metadatum_list.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/json/json_writer.h>
@@ -740,6 +741,101 @@ TEST(cardano_auxiliary_data_to_cbor, preservesOriginalCbor)
   cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&writer);
   free(hex);
+}
+
+TEST(cardano_auxiliary_data_to_cbor, encodesBuiltMetadataListsWithDefiniteLength)
+{
+  // Arrange
+  cardano_auxiliary_data_t*       auxiliary_data = NULL;
+  cardano_transaction_metadata_t* metadata       = NULL;
+  cardano_metadatum_list_t*       list           = NULL;
+  cardano_metadatum_t*            value          = NULL;
+  cardano_cbor_writer_t*          writer         = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_auxiliary_data_new(&auxiliary_data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_metadata_new(&metadata), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_metadatum_list_new(&list), CARDANO_SUCCESS);
+
+  for (int64_t i = 1; i <= 2; ++i)
+  {
+    cardano_metadatum_t* data = NULL;
+
+    EXPECT_EQ(cardano_metadatum_new_integer_from_int(i, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_metadatum_list_add(list, data), CARDANO_SUCCESS);
+
+    cardano_metadatum_unref(&data);
+  }
+
+  EXPECT_EQ(cardano_metadatum_new_list(list, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_metadata_insert(metadata, 1, value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_auxiliary_data_set_transaction_metadata(auxiliary_data, metadata), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_auxiliary_data_to_cbor(auxiliary_data, writer);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, "d90103a100a101820102");
+
+  // Cleanup
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_transaction_metadata_unref(&metadata);
+  cardano_metadatum_list_unref(&list);
+  cardano_metadatum_unref(&value);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_auxiliary_data_to_cbor, preservesIndefiniteMetadataListsAfterClearingTheCache)
+{
+  // Arrange
+  const char*               cbor           = "d90103a100a1019f0102ff";
+  cardano_auxiliary_data_t* auxiliary_data = NULL;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_cbor_writer_t*    writer         = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_auxiliary_data_from_cbor(reader, &auxiliary_data), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* original_hash = cardano_auxiliary_data_get_hash(auxiliary_data);
+
+  cardano_auxiliary_data_clear_cbor_cache(auxiliary_data);
+
+  // Act
+  cardano_error_t         result = cardano_auxiliary_data_to_cbor(auxiliary_data, writer);
+  cardano_blake2b_hash_t* hash   = cardano_auxiliary_data_get_hash(auxiliary_data);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, cbor);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(original_hash, hash));
+
+  size_t hash_hex_size = cardano_blake2b_hash_get_hex_size(hash);
+  char*  hash_hex      = (char*)malloc(hash_hex_size);
+
+  ASSERT_EQ(cardano_blake2b_hash_to_hex(hash, hash_hex, hash_hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hash_hex, "9cf0457a3ae3eb45a305621a85619174670175b76c793f4bcf8000274b987019");
+
+  // Cleanup
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_blake2b_hash_unref(&original_hash);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+  free(hash_hex);
 }
 
 TEST(cardano_auxiliary_data_get_transaction_metadata, returnsErrorIfObjectIsNull)

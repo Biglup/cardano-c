@@ -135,7 +135,7 @@ TEST(cardano_metadatum_list_to_cbor, canSerializeAnSimpleMetadatumList)
   // Arrange
   cardano_metadatum_list_t* metadatum_list   = nullptr;
   cardano_cbor_writer_t*    writer           = cardano_cbor_writer_new();
-  const char*               simple_list_cbor = "9f0102030405ff";
+  const char*               simple_list_cbor = "850102030405";
 
   cardano_error_t error = cardano_metadatum_list_new(&metadatum_list);
 
@@ -178,7 +178,7 @@ TEST(cardano_metadatum_list_to_cbor, canSerializeAnNestedMetadatumList)
   // Arrange
   cardano_metadatum_list_t* inner_list       = nullptr;
   cardano_cbor_writer_t*    writer           = cardano_cbor_writer_new();
-  const char*               nested_list_cbor = "9f01029f0102030405ff9f0102030405ff05ff";
+  const char*               nested_list_cbor = "85010285010203040585010203040505";
 
   cardano_error_t error = cardano_metadatum_list_new(&inner_list);
 
@@ -298,6 +298,105 @@ TEST(cardano_metadatum_list_to_cbor, canDeserializeAndReserializeCbor)
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   EXPECT_STREQ(actual_cbor, "9f0102ff");
+
+  // Cleanup
+  cardano_metadatum_list_unref(&metadatum_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_metadatum_list_to_cbor, encodesANonEmptyListWithDefiniteLength)
+{
+  // Arrange
+  cardano_metadatum_list_t* metadatum_list = nullptr;
+  cardano_cbor_writer_t*    writer         = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_metadatum_list_new(&metadatum_list), CARDANO_SUCCESS);
+
+  for (int64_t i = 1; i <= 2; ++i)
+  {
+    cardano_metadatum_t* data = nullptr;
+
+    EXPECT_EQ(cardano_metadatum_new_integer_from_int(i, &data), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_metadatum_list_add(metadatum_list, data), CARDANO_SUCCESS);
+
+    cardano_metadatum_unref(&data);
+  }
+
+  // Act
+  cardano_error_t error = cardano_metadatum_list_to_cbor(metadatum_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen("820102") + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, "820102");
+
+  // Cleanup
+  cardano_metadatum_list_unref(&metadatum_list);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_metadatum_list_to_cbor, canDeserializeAndReserializeDefiniteCbor)
+{
+  // Arrange
+  cardano_metadatum_list_t* metadatum_list = nullptr;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex("820102", strlen("820102"));
+  cardano_cbor_writer_t*    writer         = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_metadatum_list_from_cbor(reader, &metadatum_list), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_metadatum_list_to_cbor(metadatum_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen("820102") + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, "820102");
+
+  // Cleanup
+  cardano_metadatum_list_unref(&metadatum_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_metadatum_list_to_cbor, canDeserializeAndReserializeNestedIndefiniteCbor)
+{
+  // Arrange
+  const char*               cbor           = "9f01a101029f03ffbf0405ffff";
+  cardano_metadatum_list_t* metadatum_list = nullptr;
+  cardano_cbor_reader_t*    reader         = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_cbor_writer_t*    writer         = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_metadatum_list_from_cbor(reader, &metadatum_list), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_metadatum_list_to_cbor(metadatum_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(cbor) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, cbor);
 
   // Cleanup
   cardano_metadatum_list_unref(&metadatum_list);
