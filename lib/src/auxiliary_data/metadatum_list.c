@@ -41,6 +41,7 @@ typedef struct cardano_metadatum_list_t
 {
     cardano_object_t base;
     cardano_array_t* array;
+    bool             use_indefinite_encoding;
 } cardano_metadatum_list_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -90,9 +91,10 @@ cardano_metadatum_list_new(cardano_metadatum_list_t** metadatum_list)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  list->base.ref_count     = 1;
-  list->base.last_error[0] = '\0';
-  list->base.deallocator   = cardano_metadatum_list_deallocate;
+  list->base.ref_count          = 1;
+  list->base.last_error[0]      = '\0';
+  list->base.deallocator        = cardano_metadatum_list_deallocate;
+  list->use_indefinite_encoding = false;
 
   list->array = cardano_array_new(128);
 
@@ -137,6 +139,8 @@ cardano_metadatum_list_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatu
     cardano_metadatum_list_unref(&list);
     return result;
   }
+
+  list->use_indefinite_encoding = length < 0;
 
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
@@ -207,9 +211,7 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  size_t array_size = cardano_array_get_size(metadatum_list->array);
-
-  if (array_size > 0U)
+  if (metadatum_list->use_indefinite_encoding)
   {
     result = cardano_cbor_writer_write_start_array(writer, -1);
 
@@ -220,7 +222,8 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
   }
   else
   {
-    result = cardano_cbor_writer_write_start_array(writer, (int64_t)array_size);
+    size_t array_size = cardano_array_get_size(metadatum_list->array);
+    result            = cardano_cbor_writer_write_start_array(writer, (int64_t)array_size);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -248,7 +251,7 @@ cardano_metadatum_list_to_cbor(const cardano_metadatum_list_t* metadatum_list, c
     }
   }
 
-  if (array_size > 0U)
+  if (metadatum_list->use_indefinite_encoding)
   {
     result = cardano_cbor_writer_write_end_array(writer);
   }
