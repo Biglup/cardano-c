@@ -1518,8 +1518,7 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved
  * reference inputs, counted once per sub transaction that references them, as the ledger does when it measures the
  * reference script size of a batch, while a UTXO that a sub transaction both references and spends is counted once for
- * that sub transaction. Including them in the fee is deliberate and may exceed the current ledger minimum, which does
- * not charge for the reference scripts of sub transactions yet. When a sub transaction carries redeemers the
+ * that sub transaction. When a sub transaction carries redeemers the
  * transaction posts the collateral, even if it runs no script itself, so the collateral change address and the
  * collateral UTXOs must be set before building, and building fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT when the
  * collateral UTXOs are empty. The UTXOs that the sub transactions spend or reference are never used

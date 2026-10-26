@@ -56,8 +56,8 @@ extern "C" {
  * A transaction that carries sub transactions pays the fee of the whole batch. The size of the sub transactions is part
  * of the size of the transaction, and the execution units of the redeemers of every sub transaction are added to the ones
  * of the transaction. The reference scripts of the sub transactions are included if the resolved UTXOs of their reference
- * inputs and spend inputs are given in \p resolved_ref_inputs. Including them is deliberate and may exceed the current
- * ledger minimum, which does not charge for the reference scripts of sub transactions yet.
+ * inputs and spend inputs are given in \p resolved_ref_inputs, as the ledger prices the reference scripts of the whole
+ * batch.
  *
  * \param[in] transaction The pointer to the \ref cardano_transaction_t object representing the transaction.
  * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing every resolved UTXO whose reference script is priced: the ones behind
@@ -153,8 +153,7 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  *
  * Reference scripts are always priced, whatever their language: when the batch has no redeemers the execution unit part of
  * the fee is zero and the computed fee is the reference script fee alone. The reference scripts of the sub transactions
- * resolved in \p resolved_reference_inputs are included. This is deliberate and may exceed the current ledger minimum, which
- * does not charge for the reference scripts of sub transactions yet.
+ * resolved in \p resolved_reference_inputs are included, as the ledger prices the reference scripts of the whole batch.
  *
  * The reference scripts are priced as \ref cardano_compute_script_ref_fee prices them, with the Conway values of the
  * reference script cost stride and multiplier. \ref cardano_compute_transaction_fee prices them with the stride and the
@@ -268,9 +267,8 @@ cardano_compute_min_fee_without_scripts(
  * The total size is not distinct: every entry of the list is counted, so a reference script that appears in several entries
  * is priced once per entry. The ledger takes the inputs of a body as a set, so a UTXO that a body both references and
  * spends must be listed once. Counting every entry matches how the ledger measures the reference script size of a batch, where
- * a UTXO referenced by the transaction and by one of its sub transactions counts twice. For the sub transactions the ledger only
- * applies that measure to the reference script size limit of the transaction and does not charge for their reference scripts
- * yet. Including them in the list is deliberate and may exceed the current ledger minimum.
+ * a UTXO referenced by the transaction and by one of its sub transactions counts twice. The ledger prices the total of the
+ * whole batch with a single application of the tiered model, so the UTXOs of the sub transactions must be in the same list.
  *
  * \param[in] resolved_reference_inputs A pointer to the \ref cardano_utxo_list_t object holding every resolved UTXO whose reference script is priced: the
  *                            ones behind the reference inputs and the spend inputs of the transaction. Entries without a reference script add nothing.
