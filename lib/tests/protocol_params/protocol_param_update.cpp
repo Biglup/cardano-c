@@ -52,6 +52,8 @@ static const char* POOL_VOTING_THRESHOLDS_CBOR = "85d81e820000d81e820101d81e8202
 static const char* DREP_VOTING_THRESHOLDS_CBOR = "8ad81e820000d81e820101d81e820202d81e820303d81e820404d81e820505d81e820606d81e820707d81e820808d81e820909";
 static const char* DIJKSTRA_PARAMS_CBOR        = "a418221affffffff18231a0140000018241964001825d81e820f0a";
 static const char* LEIOS_PARAMS_CBOR           = "ab1826d81e8203021827d81e82011418281903e818291907d0182a190bb8182b1901f4182cd81e820305182d1a00010000182e1a000186a0182f821a00d59f801b00000002540be40018301a00032000";
+static const char* PERAS_PARAMS_CBOR           = "a81831181e1832d81e82050218330f18341902581835071836d81e82010a18371903e81838182c";
+static const char* PERAS_PARAMS_NULL_CBOR      = "a81831181e1832d81e82050218330f18341902581835f61836d81e82010a18371903e81838182c";
 static const char* LEIOS_PARAMS_UNBOUNDED_CBOR = "ab1826f61827d81e82011418281903e818291907d0182a190bb8182b1901f4182cd81e820305182d1a00010000182e1a000186a0182f821a00d59f801b00000002540be40018301a00032000";
 
 /* TEST VECTORS **************************************************************/
@@ -84,13 +86,14 @@ typedef struct
  */
 static const ledger_parameter_update_t LEDGER_PARAMETER_UPDATES[] = {
   { "collateralPercentage", "collateral_percentage", cardano_protocol_param_update_set_collateral_percentage, cardano_protocol_param_update_get_collateral_percentage },
-  { "committeeMinSize", "min_committee_size", cardano_protocol_param_update_set_min_committee_size, cardano_protocol_param_update_get_min_committee_size },
+  { "committeeMaxTermLength", "committee_term_limit", cardano_protocol_param_update_set_committee_term_limit, cardano_protocol_param_update_get_committee_term_limit },
   { "costModels", "cost_models", NULL, NULL },
   { "dRepActivity", "drep_inactivity_period", cardano_protocol_param_update_set_drep_inactivity_period, cardano_protocol_param_update_get_drep_inactivity_period },
-  { "dRepDeposit", "drep_deposit", cardano_protocol_param_update_set_drep_deposit, cardano_protocol_param_update_get_drep_deposit },
   { "dRepVotingThresholds", "drep_voting_thresholds", NULL, NULL },
   { "govActionDeposit", "governance_action_deposit", cardano_protocol_param_update_set_governance_action_deposit, cardano_protocol_param_update_get_governance_action_deposit },
+  { "leiosAnnouncementPeriodLength", "leios_announcement_period_length", cardano_protocol_param_update_set_leios_announcement_period_length, cardano_protocol_param_update_get_leios_announcement_period_length },
   { "leiosCommitteeSize", "leios_committee_size", cardano_protocol_param_update_set_leios_committee_size, cardano_protocol_param_update_get_leios_committee_size },
+  { "leiosDiffusionPeriodLength", "leios_diffusion_period_length", cardano_protocol_param_update_set_leios_diffusion_period_length, cardano_protocol_param_update_get_leios_diffusion_period_length },
   { "leiosQuorumStakeThreshold", "leios_quorum_stake_threshold", NULL, NULL },
   { "leiosVotePeriodLength", "leios_vote_period_length", cardano_protocol_param_update_set_leios_vote_period_length, cardano_protocol_param_update_get_leios_vote_period_length },
   { "maxBlockBodySize", "max_block_body_size", cardano_protocol_param_update_set_max_block_body_size, cardano_protocol_param_update_get_max_block_body_size },
@@ -99,25 +102,24 @@ static const ledger_parameter_update_t LEDGER_PARAMETER_UPDATES[] = {
   { "maxCollateralInputs", "max_collateral_inputs", cardano_protocol_param_update_set_max_collateral_inputs, cardano_protocol_param_update_get_max_collateral_inputs },
   { "maxEndorserBlockReferencesSize", "max_endorser_block_references_size", cardano_protocol_param_update_set_max_endorser_block_references_size, cardano_protocol_param_update_get_max_endorser_block_references_size },
   { "maxPledgeLeverage", "max_pledge_leverage", NULL, NULL },
-  { "maxRefScriptSizePerBlock", "max_ref_script_size_per_block", cardano_protocol_param_update_set_max_ref_script_size_per_block, cardano_protocol_param_update_get_max_ref_script_size_per_block },
   { "maxRefScriptSizePerEndorserBlock", "max_ref_script_size_per_endorser_block", cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block, cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block },
   { "maxRefScriptSizePerTx", "max_ref_script_size_per_tx", cardano_protocol_param_update_set_max_ref_script_size_per_tx, cardano_protocol_param_update_get_max_ref_script_size_per_tx },
-  { "maxTxExecutionUnits", "max_tx_ex_units", NULL, NULL },
   { "maxTxSize", "max_tx_size", cardano_protocol_param_update_set_max_tx_size, cardano_protocol_param_update_get_max_tx_size },
-  { "maxValueSize", "max_value_size", cardano_protocol_param_update_set_max_value_size, cardano_protocol_param_update_get_max_value_size },
-  { "minFeeRefScriptCostPerByte", "ref_script_cost_per_byte", NULL, NULL },
   { "minPoolCost", "min_pool_cost", cardano_protocol_param_update_set_min_pool_cost, cardano_protocol_param_update_get_min_pool_cost },
-  { "minPoolMargin", "min_pool_margin", NULL, NULL },
-  { "monetaryExpansion", "expansion_rate", NULL, NULL },
+  { "perasBootstrapRound", "peras_bootstrap_round", NULL, NULL },
+  { "perasCertBoost", "peras_cert_boost", cardano_protocol_param_update_set_peras_cert_boost, cardano_protocol_param_update_get_peras_cert_boost },
+  { "perasHealingFactor", "peras_healing_factor", NULL, NULL },
+  { "perasTargetCommitteeSize", "peras_target_committee_size", cardano_protocol_param_update_set_peras_target_committee_size, cardano_protocol_param_update_get_peras_target_committee_size },
   { "poolPledgeInfluence", "pool_pledge_influence", NULL, NULL },
+  { "poolRetireMaxEpoch", "max_epoch", cardano_protocol_param_update_set_max_epoch, cardano_protocol_param_update_get_max_epoch },
+  { "poolVotingThresholds", "pool_voting_thresholds", NULL, NULL },
+  { "refInputsCostPerDatumByte", "ref_inputs_cost_per_datum_byte", cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte, cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte },
   { "refScriptCostMultiplier", "ref_script_cost_multiplier", NULL, NULL },
   { "refScriptCostStride", "ref_script_cost_stride", cardano_protocol_param_update_set_ref_script_cost_stride, cardano_protocol_param_update_get_ref_script_cost_stride },
   { "stakeAddressDeposit", "key_deposit", cardano_protocol_param_update_set_key_deposit, cardano_protocol_param_update_get_key_deposit },
   { "stakePoolDeposit", "pool_deposit", cardano_protocol_param_update_set_pool_deposit, cardano_protocol_param_update_get_pool_deposit },
-  { "stakePoolTargetNum", "n_opt", cardano_protocol_param_update_set_n_opt, cardano_protocol_param_update_get_n_opt },
   { "treasuryCut", "treasury_growth_rate", NULL, NULL },
-  { "txFeePerByte", "min_fee_a", cardano_protocol_param_update_set_min_fee_a, cardano_protocol_param_update_get_min_fee_a },
-  { "utxoCostPerByte", "ada_per_utxo_byte", cardano_protocol_param_update_set_ada_per_utxo_byte, cardano_protocol_param_update_get_ada_per_utxo_byte }
+  { "txFeePerByte", "min_fee_a", cardano_protocol_param_update_set_min_fee_a, cardano_protocol_param_update_get_min_fee_a }
 };
 
 static const size_t LEDGER_PARAMETER_UPDATES_SIZE = sizeof(LEDGER_PARAMETER_UPDATES) / sizeof(LEDGER_PARAMETER_UPDATES[0]);
@@ -720,7 +722,7 @@ TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfKeyIsPastDijkstraRan
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
-  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex("a1183100", strlen("a1183100"));
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex("a1183900", strlen("a1183900"));
 
   // Act
   cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
@@ -7766,6 +7768,1747 @@ TEST(cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block, r
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_protocol_param_update_from_cbor, roundTripsPerasParamsByteExactly)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+
+  cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_protocol_param_update_to_cbor(protocol_param_update, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+  char*        actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, PERAS_PARAMS_CBOR);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_param_update_from_cbor, roundTripsNullPerasBootstrapRoundByteExactly)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_NULL_CBOR, strlen(PERAS_PARAMS_NULL_CBOR));
+
+  cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  error = cardano_protocol_param_update_to_cbor(protocol_param_update, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+  char*        actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, PERAS_PARAMS_NULL_CBOR);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_param_update_from_cbor, roundTripsEachPerasParamByteExactly)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a11831181e",
+    "a11832d81e820502",
+    "a118330f",
+    "a11834190258",
+    "a1183507",
+    "a11835f6",
+    "a11836d81e82010a",
+    "a118371903e8",
+    "a11838182c"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    ASSERT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_protocol_param_update_to_cbor(protocol_param_update, writer), CARDANO_SUCCESS);
+
+    // Assert
+    const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+    char*        actual_cbor = (char*)malloc(hex_size);
+
+    ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(actual_cbor, vectors[i]);
+
+    // Cleanup
+    cardano_protocol_param_update_unref(&protocol_param_update);
+    cardano_cbor_writer_unref(&writer);
+    cardano_cbor_reader_unref(&reader);
+    free(actual_cbor);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfPerasUintParamExceedsUint32Max)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a118311b0000000100000000",
+    "a118351b0000000100000000"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+    EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'protocol_param_update', 'parameter' must have a value between 0 and 4294967295, but got 4294967296.");
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfPerasUintParamExceedsUint16Max)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a118331a00010000",
+    "a118341a00010000"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+    EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "There was an error decoding 'protocol_param_update', 'parameter' must have a value between 0 and 65535, but got 65536.");
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfPerasParamHasWrongType)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a11831f6",
+    "a1183200",
+    "a1183340",
+    "a1183440",
+    "a1183540",
+    "a1183600"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+    EXPECT_EQ(protocol_param_update, (cardano_protocol_param_update_t*)nullptr);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfRefInputsCostParamHasWrongType)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a1183740",
+    "a11838f6"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+    EXPECT_EQ(protocol_param_update, (cardano_protocol_param_update_t*)nullptr);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfPerasBootstrapRoundIsTruncated)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a11835"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_NE(error, CARDANO_SUCCESS);
+    EXPECT_EQ(protocol_param_update, (cardano_protocol_param_update_t*)nullptr);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfDuplicatedPerasBootstrapRound)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a21835f61835f6",
+    "a21835071835f6",
+    "a21835f6183507",
+    "a2183507183507"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfDuplicatedPerasParam)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a2183300183300",
+    "a2183100183100",
+    "a2183700183700",
+    "a21832d81e8205021832d81e820502"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_protocol_param_update_from_cbor, returnsErrorIfMemoryAllocationFailsWhenReadingPerasUintParam)
+{
+  // Arrange
+  const char* vectors[] = {
+    "a11831181e",
+    "a118330f",
+    "a1183507",
+    "a118371903e8"
+  };
+
+  for (size_t i = 0U; i < (sizeof(vectors) / sizeof(vectors[0])); ++i)
+  {
+    cardano_protocol_param_update_t* protocol_param_update = nullptr;
+    cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    reset_allocators_run_count();
+    cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+    cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &protocol_param_update);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+    cardano_set_allocators(malloc, realloc, free);
+  }
+}
+
+TEST(cardano_protocol_param_update_to_cbor, encodesPerasParamsSetThroughTheApiInAscendingKeyOrder)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* peras_healing_factor                 = NULL;
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+
+  EXPECT_EQ(cardano_unit_interval_new(5, 2, &peras_healing_factor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  const uint64_t min_candidate_block_age = 30;
+  const uint64_t cert_boost              = 15;
+  const uint64_t target_committee_size   = 600;
+  const uint64_t bootstrap_round         = 7;
+  const uint64_t cost_per_policy         = 1000;
+  const uint64_t cost_per_datum_byte     = 44;
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &cost_per_datum_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &cost_per_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &bootstrap_round), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &target_committee_size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &cert_boost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &min_candidate_block_age), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_protocol_param_update_to_cbor(protocol_param_update, writer), CARDANO_SUCCESS);
+
+  // Assert
+  const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+  char*        actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, PERAS_PARAMS_CBOR);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  cardano_unit_interval_unref(&peras_healing_factor);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_param_update_to_cbor, encodesANullPerasBootstrapRoundAsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_to_cbor(protocol_param_update, writer), CARDANO_SUCCESS);
+
+  // Assert
+  const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+  char*        actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, "a11835f6");
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsThePerasBootstrapRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+
+  const uint64_t* peras_bootstrap_round = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Assert
+  ASSERT_NE(peras_bootstrap_round, (const uint64_t*)nullptr);
+  EXPECT_EQ(*peras_bootstrap_round, 7U);
+  EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsNullForANullPerasBootstrapRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_NULL_CBOR, strlen(PERAS_PARAMS_NULL_CBOR));
+
+  uint64_t        sentinel              = 0U;
+  const uint64_t* peras_bootstrap_round = &sentinel;
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(peras_bootstrap_round, (const uint64_t*)nullptr);
+  EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsElementNotFoundIfAbsent)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t* peras_bootstrap_round = NULL;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(peras_bootstrap_round, (const uint64_t*)nullptr);
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  const uint64_t* peras_bootstrap_round = NULL;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_bootstrap_round(nullptr, &peras_bootstrap_round);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsErrorIfPerasBootstrapRoundIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_has_peras_bootstrap_round, returnsFalseIfProtocolParamUpdateIsNull)
+{
+  // Act & Assert
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(nullptr));
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, setsValue)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Assert
+  const uint64_t* peras_bootstrap_round_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
+  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  EXPECT_EQ(*peras_bootstrap_round_out, 7U);
+  EXPECT_NE(peras_bootstrap_round_out, &peras_bootstrap_round);
+  EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, replacesAnExistingRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t first  = 7U;
+  const uint64_t second = 4294967295U;
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &first), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &second), CARDANO_SUCCESS);
+
+  // Assert
+  const uint64_t* peras_bootstrap_round_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
+  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  EXPECT_EQ(*peras_bootstrap_round_out, 4294967295U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, replacesANullRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Assert
+  const uint64_t* peras_bootstrap_round_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
+  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  EXPECT_EQ(*peras_bootstrap_round_out, 7U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  const uint64_t peras_bootstrap_round = 7U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_bootstrap_round(nullptr, &peras_bootstrap_round);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 4294967296U;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_protocol_param_update_get_last_error(protocol_param_update), "Peras bootstrap round must fit in a 32-bit unsigned integer.");
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  const uint64_t* peras_bootstrap_round_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round_null, proposesANullRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  // Assert
+  uint64_t        sentinel                  = 0U;
+  const uint64_t* peras_bootstrap_round_out = &sentinel;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
+  EXPECT_EQ(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round_null, replacesARound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  // Assert
+  uint64_t        sentinel                  = 0U;
+  const uint64_t* peras_bootstrap_round_out = &sentinel;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
+  EXPECT_EQ(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_bootstrap_round_null, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_bootstrap_round_null(nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_clear_peras_bootstrap_round, removesARound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  const uint64_t peras_bootstrap_round = 7U;
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update), CARDANO_SUCCESS);
+
+  // Assert
+  const uint64_t* peras_bootstrap_round_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_clear_peras_bootstrap_round, removesANullRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_writer_t*           writer                = cardano_cbor_writer_new();
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+  EXPECT_EQ(cardano_protocol_param_update_to_cbor(protocol_param_update, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size    = cardano_cbor_writer_get_hex_size(writer);
+  char*        actual_cbor = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(actual_cbor, "a0");
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_protocol_param_update_clear_peras_bootstrap_round, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_clear_peras_bootstrap_round(nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_, returnsElementNotFoundIfMissingPerasField)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  uint64_t peras_min_candidate_block_age = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  uint64_t peras_cert_boost = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  uint64_t peras_target_committee_size = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  uint64_t ref_inputs_cost_per_datum_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  const uint64_t* peras_bootstrap_round = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_get_peras_healing_factor, returnsThePerasHealingFactor)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_unit_interval_get_numerator(peras_healing_factor), 5);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(peras_healing_factor), 2);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_healing_factor);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_healing_factor, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_healing_factor(nullptr, &peras_healing_factor);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_healing_factor, returnsErrorIfPerasHealingFactorIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_healing_factor, setsValue)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(5, 2, &peras_healing_factor), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor), CARDANO_SUCCESS);
+
+  // Assert
+  cardano_unit_interval_t* peras_healing_factor_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor_out), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_get_numerator(peras_healing_factor_out), 5);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(peras_healing_factor_out), 2);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_healing_factor);
+  cardano_unit_interval_unref(&peras_healing_factor_out);
+}
+
+TEST(cardano_protocol_param_update_set_peras_healing_factor, keepsAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(5, 2, &peras_healing_factor), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_healing_factor), 2);
+
+  cardano_unit_interval_t* peras_healing_factor_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor_out), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_healing_factor), 3);
+
+  cardano_unit_interval_unref(&peras_healing_factor_out);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_healing_factor), 2);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_healing_factor), 1);
+  cardano_unit_interval_unref(&peras_healing_factor);
+}
+
+TEST(cardano_protocol_param_update_set_peras_healing_factor, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* peras_healing_factor = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(5, 2, &peras_healing_factor), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_healing_factor(nullptr, peras_healing_factor);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_unit_interval_unref(&peras_healing_factor);
+}
+
+TEST(cardano_protocol_param_update_set_peras_healing_factor, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_unit_interval_t*         peras_healing_factor  = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(5, 2, &peras_healing_factor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  cardano_unit_interval_t* peras_healing_factor_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_healing_factor), 1);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_healing_factor);
+}
+
+TEST(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin, returnsThePerasQuorumThresholdSafetyMargin)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_unit_interval_get_numerator(peras_quorum_threshold_safety_margin), 1);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(peras_quorum_threshold_safety_margin), 10);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(nullptr, &peras_quorum_threshold_safety_margin);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin, returnsErrorIfPerasQuorumThresholdSafetyMarginIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin, setsValue)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Assert
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin_out), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_get_numerator(peras_quorum_threshold_safety_margin_out), 1);
+  EXPECT_EQ(cardano_unit_interval_get_denominator(peras_quorum_threshold_safety_margin_out), 10);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin_out);
+}
+
+TEST(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin, keepsAReferenceToTheValue)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_quorum_threshold_safety_margin), 2);
+
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin_out), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_quorum_threshold_safety_margin), 3);
+
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin_out);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_quorum_threshold_safety_margin), 2);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_quorum_threshold_safety_margin), 1);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+}
+
+TEST(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(nullptr, peras_quorum_threshold_safety_margin);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+}
+
+TEST(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update                = nullptr;
+  cardano_unit_interval_t*         peras_quorum_threshold_safety_margin = NULL;
+  EXPECT_EQ(cardano_unit_interval_new(1, 10, &peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  cardano_unit_interval_t* peras_quorum_threshold_safety_margin_out = NULL;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(cardano_unit_interval_refcount(peras_quorum_threshold_safety_margin), 1);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+}
+
+TEST(cardano_protocol_param_update_get_peras_min_candidate_block_age, returnsThePerasMinCandidateBlockAge)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t peras_min_candidate_block_age = 0;
+
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(peras_min_candidate_block_age, 30U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_min_candidate_block_age, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_min_candidate_block_age = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_min_candidate_block_age(nullptr, &peras_min_candidate_block_age);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_min_candidate_block_age, returnsErrorIfPerasMinCandidateBlockAgeIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_min_candidate_block_age, setsPerasMinCandidateBlockAge)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_min_candidate_block_age = 30;
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_SUCCESS);
+
+  // Assert
+  peras_min_candidate_block_age = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_SUCCESS);
+  EXPECT_EQ(peras_min_candidate_block_age, 30);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_min_candidate_block_age, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_min_candidate_block_age = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_min_candidate_block_age(nullptr, &peras_min_candidate_block_age);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_peras_min_candidate_block_age, returnsErrorIfValueExceedsUint32Max)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_min_candidate_block_age = 4294967296U;
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_min_candidate_block_age, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update         = nullptr;
+  uint64_t                         peras_min_candidate_block_age = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  peras_min_candidate_block_age = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_min_candidate_block_age, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update         = nullptr;
+  uint64_t                         peras_min_candidate_block_age = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_protocol_param_update_get_peras_cert_boost, returnsThePerasCertBoost)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t peras_cert_boost = 0;
+
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(peras_cert_boost, 15U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_cert_boost, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_cert_boost = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_cert_boost(nullptr, &peras_cert_boost);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_cert_boost, returnsErrorIfPerasCertBoostIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_cert_boost, setsPerasCertBoost)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_cert_boost = 15;
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_SUCCESS);
+
+  // Assert
+  peras_cert_boost = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_SUCCESS);
+  EXPECT_EQ(peras_cert_boost, 15);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_cert_boost, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_cert_boost = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_cert_boost(nullptr, &peras_cert_boost);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_peras_cert_boost, returnsErrorIfValueExceedsUint16Max)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_cert_boost = 65536U;
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_cert_boost, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  uint64_t                         peras_cert_boost      = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  peras_cert_boost = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_cert_boost, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  uint64_t                         peras_cert_boost      = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_protocol_param_update_get_peras_target_committee_size, returnsThePerasTargetCommitteeSize)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t peras_target_committee_size = 0;
+
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(peras_target_committee_size, 600U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_peras_target_committee_size, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_target_committee_size = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_target_committee_size(nullptr, &peras_target_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_peras_target_committee_size, returnsErrorIfPerasTargetCommitteeSizeIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_target_committee_size, setsPerasTargetCommitteeSize)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_target_committee_size = 600;
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_SUCCESS);
+
+  // Assert
+  peras_target_committee_size = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_SUCCESS);
+  EXPECT_EQ(peras_target_committee_size, 600);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_target_committee_size, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t peras_target_committee_size = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_peras_target_committee_size(nullptr, &peras_target_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_peras_target_committee_size, returnsErrorIfValueExceedsUint16Max)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t peras_target_committee_size = 65536U;
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_target_committee_size, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update       = nullptr;
+  uint64_t                         peras_target_committee_size = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  peras_target_committee_size = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_peras_target_committee_size, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update       = nullptr;
+  uint64_t                         peras_target_committee_size = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  error = cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsTheRefInputsCostPerMultiAssetPolicy)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(ref_inputs_cost_per_multi_asset_policy, 1000U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(nullptr, &ref_inputs_cost_per_multi_asset_policy);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfRefInputsCostPerMultiAssetPolicyIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, setsRefInputsCostPerMultiAssetPolicy)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t ref_inputs_cost_per_multi_asset_policy = 1000;
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+
+  // Assert
+  ref_inputs_cost_per_multi_asset_policy = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(ref_inputs_cost_per_multi_asset_policy, 1000);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t ref_inputs_cost_per_multi_asset_policy = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(nullptr, &ref_inputs_cost_per_multi_asset_policy);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update                  = nullptr;
+  uint64_t                         ref_inputs_cost_per_multi_asset_policy = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  ref_inputs_cost_per_multi_asset_policy = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update                  = nullptr;
+  uint64_t                         ref_inputs_cost_per_multi_asset_policy = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte, returnsTheRefInputsCostPerDatumByte)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  uint64_t ref_inputs_cost_per_datum_byte = 0;
+
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(ref_inputs_cost_per_datum_byte, 44U);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t ref_inputs_cost_per_datum_byte = 0;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(nullptr, &ref_inputs_cost_per_datum_byte);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte, returnsErrorIfRefInputsCostPerDatumByteIsNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte, setsRefInputsCostPerDatumByte)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  uint64_t ref_inputs_cost_per_datum_byte = 44;
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_SUCCESS);
+
+  // Assert
+  ref_inputs_cost_per_datum_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(ref_inputs_cost_per_datum_byte, 44);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte, returnsErrorIfProtocolParamUpdateIsNull)
+{
+  // Arrange
+  uint64_t ref_inputs_cost_per_datum_byte = 1;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(nullptr, &ref_inputs_cost_per_datum_byte);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte, canUnsetParameterByPassingNull)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update          = nullptr;
+  uint64_t                         ref_inputs_cost_per_datum_byte = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  ref_inputs_cost_per_datum_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update          = nullptr;
+  uint64_t                         ref_inputs_cost_per_datum_byte = 1;
+
+  cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  error = cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+  cardano_set_allocators(malloc, realloc, free);
+}
+
 TEST(cardano_protocol_param_update_to_cip116_json, canConvertDijkstraParamsToCip116Json)
 {
   // Arrange
@@ -7839,6 +9582,60 @@ TEST(cardano_protocol_param_update_to_cip116_json, writesNullForAnUnboundedMaxPl
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_STREQ(json_str, R"({"max_pledge_leverage":null,"min_pool_margin":{"numerator":"1","denominator":"20"}})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_cbor_reader_unref(&reader);
+  cardano_protocol_param_update_unref(&update);
+  free(json_str);
+}
+
+TEST(cardano_protocol_param_update_to_cip116_json, canConvertPerasParamsToCip116Json)
+{
+  // Arrange
+  cardano_protocol_param_update_t* update = nullptr;
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  cardano_error_t                  error  = cardano_protocol_param_update_from_cbor(reader, &update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Serialize
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_protocol_param_update_to_cip116_json(update, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"peras_min_candidate_block_age":"30","peras_healing_factor":{"numerator":"5","denominator":"2"},"peras_cert_boost":"15","peras_target_committee_size":"600","peras_bootstrap_round":"7","peras_quorum_threshold_safety_margin":{"numerator":"1","denominator":"10"},"ref_inputs_cost_per_multi_asset_policy":"1000","ref_inputs_cost_per_datum_byte":"44"})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_cbor_reader_unref(&reader);
+  cardano_protocol_param_update_unref(&update);
+  free(json_str);
+}
+
+TEST(cardano_protocol_param_update_to_cip116_json, writesNullForANullPerasBootstrapRound)
+{
+  // Arrange
+  cardano_protocol_param_update_t* update = nullptr;
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex("a21835f61836d81e82010a", strlen("a21835f61836d81e82010a"));
+  cardano_error_t                  error  = cardano_protocol_param_update_from_cbor(reader, &update);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  // Serialize
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  error          = cardano_protocol_param_update_to_cip116_json(update, json);
+  char* json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"peras_bootstrap_round":null,"peras_quorum_threshold_safety_margin":{"numerator":"1","denominator":"10"}})");
 
   // Cleanup
   cardano_json_writer_unref(&json);
@@ -8307,6 +10104,91 @@ TEST(cardano_protocol_param_update_to_plutus_data, encodesAnUnboundedMaxPledgeLe
   EXPECT_EQ(pd_constr_alternative(leverage, &field_count), 1U);
   EXPECT_EQ(field_count, 0U);
   cardano_plutus_data_unref(&leverage);
+
+  cardano_plutus_data_unref(&pd);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesThePerasParams)
+{
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_from_cbor(reader, &update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_map_t* map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(pd, &map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(map), 8U);
+  cardano_plutus_map_unref(&map);
+
+  // tags 49, 51, 52, 55 and 56: plain integers
+  const uint64_t int_tags[]   = { 49U, 51U, 52U, 55U, 56U };
+  const int64_t  int_values[] = { 30, 15, 600, 1000, 44 };
+
+  for (size_t i = 0U; i < (sizeof(int_tags) / sizeof(int_tags[0])); ++i)
+  {
+    cardano_plutus_data_t* value = pd_map_get_tag(pd, int_tags[i]);
+    EXPECT_EQ(pd_to_i64(value), int_values[i]);
+    cardano_plutus_data_unref(&value);
+  }
+
+  // tag 50: peras_healing_factor -> [5, 2]
+  cardano_plutus_data_t* healing = pd_map_get_tag(pd, 50U);
+  EXPECT_EQ(pd_list_i64(healing, 0U), 5);
+  EXPECT_EQ(pd_list_i64(healing, 1U), 2);
+  cardano_plutus_data_unref(&healing);
+
+  // tag 53: peras_bootstrap_round 7 -> Constr 0 [7]
+  cardano_plutus_data_t* round       = pd_map_get_tag(pd, 53U);
+  size_t                 field_count = 0U;
+  EXPECT_EQ(pd_constr_alternative(round, &field_count), 0U);
+  EXPECT_EQ(field_count, 1U);
+
+  cardano_constr_plutus_data_t* constr = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_constr(round, &constr), CARDANO_SUCCESS);
+  cardano_plutus_list_t* fields = nullptr;
+  ASSERT_EQ(cardano_constr_plutus_data_get_data(constr, &fields), CARDANO_SUCCESS);
+  cardano_plutus_data_t* integer = nullptr;
+  ASSERT_EQ(cardano_plutus_list_get(fields, 0U, &integer), CARDANO_SUCCESS);
+  EXPECT_EQ(pd_to_i64(integer), 7);
+  cardano_plutus_data_unref(&integer);
+  cardano_plutus_list_unref(&fields);
+  cardano_constr_plutus_data_unref(&constr);
+  cardano_plutus_data_unref(&round);
+
+  // tag 54: peras_quorum_threshold_safety_margin -> [1, 10]
+  cardano_plutus_data_t* margin = pd_map_get_tag(pd, 54U);
+  EXPECT_EQ(pd_list_i64(margin, 0U), 1);
+  EXPECT_EQ(pd_list_i64(margin, 1U), 10);
+  cardano_plutus_data_unref(&margin);
+
+  cardano_plutus_data_unref(&pd);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesANullPerasBootstrapRoundAsConstrOne)
+{
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(update), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_map_t* map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(pd, &map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(map), 1U);
+  cardano_plutus_map_unref(&map);
+
+  // tag 53: null peras_bootstrap_round -> Constr 1 []
+  cardano_plutus_data_t* round       = pd_map_get_tag(pd, 53U);
+  size_t                 field_count = 0U;
+  EXPECT_EQ(pd_constr_alternative(round, &field_count), 1U);
+  EXPECT_EQ(field_count, 0U);
+  cardano_plutus_data_unref(&round);
 
   cardano_plutus_data_unref(&pd);
   cardano_protocol_param_update_unref(&update);
