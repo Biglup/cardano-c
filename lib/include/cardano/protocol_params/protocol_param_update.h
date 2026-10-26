@@ -2641,34 +2641,33 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_target_co
  * \brief Retrieves the Peras bootstrap round from the protocol parameter update.
  *
  * This function returns the Peras round number used to manually bootstrap voting at a specific time. The parameter is nullable: an update can propose a round (on the wire
- * a 32-bit unsigned integer) or propose having no bootstrap round at all, encoded as CBOR null on the wire.
+ * a 32-bit unsigned integer) or propose having no bootstrap round at all, encoded as CBOR null on the wire. Use
+ * \ref cardano_protocol_param_update_is_peras_bootstrap_round_null to tell a proposal of no bootstrap round from an update that does
+ * not change the parameter.
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
- * \param[out] peras_bootstrap_round Pointer to where a pointer to the Peras bootstrap round will be stored. When the update
- *             proposes a round, the stored pointer refers to the round held by the update; it remains valid until the
- *             parameter is modified or the update is released, and must not be freed by the caller. When the update
- *             proposes having no bootstrap round (null), the function succeeds and stores NULL. If the parameter is not
- *             set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ * \param[out] peras_bootstrap_round Pointer to where the Peras bootstrap round will be stored. If the update does not propose a
+ *             round, either because the parameter is not set or because it proposes having no bootstrap round (null),
+ *             the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the Peras bootstrap round was successfully retrieved (a round or null), or
- *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the parameter is not set in the update. Other appropriate
- *         error codes may indicate different failure reasons.
+ *         if the Peras bootstrap round was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
+ *         update does not propose a round. Other appropriate error codes may indicate different failure reasons.
  *
  * Usage Example:
  * \code{.c}
  * cardano_protocol_param_update_t* protocol_param_update = NULL;
- * const uint64_t* peras_bootstrap_round = NULL;
+ * uint64_t peras_bootstrap_round = 0;
  *
  * // Assume protocol_param_update is initialized properly
  *
  * cardano_error_t result = cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
  *
- * if ((result == CARDANO_SUCCESS) && (peras_bootstrap_round != NULL))
+ * if (result == CARDANO_SUCCESS)
  * {
- *   printf("Peras bootstrap round retrieved successfully: %lu.\n", *peras_bootstrap_round);
+ *   printf("Peras bootstrap round retrieved successfully: %lu.\n", peras_bootstrap_round);
  * }
- * else if (result == CARDANO_SUCCESS)
+ * else if (cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update))
  * {
  *   printf("The update proposes having no Peras bootstrap round.\n");
  * }
@@ -2689,7 +2688,7 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_target_co
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_bootstrap_round(
   const cardano_protocol_param_update_t* protocol_param_update,
-  const uint64_t**                       peras_bootstrap_round);
+  uint64_t*                              peras_bootstrap_round);
 
 /**
  * \brief Checks whether the protocol parameter update proposes a change to the Peras bootstrap round.
@@ -2719,6 +2718,36 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_bootstrap
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT bool cardano_protocol_param_update_has_peras_bootstrap_round(
+  const cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Checks whether the protocol parameter update proposes having no Peras bootstrap round.
+ *
+ * This function reports whether the update carries the Peras bootstrap round parameter in its null form, encoded as CBOR
+ * null on the wire, which proposes removing the bootstrap round.
+ *
+ * \param[in] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \c true if the update proposes having no Peras bootstrap round, \c false if it proposes a round, if the
+ *         parameter is not part of the update or if \p protocol_param_update is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * if (cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update))
+ * {
+ *   printf("The update proposes having no Peras bootstrap round.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_protocol_param_update_is_peras_bootstrap_round_null(
   const cardano_protocol_param_update_t* protocol_param_update);
 
 /**

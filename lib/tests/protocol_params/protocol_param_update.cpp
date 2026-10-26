@@ -8159,38 +8159,37 @@ TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsThePerasBoo
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
   cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_CBOR, strlen(PERAS_PARAMS_CBOR));
 
-  const uint64_t* peras_bootstrap_round = NULL;
+  uint64_t peras_bootstrap_round = 0U;
   EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
 
   // Act
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
 
   // Assert
-  ASSERT_NE(peras_bootstrap_round, (const uint64_t*)nullptr);
-  EXPECT_EQ(*peras_bootstrap_round, 7U);
+  EXPECT_EQ(peras_bootstrap_round, 7U);
   EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+  EXPECT_FALSE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsNullForANullPerasBootstrapRound)
+TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsElementNotFoundForANullPerasBootstrapRound)
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
   cardano_cbor_reader_t*           reader                = cardano_cbor_reader_from_hex(PERAS_PARAMS_NULL_CBOR, strlen(PERAS_PARAMS_NULL_CBOR));
 
-  uint64_t        sentinel              = 0U;
-  const uint64_t* peras_bootstrap_round = &sentinel;
+  uint64_t peras_bootstrap_round = 0U;
   EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Assert
-  EXPECT_EQ(peras_bootstrap_round, (const uint64_t*)nullptr);
   EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+  EXPECT_TRUE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -8203,15 +8202,15 @@ TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsElementNotF
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
   EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
 
-  const uint64_t* peras_bootstrap_round = NULL;
+  uint64_t peras_bootstrap_round = 0U;
 
   // Act
   cardano_error_t error = cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
-  EXPECT_EQ(peras_bootstrap_round, (const uint64_t*)nullptr);
   EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
+  EXPECT_FALSE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -8220,7 +8219,7 @@ TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsElementNotF
 TEST(cardano_protocol_param_update_get_peras_bootstrap_round, returnsErrorIfProtocolParamUpdateIsNull)
 {
   // Arrange
-  const uint64_t* peras_bootstrap_round = NULL;
+  uint64_t peras_bootstrap_round = 0U;
 
   // Act
   cardano_error_t error = cardano_protocol_param_update_get_peras_bootstrap_round(nullptr, &peras_bootstrap_round);
@@ -8251,6 +8250,29 @@ TEST(cardano_protocol_param_update_has_peras_bootstrap_round, returnsFalseIfProt
   EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(nullptr));
 }
 
+TEST(cardano_protocol_param_update_is_peras_bootstrap_round_null, returnsFalseIfProtocolParamUpdateIsNull)
+{
+  // Act & Assert
+  EXPECT_FALSE(cardano_protocol_param_update_is_peras_bootstrap_round_null(nullptr));
+}
+
+TEST(cardano_protocol_param_update_is_peras_bootstrap_round_null, returnsFalseOnceTheNullRoundIsCleared)
+{
+  // Arrange
+  cardano_protocol_param_update_t* protocol_param_update = nullptr;
+  EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_FALSE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&protocol_param_update);
+}
+
 TEST(cardano_protocol_param_update_set_peras_bootstrap_round, setsValue)
 {
   // Arrange
@@ -8263,11 +8285,9 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round, setsValue)
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
 
   // Assert
-  const uint64_t* peras_bootstrap_round_out = NULL;
+  uint64_t peras_bootstrap_round_out = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
-  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
-  EXPECT_EQ(*peras_bootstrap_round_out, 7U);
-  EXPECT_NE(peras_bootstrap_round_out, &peras_bootstrap_round);
+  EXPECT_EQ(peras_bootstrap_round_out, 7U);
   EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
 
   // Cleanup
@@ -8288,10 +8308,9 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round, replacesAnExisting
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &second), CARDANO_SUCCESS);
 
   // Assert
-  const uint64_t* peras_bootstrap_round_out = NULL;
+  uint64_t peras_bootstrap_round_out = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
-  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
-  EXPECT_EQ(*peras_bootstrap_round_out, 4294967295U);
+  EXPECT_EQ(peras_bootstrap_round_out, 4294967295U);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -8310,10 +8329,10 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round, replacesANullRound
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_SUCCESS);
 
   // Assert
-  const uint64_t* peras_bootstrap_round_out = NULL;
+  uint64_t peras_bootstrap_round_out = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
-  ASSERT_NE(peras_bootstrap_round_out, (const uint64_t*)nullptr);
-  EXPECT_EQ(*peras_bootstrap_round_out, 7U);
+  EXPECT_EQ(peras_bootstrap_round_out, 7U);
+  EXPECT_FALSE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -8364,7 +8383,7 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round, canUnsetParameterB
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, nullptr), CARDANO_SUCCESS);
 
   // Assert
-  const uint64_t* peras_bootstrap_round_out = NULL;
+  uint64_t peras_bootstrap_round_out = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
 
@@ -8406,10 +8425,9 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round_null, proposesANull
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
 
   // Assert
-  uint64_t        sentinel                  = 0U;
-  const uint64_t* peras_bootstrap_round_out = &sentinel;
-  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
-  EXPECT_EQ(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  uint64_t peras_bootstrap_round_out = 0U;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_TRUE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
   EXPECT_TRUE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
 
   // Cleanup
@@ -8429,10 +8447,9 @@ TEST(cardano_protocol_param_update_set_peras_bootstrap_round_null, replacesARoun
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update), CARDANO_SUCCESS);
 
   // Assert
-  uint64_t        sentinel                  = 0U;
-  const uint64_t* peras_bootstrap_round_out = &sentinel;
-  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_SUCCESS);
-  EXPECT_EQ(peras_bootstrap_round_out, (const uint64_t*)nullptr);
+  uint64_t peras_bootstrap_round_out = 0U;
+  EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_TRUE(cardano_protocol_param_update_is_peras_bootstrap_round_null(protocol_param_update));
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
@@ -8460,7 +8477,7 @@ TEST(cardano_protocol_param_update_clear_peras_bootstrap_round, removesARound)
   EXPECT_EQ(cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update), CARDANO_SUCCESS);
 
   // Assert
-  const uint64_t* peras_bootstrap_round_out = NULL;
+  uint64_t peras_bootstrap_round_out = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round_out), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_FALSE(cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update));
 
@@ -8528,7 +8545,7 @@ TEST(cardano_protocol_param_update_get_, returnsElementNotFoundIfMissingPerasFie
   EXPECT_EQ(cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin), CARDANO_ERROR_ELEMENT_NOT_FOUND);
-  const uint64_t* peras_bootstrap_round = NULL;
+  uint64_t peras_bootstrap_round = 0U;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup

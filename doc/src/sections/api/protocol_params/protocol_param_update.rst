@@ -241,6 +241,10 @@ Protocol Parameter Update
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_param_update_is_peras_bootstrap_round_null
+
+------------
+
 .. doxygenfunction:: cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin
 
 ------------
