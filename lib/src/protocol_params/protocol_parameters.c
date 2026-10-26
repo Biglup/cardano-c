@@ -86,6 +86,15 @@ typedef struct cardano_protocol_parameters_t
     uint64_t                          max_endorser_block_txs_size;
     cardano_ex_units_t*               max_endorser_block_execution_units;
     uint64_t                          max_ref_script_size_per_endorser_block;
+    uint64_t                          peras_min_candidate_block_age;
+    cardano_unit_interval_t*          peras_healing_factor;
+    uint64_t                          peras_cert_boost;
+    uint64_t                          peras_target_committee_size;
+    bool                              has_peras_bootstrap_round;
+    uint64_t                          peras_bootstrap_round;
+    cardano_unit_interval_t*          peras_quorum_threshold_safety_margin;
+    uint64_t                          ref_inputs_cost_per_multi_asset_policy;
+    uint64_t                          ref_inputs_cost_per_datum_byte;
 } cardano_protocol_parameters_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -128,6 +137,8 @@ cardano_protocol_parameters_deallocate(void* object)
   cardano_unit_interval_unref(&data->min_pool_margin);
   cardano_unit_interval_unref(&data->leios_quorum_stake_threshold);
   cardano_ex_units_unref(&data->max_endorser_block_execution_units);
+  cardano_unit_interval_unref(&data->peras_healing_factor);
+  cardano_unit_interval_unref(&data->peras_quorum_threshold_safety_margin);
 
   _cardano_free(object);
 }
@@ -418,8 +429,17 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->max_endorser_block_txs_size            = 0;
   (*protocol_parameters)->max_endorser_block_execution_units     = cardano_get_ex_unit();
   (*protocol_parameters)->max_ref_script_size_per_endorser_block = 0;
+  (*protocol_parameters)->peras_min_candidate_block_age          = 0;
+  (*protocol_parameters)->peras_healing_factor                   = NULL;
+  (*protocol_parameters)->peras_cert_boost                       = 0;
+  (*protocol_parameters)->peras_target_committee_size            = 0;
+  (*protocol_parameters)->has_peras_bootstrap_round              = false;
+  (*protocol_parameters)->peras_bootstrap_round                  = 0;
+  (*protocol_parameters)->peras_quorum_threshold_safety_margin   = cardano_get_zero_interval();
+  (*protocol_parameters)->ref_inputs_cost_per_multi_asset_policy = 0;
+  (*protocol_parameters)->ref_inputs_cost_per_datum_byte         = 0;
 
-  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL))
+  if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL) || ((*protocol_parameters)->peras_quorum_threshold_safety_margin == NULL))
   {
     cardano_protocol_parameters_unref(protocol_parameters);
 
@@ -1021,6 +1041,104 @@ cardano_protocol_parameters_get_max_ref_script_size_per_endorser_block(
   }
 
   return protocol_parameters->max_ref_script_size_per_endorser_block;
+}
+
+uint64_t
+cardano_protocol_parameters_get_peras_min_candidate_block_age(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->peras_min_candidate_block_age;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_peras_healing_factor(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->peras_healing_factor);
+  return protocol_parameters->peras_healing_factor;
+}
+
+uint64_t
+cardano_protocol_parameters_get_peras_cert_boost(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->peras_cert_boost;
+}
+
+uint64_t
+cardano_protocol_parameters_get_peras_target_committee_size(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->peras_target_committee_size;
+}
+
+const uint64_t*
+cardano_protocol_parameters_get_peras_bootstrap_round(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if ((protocol_parameters == NULL) || !protocol_parameters->has_peras_bootstrap_round)
+  {
+    return NULL;
+  }
+
+  return &protocol_parameters->peras_bootstrap_round;
+}
+
+cardano_unit_interval_t*
+cardano_protocol_parameters_get_peras_quorum_threshold_safety_margin(
+  cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_unit_interval_ref(protocol_parameters->peras_quorum_threshold_safety_margin);
+  return protocol_parameters->peras_quorum_threshold_safety_margin;
+}
+
+uint64_t
+cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->ref_inputs_cost_per_multi_asset_policy;
+}
+
+uint64_t
+cardano_protocol_parameters_get_ref_inputs_cost_per_datum_byte(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  if (protocol_parameters == NULL)
+  {
+    return 0;
+  }
+
+  return protocol_parameters->ref_inputs_cost_per_datum_byte;
 }
 
 cardano_error_t
@@ -1798,6 +1916,160 @@ cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(
   }
 
   protocol_parameters->max_ref_script_size_per_endorser_block = max_ref_script_size_per_endorser_block;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_min_candidate_block_age(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_min_candidate_block_age)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (peras_min_candidate_block_age > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Peras min candidate block age must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->peras_min_candidate_block_age = peras_min_candidate_block_age;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_healing_factor(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       peras_healing_factor)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(peras_healing_factor);
+  cardano_unit_interval_unref(&protocol_parameters->peras_healing_factor);
+  protocol_parameters->peras_healing_factor = peras_healing_factor;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_cert_boost(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_cert_boost)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (peras_cert_boost > UINT16_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Peras cert boost must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->peras_cert_boost = peras_cert_boost;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_target_committee_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_target_committee_size)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (peras_target_committee_size > UINT16_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Peras target committee size must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->peras_target_committee_size = peras_target_committee_size;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_bootstrap_round(
+  cardano_protocol_parameters_t* protocol_parameters,
+  const uint64_t*                peras_bootstrap_round)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (peras_bootstrap_round == NULL)
+  {
+    protocol_parameters->has_peras_bootstrap_round = false;
+    protocol_parameters->peras_bootstrap_round     = 0;
+
+    return CARDANO_SUCCESS;
+  }
+
+  if (*peras_bootstrap_round > UINT32_MAX)
+  {
+    cardano_protocol_parameters_set_last_error(protocol_parameters, "Peras bootstrap round must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  protocol_parameters->has_peras_bootstrap_round = true;
+  protocol_parameters->peras_bootstrap_round     = *peras_bootstrap_round;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_peras_quorum_threshold_safety_margin(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       peras_quorum_threshold_safety_margin)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_ref(peras_quorum_threshold_safety_margin);
+  cardano_unit_interval_unref(&protocol_parameters->peras_quorum_threshold_safety_margin);
+  protocol_parameters->peras_quorum_threshold_safety_margin = peras_quorum_threshold_safety_margin;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_inputs_cost_per_multi_asset_policy)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  protocol_parameters->ref_inputs_cost_per_multi_asset_policy = ref_inputs_cost_per_multi_asset_policy;
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_ref_inputs_cost_per_datum_byte(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_inputs_cost_per_datum_byte)
+{
+  if (protocol_parameters == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  protocol_parameters->ref_inputs_cost_per_datum_byte = ref_inputs_cost_per_datum_byte;
   return CARDANO_SUCCESS;
 }
 

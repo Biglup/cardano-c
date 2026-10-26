@@ -1654,6 +1654,273 @@ CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_max_ref_script_size_per_
   const cardano_protocol_parameters_t* protocol_parameters);
 
 /**
+ * \brief Retrieves the Peras minimum candidate block age from the protocol parameters.
+ *
+ * This function returns the minimum age, in slots, that a block must reach before it becomes eligible
+ * for voting in a Peras round, as specified in the given \ref cardano_protocol_parameters_t object.
+ * On the wire this parameter is a slot interval (a 32-bit unsigned integer).
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Peras minimum candidate block age in slots.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t min_candidate_block_age = cardano_protocol_parameters_get_peras_min_candidate_block_age(protocol_params);
+ *
+ * printf("Peras minimum candidate block age: %llu\n", min_candidate_block_age);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_peras_min_candidate_block_age(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Peras healing factor from the protocol parameters.
+ *
+ * This function returns the healing time coefficient used to derive the length of the Peras cooldown
+ * period, the time the protocol waits after a round without a quorum before voting resumes, as specified
+ * in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a positive interval
+ * (a rational number); its value is expected to be greater than zero.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the Peras healing factor,
+ *         or NULL if it is not set. A fresh parameter set does not carry it, as the parameters of the eras before
+ *         Dijkstra do not. If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ *
+ * \note When the function returns a non-NULL pointer, the caller is responsible for managing the lifecycle of the
+ *       returned \ref cardano_unit_interval_t object. Specifically, the caller must release the object by calling
+ *       \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* healing_factor = cardano_protocol_parameters_get_peras_healing_factor(protocol_params);
+ *
+ * if (healing_factor != NULL)
+ * {
+ *   // Use the Peras healing factor as needed
+ *
+ *   // Clean up when done
+ *   cardano_unit_interval_unref(&healing_factor);
+ * }
+ * else
+ * {
+ *   printf("The Peras healing factor is not set.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_peras_healing_factor(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Peras certificate boost from the protocol parameters.
+ *
+ * This function returns the extra chain weight that a Peras certificate gives to the block it boosts,
+ * as specified in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a
+ * 16-bit unsigned integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Peras certificate boost.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t cert_boost = cardano_protocol_parameters_get_peras_cert_boost(protocol_params);
+ *
+ * printf("Peras certificate boost: %llu\n", cert_boost);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_peras_cert_boost(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Peras target committee size from the protocol parameters.
+ *
+ * This function returns the target number of voters seated in the Peras voting committee, as specified
+ * in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a 16-bit unsigned
+ * integer.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The Peras target committee size.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t committee_size = cardano_protocol_parameters_get_peras_target_committee_size(protocol_params);
+ *
+ * printf("Peras target committee size: %llu\n", committee_size);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_peras_target_committee_size(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Peras bootstrap round from the protocol parameters.
+ *
+ * This function returns the round number used to manually bootstrap Peras voting at a specific time, as
+ * specified in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a
+ * 32-bit unsigned integer or nil when no bootstrap round is scheduled.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to the Peras bootstrap round, or NULL when no bootstrap round is scheduled. A freshly
+ *         created parameter set reports no bootstrap round, which is the state of every era before the
+ *         parameter was introduced. If the \p protocol_parameters pointer is NULL, the function also returns NULL.
+ *
+ * \note The returned pointer refers to storage owned by the \ref cardano_protocol_parameters_t object. It must not
+ *       be freed, and it remains valid only until the bootstrap round is set again or the object is released.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * const uint64_t* bootstrap_round = cardano_protocol_parameters_get_peras_bootstrap_round(protocol_params);
+ *
+ * if (bootstrap_round != NULL)
+ * {
+ *   printf("Peras bootstrap round: %llu\n", *bootstrap_round);
+ * }
+ * else
+ * {
+ *   printf("No Peras bootstrap round is scheduled.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT const uint64_t* cardano_protocol_parameters_get_peras_bootstrap_round(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the Peras quorum threshold safety margin from the protocol parameters.
+ *
+ * This function returns the extra safety margin added on top of the 75% baseline of the Peras quorum
+ * threshold, as specified in the given \ref cardano_protocol_parameters_t object. On the wire this
+ * parameter is a unit interval (a rational number between zero and one); the ledger expects it to be
+ * between 0 and 0.25, inclusive.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return A pointer to a \ref cardano_unit_interval_t object representing the Peras quorum threshold safety margin.
+ *         If the \p protocol_parameters pointer is NULL, the function returns NULL.
+ *
+ * \note The caller is responsible for managing the lifecycle of the returned \ref cardano_unit_interval_t object.
+ *       Specifically, the caller must release the object by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* safety_margin = cardano_protocol_parameters_get_peras_quorum_threshold_safety_margin(protocol_params);
+ *
+ * if (safety_margin != NULL)
+ * {
+ *   // Use the quorum threshold safety margin as needed
+ *
+ *   // Clean up when done
+ *   cardano_unit_interval_unref(&safety_margin);
+ * }
+ * else
+ * {
+ *   printf("Failed to retrieve the Peras quorum threshold safety margin.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_unit_interval_t* cardano_protocol_parameters_get_peras_quorum_threshold_safety_margin(
+  cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the reference inputs cost per multi-asset policy from the protocol parameters.
+ *
+ * This function returns the fee, in lovelaces, charged for every multi-asset policy present in the values
+ * of the reference inputs of a transaction, as specified in the given \ref cardano_protocol_parameters_t
+ * object. On the wire this parameter is a coin amount.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The reference inputs cost per multi-asset policy in lovelaces.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note Reading large amounts of data from disk becomes a bottleneck once the ledger state is stored on
+ *       disk, so this fee acts as a monetary deterrent against it. The ledger does not charge it yet, and
+ *       the fee functions of this library do not take it into account.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t cost = cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(protocol_params);
+ *
+ * printf("Reference inputs cost per multi-asset policy: %llu lovelaces\n", cost);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
+ * \brief Retrieves the reference inputs cost per datum byte from the protocol parameters.
+ *
+ * This function returns the fee, in lovelaces, charged per byte of the datums attached to the reference
+ * inputs of a transaction, as specified in the given \ref cardano_protocol_parameters_t object. On the wire
+ * this parameter is a coin amount per byte.
+ *
+ * \param[in] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                This parameter must not be NULL.
+ *
+ * \return The reference inputs cost per datum byte in lovelaces.
+ *         If the \p protocol_parameters pointer is NULL, the function returns 0.
+ *
+ * \note Reading large amounts of data from disk becomes a bottleneck once the ledger state is stored on
+ *       disk, so this fee acts as a monetary deterrent against it. The ledger does not charge it yet, and
+ *       the fee functions of this library do not take it into account.
+ *
+ * Usage Example:
+ * \code{.c}
+ * const cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t cost = cardano_protocol_parameters_get_ref_inputs_cost_per_datum_byte(protocol_params);
+ *
+ * printf("Reference inputs cost per datum byte: %llu lovelaces\n", cost);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT uint64_t cardano_protocol_parameters_get_ref_inputs_cost_per_datum_byte(
+  const cardano_protocol_parameters_t* protocol_parameters);
+
+/**
  * \brief Sets the minimum fee coefficient "A" in the protocol parameters.
  *
  * This function sets the minimum fee coefficient "A" in the given \ref cardano_protocol_parameters_t object.
@@ -3638,6 +3905,344 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block(
   cardano_protocol_parameters_t* protocol_parameters,
   uint64_t                       max_ref_script_size_per_endorser_block);
+
+/**
+ * \brief Sets the Peras minimum candidate block age in the protocol parameters.
+ *
+ * This function sets the minimum age, in slots, that a block must reach before it becomes eligible for
+ * voting in a Peras round in the given \ref cardano_protocol_parameters_t object. On the wire this parameter
+ * is a slot interval (a 32-bit unsigned integer); values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_min_candidate_block_age The new Peras minimum candidate block age, in slots.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras minimum candidate block age was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 30; // Blocks become candidates thirty slots after they are forged
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_min_candidate_block_age(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras minimum candidate block age set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras minimum candidate block age.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_min_candidate_block_age(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_min_candidate_block_age);
+
+/**
+ * \brief Sets the Peras healing factor in the protocol parameters.
+ *
+ * This function sets the healing time coefficient used to derive the length of the Peras cooldown period
+ * in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a positive interval
+ * (a rational number); its value is expected to be greater than zero.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_healing_factor A pointer to an initialized \ref cardano_unit_interval_t object representing the Peras healing factor,
+ *                                 or NULL to clear it.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras healing factor was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_unit_interval_t object. The object must be
+ *       released by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* healing_factor = ...; // Assume healing_factor is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_healing_factor(protocol_params, healing_factor);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras healing factor set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras healing factor.\n");
+ * }
+ *
+ * // Clean up the healing_factor when no longer needed
+ * cardano_unit_interval_unref(&healing_factor);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_healing_factor(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       peras_healing_factor);
+
+/**
+ * \brief Sets the Peras certificate boost in the protocol parameters.
+ *
+ * This function sets the extra chain weight that a Peras certificate gives to the block it boosts in the
+ * given \ref cardano_protocol_parameters_t object. On the wire this parameter is a 16-bit unsigned integer;
+ * values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_cert_boost The new Peras certificate boost.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras certificate boost was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 15; // A certificate adds the weight of fifteen blocks
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_cert_boost(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras certificate boost set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras certificate boost.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_cert_boost(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_cert_boost);
+
+/**
+ * \brief Sets the Peras target committee size in the protocol parameters.
+ *
+ * This function sets the target number of voters seated in the Peras voting committee in the given
+ * \ref cardano_protocol_parameters_t object. On the wire this parameter is a 16-bit unsigned integer;
+ * values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_target_committee_size The new Peras target committee size.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras target committee size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code if an error occurred.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 500; // A committee of five hundred voters
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_target_committee_size(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras target committee size set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras target committee size.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_target_committee_size(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       peras_target_committee_size);
+
+/**
+ * \brief Sets the Peras bootstrap round in the protocol parameters.
+ *
+ * This function sets the round number used to manually bootstrap Peras voting at a specific time in the
+ * given \ref cardano_protocol_parameters_t object. On the wire this parameter is a 32-bit unsigned integer
+ * or nil when no bootstrap round is scheduled; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_bootstrap_round A pointer to the new Peras bootstrap round, or NULL to mark that no
+ *                                  bootstrap round is scheduled. The value is copied, so the pointer does not
+ *                                  need to outlive the call.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras bootstrap round was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code if an error occurred.
+ *         When the value is rejected, the previous bootstrap round is kept.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t bootstrap_round = 1200;
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_bootstrap_round(protocol_params, &bootstrap_round);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras bootstrap round set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras bootstrap round.\n");
+ * }
+ *
+ * // Mark that no bootstrap round is scheduled
+ * result = cardano_protocol_parameters_set_peras_bootstrap_round(protocol_params, NULL);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_bootstrap_round(
+  cardano_protocol_parameters_t* protocol_parameters,
+  const uint64_t*                peras_bootstrap_round);
+
+/**
+ * \brief Sets the Peras quorum threshold safety margin in the protocol parameters.
+ *
+ * This function sets the extra safety margin added on top of the 75% baseline of the Peras quorum threshold
+ * in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a unit interval
+ * (a rational number between zero and one); the ledger expects it to be between 0 and 0.25, inclusive.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] peras_quorum_threshold_safety_margin A pointer to an initialized \ref cardano_unit_interval_t object representing
+ *                                                 the quorum threshold safety margin.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the Peras quorum threshold safety margin was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note The caller is responsible for managing the lifecycle of the \ref cardano_unit_interval_t object. The object must be
+ *       released by calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * \note The Peras parameters configure the voting protocol that certifies recent blocks and boosts the
+ *       weight of the chains carrying them, giving faster settlement than the Praos chain growth alone.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * cardano_unit_interval_t* safety_margin = ...; // Assume safety_margin is initialized
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_peras_quorum_threshold_safety_margin(protocol_params, safety_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras quorum threshold safety margin set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Peras quorum threshold safety margin.\n");
+ * }
+ *
+ * // Clean up the safety_margin when no longer needed
+ * cardano_unit_interval_unref(&safety_margin);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_peras_quorum_threshold_safety_margin(
+  cardano_protocol_parameters_t* protocol_parameters,
+  cardano_unit_interval_t*       peras_quorum_threshold_safety_margin);
+
+/**
+ * \brief Sets the reference inputs cost per multi-asset policy in the protocol parameters.
+ *
+ * This function sets the fee, in lovelaces, charged for every multi-asset policy present in the values of
+ * the reference inputs of a transaction in the given \ref cardano_protocol_parameters_t object. On the wire
+ * this parameter is a coin amount.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] ref_inputs_cost_per_multi_asset_policy The new reference inputs cost per multi-asset policy, in lovelaces.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the reference inputs cost per multi-asset policy was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note Reading large amounts of data from disk becomes a bottleneck once the ledger state is stored on
+ *       disk, so this fee acts as a monetary deterrent against it. The ledger does not charge it yet, and
+ *       the fee functions of this library do not take it into account.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 1000; // 1000 lovelaces per policy
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per multi-asset policy set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set reference inputs cost per multi-asset policy.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_inputs_cost_per_multi_asset_policy);
+
+/**
+ * \brief Sets the reference inputs cost per datum byte in the protocol parameters.
+ *
+ * This function sets the fee, in lovelaces, charged per byte of the datums attached to the reference inputs
+ * of a transaction in the given \ref cardano_protocol_parameters_t object. On the wire this parameter is a
+ * coin amount per byte.
+ *
+ * \param[in,out] protocol_parameters A pointer to an initialized \ref cardano_protocol_parameters_t object.
+ *                                    This parameter must not be NULL.
+ * \param[in] ref_inputs_cost_per_datum_byte The new reference inputs cost per datum byte, in lovelaces.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if
+ *         the reference inputs cost per datum byte was successfully set, or an appropriate error code if an error occurred.
+ *
+ * \note Reading large amounts of data from disk becomes a bottleneck once the ledger state is stored on
+ *       disk, so this fee acts as a monetary deterrent against it. The ledger does not charge it yet, and
+ *       the fee functions of this library do not take it into account.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_parameters_t* protocol_params = ...; // Assume protocol_params is initialized
+ * uint64_t new_value = 10; // 10 lovelaces per datum byte
+ *
+ * cardano_error_t result = cardano_protocol_parameters_set_ref_inputs_cost_per_datum_byte(protocol_params, new_value);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per datum byte set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set reference inputs cost per datum byte.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_parameters_set_ref_inputs_cost_per_datum_byte(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_inputs_cost_per_datum_byte);
 
 /**
  * \brief Decrements the reference count of a cardano_protocol_parameters_t object.

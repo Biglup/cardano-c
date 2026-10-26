@@ -201,6 +201,38 @@ Protocol Parameters
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_min_candidate_block_age
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_healing_factor
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_cert_boost
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_target_committee_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_bootstrap_round
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_peras_quorum_threshold_safety_margin
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_inputs_cost_per_datum_byte
+
+------------
+
 .. doxygenfunction:: cardano_protocol_parameters_set_min_fee_a
 
 ------------
@@ -390,6 +422,38 @@ Protocol Parameters
 ------------
 
 .. doxygenfunction:: cardano_protocol_parameters_set_max_ref_script_size_per_endorser_block
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_min_candidate_block_age
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_healing_factor
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_cert_boost
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_target_committee_size
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_bootstrap_round
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_peras_quorum_threshold_safety_margin
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_inputs_cost_per_datum_byte
 
 ------------
 
