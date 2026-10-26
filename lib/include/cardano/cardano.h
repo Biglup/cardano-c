@@ -243,6 +243,7 @@
 #include <cardano/witness_set/plutus_v1_script_set.h>
 #include <cardano/witness_set/plutus_v2_script_set.h>
 #include <cardano/witness_set/plutus_v3_script_set.h>
+#include <cardano/witness_set/plutus_v4_script_set.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/redeemer_tag.h>
