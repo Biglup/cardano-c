@@ -69,6 +69,14 @@ Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_witness_set_get_plutus_v4_scripts
+
+------------
+
+.. doxygenfunction:: cardano_witness_set_set_plutus_v4_scripts
+
+------------
+
 .. doxygenfunction:: cardano_witness_set_get_plutus_data
 
 ------------

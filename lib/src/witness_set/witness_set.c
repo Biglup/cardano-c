@@ -33,7 +33,7 @@
 
 /* CONSTANTS *****************************************************************/
 
-#define WITNESS_SET_FIELD_COUNT ((size_t)8U)
+#define WITNESS_SET_FIELD_COUNT ((size_t)9U)
 
 /* STRUCTURES ****************************************************************/
 
@@ -56,6 +56,7 @@ typedef struct cardano_witness_set_t
     cardano_redeemer_list_t*         redeemer;
     cardano_plutus_v2_script_set_t*  plutus_v2_scripts;
     cardano_plutus_v3_script_set_t*  plutus_v3_scripts;
+    cardano_plutus_v4_script_set_t*  plutus_v4_scripts;
     size_t                           key_order[WITNESS_SET_FIELD_COUNT];
 } cardano_witness_set_t;
 
@@ -111,6 +112,7 @@ cardano_witness_set_deallocate(void* object)
   cardano_redeemer_list_unref(&data->redeemer);
   cardano_plutus_v2_script_set_unref(&data->plutus_v2_scripts);
   cardano_plutus_v3_script_set_unref(&data->plutus_v3_scripts);
+  cardano_plutus_v4_script_set_unref(&data->plutus_v4_scripts);
 
   _cardano_free(object);
 }
@@ -169,6 +171,11 @@ get_map_size(const cardano_witness_set_t* witness)
     map_size += 1U;
   }
 
+  if (cardano_plutus_v4_script_set_get_length(witness->plutus_v4_scripts) > 0U)
+  {
+    map_size += 1U;
+  }
+
   return map_size;
 }
 
@@ -208,6 +215,8 @@ get_field_ptr(cardano_witness_set_t* witness, size_t key)
       return (void*)&witness->plutus_v2_scripts;
     case 7:
       return (void*)&witness->plutus_v3_scripts;
+    case 8:
+      return (void*)&witness->plutus_v4_scripts;
 
     default:
       return NULL;
@@ -460,6 +469,37 @@ handle_plutus_v3_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
   }
 
   return cardano_plutus_v3_script_set_from_cbor(reader, field);
+}
+
+/**
+ * \brief Reads a cardano_plutus_v4_script_set_t value from the CBOR reader and stores it in the specified field.
+ *
+ * This function reads a cardano_plutus_v4_script_set_t value from the provided CBOR reader and stores the result
+ * in the specified field pointer. It is used as a handler function for parameters that are
+ * represented as cardano_plutus_v4_script_set_t in the witness set witness.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the cardano_plutus_v4_script_set_t value.
+ * \param[out] field_ptr A pointer to the field where the read cardano_plutus_v4_script_set_t value should be stored.
+ *                       The field pointer should be of type cardano_plutus_v4_script_set_t*.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the cardano_plutus_v4_script_set_t value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_plutus_v4_script_set(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_plutus_v4_script_set_t** field = (cardano_plutus_v4_script_set_t**)field_ptr;
+
+  if (*field != NULL)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  return cardano_plutus_v4_script_set_from_cbor(reader, field);
 }
 
 /**
@@ -821,6 +861,48 @@ write_plutus_v3_script_set_if_present(cardano_cbor_writer_t* writer, const uint6
 }
 
 /**
+ * \brief Writes a key-value pair to the CBOR writer if the value is present.
+ *
+ * This function writes a key and its associated plutus v4 script set value to the CBOR writer
+ * only if the value is not NULL. If the value is NULL, the function does nothing and
+ * returns \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] value A pointer to the plutus v4 script set value to be written. If NULL, nothing is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the value is NULL.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_plutus_v4_script_set_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const cardano_plutus_v4_script_set_t* value)
+{
+  assert(writer != NULL);
+
+  if ((value != NULL) && (cardano_plutus_v4_script_set_get_length(value) > 0U))
+  {
+    cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    result = cardano_plutus_v4_script_set_to_cbor(value, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Writes the witness set field identified by the given map key if it is present.
  *
  * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
@@ -859,6 +941,9 @@ write_field_if_present(cardano_cbor_writer_t* writer, const cardano_witness_set_
       break;
     case 7U:
       result = write_plutus_v3_script_set_if_present(writer, 7U, witness_set->plutus_v3_scripts);
+      break;
+    case 8U:
+      result = write_plutus_v4_script_set_if_present(writer, 8U, witness_set->plutus_v4_scripts);
       break;
     default:
       result = CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
@@ -911,6 +996,7 @@ create_witness_set_new(void)
   witness_set->redeemer            = NULL;
   witness_set->plutus_v2_scripts   = NULL;
   witness_set->plutus_v3_scripts   = NULL;
+  witness_set->plutus_v4_scripts   = NULL;
 
   reset_key_order(witness_set);
 
@@ -928,7 +1014,8 @@ static const param_handler_t param_handlers[] = {
   handle_plutus_data,
   handle_redeemer_list,
   handle_plutus_v2_script_set,
-  handle_plutus_v3_script_set
+  handle_plutus_v3_script_set,
+  handle_plutus_v4_script_set
 };
 
 /* DEFINITIONS ****************************************************************/
@@ -1125,11 +1212,13 @@ cardano_witness_set_to_cip116_json(
   cardano_plutus_v1_script_set_t* plutus_v1_scripts = witness_set->plutus_v1_scripts;
   cardano_plutus_v2_script_set_t* plutus_v2_scripts = witness_set->plutus_v2_scripts;
   cardano_plutus_v3_script_set_t* plutus_v3_scripts = witness_set->plutus_v3_scripts;
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = witness_set->plutus_v4_scripts;
   const bool                      hash_plutus_v1    = (plutus_v1_scripts != NULL) && (cardano_plutus_v1_script_set_get_length(plutus_v1_scripts) > 0U);
   const bool                      hash_plutus_v2    = (plutus_v2_scripts != NULL) && (cardano_plutus_v2_script_set_get_length(plutus_v2_scripts) > 0U);
   const bool                      hash_plutus_v3    = (plutus_v3_scripts != NULL) && (cardano_plutus_v3_script_set_get_length(plutus_v3_scripts) > 0U);
+  const bool                      hash_plutus_v4    = (plutus_v4_scripts != NULL) && (cardano_plutus_v4_script_set_get_length(plutus_v4_scripts) > 0U);
 
-  if (hash_plutus_v1 || hash_plutus_v2 || hash_plutus_v3)
+  if (hash_plutus_v1 || hash_plutus_v2 || hash_plutus_v3 || hash_plutus_v4)
   {
     cardano_json_writer_write_property_name(writer, "plutus_scripts", 14);
     cardano_json_writer_write_start_array(writer);
@@ -1198,6 +1287,30 @@ cardano_witness_set_to_cip116_json(
 
         error = cardano_plutus_v3_script_to_cip116_json(script, writer);
         cardano_plutus_v3_script_unref(&script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+      }
+    }
+
+    if (hash_plutus_v4)
+    {
+      const size_t length = cardano_plutus_v4_script_set_get_length(plutus_v4_scripts);
+
+      for (size_t i = 0U; i < length; ++i)
+      {
+        cardano_plutus_v4_script_t* script = NULL;
+        error                              = cardano_plutus_v4_script_set_get(plutus_v4_scripts, i, &script);
+
+        if (error != CARDANO_SUCCESS)
+        {
+          return error;
+        }
+
+        error = cardano_plutus_v4_script_to_cip116_json(script, writer);
+        cardano_plutus_v4_script_unref(&script);
 
         if (error != CARDANO_SUCCESS)
         {
@@ -1464,6 +1577,44 @@ cardano_witness_set_set_plutus_v3_scripts(
   return CARDANO_SUCCESS;
 }
 
+cardano_plutus_v4_script_set_t*
+cardano_witness_set_get_plutus_v4_scripts(cardano_witness_set_t* witness_set)
+{
+  if (witness_set == NULL)
+  {
+    return NULL;
+  }
+
+  cardano_plutus_v4_script_set_ref(witness_set->plutus_v4_scripts);
+
+  return witness_set->plutus_v4_scripts;
+}
+
+cardano_error_t
+cardano_witness_set_set_plutus_v4_scripts(
+  cardano_witness_set_t*          witness_set,
+  cardano_plutus_v4_script_set_t* plutus_scripts)
+{
+  if (witness_set == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (plutus_scripts == NULL)
+  {
+    cardano_plutus_v4_script_set_unref(&witness_set->plutus_v4_scripts);
+    witness_set->plutus_v4_scripts = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_plutus_v4_script_set_ref(plutus_scripts);
+  cardano_plutus_v4_script_set_unref(&witness_set->plutus_v4_scripts);
+  witness_set->plutus_v4_scripts = plutus_scripts;
+
+  return CARDANO_SUCCESS;
+}
+
 cardano_plutus_data_set_t*
 cardano_witness_set_get_plutus_data(cardano_witness_set_t* witness_set)
 {
@@ -1574,6 +1725,9 @@ cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* witness_set)
   CARDANO_UNUSED(result);
 
   result = cardano_plutus_v3_script_set_set_use_tag(witness_set->plutus_v3_scripts, true);
+  CARDANO_UNUSED(result);
+
+  result = cardano_plutus_v4_script_set_set_use_tag(witness_set->plutus_v4_scripts, true);
   CARDANO_UNUSED(result);
 }
 

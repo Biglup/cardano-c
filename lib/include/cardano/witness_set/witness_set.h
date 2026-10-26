@@ -36,6 +36,7 @@
 #include <cardano/witness_set/plutus_v1_script_set.h>
 #include <cardano/witness_set/plutus_v2_script_set.h>
 #include <cardano/witness_set/plutus_v3_script_set.h>
+#include <cardano/witness_set/plutus_v4_script_set.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/vkey_witness_set.h>
 
@@ -668,6 +669,83 @@ CARDANO_EXPORT cardano_error_t cardano_witness_set_set_plutus_v3_scripts(
   cardano_plutus_v3_script_set_t* plutus_scripts);
 
 /**
+ * \brief Retrieves the Plutus V4 scripts from a witness set.
+ *
+ * This function fetches the set of Plutus V4 scripts, if any, associated with a given \ref cardano_witness_set_t object.
+ * Plutus V4 scripts are carried under key 8 of the witness set, which was introduced in the Dijkstra era.
+ *
+ * \param[in] witness_set A pointer to an initialized \ref cardano_witness_set_t object from which the Plutus V4 scripts will be retrieved.
+ *
+ * \return A pointer to the \ref cardano_plutus_v4_script_set_t object representing the set of Plutus V4 scripts,
+ *         or \c NULL if no Plutus V4 scripts are present in the witness set.
+ *         The returned set is a new reference, and the caller is responsible for releasing it by calling \ref cardano_plutus_v4_script_set_unref
+ *         when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_witness_set_t* witness_set = ...; // Assume witness_set is already initialized
+ * cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+ *
+ * if (plutus_v4_scripts != NULL)
+ * {
+ *   // Process the Plutus V4 scripts
+ *
+ *   // Release the Plutus V4 scripts when done
+ *   cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
+ * }
+ * else
+ * {
+ *   printf("No Plutus V4 scripts found in the witness set.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_plutus_v4_script_set_t* cardano_witness_set_get_plutus_v4_scripts(
+  cardano_witness_set_t* witness_set);
+
+/**
+ * \brief Sets the Plutus V4 scripts in a witness set.
+ *
+ * This function assigns a set of Plutus V4 scripts to the specified \ref cardano_witness_set_t object.
+ * If the Plutus scripts are set, they will be included in the witness set used for transaction validation.
+ *
+ * \param[in,out] witness_set A pointer to an initialized \ref cardano_witness_set_t object where the Plutus V4 scripts will be set.
+ * \param[in] plutus_scripts A pointer to an initialized \ref cardano_plutus_v4_script_set_t object representing the Plutus V4 scripts to be set.
+ *                           This parameter can be \c NULL to remove any existing Plutus V4 scripts from the witness set.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the Plutus V4 scripts were
+ *         successfully set or removed, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_witness_set_t* witness_set = ...; // Assume witness_set is already initialized
+ * cardano_plutus_v4_script_set_t* plutus_scripts = ...; // Assume Plutus V4 scripts are initialized
+ *
+ * cardano_error_t result = cardano_witness_set_plutus_v4_scripts(witness_set, plutus_scripts);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Plutus V4 scripts set successfully.\n");
+ * }
+ * else
+ * {
+ *   printf("Failed to set Plutus V4 scripts.\n");
+ * }
+ *
+ * // You can also remove the Plutus V4 scripts by passing NULL:
+ * result = cardano_witness_set_plutus_v4_scripts(witness_set, NULL);
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Plutus V4 scripts removed successfully.\n");
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_witness_set_set_plutus_v4_scripts(
+  cardano_witness_set_t*          witness_set,
+  cardano_plutus_v4_script_set_t* plutus_scripts);
+
+/**
  * \brief Retrieves the Plutus data from a witness set.
  *
  * This function retrieves the set of Plutus data associated with the specified \ref cardano_witness_set_t object.
@@ -875,6 +953,10 @@ CARDANO_EXPORT void cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* 
  *         indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if `witness_set`
  *         or `script` is NULL, or \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE if the script's language
  *         is unsupported.
+ *
+ * \note Plutus V4 scripts are not accepted by this function yet and fail with
+ *       \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE. Use \ref cardano_witness_set_set_plutus_v4_scripts
+ *       to place Plutus V4 scripts in the witness set.
  *
  * Usage Example:
  * \code{.c}

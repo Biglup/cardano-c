@@ -726,6 +726,27 @@ record_witness_set_scripts(
     cardano_plutus_v3_script_unref(&script);
   }
 
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witnesses);
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
+
+  for (size_t i = 0U; (i < cardano_plutus_v4_script_set_get_length(plutus_v4_scripts)) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_v4_script_t* script = NULL;
+
+    result = cardano_plutus_v4_script_set_get(plutus_v4_scripts, i, &script);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_t* hash = cardano_plutus_v4_script_get_hash(script);
+
+      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4, languages);
+
+      cardano_blake2b_hash_unref(&hash);
+    }
+
+    cardano_plutus_v4_script_unref(&script);
+  }
+
   return result;
 }
 

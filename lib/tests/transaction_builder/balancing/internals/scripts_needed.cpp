@@ -663,6 +663,19 @@ add_witness_script(cardano_transaction_t* tx, cardano_script_t* script)
     cardano_plutus_v2_script_set_unref(&set);
     cardano_plutus_v2_script_unref(&plutus);
   }
+  else if (language == CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4)
+  {
+    cardano_plutus_v4_script_t*     plutus = nullptr;
+    cardano_plutus_v4_script_set_t* set    = nullptr;
+
+    EXPECT_EQ(cardano_script_to_plutus_v4(script, &plutus), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v4_script_set_new(&set), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v4_script_set_add(set, plutus), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v4_scripts(witnesses, set), CARDANO_SUCCESS);
+
+    cardano_plutus_v4_script_set_unref(&set);
+    cardano_plutus_v4_script_unref(&plutus);
+  }
   else
   {
     cardano_plutus_v3_script_t*     plutus = nullptr;
@@ -1370,9 +1383,9 @@ TEST(_cardano_get_plutus_languages_used, reportsNothingIfNoScriptIsNeeded)
 
 TEST(_cardano_get_plutus_languages_used, findsANeededScriptOfTheWitnessSet)
 {
-  const char* scripts[] = { PLUTUS_V1_SCRIPT_CBOR, PLUTUS_V2_SCRIPT_CBOR, PLUTUS_V3_SCRIPT_CBOR };
+  const char* scripts[] = { PLUTUS_V1_SCRIPT_CBOR, PLUTUS_V2_SCRIPT_CBOR, PLUTUS_V3_SCRIPT_CBOR, PLUTUS_V4_SCRIPT_CBOR };
 
-  for (size_t i = 0U; i < 3U; ++i)
+  for (size_t i = 0U; i < 4U; ++i)
   {
     // Arrange
     cardano_transaction_t* tx     = new_empty_transaction();
@@ -1388,7 +1401,7 @@ TEST(_cardano_get_plutus_languages_used, findsANeededScriptOfTheWitnessSet)
     EXPECT_EQ(languages.v1, i == 0U);
     EXPECT_EQ(languages.v2, i == 1U);
     EXPECT_EQ(languages.v3, i == 2U);
-    EXPECT_FALSE(languages.v4);
+    EXPECT_EQ(languages.v4, i == 3U);
     EXPECT_FALSE(languages.missing);
 
     // Cleanup
