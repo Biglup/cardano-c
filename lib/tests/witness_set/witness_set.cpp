@@ -65,6 +65,15 @@ static const char* PLUTUS_V2_CBOR       = "8202590895590892010000323322323232323
 static const char* PLUTUS_V3_CBOR       = "82035908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
 static const char* NATIVE_SCRIPT_CBOR   = "82008202828200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d3985388201838205190bb88200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c378204190fa0";
 
+static const char* PLUTUS_V4_CBOR                 = "82044e4d01000033222220051200120011";
+static const char* PLUTUS_V4_SCRIPT_SET_CBOR      = "d90102814e4d01000033222220051200120011";
+static const char* PLUTUS_V4_WITNESS_SET_CBOR     = "a108d90102814e4d01000033222220051200120011";
+static const char* PLUTUS_V4_UNTAGGED_CBOR        = "a108814e4d01000033222220051200120011";
+static const char* PLUTUS_V4_BEFORE_V3_CBOR       = "a208d90102814e4d0100003322222005120012001107d90102814e4d01000033222220051200120011";
+static const char* PLUTUS_V3_BEFORE_V4_CBOR       = "a207d90102814e4d0100003322222005120012001108d90102814e4d01000033222220051200120011";
+static const char* PLUTUS_V4_DUPLICATED_KEY_CBOR  = "a208d90102814e4d0100003322222005120012001108d90102814e4d01000033222220051200120011";
+static const char* WITNESS_SET_WITH_KEY_NINE_CBOR = "a109d90102814e4d01000033222220051200120011";
+
 static const char* NON_CANONICAL_ORDER_CBOR          = "a702828458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e863895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff41a000838258204a352f53eb4311d552aa9e1c6f0125846a3b607011d691f0e774d893d940b8525840c4f13cc397a50193061ce899b3eda906ad1adf3f3d515b52248ea5aa142781cd9c2ccc52ac62b2e1b5226de890104ec530bda4c38a19b691946da9addb3213f5825820290c08454c58a8c7fad6351e65a652460bd4f80f485f1ccfc350ff6a4d5bd4de5840026f47bab2f24da9690746bdb0e55d53a5eef45a969e3dd2873a3e6bb8ef3316d9f80489bacfd2f543108e284a40847ae7ce33fa358fcfe439a37990ad3107e98258204d953d6a9d556da3f3e26622c725923130f5733d1a3c4013ef8c34d15a070fd75840f9218e5a569c5ace38b1bb81e1f1c0b2d7fea2fe7fb913fdd06d79906436103345347a81494b83f83bf43466b0cebdbbdcef15384f67c255e826c249336ce2c70584840000d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840100d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840200d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840300d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645101848204038205098202818200581c3542acb3a64d80c29302260d62c3b87a742ad14abf855ebc6733081e830300818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540384474601000022001047460100002200114746010000220012474601000022001304833bffffffffffffffff3bffffffffffffffff3bffffffffffffffff06844746010000220010474601000022001147460100002200124746010000220013";
 static const char* CANONICAL_ORDER_CBOR              = "a700d90102838258204a352f53eb4311d552aa9e1c6f0125846a3b607011d691f0e774d893d940b8525840c4f13cc397a50193061ce899b3eda906ad1adf3f3d515b52248ea5aa142781cd9c2ccc52ac62b2e1b5226de890104ec530bda4c38a19b691946da9addb3213f5825820290c08454c58a8c7fad6351e65a652460bd4f80f485f1ccfc350ff6a4d5bd4de5840026f47bab2f24da9690746bdb0e55d53a5eef45a969e3dd2873a3e6bb8ef3316d9f80489bacfd2f543108e284a40847ae7ce33fa358fcfe439a37990ad3107e98258204d953d6a9d556da3f3e26622c725923130f5733d1a3c4013ef8c34d15a070fd75840f9218e5a569c5ace38b1bb81e1f1c0b2d7fea2fe7fb913fdd06d79906436103345347a81494b83f83bf43466b0cebdbbdcef15384f67c255e826c249336ce2c701d90102848204038205098202818200581c3542acb3a64d80c29302260d62c3b87a742ad14abf855ebc6733081e830300818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f5402d90102828458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e863895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff41a003d9010284474601000022001047460100002200114746010000220012474601000022001304d90102833bffffffffffffffff3bffffffffffffffff3bffffffffffffffff05a482000082d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645182010082d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645182020082d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645182030082d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645106d90102844746010000220010474601000022001147460100002200124746010000220013";
 static const char* NO_VKEYS_CBOR                     = "a601848204038205098202818200581c3542acb3a64d80c29302260d62c3b87a742ad14abf855ebc6733081e830300818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f5402828458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e863895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff41a00384474601000022001047460100002200114746010000220012474601000022001304833bffffffffffffffff3bffffffffffffffff3bffffffffffffffff0584840000d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840100d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840200d8799f0102030405ff821b000086788ffc4e831b00015060e9e46451840300d8799f0102030405ff821b000086788ffc4e831b00015060e9e4645106844746010000220010474601000022001147460100002200124746010000220013";
@@ -110,6 +119,48 @@ create_script(const char* script)
   cardano_cbor_reader_unref(&reader);
 
   return result;
+}
+
+/**
+ * Encodes a witness set to a CBOR hex string.
+ *
+ * \param witness_set The witness set to encode.
+ * \return The CBOR hex string. The caller must release it with free.
+ */
+static char*
+encode_witness_set_hex(const cardano_witness_set_t* witness_set)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_witness_set_to_cbor(witness_set, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  cardano_cbor_writer_unref(&writer);
+
+  return hex;
+}
+
+/**
+ * Decodes a witness set from a CBOR hex string.
+ *
+ * \param cbor The CBOR hex string.
+ * \return The decoded witness set.
+ */
+static cardano_witness_set_t*
+decode_witness_set_hex(const char* cbor)
+{
+  cardano_witness_set_t* witness_set = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  EXPECT_EQ(cardano_witness_set_from_cbor(reader, &witness_set), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return witness_set;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -1104,6 +1155,128 @@ TEST(cardano_witness_set_set_plutus_v3_scripts, canSetPlutusV3Scripts)
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_witness_set_get_plutus_v4_scripts, returnsNullIfWitnessSetIsNull)
+{
+  // Act
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(nullptr);
+
+  // Assert
+  EXPECT_EQ(plutus_v4_scripts, nullptr);
+}
+
+TEST(cardano_witness_set_get_plutus_v4_scripts, returnsNullIfTheWitnessSetHasNoPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = new_default_witness_set();
+  EXPECT_NE(witness_set, nullptr);
+
+  // Act
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  // Assert
+  EXPECT_EQ(plutus_v4_scripts, nullptr);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+}
+
+TEST(cardano_witness_set_get_plutus_v4_scripts, returnsPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(PLUTUS_V4_WITNESS_SET_CBOR, strlen(PLUTUS_V4_WITNESS_SET_CBOR));
+
+  EXPECT_EQ(cardano_witness_set_from_cbor(reader, &witness_set), CARDANO_SUCCESS);
+
+  // Act
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  // Assert
+  EXPECT_NE(plutus_v4_scripts, nullptr);
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(plutus_v4_scripts), 1U);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_witness_set_set_plutus_v4_scripts, canSetPlutusV4ScriptsNull)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(PLUTUS_V4_WITNESS_SET_CBOR, strlen(PLUTUS_V4_WITNESS_SET_CBOR));
+
+  EXPECT_EQ(cardano_witness_set_from_cbor(reader, &witness_set), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_witness_set_set_plutus_v4_scripts(witness_set, nullptr);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  EXPECT_EQ(plutus_v4_scripts, nullptr);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_witness_set_set_plutus_v4_scripts, returnsErrorIfWitnessSetNull)
+{
+  // Arrange
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = NULL;
+
+  // Act
+  cardano_error_t result = cardano_witness_set_set_plutus_v4_scripts(nullptr, plutus_v4_scripts);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_witness_set_set_plutus_v4_scripts, canSetPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = NULL;
+  cardano_cbor_reader_t*          reader            = cardano_cbor_reader_from_hex(PLUTUS_V4_SCRIPT_SET_CBOR, strlen(PLUTUS_V4_SCRIPT_SET_CBOR));
+
+  EXPECT_THAT(cardano_plutus_v4_script_set_from_cbor(reader, &plutus_v4_scripts), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_witness_set_set_plutus_v4_scripts(witness_set, plutus_v4_scripts);
+
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts_from_witness_set = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  EXPECT_EQ(plutus_v4_scripts_from_witness_set, plutus_v4_scripts);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_witness_set_to_cbor(witness_set, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, PLUTUS_V4_WITNESS_SET_CBOR);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts_from_witness_set);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
 TEST(cardano_witness_set_get_plutus_data, returnsNullIfWitnessSetIsNull)
 {
   // Act
@@ -1508,4 +1681,218 @@ TEST(cardano_witness_set_to_cip116_json, returnsErrorIfSetIsNull)
   cardano_error_t        error = cardano_witness_set_to_cip116_json(nullptr, json);
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_witness_set_from_cbor, decodesPlutusV4ScriptsAtKeyEight)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = decode_witness_set_hex(PLUTUS_V4_WITNESS_SET_CBOR);
+
+  // Act
+  cardano_plutus_v4_script_set_t* scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+  cardano_plutus_v4_script_t*     script  = NULL;
+
+  EXPECT_EQ(cardano_plutus_v4_script_set_get(scripts, 0U, &script), CARDANO_SUCCESS);
+
+  cardano_plutus_v4_script_t* expected = NULL;
+
+  EXPECT_EQ(cardano_plutus_v4_script_new_bytes_from_hex("4d01000033222220051200120011", 28, &expected), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(scripts), 1U);
+  EXPECT_TRUE(cardano_plutus_v4_script_equals(script, expected));
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_plutus_v4_script_set_unref(&scripts);
+  cardano_plutus_v4_script_unref(&script);
+  cardano_plutus_v4_script_unref(&expected);
+}
+
+TEST(cardano_witness_set_from_cbor, returnsErrorIfPlutusV4ScriptsKeyIsDuplicated)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(PLUTUS_V4_DUPLICATED_KEY_CBOR, strlen(PLUTUS_V4_DUPLICATED_KEY_CBOR));
+
+  // Act
+  cardano_error_t result = cardano_witness_set_from_cbor(reader, &witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+  EXPECT_EQ(witness_set, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_witness_set_from_cbor, returnsErrorIfKeyIsGreaterThanEight)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(WITNESS_SET_WITH_KEY_NINE_CBOR, strlen(WITNESS_SET_WITH_KEY_NINE_CBOR));
+
+  // Act
+  cardano_error_t result = cardano_witness_set_from_cbor(reader, &witness_set);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_CBOR_MAP_KEY);
+  EXPECT_EQ(witness_set, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_witness_set_from_cbor, returnsErrorIfPlutusV4ScriptsAreInvalid)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = NULL;
+  const char*            cbor        = "a108d90102814e4d010000332222200512001200";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t result = cardano_witness_set_from_cbor(reader, &witness_set);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(witness_set, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_witness_set_to_cbor, roundTripsPlutusV4ScriptsByteExact)
+{
+  const char* vectors[] = {
+    PLUTUS_V4_WITNESS_SET_CBOR,
+    PLUTUS_V4_UNTAGGED_CBOR,
+    PLUTUS_V3_BEFORE_V4_CBOR,
+    PLUTUS_V4_BEFORE_V3_CBOR
+  };
+
+  for (const char* vector: vectors)
+  {
+    // Arrange
+    cardano_witness_set_t* witness_set = decode_witness_set_hex(vector);
+
+    // Act
+    char* hex = encode_witness_set_hex(witness_set);
+
+    // Assert
+    EXPECT_STREQ(hex, vector);
+
+    // Cleanup
+    cardano_witness_set_unref(&witness_set);
+    free(hex);
+  }
+}
+
+TEST(cardano_witness_set_clear_cbor_cache, writesPlutusV4ScriptsAfterPlutusV3ScriptsWithTheSetTag)
+{
+  const char* vectors[] = {
+    PLUTUS_V4_BEFORE_V3_CBOR,
+    "a208814e4d0100003322222005120012001107814e4d01000033222220051200120011"
+  };
+
+  for (const char* vector: vectors)
+  {
+    // Arrange
+    cardano_witness_set_t* witness_set = decode_witness_set_hex(vector);
+
+    // Act
+    cardano_witness_set_clear_cbor_cache(witness_set);
+    char* hex = encode_witness_set_hex(witness_set);
+
+    // Assert
+    EXPECT_STREQ(hex, PLUTUS_V3_BEFORE_V4_CBOR);
+
+    // Cleanup
+    cardano_witness_set_unref(&witness_set);
+    free(hex);
+  }
+}
+
+TEST(cardano_witness_set_to_cbor, omitsAnEmptyPlutusV4ScriptSet)
+{
+  // Arrange
+  cardano_witness_set_t*          witness_set = NULL;
+  cardano_plutus_v4_script_set_t* scripts     = NULL;
+
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_v4_script_set_new(&scripts), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_set_plutus_v4_scripts(witness_set, scripts), CARDANO_SUCCESS);
+
+  // Act
+  char* hex = encode_witness_set_hex(witness_set);
+
+  // Assert
+  EXPECT_STREQ(hex, "a0");
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_plutus_v4_script_set_unref(&scripts);
+  free(hex);
+}
+
+TEST(cardano_witness_set_to_cip116_json, includesPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = decode_witness_set_hex(PLUTUS_V3_BEFORE_V4_CBOR);
+  cardano_json_writer_t* json        = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_witness_set_to_cip116_json(witness_set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"plutus_scripts":[{"language":"plutus_v3","bytes":"4d01000033222220051200120011"},{"language":"plutus_v4","bytes":"4d01000033222220051200120011"}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_witness_set_unref(&witness_set);
+  free(json_str);
+}
+
+TEST(cardano_witness_set_to_cip116_json, includesOnlyPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = decode_witness_set_hex(PLUTUS_V4_WITNESS_SET_CBOR);
+  cardano_json_writer_t* json        = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_witness_set_to_cip116_json(witness_set, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"plutus_scripts":[{"language":"plutus_v4","bytes":"4d01000033222220051200120011"}]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_witness_set_unref(&witness_set);
+  free(json_str);
+}
+
+TEST(cardano_witness_set_add_script, rejectsPlutusV4Scripts)
+{
+  // Arrange
+  cardano_witness_set_t* witness_set = nullptr;
+
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+  cardano_script_t* script = create_script(PLUTUS_V4_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_witness_set_add_script(witness_set, script);
+
+  // Assert
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
+  EXPECT_EQ(plutus_v4_scripts, nullptr);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_script_unref(&script);
 }

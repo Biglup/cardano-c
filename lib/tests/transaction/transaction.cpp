@@ -35,6 +35,7 @@
 #include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/scripts/native_scripts/native_script.h>
 #include <cardano/scripts/native_scripts/script_require_guard.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
@@ -560,6 +561,27 @@ TEST(cardano_transaction_from_cbor, roundTripsTheDijkstraGoldenTransactionByteEx
   cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
 
   EXPECT_EQ(cardano_sub_transaction_set_get_length(sub_transactions), 1);
+
+  // Both the transaction and its sub transaction carry Plutus V4 scripts under witness set key 8.
+  cardano_witness_set_t*          witness_set = cardano_transaction_get_witness_set(transaction);
+  cardano_plutus_v4_script_set_t* v4_scripts  = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(v4_scripts), 1);
+
+  cardano_sub_transaction_t* sub_transaction = NULL;
+
+  EXPECT_EQ(cardano_sub_transaction_set_get(sub_transactions, 0, &sub_transaction), CARDANO_SUCCESS);
+
+  cardano_witness_set_t*          sub_witness_set = cardano_sub_transaction_get_witness_set(sub_transaction);
+  cardano_plutus_v4_script_set_t* sub_v4_scripts  = cardano_witness_set_get_plutus_v4_scripts(sub_witness_set);
+
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(sub_v4_scripts), 1);
+
+  cardano_plutus_v4_script_set_unref(&sub_v4_scripts);
+  cardano_witness_set_unref(&sub_witness_set);
+  cardano_sub_transaction_unref(&sub_transaction);
+  cardano_plutus_v4_script_set_unref(&v4_scripts);
+  cardano_witness_set_unref(&witness_set);
 
   // The transaction id is the blake2b-256 hash of the encoded body bytes.
   cardano_cbor_reader_t* body_reader = cardano_cbor_reader_new((const byte_t*)bytes.data(), bytes.size());
