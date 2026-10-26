@@ -2450,6 +2450,420 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_max_ref_script_
   uint64_t*                              max_ref_script_size_per_endorser_block);
 
 /**
+ * \brief Retrieves the Peras minimum candidate block age from the protocol parameter update.
+ *
+ * This function returns the minimum age, in slots, that a block must have to be eligible for voting in a Peras round. On the wire this parameter is a slot interval (a 32-bit unsigned integer).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_min_candidate_block_age Pointer to where the Peras minimum candidate block age will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras minimum candidate block age was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_min_candidate_block_age = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras minimum candidate block age retrieved successfully: %lu.\n", peras_min_candidate_block_age);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras minimum candidate block age is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras minimum candidate block age: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_min_candidate_block_age(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_min_candidate_block_age);
+
+/**
+ * \brief Retrieves the Peras healing factor from the protocol parameter update.
+ *
+ * This function returns the healing time coefficient used to derive the length of a Peras cooldown period. On the wire this parameter is a positive interval (a rational number greater than zero).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_healing_factor Pointer to where the Peras healing factor will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras healing factor was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * \note The caller is responsible for releasing the returned \ref cardano_unit_interval_t object by
+ *       calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* peras_healing_factor = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_healing_factor(protocol_param_update, &peras_healing_factor);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras healing factor retrieved successfully: %f.\n", cardano_unit_interval_to_double(peras_healing_factor));
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras healing factor is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras healing factor: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&peras_healing_factor);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_healing_factor(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        peras_healing_factor);
+
+/**
+ * \brief Retrieves the Peras certificate boost from the protocol parameter update.
+ *
+ * This function returns the extra chain weight that a Peras certificate gives to the block it boosts. On the wire this parameter is a 16-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_cert_boost Pointer to where the Peras certificate boost will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras certificate boost was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_cert_boost = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras certificate boost retrieved successfully: %lu.\n", peras_cert_boost);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras certificate boost is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras certificate boost: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_cert_boost(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_cert_boost);
+
+/**
+ * \brief Retrieves the Peras target committee size from the protocol parameter update.
+ *
+ * This function returns the target number of members of the Peras voting committee. On the wire this parameter is a 16-bit unsigned integer.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_target_committee_size Pointer to where the Peras target committee size will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras target committee size was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_target_committee_size = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras target committee size retrieved successfully: %lu.\n", peras_target_committee_size);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras target committee size is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras target committee size: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_target_committee_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_target_committee_size);
+
+/**
+ * \brief Retrieves the Peras bootstrap round from the protocol parameter update.
+ *
+ * This function returns the Peras round number used to manually bootstrap voting at a specific time. The parameter is nullable: an update can propose a round (on the wire
+ * a 32-bit unsigned integer) or propose having no bootstrap round at all, encoded as CBOR null on the wire.
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_bootstrap_round Pointer to where a pointer to the Peras bootstrap round will be stored. When the update
+ *             proposes a round, the stored pointer refers to the round held by the update; it remains valid until the
+ *             parameter is modified or the update is released, and must not be freed by the caller. When the update
+ *             proposes having no bootstrap round (null), the function succeeds and stores NULL. If the parameter is not
+ *             set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras bootstrap round was successfully retrieved (a round or null), or
+ *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the parameter is not set in the update. Other appropriate
+ *         error codes may indicate different failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * const uint64_t* peras_bootstrap_round = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
+ *
+ * if ((result == CARDANO_SUCCESS) && (peras_bootstrap_round != NULL))
+ * {
+ *   printf("Peras bootstrap round retrieved successfully: %lu.\n", *peras_bootstrap_round);
+ * }
+ * else if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update proposes having no Peras bootstrap round.\n");
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras bootstrap round is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras bootstrap round: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_bootstrap_round(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t**                       peras_bootstrap_round);
+
+/**
+ * \brief Checks whether the protocol parameter update proposes a change to the Peras bootstrap round.
+ *
+ * This function reports whether the update carries the Peras bootstrap round parameter, regardless of
+ * whether the proposed value is a round or the null form.
+ *
+ * \param[in] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \c true if the update proposes a Peras bootstrap round (a round or null), \c false if the
+ *         parameter is not part of the update or \p protocol_param_update is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * if (cardano_protocol_param_update_has_peras_bootstrap_round(protocol_param_update))
+ * {
+ *   printf("The update proposes a change to the Peras bootstrap round.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT bool cardano_protocol_param_update_has_peras_bootstrap_round(
+  const cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Retrieves the Peras quorum threshold safety margin from the protocol parameter update.
+ *
+ * This function returns the extra safety margin added on top of the 75% Peras quorum threshold baseline (the ledger requires it to be between 0 and 0.25, inclusive). On the wire this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] peras_quorum_threshold_safety_margin Pointer to where the Peras quorum threshold safety margin will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras quorum threshold safety margin was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * \note The caller is responsible for releasing the returned \ref cardano_unit_interval_t object by
+ *       calling \ref cardano_unit_interval_unref when it is no longer needed.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(protocol_param_update, &peras_quorum_threshold_safety_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras quorum threshold safety margin retrieved successfully: %f.\n", cardano_unit_interval_to_double(peras_quorum_threshold_safety_margin));
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Peras quorum threshold safety margin is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get Peras quorum threshold safety margin: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * cardano_unit_interval_unref(&peras_quorum_threshold_safety_margin);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        peras_quorum_threshold_safety_margin);
+
+/**
+ * \brief Retrieves the reference inputs cost per multi-asset policy from the protocol parameter update.
+ *
+ * This function returns the fee, in lovelace, charged for every multi-asset policy present in the values of the outputs a transaction references through its reference inputs. On the wire this parameter is a coin amount (an unsigned integer).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] ref_inputs_cost_per_multi_asset_policy Pointer to where the reference inputs cost per multi-asset policy will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference inputs cost per multi-asset policy was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per multi-asset policy retrieved successfully: %lu.\n", ref_inputs_cost_per_multi_asset_policy);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Reference inputs cost per multi-asset policy is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get reference inputs cost per multi-asset policy: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_multi_asset_policy);
+
+/**
+ * \brief Retrieves the reference inputs cost per datum byte from the protocol parameter update.
+ *
+ * This function returns the fee, in lovelace, charged per byte of the datums attached to the outputs a transaction references through its reference inputs. On the wire this parameter is a coin amount (an unsigned integer).
+ *
+ * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
+ * \param[out] ref_inputs_cost_per_datum_byte Pointer to where the reference inputs cost per datum byte will be stored.
+ *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference inputs cost per datum byte was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the parameter is not set in the update. Other appropriate error codes may indicate different
+ *         failure reasons.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_inputs_cost_per_datum_byte = 0;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per datum byte retrieved successfully: %lu.\n", ref_inputs_cost_per_datum_byte);
+ * }
+ * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+ * {
+ *   printf("Reference inputs cost per datum byte is not proposed for change.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to get reference inputs cost per datum byte: %d\n", result);
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_datum_byte);
+
+/**
  * \brief Sets the minimum fee A in the protocol parameter update.
  *
  * This function sets the minimum fee A value in the protocol parameter update.
@@ -4525,6 +4939,407 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block(
   cardano_protocol_param_update_t* protocol_param_update,
   const uint64_t*                  max_ref_script_size_per_endorser_block);
+
+/**
+ * \brief Sets the Peras minimum candidate block age in the protocol parameter update.
+ *
+ * This function sets the minimum age, in slots, that a block must have to be eligible for voting in a Peras round. If NULL is passed for peras_min_candidate_block_age, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a slot interval (a 32-bit unsigned integer); values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_min_candidate_block_age Pointer to the Peras minimum candidate block age.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras minimum candidate block age was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_min_candidate_block_age = 30; // 30 slots
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_min_candidate_block_age(protocol_param_update, &peras_min_candidate_block_age);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras minimum candidate block age set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras minimum candidate block age.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_min_candidate_block_age(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_min_candidate_block_age);
+
+/**
+ * \brief Sets the Peras healing factor in the protocol parameter update.
+ *
+ * This function sets the healing time coefficient used to derive the length of a Peras cooldown period. If NULL is passed for peras_healing_factor, it indicates that the update should
+ * not propose a change for this parameter. On the wire this parameter is a positive interval (a rational number greater than zero).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_healing_factor Pointer to the Peras healing factor. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras healing factor was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* peras_healing_factor = NULL;
+ *
+ * // Assume peras_healing_factor is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_healing_factor(protocol_param_update, peras_healing_factor);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras healing factor set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras healing factor.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_healing_factor(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         peras_healing_factor);
+
+/**
+ * \brief Sets the Peras certificate boost in the protocol parameter update.
+ *
+ * This function sets the extra chain weight that a Peras certificate gives to the block it boosts. If NULL is passed for peras_cert_boost, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a 16-bit unsigned integer; values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_cert_boost Pointer to the Peras certificate boost.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras certificate boost was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_cert_boost = 15; // Weight added to a certified block
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_cert_boost(protocol_param_update, &peras_cert_boost);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras certificate boost set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras certificate boost.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_cert_boost(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_cert_boost);
+
+/**
+ * \brief Sets the Peras target committee size in the protocol parameter update.
+ *
+ * This function sets the target number of members of the Peras voting committee. If NULL is passed for peras_target_committee_size, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a 16-bit unsigned integer; values greater than \c UINT16_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_target_committee_size Pointer to the Peras target committee size.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras target committee size was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 16-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_target_committee_size = 600; // 600 committee members
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &peras_target_committee_size);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras target committee size set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras target committee size.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_target_committee_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_target_committee_size);
+
+/**
+ * \brief Sets a Peras bootstrap round in the protocol parameter update.
+ *
+ * This function proposes the Peras round number used to manually bootstrap voting at a specific time. If NULL is passed for peras_bootstrap_round, the parameter is removed from the
+ * update, exactly as \ref cardano_protocol_param_update_clear_peras_bootstrap_round does. To propose having no
+ * bootstrap round instead, use \ref cardano_protocol_param_update_set_peras_bootstrap_round_null. On the wire a
+ * round is a 32-bit unsigned integer; values greater than \c UINT32_MAX are rejected.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_bootstrap_round Pointer to the Peras bootstrap round.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras bootstrap round was successfully set, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         if the value does not fit in a 32-bit unsigned integer, or an appropriate error code indicating
+ *         the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t peras_bootstrap_round = 7; // Bootstrap voting at round 7
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &peras_bootstrap_round);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras bootstrap round set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras bootstrap round.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_bootstrap_round(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_bootstrap_round);
+
+/**
+ * \brief Proposes having no Peras bootstrap round in the protocol parameter update.
+ *
+ * This function marks the Peras bootstrap round as part of the update with the null value, which proposes
+ * that voting is not manually bootstrapped at any round. On the wire the parameter is encoded as CBOR null.
+ * Any round previously set on the update is released.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the null Peras bootstrap round was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_bootstrap_round_null(protocol_param_update);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update now proposes having no Peras bootstrap round.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_bootstrap_round_null(
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Removes the Peras bootstrap round from the protocol parameter update.
+ *
+ * This function removes the Peras bootstrap round parameter from the update, whether it proposed a
+ * round or the null value, so that the update no longer proposes a change for this parameter.
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the parameter was removed, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_clear_peras_bootstrap_round(protocol_param_update);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("The update no longer proposes a Peras bootstrap round.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_clear_peras_bootstrap_round(
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
+ * \brief Sets the Peras quorum threshold safety margin in the protocol parameter update.
+ *
+ * This function sets the extra safety margin added on top of the 75% Peras quorum threshold baseline (the ledger requires it to be between 0 and 0.25, inclusive). If NULL is passed for peras_quorum_threshold_safety_margin, it indicates that the update should
+ * not propose a change for this parameter. On the wire this parameter is a unit interval (a rational number between zero and one).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     peras_quorum_threshold_safety_margin Pointer to the Peras quorum threshold safety margin. If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the Peras quorum threshold safety margin was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * cardano_unit_interval_t* peras_quorum_threshold_safety_margin = NULL;
+ *
+ * // Assume peras_quorum_threshold_safety_margin is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Peras quorum threshold safety margin set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set Peras quorum threshold safety margin.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         peras_quorum_threshold_safety_margin);
+
+/**
+ * \brief Sets the reference inputs cost per multi-asset policy in the protocol parameter update.
+ *
+ * This function sets the fee, in lovelace, charged for every multi-asset policy present in the values of the outputs a transaction references through its reference inputs. If NULL is passed for ref_inputs_cost_per_multi_asset_policy, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a coin amount (an unsigned integer).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     ref_inputs_cost_per_multi_asset_policy Pointer to the reference inputs cost per multi-asset policy.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference inputs cost per multi-asset policy was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_inputs_cost_per_multi_asset_policy = 1000; // 1000 lovelace per policy
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per multi-asset policy set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set reference inputs cost per multi-asset policy.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy);
+
+/**
+ * \brief Sets the reference inputs cost per datum byte in the protocol parameter update.
+ *
+ * This function sets the fee, in lovelace, charged per byte of the datums attached to the outputs a transaction references through its reference inputs. If NULL is passed for ref_inputs_cost_per_datum_byte, it indicates that the update should not
+ * propose a change for this parameter. On the wire this parameter is a coin amount (an unsigned integer).
+ *
+ * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
+ * \param[in]     ref_inputs_cost_per_datum_byte Pointer to the reference inputs cost per datum byte.
+ *                If NULL, it indicates no change is being proposed for this field.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the reference inputs cost per datum byte was successfully set, or an appropriate error code indicating the failure reason.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_protocol_param_update_t* protocol_param_update = NULL;
+ * uint64_t ref_inputs_cost_per_datum_byte = 44; // 44 lovelace per datum byte
+ *
+ * // Assume protocol_param_update is initialized properly
+ *
+ * cardano_error_t result = cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Reference inputs cost per datum byte set successfully.\n");
+ * }
+ * else
+ * {
+ *   // Handle error
+ *   printf("Failed to set reference inputs cost per datum byte.\n");
+ * }
+ *
+ * // Clean up
+ * cardano_protocol_param_update_unref(&protocol_param_update);
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_datum_byte);
 
 /**
  * \brief Decrements the reference count of a cardano_protocol_param_update_t object.

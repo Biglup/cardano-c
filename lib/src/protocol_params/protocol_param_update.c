@@ -96,6 +96,15 @@ typedef struct cardano_protocol_param_update_t
     uint64_t*                         max_endorser_block_txs_size;
     cardano_ex_units_t*               max_endorser_block_execution_units;
     uint64_t*                         max_ref_script_size_per_endorser_block;
+    uint64_t*                         peras_min_candidate_block_age;
+    cardano_unit_interval_t*          peras_healing_factor;
+    uint64_t*                         peras_cert_boost;
+    uint64_t*                         peras_target_committee_size;
+    bool                              has_peras_bootstrap_round;
+    uint64_t*                         peras_bootstrap_round;
+    cardano_unit_interval_t*          peras_quorum_threshold_safety_margin;
+    uint64_t*                         ref_inputs_cost_per_multi_asset_policy;
+    uint64_t*                         ref_inputs_cost_per_datum_byte;
 } cardano_protocol_param_update_t;
 
 /* PLUTUS-DATA ENCODING ******************************************************/
@@ -267,6 +276,48 @@ pp_encode_optional_rational(cardano_unit_interval_t* interval, cardano_plutus_da
 
   cardano_constr_plutus_data_unref(&constr);
   cardano_plutus_data_unref(&value);
+  cardano_plutus_list_unref(&fields);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an optional unsigned integer the way the ledger encodes a StrictMaybe:
+ * Constr 1 [] when the value is absent and Constr 0 [I n] when it is present.
+ */
+static cardano_error_t
+pp_encode_optional_uint(const uint64_t* value, cardano_plutus_data_t** out)
+{
+  static const uint64_t just_alternative    = 0U;
+  static const uint64_t nothing_alternative = 1U;
+
+  cardano_plutus_list_t*        fields  = NULL;
+  cardano_plutus_data_t*        integer = NULL;
+  cardano_constr_plutus_data_t* constr  = NULL;
+  cardano_error_t               result  = cardano_plutus_list_new(&fields);
+
+  if ((result == CARDANO_SUCCESS) && (value != NULL))
+  {
+    result = pp_encode_uint(*value, &integer);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(fields, integer);
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_constr_plutus_data_new((value != NULL) ? just_alternative : nothing_alternative, fields, &constr);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_constr(constr, out);
+  }
+
+  cardano_constr_plutus_data_unref(&constr);
+  cardano_plutus_data_unref(&integer);
   cardano_plutus_list_unref(&fields);
 
   return result;
@@ -1134,6 +1185,102 @@ cardano_protocol_param_update_to_plutus_data(
     cardano_plutus_data_unref(&v);
   }
 
+  if ((result == CARDANO_SUCCESS) && (u->peras_min_candidate_block_age != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->peras_min_candidate_block_age, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 49U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->peras_healing_factor != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->peras_healing_factor, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 50U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->peras_cert_boost != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->peras_cert_boost, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 51U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->peras_target_committee_size != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->peras_target_committee_size, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 52U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->has_peras_bootstrap_round))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_optional_uint(u->peras_bootstrap_round, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 53U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->peras_quorum_threshold_safety_margin != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_rational(u->peras_quorum_threshold_safety_margin, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 54U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ref_inputs_cost_per_multi_asset_policy != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->ref_inputs_cost_per_multi_asset_policy, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 55U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (u->ref_inputs_cost_per_datum_byte != NULL))
+  {
+    cardano_plutus_data_t* v = NULL;
+    result                   = pp_encode_uint(*u->ref_inputs_cost_per_datum_byte, &v);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = pp_map_push(map, 56U, v);
+    }
+
+    cardano_plutus_data_unref(&v);
+  }
+
   if (result == CARDANO_SUCCESS)
   {
     result = cardano_plutus_data_new_map(map, plutus_data);
@@ -1236,6 +1383,14 @@ cardano_protocol_param_update_deallocate(void* object)
   _cardano_free(data->max_endorser_block_txs_size);
   cardano_ex_units_unref(&data->max_endorser_block_execution_units);
   _cardano_free(data->max_ref_script_size_per_endorser_block);
+  _cardano_free(data->peras_min_candidate_block_age);
+  cardano_unit_interval_unref(&data->peras_healing_factor);
+  _cardano_free(data->peras_cert_boost);
+  _cardano_free(data->peras_target_committee_size);
+  _cardano_free(data->peras_bootstrap_round);
+  cardano_unit_interval_unref(&data->peras_quorum_threshold_safety_margin);
+  _cardano_free(data->ref_inputs_cost_per_multi_asset_policy);
+  _cardano_free(data->ref_inputs_cost_per_datum_byte);
 
   _cardano_free(object);
 }
@@ -1494,6 +1649,46 @@ get_map_size(const cardano_protocol_param_update_t* update)
     ++map_size;
   }
 
+  if (update->peras_min_candidate_block_age != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->peras_healing_factor != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->peras_cert_boost != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->peras_target_committee_size != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->has_peras_bootstrap_round)
+  {
+    ++map_size;
+  }
+
+  if (update->peras_quorum_threshold_safety_margin != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  {
+    ++map_size;
+  }
+
+  if (update->ref_inputs_cost_per_datum_byte != NULL)
+  {
+    ++map_size;
+  }
+
   return map_size;
 }
 
@@ -1613,6 +1808,22 @@ get_field_ptr(cardano_protocol_param_update_t* update, size_t key)
       return (void*)&update->max_endorser_block_execution_units;
     case 48:
       return (void*)&update->max_ref_script_size_per_endorser_block;
+    case 49:
+      return (void*)&update->peras_min_candidate_block_age;
+    case 50:
+      return (void*)&update->peras_healing_factor;
+    case 51:
+      return (void*)&update->peras_cert_boost;
+    case 52:
+      return (void*)&update->peras_target_committee_size;
+    case 53:
+      return (void*)update;
+    case 54:
+      return (void*)&update->peras_quorum_threshold_safety_margin;
+    case 55:
+      return (void*)&update->ref_inputs_cost_per_multi_asset_policy;
+    case 56:
+      return (void*)&update->ref_inputs_cost_per_datum_byte;
 
     default:
       return NULL;
@@ -1886,6 +2097,60 @@ handle_max_pledge_leverage(cardano_cbor_reader_t* reader, void* field_ptr)
   }
 
   update->has_max_pledge_leverage = true;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Reads the Peras bootstrap round from the CBOR reader and stores it in the update.
+ *
+ * The Peras bootstrap round is a nullable parameter: the wire value is either a 32-bit unsigned
+ * integer (the round at which voting is manually bootstrapped) or CBOR null (no bootstrap round).
+ * Both forms mark the parameter as present in the update; the null form leaves the stored round NULL.
+ *
+ * \param[in] reader A pointer to the CBOR reader from which to read the value.
+ * \param[out] field_ptr A pointer to the protocol parameter update object that receives the value.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the value was successfully read and stored.
+ *         - An appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+handle_peras_bootstrap_round(cardano_cbor_reader_t* reader, void* field_ptr)
+{
+  assert(reader != NULL);
+  assert(field_ptr != NULL);
+
+  cardano_protocol_param_update_t* update = (cardano_protocol_param_update_t*)field_ptr;
+
+  if (update->has_peras_bootstrap_round)
+  {
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
+
+  cardano_cbor_reader_state_t state  = CARDANO_CBOR_READER_STATE_UNDEFINED;
+  cardano_error_t             result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (state == CARDANO_CBOR_READER_STATE_NULL)
+  {
+    result = cardano_cbor_reader_read_null(reader);
+  }
+  else
+  {
+    result = handle_uint32(reader, (void*)&update->peras_bootstrap_round);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  update->has_peras_bootstrap_round = true;
 
   return CARDANO_SUCCESS;
 }
@@ -2295,6 +2560,50 @@ write_nullable_unit_interval_if_present(cardano_cbor_writer_t* writer, const uin
 }
 
 /**
+ * \brief Writes a key and its nullable unsigned integer value to the CBOR writer if the parameter is present.
+ *
+ * This function writes a key and its associated unsigned integer value to the CBOR writer only if
+ * the parameter is marked as present. A present parameter whose value is NULL is written as
+ * CBOR null. If the parameter is not present, the function does nothing and returns
+ * \ref CARDANO_SUCCESS.
+ *
+ * \param[in] writer A pointer to the CBOR writer. Must not be NULL.
+ * \param[in] key The key to be written to the CBOR map.
+ * \param[in] is_present Whether the parameter is part of the update.
+ * \param[in] value A pointer to the unsigned integer value to be written. If NULL, CBOR null is written.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation.
+ *         - \ref CARDANO_SUCCESS if the key-value pair was successfully written or if the parameter is absent.
+ *         - An appropriate error code indicating the failure reason if writing to the CBOR writer fails.
+ *
+ * \pre \p writer must not be NULL.
+ */
+static cardano_error_t
+write_nullable_uint_if_present(cardano_cbor_writer_t* writer, const uint64_t key, const bool is_present, const uint64_t* value)
+{
+  assert(writer != NULL);
+
+  if (!is_present)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_error_t result = cardano_cbor_writer_write_uint(writer, key);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (value == NULL)
+  {
+    return cardano_cbor_writer_write_null(writer);
+  }
+
+  return cardano_cbor_writer_write_uint(writer, *value);
+}
+
+/**
  * \brief Writes a key-value pair for entropy to the CBOR writer if the value is present.
  *
  * This function writes a key and its associated entropy value to the CBOR writer
@@ -2673,7 +2982,15 @@ static const param_handler_t param_handlers[] = {
   handle_uint32,
   handle_uint32,
   handle_ex_units,
-  handle_uint32
+  handle_uint32,
+  handle_uint32,
+  handle_unit_interval,
+  handle_uint16,
+  handle_uint16,
+  handle_peras_bootstrap_round,
+  handle_unit_interval,
+  handle_uint64,
+  handle_uint64
 };
 
 /* DEFINITIONS ****************************************************************/
@@ -2746,6 +3063,15 @@ cardano_protocol_param_update_new(cardano_protocol_param_update_t** protocol_par
   (*protocol_param_update)->max_endorser_block_txs_size            = NULL;
   (*protocol_param_update)->max_endorser_block_execution_units     = NULL;
   (*protocol_param_update)->max_ref_script_size_per_endorser_block = NULL;
+  (*protocol_param_update)->peras_min_candidate_block_age          = NULL;
+  (*protocol_param_update)->peras_healing_factor                   = NULL;
+  (*protocol_param_update)->peras_cert_boost                       = NULL;
+  (*protocol_param_update)->peras_target_committee_size            = NULL;
+  (*protocol_param_update)->has_peras_bootstrap_round              = false;
+  (*protocol_param_update)->peras_bootstrap_round                  = NULL;
+  (*protocol_param_update)->peras_quorum_threshold_safety_margin   = NULL;
+  (*protocol_param_update)->ref_inputs_cost_per_multi_asset_policy = NULL;
+  (*protocol_param_update)->ref_inputs_cost_per_datum_byte         = NULL;
 
   return CARDANO_SUCCESS;
 }
@@ -3178,6 +3504,62 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
     return result;
   }
 
+  result = write_uint_if_present(writer, 49U, protocol_param_update->peras_min_candidate_block_age);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_unit_interval_if_present(writer, 50U, protocol_param_update->peras_healing_factor);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 51U, protocol_param_update->peras_cert_boost);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 52U, protocol_param_update->peras_target_committee_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_nullable_uint_if_present(writer, 53U, protocol_param_update->has_peras_bootstrap_round, protocol_param_update->peras_bootstrap_round);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_unit_interval_if_present(writer, 54U, protocol_param_update->peras_quorum_threshold_safety_margin);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 55U, protocol_param_update->ref_inputs_cost_per_multi_asset_policy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = write_uint_if_present(writer, 56U, protocol_param_update->ref_inputs_cost_per_datum_byte);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
   return CARDANO_SUCCESS;
 }
 
@@ -3572,6 +3954,72 @@ cardano_protocol_param_update_to_cip116_json(
   {
     cardano_json_writer_write_property_name(writer, "max_ref_script_size_per_endorser_block", 38);
     cardano_json_writer_write_uint_as_string(writer, *update->max_ref_script_size_per_endorser_block);
+  }
+
+  if (update->peras_min_candidate_block_age != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_min_candidate_block_age", 29);
+    cardano_json_writer_write_uint_as_string(writer, *update->peras_min_candidate_block_age);
+  }
+
+  if (update->peras_healing_factor != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_healing_factor", 20);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->peras_healing_factor, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->peras_cert_boost != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_cert_boost", 16);
+    cardano_json_writer_write_uint_as_string(writer, *update->peras_cert_boost);
+  }
+
+  if (update->peras_target_committee_size != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_target_committee_size", 27);
+    cardano_json_writer_write_uint_as_string(writer, *update->peras_target_committee_size);
+  }
+
+  if (update->has_peras_bootstrap_round)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_bootstrap_round", 21);
+
+    if (update->peras_bootstrap_round == NULL)
+    {
+      cardano_json_writer_write_null(writer);
+    }
+    else
+    {
+      cardano_json_writer_write_uint_as_string(writer, *update->peras_bootstrap_round);
+    }
+  }
+
+  if (update->peras_quorum_threshold_safety_margin != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "peras_quorum_threshold_safety_margin", 36);
+    cardano_error_t error = cardano_unit_interval_to_cip116_json(update->peras_quorum_threshold_safety_margin, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  if (update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ref_inputs_cost_per_multi_asset_policy", 38);
+    cardano_json_writer_write_uint_as_string(writer, *update->ref_inputs_cost_per_multi_asset_policy);
+  }
+
+  if (update->ref_inputs_cost_per_datum_byte != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "ref_inputs_cost_per_datum_byte", 30);
+    cardano_json_writer_write_uint_as_string(writer, *update->ref_inputs_cost_per_datum_byte);
   }
 
   cardano_json_writer_write_end_object(writer);
@@ -4569,6 +5017,180 @@ cardano_protocol_param_update_get_max_ref_script_size_per_endorser_block(
   }
 
   *max_ref_script_size_per_endorser_block = *protocol_param_update->max_ref_script_size_per_endorser_block;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_min_candidate_block_age(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_min_candidate_block_age)
+{
+  if ((protocol_param_update == NULL) || (peras_min_candidate_block_age == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_min_candidate_block_age == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *peras_min_candidate_block_age = *protocol_param_update->peras_min_candidate_block_age;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_healing_factor(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        peras_healing_factor)
+{
+  if ((protocol_param_update == NULL) || (peras_healing_factor == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_healing_factor == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_unit_interval_ref(protocol_param_update->peras_healing_factor);
+  *peras_healing_factor = protocol_param_update->peras_healing_factor;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_cert_boost(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_cert_boost)
+{
+  if ((protocol_param_update == NULL) || (peras_cert_boost == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_cert_boost == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *peras_cert_boost = *protocol_param_update->peras_cert_boost;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_target_committee_size(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              peras_target_committee_size)
+{
+  if ((protocol_param_update == NULL) || (peras_target_committee_size == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_target_committee_size == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *peras_target_committee_size = *protocol_param_update->peras_target_committee_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_bootstrap_round(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t**                       peras_bootstrap_round)
+{
+  if ((protocol_param_update == NULL) || (peras_bootstrap_round == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (!protocol_param_update->has_peras_bootstrap_round)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *peras_bootstrap_round = protocol_param_update->peras_bootstrap_round;
+
+  return CARDANO_SUCCESS;
+}
+
+bool
+cardano_protocol_param_update_has_peras_bootstrap_round(
+  const cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return false;
+  }
+
+  return protocol_param_update->has_peras_bootstrap_round;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t**        peras_quorum_threshold_safety_margin)
+{
+  if ((protocol_param_update == NULL) || (peras_quorum_threshold_safety_margin == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_quorum_threshold_safety_margin == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_unit_interval_ref(protocol_param_update->peras_quorum_threshold_safety_margin);
+  *peras_quorum_threshold_safety_margin = protocol_param_update->peras_quorum_threshold_safety_margin;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_multi_asset_policy)
+{
+  if ((protocol_param_update == NULL) || (ref_inputs_cost_per_multi_asset_policy == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *ref_inputs_cost_per_multi_asset_policy = *protocol_param_update->ref_inputs_cost_per_multi_asset_policy;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_datum_byte)
+{
+  if ((protocol_param_update == NULL) || (ref_inputs_cost_per_datum_byte == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_inputs_cost_per_datum_byte == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  *ref_inputs_cost_per_datum_byte = *protocol_param_update->ref_inputs_cost_per_datum_byte;
 
   return CARDANO_SUCCESS;
 }
@@ -6205,6 +6827,338 @@ cardano_protocol_param_update_set_max_ref_script_size_per_endorser_block(
   }
 
   *protocol_param_update->max_ref_script_size_per_endorser_block = *max_ref_script_size_per_endorser_block;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_min_candidate_block_age(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_min_candidate_block_age)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((peras_min_candidate_block_age != NULL) && (*peras_min_candidate_block_age > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Peras minimum candidate block age must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->peras_min_candidate_block_age != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_min_candidate_block_age);
+  }
+
+  if (peras_min_candidate_block_age == NULL)
+  {
+    protocol_param_update->peras_min_candidate_block_age = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->peras_min_candidate_block_age = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->peras_min_candidate_block_age == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->peras_min_candidate_block_age = *peras_min_candidate_block_age;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_healing_factor(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         peras_healing_factor)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_healing_factor != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->peras_healing_factor);
+  }
+
+  if (peras_healing_factor == NULL)
+  {
+    protocol_param_update->peras_healing_factor = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(peras_healing_factor);
+  protocol_param_update->peras_healing_factor = peras_healing_factor;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_cert_boost(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_cert_boost)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((peras_cert_boost != NULL) && (*peras_cert_boost > UINT16_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Peras certificate boost must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->peras_cert_boost != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_cert_boost);
+  }
+
+  if (peras_cert_boost == NULL)
+  {
+    protocol_param_update->peras_cert_boost = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->peras_cert_boost = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->peras_cert_boost == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->peras_cert_boost = *peras_cert_boost;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_target_committee_size(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_target_committee_size)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((peras_target_committee_size != NULL) && (*peras_target_committee_size > UINT16_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Peras target committee size must fit in a 16-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->peras_target_committee_size != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_target_committee_size);
+  }
+
+  if (peras_target_committee_size == NULL)
+  {
+    protocol_param_update->peras_target_committee_size = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->peras_target_committee_size = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->peras_target_committee_size == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->peras_target_committee_size = *peras_target_committee_size;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_bootstrap_round(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  peras_bootstrap_round)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((peras_bootstrap_round != NULL) && (*peras_bootstrap_round > UINT32_MAX))
+  {
+    cardano_protocol_param_update_set_last_error(protocol_param_update, "Peras bootstrap round must fit in a 32-bit unsigned integer.");
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (protocol_param_update->peras_bootstrap_round != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_bootstrap_round);
+  }
+
+  if (peras_bootstrap_round == NULL)
+  {
+    protocol_param_update->peras_bootstrap_round     = NULL;
+    protocol_param_update->has_peras_bootstrap_round = false;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->peras_bootstrap_round = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->peras_bootstrap_round == NULL)
+  {
+    protocol_param_update->has_peras_bootstrap_round = false;
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->peras_bootstrap_round    = *peras_bootstrap_round;
+  protocol_param_update->has_peras_bootstrap_round = true;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_bootstrap_round_null(
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_bootstrap_round != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_bootstrap_round);
+  }
+
+  protocol_param_update->peras_bootstrap_round     = NULL;
+  protocol_param_update->has_peras_bootstrap_round = true;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_clear_peras_bootstrap_round(
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_bootstrap_round != NULL)
+  {
+    _cardano_free(protocol_param_update->peras_bootstrap_round);
+  }
+
+  protocol_param_update->peras_bootstrap_round     = NULL;
+  protocol_param_update->has_peras_bootstrap_round = false;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_unit_interval_t*         peras_quorum_threshold_safety_margin)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->peras_quorum_threshold_safety_margin != NULL)
+  {
+    cardano_unit_interval_unref(&protocol_param_update->peras_quorum_threshold_safety_margin);
+  }
+
+  if (peras_quorum_threshold_safety_margin == NULL)
+  {
+    protocol_param_update->peras_quorum_threshold_safety_margin = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_unit_interval_ref(peras_quorum_threshold_safety_margin);
+  protocol_param_update->peras_quorum_threshold_safety_margin = peras_quorum_threshold_safety_margin;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  {
+    _cardano_free(protocol_param_update->ref_inputs_cost_per_multi_asset_policy);
+  }
+
+  if (ref_inputs_cost_per_multi_asset_policy == NULL)
+  {
+    protocol_param_update->ref_inputs_cost_per_multi_asset_policy = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->ref_inputs_cost_per_multi_asset_policy = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->ref_inputs_cost_per_multi_asset_policy = *ref_inputs_cost_per_multi_asset_policy;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_datum_byte)
+{
+  if (protocol_param_update == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (protocol_param_update->ref_inputs_cost_per_datum_byte != NULL)
+  {
+    _cardano_free(protocol_param_update->ref_inputs_cost_per_datum_byte);
+  }
+
+  if (ref_inputs_cost_per_datum_byte == NULL)
+  {
+    protocol_param_update->ref_inputs_cost_per_datum_byte = NULL;
+
+    return CARDANO_SUCCESS;
+  }
+
+  protocol_param_update->ref_inputs_cost_per_datum_byte = _cardano_malloc(sizeof(uint64_t));
+
+  if (protocol_param_update->ref_inputs_cost_per_datum_byte == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  *protocol_param_update->ref_inputs_cost_per_datum_byte = *ref_inputs_cost_per_datum_byte;
 
   return CARDANO_SUCCESS;
 }

@@ -300,3 +300,81 @@ TEST(param_update_plutus_data, matchesDijkstraLeiosUnboundedLeverageVector)
   cardano_unit_interval_unref(&margin);
   cardano_protocol_param_update_unref(&u);
 }
+
+// changed-parameters CBOR for the Dijkstra Peras parameters and the reference
+// input fee parameters (tags 49-56), following the same encoding scheme and the
+// ledger's StrictMaybe encoding for the nullable tag 53 (Constr 0 [x] when a
+// bootstrap round is proposed, Constr 1 [] when it is null). Derived by hand:
+//
+//   a8                                map(8)
+//   1831 18 1e                        49 -> 30
+//   1832 9f 05 02 ff                  50 -> [5, 2]                (10/4 -> 5/2)
+//   1833 0f                           51 -> 15
+//   1834 19 0258                      52 -> 600
+//   1835 d879 9f 07 ff                53 -> Constr 0 [7]
+//   1836 9f 01 0a ff                  54 -> [1, 10]
+//   1837 19 03e8                      55 -> 1000
+//   1838 18 2c                        56 -> 44
+static const char* kDijkstraPerasChangedParamsCbor =
+  "a81831181e18329f0502ff18330f18341902581835d8799f07ff18369f010aff18371903e81838182c";
+
+// Same update with tag 53 proposing a null bootstrap round:
+//
+//   1835 d87a 80                      53 -> Constr 1 []
+static const char* kDijkstraPerasNullBootstrapRoundChangedParamsCbor =
+  "a81831181e18329f0502ff18330f18341902581835d87a8018369f010aff18371903e81838182c";
+
+static void
+set_peras_params(cardano_protocol_param_update_t* u, cardano_unit_interval_t* healing, cardano_unit_interval_t* margin)
+{
+  const uint64_t min_candidate_block_age = 30U;
+  const uint64_t cert_boost              = 15U;
+  const uint64_t target_committee_size   = 600U;
+  const uint64_t cost_per_policy         = 1000U;
+  const uint64_t cost_per_datum_byte     = 44U;
+
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_min_candidate_block_age(u, &min_candidate_block_age), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_healing_factor(u, healing), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_cert_boost(u, &cert_boost), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(u, &target_committee_size), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(u, margin), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(u, &cost_per_policy), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(u, &cost_per_datum_byte), CARDANO_SUCCESS);
+}
+
+TEST(param_update_plutus_data, matchesDijkstraPerasVector)
+{
+  cardano_protocol_param_update_t* u = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&u), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* healing = ui(10U, 4U); // reduces to 5/2
+  cardano_unit_interval_t* margin  = ui(1U, 10U);
+  const uint64_t           round   = 7U;
+
+  set_peras_params(u, healing, margin);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(u, &round), CARDANO_SUCCESS);
+
+  EXPECT_EQ(changed_params_hex(u), std::string(kDijkstraPerasChangedParamsCbor));
+
+  cardano_unit_interval_unref(&margin);
+  cardano_unit_interval_unref(&healing);
+  cardano_protocol_param_update_unref(&u);
+}
+
+TEST(param_update_plutus_data, matchesDijkstraPerasNullBootstrapRoundVector)
+{
+  cardano_protocol_param_update_t* u = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&u), CARDANO_SUCCESS);
+
+  cardano_unit_interval_t* healing = ui(10U, 4U); // reduces to 5/2
+  cardano_unit_interval_t* margin  = ui(1U, 10U);
+
+  set_peras_params(u, healing, margin);
+  ASSERT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round_null(u), CARDANO_SUCCESS);
+
+  EXPECT_EQ(changed_params_hex(u), std::string(kDijkstraPerasNullBootstrapRoundChangedParamsCbor));
+
+  cardano_unit_interval_unref(&margin);
+  cardano_unit_interval_unref(&healing);
+  cardano_protocol_param_update_unref(&u);
+}
