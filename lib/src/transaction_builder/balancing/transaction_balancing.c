@@ -1412,9 +1412,9 @@ add_sub_transaction_priced_inputs(
  * transactions are priced too: the ones of their resolved reference inputs and the ones that sit on the UTXOs they
  * spend. The UTXOs are taken from the body of each sub transaction, as a set, so a UTXO that a sub transaction both
  * references and spends is listed once, while a UTXO used by several sub transactions is listed, and priced, once per
- * sub transaction. Including them is deliberate and may exceed the current ledger minimum, which does not charge for the
- * reference scripts of sub transactions yet. This list must only be used to price reference scripts, the scripts of the
- * sub transactions take no part in the evaluation or in the validation mode of the top level transaction.
+ * sub transaction, as the ledger prices the reference scripts of a batch. This list must only be used to price reference
+ * scripts, the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top level
+ * transaction.
  *
  * \param[in]  sub_transactions  The sub transactions carried by the transaction, or NULL when it has none.
  * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.

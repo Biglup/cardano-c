@@ -88,9 +88,7 @@ extern "C" {
  * sub transactions, the execution units of the redeemers of every sub transaction and the reference scripts of the sub
  * transactions: the ones on the UTXOs each sub transaction spends and the ones on its resolved reference inputs. A UTXO that
  * a sub transaction both references and spends is priced once, while a UTXO referenced by several sub transactions is priced
- * once per sub transaction, as the ledger counts it when it measures the reference script size of a batch. Including them is
- * deliberate and may exceed the current ledger minimum, which does not charge for the reference scripts of sub transactions
- * yet. Collateral is added when a redeemer exists in the transaction or in any of its sub transactions, and it is sized from
+ * once per sub transaction, as the ledger counts it when it prices the reference scripts of a batch. Collateral is added when a redeemer exists in the transaction or in any of its sub transactions, and it is sized from
  * the fee of the top level transaction. The scripts of the sub transactions are not evaluated, the execution units their
  * redeemers declare are taken as final.
  *
