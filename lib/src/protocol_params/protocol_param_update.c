@@ -5105,19 +5105,19 @@ cardano_protocol_param_update_get_peras_target_committee_size(
 cardano_error_t
 cardano_protocol_param_update_get_peras_bootstrap_round(
   const cardano_protocol_param_update_t* protocol_param_update,
-  const uint64_t**                       peras_bootstrap_round)
+  uint64_t*                              peras_bootstrap_round)
 {
   if ((protocol_param_update == NULL) || (peras_bootstrap_round == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (!protocol_param_update->has_peras_bootstrap_round)
+  if (protocol_param_update->peras_bootstrap_round == NULL)
   {
     return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
-  *peras_bootstrap_round = protocol_param_update->peras_bootstrap_round;
+  *peras_bootstrap_round = *protocol_param_update->peras_bootstrap_round;
 
   return CARDANO_SUCCESS;
 }
@@ -5132,6 +5132,18 @@ cardano_protocol_param_update_has_peras_bootstrap_round(
   }
 
   return protocol_param_update->has_peras_bootstrap_round;
+}
+
+bool
+cardano_protocol_param_update_is_peras_bootstrap_round_null(
+  const cardano_protocol_param_update_t* protocol_param_update)
+{
+  if (protocol_param_update == NULL)
+  {
+    return false;
+  }
+
+  return protocol_param_update->has_peras_bootstrap_round && (protocol_param_update->peras_bootstrap_round == NULL);
 }
 
 cardano_error_t
