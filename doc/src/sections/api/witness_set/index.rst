@@ -15,6 +15,7 @@ In Cardano, transactions have multiple types of authentication proofs, these can
    plutus_v1_script_set
    plutus_v2_script_set
    plutus_v3_script_set
+   plutus_v4_script_set
    redeemer
    redeemer_list
    redeemer_tag
