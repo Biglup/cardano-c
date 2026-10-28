@@ -55,6 +55,7 @@
 #include <cardano/common/datum.h>
 #include <cardano/common/datum_type.h>
 #include <cardano/common/ex_units.h>
+#include <cardano/common/guard_set.h>
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/common/withdrawal_map.h>
@@ -72,9 +73,13 @@
 #include <cardano/scripts/plutus_scripts/plutus_v1_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v2_script.h>
 #include <cardano/scripts/plutus_scripts/plutus_v3_script.h>
+#include <cardano/scripts/plutus_scripts/plutus_v4_script.h>
 #include <cardano/scripts/script.h>
 #include <cardano/scripts/script_language.h>
+#include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_input_set.h>
@@ -88,6 +93,7 @@
 #include <cardano/witness_set/plutus_v1_script_set.h>
 #include <cardano/witness_set/plutus_v2_script_set.h>
 #include <cardano/witness_set/plutus_v3_script_set.h>
+#include <cardano/witness_set/plutus_v4_script_set.h>
 #include <cardano/witness_set/witness_set.h>
 
 #include "../../allocators.h"
@@ -134,6 +140,12 @@ static const int64_t PRV_MAX_MEM = (int64_t)100000000;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t PRV_DIJKSTRA_PROTOCOL_MAJOR = 12U;
 
+/**
+ * \brief The name the native evaluator reports.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const char* const PRV_EVALUATOR_NAME = "Native UPLC transaction evaluator";
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -142,7 +154,8 @@ static const uint64_t PRV_DIJKSTRA_PROTOCOL_MAJOR = 12U;
  * Stored as the \c context of the \ref cardano_tx_evaluator_impl_t and reached
  * by casting the \c cardano_object_t base. Holds the inputs the evaluate
  * signature does not carry: the slot config (copied by value), the ledger cost
- * models (referenced) and the protocol major version.
+ * models (referenced), the protocol major version and the transaction level
+ * whose redeemers the evaluator returns.
  */
 typedef struct native_context_t
 {
@@ -150,6 +163,8 @@ typedef struct native_context_t
     cardano_slot_config_t slot_config;
     cardano_costmdls_t*   cost_models;
     uint64_t              protocol_major;
+    bool                  has_sub_tx_index;
+    uint64_t              sub_tx_index;
 } native_context_t;
 
 /**
@@ -159,8 +174,41 @@ typedef enum
 {
   PRV_SCRIPT_V1 = 0,
   PRV_SCRIPT_V2 = 1,
-  PRV_SCRIPT_V3 = 2
+  PRV_SCRIPT_V3 = 2,
+  PRV_SCRIPT_V4 = 3
 } script_version_t;
+
+/**
+ * \brief The parts of a transaction level its redeemers point into.
+ *
+ * A Dijkstra transaction runs scripts at two levels: the top-level transaction
+ * and each of its sub-transactions. Each level has its own body and witness set,
+ * and the redeemers of a level index into the collections of that level only.
+ */
+typedef struct tx_level_t
+{
+    cardano_witness_set_t*            witness_set;
+    cardano_transaction_input_set_t*  inputs;
+    cardano_multi_asset_t*            mint;
+    cardano_withdrawal_map_t*         withdrawals;
+    cardano_certificate_set_t*        certificates;
+    cardano_voting_procedures_t*      votes;
+    cardano_proposal_procedure_set_t* proposals;
+    cardano_guard_set_t*              guards;
+} tx_level_t;
+
+/**
+ * \brief A redeemer resolved to the script it runs.
+ *
+ * Holds the raw script bytes, the language of the script and, for a spend, the
+ * datum of the spent output.
+ */
+typedef struct resolved_script_t
+{
+    cardano_buffer_t*      script_bytes;
+    script_version_t       version;
+    cardano_plutus_data_t* datum;
+} resolved_script_t;
 
 /**
  * \brief The outcome of evaluating one redeemer that the host could run.
@@ -260,20 +308,19 @@ payment_credential(cardano_address_t* address)
 }
 
 /**
- * \brief Looks a script hash up in the witness plutus script sets and reference scripts.
+ * \brief Looks a script hash up in the plutus script sets of a witness set.
  *
- * The script is discovered in the witness V1/V2/V3 script sets or in a resolved
- * output's reference script. The raw witness-set bytes (CBOR-wrapped flat) and
- * the language version are returned on a match. The caller owns \p out_bytes and
- * releases it with \ref cardano_buffer_unref.
+ * The raw witness-set bytes (CBOR-wrapped flat) and the language version are
+ * returned on a match. The caller owns \p out_bytes and releases it with
+ * \ref cardano_buffer_unref.
  *
  * \return \ref CARDANO_SUCCESS on a match, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
- *         if no plutus script with that hash exists, or a propagated error.
+ *         if the witness set holds no plutus script with that hash, or a
+ *         propagated error.
  */
 static cardano_error_t
-find_script_by_hash(
+find_witness_script(
   cardano_witness_set_t*        witness_set,
-  cardano_utxo_list_t*          resolved_inputs,
   const cardano_blake2b_hash_t* script_hash,
   cardano_buffer_t**            out_bytes,
   script_version_t*             out_version)
@@ -283,6 +330,7 @@ find_script_by_hash(
   cardano_plutus_v1_script_set_t* v1 = cardano_witness_set_get_plutus_v1_scripts(witness_set);
   cardano_plutus_v2_script_set_t* v2 = cardano_witness_set_get_plutus_v2_scripts(witness_set);
   cardano_plutus_v3_script_set_t* v3 = cardano_witness_set_get_plutus_v3_scripts(witness_set);
+  cardano_plutus_v4_script_set_t* v4 = cardano_witness_set_get_plutus_v4_scripts(witness_set);
 
   size_t i = 0U;
 
@@ -346,7 +394,137 @@ find_script_by_hash(
     cardano_plutus_v3_script_unref(&script);
   }
 
-  for (i = 0U; (result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (resolved_inputs != NULL) && (i < cardano_utxo_list_get_length(resolved_inputs)); ++i)
+  for (i = 0U; (result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (v4 != NULL) && (i < cardano_plutus_v4_script_set_get_length(v4)); ++i)
+  {
+    cardano_plutus_v4_script_t* script = NULL;
+
+    if (cardano_plutus_v4_script_set_get(v4, i, &script) == CARDANO_SUCCESS)
+    {
+      cardano_blake2b_hash_t* hash = cardano_plutus_v4_script_get_hash(script);
+
+      if (cardano_blake2b_hash_equals(hash, script_hash))
+      {
+        result       = cardano_plutus_v4_script_to_raw_bytes(script, out_bytes);
+        *out_version = PRV_SCRIPT_V4;
+      }
+
+      cardano_blake2b_hash_unref(&hash);
+    }
+
+    cardano_plutus_v4_script_unref(&script);
+  }
+
+  cardano_plutus_v1_script_set_unref(&v1);
+  cardano_plutus_v2_script_set_unref(&v2);
+  cardano_plutus_v3_script_set_unref(&v3);
+  cardano_plutus_v4_script_set_unref(&v4);
+
+  return result;
+}
+
+/**
+ * \brief Returns the raw bytes and language version of a plutus reference script.
+ *
+ * \return \ref CARDANO_SUCCESS for a plutus script, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         for a native script, or a propagated error.
+ */
+static cardano_error_t
+reference_script_bytes(cardano_script_t* script_ref, cardano_buffer_t** out_bytes, script_version_t* out_version)
+{
+  cardano_script_language_t lang   = CARDANO_SCRIPT_LANGUAGE_NATIVE;
+  cardano_error_t           result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  CARDANO_UNUSED(cardano_script_get_language(script_ref, &lang));
+
+  switch (lang)
+  {
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
+    {
+      cardano_plutus_v1_script_t* s = NULL;
+
+      result = cardano_script_to_plutus_v1(script_ref, &s);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result       = cardano_plutus_v1_script_to_raw_bytes(s, out_bytes);
+        *out_version = PRV_SCRIPT_V1;
+      }
+
+      cardano_plutus_v1_script_unref(&s);
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
+    {
+      cardano_plutus_v2_script_t* s = NULL;
+
+      result = cardano_script_to_plutus_v2(script_ref, &s);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result       = cardano_plutus_v2_script_to_raw_bytes(s, out_bytes);
+        *out_version = PRV_SCRIPT_V2;
+      }
+
+      cardano_plutus_v2_script_unref(&s);
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
+    {
+      cardano_plutus_v3_script_t* s = NULL;
+
+      result = cardano_script_to_plutus_v3(script_ref, &s);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result       = cardano_plutus_v3_script_to_raw_bytes(s, out_bytes);
+        *out_version = PRV_SCRIPT_V3;
+      }
+
+      cardano_plutus_v3_script_unref(&s);
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+    {
+      cardano_plutus_v4_script_t* s = NULL;
+
+      result = cardano_script_to_plutus_v4(script_ref, &s);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result       = cardano_plutus_v4_script_to_raw_bytes(s, out_bytes);
+        *out_version = PRV_SCRIPT_V4;
+      }
+
+      cardano_plutus_v4_script_unref(&s);
+      break;
+    }
+    case CARDANO_SCRIPT_LANGUAGE_NATIVE:
+    default:
+    {
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Looks a script hash up in the reference scripts of the resolved outputs.
+ *
+ * \return \ref CARDANO_SUCCESS on a match, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if no resolved output carries a plutus reference script with that hash,
+ *         or a propagated error.
+ */
+static cardano_error_t
+find_reference_script(
+  cardano_utxo_list_t*          resolved_inputs,
+  const cardano_blake2b_hash_t* script_hash,
+  cardano_buffer_t**            out_bytes,
+  script_version_t*             out_version)
+{
+  cardano_error_t result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  for (size_t i = 0U; (result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (resolved_inputs != NULL) && (i < cardano_utxo_list_get_length(resolved_inputs)); ++i)
   {
     cardano_utxo_t* utxo = NULL;
 
@@ -361,58 +539,7 @@ find_script_by_hash(
 
         if (cardano_blake2b_hash_equals(hash, script_hash))
         {
-          cardano_script_language_t lang = CARDANO_SCRIPT_LANGUAGE_NATIVE;
-
-          if (cardano_script_get_language(script_ref, &lang) == CARDANO_SUCCESS)
-          {
-            switch (lang)
-            {
-              case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
-              {
-                cardano_plutus_v1_script_t* s = NULL;
-
-                if (cardano_script_to_plutus_v1(script_ref, &s) == CARDANO_SUCCESS)
-                {
-                  result       = cardano_plutus_v1_script_to_raw_bytes(s, out_bytes);
-                  *out_version = PRV_SCRIPT_V1;
-                }
-
-                cardano_plutus_v1_script_unref(&s);
-                break;
-              }
-              case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
-              {
-                cardano_plutus_v2_script_t* s = NULL;
-
-                if (cardano_script_to_plutus_v2(script_ref, &s) == CARDANO_SUCCESS)
-                {
-                  result       = cardano_plutus_v2_script_to_raw_bytes(s, out_bytes);
-                  *out_version = PRV_SCRIPT_V2;
-                }
-
-                cardano_plutus_v2_script_unref(&s);
-                break;
-              }
-              case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
-              {
-                cardano_plutus_v3_script_t* s = NULL;
-
-                if (cardano_script_to_plutus_v3(script_ref, &s) == CARDANO_SUCCESS)
-                {
-                  result       = cardano_plutus_v3_script_to_raw_bytes(s, out_bytes);
-                  *out_version = PRV_SCRIPT_V3;
-                }
-
-                cardano_plutus_v3_script_unref(&s);
-                break;
-              }
-              case CARDANO_SCRIPT_LANGUAGE_NATIVE:
-              default:
-              {
-                break;
-              }
-            }
-          }
+          result = reference_script_bytes(script_ref, out_bytes, out_version);
         }
 
         cardano_blake2b_hash_unref(&hash);
@@ -425,9 +552,58 @@ find_script_by_hash(
     cardano_utxo_unref(&utxo);
   }
 
-  cardano_plutus_v1_script_set_unref(&v1);
-  cardano_plutus_v2_script_set_unref(&v2);
-  cardano_plutus_v3_script_set_unref(&v3);
+  return result;
+}
+
+/**
+ * \brief Looks a script hash up in every script the transaction provides.
+ *
+ * Like the ledger, the scripts a Dijkstra transaction provides are the union of
+ * the witness scripts of the top-level transaction and of every sub-transaction,
+ * and the reference scripts of the resolved outputs; a redeemer at any level can
+ * run any of them. The caller owns \p out_bytes and releases it with
+ * \ref cardano_buffer_unref.
+ *
+ * \return \ref CARDANO_SUCCESS on a match, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if no plutus script with that hash exists, or a propagated error.
+ */
+static cardano_error_t
+find_script_by_hash(
+  cardano_transaction_t*        tx,
+  cardano_utxo_list_t*          resolved_inputs,
+  const cardano_blake2b_hash_t* script_hash,
+  cardano_buffer_t**            out_bytes,
+  script_version_t*             out_version)
+{
+  cardano_witness_set_t*         witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_transaction_body_t*    body        = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_set_t* subs        = cardano_transaction_body_get_sub_transactions(body);
+  cardano_error_t                result      = find_witness_script(witness_set, script_hash, out_bytes, out_version);
+
+  for (size_t i = 0U; (result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (i < cardano_sub_transaction_set_get_length(subs)); ++i)
+  {
+    cardano_sub_transaction_t* sub = NULL;
+
+    if (cardano_sub_transaction_set_get(subs, i, &sub) == CARDANO_SUCCESS)
+    {
+      cardano_witness_set_t* sub_witness_set = cardano_sub_transaction_get_witness_set(sub);
+
+      result = find_witness_script(sub_witness_set, script_hash, out_bytes, out_version);
+
+      cardano_witness_set_unref(&sub_witness_set);
+    }
+
+    cardano_sub_transaction_unref(&sub);
+  }
+
+  if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+  {
+    result = find_reference_script(resolved_inputs, script_hash, out_bytes, out_version);
+  }
+
+  cardano_sub_transaction_set_unref(&subs);
+  cardano_transaction_body_unref(&body);
+  cardano_witness_set_unref(&witness_set);
 
   return result;
 }
@@ -889,14 +1065,104 @@ proposal_policy_hash(cardano_proposal_procedure_t* proposal, cardano_blake2b_has
 }
 
 /**
+ * \brief Releases the references held by a transaction level.
+ */
+static void
+release_level(tx_level_t* level)
+{
+  cardano_witness_set_unref(&level->witness_set);
+  cardano_transaction_input_set_unref(&level->inputs);
+  cardano_multi_asset_unref(&level->mint);
+  cardano_withdrawal_map_unref(&level->withdrawals);
+  cardano_certificate_set_unref(&level->certificates);
+  cardano_voting_procedures_unref(&level->votes);
+  cardano_proposal_procedure_set_unref(&level->proposals);
+  cardano_guard_set_unref(&level->guards);
+}
+
+/**
+ * \brief Reads the parts of a transaction level its redeemers point into.
+ *
+ * \param[in] tx The top-level transaction.
+ * \param[in] sub_tx_index The position of the sub-transaction in the body of \p tx,
+ *            or NULL for the top-level transaction.
+ * \param[out] level The level to fill; release it with \ref release_level.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
+ *         when \p sub_tx_index points past the sub-transactions.
+ */
+static cardano_error_t
+read_level(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_level_t* level)
+{
+  cardano_transaction_body_t*    body   = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_set_t* subs   = NULL;
+  cardano_sub_transaction_t*     sub    = NULL;
+  cardano_error_t                result = CARDANO_SUCCESS;
+
+  CARDANO_UNUSED(memset(level, 0, sizeof(tx_level_t)));
+
+  if (sub_tx_index == NULL)
+  {
+    level->witness_set  = cardano_transaction_get_witness_set(tx);
+    level->inputs       = cardano_transaction_body_get_inputs(body);
+    level->mint         = cardano_transaction_body_get_mint(body);
+    level->withdrawals  = cardano_transaction_body_get_withdrawals(body);
+    level->certificates = cardano_transaction_body_get_certificates(body);
+    level->votes        = cardano_transaction_body_get_voting_procedures(body);
+    level->proposals    = cardano_transaction_body_get_proposal_procedures(body);
+    level->guards       = cardano_transaction_body_get_guards(body);
+
+    cardano_transaction_body_unref(&body);
+
+    return CARDANO_SUCCESS;
+  }
+
+  subs = cardano_transaction_body_get_sub_transactions(body);
+
+  if (*sub_tx_index >= (uint64_t)cardano_sub_transaction_set_get_length(subs))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_sub_transaction_set_get(subs, (size_t)*sub_tx_index, &sub);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_sub_transaction_body_t* sub_body = cardano_sub_transaction_get_body(sub);
+
+    level->witness_set  = cardano_sub_transaction_get_witness_set(sub);
+    level->inputs       = cardano_sub_transaction_body_get_inputs(sub_body);
+    level->mint         = cardano_sub_transaction_body_get_mint(sub_body);
+    level->withdrawals  = cardano_sub_transaction_body_get_withdrawals(sub_body);
+    level->certificates = cardano_sub_transaction_body_get_certificates(sub_body);
+    level->votes        = cardano_sub_transaction_body_get_voting_procedures(sub_body);
+    level->proposals    = cardano_sub_transaction_body_get_proposal_procedures(sub_body);
+    level->guards       = cardano_sub_transaction_body_get_guards(sub_body);
+
+    cardano_sub_transaction_body_unref(&sub_body);
+  }
+
+  cardano_sub_transaction_unref(&sub);
+  cardano_sub_transaction_set_unref(&subs);
+  cardano_transaction_body_unref(&body);
+
+  return result;
+}
+
+/**
  * \brief Resolves the script hash a redeemer points at, plus the spend datum.
  *
- * The (tag, index) pair selects the concrete item against the transaction's own
- * sorted inputs (spend), sorted mint policies (mint), withdrawals (reward),
- * certificates (cert), voters (vote) or proposals (propose). The script hash is
- * the script credential the item is authorized by; the spend purpose also
- * resolves the datum. The index ordering mirrors the ledger's per-purpose
- * ordering, which is the consensus-critical mapping.
+ * The (tag, index) pair selects the concrete item against the collections of the
+ * redeemer's own transaction level: sorted inputs (spend), sorted mint policies
+ * (mint), withdrawals (reward), certificates (cert), voters (vote), proposals
+ * (propose) or guards (guard). The guard index is the position in the guard set
+ * in transaction order, counting key-hash guards too. The script hash is the
+ * script credential the item is authorized by; the spend purpose also resolves
+ * the datum from the witness datums of the level. The index ordering mirrors the
+ * ledger's per-purpose ordering, which is the consensus-critical mapping.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
  *         if the index is out of range, \ref CARDANO_ERROR_INVALID_ARGUMENT for a
@@ -904,14 +1170,12 @@ proposal_policy_hash(cardano_proposal_procedure_t* proposal, cardano_blake2b_has
  */
 static cardano_error_t
 resolve_script_hash(
-  cardano_transaction_t*   tx,
-  cardano_witness_set_t*   witness_set,
+  const tx_level_t*        level,
   cardano_utxo_list_t*     resolved_inputs,
   cardano_redeemer_t*      redeemer,
   cardano_blake2b_hash_t** out_hash,
   cardano_plutus_data_t**  out_datum)
 {
-  cardano_transaction_body_t*  body   = cardano_transaction_get_body(tx);
   const cardano_redeemer_tag_t tag    = cardano_redeemer_get_tag(redeemer);
   const uint64_t               index  = cardano_redeemer_get_index(redeemer);
   cardano_error_t              result = CARDANO_SUCCESS;
@@ -923,10 +1187,9 @@ resolve_script_hash(
   {
     case CARDANO_REDEEMER_TAG_MINT:
     {
-      cardano_multi_asset_t*    mint     = cardano_transaction_body_get_mint(body);
       cardano_policy_id_list_t* policies = NULL;
 
-      result = (mint != NULL) ? cardano_multi_asset_get_keys(mint, &policies) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      result = (level->mint != NULL) ? cardano_multi_asset_get_keys(level->mint, &policies) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
 
       if ((result == CARDANO_SUCCESS) && (index >= cardano_policy_id_list_get_length(policies)))
       {
@@ -938,15 +1201,12 @@ resolve_script_hash(
         result = cardano_policy_id_list_get(policies, (size_t)index, out_hash);
       }
 
-      cardano_multi_asset_unref(&mint);
       cardano_policy_id_list_unref(&policies);
       break;
     }
     case CARDANO_REDEEMER_TAG_SPEND:
     {
-      cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
-
-      if ((inputs == NULL) || (index >= cardano_transaction_input_set_get_length(inputs)))
+      if ((level->inputs == NULL) || (index >= cardano_transaction_input_set_get_length(level->inputs)))
       {
         result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
       }
@@ -956,7 +1216,7 @@ resolve_script_hash(
         cardano_transaction_input_t*  input  = NULL;
         cardano_transaction_output_t* output = NULL;
 
-        result = cardano_transaction_input_set_get(inputs, (size_t)index, &input);
+        result = cardano_transaction_input_set_get(level->inputs, (size_t)index, &input);
 
         if (result == CARDANO_SUCCESS)
         {
@@ -994,7 +1254,7 @@ resolve_script_hash(
 
           if (result == CARDANO_SUCCESS)
           {
-            result = resolve_datum(witness_set, output, out_datum);
+            result = resolve_datum(level->witness_set, output, out_datum);
           }
 
           cardano_credential_unref(&credential);
@@ -1005,14 +1265,11 @@ resolve_script_hash(
         cardano_transaction_input_unref(&input);
       }
 
-      cardano_transaction_input_set_unref(&inputs);
       break;
     }
     case CARDANO_REDEEMER_TAG_REWARD:
     {
-      cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
-
-      if ((withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(withdrawals)))
+      if ((level->withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(level->withdrawals)))
       {
         result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
       }
@@ -1022,7 +1279,7 @@ resolve_script_hash(
         cardano_reward_address_t* address = NULL;
         uint64_t                  coin    = 0U;
 
-        result = cardano_withdrawal_map_get_key_value_at(withdrawals, (size_t)index, &address, &coin);
+        result = cardano_withdrawal_map_get_key_value_at(level->withdrawals, (size_t)index, &address, &coin);
 
         if (result == CARDANO_SUCCESS)
         {
@@ -1036,14 +1293,11 @@ resolve_script_hash(
         cardano_reward_address_unref(&address);
       }
 
-      cardano_withdrawal_map_unref(&withdrawals);
       break;
     }
     case CARDANO_REDEEMER_TAG_CERTIFYING:
     {
-      cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
-
-      if ((certificates == NULL) || (index >= cardano_certificate_set_get_length(certificates)))
+      if ((level->certificates == NULL) || (index >= cardano_certificate_set_get_length(level->certificates)))
       {
         result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
       }
@@ -1052,7 +1306,7 @@ resolve_script_hash(
       {
         cardano_certificate_t* certificate = NULL;
 
-        result = cardano_certificate_set_get(certificates, (size_t)index, &certificate);
+        result = cardano_certificate_set_get(level->certificates, (size_t)index, &certificate);
 
         if (result == CARDANO_SUCCESS)
         {
@@ -1071,15 +1325,13 @@ resolve_script_hash(
         cardano_certificate_unref(&certificate);
       }
 
-      cardano_certificate_set_unref(&certificates);
       break;
     }
     case CARDANO_REDEEMER_TAG_VOTING:
     {
-      cardano_voting_procedures_t* voting = cardano_transaction_body_get_voting_procedures(body);
-      cardano_voter_list_t*        voters = NULL;
+      cardano_voter_list_t* voters = NULL;
 
-      result = (voting != NULL) ? cardano_voting_procedures_get_voters(voting, &voters) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      result = (level->votes != NULL) ? cardano_voting_procedures_get_voters(level->votes, &voters) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
 
       if ((result == CARDANO_SUCCESS) && (index >= cardano_voter_list_get_length(voters)))
       {
@@ -1105,14 +1357,11 @@ resolve_script_hash(
       }
 
       cardano_voter_list_unref(&voters);
-      cardano_voting_procedures_unref(&voting);
       break;
     }
     case CARDANO_REDEEMER_TAG_PROPOSING:
     {
-      cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
-
-      if ((proposals == NULL) || (index >= cardano_proposal_procedure_set_get_length(proposals)))
+      if ((level->proposals == NULL) || (index >= cardano_proposal_procedure_set_get_length(level->proposals)))
       {
         result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
       }
@@ -1121,7 +1370,7 @@ resolve_script_hash(
       {
         cardano_proposal_procedure_t* proposal = NULL;
 
-        result = cardano_proposal_procedure_set_get(proposals, (size_t)index, &proposal);
+        result = cardano_proposal_procedure_set_get(level->proposals, (size_t)index, &proposal);
 
         if (result == CARDANO_SUCCESS)
         {
@@ -1131,18 +1380,37 @@ resolve_script_hash(
         cardano_proposal_procedure_unref(&proposal);
       }
 
-      cardano_proposal_procedure_set_unref(&proposals);
       break;
     }
     case CARDANO_REDEEMER_TAG_GUARDING:
+    {
+      if ((level->guards == NULL) || (index >= cardano_guard_set_get_length(level->guards)))
+      {
+        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_credential_t* credential = NULL;
+
+        result = cardano_guard_set_get(level->guards, (size_t)index, &credential);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = script_hash_from_credential(credential, out_hash);
+        }
+
+        cardano_credential_unref(&credential);
+      }
+
+      break;
+    }
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
       break;
     }
   }
-
-  cardano_transaction_body_unref(&body);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1175,6 +1443,11 @@ plutus_language(script_version_t version)
       result = CARDANO_PLUTUS_LANGUAGE_VERSION_V2;
       break;
     }
+    case PRV_SCRIPT_V4:
+    {
+      result = CARDANO_PLUTUS_LANGUAGE_VERSION_V4;
+      break;
+    }
     case PRV_SCRIPT_V3:
     default:
     {
@@ -1204,6 +1477,11 @@ uplc_lang_version(script_version_t version)
     case PRV_SCRIPT_V2:
     {
       result = CARDANO_UPLC_LANG_VERSION_V2;
+      break;
+    }
+    case PRV_SCRIPT_V4:
+    {
+      result = CARDANO_UPLC_LANG_VERSION_V4;
       break;
     }
     case PRV_SCRIPT_V3:
@@ -1243,6 +1521,11 @@ select_cost_model(
   if (ctx->cost_models != NULL)
   {
     result = cardano_costmdls_get(ctx->cost_models, plutus_language(version), &cost_model);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (cost_model == NULL))
+  {
+    result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1298,14 +1581,16 @@ select_cost_model(
 /**
  * \brief Builds the version-appropriate ScriptContext for a redeemer.
  *
- * Dispatches to the V1, V2 or V3 builder; the V3 builder embeds the redeemer data
- * and the optional datum inside the context, the V1/V2 builders carry only the
- * TxInfo and the script purpose.
+ * Dispatches to the V1, V2, V3 or V4 builder. The V3 and V4 builders embed the
+ * redeemer data and the optional datum inside the context, the V1/V2 builders
+ * carry only the TxInfo and the script purpose. The V4 context is the one of the
+ * transaction level the redeemer belongs to.
  */
 static cardano_error_t
 build_script_context(
   script_version_t             version,
   cardano_transaction_t*       tx,
+  const uint64_t*              sub_tx_index,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_slot_config_t* slot_config,
   cardano_redeemer_t*          redeemer,
@@ -1331,9 +1616,10 @@ build_script_context(
       result = cardano_uplc_int_build_script_context_v3(tx, resolved_inputs, slot_config, redeemer, datum, script_context);
       break;
     }
+    case PRV_SCRIPT_V4:
     default:
     {
-      result = CARDANO_ERROR_INVALID_ARGUMENT;
+      result = cardano_uplc_int_build_script_context_v4(tx, sub_tx_index, resolved_inputs, slot_config, redeemer, datum, script_context);
       break;
     }
   }
@@ -1345,8 +1631,8 @@ build_script_context(
  * \brief Applies the version-appropriate arguments to a decoded program.
  *
  * V1/V2 spend applies [datum, redeemer, context]; V1/V2 non-spend applies
- * [redeemer, context]; V3 applies [context] only, since the V3 context already
- * carries the redeemer and the datum.
+ * [redeemer, context]; V3 and V4 apply [context] only, since their context
+ * already carries the redeemer and the datum.
  */
 static cardano_error_t
 apply_arguments(
@@ -1360,7 +1646,7 @@ apply_arguments(
 {
   cardano_error_t result = CARDANO_SUCCESS;
 
-  if (version == PRV_SCRIPT_V3)
+  if ((version == PRV_SCRIPT_V3) || (version == PRV_SCRIPT_V4))
   {
     result = cardano_uplc_program_apply_data(arena, program, script_context, out);
   }
@@ -1446,13 +1732,159 @@ script_is_closed(const cardano_uplc_program_t* program, const uint64_t protocol_
 }
 
 /**
+ * \brief Returns whether the result of a script is accepted.
+ *
+ * A Plutus V3 or V4 script only succeeds when it evaluates to the unit constant;
+ * any other result fails phase-2 validation, as the ledger's
+ * \c processLogsAndErrors reports \c InvalidReturnValue. V1 and V2 results are
+ * accepted as they are.
+ *
+ * \param[in] version The language version of the script.
+ * \param[in] result The discharged result term of the evaluation.
+ *
+ * \return \c true when the result is accepted, \c false otherwise.
+ */
+static bool
+result_is_accepted(const script_version_t version, const cardano_uplc_term_t* result)
+{
+  if ((version == PRV_SCRIPT_V1) || (version == PRV_SCRIPT_V2))
+  {
+    return true;
+  }
+
+  return (result->kind == CARDANO_UPLC_TERM_CONSTANT) && (result->as.constant->kind == CARDANO_UPLC_TYPE_UNIT);
+}
+
+/**
+ * \brief Releases the references held by a resolved script.
+ */
+static void
+release_resolved_script(resolved_script_t* script)
+{
+  cardano_buffer_unref(&script->script_bytes);
+  cardano_plutus_data_unref(&script->datum);
+}
+
+/**
+ * \brief Resolves the script a redeemer of a transaction level runs.
+ *
+ * Plutus V1, V2 and V3 scripts only run at the top level: like the ledger, a
+ * sub-transaction redeemer that resolves to one of them is rejected before any
+ * script runs.
+ *
+ * \param[in] tx The top-level transaction.
+ * \param[in] sub_tx_index The position of the redeemer's sub-transaction, or NULL
+ *            for the top level.
+ * \param[in] level The transaction level of the redeemer.
+ * \param[in] resolved_inputs The UTxO set resolving the inputs of every level.
+ * \param[in] redeemer The redeemer to resolve.
+ * \param[out] script The resolved script; release it with \ref release_resolved_script.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when
+ *         the script is not provided or a V1/V2 spend has no datum,
+ *         \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE for a V1, V2 or V3 script in a
+ *         sub-transaction, or a propagated error.
+ */
+static cardano_error_t
+resolve_script(
+  cardano_transaction_t* tx,
+  const uint64_t*        sub_tx_index,
+  const tx_level_t*      level,
+  cardano_utxo_list_t*   resolved_inputs,
+  cardano_redeemer_t*    redeemer,
+  resolved_script_t*     script)
+{
+  cardano_blake2b_hash_t* script_hash = NULL;
+  cardano_error_t         result      = CARDANO_SUCCESS;
+
+  script->script_bytes = NULL;
+  script->version      = PRV_SCRIPT_V3;
+  script->datum        = NULL;
+
+  result = resolve_script_hash(level, resolved_inputs, redeemer, &script_hash, &script->datum);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = find_script_by_hash(tx, resolved_inputs, script_hash, &script->script_bytes, &script->version);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    if ((script->datum == NULL) && ((script->version == PRV_SCRIPT_V1) || (script->version == PRV_SCRIPT_V2)) && (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_SPEND))
+    {
+      result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+  }
+
+  if ((result == CARDANO_SUCCESS) && (sub_tx_index != NULL) && (script->version != PRV_SCRIPT_V4))
+  {
+    result = CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
+  }
+
+  cardano_blake2b_hash_unref(&script_hash);
+
+  return result;
+}
+
+/**
+ * \brief Checks that the script of a redeemer can be deserialised.
+ *
+ * The ledger deserialises every script a transaction runs, at every level,
+ * before it evaluates any of them, so a script that cannot be deserialised is
+ * reported even when another script would fail phase-2 validation. A script
+ * that cannot be deserialised for its language at the protocol version is
+ * reported through \p out_outcome, not as a host error.
+ *
+ * \return \ref CARDANO_SUCCESS when the host checked the redeemer (whatever the
+ *         outcome), or a \ref cardano_error_t when the host could not check it.
+ */
+static cardano_error_t
+check_redeemer(
+  native_context_t*      ctx,
+  cardano_transaction_t* tx,
+  const uint64_t*        sub_tx_index,
+  const tx_level_t*      level,
+  cardano_utxo_list_t*   resolved_inputs,
+  cardano_redeemer_t*    redeemer,
+  redeemer_outcome_t*    out_outcome)
+{
+  resolved_script_t             script;
+  cardano_uplc_arena_t*         arena   = NULL;
+  const cardano_uplc_program_t* program = NULL;
+  cardano_error_t               result  = resolve_script(tx, sub_tx_index, level, resolved_inputs, redeemer, &script);
+
+  *out_outcome = PRV_REDEEMER_SUCCEEDED;
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_arena_new(PRV_ARENA_BLOCK_SIZE, &arena);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = deserialise_script(arena, script.version, ctx->protocol_major, script.script_bytes, &program);
+
+    if (result == CARDANO_ERROR_DECODING)
+    {
+      *out_outcome = PRV_REDEEMER_NOT_DESERIALISABLE;
+      result       = CARDANO_SUCCESS;
+    }
+  }
+
+  cardano_uplc_arena_free(&arena);
+  release_resolved_script(&script);
+
+  return result;
+}
+
+/**
  * \brief Evaluates one redeemer and writes its consumed ex-units into a new redeemer.
  *
  * The whole evaluation runs inside a per-redeemer arena that is freed on every
- * path. A script that cannot be deserialised for its language at the protocol
- * version, or that fails (Plutus Core version not available at the protocol
- * version, a free variable, error term, out of budget, unsupported builtin), is
- * reported through \p out_outcome, not as a host error.
+ * path. A script that fails (Plutus Core version not available at the protocol
+ * version, a free variable, error term, out of budget, unsupported builtin, or a
+ * V3 or V4 script that does not return unit) is reported through \p out_outcome,
+ * not as a host error.
  *
  * The CEK machine is bounded by \p remaining, the budget left for the whole
  * transaction; on a successful evaluation the script's spent units are deducted
@@ -1465,46 +1897,31 @@ static cardano_error_t
 eval_redeemer(
   native_context_t*      ctx,
   cardano_transaction_t* tx,
-  cardano_witness_set_t* witness_set,
+  const uint64_t*        sub_tx_index,
+  const tx_level_t*      level,
   cardano_utxo_list_t*   resolved_inputs,
   cardano_redeemer_t*    redeemer,
   cardano_uplc_budget_t* remaining,
   cardano_redeemer_t**   out_redeemer,
   redeemer_outcome_t*    out_outcome)
 {
-  cardano_blake2b_hash_t*       script_hash    = NULL;
-  cardano_plutus_data_t*        datum          = NULL;
-  cardano_buffer_t*             script_bytes   = NULL;
+  resolved_script_t             script;
   cardano_plutus_data_t*        script_context = NULL;
   cardano_uplc_arena_t*         arena          = NULL;
   const cardano_uplc_program_t* program        = NULL;
   cardano_uplc_program_t*       applied        = NULL;
   cardano_ex_units_t*           ex_units       = NULL;
-  script_version_t              version        = PRV_SCRIPT_V3;
   cardano_uplc_eval_result_t    eval_result;
   cardano_error_t               result = CARDANO_SUCCESS;
 
   *out_redeemer = NULL;
   *out_outcome  = PRV_REDEEMER_SUCCEEDED;
 
-  result = resolve_script_hash(tx, witness_set, resolved_inputs, redeemer, &script_hash, &datum);
+  result = resolve_script(tx, sub_tx_index, level, resolved_inputs, redeemer, &script);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = find_script_by_hash(witness_set, resolved_inputs, script_hash, &script_bytes, &version);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    if ((datum == NULL) && ((version == PRV_SCRIPT_V1) || (version == PRV_SCRIPT_V2)) && (cardano_redeemer_get_tag(redeemer) == CARDANO_REDEEMER_TAG_SPEND))
-    {
-      result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
-    }
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = build_script_context(version, tx, resolved_inputs, &ctx->slot_config, redeemer, datum, &script_context);
+    result = build_script_context(script.version, tx, sub_tx_index, resolved_inputs, &ctx->slot_config, redeemer, script.datum, &script_context);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1514,18 +1931,12 @@ eval_redeemer(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = deserialise_script(arena, version, ctx->protocol_major, script_bytes, &program);
-
-    if (result == CARDANO_ERROR_DECODING)
-    {
-      *out_outcome = PRV_REDEEMER_NOT_DESERIALISABLE;
-      result       = CARDANO_SUCCESS;
-    }
+    result = deserialise_script(arena, script.version, ctx->protocol_major, script.script_bytes, &program);
   }
 
-  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
+  if (result == CARDANO_SUCCESS)
   {
-    if (!cardano_uplc_plc_version_available(uplc_lang_version(version), ctx->protocol_major, program->version_major, program->version_minor, program->version_patch))
+    if (!cardano_uplc_plc_version_available(uplc_lang_version(script.version), ctx->protocol_major, program->version_major, program->version_minor, program->version_patch))
     {
       *out_outcome = PRV_REDEEMER_SCRIPT_FAILED;
     }
@@ -1541,14 +1952,14 @@ eval_redeemer(
 
   if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
-    result = apply_arguments(arena, version, program, redeemer, datum, script_context, &applied);
+    result = apply_arguments(arena, script.version, program, redeemer, script.datum, script_context, &applied);
   }
 
   if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
     cardano_uplc_selected_cost_model_t selected;
 
-    result = select_cost_model(ctx, version, &selected);
+    result = select_cost_model(ctx, script.version, &selected);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1558,7 +1969,7 @@ eval_redeemer(
 
   if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
-    if (eval_result.status == CARDANO_UPLC_EVAL_SUCCESS)
+    if ((eval_result.status == CARDANO_UPLC_EVAL_SUCCESS) && result_is_accepted(script.version, eval_result.result))
     {
       remaining->cpu -= eval_result.spent.cpu;
       remaining->mem -= eval_result.spent.mem;
@@ -1588,9 +1999,7 @@ eval_redeemer(
   cardano_ex_units_unref(&ex_units);
   cardano_uplc_arena_free(&arena);
   cardano_plutus_data_unref(&script_context);
-  cardano_buffer_unref(&script_bytes);
-  cardano_plutus_data_unref(&datum);
-  cardano_blake2b_hash_unref(&script_hash);
+  release_resolved_script(&script);
 
   return result;
 }
@@ -1611,65 +2020,78 @@ set_error_message(cardano_tx_evaluator_impl_t* impl, const char* message)
 }
 
 /**
- * \brief The \ref cardano_tx_evaluate_func_t entry of the native evaluator.
+ * \brief Maps a level number to the sub-transaction index the script context builders take.
  *
- * Builds the resolved-input set from the additional UTxOs (the transaction's own
- * inputs must be resolvable there), evaluates every redeemer in the witness set,
- * and returns a redeemer list whose entries carry the computed ex-units. A script
- * that cannot be deserialised for its language at the protocol version (an
- * unavailable language or builtin, or a malformed script) is reported as
- * \ref CARDANO_ERROR_DECODING, and a script that fails phase-2 validation
- * (including a Plutus Core version not available at the protocol version and a
- * script with a free variable) as
- * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE, each with an error message
- * naming the failure.
+ * Level 0 is the top-level transaction, level \c n is the sub-transaction at
+ * position \c n - 1.
+ *
+ * \param[in] level The level number.
+ * \param[out] index The storage for the sub-transaction index.
+ *
+ * \return NULL for the top level, \p index holding the position otherwise.
+ */
+static const uint64_t*
+level_sub_tx_index(const size_t level, uint64_t* index)
+{
+  if (level == 0U)
+  {
+    return NULL;
+  }
+
+  *index = (uint64_t)level - 1U;
+
+  return index;
+}
+
+/**
+ * \brief Checks or evaluates every redeemer of a transaction level.
+ *
+ * When \p remaining is NULL the script of every redeemer is checked for
+ * deserialisation only. Otherwise every redeemer is evaluated against the shared
+ * remaining budget and, when \p out_list is not NULL, the redeemers carrying the
+ * consumed execution units are appended to it in witness set order.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when a
+ *         script cannot be deserialised, \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE
+ *         when a script fails phase-2 validation, or a propagated host error.
  */
 static cardano_error_t
-evaluate_transaction(
+run_level(
   cardano_tx_evaluator_impl_t* impl,
   cardano_transaction_t*       tx,
-  cardano_utxo_list_t*         additional_utxos,
-  cardano_redeemer_list_t**    redeemers)
+  const uint64_t*              sub_tx_index,
+  cardano_utxo_list_t*         resolved_inputs,
+  cardano_uplc_budget_t*       remaining,
+  cardano_redeemer_list_t*     out_list)
 {
-  native_context_t*        ctx         = NULL;
-  cardano_witness_set_t*   witness_set = NULL;
-  cardano_redeemer_list_t* in_list     = NULL;
-  cardano_redeemer_list_t* out_list    = NULL;
-  cardano_uplc_budget_t    remaining;
-  cardano_error_t          result = CARDANO_SUCCESS;
+  native_context_t*        ctx       = (native_context_t*)((void*)impl->context);
+  cardano_redeemer_list_t* redeemers = NULL;
+  tx_level_t               level;
+  cardano_error_t          result = read_level(tx, sub_tx_index, &level);
 
-  if ((impl == NULL) || (tx == NULL) || (redeemers == NULL))
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_POINTER_IS_NULL;
+    redeemers = cardano_witness_set_get_redeemers(level.witness_set);
   }
 
-  ctx         = (native_context_t*)((void*)impl->context);
-  witness_set = cardano_transaction_get_witness_set(tx);
-  in_list     = cardano_witness_set_get_redeemers(witness_set);
-
-  if (in_list == NULL)
-  {
-    result = cardano_redeemer_list_new(redeemers);
-    cardano_witness_set_unref(&witness_set);
-    return result;
-  }
-
-  result = cardano_redeemer_list_new(&out_list);
-
-  remaining.cpu = PRV_MAX_CPU;
-  remaining.mem = PRV_MAX_MEM;
-
-  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < cardano_redeemer_list_get_length(in_list)); ++i)
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < cardano_redeemer_list_get_length(redeemers)); ++i)
   {
     cardano_redeemer_t* redeemer     = NULL;
     cardano_redeemer_t* new_redeemer = NULL;
     redeemer_outcome_t  outcome      = PRV_REDEEMER_SUCCEEDED;
 
-    result = cardano_redeemer_list_get(in_list, i, &redeemer);
+    result = cardano_redeemer_list_get(redeemers, i, &redeemer);
 
     if (result == CARDANO_SUCCESS)
     {
-      result = eval_redeemer(ctx, tx, witness_set, additional_utxos, redeemer, &remaining, &new_redeemer, &outcome);
+      result = (remaining == NULL)
+        ? check_redeemer(ctx, tx, sub_tx_index, &level, resolved_inputs, redeemer, &outcome)
+        : eval_redeemer(ctx, tx, sub_tx_index, &level, resolved_inputs, redeemer, remaining, &new_redeemer, &outcome);
+    }
+
+    if (result == CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE)
+    {
+      set_error_message(impl, "a sub-transaction redeemer runs a Plutus V1, V2 or V3 script, which only run at the top level");
     }
 
     if ((result == CARDANO_SUCCESS) && (outcome == PRV_REDEEMER_NOT_DESERIALISABLE))
@@ -1684,7 +2106,7 @@ evaluate_transaction(
       result = CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
     }
 
-    if (result == CARDANO_SUCCESS)
+    if ((result == CARDANO_SUCCESS) && (out_list != NULL))
     {
       result = cardano_redeemer_list_add(out_list, new_redeemer);
     }
@@ -1693,8 +2115,94 @@ evaluate_transaction(
     cardano_redeemer_unref(&redeemer);
   }
 
-  cardano_redeemer_list_unref(&in_list);
-  cardano_witness_set_unref(&witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+  release_level(&level);
+
+  return result;
+}
+
+/**
+ * \brief The \ref cardano_tx_evaluate_func_t entry of the native evaluator.
+ *
+ * Evaluates the redeemers of the top-level transaction and of every
+ * sub-transaction together, as the ledger evaluates a Dijkstra transaction as a
+ * whole: the scripts of every level are first deserialised, and only then
+ * evaluated, top level first and then each sub-transaction in order. The
+ * transaction's own inputs and those of its sub-transactions must be resolvable
+ * in the additional UTxOs. The returned redeemer list carries the computed
+ * ex-units of the level the evaluator is bound to: the top-level transaction, or
+ * one sub-transaction. A script that cannot be deserialised for its language at
+ * the protocol version (an unavailable language or builtin, or a malformed
+ * script) is reported as \ref CARDANO_ERROR_DECODING, and a script that fails
+ * phase-2 validation (including a Plutus Core version not available at the
+ * protocol version and a script with a free variable) as
+ * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE, each with an error message
+ * naming the failure.
+ */
+static cardano_error_t
+evaluate_transaction(
+  cardano_tx_evaluator_impl_t* impl,
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         additional_utxos,
+  cardano_redeemer_list_t**    redeemers)
+{
+  native_context_t*              ctx       = NULL;
+  cardano_transaction_body_t*    body      = NULL;
+  cardano_sub_transaction_set_t* subs      = NULL;
+  cardano_redeemer_list_t*       out_list  = NULL;
+  size_t                         sub_count = 0U;
+  cardano_uplc_budget_t          remaining;
+  cardano_error_t                result = CARDANO_SUCCESS;
+
+  if ((impl == NULL) || (tx == NULL) || (redeemers == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  ctx       = (native_context_t*)((void*)impl->context);
+  body      = cardano_transaction_get_body(tx);
+  subs      = cardano_transaction_body_get_sub_transactions(body);
+  sub_count = cardano_sub_transaction_set_get_length(subs);
+
+  cardano_sub_transaction_set_unref(&subs);
+  cardano_transaction_body_unref(&body);
+
+  if (ctx->has_sub_tx_index)
+  {
+    tx_level_t target;
+
+    result = read_level(tx, &ctx->sub_tx_index, &target);
+    release_level(&target);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      set_error_message(impl, "the transaction has no sub-transaction at the evaluated position");
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_redeemer_list_new(&out_list);
+  }
+
+  for (size_t level = 0U; (result == CARDANO_SUCCESS) && (level <= sub_count); ++level)
+  {
+    uint64_t index = 0U;
+
+    result = run_level(impl, tx, level_sub_tx_index(level, &index), additional_utxos, NULL, NULL);
+  }
+
+  remaining.cpu = PRV_MAX_CPU;
+  remaining.mem = PRV_MAX_MEM;
+
+  for (size_t level = 0U; (result == CARDANO_SUCCESS) && (level <= sub_count); ++level)
+  {
+    uint64_t        index     = 0U;
+    const uint64_t* sub_index = level_sub_tx_index(level, &index);
+    const bool      is_target = (sub_index == NULL) ? !ctx->has_sub_tx_index : (ctx->has_sub_tx_index && (ctx->sub_tx_index == index));
+
+    result = run_level(impl, tx, sub_index, additional_utxos, &remaining, is_target ? out_list : NULL);
+  }
 
   if (result == CARDANO_SUCCESS)
   {
@@ -1708,13 +2216,25 @@ evaluate_transaction(
   return result;
 }
 
-/* DEFINITIONS ***************************************************************/
-
-cardano_error_t
-cardano_tx_evaluator_new_native(
+/**
+ * \brief Creates a native evaluator bound to one transaction level.
+ *
+ * \param[in] slot_config The slot/time parameters. Must not be NULL.
+ * \param[in] cost_models The ledger cost models, or NULL.
+ * \param[in] protocol_major The protocol major version.
+ * \param[in] sub_tx_index The position of the sub-transaction whose redeemers the
+ *            evaluator returns, or NULL for the top-level transaction.
+ * \param[out] tx_evaluator On success, the new evaluator.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         \p slot_config or \p tx_evaluator is NULL, or a propagated error.
+ */
+static cardano_error_t
+new_native_evaluator(
   const cardano_slot_config_t* slot_config,
   cardano_costmdls_t*          cost_models,
-  uint64_t                     protocol_major,
+  const uint64_t               protocol_major,
+  const uint64_t*              sub_tx_index,
   cardano_tx_evaluator_t**     tx_evaluator)
 {
   cardano_tx_evaluator_impl_t impl = { { 0 }, { 0 }, NULL, NULL };
@@ -1739,6 +2259,8 @@ cardano_tx_evaluator_new_native(
   ctx->slot_config        = *slot_config;
   ctx->cost_models        = cost_models;
   ctx->protocol_major     = protocol_major;
+  ctx->has_sub_tx_index   = (sub_tx_index != NULL);
+  ctx->sub_tx_index       = (sub_tx_index != NULL) ? *sub_tx_index : 0U;
 
   if (cost_models != NULL)
   {
@@ -1748,8 +2270,7 @@ cardano_tx_evaluator_new_native(
   impl.context  = (cardano_object_t*)((void*)ctx);
   impl.evaluate = evaluate_transaction;
 
-  cardano_safe_memcpy(impl.name, sizeof(impl.name), "Native UPLC transaction evaluator", sizeof(impl.name) - 1U);
-  impl.name[sizeof(impl.name) - 1U] = '\0';
+  cardano_safe_memcpy(impl.name, sizeof(impl.name), PRV_EVALUATOR_NAME, cardano_safe_strlen(PRV_EVALUATOR_NAME, sizeof(impl.name) - 1U));
 
   result = cardano_tx_evaluator_new(impl, tx_evaluator);
 
@@ -1760,4 +2281,27 @@ cardano_tx_evaluator_new_native(
   }
 
   return result;
+}
+
+/* DEFINITIONS ***************************************************************/
+
+cardano_error_t
+cardano_tx_evaluator_new_native(
+  const cardano_slot_config_t* slot_config,
+  cardano_costmdls_t*          cost_models,
+  uint64_t                     protocol_major,
+  cardano_tx_evaluator_t**     tx_evaluator)
+{
+  return new_native_evaluator(slot_config, cost_models, protocol_major, NULL, tx_evaluator);
+}
+
+cardano_error_t
+cardano_tx_evaluator_new_native_sub_transaction(
+  const cardano_slot_config_t* slot_config,
+  cardano_costmdls_t*          cost_models,
+  uint64_t                     protocol_major,
+  uint64_t                     sub_tx_index,
+  cardano_tx_evaluator_t**     tx_evaluator)
+{
+  return new_native_evaluator(slot_config, cost_models, protocol_major, &sub_tx_index, tx_evaluator);
 }

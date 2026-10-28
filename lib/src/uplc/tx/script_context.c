@@ -2383,6 +2383,63 @@ guard_conway_features_v1v2(cardano_transaction_body_t* body)
 }
 
 /**
+ * \brief Rejects a transaction that carries Dijkstra-only fields a V1, V2 or V3 context cannot represent.
+ *
+ * Mirrors the ledger's \c guardDijkstraFeaturesForPlutusV1toV3: a V1, V2 or V3
+ * script context cannot be built for a transaction with direct deposits,
+ * account balance intervals, required top-level guards, or a script-hash
+ * credential among its guards. Key-hash guards are accepted, since those
+ * contexts see them as signatories.
+ */
+static cardano_error_t
+guard_dijkstra_features_v1v3(cardano_transaction_body_t* body)
+{
+  cardano_direct_deposit_map_t*            deposits    = cardano_transaction_body_get_direct_deposits(body);
+  cardano_account_balance_intervals_map_t* intervals   = cardano_transaction_body_get_account_balance_intervals(body);
+  cardano_required_guards_map_t*           required    = cardano_transaction_body_get_required_top_level_guards(body);
+  cardano_guard_set_t*                     guards      = cardano_transaction_body_get_guards(body);
+  const size_t                             guard_count = (guards != NULL) ? cardano_guard_set_get_length(guards) : 0U;
+  cardano_error_t                          result      = CARDANO_SUCCESS;
+
+  if ((deposits != NULL) && (cardano_direct_deposit_map_get_length(deposits) > 0U))
+  {
+    result = CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if ((intervals != NULL) && (cardano_account_balance_intervals_map_get_length(intervals) > 0U))
+  {
+    result = CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if ((required != NULL) && (cardano_required_guards_map_get_length(required) > 0U))
+  {
+    result = CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < guard_count); ++i)
+  {
+    cardano_credential_t*     credential = NULL;
+    cardano_credential_type_t type       = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+
+    result = cardano_guard_set_get(guards, i, &credential);
+
+    if ((result == CARDANO_SUCCESS) && (cardano_credential_get_type(credential, &type) == CARDANO_SUCCESS) && (type == CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH))
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+
+    cardano_credential_unref(&credential);
+  }
+
+  cardano_direct_deposit_map_unref(&deposits);
+  cardano_account_balance_intervals_map_unref(&intervals);
+  cardano_required_guards_map_unref(&required);
+  cardano_guard_set_unref(&guards);
+
+  return result;
+}
+
+/**
  * \brief Validates the reference inputs of a V1 transaction (which has no reference-input field).
  *
  * Mirrors the ledger's V1 \c toPlutusTxInfo, which resolves each reference input
@@ -2486,6 +2543,11 @@ build_tx_info(
   if (result == CARDANO_SUCCESS)
   {
     result = guard_conway_features_v1v2(body);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = guard_dijkstra_features_v1v3(body);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -9043,6 +9105,11 @@ cardano_uplc_int_build_tx_info_v3(
   cardano_plutus_data_t* props_pd    = NULL;
   cardano_plutus_data_t* treasury_pd = NULL;
   cardano_plutus_data_t* donation_pd = NULL;
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = guard_dijkstra_features_v1v3(body);
+  }
 
   if (result == CARDANO_SUCCESS)
   {

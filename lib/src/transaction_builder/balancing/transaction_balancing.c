@@ -1412,9 +1412,10 @@ add_sub_transaction_priced_inputs(
  * transactions are priced too: the ones of their resolved reference inputs and the ones that sit on the UTXOs they
  * spend. The UTXOs are taken from the body of each sub transaction, as a set, so a UTXO that a sub transaction both
  * references and spends is listed once, while a UTXO used by several sub transactions is listed, and priced, once per
- * sub transaction, as the ledger prices the reference scripts of a batch. This list must only be used to price reference
- * scripts, the scripts of the sub transactions take no part in the evaluation or in the validation mode of the top level
- * transaction.
+ * sub transaction, as the ledger prices the reference scripts of a batch. Besides pricing reference scripts, this list
+ * resolves the inputs and reference inputs of the sub transactions when the transaction evaluator runs their scripts
+ * together with the ones of the top level transaction; the scripts of the sub transactions take no part in the
+ * validation mode of the top level transaction.
  *
  * \param[in]  sub_transactions  The sub transactions carried by the transaction, or NULL when it has none.
  * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.
@@ -2278,6 +2279,27 @@ balance_transaction(
 
           return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
         }
+      }
+
+      if (cardano_utxo_list_get_length(sub_transaction_priced_inputs) > 0U)
+      {
+        cardano_utxo_list_t* batch_utxos = cardano_utxo_list_concat(eval_utxos, sub_transaction_priced_inputs);
+
+        if (eval_utxos != selection)
+        {
+          cardano_utxo_list_unref(&eval_utxos);
+        }
+
+        if (batch_utxos == NULL)
+        {
+          cardano_transaction_output_list_unref(&shallow_cloned_outputs);
+          cardano_utxo_list_unref(&selection);
+          cardano_utxo_list_unref(&remaining_utxo);
+
+          return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+        }
+
+        eval_utxos = batch_utxos;
       }
 
       result = cardano_tx_evaluator_evaluate(evaluator, unbalanced_tx, eval_utxos, &redeemers);

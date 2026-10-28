@@ -560,6 +560,7 @@ TEST(cardano_transaction_body_new, returnsErrorIfMemoryAllocationFails)
   result = cardano_transaction_body_new(inputs, outputs, fee, &ttl, &transaction_body);
 
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(transaction_body, nullptr);
 
   reset_allocators_run_count();
   cardano_set_allocators(fail_after_two_malloc, realloc, free);
@@ -569,6 +570,7 @@ TEST(cardano_transaction_body_new, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 
   ASSERT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(transaction_body, nullptr);
 
   // Cleanup
   cardano_transaction_input_set_unref(&inputs);

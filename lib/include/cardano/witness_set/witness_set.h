@@ -954,10 +954,6 @@ CARDANO_EXPORT void cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* 
  *         or `script` is NULL, or \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE if the script's language
  *         is unsupported.
  *
- * \note Plutus V4 scripts are not accepted by this function yet and fail with
- *       \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE. Use \ref cardano_witness_set_set_plutus_v4_scripts
- *       to place Plutus V4 scripts in the witness set.
- *
  * Usage Example:
  * \code{.c}
  * cardano_witness_set_t* witness_set = ...;

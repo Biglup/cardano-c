@@ -24,10 +24,12 @@
 #include "builder_witnesses.h"
 
 #include <cardano/common/credential.h>
+#include <cardano/common/ex_units.h>
 #include <cardano/common/guard_set.h>
 #include <cardano/transaction_body/required_guards_map.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/witness_set/plutus_data_set.h>
+#include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
 
 /* STATIC DECLARATIONS *******************************************************/
@@ -193,6 +195,148 @@ copy_with_required_guard(
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Returns the position of a credential in the guard set of the transaction body.
+ *
+ * The position is the index a guarding redeemer points to: guards keep the order in which they
+ * were added, and key hash guards count towards it.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction. This parameter must not be NULL.
+ * \param[in] credential A pointer to the \ref cardano_credential_t to look up. It must be among the
+ *                       guards of the transaction.
+ *
+ * \return The position of \p credential in the guard set.
+ */
+static size_t
+guard_index(cardano_builder_state_t* state, const cardano_credential_t* credential)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+  cardano_guard_set_unref(&guards);
+
+  const size_t length = cardano_guard_set_get_length(guards);
+  size_t       index  = 0U;
+  bool         found  = false;
+
+  for (size_t i = 0U; (i < length) && !found; ++i)
+  {
+    cardano_credential_t* guard = NULL;
+
+    const cardano_error_t result = cardano_guard_set_get(guards, i, &guard);
+    cardano_credential_unref(&guard);
+
+    found = (result == CARDANO_SUCCESS) && cardano_credential_equals(guard, credential);
+    index = i;
+  }
+
+  return index;
+}
+
+/**
+ * \brief Adds a guarding redeemer to the witness set of the transaction.
+ *
+ * This function creates a redeemer with the guarding tag, the given index and zero execution units,
+ * and appends it to the witness set redeemer list, creating the list when it is missing. The
+ * execution units are computed when the transaction is evaluated.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] index The position of the guard in the guard set.
+ * \param[in] data A pointer to the \ref cardano_plutus_data_t with the redeemer payload. This
+ *                 parameter must not be NULL.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS.
+ *
+ * \return \ref CARDANO_SUCCESS if the redeemer was added, \ref CARDANO_ERROR_DUPLICATED_KEY if the
+ *         guard already has a redeemer, or an appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+add_guarding_redeemer(
+  cardano_builder_state_t* state,
+  const size_t             index,
+  cardano_plutus_data_t*   data,
+  const char**             error_message)
+{
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(state->transaction);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_error_t          result    = CARDANO_SUCCESS;
+
+  if (redeemers == NULL)
+  {
+    result = cardano_redeemer_list_new(&redeemers);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_witness_set_set_redeemers(witness_set, redeemers);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      *error_message = "Failed to create redeemer list.";
+      cardano_redeemer_list_unref(&redeemers);
+
+      return result;
+    }
+  }
+
+  cardano_redeemer_list_unref(&redeemers);
+
+  const size_t length = cardano_redeemer_list_get_length(redeemers);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_redeemer_t* existing = NULL;
+
+    result = cardano_redeemer_list_get(redeemers, i, &existing);
+    cardano_redeemer_unref(&existing);
+
+    if ((result == CARDANO_SUCCESS) && (cardano_redeemer_get_tag(existing) == CARDANO_REDEEMER_TAG_GUARDING) && (cardano_redeemer_get_index(existing) == (uint64_t)index))
+    {
+      *error_message = "The guard already has a redeemer.";
+
+      return CARDANO_ERROR_DUPLICATED_KEY;
+    }
+  }
+
+  cardano_ex_units_t* ex_units = NULL;
+
+  result = cardano_ex_units_new(0U, 0U, &ex_units);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to create execution units.";
+
+    return result;
+  }
+
+  cardano_redeemer_t* redeemer = NULL;
+
+  result = cardano_redeemer_new(CARDANO_REDEEMER_TAG_GUARDING, (uint64_t)index, data, ex_units, &redeemer);
+  cardano_ex_units_unref(&ex_units);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to create redeemer.";
+
+    return result;
+  }
+
+  result = cardano_redeemer_list_add(redeemers, redeemer);
+  cardano_redeemer_unref(&redeemer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to add redeemer.";
+  }
+
+  return result;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -307,6 +451,50 @@ cardano_builder_add_guard_ex(
 
   result = cardano_builder_add_guard(state, guard, error_message);
   cardano_credential_unref(&guard);
+
+  return result;
+}
+
+cardano_error_t
+cardano_builder_add_guard_with_redeemer(
+  cardano_builder_state_t* state,
+  cardano_credential_t*    guard,
+  cardano_plutus_data_t*   redeemer,
+  const char**             error_message)
+{
+  if (guard == NULL)
+  {
+    *error_message = "Guard is NULL.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (redeemer == NULL)
+  {
+    *error_message = "Redeemer is NULL.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_credential_type_t type   = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+  cardano_error_t           result = cardano_credential_get_type(guard, &type);
+
+  if ((result == CARDANO_SUCCESS) && (type != CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH))
+  {
+    *error_message = "Only a script hash guard is satisfied by a redeemer.";
+
+    result = CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_guard_credential(state, guard, error_message);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_guarding_redeemer(state, guard_index(state, guard), redeemer, error_message);
+  }
 
   return result;
 }
@@ -476,6 +664,11 @@ cardano_builder_add_script(
       state->has_plutus_v3 = true;
       break;
     }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+    {
+      state->has_plutus_v4 = true;
+      break;
+    }
     default:
     {
       break;
@@ -518,9 +711,9 @@ cardano_builder_add_sub_transaction_script(
     return result;
   }
 
-  if (language != CARDANO_SCRIPT_LANGUAGE_NATIVE)
+  if ((language != CARDANO_SCRIPT_LANGUAGE_NATIVE) && (language != CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4))
   {
-    *error_message = "Plutus scripts are not supported in sub transactions by this builder, only native scripts are supported.";
+    *error_message = "PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, only native and PlutusV4 scripts are supported.";
 
     return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;
   }

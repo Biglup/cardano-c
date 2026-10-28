@@ -89,8 +89,11 @@ extern "C" {
  * transactions: the ones on the UTXOs each sub transaction spends and the ones on its resolved reference inputs. A UTXO that
  * a sub transaction both references and spends is priced once, while a UTXO referenced by several sub transactions is priced
  * once per sub transaction, as the ledger counts it when it prices the reference scripts of a batch. Collateral is added when a redeemer exists in the transaction or in any of its sub transactions, and it is sized from
- * the fee of the top level transaction. The scripts of the sub transactions are not evaluated, the execution units their
- * redeemers declare are taken as final.
+ * the fee of the top level transaction. The execution units the redeemers of the sub transactions declare are taken as
+ * final, since they are signed by the party that built each sub transaction. When the top level transaction carries
+ * redeemers, the resolved UTXOs of the sub transactions are handed to the transaction evaluator together with the ones
+ * of the top level transaction, so that it can run the scripts of every level, as the ledger does; a sub transaction
+ * script that fails then makes balancing fail with the error of the evaluator.
  *
  * \param[in, out] unbalanced_tx              A pointer to the transaction that needs balancing.
  * \param[in]      foreign_signature_count    The number of expected extra signatures, not specified in the transaction.

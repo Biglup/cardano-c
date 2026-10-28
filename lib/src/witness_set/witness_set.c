@@ -1917,6 +1917,46 @@ cardano_witness_set_add_script(cardano_witness_set_t* witness_set, cardano_scrip
 
       break;
     }
+    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+    {
+      cardano_plutus_v4_script_set_t* scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+      if (scripts == NULL)
+      {
+        result = cardano_plutus_v4_script_set_new(&scripts);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        result = cardano_witness_set_set_plutus_v4_scripts(witness_set, scripts);
+
+        assert(result == CARDANO_SUCCESS);
+        CARDANO_UNUSED(result);
+      }
+
+      cardano_plutus_v4_script_set_unref(&scripts);
+
+      cardano_plutus_v4_script_t* plutus_v4_script = NULL;
+
+      result = cardano_script_to_plutus_v4(script, &plutus_v4_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      result = cardano_plutus_v4_script_set_add(scripts, plutus_v4_script);
+      cardano_plutus_v4_script_unref(&plutus_v4_script);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      break;
+    }
     default:
     {
       return CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE;

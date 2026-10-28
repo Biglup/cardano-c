@@ -44,9 +44,9 @@ extern "C" {
  *
  * V4 was introduced in the Dijkstra hard fork.
  *
- * The Dijkstra era defines the wire format for V4 scripts, however, V4 is not yet an executable
- * language. V4 scripts can be serialized in transactions as witness set scripts, reference scripts
- * or auxiliary data scripts.
+ * V4 scripts run from protocol version 12. They can be serialized in transactions as witness set
+ * scripts, reference scripts or auxiliary data scripts, and they are the only Plutus scripts that
+ * run inside a sub transaction.
  */
 typedef struct cardano_plutus_v4_script_t cardano_plutus_v4_script_t;
 

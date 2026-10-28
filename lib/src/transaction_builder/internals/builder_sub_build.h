@@ -48,13 +48,21 @@ extern "C" {
  * witness set and the auxiliary data of that transaction are shared with the sub transaction. Fields
  * that only exist on a top level transaction, such as the fee and the collateral, are left out.
  *
+ * When the sub transaction carries redeemers, its scripts are evaluated with the native evaluator,
+ * configured from the cost models and protocol version of the state, and the computed execution
+ * units are written into the redeemers. The sub transaction is evaluated at position 0 of a batch
+ * that holds nothing else, so a script whose path or cost depends on its position in the batch may
+ * need different execution units in the final batch. The script data hash is then computed from the
+ * evaluated redeemers. A script that fails phase-2 validation makes the build fail.
+ *
  * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                  construction. This parameter must not be NULL.
  * \param[out] sub_transaction A pointer to a pointer that receives the newly created
  *                             \ref cardano_sub_transaction_t. The caller must release it with
  *                             \ref cardano_sub_transaction_unref. This parameter must not be NULL.
- * \param[out] error_message A pointer that receives a static string describing the failure when the
- *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ * \param[out] error_message A pointer that receives a string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. The string is static or
+ *                           owned by the transaction held by the state. It is left untouched on
  *                           success. This parameter must not be NULL.
  *
  * \return \ref CARDANO_SUCCESS if the sub transaction was created, or an appropriate error code

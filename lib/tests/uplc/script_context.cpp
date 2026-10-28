@@ -21,8 +21,11 @@
 
 /* INCLUDES ******************************************************************/
 
+#include <cardano/address/reward_address.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/credential.h>
+#include <cardano/common/guard_set.h>
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/error.h>
@@ -32,6 +35,11 @@
 #include <cardano/plutus_data/plutus_map.h>
 #include <cardano/slot_config.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/account_balance_interval.h>
+#include <cardano/transaction_body/account_balance_intervals_map.h>
+#include <cardano/transaction_body/direct_deposit_map.h>
+#include <cardano/transaction_body/required_guards_map.h>
+#include <cardano/transaction_body/transaction_body.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
@@ -909,6 +917,167 @@ TEST(uplc_script_context, v1v2_context_rejects_conway_treasury_fields)
 
   cardano_plutus_data_unref(&tx_info_v1);
   cardano_plutus_data_unref(&tx_info_v2);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
+/**
+ * \brief The hash of the script credential the Dijkstra field tests attach.
+ */
+static const char* kGuardScriptHash = "abababababababababababababababababababababababababababab";
+
+/**
+ * \brief Builds a credential of the given type over kGuardScriptHash.
+ */
+static cardano_credential_t*
+guard_credential(cardano_credential_type_t type)
+{
+  cardano_credential_t* credential = NULL;
+  EXPECT_EQ(cardano_credential_from_hash_hex(kGuardScriptHash, strlen(kGuardScriptHash), type, &credential), CARDANO_SUCCESS);
+
+  return credential;
+}
+
+/**
+ * \brief Builds a testnet reward address over a script credential.
+ */
+static cardano_reward_address_t*
+guard_reward_address()
+{
+  cardano_credential_t*     credential = guard_credential(CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_reward_address_t* address    = NULL;
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &address), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&credential);
+
+  return address;
+}
+
+/**
+ * \brief Replaces the guard set of kTxCbor with a single guard of the given type.
+ */
+static cardano_transaction_t*
+tx_with_guard(cardano_credential_type_t type)
+{
+  cardano_transaction_t*      tx         = decode_tx(kTxCbor);
+  cardano_transaction_body_t* body       = cardano_transaction_get_body(tx);
+  cardano_credential_t*       credential = guard_credential(type);
+  cardano_guard_set_t*        guards     = NULL;
+
+  EXPECT_EQ(cardano_guard_set_new(&guards), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_guard_set_add(guards, credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_guards(body, guards), CARDANO_SUCCESS);
+
+  cardano_guard_set_unref(&guards);
+  cardano_credential_unref(&credential);
+  cardano_transaction_body_unref(&body);
+
+  return tx;
+}
+
+/**
+ * \brief Expects the V1, V2 and V3 TxInfo builders to reject \p tx as the ledger's
+ *        guardDijkstraFeaturesForPlutusV1toV3 does.
+ */
+static void
+expect_v1_to_v3_rejected(cardano_transaction_t* tx)
+{
+  cardano_utxo_list_t*   utxos   = decode_utxos(kUtxoCbor);
+  cardano_plutus_data_t* tx_info = NULL;
+
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v1(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(tx_info, nullptr);
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(tx_info, nullptr);
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(tx_info, nullptr);
+
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(uplc_script_context, v1_to_v3_context_rejects_direct_deposits)
+{
+  cardano_transaction_t*        tx       = decode_tx(kTxCbor);
+  cardano_transaction_body_t*   body     = cardano_transaction_get_body(tx);
+  cardano_reward_address_t*     address  = guard_reward_address();
+  cardano_direct_deposit_map_t* deposits = NULL;
+
+  ASSERT_EQ(cardano_direct_deposit_map_new(&deposits), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_direct_deposit_map_insert(deposits, address, 1000000U), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_body_set_direct_deposits(body, deposits), CARDANO_SUCCESS);
+
+  expect_v1_to_v3_rejected(tx);
+
+  cardano_direct_deposit_map_unref(&deposits);
+  cardano_reward_address_unref(&address);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, v1_to_v3_context_rejects_account_balance_intervals)
+{
+  const uint64_t                           lower     = 1000000U;
+  cardano_transaction_t*                   tx        = decode_tx(kTxCbor);
+  cardano_transaction_body_t*              body      = cardano_transaction_get_body(tx);
+  cardano_reward_address_t*                address   = guard_reward_address();
+  cardano_account_balance_interval_t*      interval  = NULL;
+  cardano_account_balance_intervals_map_t* intervals = NULL;
+
+  ASSERT_EQ(cardano_account_balance_interval_new(&lower, NULL, &interval), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_account_balance_intervals_map_new(&intervals), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_account_balance_intervals_map_insert(intervals, address, interval), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_body_set_account_balance_intervals(body, intervals), CARDANO_SUCCESS);
+
+  expect_v1_to_v3_rejected(tx);
+
+  cardano_account_balance_intervals_map_unref(&intervals);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_reward_address_unref(&address);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, v1_to_v3_context_rejects_required_top_level_guards)
+{
+  cardano_transaction_t*         tx         = decode_tx(kTxCbor);
+  cardano_transaction_body_t*    body       = cardano_transaction_get_body(tx);
+  cardano_credential_t*          credential = guard_credential(CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_required_guards_map_t* required   = NULL;
+
+  ASSERT_EQ(cardano_required_guards_map_new(&required), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_required_guards_map_insert(required, credential, NULL), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_body_set_required_top_level_guards(body, required), CARDANO_SUCCESS);
+
+  expect_v1_to_v3_rejected(tx);
+
+  cardano_required_guards_map_unref(&required);
+  cardano_credential_unref(&credential);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, v1_to_v3_context_rejects_a_script_hash_guard)
+{
+  cardano_transaction_t* tx = tx_with_guard(CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+
+  expect_v1_to_v3_rejected(tx);
+
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, v1_to_v3_context_accepts_a_key_hash_guard)
+{
+  cardano_transaction_t* tx      = tx_with_guard(CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_utxo_list_t*   utxos   = decode_utxos(kUtxoCbor);
+  cardano_plutus_data_t* tx_info = NULL;
+
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v1(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&tx_info);
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&tx_info);
+  EXPECT_EQ(cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info), CARDANO_SUCCESS);
+  cardano_plutus_data_unref(&tx_info);
+
   cardano_utxo_list_unref(&utxos);
   cardano_transaction_unref(&tx);
 }
