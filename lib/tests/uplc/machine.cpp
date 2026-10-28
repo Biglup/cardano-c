@@ -2054,8 +2054,10 @@ evaluate_text_at(
   return result;
 }
 
-// Vector term/constant-case/data/data-02: the second branch receives the Constr
-// fields as one list of data, budget cpu 64100 mem 500.
+/**
+ * \brief Vector term/constant-case/data/data-02: the second branch receives the
+ *        Constr fields as one list of data, budget cpu 64100 mem 500.
+ */
 TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataConstrSelectsTheBranchAtItsTagWithItsFields)
 {
   // Arrange

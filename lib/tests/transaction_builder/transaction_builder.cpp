@@ -13536,7 +13536,7 @@ TEST(cardano_tx_builder_vote_with_deferred_redeemer, returnsErrorIfMemoryAllocat
 
 /* GUARDING REDEEMERS ********************************************************/
 
-static const char* ALWAYS_SUCCEEDS_V4_CBOR = "82044645010000249901";
+static const char* ALWAYS_SUCCEEDS_V4_CBOR = "820446450100002499";
 
 /**
  * Creates protocol parameters for the Dijkstra era, with a Plutus V4 cost model.

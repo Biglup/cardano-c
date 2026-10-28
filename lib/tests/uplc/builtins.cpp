@@ -1896,8 +1896,10 @@ static const size_t POLICY_FILTER_MAX_IDS         = 256U;
 static const char* const THREE_POLICY_VALUE =
   "(con value [(#01, [(#aa, 1), (#bb, 2)]), (#02, [(#aa, -3)]), (#03, [(#cc, 4)])])";
 
-// Builds a list constant of the given element type holding the same item
-// count times.
+/**
+ * \brief Builds a list constant of the given element type holding the same item
+ *        count times.
+ */
 static std::string
 repeated_list(const char* element_type, const char* item, size_t count)
 {
@@ -1926,7 +1928,9 @@ status_of(const std::string& source)
   return status;
 }
 
-// Parses a constant into a value living in the given arena.
+/**
+ * \brief Parses a constant into a value living in the given arena.
+ */
 static const cardano_uplc_value_t*
 parsed_constant_value(cardano_uplc_arena_t* arena, const std::string& constant)
 {
@@ -1941,8 +1945,11 @@ parsed_constant_value(cardano_uplc_arena_t* arena, const std::string& constant)
   return value;
 }
 
-// Runs a builtin with every allocation from the nth onwards failing, for every n
-// until the run succeeds, and checks each failure surfaces as a host error.
+/**
+ * \brief Runs a builtin with every allocation from the nth onwards failing, for
+ *        every n until the run succeeds, and checks each failure surfaces as a host
+ *        error.
+ */
 static void
 expect_allocation_failures_are_host_errors(cardano_uplc_builtin_t func, const std::string& first, const std::string& second, size_t arg_count)
 {
@@ -2094,7 +2101,9 @@ TEST(cardano_uplc_builtin_body, policyFiltersRejectMistypedArguments)
   }
 }
 
-// Prices a builtin with the default V3 costs over arguments parsed from text.
+/**
+ * \brief Prices a builtin with the default V3 costs over arguments parsed from text.
+ */
 static cardano_uplc_budget_t
 batch7_cost(cardano_uplc_builtin_t func, const std::string& first, const std::string& second)
 {

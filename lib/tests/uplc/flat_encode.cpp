@@ -189,7 +189,9 @@ round_trip_constant(cardano_uplc_constant_t* constant)
   cardano_uplc_arena_free(&arena);
 }
 
-// Encodes a single-constant program and discards the bytes, returning the status.
+/**
+ * \brief Encodes a single-constant program and discards the bytes, returning the status.
+ */
 cardano_error_t
 encode_constant(cardano_uplc_arena_t* arena, const cardano_uplc_constant_t* constant)
 {
@@ -204,13 +206,19 @@ encode_constant(cardano_uplc_arena_t* arena, const cardano_uplc_constant_t* cons
   return result;
 }
 
-// One token of a value: the token name and its amount.
+/**
+ * \brief One token of a value: the token name and its amount.
+ */
 using Token = std::pair<std::vector<uint8_t>, int64_t>;
 
-// One policy entry of a value: the currency symbol and its tokens.
+/**
+ * \brief One policy entry of a value: the currency symbol and its tokens.
+ */
 using Policy = std::pair<std::vector<uint8_t>, std::vector<Token>>;
 
-// Builds a byte-string constant over the arena.
+/**
+ * \brief Builds a byte-string constant over the arena.
+ */
 cardano_uplc_constant_t*
 make_bytes(cardano_uplc_arena_t* arena, const std::vector<uint8_t>& bytes)
 {
@@ -219,7 +227,9 @@ make_bytes(cardano_uplc_arena_t* arena, const std::vector<uint8_t>& bytes)
   return constant;
 }
 
-// Builds a value constant with the canonical element type from policy entries.
+/**
+ * \brief Builds a value constant with the canonical element type from policy entries.
+ */
 cardano_uplc_constant_t*
 make_value(cardano_uplc_arena_t* arena, const std::vector<Policy>& policies)
 {

@@ -180,7 +180,7 @@ TEST(cardano_uplc_select_cost_model, v1_pre_chang_selects_a_and_v1_model)
 
   cardano_uplc_cost_model_t expected;
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_B, &expected),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_A, &expected),
     CARDANO_SUCCESS);
   EXPECT_EQ(std::memcmp(&selected.model, &expected, sizeof(expected)), 0);
 }
