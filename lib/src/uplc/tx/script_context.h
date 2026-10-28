@@ -274,6 +274,91 @@ cardano_uplc_int_build_script_context_v3(
   cardano_plutus_data_t*       datum,
   cardano_plutus_data_t**      script_context);
 
+/**
+ * \brief Builds the Plutus V4 (Dijkstra) TxInfo of a transaction level as Plutus data.
+ *
+ * A Dijkstra transaction runs scripts at two levels: the top-level transaction
+ * and each of its sub-transactions. Every level has its own TxInfo, built from
+ * that level's body and witness set.
+ *
+ * The V4 TxInfo is a plutus-data list (not a constructor) whose fields are: id,
+ * sub-transaction index (Nothing at the top level, Just the position of the
+ * sub-transaction otherwise), inputs, reference inputs, outputs, mint,
+ * certificates, withdrawals, direct deposits, account balance intervals,
+ * validity range, guards, required top-level guards, redeemers, datums, votes,
+ * proposal procedures, current treasury amount and treasury donation. Maps and
+ * sets follow the ledger key order.
+ *
+ * Fails when an input or output pays to a pointer, Byron or reward address, when
+ * a reference input is also spent, or when a certificate no longer exists in the
+ * Dijkstra era.
+ *
+ * \param[in] tx The top-level transaction. Must not be NULL.
+ * \param[in] sub_tx_index The position of the sub-transaction in the body of \p tx,
+ *            or NULL for the top-level transaction.
+ * \param[in] resolved_inputs The UTxO set resolving the inputs and reference inputs
+ *            of the level. Must not be NULL.
+ * \param[in] slot_config The slot/time parameters. Must not be NULL.
+ * \param[out] tx_info On success, the newly created TxInfo data, owned by the
+ *             caller.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
+ *         when \p sub_tx_index points past the sub-transactions, or another error
+ *         code otherwise.
+ */
+cardano_error_t
+cardano_uplc_int_build_tx_info_v4(
+  cardano_transaction_t*       tx,
+  const uint64_t*              sub_tx_index,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_plutus_data_t**      tx_info);
+
+/**
+ * \brief Builds the complete Plutus V4 ScriptContext of a redeemer as Plutus data.
+ *
+ * The result is the plutus-data list [TxInfo, redeemer data, ScriptInfo, script
+ * hash] for the transaction level the redeemer belongs to. The redeemer index is
+ * resolved against that level, and the script hash is the one the ledger runs
+ * for the purpose.
+ *
+ * The ScriptInfo is Minting => Constr 0 [policy id], Spending => Constr 1
+ * [out ref, Maybe datum], Withdrawing => Constr 2 [credential], Certifying =>
+ * Constr 3 [index, certificate], Voting => Constr 4 [voter], Proposing =>
+ * Constr 5 [index, proposal procedure] and Guarding => Constr 6 [index, Maybe
+ * TopTxInfo]. A guard running at the top level receives Just the TopTxInfo,
+ * the view of the whole transaction with all its sub-transactions; a guard
+ * running in a sub-transaction receives Nothing.
+ *
+ * \param[in] tx The top-level transaction. Must not be NULL.
+ * \param[in] sub_tx_index The position of the sub-transaction the redeemer belongs
+ *            to, or NULL for a redeemer of the top-level transaction.
+ * \param[in] resolved_inputs The UTxO set resolving the inputs and reference inputs.
+ *            For a top-level guard it must resolve those of every sub-transaction
+ *            too. Must not be NULL.
+ * \param[in] slot_config The slot/time parameters. Must not be NULL.
+ * \param[in] redeemer The redeemer, taken from the witness set of its level. Must
+ *            not be NULL.
+ * \param[in] datum The resolved spending datum, or NULL. Only used for the
+ *            Spending purpose.
+ * \param[out] script_context On success, the newly created ScriptContext data,
+ *             owned by the caller.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
+ *         when the sub-transaction or redeemer index is out of range,
+ *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when the purpose is not run by a
+ *         script, or another error code otherwise.
+ */
+cardano_error_t
+cardano_uplc_int_build_script_context_v4(
+  cardano_transaction_t*       tx,
+  const uint64_t*              sub_tx_index,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_redeemer_t*          redeemer,
+  cardano_plutus_data_t*       datum,
+  cardano_plutus_data_t**      script_context);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
