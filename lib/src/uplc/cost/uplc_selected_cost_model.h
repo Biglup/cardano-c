@@ -79,15 +79,19 @@ cardano_uplc_cost_model_version_for_language(cardano_uplc_lang_version_t lang_ve
  * Builds the structured cost model from the flat ordered ledger parameter list for
  * the language version's parameter ordering, and selects the builtin semantics
  * variant from the language version and protocol major version
- * (\ref cardano_uplc_builtin_semantics_for_language_and_protocol). Both selections
- * are made from the same inputs and returned together so the driver and the CEK
- * machine read one consistent pair. Consensus-critical: a wrong semantics variant
+ * (\ref cardano_uplc_builtin_semantics_for_language_and_protocol). The variant
+ * also picks the cost model generation whose shapes interpret the parameters, as
+ * the ledger does: D and F read the integer-division parameters with the cost
+ * model D shapes, E and G with the cost model E shapes, and A, B and C keep the
+ * earlier shapes (\ref cardano_uplc_builtin_costs_select_division_shapes). Both
+ * selections are made from the same inputs and returned together so the driver
+ * and the CEK machine read one consistent pair. Consensus-critical: a wrong semantics variant
  * or cost model changes the validation outcome.
  *
  * \param[in] lang_version The script's language version, selecting the parameter
  *            ordering and (with \p protocol_major) the semantics variant.
  * \param[in] protocol_major The protocol major version, selecting the semantics
- *            variant at the Chang and Van-Rossem boundaries.
+ *            variant at the Chang, Van-Rossem and Dijkstra boundaries.
  * \param[in] params The flat ordered cost-model parameter list. Must not be NULL.
  * \param[in] count The number of parameters in \p params. Must equal the parameter
  *            count for the language version's cost-model ordering.

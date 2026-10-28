@@ -35,6 +35,7 @@
 #include <cardano/certs/stake_deregistration_cert.h>
 #include <cardano/certs/update_drep_cert.h>
 #include <cardano/common/anchor.h>
+#include <cardano/common/bigint.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/datum.h>
 #include <cardano/common/ex_units.h>
@@ -255,6 +256,61 @@ build_expmod_v3_script()
 
   cardano_uplc_term_t* lambda = nullptr;
   EXPECT_EQ(cardano_uplc_term_new_lambda(arena, term, &lambda), CARDANO_SUCCESS);
+
+  cardano_uplc_program_t program;
+  program.version_major = 1U;
+  program.version_minor = 1U;
+  program.version_patch = 0U;
+  program.term          = lambda;
+
+  cardano_buffer_t* cbor = nullptr;
+  EXPECT_EQ(cardano_uplc_program_to_cbor(&program, &cbor), CARDANO_SUCCESS);
+
+  cardano_plutus_v3_script_t* script = nullptr;
+  EXPECT_EQ(cardano_plutus_v3_script_new_bytes(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), &script), CARDANO_SUCCESS);
+
+  cardano_buffer_unref(&cbor);
+  cardano_uplc_arena_free(&arena);
+
+  return script;
+}
+
+/**
+ * \brief Builds a V3 script whose body evaluates divideInteger(1, 2^64), a
+ *        division whose dividend is one word and whose divisor is two words.
+ */
+static cardano_plutus_v3_script_t*
+build_divide_below_diagonal_v3_script()
+{
+  static const char TWO_TO_THE_64[] = "18446744073709551616";
+
+  cardano_uplc_arena_t* arena = nullptr;
+  EXPECT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
+
+  cardano_uplc_term_t* builtin = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_builtin(arena, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, &builtin), CARDANO_SUCCESS);
+
+  cardano_bigint_t* divisor_value = nullptr;
+  EXPECT_EQ(cardano_bigint_from_string(TWO_TO_THE_64, sizeof(TWO_TO_THE_64) - 1U, 10, &divisor_value), CARDANO_SUCCESS);
+
+  cardano_uplc_constant_t* dividend = nullptr;
+  cardano_uplc_constant_t* divisor  = nullptr;
+  EXPECT_EQ(cardano_uplc_constant_new_integer_small(arena, 1, &dividend), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_constant_new_integer(arena, divisor_value, &divisor), CARDANO_SUCCESS);
+  cardano_bigint_unref(&divisor_value);
+
+  cardano_uplc_term_t* dividend_term = nullptr;
+  cardano_uplc_term_t* divisor_term  = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_constant(arena, dividend, &dividend_term), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_constant(arena, divisor, &divisor_term), CARDANO_SUCCESS);
+
+  cardano_uplc_term_t* partial = nullptr;
+  cardano_uplc_term_t* applied = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_apply(arena, builtin, dividend_term, &partial), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_apply(arena, partial, divisor_term, &applied), CARDANO_SUCCESS);
+
+  cardano_uplc_term_t* lambda = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, applied, &lambda), CARDANO_SUCCESS);
 
   cardano_uplc_program_t program;
   program.version_major = 1U;
@@ -1160,6 +1216,53 @@ TEST(cardano_tx_evaluator_native, rejectsExpModIntegerBeforeItsProtocolVersion)
 
   cardano_redeemer_list_unref(&result);
   cardano_tx_evaluator_unref(&evaluator);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+/**
+ * \brief Evaluates the single-redeemer \p tx under \p protocol_major and returns
+ *        the cpu steps the redeemer spent.
+ */
+static uint64_t
+single_redeemer_cpu(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, uint64_t protocol_major)
+{
+  uint64_t                cpu       = 0U;
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, protocol_major, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_SUCCESS);
+
+  cardano_redeemer_t* out = nullptr;
+  EXPECT_EQ(cardano_redeemer_list_get(result, 0U, &out), CARDANO_SUCCESS);
+
+  cardano_ex_units_t* units = cardano_redeemer_get_ex_units(out);
+  cpu                       = cardano_ex_units_get_cpu_steps(units);
+
+  cardano_ex_units_unref(&units);
+  cardano_redeemer_unref(&out);
+  cardano_redeemer_list_unref(&result);
+  cardano_tx_evaluator_unref(&evaluator);
+
+  return cpu;
+}
+
+TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion)
+{
+  // Below the diagonal cost model C charges the constant 85848, while cost model E
+  // (V3 from protocol 11) evaluates the quadratic at (2, 1):
+  // 123203 + 1716*2 + 7305*1 + 57*4 + 549*2 - 900*1 = 134366.
+  cardano_plutus_v3_script_t* script = build_divide_below_diagonal_v3_script();
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  const uint64_t cpu_c = single_redeemer_cpu(tx, utxos, 10U);
+  const uint64_t cpu_e = single_redeemer_cpu(tx, utxos, 11U);
+
+  EXPECT_EQ(cpu_e - cpu_c, 134366U - 85848U);
+
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);
   cardano_plutus_v3_script_unref(&script);

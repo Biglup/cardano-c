@@ -797,6 +797,55 @@ fill_shared_extension(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE]    = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 1000, 277577), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 12, 21));
 }
 
+/**
+ * \brief Turns a const-above-diagonal division cpu into above-and-below-diagonal.
+ *
+ * Keeps the constant and the nested model coefficients. A const-above-diagonal
+ * function only changes its tag; the const-above-diagonal-into-quadratic form is
+ * rebuilt as an above-and-below-diagonal over the same two-variable quadratic.
+ * Any other shape is left unchanged.
+ *
+ * \param[in,out] fn The costing function to reshape.
+ */
+static void
+to_above_and_below_diagonal(cardano_uplc_two_arg_cost_t* fn)
+{
+  if (fn->kind == CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL)
+  {
+    fn->kind = CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL;
+  }
+
+  if (fn->kind == CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC)
+  {
+    cardano_uplc_two_arg_cost_t reshaped;
+
+    (void)memset(&reshaped, 0, sizeof(reshaped));
+    reshaped.kind                                  = CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL;
+    reshaped.params.const_diagonal.constant        = fn->params.const_above_into_quadratic.constant;
+    reshaped.params.const_diagonal.kind            = CARDANO_UPLC_DIAG_MODEL_QUADRATIC;
+    reshaped.params.const_diagonal.model.quadratic = fn->params.const_above_into_quadratic.quadratic;
+
+    *fn = reshaped;
+  }
+}
+
+/**
+ * \brief Turns a subtracted-sizes division mem into linear-in-y2.
+ *
+ * Both shapes read the same intercept, slope and minimum, so only the tag
+ * changes. Any other shape is left unchanged.
+ *
+ * \param[in,out] fn The costing function to reshape.
+ */
+static void
+to_linear_in_y2(cardano_uplc_two_arg_cost_t* fn)
+{
+  if (fn->kind == CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES)
+  {
+    fn->kind = CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2;
+  }
+}
+
 cardano_uplc_builtin_costs_t
 cardano_uplc_builtin_costs_v1(void)
 {
@@ -836,6 +885,44 @@ cardano_uplc_builtin_costs_v3(void)
   c.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER]       = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
 
   return c;
+}
+
+void
+cardano_uplc_builtin_costs_select_division_shapes(
+  cardano_uplc_builtin_costs_t*    costs,
+  cardano_uplc_builtin_semantics_t semantics)
+{
+  if (costs == NULL)
+  {
+    return;
+  }
+
+  switch (semantics)
+  {
+    case CARDANO_UPLC_SEMANTICS_D:
+    case CARDANO_UPLC_SEMANTICS_F:
+    {
+      to_above_and_below_diagonal(&costs->entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two);
+      to_above_and_below_diagonal(&costs->entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].cpu.two);
+      to_linear_in_y2(&costs->entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem.two);
+      to_linear_in_y2(&costs->entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem.two);
+      break;
+    }
+    case CARDANO_UPLC_SEMANTICS_E:
+    case CARDANO_UPLC_SEMANTICS_G:
+    {
+      to_above_and_below_diagonal(&costs->entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two);
+      to_above_and_below_diagonal(&costs->entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].cpu.two);
+      break;
+    }
+    case CARDANO_UPLC_SEMANTICS_A:
+    case CARDANO_UPLC_SEMANTICS_B:
+    case CARDANO_UPLC_SEMANTICS_C:
+    default:
+    {
+      break;
+    }
+  }
 }
 
 /**

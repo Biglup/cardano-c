@@ -32,7 +32,9 @@ extern "C" {
  * \brief Discriminator for a two-argument costing function.
  *
  * The \c DROP_LIST arm is the V4 dropList shape, which charges the linear
- * intercept only.
+ * intercept only. The \c LINEAR_IN_Y2 arm is the cost model D memory shape of
+ * modInteger and remainderInteger: linear in y, carrying a subtracted-sizes
+ * minimum that is never read so the ledger parameter list keeps its length.
  */
 typedef enum
 {
@@ -71,7 +73,9 @@ typedef enum
   /** \brief Constant when x < y, two-variable quadratic otherwise. */
   CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC = 16,
   /** \brief Charges the linear intercept only (V4 dropList). */
-  CARDANO_UPLC_TWO_ARG_DROP_LIST = 17
+  CARDANO_UPLC_TWO_ARG_DROP_LIST = 17,
+  /** \brief Linear in y, ignoring the carried minimum. */
+  CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2 = 18
 } cardano_uplc_two_arg_kind_t;
 
 #ifdef __cplusplus

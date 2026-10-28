@@ -227,7 +227,8 @@ is_script_failure(cardano_uplc_eval_status_t status)
   return (status == CARDANO_UPLC_EVAL_ERROR_TERM) || (status == CARDANO_UPLC_EVAL_OUT_OF_BUDGET);
 }
 
-// Builds the cost model for the configuration.
+// Builds the cost model for the configuration, with the shapes of the cost model
+// generation its semantics variant selects.
 cardano_uplc_cost_model_t
 make_cost_model(const Configuration& config)
 {
@@ -255,6 +256,8 @@ make_cost_model(const Configuration& config)
       break;
     }
   }
+
+  cardano_uplc_builtin_costs_select_division_shapes(&model.builtins, config.semantics);
 
   return model;
 }
