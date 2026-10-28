@@ -234,6 +234,29 @@ cardano_uplc_builtin_as_pair(
   const cardano_uplc_constant_t** fst,
   const cardano_uplc_constant_t** snd);
 
+/* DATA HELPERS *************************************************************/
+
+/**
+ * \brief Builds a proto-list of data constants from an arena data node array.
+ *
+ * Each data node is wrapped in a fresh data constant; the result is a list constant
+ * carrying element type \c data. Used by the deconstructors that surface a Data List
+ * or the fields of a Data Constr, and by \c case on a Data Constr to bind its fields.
+ *
+ * \param[in] arena The arena the result is allocated from.
+ * \param[in] nodes The data nodes to expose, or NULL when \p count is 0.
+ * \param[in] count The number of nodes.
+ * \param[out] out On success, the list constant; left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success or a propagated allocation error.
+ */
+cardano_error_t
+cardano_uplc_int_data_list_from_nodes(
+  struct cardano_uplc_arena_t*      arena,
+  const cardano_uplc_data_t* const* nodes,
+  size_t                            count,
+  cardano_uplc_constant_t**         out);
+
 /* VALUE HELPERS ************************************************************/
 
 /**

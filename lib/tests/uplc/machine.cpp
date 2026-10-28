@@ -31,16 +31,19 @@
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/ast/uplc_int.h"
+#include "../../src/uplc/data/uplc_data.h"
 #include "../../src/uplc/machine/uplc_env.h"
 #include "../../src/uplc/machine/uplc_frame.h"
 #include "../../src/uplc/machine/uplc_state_kind.h"
 #include "../../src/uplc/machine/uplc_value.h"
+#include "../../src/uplc/syntax/text_parser.h"
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
 
+#include <cstring>
 #include <vector>
 
 /* STATIC HELPERS ************************************************************/
@@ -2014,6 +2017,209 @@ TEST(cardano_uplc_evaluate, caseOverALambdaScrutineeIsAScriptError)
 
   // Cleanup
   cardano_uplc_arena_free(&arena);
+}
+
+/**
+ * \brief Parses \p source, gives the program the version \p major.\p minor.0 and
+ *        evaluates it under the V3 default costs at \p protocol_major.
+ */
+static cardano_uplc_eval_result_t
+evaluate_text_at(
+  cardano_uplc_arena_t* arena,
+  const char*           source,
+  uint64_t              protocol_major,
+  uint32_t              major,
+  uint32_t              minor)
+{
+  const cardano_uplc_program_t* parsed = nullptr;
+  size_t                        offset = 0U;
+
+  EXPECT_EQ(cardano_uplc_parse_program(arena, source, std::strlen(source), &parsed, &offset), CARDANO_SUCCESS);
+
+  cardano_uplc_program_t* program = new_program(arena, parsed->term);
+  program->version_major          = major;
+  program->version_minor          = minor;
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  model.builtins = cardano_uplc_builtin_costs_v3();
+
+  cardano_uplc_budget_t      budget = { 10000000000LL, 10000000000LL };
+  cardano_uplc_eval_result_t result = {};
+
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_C, protocol_major, budget, &result),
+    CARDANO_SUCCESS);
+
+  return result;
+}
+
+// Vector term/constant-case/data/data-02: the second branch receives the Constr
+// fields as one list of data, budget cpu 64100 mem 500.
+TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataConstrSelectsTheBranchAtItsTagWithItsFields)
+{
+  // Arrange
+  cardano_uplc_arena_t* arena  = new_arena();
+  const char*           source = "(program 1.2.0 (case (con data (Constr 1 [I 42, B #abcd, List [I 7]])) "
+                                 "(lam fields (con integer 0)) (lam fields fields)))";
+
+  // Act
+  cardano_uplc_eval_result_t result = evaluate_text_at(arena, source, 12U, 1U, 2U);
+
+  // Assert
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+  ASSERT_NE(result.result, nullptr);
+  ASSERT_EQ(result.result->kind, CARDANO_UPLC_TERM_CONSTANT);
+
+  const cardano_uplc_constant_t* fields = result.result->as.constant;
+  ASSERT_EQ(fields->kind, CARDANO_UPLC_TYPE_LIST);
+  EXPECT_EQ(fields->as.list.element_type->kind, CARDANO_UPLC_TYPE_DATA);
+  ASSERT_EQ(fields->as.list.count, 3U);
+  EXPECT_EQ(fields->as.list.items[0]->as.data->kind, CARDANO_UPLC_DATA_KIND_INTEGER);
+  EXPECT_EQ(fields->as.list.items[1]->as.data->kind, CARDANO_UPLC_DATA_KIND_BYTES);
+  EXPECT_EQ(fields->as.list.items[2]->as.data->kind, CARDANO_UPLC_DATA_KIND_LIST);
+  EXPECT_EQ(result.spent.cpu, 64100);
+  EXPECT_EQ(result.spent.mem, 500);
+
+  // Cleanup
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataConstrWithoutFieldsBindsAnEmptyList)
+{
+  // Arrange
+  cardano_uplc_arena_t* arena  = new_arena();
+  const char*           source = "(program 1.2.0 (case (con data (Constr 0 [])) (lam fields fields)))";
+
+  // Act
+  cardano_uplc_eval_result_t result = evaluate_text_at(arena, source, 12U, 1U, 2U);
+
+  // Assert
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+  ASSERT_NE(result.result, nullptr);
+  ASSERT_EQ(result.result->kind, CARDANO_UPLC_TERM_CONSTANT);
+  ASSERT_EQ(result.result->as.constant->kind, CARDANO_UPLC_TYPE_LIST);
+  EXPECT_EQ(result.result->as.constant->as.list.count, 0U);
+
+  // Cleanup
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataFailsUnlessAConstrTagSelectsABranch)
+{
+  const char* const sources[] = {
+    "(program 1.2.0 (case (con data (Constr 2 [])) (lam fields fields) (lam fields fields)))",
+    "(program 1.2.0 (case (con data (Constr 0 [])) (con integer 42)))",
+    "(program 1.2.0 (case (con data (Constr 0 []))))",
+    "(program 1.2.0 (case (con data (I 0)) (lam fields fields)))",
+    "(program 1.2.0 (case (con data (B #00)) (lam fields fields)))",
+    "(program 1.2.0 (case (con data (List [])) (lam fields fields)))",
+    "(program 1.2.0 (case (con data (Map [])) (lam fields fields)))"
+  };
+
+  for (const char* source: sources)
+  {
+    cardano_uplc_arena_t*      arena  = new_arena();
+    cardano_uplc_eval_result_t result = evaluate_text_at(arena, source, 12U, 1U, 2U);
+
+    EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_ERROR_TERM) << source;
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_int_evaluate_with_costs, casesOnDataOnlyFromProtocolTwelveAndPlutusCoreOneTwoZero)
+{
+  struct Row
+  {
+      uint64_t                   protocol_major;
+      uint32_t                   major;
+      uint32_t                   minor;
+      cardano_uplc_eval_status_t expected;
+  };
+
+  const Row rows[] = {
+    { 10U, 1U, 2U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { 11U, 1U, 2U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { 12U, 1U, 2U, CARDANO_UPLC_EVAL_SUCCESS },
+    { 13U, 1U, 2U, CARDANO_UPLC_EVAL_SUCCESS },
+    { 12U, 1U, 0U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { 12U, 1U, 1U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { 12U, 1U, 3U, CARDANO_UPLC_EVAL_SUCCESS },
+    { 12U, 0U, 9U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { 12U, 2U, 0U, CARDANO_UPLC_EVAL_SUCCESS },
+    { 11U, 2U, 0U, CARDANO_UPLC_EVAL_ERROR_TERM }
+  };
+
+  for (const Row& row: rows)
+  {
+    cardano_uplc_arena_t*      arena  = new_arena();
+    cardano_uplc_eval_result_t result = evaluate_text_at(
+      arena,
+      "(program 1.2.0 (case (con data (Constr 0 [])) (lam fields (con integer 42))))",
+      row.protocol_major,
+      row.major,
+      row.minor);
+
+    EXPECT_EQ(result.status, row.expected)
+      << "protocol " << row.protocol_major << " version " << row.major << "." << row.minor << ".0";
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataFailsCleanlyWhenAnAllocationFails)
+{
+  cardano_uplc_arena_t*         prereq = new_arena();
+  const cardano_uplc_program_t* parsed = nullptr;
+  size_t                        offset = 0U;
+  const char*                   source = "(program 1.2.0 (case (con data (Constr 0 [I 1, I 2])) (lam fields fields)))";
+
+  EXPECT_EQ(cardano_uplc_parse_program(prereq, source, std::strlen(source), &parsed, &offset), CARDANO_SUCCESS);
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  model.builtins = cardano_uplc_builtin_costs_v3();
+
+  cardano_uplc_budget_t budget    = { 10000000000LL, 10000000000LL };
+  bool                  succeeded = false;
+  int                   failures  = 0;
+
+  for (int nth = 1; (nth <= 200) && !succeeded; ++nth)
+  {
+    cardano_uplc_arena_t*      arena  = nullptr;
+    cardano_uplc_eval_result_t result = {};
+
+    EXPECT_EQ(cardano_uplc_arena_new(8U, &arena), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(nth);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_error_t error =
+      cardano_uplc_int_evaluate_with_costs(arena, parsed, &model, CARDANO_UPLC_SEMANTICS_C, 12U, budget, &result);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    if (error == CARDANO_SUCCESS)
+    {
+      EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      ++failures;
+    }
+
+    cardano_uplc_arena_free(&arena);
+  }
+
+  EXPECT_TRUE(succeeded);
+  EXPECT_GT(failures, 0);
+
+  cardano_uplc_arena_free(&prereq);
 }
 
 TEST(cardano_uplc_evaluate, aSaturatedValueBuiltinRejectsMismatchedArgsAsScriptError)
