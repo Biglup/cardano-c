@@ -27,6 +27,7 @@
 #include "uplc_builtin_cost.h"
 
 #include "../builtins/uplc_builtin.h"
+#include "../builtins/uplc_builtin_semantics.h"
 #include "../machine/uplc_budget.h"
 #include <cardano/typedefs.h>
 
@@ -81,6 +82,33 @@ cardano_uplc_builtin_costs_v2(void);
  */
 cardano_uplc_builtin_costs_t
 cardano_uplc_builtin_costs_v3(void);
+
+/**
+ * \brief Reshapes the integer-division costing functions for a semantics variant.
+ *
+ * The ledger overlays its parameters on the builtin cost model of the semantics
+ * variant: A, B and C read cost models A, B and C, D and F read cost model D, and
+ * E and G read cost model E. The parameter lists are the same for every variant;
+ * cost models D and E only interpret some division parameters with other shapes.
+ * Under D, E, F and G the cpu of divideInteger and modInteger becomes
+ * above-and-below-diagonal: the nested model of the const-above-diagonal shape is
+ * evaluated at (max(x, y), min(x, y)) on both sides of the diagonal, and the
+ * constant is no longer charged. Under D and F the mem of modInteger and
+ * remainderInteger becomes linear-in-y2, which is linear in y and keeps the
+ * subtracted-sizes minimum unread. quotientInteger keeps its shapes. Under A, B
+ * and C nothing changes.
+ *
+ * Only const-above-diagonal and const-above-diagonal-into-quadratic cpu functions
+ * and subtracted-sizes mem functions are reshaped, keeping their coefficients;
+ * any other shape is left as is, so applying the same variant twice is harmless.
+ *
+ * \param[in,out] costs The builtin costs to reshape. Ignored when NULL.
+ * \param[in] semantics The semantics variant selecting the cost model shapes.
+ */
+void
+cardano_uplc_builtin_costs_select_division_shapes(
+  cardano_uplc_builtin_costs_t*    costs,
+  cardano_uplc_builtin_semantics_t semantics);
 
 /**
  * \brief Computes the cpu and mem budget a builtin charges for its arguments.

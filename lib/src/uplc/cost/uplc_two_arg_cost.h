@@ -65,7 +65,7 @@ typedef struct cardano_uplc_two_arg_cost_t
         cardano_uplc_two_var_linear_cost_t linear_in_x_and_y;
         /** \brief Active for WITH_INTERACTION. */
         cardano_uplc_with_interaction_cost_t with_interaction;
-        /** \brief Active for SUBTRACTED_SIZES. */
+        /** \brief Active for SUBTRACTED_SIZES and LINEAR_IN_Y2. */
         cardano_uplc_subtracted_sizes_cost_t subtracted_sizes;
         /** \brief Active for LINEAR_ON_DIAGONAL. */
         cardano_uplc_const_or_linear_cost_t linear_on_diagonal;
@@ -222,6 +222,13 @@ cardano_uplc_two_arg_eval(const cardano_uplc_two_arg_cost_t* fn, int64_t x, int6
     case CARDANO_UPLC_TWO_ARG_DROP_LIST:
     {
       result = fn->params.linear.intercept;
+      break;
+    }
+    case CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2:
+    {
+      cardano_uplc_subtracted_sizes_cost_t s = fn->params.subtracted_sizes;
+
+      result = sat_add(s.intercept, sat_mul(s.slope, y));
       break;
     }
     default:

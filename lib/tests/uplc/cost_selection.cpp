@@ -866,7 +866,7 @@ TEST(cardano_uplc_select_cost_model, v1_pre_chang_selects_a_and_v1_model)
 
   cardano_uplc_cost_model_t expected;
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, &expected),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_B, &expected),
     CARDANO_SUCCESS);
   EXPECT_EQ(std::memcmp(&selected.model, &expected, sizeof(expected)), 0);
 }
@@ -920,7 +920,7 @@ TEST(cardano_uplc_select_cost_model, v3_pre_van_rossem_selects_c_and_v3_model)
 
   cardano_uplc_cost_model_t expected;
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &expected),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_C, &expected),
     CARDANO_SUCCESS);
   EXPECT_EQ(std::memcmp(&selected.model, &expected, sizeof(expected)), 0);
 }
@@ -989,6 +989,73 @@ TEST(cardano_uplc_select_cost_model, v4_dijkstra_selects_g)
   EXPECT_EQ(selected.semantics, CARDANO_UPLC_SEMANTICS_G);
 }
 
+TEST(cardano_uplc_select_cost_model, v1_chang_keeps_the_cost_model_b_division_shapes)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  ASSERT_EQ(
+    cardano_uplc_select_cost_model(CARDANO_UPLC_LANG_VERSION_V1, 10U, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, &selected),
+    CARDANO_SUCCESS);
+
+  EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL);
+  EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem.two.kind, CARDANO_UPLC_TWO_ARG_SUBTRACTED_SIZES);
+}
+
+TEST(cardano_uplc_select_cost_model, v1_van_rossem_reads_division_with_cost_model_d_shapes)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  ASSERT_EQ(
+    cardano_uplc_select_cost_model(CARDANO_UPLC_LANG_VERSION_V1, 11U, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, &selected),
+    CARDANO_SUCCESS);
+
+  cardano_uplc_cost_model_t expected;
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_D, &expected),
+    CARDANO_SUCCESS);
+  EXPECT_EQ(std::memcmp(&selected.model, &expected, sizeof(expected)), 0);
+  EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+  EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem.two.kind, CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
+}
+
+TEST(cardano_uplc_select_cost_model, v3_pre_van_rossem_keeps_the_cost_model_c_division_shapes)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  ASSERT_EQ(
+    cardano_uplc_select_cost_model(CARDANO_UPLC_LANG_VERSION_V3, 10U, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &selected),
+    CARDANO_SUCCESS);
+
+  EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC);
+}
+
+TEST(cardano_uplc_select_cost_model, v3_and_v4_from_van_rossem_read_division_with_cost_model_e_shapes)
+{
+  const cardano_uplc_lang_version_t languages[2] = { CARDANO_UPLC_LANG_VERSION_V3, CARDANO_UPLC_LANG_VERSION_V4 };
+  const uint64_t                    protocols[2] = { 11U, 12U };
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    for (size_t j = 0U; j < 2U; ++j)
+    {
+      cardano_uplc_selected_cost_model_t selected;
+      std::memset(&selected, 0, sizeof(selected));
+
+      ASSERT_EQ(
+        cardano_uplc_select_cost_model(languages[i], protocols[j], V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &selected),
+        CARDANO_SUCCESS);
+
+      EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+      EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+      EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER].cpu.two.kind, CARDANO_UPLC_TWO_ARG_CONST_ABOVE_DIAGONAL_INTO_QUADRATIC);
+      EXPECT_EQ(selected.model.builtins.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem.two.kind, CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y);
+    }
+  }
+}
+
 TEST(cardano_uplc_select_cost_model, extra_trailing_params_are_ignored)
 {
   int64_t longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 2U];
@@ -1010,7 +1077,7 @@ TEST(cardano_uplc_select_cost_model, extra_trailing_params_are_ignored)
 
   cardano_uplc_cost_model_t expected;
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &expected),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_E, &expected),
     CARDANO_SUCCESS);
   EXPECT_EQ(std::memcmp(&selected.model, &expected, sizeof(expected)), 0);
 }

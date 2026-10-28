@@ -2069,6 +2069,8 @@ cardano_uplc_evaluate(
     lang_version(version),
     VAN_ROSSEM_PROTOCOL_VERSION);
 
+  cardano_uplc_builtin_costs_select_division_shapes(&cost_model.builtins, semantics);
+
   // This generic entry point does not carry a protocol version; gate by language
   // only by assuming the newest protocol, where every builtin of the language is
   // available. The transaction evaluator threads the real protocol version below.

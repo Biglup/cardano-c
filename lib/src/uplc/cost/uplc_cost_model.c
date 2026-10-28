@@ -848,6 +848,7 @@ cardano_uplc_cost_model_from_params(
   cardano_uplc_cost_model_version_t version,
   const int64_t*                    params,
   size_t                            count,
+  cardano_uplc_builtin_semantics_t  semantics,
   cardano_uplc_cost_model_t*        out)
 {
   size_t  expected = 0U;
@@ -916,6 +917,8 @@ cardano_uplc_cost_model_from_params(
       break;
     }
   }
+
+  cardano_uplc_builtin_costs_select_division_shapes(&out->builtins, semantics);
 
   return CARDANO_SUCCESS;
 }

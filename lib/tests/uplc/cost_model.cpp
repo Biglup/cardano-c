@@ -812,6 +812,60 @@ TEST(cardano_uplc_two_arg_cost, drop_list)
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 4, 9), 116711);
 }
 
+TEST(cardano_uplc_two_arg_cost, linear_in_y2_ignores_x_and_minimum)
+{
+  cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
+  fn.params.subtracted_sizes.intercept = 7;
+  fn.params.subtracted_sizes.slope     = 3;
+  fn.params.subtracted_sizes.minimum   = 1000;
+
+  // 7 + 3*5 = 22, whatever x and the minimum are
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 9, 5), 22);
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, 5), 22);
+}
+
+TEST(cardano_uplc_two_arg_cost, linear_in_y2_saturates)
+{
+  cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
+  fn.params.subtracted_sizes.intercept = 1;
+  fn.params.subtracted_sizes.slope     = 2;
+  fn.params.subtracted_sizes.minimum   = 1;
+
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, I64_MAX), I64_MAX);
+}
+
+TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_multiplied_model)
+{
+  cardano_uplc_two_arg_cost_t fn                            = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+  fn.params.const_diagonal.constant                         = 85848;
+  fn.params.const_diagonal.kind                             = CARDANO_UPLC_DIAG_MODEL_MULTIPLIED_SIZES;
+  fn.params.const_diagonal.model.multiplied_sizes.intercept = 228465;
+  fn.params.const_diagonal.model.multiplied_sizes.slope     = 122;
+
+  // the constant is never charged: 228465 + 122*(3*5) = 230295 on both sides
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 3, 5), 230295);
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 5, 3), 230295);
+}
+
+TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_quadratic_saturates)
+{
+  cardano_uplc_two_arg_cost_t fn                    = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+  fn.params.const_diagonal.constant                 = 85848;
+  fn.params.const_diagonal.kind                     = CARDANO_UPLC_DIAG_MODEL_QUADRATIC;
+  fn.params.const_diagonal.model.quadratic.minimum  = 85848;
+  fn.params.const_diagonal.model.quadratic.coeff_00 = 123203;
+  fn.params.const_diagonal.model.quadratic.coeff_10 = 1716;
+  fn.params.const_diagonal.model.quadratic.coeff_01 = 7305;
+  fn.params.const_diagonal.model.quadratic.coeff_20 = 57;
+  fn.params.const_diagonal.model.quadratic.coeff_11 = 960;
+  fn.params.const_diagonal.model.quadratic.coeff_02 = -900;
+
+  // at (I64_MAX, 1) the x terms saturate at I64_MAX, then the c02*y*y term
+  // subtracts 900, as with the reference SatInt arithmetic, on both sides
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, I64_MAX), I64_MAX - 900);
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, I64_MAX, 1), I64_MAX - 900);
+}
+
 TEST(cardano_uplc_two_arg_cost, saturates)
 {
   cardano_uplc_two_arg_cost_t fn = make_two(CARDANO_UPLC_TWO_ARG_MULTIPLIED_SIZES);
@@ -2493,6 +2547,7 @@ TEST(cardano_uplc_cost_model_from_params, v1_round_trip_reproduces_default)
       CARDANO_UPLC_COST_MODEL_VERSION_V1,
       V1_DEFAULT_PARAMS,
       CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1,
+      CARDANO_UPLC_SEMANTICS_B,
       &model),
     CARDANO_SUCCESS);
 
@@ -2509,6 +2564,7 @@ TEST(cardano_uplc_cost_model_from_params, v2_round_trip_reproduces_default)
       CARDANO_UPLC_COST_MODEL_VERSION_V2,
       V2_DEFAULT_PARAMS,
       CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2,
+      CARDANO_UPLC_SEMANTICS_B,
       &model),
     CARDANO_SUCCESS);
 
@@ -2525,6 +2581,7 @@ TEST(cardano_uplc_cost_model_from_params, v3_round_trip_reproduces_default)
       CARDANO_UPLC_COST_MODEL_VERSION_V3,
       V3_DEFAULT_PARAMS,
       CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3,
+      CARDANO_UPLC_SEMANTICS_C,
       &model),
     CARDANO_SUCCESS);
 
@@ -2540,6 +2597,7 @@ TEST(cardano_uplc_cost_model_from_params, v3_machine_costs_match_default)
       CARDANO_UPLC_COST_MODEL_VERSION_V3,
       V3_DEFAULT_PARAMS,
       CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3,
+      CARDANO_UPLC_SEMANTICS_C,
       &model),
     CARDANO_SUCCESS);
 
@@ -2553,13 +2611,13 @@ TEST(cardano_uplc_cost_model_from_params, short_count_is_tolerated_not_rejected)
   cardano_uplc_cost_model_t model;
 
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, 10U, &model),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, 10U, CARDANO_UPLC_SEMANTICS_B, &model),
     CARDANO_SUCCESS);
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, 10U, &model),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, 10U, CARDANO_UPLC_SEMANTICS_B, &model),
     CARDANO_SUCCESS);
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, 10U, &model),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, 10U, CARDANO_UPLC_SEMANTICS_C, &model),
     CARDANO_SUCCESS);
 }
 
@@ -2575,10 +2633,10 @@ TEST(cardano_uplc_cost_model_from_params, v3_extra_params_are_ignored)
   cardano_uplc_cost_model_t exact;
 
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, longer, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 3U, &with_extra),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, longer, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 3U, CARDANO_UPLC_SEMANTICS_C, &with_extra),
     CARDANO_SUCCESS);
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &exact),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_C, &exact),
     CARDANO_SUCCESS);
 
   EXPECT_EQ(std::memcmp(&with_extra, &exact, sizeof(exact)), 0);
@@ -2596,7 +2654,7 @@ TEST(cardano_uplc_cost_model_from_params, v3_prices_exp_mod_integer_from_params)
 
   cardano_uplc_cost_model_t model;
   ASSERT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &model),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_C, &model),
     CARDANO_SUCCESS);
 
   const cardano_uplc_three_arg_cost_t cpu = model.builtins.entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three;
@@ -2614,10 +2672,10 @@ TEST(cardano_uplc_cost_model_from_params, null_pointers_are_error)
   cardano_uplc_cost_model_t model;
 
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, nullptr, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, &model),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, nullptr, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_B, &model),
     CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, nullptr),
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_B, nullptr),
     CARDANO_ERROR_POINTER_IS_NULL);
 }
 
@@ -2626,8 +2684,236 @@ TEST(cardano_uplc_cost_model_from_params, unknown_version_is_error)
   cardano_uplc_cost_model_t model;
 
   EXPECT_EQ(
-    cardano_uplc_cost_model_from_params((cardano_uplc_cost_model_version_t)99, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, &model),
+    cardano_uplc_cost_model_from_params((cardano_uplc_cost_model_version_t)99, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_C, &model),
     CARDANO_ERROR_INVALID_ARGUMENT);
+}
+
+/* Division cost model shapes. Sizes (3, 5) sit above the diagonal (x < y) and
+ * (5, 3) below it. */
+
+static int64_t
+division_cpu(const cardano_uplc_builtin_costs_t& costs, cardano_uplc_builtin_t builtin, int64_t x, int64_t y)
+{
+  return cardano_uplc_two_arg_cost_eval(&costs.entries[builtin].cpu.two, x, y);
+}
+
+static int64_t
+division_mem(const cardano_uplc_builtin_costs_t& costs, cardano_uplc_builtin_t builtin, int64_t x, int64_t y)
+{
+  return cardano_uplc_two_arg_cost_eval(&costs.entries[builtin].mem.two, x, y);
+}
+
+static cardano_uplc_builtin_costs_t
+division_shaped(cardano_uplc_builtin_costs_t costs, cardano_uplc_builtin_semantics_t semantics)
+{
+  cardano_uplc_builtin_costs_select_division_shapes(&costs, semantics);
+  return costs;
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, semantics_a_b_and_c_change_nothing)
+{
+  cardano_uplc_builtin_costs_t v1 = cardano_uplc_builtin_costs_v1();
+  cardano_uplc_builtin_costs_t v3 = cardano_uplc_builtin_costs_v3();
+
+  cardano_uplc_builtin_costs_t a = division_shaped(v1, CARDANO_UPLC_SEMANTICS_A);
+  cardano_uplc_builtin_costs_t b = division_shaped(v1, CARDANO_UPLC_SEMANTICS_B);
+  cardano_uplc_builtin_costs_t c = division_shaped(v3, CARDANO_UPLC_SEMANTICS_C);
+
+  EXPECT_EQ(std::memcmp(&a, &v1, sizeof(v1)), 0);
+  EXPECT_EQ(std::memcmp(&b, &v1, sizeof(v1)), 0);
+  EXPECT_EQ(std::memcmp(&c, &v3, sizeof(v3)), 0);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_b_charges_the_constant_above_the_diagonal)
+{
+  cardano_uplc_builtin_costs_t b = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_B);
+
+  // above: constant 85848; below: 228465 + 122*15 = 230295
+  EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 230295);
+  EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 230295);
+
+  // subtracted sizes: max(1, 3-5) = 1 and max(1, 5-3) = 2
+  EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 1);
+  EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 2);
+  EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 1);
+  EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 2);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_c_charges_the_constant_above_the_diagonal)
+{
+  cardano_uplc_builtin_costs_t c = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_C);
+
+  // above: constant 85848; below: 123203 + 1716*5 + 7305*3 + 57*25 + 549*15 - 900*9 = 155258
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_d_reads_divide_and_mod_on_both_sides)
+{
+  cardano_uplc_builtin_costs_t d = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
+
+  // multiplied sizes at (max, min): 228465 + 122*15 = 230295 on both sides
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 230295);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 230295);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 230295);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 230295);
+
+  // quotient and remainder keep the constant above the diagonal
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 230295);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 230295);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_d_costs_mod_and_remainder_memory_by_y)
+{
+  cardano_uplc_builtin_costs_t d = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
+
+  EXPECT_EQ(d.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem.two.kind, CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
+  EXPECT_EQ(d.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem.two.kind, CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 5);
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 3);
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 5);
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 3);
+
+  // divide and quotient keep subtracted sizes
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 1);
+  EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 2);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_reads_divide_and_mod_on_both_sides)
+{
+  cardano_uplc_builtin_costs_t e = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_E);
+
+  // quadratic at (max, min) = (5, 3): 155258 on both sides
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 155258);
+
+  // quotient and remainder keep the constant above the diagonal
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 155258);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_keeps_the_quadratic_coefficients)
+{
+  cardano_uplc_builtin_costs_t      v3  = cardano_uplc_builtin_costs_v3();
+  cardano_uplc_builtin_costs_t      e   = division_shaped(v3, CARDANO_UPLC_SEMANTICS_E);
+  const cardano_uplc_two_arg_cost_t cpu = e.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two;
+
+  EXPECT_EQ(cpu.kind, CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
+  EXPECT_EQ(cpu.params.const_diagonal.kind, CARDANO_UPLC_DIAG_MODEL_QUADRATIC);
+  EXPECT_EQ(cpu.params.const_diagonal.constant, 85848);
+  EXPECT_EQ(
+    std::memcmp(
+      &cpu.params.const_diagonal.model.quadratic,
+      &v3.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.params.const_above_into_quadratic.quadratic,
+      sizeof(cardano_uplc_two_var_quadratic_cost_t)),
+    0);
+
+  // memory shapes are unchanged under cost model E
+  EXPECT_EQ(std::memcmp(&e.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem, &v3.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem, sizeof(cardano_uplc_builtin_cost_t::mem)), 0);
+  EXPECT_EQ(std::memcmp(&e.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem, &v3.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem, sizeof(cardano_uplc_builtin_cost_t::mem)), 0);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, f_and_g_share_the_shapes_of_d_and_e)
+{
+  cardano_uplc_builtin_costs_t d = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
+  cardano_uplc_builtin_costs_t f = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_F);
+  cardano_uplc_builtin_costs_t e = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_E);
+  cardano_uplc_builtin_costs_t g = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_G);
+
+  EXPECT_EQ(std::memcmp(&d, &f, sizeof(d)), 0);
+  EXPECT_EQ(std::memcmp(&e, &g, sizeof(e)), 0);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, reshaping_twice_is_harmless)
+{
+  cardano_uplc_builtin_costs_t d       = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
+  cardano_uplc_builtin_costs_t e       = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_E);
+  cardano_uplc_builtin_costs_t d_twice = division_shaped(d, CARDANO_UPLC_SEMANTICS_D);
+  cardano_uplc_builtin_costs_t e_twice = division_shaped(e, CARDANO_UPLC_SEMANTICS_E);
+
+  EXPECT_EQ(std::memcmp(&d, &d_twice, sizeof(d)), 0);
+  EXPECT_EQ(std::memcmp(&e, &e_twice, sizeof(e)), 0);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, unknown_semantics_changes_nothing)
+{
+  cardano_uplc_builtin_costs_t v3     = cardano_uplc_builtin_costs_v3();
+  cardano_uplc_builtin_costs_t shaped = division_shaped(v3, (cardano_uplc_builtin_semantics_t)99);
+
+  EXPECT_EQ(std::memcmp(&shaped, &v3, sizeof(v3)), 0);
+}
+
+TEST(cardano_uplc_builtin_costs_select_division_shapes, null_costs_is_ignored)
+{
+  cardano_uplc_builtin_costs_select_division_shapes(nullptr, CARDANO_UPLC_SEMANTICS_E);
+}
+
+TEST(cardano_uplc_cost_model_from_params, cost_model_d_shapes_the_v1_division_parameters)
+{
+  cardano_uplc_cost_model_t    model;
+  cardano_uplc_builtin_costs_t expected = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
+
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(
+      CARDANO_UPLC_COST_MODEL_VERSION_V1,
+      V1_DEFAULT_PARAMS,
+      CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1,
+      CARDANO_UPLC_SEMANTICS_D,
+      &model),
+    CARDANO_SUCCESS);
+
+  EXPECT_EQ(std::memcmp(&model.builtins, &expected, sizeof(expected)), 0);
+}
+
+TEST(cardano_uplc_cost_model_from_params, cost_model_d_leaves_the_mod_memory_minimum_unread)
+{
+  int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1];
+  std::memcpy(params, V1_DEFAULT_PARAMS, sizeof(params));
+  params[113] = 1000;
+
+  cardano_uplc_cost_model_t b;
+  cardano_uplc_cost_model_t d;
+
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_B, &b),
+    CARDANO_SUCCESS);
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_D, &d),
+    CARDANO_SUCCESS);
+
+  // B floors x - y at the minimum; D charges 0 + 1*y
+  EXPECT_EQ(division_mem(b.builtins, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 1000);
+  EXPECT_EQ(division_mem(d.builtins, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 3);
+}
+
+TEST(cardano_uplc_cost_model_from_params, cost_model_e_reads_the_v3_division_coefficients)
+{
+  int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
+  std::memcpy(params, V3_DEFAULT_PARAMS, sizeof(params));
+  params[54] = 960;
+
+  cardano_uplc_cost_model_t model;
+
+  ASSERT_EQ(
+    cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_E, &model),
+    CARDANO_SUCCESS);
+
+  // (3, 5) evaluates at (5, 3): 123203 + 1716*5 + 7305*3 + 57*25 + 960*15 - 900*9 = 161423
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.params.const_diagonal.model.quadratic.coeff_11, 960);
+  EXPECT_EQ(division_cpu(model.builtins, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 161423);
+  EXPECT_EQ(division_cpu(model.builtins, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
 }
 
 TEST(cardano_uplc_builtin_cost, v3_add_integer_small_args)

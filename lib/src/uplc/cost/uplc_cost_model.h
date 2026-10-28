@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../builtins/uplc_builtin_semantics.h"
 #include "uplc_builtin_costs.h"
 #include "uplc_cost_model_version.h"
 #include "uplc_machine_costs.h"
@@ -82,11 +83,12 @@ typedef struct cardano_uplc_cost_model_t
  *
  * Maps the flat int64 list positionally into the machine-step costs and the
  * per-builtin costing functions, using the per-version ledger parameter
- * ordering. The shapes are fixed per version; only the coefficients come from
- * \p params.
+ * ordering. The shapes are fixed per version and then adjusted for the
+ * semantics variant (\ref cardano_uplc_builtin_costs_select_division_shapes);
+ * only the coefficients come from \p params.
  * Parameters absent from a version's list keep the prohibitive sentinel cost.
- * When given the version's default parameter vector this reproduces
- * \ref cardano_uplc_builtin_costs_v1, \c _v2 or \c _v3 exactly.
+ * When given the version's default parameter vector under semantics A, B or C
+ * this reproduces \ref cardano_uplc_builtin_costs_v1, \c _v2 or \c _v3 exactly.
  *
  * The ledger's flat list grows append-only across protocol versions, so its
  * length need not equal the count this build knows about. Following the Haskell
@@ -102,6 +104,8 @@ typedef struct cardano_uplc_cost_model_t
  * \param[in] params The flat ordered parameter list. Must not be NULL.
  * \param[in] count The number of parameters in \p params. Any count is accepted;
  *            extra trailing parameters are ignored and missing ones are padded.
+ * \param[in] semantics The builtin semantics variant, selecting the cost model
+ *            generation whose shapes interpret the integer-division parameters.
  * \param[out] out On success, set to the built cost model; left untouched on
  *             failure.
  *
@@ -114,6 +118,7 @@ cardano_uplc_cost_model_from_params(
   cardano_uplc_cost_model_version_t version,
   const int64_t*                    params,
   size_t                            count,
+  cardano_uplc_builtin_semantics_t  semantics,
   cardano_uplc_cost_model_t*        out);
 
 #ifdef __cplusplus

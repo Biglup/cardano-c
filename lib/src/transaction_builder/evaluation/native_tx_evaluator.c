@@ -1204,9 +1204,10 @@ uplc_lang_version(script_version_t version)
  * language version and selects the structured cost model and builtin semantics
  * for that language and the protocol major version
  * (\ref cardano_uplc_select_cost_model). When no cost model exists for the
- * language the version default is returned, which keeps an under-specified host
- * usable. Consensus-critical: the spent ex-units track the cost model the
- * transaction was submitted under, not a hardcoded default.
+ * language the version default is returned, reshaped for the semantics variant
+ * of the protocol version, which keeps an under-specified host usable.
+ * Consensus-critical: the spent ex-units track the cost model the transaction
+ * was submitted under, not a hardcoded default.
  *
  * \return \ref CARDANO_SUCCESS on success, or a propagated error.
  */
@@ -1266,6 +1267,8 @@ select_cost_model(
 
     out->semantics = cardano_uplc_builtin_semantics_for_language_and_protocol(uplc_lang_version(version), ctx->protocol_major);
     result         = CARDANO_SUCCESS;
+
+    cardano_uplc_builtin_costs_select_division_shapes(&out->model.builtins, out->semantics);
   }
 
   return result;

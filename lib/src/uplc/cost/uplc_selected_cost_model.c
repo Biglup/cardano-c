@@ -73,6 +73,7 @@ cardano_uplc_select_cost_model(
 {
   cardano_uplc_cost_model_version_t cost_version;
   cardano_uplc_cost_model_t         model;
+  cardano_uplc_builtin_semantics_t  semantics;
   cardano_error_t                   result;
 
   if ((params == NULL) || (out == NULL))
@@ -81,8 +82,9 @@ cardano_uplc_select_cost_model(
   }
 
   cost_version = cardano_uplc_cost_model_version_for_language(lang_version);
+  semantics    = cardano_uplc_builtin_semantics_for_language_and_protocol(lang_version, protocol_major);
 
-  result = cardano_uplc_cost_model_from_params(cost_version, params, count, &model);
+  result = cardano_uplc_cost_model_from_params(cost_version, params, count, semantics, &model);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -90,7 +92,7 @@ cardano_uplc_select_cost_model(
   }
 
   out->model     = model;
-  out->semantics = cardano_uplc_builtin_semantics_for_language_and_protocol(lang_version, protocol_major);
+  out->semantics = semantics;
 
   return CARDANO_SUCCESS;
 }

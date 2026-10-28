@@ -24,30 +24,30 @@ builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/scalarMul/scalarMul.up
 builtin/semantics/bls12_381_G1_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
 builtin/semantics/bls12_381_G2_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
 builtin/semantics/complementByteString/case-05/case-05.uplc cost-model
-builtin/semantics/divideInteger/divideInteger-01/divideInteger-01.uplc division-costing
-builtin/semantics/divideInteger/divideInteger-neg-neg/divideInteger-neg-neg.uplc division-costing
-builtin/semantics/divideInteger/divideInteger-neg-pos/divideInteger-neg-pos.uplc division-costing
-builtin/semantics/divideInteger/divideInteger-pos-neg/divideInteger-pos-neg.uplc division-costing
-builtin/semantics/divideInteger/divideInteger-pos-pos/divideInteger-pos-pos.uplc division-costing
+builtin/semantics/divideInteger/divideInteger-01/divideInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-neg-neg/divideInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-neg-pos/divideInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-pos-neg/divideInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-pos-pos/divideInteger-pos-pos.uplc cost-model division default parameters predate cost model e
 builtin/semantics/equalsByteString/equalsByteString-02/equalsByteString-02.uplc cost-model
 builtin/semantics/equalsByteString/equalsByteString/equalsByteString.uplc cost-model
-builtin/semantics/expModInteger/extra/expModInteger-19/expModInteger-19.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-20/expModInteger-20.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-21/expModInteger-21.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-22/expModInteger-22.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-23/expModInteger-23.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-24/expModInteger-24.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-25/expModInteger-25.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-46/expModInteger-46.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-47/expModInteger-47.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-48/expModInteger-48.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-49/expModInteger-49.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-50/expModInteger-50.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-51/expModInteger-51.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-52/expModInteger-52.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-53/expModInteger-53.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-54/expModInteger-54.uplc division-costing
-builtin/semantics/expModInteger/extra/expModInteger-55/expModInteger-55.uplc division-costing
+builtin/semantics/expModInteger/extra/expModInteger-19/expModInteger-19.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-20/expModInteger-20.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-21/expModInteger-21.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-22/expModInteger-22.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-23/expModInteger-23.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-24/expModInteger-24.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-25/expModInteger-25.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-46/expModInteger-46.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-47/expModInteger-47.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-48/expModInteger-48.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-49/expModInteger-49.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-50/expModInteger-50.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-51/expModInteger-51.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-52/expModInteger-52.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-53/expModInteger-53.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-54/expModInteger-54.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-55/expModInteger-55.uplc cost-model division default parameters predate cost model e
 builtin/semantics/insertCoin/long-key-zero-1/long-key-zero-1.uplc cost-model
 builtin/semantics/insertCoin/long-key-zero-2/long-key-zero-2.uplc cost-model
 builtin/semantics/insertCoin/multi-ccy-empty/multi-ccy-empty.uplc cost-model
@@ -62,11 +62,11 @@ builtin/semantics/insertCoin/zero-positive/zero-positive.uplc cost-model
 builtin/semantics/keccak_256/keccak_256-empty/keccak_256-empty.uplc cost-model
 builtin/semantics/keccak_256/keccak_256-length-200/keccak_256-length-200.uplc cost-model
 builtin/semantics/lessThanByteString/lessThanByteString-01/lessThanByteString-01.uplc cost-model
-builtin/semantics/modInteger/modInteger-01/modInteger-01.uplc division-costing
-builtin/semantics/modInteger/modInteger-neg-neg/modInteger-neg-neg.uplc division-costing
-builtin/semantics/modInteger/modInteger-neg-pos/modInteger-neg-pos.uplc division-costing
-builtin/semantics/modInteger/modInteger-pos-neg/modInteger-pos-neg.uplc division-costing
-builtin/semantics/modInteger/modInteger-pos-pos/modInteger-pos-pos.uplc division-costing
+builtin/semantics/modInteger/modInteger-01/modInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-neg-neg/modInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-neg-pos/modInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-pos-neg/modInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-pos-pos/modInteger-pos-pos.uplc cost-model division default parameters predate cost model e
 builtin/semantics/multiIndexArray/multiIndexArray-01/multiIndexArray-01.uplc batch7-builtins
 builtin/semantics/multiIndexArray/multiIndexArray-02/multiIndexArray-02.uplc batch7-builtins
 builtin/semantics/multiIndexArray/multiIndexArray-03/multiIndexArray-03.uplc batch7-builtins
@@ -93,16 +93,16 @@ builtin/semantics/multiIndexArray/multiIndexArray-23/multiIndexArray-23.uplc bat
 builtin/semantics/multiIndexArray/multiIndexArray-24/multiIndexArray-24.uplc batch7-builtins
 builtin/semantics/multiIndexArray/multiIndexArray-25/multiIndexArray-25.uplc batch7-builtins
 builtin/semantics/multiIndexArray/multiIndexArray-26/multiIndexArray-26.uplc batch7-builtins
-builtin/semantics/quotientInteger/quotientInteger-01/quotientInteger-01.uplc division-costing
-builtin/semantics/quotientInteger/quotientInteger-neg-neg/quotientInteger-neg-neg.uplc division-costing
-builtin/semantics/quotientInteger/quotientInteger-neg-pos/quotientInteger-neg-pos.uplc division-costing
-builtin/semantics/quotientInteger/quotientInteger-pos-neg/quotientInteger-pos-neg.uplc division-costing
-builtin/semantics/quotientInteger/quotientInteger-pos-pos/quotientInteger-pos-pos.uplc division-costing
-builtin/semantics/remainderInteger/remainderInteger-01/remainderInteger-01.uplc division-costing
-builtin/semantics/remainderInteger/remainderInteger-neg-neg/remainderInteger-neg-neg.uplc division-costing
-builtin/semantics/remainderInteger/remainderInteger-neg-pos/remainderInteger-neg-pos.uplc division-costing
-builtin/semantics/remainderInteger/remainderInteger-pos-neg/remainderInteger-pos-neg.uplc division-costing
-builtin/semantics/remainderInteger/remainderInteger-pos-pos/remainderInteger-pos-pos.uplc division-costing
+builtin/semantics/quotientInteger/quotientInteger-01/quotientInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-neg-neg/quotientInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-neg-pos/quotientInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-pos-neg/quotientInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-pos-pos/quotientInteger-pos-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-01/remainderInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-neg-neg/remainderInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-neg-pos/remainderInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-pos-neg/remainderInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-pos-pos/remainderInteger-pos-pos.uplc cost-model division default parameters predate cost model e
 builtin/semantics/ripemd_160/ripemd_160-empty/ripemd_160-empty.uplc cost-model
 builtin/semantics/ripemd_160/ripemd_160-length-200/ripemd_160-length-200.uplc cost-model
 builtin/semantics/scaleValue/by-neg/by-neg.uplc cost-model
