@@ -74,8 +74,6 @@ namespace fs = std::filesystem;
  */
 struct Configuration
 {
-    /** \brief The name the run reports in its summary. */
-    const char* name;
     /** \brief The Plutus language whose builtin and program-version availability the run assumes. */
     cardano_uplc_lang_version_t language;
     /** \brief The major protocol version the cases are evaluated under. */
@@ -101,7 +99,6 @@ struct Configuration
  * with the V4 cost model.
  */
 const Configuration NEWEST_CONFIGURATION = {
-  "pv12",
   CARDANO_UPLC_LANG_VERSION_V4,
   12U,
   CARDANO_UPLC_SEMANTICS_G,
@@ -122,7 +119,6 @@ const Configuration NEWEST_CONFIGURATION = {
  * \ref MAINNET_COSTED_DIFFERENTLY).
  */
 const Configuration MAINNET_CONFIGURATION = {
-  "pv10",
   CARDANO_UPLC_LANG_VERSION_V3,
   10U,
   CARDANO_UPLC_SEMANTICS_C,
@@ -934,15 +930,8 @@ names_any(const std::set<cardano_uplc_builtin_t>& builtins, const std::set<carda
 bool
 all_available(const std::set<cardano_uplc_builtin_t>& builtins, const Configuration& config)
 {
-  for (const cardano_uplc_builtin_t builtin: builtins)
-  {
-    if (!cardano_uplc_builtin_available(builtin, config.language, config.protocol_major))
-    {
-      return false;
-    }
-  }
-
-  return true;
+  return std::all_of(builtins.begin(), builtins.end(), [&config](const cardano_uplc_builtin_t builtin)
+                     { return cardano_uplc_builtin_available(builtin, config.language, config.protocol_major); });
 }
 
 /**
@@ -1107,7 +1096,7 @@ TEST(cardano_uplc_conformance, fullCorpusPassesAtTheNewestProtocolVersion)
     }
   }
 
-  std::cout << "[ CONFORMANCE SUMMARY ] configuration=" << NEWEST_CONFIGURATION.name << " total=" << inputs.size()
+  std::cout << "[ CONFORMANCE SUMMARY ] configuration=pv" << NEWEST_CONFIGURATION.protocol_major << " total=" << inputs.size()
             << " uplc=" << textual << " flat=" << flat << " passed=" << passed << " failed=" << failed << std::endl;
 
   // Assert
@@ -1158,7 +1147,7 @@ TEST(cardano_uplc_conformance, unchangedCasesPassAtTheMainnetProtocolVersion)
     }
   }
 
-  std::cout << "[ CONFORMANCE SUMMARY ] configuration=" << MAINNET_CONFIGURATION.name << " total=" << inputs.size()
+  std::cout << "[ CONFORMANCE SUMMARY ] configuration=pv" << MAINNET_CONFIGURATION.protocol_major << " total=" << inputs.size()
             << " covered=" << covered << " passed=" << passed << " failed=" << failed << std::endl;
 
   for (const auto& reason: excluded)

@@ -973,7 +973,7 @@ sorted_map_put(
 
   CARDANO_UNUSED(memmove(&map->items[position + 1U], &map->items[position], (map->count - position) * sizeof(sorted_entry_t)));
 
-  map->items[position]  = entry;
+  map->items[position] = entry;
   map->count           += 1U;
 
   return CARDANO_SUCCESS;
@@ -7645,9 +7645,9 @@ redeemers_v4(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted
 
   for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
   {
-    cardano_redeemer_t*    redeemer   = NULL;
-    cardano_plutus_data_t* data       = NULL;
-    cardano_plutus_data_t* purpose_pd = NULL;
+    cardano_redeemer_t*    redeemer      = NULL;
+    cardano_plutus_data_t* redeemer_data = NULL;
+    cardano_plutus_data_t* purpose_pd    = NULL;
     purpose_parts_t        parts;
     sort_key_t             key;
 
@@ -7675,8 +7675,8 @@ redeemers_v4(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted
 
     if (result == CARDANO_SUCCESS)
     {
-      data   = cardano_redeemer_get_data(redeemer);
-      result = sorted_map_put(&map, &key, purpose_pd, NULL, data, NULL, MERGE_KEEP_FIRST);
+      redeemer_data = cardano_redeemer_get_data(redeemer);
+      result        = sorted_map_put(&map, &key, purpose_pd, NULL, redeemer_data, NULL, MERGE_KEEP_FIRST);
     }
 
     if ((result == CARDANO_SUCCESS) && (script_hashes != NULL))
@@ -7700,7 +7700,7 @@ redeemers_v4(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted
 
     purpose_parts_release(&parts);
     cardano_redeemer_unref(&redeemer);
-    cardano_plutus_data_unref(&data);
+    cardano_plutus_data_unref(&redeemer_data);
     cardano_plutus_data_unref(&purpose_pd);
   }
 

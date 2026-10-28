@@ -209,7 +209,7 @@ _cardano_ledger_order_voter_index(cardano_voter_list_t* voters, cardano_voter_t*
       const int32_t order = (int32_t)memcmp(entry_key, target, sizeof(target));
 
       rank  += (order < 0) ? 1U : 0U;
-      found  = found || (order == 0);
+      found = found || (order == 0);
     }
 
     cardano_voter_unref(&entry);
@@ -259,7 +259,7 @@ _cardano_ledger_order_withdrawal_index(cardano_withdrawal_map_t* withdrawals, ca
       const int32_t order = (int32_t)memcmp(entry_key, target, sizeof(target));
 
       rank  += (order < 0) ? 1U : 0U;
-      found  = found || (order == 0);
+      found = found || (order == 0);
     }
 
     cardano_reward_address_unref(&entry);
