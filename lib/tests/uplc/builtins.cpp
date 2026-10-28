@@ -1357,3 +1357,416 @@ TEST(cardano_uplc_builtin_body, verifySchnorrSecp256k1SignatureWrongSignatureLen
     &status);
   EXPECT_EQ(status, CARDANO_UPLC_EVAL_ERROR_TERM);
 }
+
+/* ARGUMENT BOUNDS **********************************************************/
+
+static std::string
+signed_power_of_two(uint32_t bits, bool negative, int64_t delta)
+{
+  cardano_bigint_t* one    = nullptr;
+  cardano_bigint_t* power  = nullptr;
+  cardano_bigint_t* offset = nullptr;
+  cardano_bigint_t* sum    = nullptr;
+
+  EXPECT_EQ(cardano_bigint_from_int(1, &one), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(0, &power), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(delta, &offset), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(0, &sum), CARDANO_SUCCESS);
+
+  cardano_bigint_shift_left(one, bits, power);
+
+  if (negative)
+  {
+    cardano_bigint_subtract(offset, power, sum);
+  }
+  else
+  {
+    cardano_bigint_add(power, offset, sum);
+  }
+
+  const size_t size = cardano_bigint_get_string_size(sum, 10);
+  std::string  text(size, '\0');
+
+  EXPECT_EQ(cardano_bigint_to_string(sum, &text[0], size, 10), CARDANO_SUCCESS);
+  text.resize(std::strlen(text.c_str()));
+
+  cardano_bigint_unref(&one);
+  cardano_bigint_unref(&power);
+  cardano_bigint_unref(&offset);
+  cardano_bigint_unref(&sum);
+
+  return text;
+}
+
+static std::string
+filled_bytes(size_t size)
+{
+  return "(con bytestring #" + std::string(size * 2U, 'a') + ")";
+}
+
+static std::string
+integer_con(const std::string& digits)
+{
+  return "(con integer " + digits + ")";
+}
+
+static std::string
+program_of(const char* builtin, const std::string& a)
+{
+  return "(program 1.0.0 [ (builtin " + std::string(builtin) + ") " + a + " ])";
+}
+
+static std::string
+program_of(const char* builtin, const std::string& a, const std::string& b)
+{
+  return "(program 1.0.0 [ [ (builtin " + std::string(builtin) + ") " + a + " ] " + b + " ])";
+}
+
+static std::string
+program_of(const char* builtin, const std::string& a, const std::string& b, const std::string& c)
+{
+  return "(program 1.0.0 [ [ [ (builtin " + std::string(builtin) + ") " + a + " ] " + b + " ] " + c + " ])";
+}
+
+static cardano_uplc_eval_status_t
+status_under(const std::string& source, cardano_uplc_builtin_semantics_t semantics)
+{
+  cardano_uplc_arena_t*         arena   = new_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
+
+  EXPECT_EQ(cardano_uplc_parse_program(arena, source.c_str(), source.size(), &program, &offset), CARDANO_SUCCESS)
+    << "failed to parse at offset " << offset;
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  model.builtins = cardano_uplc_builtin_costs_v3();
+
+  const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
+  cardano_uplc_eval_result_t  result  = {};
+
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, CARDANO_UPLC_LANG_VERSION_V4, 12U, initial, &result),
+    CARDANO_SUCCESS);
+
+  const cardano_uplc_eval_status_t status = result.status;
+
+  cardano_uplc_arena_free(&arena);
+
+  return status;
+}
+
+static const uint32_t INTEGER_ARG_BITS      = 262143U;
+static const size_t   BYTE_STRING_ARG_MAX   = 65536U;
+static const size_t   WRITE_BITS_INPUT_MAX  = 4096U;
+static const uint32_t BLS_SCALAR_BOUND_BITS = 4095U;
+static const uint32_t EXP_MOD_BOUND_BITS    = 8191U;
+
+static const char* const G1_GENERATOR =
+  "0x97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb";
+static const char* const G2_GENERATOR =
+  "0x93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e"
+  "024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8";
+
+static const cardano_uplc_value_t*
+signed_power_of_two_value(cardano_uplc_arena_t* arena, uint32_t bits, bool negative, int64_t delta)
+{
+  cardano_bigint_t*        one      = nullptr;
+  cardano_bigint_t*        power    = nullptr;
+  cardano_bigint_t*        offset   = nullptr;
+  cardano_bigint_t*        sum      = nullptr;
+  cardano_uplc_constant_t* constant = nullptr;
+  cardano_uplc_value_t*    value    = nullptr;
+
+  EXPECT_EQ(cardano_bigint_from_int(1, &one), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(0, &power), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(delta, &offset), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_int(0, &sum), CARDANO_SUCCESS);
+
+  cardano_bigint_shift_left(one, bits, power);
+
+  if (negative)
+  {
+    cardano_bigint_subtract(offset, power, sum);
+  }
+  else
+  {
+    cardano_bigint_add(power, offset, sum);
+  }
+
+  EXPECT_EQ(cardano_uplc_constant_new_integer(arena, sum, &constant), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_value_new_constant(arena, constant, &value), CARDANO_SUCCESS);
+
+  cardano_bigint_unref(&one);
+  cardano_bigint_unref(&power);
+  cardano_bigint_unref(&offset);
+  cardano_bigint_unref(&sum);
+
+  return value;
+}
+
+static cardano_uplc_int_builtin_outcome_t
+run_under(
+  cardano_uplc_arena_t*            arena,
+  cardano_uplc_builtin_semantics_t semantics,
+  cardano_uplc_builtin_t           func,
+  const cardano_uplc_value_t*      first,
+  const cardano_uplc_value_t*      second)
+{
+  cardano_uplc_machine_costs_t    machine = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  cardano_uplc_builtin_costs_t    costs   = cardano_uplc_builtin_costs_v3();
+  cardano_uplc_step_accumulator_t acc;
+  const cardano_uplc_value_t*     out     = nullptr;
+  cardano_error_t                 host    = CARDANO_ERROR_GENERIC;
+  const cardano_uplc_value_t*     args[2] = { first, second };
+
+  EXPECT_EQ(cardano_uplc_step_accumulator_init(&acc, &machine), CARDANO_SUCCESS);
+
+  const cardano_uplc_int_builtin_outcome_t outcome =
+    cardano_uplc_int_builtin_run(arena, &acc, &costs, semantics, func, args, 2U, &out, &host);
+
+  EXPECT_EQ(host, CARDANO_SUCCESS);
+
+  return outcome;
+}
+
+TEST(cardano_uplc_builtin_bounds, integerArgumentsAreBoundedUnderVariantsDAndE)
+{
+  cardano_uplc_arena_t*       arena   = new_arena();
+  const cardano_uplc_value_t* max_int = signed_power_of_two_value(arena, INTEGER_ARG_BITS, false, -1);
+  const cardano_uplc_value_t* above   = signed_power_of_two_value(arena, INTEGER_ARG_BITS, false, 0);
+  const cardano_uplc_value_t* min_int = signed_power_of_two_value(arena, INTEGER_ARG_BITS, true, 0);
+  const cardano_uplc_value_t* below   = signed_power_of_two_value(arena, INTEGER_ARG_BITS, true, -1);
+  const cardano_uplc_value_t* far     = signed_power_of_two_value(arena, INTEGER_ARG_BITS + 1U, false, 0);
+  const cardano_uplc_value_t* zero    = int_value(arena, 0);
+
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_ADD_INTEGER, max_int, zero), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_E, CARDANO_UPLC_BUILTIN_ADD_INTEGER, min_int, zero), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_ADD_INTEGER, above, zero), CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_E, CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER, zero, below), CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_LESS_THAN_INTEGER, zero, far), CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_C, CARDANO_UPLC_BUILTIN_ADD_INTEGER, above, zero), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_F, CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER, zero, below), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_G, CARDANO_UPLC_BUILTIN_LESS_THAN_INTEGER, zero, far), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_EQUALS_INTEGER, above, zero), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_builtin_bounds, consByteStringBoundsItsByteUnderVariantD)
+{
+  cardano_uplc_arena_t*       arena   = new_arena();
+  const cardano_uplc_value_t* max_int = signed_power_of_two_value(arena, INTEGER_ARG_BITS, false, -1);
+  const cardano_uplc_value_t* above   = signed_power_of_two_value(arena, INTEGER_ARG_BITS, false, 0);
+  const cardano_uplc_value_t* tail    = bytes_value(arena, std::string("\x01", 1));
+
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING, max_int, tail), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_D, CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING, above, tail), CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+  EXPECT_EQ(run_under(arena, CARDANO_UPLC_SEMANTICS_F, CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING, above, tail), CARDANO_UPLC_BUILTIN_OUTCOME_OK);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_builtin_bounds, aMistypedBoundedArgumentIsLeftToTheBody)
+{
+  EXPECT_EQ(status_under(program_of("addInteger", "(con bytestring #01)", integer_con("1")), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("sha2_256", integer_con("1")), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_bounds, byteStringArgumentsAreBoundedUnderVariantsDToG)
+{
+  const std::string at_limit = filled_bytes(BYTE_STRING_ARG_MAX);
+  const std::string above    = filled_bytes(BYTE_STRING_ARG_MAX + 1U);
+  const std::string small    = "(con bytestring #01)";
+
+  EXPECT_EQ(status_under(program_of("sha2_256", at_limit), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("sha2_256", above), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("sha2_256", above), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("appendByteString", small, above), CARDANO_UPLC_SEMANTICS_F), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("andByteString", "(con bool False)", small, above), CARDANO_UPLC_SEMANTICS_E), CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  EXPECT_EQ(status_under(program_of("sha2_256", above), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("appendByteString", small, above), CARDANO_UPLC_SEMANTICS_B), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("lengthOfByteString", above), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+}
+
+TEST(cardano_uplc_builtin_bounds, aBoundedArgumentFailsBeforeAnyCostIsSpent)
+{
+  cardano_uplc_arena_t*           arena   = new_arena();
+  cardano_uplc_machine_costs_t    machine = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  cardano_uplc_builtin_costs_t    costs   = cardano_uplc_builtin_costs_v3();
+  cardano_uplc_step_accumulator_t acc;
+  const cardano_uplc_value_t*     out  = nullptr;
+  cardano_error_t                 host = CARDANO_ERROR_GENERIC;
+
+  ASSERT_EQ(cardano_uplc_step_accumulator_init(&acc, &machine), CARDANO_SUCCESS);
+
+  const cardano_uplc_value_t* args[1] = { bytes_value(arena, std::string(BYTE_STRING_ARG_MAX + 1U, 'a')) };
+
+  EXPECT_EQ(
+    cardano_uplc_int_builtin_run(arena, &acc, &costs, CARDANO_UPLC_SEMANTICS_G, CARDANO_UPLC_BUILTIN_SHA2_256, args, 1U, &out, &host),
+    CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+  EXPECT_EQ(host, CARDANO_SUCCESS);
+  EXPECT_EQ(out, nullptr);
+  EXPECT_EQ(cardano_uplc_step_accumulator_spent(&acc).cpu, 0);
+  EXPECT_EQ(cardano_uplc_step_accumulator_spent(&acc).mem, 0);
+
+  EXPECT_EQ(
+    cardano_uplc_int_builtin_run(arena, &acc, &costs, CARDANO_UPLC_SEMANTICS_G, static_cast<cardano_uplc_builtin_t>(CARDANO_UPLC_BUILTIN_COUNT), args, 1U, &out, &host),
+    CARDANO_UPLC_BUILTIN_OUTCOME_UNSUPPORTED);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_builtin_bounds, writeBitsBoundsItsInputUnderVariantsDToG)
+{
+  const std::string indices = "(con (list integer) [0])";
+  const std::string bit     = "(con bool True)";
+
+  EXPECT_EQ(status_under(program_of("writeBits", filled_bytes(WRITE_BITS_INPUT_MAX), indices, bit), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("writeBits", filled_bytes(WRITE_BITS_INPUT_MAX + 1U), indices, bit), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("writeBits", filled_bytes(WRITE_BITS_INPUT_MAX + 1U), indices, bit), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+}
+
+TEST(cardano_uplc_builtin_bounds, shiftAndRotateBoundTheirCountUnderVariantsDToG)
+{
+  const std::string bytes    = "(con bytestring #0102)";
+  const char* const names[2] = { "shiftByteString", "rotateByteString" };
+
+  for (const char* name: names)
+  {
+    EXPECT_EQ(status_under(program_of(name, bytes, integer_con("9223372036854775807")), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS) << name;
+    EXPECT_EQ(status_under(program_of(name, bytes, integer_con("-9223372036854775808")), CARDANO_UPLC_SEMANTICS_F), CARDANO_UPLC_EVAL_SUCCESS) << name;
+    EXPECT_EQ(status_under(program_of(name, bytes, integer_con("9223372036854775808")), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+    EXPECT_EQ(status_under(program_of(name, bytes, integer_con("-9223372036854775809")), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+    EXPECT_EQ(status_under(program_of(name, bytes, integer_con("9223372036854775808")), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS) << name;
+  }
+}
+
+TEST(cardano_uplc_builtin_bounds, sliceByteStringRequiresSigned64BitCountsInEveryVariant)
+{
+  const std::string bytes = "(con bytestring #010203)";
+
+  EXPECT_EQ(
+    eval_ok(program_of("sliceByteString", integer_con("9223372036854775807"), integer_con("1"), bytes).c_str()),
+    "(con bytestring #)");
+  EXPECT_EQ(
+    eval_ok(program_of("sliceByteString", integer_con("1"), integer_con("9223372036854775807"), bytes).c_str()),
+    "(con bytestring #0203)");
+  EXPECT_EQ(
+    eval_ok(program_of("sliceByteString", integer_con("-9223372036854775808"), integer_con("1"), bytes).c_str()),
+    "(con bytestring #01)");
+
+  EXPECT_EQ(status_under(program_of("sliceByteString", integer_con("9223372036854775808"), integer_con("1"), bytes), CARDANO_UPLC_SEMANTICS_A), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("sliceByteString", integer_con("0"), integer_con("-9223372036854775809"), bytes), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("sliceByteString", integer_con("9223372036854775808"), integer_con("1"), bytes), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_bounds, constrDataBoundsItsTagUnderVariantsDToG)
+{
+  const std::string fields = "(con (list data) [])";
+
+  EXPECT_EQ(status_under(program_of("constrData", integer_con("18446744073709551615"), fields), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("constrData", integer_con("18446744073709551616"), fields), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("constrData", integer_con("-1"), fields), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("constrData", integer_con("18446744073709551616"), fields), CARDANO_UPLC_SEMANTICS_B), CARDANO_UPLC_EVAL_SUCCESS);
+}
+
+TEST(cardano_uplc_builtin_bounds, scalarMulBoundsItsScalarUnderVariantsDToG)
+{
+  const std::string max_scalar = integer_con(signed_power_of_two(BLS_SCALAR_BOUND_BITS, false, -1));
+  const std::string min_scalar = integer_con(signed_power_of_two(BLS_SCALAR_BOUND_BITS, true, 0));
+  const std::string above      = integer_con(signed_power_of_two(BLS_SCALAR_BOUND_BITS, false, 0));
+  const std::string below      = integer_con(signed_power_of_two(BLS_SCALAR_BOUND_BITS, true, -1));
+  const std::string g1         = "(con bls12_381_G1_element " + std::string(G1_GENERATOR) + ")";
+  const std::string g2         = "(con bls12_381_G2_element " + std::string(G2_GENERATOR) + ")";
+
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_scalarMul", max_scalar, g1), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_scalarMul", min_scalar, g1), CARDANO_UPLC_SEMANTICS_E), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_scalarMul", above, g1), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_scalarMul", below, g1), CARDANO_UPLC_SEMANTICS_D), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_scalarMul", above, g1), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_scalarMul", max_scalar, g2), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_scalarMul", min_scalar, g2), CARDANO_UPLC_SEMANTICS_F), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_scalarMul", above, g2), CARDANO_UPLC_SEMANTICS_E), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_scalarMul", below, g2), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_scalarMul", above, g2), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+}
+
+TEST(cardano_uplc_builtin_bounds, multiScalarMulBoundsEveryScalarInEveryVariant)
+{
+  const std::string max_scalar = signed_power_of_two(BLS_SCALAR_BOUND_BITS, false, -1);
+  const std::string min_scalar = signed_power_of_two(BLS_SCALAR_BOUND_BITS, true, 0);
+  const std::string above      = signed_power_of_two(BLS_SCALAR_BOUND_BITS, false, 0);
+  const std::string below      = signed_power_of_two(BLS_SCALAR_BOUND_BITS, true, -1);
+  const std::string g1_points  = "(con (list bls12_381_G1_element) [" + std::string(G1_GENERATOR) + "])";
+  const std::string g2_points  = "(con (list bls12_381_G2_element) [" + std::string(G2_GENERATOR) + "])";
+
+  const auto scalars = [](const std::string& a, const std::string& b)
+  {
+    return "(con (list integer) [" + a + ", " + b + "])";
+  };
+
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_multiScalarMul", scalars(max_scalar, min_scalar), g1_points), CARDANO_UPLC_SEMANTICS_A), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_multiScalarMul", scalars(max_scalar, above), g1_points), CARDANO_UPLC_SEMANTICS_A), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G1_multiScalarMul", scalars(below, "1"), g1_points), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_multiScalarMul", scalars(min_scalar, max_scalar), g2_points), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_multiScalarMul", scalars("1", below), g2_points), CARDANO_UPLC_SEMANTICS_B), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("bls12_381_G2_multiScalarMul", scalars(above, "1"), g2_points), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_bounds, multiScalarMulRejectsANonIntegerScalar)
+{
+  cardano_uplc_arena_t*    arena       = new_arena();
+  cardano_uplc_type_t*     int_type    = nullptr;
+  cardano_uplc_type_t*     point_type  = nullptr;
+  cardano_uplc_constant_t* scalar_list = nullptr;
+  cardano_uplc_constant_t* point_list  = nullptr;
+  cardano_uplc_value_t*    scalars     = nullptr;
+  cardano_uplc_value_t*    points      = nullptr;
+
+  const cardano_uplc_value_t*    stray   = bytes_value(arena, std::string("\x01", 1));
+  const cardano_uplc_constant_t* items[] = { stray->as.constant };
+
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_type), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BLS_G1, nullptr, nullptr, &point_type), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_list(arena, int_type, items, 1U, &scalar_list), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_list(arena, point_type, nullptr, 0U, &point_list), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_value_new_constant(arena, scalar_list, &scalars), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_value_new_constant(arena, point_list, &points), CARDANO_SUCCESS);
+
+  EXPECT_EQ(
+    run_under(arena, CARDANO_UPLC_SEMANTICS_G, CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL, scalars, points),
+    CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_builtin_bounds, expModIntegerBoundsItsOperandsInEveryVariant)
+{
+  const std::string max_operand = integer_con(signed_power_of_two(EXP_MOD_BOUND_BITS, false, -1));
+  const std::string min_operand = integer_con(signed_power_of_two(EXP_MOD_BOUND_BITS, true, 0));
+  const std::string above       = integer_con(signed_power_of_two(EXP_MOD_BOUND_BITS, false, 0));
+  const std::string below       = integer_con(signed_power_of_two(EXP_MOD_BOUND_BITS, true, -1));
+  const std::string one         = integer_con("1");
+  const std::string three       = integer_con("3");
+  const std::string seven       = integer_con("7");
+
+  EXPECT_EQ(status_under(program_of("expModInteger", three, one, max_operand), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("expModInteger", three, one, above), CARDANO_UPLC_SEMANTICS_A), CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  EXPECT_EQ(status_under(program_of("expModInteger", max_operand, one, seven), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("expModInteger", min_operand, one, seven), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("expModInteger", above, one, seven), CARDANO_UPLC_SEMANTICS_B), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("expModInteger", below, one, seven), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  EXPECT_EQ(status_under(program_of("expModInteger", three, max_operand, seven), CARDANO_UPLC_SEMANTICS_E), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("expModInteger", three, min_operand, seven), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_under(program_of("expModInteger", three, above, seven), CARDANO_UPLC_SEMANTICS_G), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_under(program_of("expModInteger", three, below, seven), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  EXPECT_EQ(eval_ok(program_of("expModInteger", above, below, one).c_str()), "(con integer 0)");
+}

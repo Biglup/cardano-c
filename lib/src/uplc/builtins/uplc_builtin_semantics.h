@@ -40,9 +40,12 @@ extern "C" {
  * captures that selection so the cost model and the builtin runtime read one
  * value rather than re-deriving the protocol rules. The observable differences
  * are that variants D, E, F and G cost text strings by their utf-8 byte length
- * rather than code-point count (see \ref cardano_uplc_semantics_costs_strings_by_utf8_bytes)
- * and that variants C, E and G apply a range check to \c consByteString (see
- * \ref cardano_uplc_semantics_cons_byte_string_range_checks).
+ * rather than code-point count (see \ref cardano_uplc_semantics_costs_strings_by_utf8_bytes),
+ * that variants C, E and G apply a range check to \c consByteString (see
+ * \ref cardano_uplc_semantics_cons_byte_string_range_checks), that variants D and
+ * E bound integer arguments (see \ref cardano_uplc_semantics_bounds_integer_arguments)
+ * and that variants D, E, F and G bound byte-string arguments (see
+ * \ref cardano_uplc_semantics_bounds_byte_string_arguments).
  */
 typedef enum
 {
@@ -123,6 +126,38 @@ cardano_uplc_semantics_costs_strings_by_utf8_bytes(cardano_uplc_builtin_semantic
  */
 bool
 cardano_uplc_semantics_cons_byte_string_range_checks(cardano_uplc_builtin_semantics_t semantics);
+
+/**
+ * \brief Whether a semantics variant bounds the integer arguments of builtins.
+ *
+ * True for D and E, false for A, B, C, F and G. Under these variants the integer
+ * arithmetic and ordering builtins, and the leading integer of \c consByteString,
+ * reject an argument outside -(2^262143) .. 2^262143 - 1.
+ *
+ * \param[in] semantics The semantics variant to query.
+ *
+ * \return \c true for D and E, \c false otherwise (including an unknown variant).
+ */
+bool
+cardano_uplc_semantics_bounds_integer_arguments(cardano_uplc_builtin_semantics_t semantics);
+
+/**
+ * \brief Whether a semantics variant bounds the byte-string arguments of builtins.
+ *
+ * True for D, E, F and G, false for A, B and C. Under these variants the builtins
+ * that consume a byte string's contents reject one longer than 65536 bytes, and
+ * the same variants select the bounded forms of \c writeBits (input of at most
+ * 4096 bytes), \c shiftByteString and \c rotateByteString (a shift that fits a
+ * signed 64-bit integer), \c constrData (a tag that fits an unsigned 64-bit
+ * integer) and the BLS12-381 \c scalarMul builtins (a scalar in
+ * -(2^4095) .. 2^4095 - 1).
+ *
+ * \param[in] semantics The semantics variant to query.
+ *
+ * \return \c true for D, E, F and G, \c false otherwise (including an unknown variant).
+ */
+bool
+cardano_uplc_semantics_bounds_byte_string_arguments(cardano_uplc_builtin_semantics_t semantics);
 
 #ifdef __cplusplus
 }

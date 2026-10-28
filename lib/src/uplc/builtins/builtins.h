@@ -56,6 +56,12 @@ extern "C" {
  * \ref CARDANO_UPLC_BUILTIN_OUTCOME_UNSUPPORTED (its case is skipped, so leaving
  * the budget untouched cannot corrupt the run).
  *
+ * Before any cost is spent, the arguments are checked against the bounds the
+ * semantics variant applies: under D and E an integer argument of the integer
+ * arithmetic and ordering builtins (and the byte of \c consByteString) outside
+ * -(2^262143) .. 2^262143 - 1, and under D, E, F and G a byte-string argument
+ * longer than 65536 bytes, is a script error with nothing spent.
+ *
  * The dispatch is an exhaustive switch over \ref cardano_uplc_builtin_t; every
  * arm currently returns the unsupported outcome. As bodies land they replace
  * their arm with compute-cost, spend, run.
@@ -65,7 +71,7 @@ extern "C" {
  *            be NULL.
  * \param[in] costs The per-builtin costing functions. Must not be NULL.
  * \param[in] semantics The builtin semantics variant selecting the string ex-mem
- *            measure and the body's range-check behaviour.
+ *            measure, the argument bounds and the body's range-check behaviour.
  * \param[in] func The saturated builtin to run.
  * \param[in] args The saturated argument values, in application order. May be NULL
  *            only when \p arg_count is 0.
