@@ -66,22 +66,6 @@ typedef enum
 } cardano_uplc_builtin_semantics_t;
 
 /**
- * \brief Selects the builtin semantics variant from a language version alone.
- *
- * The protocol-unaware selection maps V1 and V2 to B and V3 to C. Protocol-aware
- * callers should use \ref cardano_uplc_builtin_semantics_for_language_and_protocol
- * instead, which can also select the pre-Chang A, the Van-Rossem D/E and the
- * Dijkstra F/G variants.
- * An unrecognized version is treated as V3 (variant C).
- *
- * \param[in] lang_version The language version selecting the variant.
- *
- * \return The selected semantics variant.
- */
-cardano_uplc_builtin_semantics_t
-cardano_uplc_builtin_semantics_for_language(cardano_uplc_lang_version_t lang_version);
-
-/**
  * \brief Selects the builtin semantics variant from language and protocol.
  *
  * For V1 and V2 a protocol major version at or above the Dijkstra version

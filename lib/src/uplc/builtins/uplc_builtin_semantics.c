@@ -55,34 +55,6 @@ static const uint64_t CARDANO_UPLC_DIJKSTRA_PROTOCOL_VERSION = 12U;
 /* DEFINITIONS ***************************************************************/
 
 cardano_uplc_builtin_semantics_t
-cardano_uplc_builtin_semantics_for_language(cardano_uplc_lang_version_t lang_version)
-{
-  cardano_uplc_builtin_semantics_t result = CARDANO_UPLC_SEMANTICS_C;
-
-  switch (lang_version)
-  {
-    case CARDANO_UPLC_LANG_VERSION_V1:
-    case CARDANO_UPLC_LANG_VERSION_V2:
-    {
-      result = CARDANO_UPLC_SEMANTICS_B;
-      break;
-    }
-    case CARDANO_UPLC_LANG_VERSION_V3:
-    case CARDANO_UPLC_LANG_VERSION_V4:
-    {
-      result = CARDANO_UPLC_SEMANTICS_C;
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-
-  return result;
-}
-
-cardano_uplc_builtin_semantics_t
 cardano_uplc_builtin_semantics_for_language_and_protocol(
   cardano_uplc_lang_version_t lang_version,
   uint64_t                    protocol_major)

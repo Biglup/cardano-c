@@ -2335,14 +2335,6 @@ TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, unknown_language_
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(static_cast<cardano_uplc_lang_version_t>(99), 12U), CARDANO_UPLC_SEMANTICS_C);
 }
 
-TEST(cardano_uplc_builtin_semantics_for_language, no_protocol)
-{
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language(CARDANO_UPLC_LANG_VERSION_V1), CARDANO_UPLC_SEMANTICS_B);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language(CARDANO_UPLC_LANG_VERSION_V2), CARDANO_UPLC_SEMANTICS_B);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language(CARDANO_UPLC_LANG_VERSION_V3), CARDANO_UPLC_SEMANTICS_C);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language(CARDANO_UPLC_LANG_VERSION_V4), CARDANO_UPLC_SEMANTICS_C);
-}
-
 TEST(cardano_uplc_semantics_costs_strings_by_utf8_bytes, per_variant)
 {
   EXPECT_FALSE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_A));
