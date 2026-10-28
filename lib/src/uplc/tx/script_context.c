@@ -25,7 +25,10 @@
 
 #include <cardano/uplc/uplc_apply_params.h>
 
+#include "../../allocators.h"
+
 #include <cardano/address/address.h>
+#include <cardano/address/address_type.h>
 #include <cardano/address/base_address.h>
 #include <cardano/address/enterprise_address.h>
 #include <cardano/address/pointer_address.h>
@@ -35,6 +38,7 @@
 #include <cardano/assets/asset_name_map.h>
 #include <cardano/assets/multi_asset.h>
 #include <cardano/assets/policy_id_list.h>
+#include <cardano/buffer.h>
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/certs/auth_committee_hot_cert.h>
 #include <cardano/certs/certificate.h>
@@ -55,10 +59,13 @@
 #include <cardano/certs/update_drep_cert.h>
 #include <cardano/certs/vote_delegation_cert.h>
 #include <cardano/certs/vote_registration_delegation_cert.h>
+#include <cardano/common/bigint.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/datum.h>
 #include <cardano/common/drep.h>
 #include <cardano/common/governance_action_id.h>
+#include <cardano/common/guard_set.h>
+#include <cardano/common/network_id.h>
 #include <cardano/common/protocol_version.h>
 #include <cardano/common/unit_interval.h>
 #include <cardano/common/utxo.h>
@@ -82,6 +89,13 @@
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <cardano/proposal_procedures/update_committee_action.h>
 #include <cardano/scripts/script.h>
+#include <cardano/transaction/sub_transaction.h>
+#include <cardano/transaction_body/account_balance_interval.h>
+#include <cardano/transaction_body/account_balance_intervals_map.h>
+#include <cardano/transaction_body/direct_deposit_map.h>
+#include <cardano/transaction_body/required_guards_map.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
+#include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input.h>
 #include <cardano/transaction_body/transaction_input_set.h>
@@ -98,6 +112,10 @@
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
 
+#include <src/string_safe.h>
+
+#include <string.h>
+
 /* CONSTANTS *****************************************************************/
 
 /**
@@ -110,6 +128,222 @@ static const uint64_t CONSTR_3 = 3U;
 static const uint64_t CONSTR_4 = 4U;
 static const uint64_t CONSTR_5 = 5U;
 static const uint64_t CONSTR_6 = 6U;
+
+/**
+ * \brief Capacity of a ledger sort key, in bytes.
+ *
+ * Wide enough for the longest key the V4 encoder builds: a voter followed by a
+ * governance action id, or a policy id followed by an asset name.
+ */
+enum
+{
+  SORT_KEY_SIZE = 128
+};
+
+/**
+ * \brief Number of fields of the V4 TxInfo record.
+ */
+enum
+{
+  TX_INFO_V4_FIELD_COUNT = 19
+};
+
+/**
+ * \brief Number of fields of the V4 TopTxInfoSimplified record.
+ */
+enum
+{
+  TOP_TX_INFO_SIMPLIFIED_FIELD_COUNT = 18
+};
+
+/**
+ * \brief Number of fields of the V4 TopTxInfo record.
+ */
+enum
+{
+  TOP_TX_INFO_FIELD_COUNT = 4
+};
+
+/**
+ * \brief Number of fields of the V4 ScriptContext record.
+ */
+enum
+{
+  SCRIPT_CONTEXT_V4_FIELD_COUNT = 4
+};
+
+/**
+ * \brief Largest number of items a script purpose carries besides its script hash.
+ */
+enum
+{
+  PURPOSE_MAX_ITEMS = 2
+};
+
+/**
+ * \brief Positions of the V4 TxInfo fields that the TopTxInfo aggregates as they are.
+ */
+static const size_t   TX_INFO_V4_ID_FIELD         = 0U;
+static const size_t   TX_INFO_V4_INPUTS_FIELD     = 2U;
+static const size_t   TX_INFO_V4_REF_INPUTS_FIELD = 3U;
+static const size_t   TX_INFO_V4_OUTPUTS_FIELD    = 4U;
+static const size_t   TX_INFO_V4_CERTS_FIELD      = 6U;
+static const size_t   TX_INFO_V4_GUARDS_FIELD     = 11U;
+static const size_t   TX_INFO_V4_PROPOSALS_FIELD  = 16U;
+static const size_t   SORTED_MAP_INITIAL_CAPACITY = 4U;
+static const size_t   SORT_KEY_INDEX_SIZE         = 8U;
+static const size_t   SORT_KEY_BITS_PER_BYTE      = 8U;
+static const byte_t   LEDGER_SCRIPT_CREDENTIAL    = 0U;
+static const byte_t   LEDGER_KEY_CREDENTIAL       = 1U;
+static const byte_t   LEDGER_TESTNET              = 0U;
+static const byte_t   LEDGER_MAINNET              = 1U;
+static const byte_t   LEDGER_COMMITTEE_VOTER      = 0U;
+static const byte_t   LEDGER_DREP_VOTER           = 1U;
+static const byte_t   LEDGER_STAKE_POOL_VOTER     = 2U;
+static const uint64_t TX_CERT_V4_POOL_REGISTER    = 7U;
+static const uint64_t TX_CERT_V4_POOL_RETIRE      = 8U;
+
+/* STRUCTURES ****************************************************************/
+
+/**
+ * \brief A byte string that orders map keys the way the ledger orders them.
+ *
+ * Keys compare byte by byte and a key that is a prefix of another sorts first,
+ * which is the ordering of the ledger's Haskell \c Ord instances once each
+ * constructor is written as its rank followed by its fields.
+ */
+typedef struct sort_key_t
+{
+    byte_t bytes[SORT_KEY_SIZE];
+    size_t size;
+} sort_key_t;
+
+/**
+ * \brief How a sorted map combines a new entry with an existing one of the same key.
+ */
+typedef enum
+{
+  MERGE_KEEP_FIRST = 0,
+  MERGE_KEEP_LAST  = 1,
+  MERGE_SUM        = 2
+} merge_mode_t;
+
+/**
+ * \brief Which amounts of a multi-asset a value table collects.
+ */
+typedef enum
+{
+  ASSETS_ALL      = 0,
+  ASSETS_POSITIVE = 1,
+  ASSETS_NEGATIVE = 2
+} asset_filter_t;
+
+/**
+ * \brief An entry of a sorted map.
+ *
+ * \c key_data is the encoded map key, \c inner_key the key of a nested map when
+ * the entry belongs to one, and the value is either \c value or, for summed
+ * entries, \c amount.
+ */
+typedef struct sorted_entry_t
+{
+    sort_key_t             key;
+    cardano_plutus_data_t* key_data;
+    cardano_plutus_data_t* inner_key;
+    cardano_plutus_data_t* value;
+    cardano_bigint_t*      amount;
+} sorted_entry_t;
+
+/**
+ * \brief A map kept in ledger key order while it is filled.
+ */
+typedef struct sorted_map_t
+{
+    sorted_entry_t* items;
+    size_t          count;
+    size_t          capacity;
+} sorted_map_t;
+
+/**
+ * \brief The parts of a top-level transaction or a sub-transaction that a V4 TxInfo reads.
+ *
+ * Both transaction levels share this view so a single encoder serves them.
+ * Every pointer is an owned reference released by \ref tx_view_release.
+ */
+typedef struct tx_view_t
+{
+    cardano_blake2b_hash_t*                  id;
+    bool                                     is_sub_tx;
+    uint64_t                                 sub_tx_index;
+    cardano_transaction_input_set_t*         inputs;
+    cardano_transaction_input_set_t*         reference_inputs;
+    cardano_transaction_output_list_t*       outputs;
+    cardano_multi_asset_t*                   mint;
+    cardano_certificate_set_t*               certificates;
+    cardano_withdrawal_map_t*                withdrawals;
+    cardano_direct_deposit_map_t*            direct_deposits;
+    cardano_account_balance_intervals_map_t* balance_intervals;
+    bool                                     has_invalid_before;
+    uint64_t                                 invalid_before;
+    bool                                     has_invalid_after;
+    uint64_t                                 invalid_after;
+    cardano_guard_set_t*                     guards;
+    cardano_required_guards_map_t*           required_guards;
+    cardano_voting_procedures_t*             votes;
+    cardano_proposal_procedure_set_t*        proposals;
+    bool                                     has_treasury;
+    uint64_t                                 treasury;
+    uint64_t                                 donation;
+    cardano_redeemer_list_t*                 redeemers;
+    cardano_plutus_data_set_t*               datums;
+} tx_view_t;
+
+/**
+ * \brief The aggregates of a whole transaction that make up a TopTxInfo.
+ */
+typedef struct batch_t
+{
+    cardano_plutus_list_t* sub_tx_infos;
+    cardano_plutus_list_t* ids;
+    cardano_plutus_list_t* inputs;
+    cardano_plutus_list_t* reference_inputs;
+    cardano_plutus_list_t* outputs;
+    cardano_plutus_list_t* certificates;
+    cardano_plutus_list_t* guards;
+    cardano_plutus_list_t* proposals;
+    sorted_map_t           guard_datums;
+    sorted_map_t           mints;
+    sorted_map_t           burns;
+    sorted_map_t           withdrawals;
+    sorted_map_t           direct_deposits;
+    sorted_map_t           required_guards;
+    sorted_map_t           redeemer_hashes;
+    sorted_map_t           datums;
+    sorted_map_t           votes;
+    bool                   has_lower;
+    uint64_t               lower;
+    bool                   has_upper;
+    uint64_t               upper;
+    bool                   has_treasury;
+    uint64_t               treasury;
+    cardano_bigint_t*      donations;
+} batch_t;
+
+/**
+ * \brief What a redeemer points to, resolved at its transaction level.
+ *
+ * \c items are the fields a ScriptPurpose and a ScriptInfo share, \c script_hash
+ * the hash of the script that runs and \c guard the encoded guard credential of
+ * a guarding redeemer. Every value is an owned reference.
+ */
+typedef struct purpose_parts_t
+{
+    uint64_t               alternative;
+    cardano_plutus_data_t* items[PURPOSE_MAX_ITEMS];
+    size_t                 item_count;
+    cardano_plutus_data_t* script_hash;
+    cardano_plutus_data_t* guard;
+} purpose_parts_t;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -2153,7 +2387,7 @@ guard_conway_features_v1v2(cardano_transaction_body_t* body)
  *
  * Mirrors the ledger's V1 \c toPlutusTxInfo, which resolves each reference input
  * through \c transTxInInfoV1 (and so fails on an output the V1 TxOut cannot
- * represent — an inline datum or a reference script) and then discards it. Our
+ * represent, such as an inline datum or a reference script) and then discards it. Our
  * V1 output encoder silently drops those fields, so the representability check is
  * done explicitly here.
  */
@@ -4604,6 +4838,3882 @@ redeemers_map_v3(
   return result;
 }
 
+/* V4 STATIC FUNCTIONS *******************************************************/
+
+/**
+ * \brief Releases every plutus-data value of an array.
+ */
+static void
+unref_all(cardano_plutus_data_t** items, const size_t count)
+{
+  for (size_t i = 0U; i < count; ++i)
+  {
+    cardano_plutus_data_unref(&items[i]);
+  }
+}
+
+/**
+ * \brief Builds a plutus-data list from an array of values, in order.
+ */
+static cardano_error_t
+encode_list(cardano_plutus_data_t** items, const size_t count, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    result = cardano_plutus_list_add(list, items[i]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Builds a constructor of the given alternative from an array of fields.
+ */
+static cardano_error_t
+encode_variant(const uint64_t alternative, cardano_plutus_data_t** fields, const size_t count, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    result = cardano_plutus_list_add(list, fields[i]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_constr(alternative, list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Reads the alternative and one field of a constructor plutus-data value.
+ */
+static cardano_error_t
+constr_field_at(cardano_plutus_data_t* data, const size_t index, uint64_t* alternative, cardano_plutus_data_t** field)
+{
+  cardano_constr_plutus_data_t* constr = NULL;
+  cardano_plutus_list_t*        fields = NULL;
+  cardano_error_t               result = cardano_plutus_data_to_constr(data, &constr);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_constr_plutus_data_get_alternative(constr, alternative);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_constr_plutus_data_get_data(constr, &fields);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_get(fields, index, field);
+  }
+
+  cardano_plutus_list_unref(&fields);
+  cardano_constr_plutus_data_unref(&constr);
+
+  return result;
+}
+
+/**
+ * \brief Extracts the script hash of an encoded credential.
+ *
+ * A script credential is Constr 1 [script hash]; a key credential has no script
+ * hash and yields \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ */
+static cardano_error_t
+credential_script_hash(cardano_plutus_data_t* credential, cardano_plutus_data_t** script_hash)
+{
+  uint64_t               alternative = CONSTR_0;
+  cardano_plutus_data_t* hash        = NULL;
+  cardano_error_t        result      = constr_field_at(credential, 0U, &alternative, &hash);
+
+  if ((result == CARDANO_SUCCESS) && (alternative != CONSTR_1))
+  {
+    result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_plutus_data_ref(hash);
+    *script_hash = hash;
+  }
+
+  cardano_plutus_data_unref(&hash);
+
+  return result;
+}
+
+/**
+ * \brief Appends bytes to a sort key, truncating at its capacity.
+ */
+static void
+sort_key_append(sort_key_t* key, const byte_t* data, const size_t size)
+{
+  const size_t room = (size_t)SORT_KEY_SIZE - key->size;
+  const size_t copy = (size < room) ? size : room;
+
+  cardano_safe_memcpy(&key->bytes[key->size], room, data, copy);
+
+  key->size += copy;
+}
+
+/**
+ * \brief Appends a single rank byte to a sort key.
+ */
+static void
+sort_key_append_byte(sort_key_t* key, const byte_t value)
+{
+  sort_key_append(key, &value, 1U);
+}
+
+/**
+ * \brief Appends an unsigned integer to a sort key as 8 big-endian bytes.
+ */
+static void
+sort_key_append_index(sort_key_t* key, const uint64_t index)
+{
+  byte_t bytes[8] = { 0 };
+
+  for (size_t i = 0U; i < SORT_KEY_INDEX_SIZE; ++i)
+  {
+    bytes[i] = (byte_t)(index >> (SORT_KEY_BITS_PER_BYTE * (SORT_KEY_INDEX_SIZE - 1U - i)));
+  }
+
+  sort_key_append(key, bytes, SORT_KEY_INDEX_SIZE);
+}
+
+/**
+ * \brief Appends the bytes of a hash to a sort key.
+ */
+static void
+sort_key_append_hash(sort_key_t* key, const cardano_blake2b_hash_t* hash)
+{
+  sort_key_append(key, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash));
+}
+
+/**
+ * \brief Appends a credential to a sort key in the ledger order: script credentials sort before key credentials.
+ */
+static cardano_error_t
+sort_key_append_credential(sort_key_t* key, const cardano_credential_t* credential)
+{
+  cardano_credential_type_t type   = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+  cardano_error_t           result = cardano_credential_get_type(credential, &type);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append_byte(key, (type == CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH) ? LEDGER_SCRIPT_CREDENTIAL : LEDGER_KEY_CREDENTIAL);
+    sort_key_append(key, cardano_credential_get_hash_bytes(credential), cardano_credential_get_hash_bytes_size(credential));
+  }
+
+  return result;
+}
+
+/**
+ * \brief Orders two sort keys byte by byte, a proper prefix first.
+ */
+static int32_t
+compare_sort_keys(const sort_key_t* lhs, const sort_key_t* rhs)
+{
+  const size_t  common = (lhs->size < rhs->size) ? lhs->size : rhs->size;
+  const int32_t order  = (int32_t)memcmp(lhs->bytes, rhs->bytes, common);
+
+  if (order != 0)
+  {
+    return order;
+  }
+
+  if (lhs->size == rhs->size)
+  {
+    return 0;
+  }
+
+  return (lhs->size < rhs->size) ? -1 : 1;
+}
+
+/**
+ * \brief Releases the entries of a sorted map and resets it to empty.
+ */
+static void
+sorted_map_free(sorted_map_t* map)
+{
+  for (size_t i = 0U; i < map->count; ++i)
+  {
+    cardano_plutus_data_unref(&map->items[i].key_data);
+    cardano_plutus_data_unref(&map->items[i].inner_key);
+    cardano_plutus_data_unref(&map->items[i].value);
+    cardano_bigint_unref(&map->items[i].amount);
+  }
+
+  _cardano_free(map->items);
+
+  map->items    = NULL;
+  map->count    = 0U;
+  map->capacity = 0U;
+}
+
+/**
+ * \brief Makes room for one more entry in a sorted map.
+ */
+static cardano_error_t
+sorted_map_reserve(sorted_map_t* map)
+{
+  if (map->count < map->capacity)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  const size_t    capacity = (map->capacity == 0U) ? SORTED_MAP_INITIAL_CAPACITY : (map->capacity * 2U);
+  sorted_entry_t* items    = (sorted_entry_t*)_cardano_malloc(capacity * sizeof(sorted_entry_t));
+
+  if (items == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  if (map->items != NULL)
+  {
+    cardano_safe_memcpy(items, capacity * sizeof(sorted_entry_t), map->items, map->count * sizeof(sorted_entry_t));
+  }
+
+  _cardano_free(map->items);
+
+  map->items    = items;
+  map->capacity = capacity;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Inserts an entry into a sorted map, merging it with an entry of the same key.
+ *
+ * \param[in] map The map to insert into.
+ * \param[in] key The ledger sort key of the entry.
+ * \param[in] key_data The encoded key. A new reference is taken.
+ * \param[in] inner_key The encoded key inside a nested map, or NULL.
+ * \param[in] value The encoded value, or NULL when the entry carries an amount.
+ * \param[in] amount The amount of a summed entry, or NULL. It is copied.
+ * \param[in] mode How an entry with an existing key is merged.
+ */
+static cardano_error_t
+sorted_map_put(
+  sorted_map_t*           map,
+  const sort_key_t*       key,
+  cardano_plutus_data_t*  key_data,
+  cardano_plutus_data_t*  inner_key,
+  cardano_plutus_data_t*  value,
+  const cardano_bigint_t* amount,
+  const merge_mode_t      mode)
+{
+  size_t  position = 0U;
+  int32_t order    = -1;
+
+  while (position < map->count)
+  {
+    order = compare_sort_keys(&map->items[position].key, key);
+
+    if (order >= 0)
+    {
+      break;
+    }
+
+    ++position;
+  }
+
+  if ((position < map->count) && (order == 0))
+  {
+    sorted_entry_t* entry = &map->items[position];
+
+    if (mode == MERGE_KEEP_LAST)
+    {
+      cardano_plutus_data_ref(inner_key);
+      cardano_plutus_data_ref(value);
+      cardano_plutus_data_unref(&entry->inner_key);
+      cardano_plutus_data_unref(&entry->value);
+
+      entry->inner_key = inner_key;
+      entry->value     = value;
+    }
+
+    if (mode == MERGE_SUM)
+    {
+      cardano_bigint_add(entry->amount, amount, entry->amount);
+    }
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_error_t result = sorted_map_reserve(map);
+  sorted_entry_t  entry;
+
+  CARDANO_UNUSED(memset(&entry, 0, sizeof(entry)));
+
+  if ((result == CARDANO_SUCCESS) && (amount != NULL))
+  {
+    result = cardano_bigint_clone(amount, &entry.amount);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  entry.key = *key;
+
+  cardano_plutus_data_ref(key_data);
+  cardano_plutus_data_ref(inner_key);
+  cardano_plutus_data_ref(value);
+
+  entry.key_data  = key_data;
+  entry.inner_key = inner_key;
+  entry.value     = value;
+
+  CARDANO_UNUSED(memmove(&map->items[position + 1U], &map->items[position], (map->count - position) * sizeof(sorted_entry_t)));
+
+  map->items[position]  = entry;
+  map->count           += 1U;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Encodes the value of a sorted-map entry: its amount when summed, its value otherwise.
+ */
+static cardano_error_t
+sorted_entry_value(const sorted_entry_t* entry, cardano_plutus_data_t** out)
+{
+  if (entry->amount != NULL)
+  {
+    return cardano_plutus_data_new_integer(entry->amount, out);
+  }
+
+  cardano_plutus_data_ref(entry->value);
+  *out = entry->value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Encodes a sorted map as a plutus-data map, in key order.
+ */
+static cardano_error_t
+sorted_map_encode(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_map_t* encoded = NULL;
+  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
+
+  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_data_t* value = NULL;
+
+    result = sorted_entry_value(&map->items[i], &value);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_map_insert(encoded, map->items[i].key_data, value);
+    }
+
+    cardano_plutus_data_unref(&value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(encoded, out);
+  }
+
+  cardano_plutus_map_unref(&encoded);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the keys of a sorted map as a plutus-data list, in key order.
+ */
+static cardano_error_t
+sorted_map_encode_keys(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+
+  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    result = cardano_plutus_list_add(list, map->items[i].key_data);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Appends a sorted map to a plutus-data map as a map of nested maps.
+ *
+ * Consecutive entries with the same outer key form one nested map, keyed by
+ * their inner keys.
+ */
+static cardano_error_t
+sorted_map_append_nested(const sorted_map_t* map, cardano_plutus_map_t* target)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+  size_t          start  = 0U;
+
+  while ((start < map->count) && (result == CARDANO_SUCCESS))
+  {
+    cardano_plutus_map_t*  inner    = NULL;
+    cardano_plutus_data_t* inner_pd = NULL;
+    size_t                 end      = start;
+
+    result = cardano_plutus_map_new(&inner);
+
+    while ((result == CARDANO_SUCCESS) && (end < map->count) && cardano_plutus_data_equals(map->items[end].key_data, map->items[start].key_data))
+    {
+      cardano_plutus_data_t* value = NULL;
+
+      result = sorted_entry_value(&map->items[end], &value);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_map_insert(inner, map->items[end].inner_key, value);
+      }
+
+      cardano_plutus_data_unref(&value);
+
+      ++end;
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_map(inner, &inner_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_map_insert(target, map->items[start].key_data, inner_pd);
+    }
+
+    cardano_plutus_map_unref(&inner);
+    cardano_plutus_data_unref(&inner_pd);
+
+    start = end;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes a sorted map of nested entries as a plutus-data map of maps.
+ */
+static cardano_error_t
+sorted_map_encode_nested(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_map_t* encoded = NULL;
+  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_append_nested(map, encoded);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(encoded, out);
+  }
+
+  cardano_plutus_map_unref(&encoded);
+
+  return result;
+}
+
+/**
+ * \brief Builds the sort key and the encoded credential of a reward account.
+ *
+ * The ledger orders accounts by network, test networks first, then by credential.
+ */
+static cardano_error_t
+account_entry(cardano_reward_address_t* address, sort_key_t* key, cardano_plutus_data_t** credential_data)
+{
+  cardano_network_id_t  network    = CARDANO_NETWORK_ID_MAIN_NET;
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = cardano_reward_address_get_network_id(address, &network);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append_byte(key, (network == CARDANO_NETWORK_ID_MAIN_NET) ? LEDGER_MAINNET : LEDGER_TESTNET);
+
+    credential = cardano_reward_address_get_credential(address);
+    result     = sort_key_append_credential(key, credential);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_credential(credential, credential_data);
+  }
+
+  cardano_credential_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Adds an amount keyed by a reward account to a sorted map, summing amounts of the same account.
+ */
+static cardano_error_t
+put_account_amount(sorted_map_t* map, cardano_reward_address_t* address, const uint64_t amount)
+{
+  sort_key_t             key;
+  cardano_plutus_data_t* credential = NULL;
+  cardano_bigint_t*      value      = NULL;
+
+  key.size = 0U;
+
+  cardano_error_t result = account_entry(address, &key, &credential);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_unsigned_int(amount, &value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_put(map, &key, credential, NULL, NULL, value, MERGE_SUM);
+  }
+
+  cardano_plutus_data_unref(&credential);
+  cardano_bigint_unref(&value);
+
+  return result;
+}
+
+/**
+ * \brief Adds the withdrawals of a transaction to a sorted map of account amounts.
+ */
+static cardano_error_t
+put_withdrawals(sorted_map_t* map, cardano_withdrawal_map_t* withdrawals)
+{
+  const size_t    count  = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_reward_address_t* address = NULL;
+    uint64_t                  amount  = 0U;
+
+    result = cardano_withdrawal_map_get_key_value_at(withdrawals, i, &address, &amount);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_account_amount(map, address, amount);
+    }
+
+    cardano_reward_address_unref(&address);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Adds the direct deposits of a transaction to a sorted map of account amounts.
+ */
+static cardano_error_t
+put_direct_deposits(sorted_map_t* map, cardano_direct_deposit_map_t* deposits)
+{
+  const size_t    count  = (deposits != NULL) ? cardano_direct_deposit_map_get_length(deposits) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_reward_address_t* address = NULL;
+    uint64_t                  amount  = 0U;
+
+    result = cardano_direct_deposit_map_get_key_value_at(deposits, i, &address, &amount);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_account_amount(map, address, amount);
+    }
+
+    cardano_reward_address_unref(&address);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the withdrawals of a transaction as the V4 map of credential to lovelace.
+ */
+static cardano_error_t
+withdrawals_v4(cardano_withdrawal_map_t* withdrawals, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_withdrawals(&map, withdrawals);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the direct deposits of a transaction as the V4 map of credential to lovelace.
+ */
+static cardano_error_t
+direct_deposits_v4(cardano_direct_deposit_map_t* deposits, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_direct_deposits(&map, deposits);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an account balance interval.
+ *
+ * Lower bound => Constr 0 [lower], upper bound => Constr 1 [upper], both bounds
+ * => Constr 2 [lower, upper], exact balance => Constr 3 [balance].
+ */
+static cardano_error_t
+balance_interval_v4(const cardano_account_balance_interval_t* interval, cardano_plutus_data_t** out)
+{
+  const uint64_t* exact  = cardano_account_balance_interval_get_exact_balance(interval);
+  const uint64_t* lower  = cardano_account_balance_interval_get_inclusive_lower_bound(interval);
+  const uint64_t* upper  = cardano_account_balance_interval_get_exclusive_upper_bound(interval);
+  uint64_t        bounds = 0U;
+
+  cardano_plutus_data_t* fields[2] = { NULL, NULL };
+  cardano_error_t        result    = CARDANO_SUCCESS;
+  uint64_t               variant   = CONSTR_3;
+
+  if (exact != NULL)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(*exact, &fields[0]);
+    bounds = 1U;
+  }
+  else if ((lower != NULL) && (upper != NULL))
+  {
+    variant = CONSTR_2;
+    result  = cardano_plutus_data_new_integer_from_uint(*lower, &fields[0]);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_integer_from_uint(*upper, &fields[1]);
+    }
+
+    bounds = 2U;
+  }
+  else if (lower != NULL)
+  {
+    variant = CONSTR_0;
+    result  = cardano_plutus_data_new_integer_from_uint(*lower, &fields[0]);
+    bounds  = 1U;
+  }
+  else
+  {
+    variant = CONSTR_1;
+    result  = (upper != NULL) ? cardano_plutus_data_new_integer_from_uint(*upper, &fields[0]) : CARDANO_ERROR_INVALID_ARGUMENT;
+    bounds  = 1U;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_variant(variant, fields, (size_t)bounds, out);
+  }
+
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes account balance intervals as the V4 map of account to interval, in ledger account order.
+ */
+static cardano_error_t
+balance_intervals_v4(cardano_account_balance_intervals_map_t* intervals, cardano_plutus_data_t** out)
+{
+  sorted_map_t    map    = { NULL, 0U, 0U };
+  const size_t    count  = (intervals != NULL) ? cardano_account_balance_intervals_map_get_length(intervals) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_reward_address_t*           address     = NULL;
+    cardano_account_balance_interval_t* interval    = NULL;
+    cardano_plutus_data_t*              credential  = NULL;
+    cardano_plutus_data_t*              interval_pd = NULL;
+    sort_key_t                          key;
+
+    key.size = 0U;
+    result   = cardano_account_balance_intervals_map_get_key_value_at(intervals, i, &address, &interval);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = account_entry(address, &key, &credential);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = balance_interval_v4(interval, &interval_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = sorted_map_put(&map, &key, credential, NULL, interval_pd, NULL, MERGE_KEEP_FIRST);
+    }
+
+    cardano_reward_address_unref(&address);
+    cardano_account_balance_interval_unref(&interval);
+    cardano_plutus_data_unref(&credential);
+    cardano_plutus_data_unref(&interval_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Adds the amounts of a multi-asset to a sorted map keyed by policy id and asset name.
+ *
+ * Entries are ordered as the ledger orders them: by policy id, then by asset
+ * name compared byte by byte. The filter keeps every amount, only the positive
+ * ones or only the negative ones; amounts of the same asset are summed.
+ */
+static cardano_error_t
+put_assets(sorted_map_t* map, cardano_multi_asset_t* multi_asset, const asset_filter_t filter)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_policy_id_list_t* policies = NULL;
+  cardano_error_t           result   = cardano_multi_asset_get_keys(multi_asset, &policies);
+  const size_t              count    = (result == CARDANO_SUCCESS) ? cardano_policy_id_list_get_length(policies) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_blake2b_hash_t*   policy_id = NULL;
+    cardano_asset_name_map_t* assets    = NULL;
+    cardano_plutus_data_t*    policy_pd = NULL;
+
+    result = cardano_policy_id_list_get(policies, i, &policy_id);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = hash_bytes(policy_id, &policy_pd);
+    }
+
+    const size_t asset_count = (result == CARDANO_SUCCESS) ? cardano_asset_name_map_get_length(assets) : 0U;
+
+    for (size_t j = 0U; (j < asset_count) && (result == CARDANO_SUCCESS); ++j)
+    {
+      cardano_asset_name_t*  asset_name = NULL;
+      int64_t                quantity   = 0;
+      cardano_plutus_data_t* name_pd    = NULL;
+      cardano_bigint_t*      amount     = NULL;
+      sort_key_t             key;
+
+      key.size = 0U;
+      result   = cardano_asset_name_map_get_key_value_at(assets, j, &asset_name, &quantity);
+
+      const bool keep = (filter == ASSETS_ALL) || ((filter == ASSETS_POSITIVE) && (quantity > 0)) || ((filter == ASSETS_NEGATIVE) && (quantity < 0));
+
+      if ((result == CARDANO_SUCCESS) && keep)
+      {
+        sort_key_append_hash(&key, policy_id);
+        sort_key_append(&key, cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name));
+
+        result = encode_bytes(cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name), &name_pd);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_bigint_from_int(quantity, &amount);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = sorted_map_put(map, &key, policy_pd, name_pd, NULL, amount, MERGE_SUM);
+        }
+      }
+
+      cardano_asset_name_unref(&asset_name);
+      cardano_plutus_data_unref(&name_pd);
+      cardano_bigint_unref(&amount);
+    }
+
+    cardano_blake2b_hash_unref(&policy_id);
+    cardano_asset_name_map_unref(&assets);
+    cardano_plutus_data_unref(&policy_pd);
+  }
+
+  cardano_policy_id_list_unref(&policies);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a multi-asset as a MintValue map: policies and assets in ledger order, without an ada entry.
+ */
+static cardano_error_t
+mint_v4(cardano_multi_asset_t* multi_asset, const asset_filter_t filter, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_assets(&map, multi_asset, filter);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_nested(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a transaction-output value as the V4 Value map.
+ *
+ * The ada entry always comes first, even for a zero coin, followed by the
+ * policies and assets in ledger order.
+ */
+static cardano_error_t
+value_v4(cardano_value_t* value, cardano_plutus_data_t** out)
+{
+  sorted_map_t           map         = { NULL, 0U, 0U };
+  cardano_plutus_map_t*  value_map   = NULL;
+  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
+  cardano_error_t        result      = cardano_plutus_map_new(&value_map);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = value_add_coin(value_map, cardano_value_get_coin(value), true);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_assets(&map, multi_asset, ASSETS_ALL);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_append_nested(&map, value_map);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(value_map, out);
+  }
+
+  sorted_map_free(&map);
+  cardano_multi_asset_unref(&multi_asset);
+  cardano_plutus_map_unref(&value_map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the staking part of a V4 address as a Maybe AccountId.
+ *
+ * A base address is staked to the account of its stake credential, an
+ * enterprise address to none. Pointer, Byron and reward addresses cannot appear
+ * in a V4 context and are rejected, as the ledger rejects them.
+ */
+static cardano_error_t
+address_account_v4(const cardano_address_t* address, cardano_plutus_data_t** out)
+{
+  cardano_address_type_t type   = CARDANO_ADDRESS_TYPE_BYRON;
+  cardano_error_t        result = cardano_address_get_type(address, &type);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    switch (type)
+    {
+      case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_KEY_STAKE_KEY:
+      case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_KEY:
+      case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_KEY_STAKE_SCRIPT:
+      case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_SCRIPT:
+      {
+        cardano_base_address_t* base     = NULL;
+        cardano_credential_t*   stake    = NULL;
+        cardano_plutus_data_t*  stake_pd = NULL;
+
+        result = cardano_base_address_from_address(address, &base);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          stake  = cardano_base_address_get_stake_credential(base);
+          result = encode_credential(stake, &stake_pd);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_maybe(stake_pd, out);
+        }
+
+        cardano_base_address_unref(&base);
+        cardano_credential_unref(&stake);
+        cardano_plutus_data_unref(&stake_pd);
+
+        break;
+      }
+      case CARDANO_ADDRESS_TYPE_ENTERPRISE_KEY:
+      case CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT:
+      {
+        result = encode_maybe(NULL, out);
+        break;
+      }
+      case CARDANO_ADDRESS_TYPE_POINTER_KEY:
+      case CARDANO_ADDRESS_TYPE_POINTER_SCRIPT:
+      case CARDANO_ADDRESS_TYPE_BYRON:
+      case CARDANO_ADDRESS_TYPE_REWARD_KEY:
+      case CARDANO_ADDRESS_TYPE_REWARD_SCRIPT:
+      default:
+      {
+        result = CARDANO_ERROR_INVALID_ADDRESS_TYPE;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes a V4 address: the list [payment credential, Maybe AccountId].
+ */
+static cardano_error_t
+address_v4(const cardano_address_t* address, cardano_plutus_data_t** out)
+{
+  cardano_plutus_data_t* fields[2] = { NULL, NULL };
+  cardano_credential_t*  payment   = NULL;
+  cardano_error_t        result    = address_account_v4(address, &fields[1]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    payment = payment_credential(address);
+    result  = encode_credential(payment, &fields[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 2U, out);
+  }
+
+  cardano_credential_unref(&payment);
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the datum of a V4 transaction output as an OutputDatum.
+ *
+ * No datum => Constr 0 [], a datum hash => Constr 1 [hash], an inline datum =>
+ * Constr 2 [datum].
+ */
+static cardano_error_t
+output_datum_v4(cardano_datum_t* datum, cardano_plutus_data_t** out)
+{
+  if (datum == NULL)
+  {
+    return empty_constr(CONSTR_0, out);
+  }
+
+  cardano_datum_type_t   type   = CARDANO_DATUM_TYPE_DATA_HASH;
+  cardano_plutus_data_t* value  = NULL;
+  uint64_t               option = CONSTR_1;
+  cardano_error_t        result = cardano_datum_get_type(datum, &type);
+
+  if ((result == CARDANO_SUCCESS) && (type == CARDANO_DATUM_TYPE_INLINE_DATA))
+  {
+    option = CONSTR_2;
+    value  = cardano_datum_get_inline_data(datum);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (type == CARDANO_DATUM_TYPE_DATA_HASH))
+  {
+    result = encode_bytes(cardano_datum_get_data_hash_bytes(datum), cardano_datum_get_data_hash_bytes_size(datum), &value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = wrap_constr(option, value, out);
+  }
+
+  cardano_plutus_data_unref(&value);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a V4 transaction output: the list [address, value, datum option, Maybe script hash].
+ */
+static cardano_error_t
+output_v4(cardano_transaction_output_t* output, cardano_plutus_data_t** out)
+{
+  cardano_address_t*     address   = cardano_transaction_output_get_address(output);
+  cardano_value_t*       value     = cardano_transaction_output_get_value(output);
+  cardano_datum_t*       datum     = cardano_transaction_output_get_datum(output);
+  cardano_plutus_data_t* fields[4] = { NULL, NULL, NULL, NULL };
+  cardano_error_t        result    = address_v4(address, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = value_v4(value, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = output_datum_v4(datum, &fields[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = output_script_ref(output, &fields[3]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 4U, out);
+  }
+
+  cardano_address_unref(&address);
+  cardano_value_unref(&value);
+  cardano_datum_unref(&datum);
+  unref_all(fields, 4U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a V4 output reference: the list [transaction id, index].
+ */
+static cardano_error_t
+out_ref_v4(cardano_transaction_input_t* input, cardano_plutus_data_t** out)
+{
+  cardano_blake2b_hash_t* id        = cardano_transaction_input_get_id(input);
+  cardano_plutus_data_t*  fields[2] = { NULL, NULL };
+  cardano_error_t         result    = hash_bytes(id, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(cardano_transaction_input_get_index(input), &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 2U, out);
+  }
+
+  cardano_blake2b_hash_unref(&id);
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a set of inputs as the V4 list of TxInInfo records [out ref, resolved output].
+ */
+static cardano_error_t
+inputs_v4(cardano_transaction_input_set_t* inputs, cardano_utxo_list_t* resolved_inputs, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+  const size_t           count  = (inputs != NULL) ? cardano_transaction_input_set_get_length(inputs) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_input_t*  input     = NULL;
+    cardano_transaction_output_t* output    = NULL;
+    cardano_plutus_data_t*        fields[2] = { NULL, NULL };
+    cardano_plutus_data_t*        info      = NULL;
+
+    result = cardano_transaction_input_set_get(inputs, i, &input);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      output = resolve_output(resolved_inputs, input);
+      result = (output != NULL) ? out_ref_v4(input, &fields[0]) : CARDANO_ERROR_ELEMENT_NOT_FOUND;
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = output_v4(output, &fields[1]);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_list(fields, 2U, &info);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, info);
+    }
+
+    cardano_transaction_input_unref(&input);
+    cardano_transaction_output_unref(&output);
+    cardano_plutus_data_unref(&info);
+    unref_all(fields, 2U);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Rejects reference inputs that are also spent, as the ledger does before building a V4 TxInfo.
+ */
+static cardano_error_t
+check_reference_inputs_disjoint(cardano_transaction_input_set_t* inputs, cardano_transaction_input_set_t* reference_inputs)
+{
+  const size_t    input_count     = (inputs != NULL) ? cardano_transaction_input_set_get_length(inputs) : 0U;
+  const size_t    reference_count = (reference_inputs != NULL) ? cardano_transaction_input_set_get_length(reference_inputs) : 0U;
+  cardano_error_t result          = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < reference_count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_input_t* reference = NULL;
+
+    result = cardano_transaction_input_set_get(reference_inputs, i, &reference);
+
+    for (size_t j = 0U; (j < input_count) && (result == CARDANO_SUCCESS); ++j)
+    {
+      cardano_transaction_input_t* input = NULL;
+
+      result = cardano_transaction_input_set_get(inputs, j, &input);
+
+      if ((result == CARDANO_SUCCESS) && cardano_transaction_input_equals(input, reference))
+      {
+        result = CARDANO_ERROR_INVALID_ARGUMENT;
+      }
+
+      cardano_transaction_input_unref(&input);
+    }
+
+    cardano_transaction_input_unref(&reference);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the transaction outputs as the V4 list of outputs.
+ */
+static cardano_error_t
+outputs_v4(cardano_transaction_output_list_t* outputs, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+  const size_t           count  = (outputs != NULL) ? cardano_transaction_output_list_get_length(outputs) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+    cardano_plutus_data_t*        pd     = NULL;
+
+    result = cardano_transaction_output_list_get(outputs, i, &output);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = output_v4(output, &pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, pd);
+    }
+
+    cardano_transaction_output_unref(&output);
+    cardano_plutus_data_unref(&pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a certificate as a V4 TxCert.
+ *
+ * Account registration and deregistration carry their deposit as a plain
+ * lovelace amount: Constr 0 [credential, deposit] and Constr 1 [credential,
+ * refund]. The other certificates share their V3 encoding. Certificates without
+ * a deposit, genesis delegations and MIR certificates no longer exist in the
+ * Dijkstra era and are rejected.
+ */
+static cardano_error_t
+certificate_v4(cardano_certificate_t* certificate, cardano_plutus_data_t** out)
+{
+  cardano_cert_type_t type   = CARDANO_CERT_TYPE_STAKE_REGISTRATION;
+  cardano_error_t     result = cardano_cert_get_type(certificate, &type);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    switch (type)
+    {
+      case CARDANO_CERT_TYPE_REGISTRATION:
+      {
+        cardano_registration_cert_t* cert       = NULL;
+        cardano_credential_t*        credential = NULL;
+        cardano_plutus_data_t*       fields[2]  = { NULL, NULL };
+
+        result = cardano_certificate_to_registration(certificate, &cert);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          credential = cardano_registration_cert_get_stake_credential(cert);
+          result     = encode_credential(credential, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_plutus_data_new_integer_from_uint(cardano_registration_cert_get_deposit(cert), &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_0, fields, 2U, out);
+        }
+
+        cardano_registration_cert_unref(&cert);
+        cardano_credential_unref(&credential);
+        unref_all(fields, 2U);
+
+        break;
+      }
+      case CARDANO_CERT_TYPE_UNREGISTRATION:
+      {
+        cardano_unregistration_cert_t* cert       = NULL;
+        cardano_credential_t*          credential = NULL;
+        cardano_plutus_data_t*         fields[2]  = { NULL, NULL };
+
+        result = cardano_certificate_to_unregistration(certificate, &cert);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          credential = cardano_unregistration_cert_get_credential(cert);
+          result     = encode_credential(credential, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_plutus_data_new_integer_from_uint(cardano_unregistration_cert_get_deposit(cert), &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_1, fields, 2U, out);
+        }
+
+        cardano_unregistration_cert_unref(&cert);
+        cardano_credential_unref(&credential);
+        unref_all(fields, 2U);
+
+        break;
+      }
+      case CARDANO_CERT_TYPE_STAKE_DELEGATION:
+      case CARDANO_CERT_TYPE_POOL_REGISTRATION:
+      case CARDANO_CERT_TYPE_POOL_RETIREMENT:
+      case CARDANO_CERT_TYPE_VOTE_DELEGATION:
+      case CARDANO_CERT_TYPE_STAKE_VOTE_DELEGATION:
+      case CARDANO_CERT_TYPE_STAKE_REGISTRATION_DELEGATION:
+      case CARDANO_CERT_TYPE_VOTE_REGISTRATION_DELEGATION:
+      case CARDANO_CERT_TYPE_STAKE_VOTE_REGISTRATION_DELEGATION:
+      case CARDANO_CERT_TYPE_AUTH_COMMITTEE_HOT:
+      case CARDANO_CERT_TYPE_RESIGN_COMMITTEE_COLD:
+      case CARDANO_CERT_TYPE_DREP_REGISTRATION:
+      case CARDANO_CERT_TYPE_DREP_UNREGISTRATION:
+      case CARDANO_CERT_TYPE_UPDATE_DREP:
+      {
+        result = certificate_v3(certificate, out);
+        break;
+      }
+      case CARDANO_CERT_TYPE_STAKE_REGISTRATION:
+      case CARDANO_CERT_TYPE_STAKE_DEREGISTRATION:
+      case CARDANO_CERT_TYPE_GENESIS_KEY_DELEGATION:
+      case CARDANO_CERT_TYPE_MOVE_INSTANTANEOUS_REWARDS:
+      default:
+      {
+        result = CARDANO_ERROR_INVALID_CERTIFICATE_TYPE;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the certificates as the V4 list of TxCert.
+ */
+static cardano_error_t
+certificates_v4(cardano_certificate_set_t* certificates, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+  const size_t           count  = (certificates != NULL) ? cardano_certificate_set_get_length(certificates) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_certificate_t* certificate = NULL;
+    cardano_plutus_data_t* pd          = NULL;
+
+    result = cardano_certificate_set_get(certificates, i, &certificate);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = certificate_v4(certificate, &pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, pd);
+    }
+
+    cardano_certificate_unref(&certificate);
+    cardano_plutus_data_unref(&pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an optional slot as a Maybe POSIXTime.
+ */
+static cardano_error_t
+maybe_posix_time(const uint64_t* slot, const cardano_slot_config_t* slot_config, cardano_plutus_data_t** out)
+{
+  if (slot == NULL)
+  {
+    return encode_maybe(NULL, out);
+  }
+
+  uint64_t               time    = 0U;
+  cardano_plutus_data_t* time_pd = NULL;
+  cardano_error_t        result  = slot_to_posix(*slot, slot_config, &time);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(time, &time_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_maybe(time_pd, out);
+  }
+
+  cardano_plutus_data_unref(&time_pd);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a validity interval as the V4 POSIXTimeRange: the list [Maybe from, Maybe until].
+ *
+ * The lower bound is the inclusive start of the first valid slot, the upper bound
+ * the exclusive start of the first invalid slot; a missing bound is unbounded.
+ */
+static cardano_error_t
+time_range_v4(const uint64_t* lower, const uint64_t* upper, const cardano_slot_config_t* slot_config, cardano_plutus_data_t** out)
+{
+  cardano_plutus_data_t* fields[2] = { NULL, NULL };
+  cardano_error_t        result    = maybe_posix_time(lower, slot_config, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = maybe_posix_time(upper, slot_config, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 2U, out);
+  }
+
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the guards of a transaction as the list of credentials, in transaction order.
+ */
+static cardano_error_t
+guards_v4(cardano_guard_set_t* guards, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+  const size_t           count  = (guards != NULL) ? cardano_guard_set_get_length(guards) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t*  credential = NULL;
+    cardano_plutus_data_t* pd         = NULL;
+
+    result = cardano_guard_set_get(guards, i, &credential);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_credential(credential, &pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, pd);
+    }
+
+    cardano_credential_unref(&credential);
+    cardano_plutus_data_unref(&pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Adds the required top-level guards of a transaction to a sorted map keyed by credential.
+ *
+ * Each value is the guard datum as a Maybe Datum.
+ */
+static cardano_error_t
+put_required_guards(sorted_map_t* map, cardano_required_guards_map_t* guards)
+{
+  const size_t    count  = (guards != NULL) ? cardano_required_guards_map_get_length(guards) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t*  credential = NULL;
+    cardano_plutus_data_t* datum      = NULL;
+    cardano_plutus_data_t* key_pd     = NULL;
+    cardano_plutus_data_t* datum_pd   = NULL;
+    sort_key_t             key;
+
+    key.size = 0U;
+    result   = cardano_required_guards_map_get_key_value_at(guards, i, &credential, &datum);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = sort_key_append_credential(&key, credential);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_credential(credential, &key_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_maybe(datum, &datum_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = sorted_map_put(map, &key, key_pd, NULL, datum_pd, NULL, MERGE_KEEP_FIRST);
+    }
+
+    cardano_credential_unref(&credential);
+    cardano_plutus_data_unref(&datum);
+    cardano_plutus_data_unref(&key_pd);
+    cardano_plutus_data_unref(&datum_pd);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the required top-level guards as the V4 map of credential to Maybe Datum, in ledger order.
+ */
+static cardano_error_t
+required_guards_v4(cardano_required_guards_map_t* guards, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_required_guards(&map, guards);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Adds the witness datums of a transaction to a sorted map keyed by datum hash.
+ */
+static cardano_error_t
+put_datums(sorted_map_t* map, cardano_plutus_data_set_t* datums)
+{
+  const size_t    count  = (datums != NULL) ? cardano_plutus_data_set_get_length(datums) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_data_t*  datum   = NULL;
+    cardano_blake2b_hash_t* hash    = NULL;
+    cardano_plutus_data_t*  hash_pd = NULL;
+    sort_key_t              key;
+
+    key.size = 0U;
+    result   = cardano_plutus_data_set_get(datums, i, &datum);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = datum_hash(datum, &hash);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      sort_key_append_hash(&key, hash);
+      result = hash_bytes(hash, &hash_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = sorted_map_put(map, &key, hash_pd, NULL, datum, NULL, MERGE_KEEP_FIRST);
+    }
+
+    cardano_plutus_data_unref(&datum);
+    cardano_blake2b_hash_unref(&hash);
+    cardano_plutus_data_unref(&hash_pd);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the witness datums as the V4 map of datum hash to datum, in hash order.
+ */
+static cardano_error_t
+datums_v4(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_datums(&map, datums);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes a V4 governance action id: the list [transaction id, action index].
+ *
+ * The sort key receives the transaction id and the index, the ledger order of
+ * governance action ids.
+ */
+static cardano_error_t
+gov_action_id_v4(cardano_governance_action_id_t* id, sort_key_t* key, cardano_plutus_data_t** out)
+{
+  const byte_t*          tx_id     = cardano_governance_action_id_get_hash_bytes(id);
+  const size_t           id_size   = cardano_governance_action_id_get_hash_bytes_size(id);
+  uint64_t               index     = 0U;
+  cardano_plutus_data_t* fields[2] = { NULL, NULL };
+  cardano_error_t        result    = encode_bytes(tx_id, id_size, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_governance_action_id_get_index(id, &index);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append(key, tx_id, id_size);
+    sort_key_append_index(key, index);
+
+    result = cardano_plutus_data_new_integer_from_uint(index, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 2U, out);
+  }
+
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an optional V4 governance action id as a Maybe GovernanceActionId.
+ */
+static cardano_error_t
+maybe_gov_action_id_v4(cardano_governance_action_id_t* id, cardano_plutus_data_t** out)
+{
+  if (id == NULL)
+  {
+    return encode_maybe(NULL, out);
+  }
+
+  sort_key_t             key;
+  cardano_plutus_data_t* id_pd = NULL;
+
+  key.size = 0U;
+
+  cardano_error_t result = gov_action_id_v4(id, &key, &id_pd);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_maybe(id_pd, out);
+  }
+
+  cardano_plutus_data_unref(&id_pd);
+
+  return result;
+}
+
+/**
+ * \brief Builds the sort key and the encoding of a voter.
+ *
+ * The ledger orders committee voters first, then DReps, then stake pools, each
+ * by credential.
+ */
+static cardano_error_t
+voter_entry(cardano_voter_t* voter, sort_key_t* key, cardano_plutus_data_t** voter_data)
+{
+  cardano_voter_type_t  type       = CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH;
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = cardano_voter_get_type(voter, &type);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    switch (type)
+    {
+      case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH:
+      case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH:
+      {
+        sort_key_append_byte(key, LEDGER_COMMITTEE_VOTER);
+        break;
+      }
+      case CARDANO_VOTER_TYPE_DREP_KEY_HASH:
+      case CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH:
+      {
+        sort_key_append_byte(key, LEDGER_DREP_VOTER);
+        break;
+      }
+      case CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH:
+      default:
+      {
+        sort_key_append_byte(key, LEDGER_STAKE_POOL_VOTER);
+        break;
+      }
+    }
+
+    credential = cardano_voter_get_credential(voter);
+    result     = sort_key_append_credential(key, credential);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_voter(voter, voter_data);
+  }
+
+  cardano_credential_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Adds the votes of a transaction to a sorted map keyed by voter and governance action id.
+ *
+ * A later vote of the same voter on the same action replaces an earlier one.
+ */
+static cardano_error_t
+put_votes(sorted_map_t* map, cardano_voting_procedures_t* procedures)
+{
+  cardano_voter_list_t* voters = NULL;
+  cardano_error_t       result = CARDANO_SUCCESS;
+
+  if (procedures != NULL)
+  {
+    result = cardano_voting_procedures_get_voters(procedures, &voters);
+  }
+
+  const size_t voter_count = (voters != NULL) ? cardano_voter_list_get_length(voters) : 0U;
+
+  for (size_t i = 0U; (i < voter_count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_voter_t*                     voter    = NULL;
+    cardano_governance_action_id_list_t* ids      = NULL;
+    cardano_plutus_data_t*               voter_pd = NULL;
+    sort_key_t                           voter_key;
+
+    voter_key.size = 0U;
+    result         = cardano_voter_list_get(voters, i, &voter);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = voter_entry(voter, &voter_key, &voter_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_voting_procedures_get_governance_ids_by_voter(procedures, voter, &ids);
+    }
+
+    const size_t id_count = (result == CARDANO_SUCCESS) ? cardano_governance_action_id_list_get_length(ids) : 0U;
+
+    for (size_t j = 0U; (j < id_count) && (result == CARDANO_SUCCESS); ++j)
+    {
+      cardano_governance_action_id_t* id        = NULL;
+      cardano_voting_procedure_t*     procedure = NULL;
+      cardano_plutus_data_t*          id_pd     = NULL;
+      cardano_plutus_data_t*          vote_pd   = NULL;
+      sort_key_t                      key       = voter_key;
+
+      result = cardano_governance_action_id_list_get(ids, j, &id);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = gov_action_id_v4(id, &key, &id_pd);
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        procedure = cardano_voting_procedures_get(procedures, voter, id);
+        result    = (procedure != NULL) ? encode_vote(cardano_voting_procedure_get_vote(procedure), &vote_pd) : CARDANO_ERROR_ELEMENT_NOT_FOUND;
+      }
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = sorted_map_put(map, &key, voter_pd, id_pd, vote_pd, NULL, MERGE_KEEP_LAST);
+      }
+
+      cardano_governance_action_id_unref(&id);
+      cardano_voting_procedure_unref(&procedure);
+      cardano_plutus_data_unref(&id_pd);
+      cardano_plutus_data_unref(&vote_pd);
+    }
+
+    cardano_voter_unref(&voter);
+    cardano_governance_action_id_list_unref(&ids);
+    cardano_plutus_data_unref(&voter_pd);
+  }
+
+  cardano_voter_list_unref(&voters);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the votes as the V4 map of voter to map of governance action id to vote, in ledger order.
+ */
+static cardano_error_t
+votes_v4(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_votes(&map, procedures);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_nested(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Computes the greatest common divisor of two unsigned integers.
+ */
+static uint64_t
+gcd_u64(uint64_t lhs, uint64_t rhs)
+{
+  while (rhs != 0U)
+  {
+    const uint64_t remainder = lhs % rhs;
+
+    lhs = rhs;
+    rhs = remainder;
+  }
+
+  return lhs;
+}
+
+/**
+ * \brief Encodes a unit interval as the V4 Rational: the list [numerator, denominator] in lowest terms.
+ *
+ * The ledger translates the interval through a Haskell \c Rational, which is
+ * always reduced.
+ */
+static cardano_error_t
+rational_v4(const cardano_unit_interval_t* interval, cardano_plutus_data_t** out)
+{
+  const uint64_t numerator   = cardano_unit_interval_get_numerator(interval);
+  const uint64_t denominator = cardano_unit_interval_get_denominator(interval);
+  const uint64_t divisor     = gcd_u64(numerator, denominator);
+  const uint64_t scale       = (divisor == 0U) ? 1U : divisor;
+
+  cardano_plutus_data_t* fields[2] = { NULL, NULL };
+  cardano_error_t        result    = cardano_plutus_data_new_integer_from_uint(numerator / scale, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(denominator / scale, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 2U, out);
+  }
+
+  unref_all(fields, 2U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes an optional script hash as a Maybe ScriptHash.
+ */
+static cardano_error_t
+maybe_script_hash(cardano_blake2b_hash_t* hash, cardano_plutus_data_t** out)
+{
+  if (hash == NULL)
+  {
+    return encode_maybe(NULL, out);
+  }
+
+  cardano_plutus_data_t* hash_pd = NULL;
+  cardano_error_t        result  = hash_bytes(hash, &hash_pd);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_maybe(hash_pd, out);
+  }
+
+  cardano_plutus_data_unref(&hash_pd);
+
+  return result;
+}
+
+/**
+ * \brief Adds a credential to a sorted map keyed by credential, with an optional value.
+ */
+static cardano_error_t
+put_credential(sorted_map_t* map, cardano_credential_t* credential, cardano_plutus_data_t* value)
+{
+  sort_key_t             key;
+  cardano_plutus_data_t* key_pd = NULL;
+
+  key.size = 0U;
+
+  cardano_error_t result = sort_key_append_credential(&key, credential);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_credential(credential, &key_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_put(map, &key, key_pd, NULL, value, NULL, MERGE_KEEP_FIRST);
+  }
+
+  cardano_plutus_data_unref(&key_pd);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the fields of an UpdateCommittee action: removed members, added members and quorum.
+ *
+ * The removed members are a list and the added members a map, both in ledger
+ * credential order.
+ */
+static cardano_error_t
+update_committee_v4(cardano_update_committee_action_t* action, cardano_plutus_data_t** fields)
+{
+  cardano_credential_set_t*        removed     = cardano_update_committee_action_get_members_to_be_removed(action);
+  cardano_committee_members_map_t* added       = cardano_update_committee_action_get_members_to_be_added(action);
+  cardano_unit_interval_t*         quorum      = cardano_update_committee_action_get_quorum(action);
+  sorted_map_t                     removed_map = { NULL, 0U, 0U };
+  sorted_map_t                     added_map   = { NULL, 0U, 0U };
+  const size_t                     removed_n   = (removed != NULL) ? cardano_credential_set_get_length(removed) : 0U;
+  const size_t                     added_n     = (added != NULL) ? cardano_committee_members_map_get_length(added) : 0U;
+  cardano_error_t                  result      = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < removed_n) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t* credential = NULL;
+
+    result = cardano_credential_set_get(removed, i, &credential);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_credential(&removed_map, credential, NULL);
+    }
+
+    cardano_credential_unref(&credential);
+  }
+
+  for (size_t i = 0U; (i < added_n) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t*  credential = NULL;
+    uint64_t               epoch      = 0U;
+    cardano_plutus_data_t* epoch_pd   = NULL;
+
+    result = cardano_committee_members_map_get_key_value_at(added, i, &credential, &epoch);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_integer_from_uint(epoch, &epoch_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_credential(&added_map, credential, epoch_pd);
+    }
+
+    cardano_credential_unref(&credential);
+    cardano_plutus_data_unref(&epoch_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_keys(&removed_map, &fields[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&added_map, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = (quorum != NULL) ? rational_v4(quorum, &fields[2]) : CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  sorted_map_free(&removed_map);
+  sorted_map_free(&added_map);
+  cardano_credential_set_unref(&removed);
+  cardano_committee_members_map_unref(&added);
+  cardano_unit_interval_unref(&quorum);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the governance action of a proposal procedure as a V4 GovernanceAction.
+ *
+ * The constructors match V3, but governance action ids, protocol versions,
+ * constitutions and rationals are list-encoded records, and every map and set
+ * follows the ledger key order.
+ */
+static cardano_error_t
+gov_action_v4(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
+{
+  cardano_governance_action_type_t type   = CARDANO_GOVERNANCE_ACTION_TYPE_INFO;
+  cardano_error_t                  result = cardano_proposal_procedure_get_action_type(proposal, &type);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    switch (type)
+    {
+      case CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE:
+      {
+        cardano_parameter_change_action_t* action    = NULL;
+        cardano_governance_action_id_t*    prev      = NULL;
+        cardano_protocol_param_update_t*   update    = NULL;
+        cardano_blake2b_hash_t*            guardrail = NULL;
+        cardano_plutus_data_t*             fields[3] = { NULL, NULL, NULL };
+
+        result = cardano_proposal_procedure_to_parameter_change_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          prev   = cardano_parameter_change_action_get_governance_action_id(action);
+          result = maybe_gov_action_id_v4(prev, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          update = cardano_parameter_change_action_get_protocol_param_update(action);
+          result = cardano_protocol_param_update_to_plutus_data(update, &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          guardrail = cardano_parameter_change_action_get_policy_hash(action);
+          result    = maybe_script_hash(guardrail, &fields[2]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_0, fields, 3U, out);
+        }
+
+        cardano_parameter_change_action_unref(&action);
+        cardano_governance_action_id_unref(&prev);
+        cardano_protocol_param_update_unref(&update);
+        cardano_blake2b_hash_unref(&guardrail);
+        unref_all(fields, 3U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_HARD_FORK_INITIATION:
+      {
+        cardano_hard_fork_initiation_action_t* action    = NULL;
+        cardano_governance_action_id_t*        prev      = NULL;
+        cardano_protocol_version_t*            version   = NULL;
+        cardano_plutus_data_t*                 fields[2] = { NULL, NULL };
+        cardano_plutus_data_t*                 parts[2]  = { NULL, NULL };
+
+        result = cardano_proposal_procedure_to_hard_fork_initiation_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          prev   = cardano_hard_fork_initiation_action_get_governance_action_id(action);
+          result = maybe_gov_action_id_v4(prev, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          version = cardano_hard_fork_initiation_action_get_protocol_version(action);
+          result  = cardano_plutus_data_new_integer_from_uint(cardano_protocol_version_get_major(version), &parts[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_plutus_data_new_integer_from_uint(cardano_protocol_version_get_minor(version), &parts[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_list(parts, 2U, &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_1, fields, 2U, out);
+        }
+
+        cardano_hard_fork_initiation_action_unref(&action);
+        cardano_governance_action_id_unref(&prev);
+        cardano_protocol_version_unref(&version);
+        unref_all(fields, 2U);
+        unref_all(parts, 2U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS:
+      {
+        cardano_treasury_withdrawals_action_t* action      = NULL;
+        cardano_withdrawal_map_t*              withdrawals = NULL;
+        cardano_blake2b_hash_t*                guardrail   = NULL;
+        cardano_plutus_data_t*                 fields[2]   = { NULL, NULL };
+
+        result = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          withdrawals = cardano_treasury_withdrawals_action_get_withdrawals(action);
+          result      = withdrawals_v4(withdrawals, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          guardrail = cardano_treasury_withdrawals_action_get_policy_hash(action);
+          result    = maybe_script_hash(guardrail, &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_2, fields, 2U, out);
+        }
+
+        cardano_treasury_withdrawals_action_unref(&action);
+        cardano_withdrawal_map_unref(&withdrawals);
+        cardano_blake2b_hash_unref(&guardrail);
+        unref_all(fields, 2U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_NO_CONFIDENCE:
+      {
+        cardano_no_confidence_action_t* action    = NULL;
+        cardano_governance_action_id_t* prev      = NULL;
+        cardano_plutus_data_t*          fields[1] = { NULL };
+
+        result = cardano_proposal_procedure_to_no_confidence_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          prev   = cardano_no_confidence_action_get_governance_action_id(action);
+          result = maybe_gov_action_id_v4(prev, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_3, fields, 1U, out);
+        }
+
+        cardano_no_confidence_action_unref(&action);
+        cardano_governance_action_id_unref(&prev);
+        unref_all(fields, 1U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_UPDATE_COMMITTEE:
+      {
+        cardano_update_committee_action_t* action    = NULL;
+        cardano_governance_action_id_t*    prev      = NULL;
+        cardano_plutus_data_t*             fields[4] = { NULL, NULL, NULL, NULL };
+
+        result = cardano_proposal_procedure_to_update_committee_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          prev   = cardano_update_committee_action_get_governance_action_id(action);
+          result = maybe_gov_action_id_v4(prev, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = update_committee_v4(action, &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_4, fields, 4U, out);
+        }
+
+        cardano_update_committee_action_unref(&action);
+        cardano_governance_action_id_unref(&prev);
+        unref_all(fields, 4U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_NEW_CONSTITUTION:
+      {
+        cardano_new_constitution_action_t* action       = NULL;
+        cardano_governance_action_id_t*    prev         = NULL;
+        cardano_constitution_t*            constitution = NULL;
+        cardano_blake2b_hash_t*            script_hash  = NULL;
+        cardano_plutus_data_t*             fields[2]    = { NULL, NULL };
+        cardano_plutus_data_t*             script_pd    = NULL;
+
+        result = cardano_proposal_procedure_to_constitution_action(proposal, &action);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          prev   = cardano_new_constitution_action_get_governance_action_id(action);
+          result = maybe_gov_action_id_v4(prev, &fields[0]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          constitution = cardano_new_constitution_action_get_constitution(action);
+          script_hash  = cardano_constitution_get_script_hash(constitution);
+          result       = maybe_script_hash(script_hash, &script_pd);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_list(&script_pd, 1U, &fields[1]);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = encode_variant(CONSTR_5, fields, 2U, out);
+        }
+
+        cardano_new_constitution_action_unref(&action);
+        cardano_governance_action_id_unref(&prev);
+        cardano_constitution_unref(&constitution);
+        cardano_blake2b_hash_unref(&script_hash);
+        cardano_plutus_data_unref(&script_pd);
+        unref_all(fields, 2U);
+
+        break;
+      }
+      case CARDANO_GOVERNANCE_ACTION_TYPE_INFO:
+      {
+        result = empty_constr(CONSTR_6, out);
+        break;
+      }
+      default:
+      {
+        result = CARDANO_ERROR_INVALID_ARGUMENT;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes a V4 proposal procedure: the list [deposit, return credential, governance action].
+ */
+static cardano_error_t
+proposal_procedure_v4(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
+{
+  cardano_reward_address_t* reward     = cardano_proposal_procedure_get_reward_address(proposal);
+  cardano_credential_t*     credential = cardano_reward_address_get_credential(reward);
+  cardano_plutus_data_t*    fields[3]  = { NULL, NULL, NULL };
+  cardano_error_t           result     = cardano_plutus_data_new_integer_from_uint(cardano_proposal_procedure_get_deposit(proposal), &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_credential(credential, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = gov_action_v4(proposal, &fields[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, 3U, out);
+  }
+
+  cardano_reward_address_unref(&reward);
+  cardano_credential_unref(&credential);
+  unref_all(fields, 3U);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the proposal procedures as the V4 list, in transaction order.
+ */
+static cardano_error_t
+proposal_procedures_v4(cardano_proposal_procedure_set_t* proposals, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+  const size_t           count  = (proposals != NULL) ? cardano_proposal_procedure_set_get_length(proposals) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_proposal_procedure_t* proposal = NULL;
+    cardano_plutus_data_t*        pd       = NULL;
+
+    result = cardano_proposal_procedure_set_get(proposals, i, &proposal);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = proposal_procedure_v4(proposal, &pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, pd);
+    }
+
+    cardano_proposal_procedure_unref(&proposal);
+    cardano_plutus_data_unref(&pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Releases the references held by a transaction view.
+ */
+static void
+tx_view_release(tx_view_t* view)
+{
+  cardano_blake2b_hash_unref(&view->id);
+  cardano_transaction_input_set_unref(&view->inputs);
+  cardano_transaction_input_set_unref(&view->reference_inputs);
+  cardano_transaction_output_list_unref(&view->outputs);
+  cardano_multi_asset_unref(&view->mint);
+  cardano_certificate_set_unref(&view->certificates);
+  cardano_withdrawal_map_unref(&view->withdrawals);
+  cardano_direct_deposit_map_unref(&view->direct_deposits);
+  cardano_account_balance_intervals_map_unref(&view->balance_intervals);
+  cardano_guard_set_unref(&view->guards);
+  cardano_required_guards_map_unref(&view->required_guards);
+  cardano_voting_procedures_unref(&view->votes);
+  cardano_proposal_procedure_set_unref(&view->proposals);
+  cardano_redeemer_list_unref(&view->redeemers);
+  cardano_plutus_data_set_unref(&view->datums);
+}
+
+/**
+ * \brief Copies an optional slot or amount into a view.
+ */
+static void
+tx_view_set_optional(const uint64_t* source, bool* is_set, uint64_t* value)
+{
+  *is_set = (source != NULL);
+  *value  = (source != NULL) ? *source : 0U;
+}
+
+/**
+ * \brief Reads the view of a top-level transaction.
+ */
+static cardano_error_t
+tx_view_from_transaction(cardano_transaction_t* tx, tx_view_t* view)
+{
+  cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  const uint64_t*             donation    = cardano_transaction_body_get_donation(body);
+
+  CARDANO_UNUSED(memset(view, 0, sizeof(tx_view_t)));
+
+  view->id                = cardano_transaction_get_id(tx);
+  view->inputs            = cardano_transaction_body_get_inputs(body);
+  view->reference_inputs  = cardano_transaction_body_get_reference_inputs(body);
+  view->outputs           = cardano_transaction_body_get_outputs(body);
+  view->mint              = cardano_transaction_body_get_mint(body);
+  view->certificates      = cardano_transaction_body_get_certificates(body);
+  view->withdrawals       = cardano_transaction_body_get_withdrawals(body);
+  view->direct_deposits   = cardano_transaction_body_get_direct_deposits(body);
+  view->balance_intervals = cardano_transaction_body_get_account_balance_intervals(body);
+  view->guards            = cardano_transaction_body_get_guards(body);
+  view->required_guards   = cardano_transaction_body_get_required_top_level_guards(body);
+  view->votes             = cardano_transaction_body_get_voting_procedures(body);
+  view->proposals         = cardano_transaction_body_get_proposal_procedures(body);
+  view->redeemers         = cardano_witness_set_get_redeemers(witness_set);
+  view->datums            = cardano_witness_set_get_plutus_data(witness_set);
+  view->donation          = (donation != NULL) ? *donation : 0U;
+
+  tx_view_set_optional(cardano_transaction_body_get_invalid_before(body), &view->has_invalid_before, &view->invalid_before);
+  tx_view_set_optional(cardano_transaction_body_get_invalid_after(body), &view->has_invalid_after, &view->invalid_after);
+  tx_view_set_optional(cardano_transaction_body_get_treasury_value(body), &view->has_treasury, &view->treasury);
+
+  cardano_transaction_body_unref(&body);
+  cardano_witness_set_unref(&witness_set);
+
+  return (view->id != NULL) ? CARDANO_SUCCESS : CARDANO_ERROR_POINTER_IS_NULL;
+}
+
+/**
+ * \brief Reads the view of the sub-transaction at a position of the top-level transaction.
+ *
+ * The position is the index of the sub-transaction in the body of the top-level
+ * transaction, and becomes the sub-transaction index of its TxInfo.
+ */
+static cardano_error_t
+tx_view_from_sub_transaction(cardano_transaction_t* tx, const uint64_t index, tx_view_t* view)
+{
+  cardano_transaction_body_t*    body   = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_set_t* subs   = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_t*     sub    = NULL;
+  cardano_error_t                result = CARDANO_SUCCESS;
+
+  CARDANO_UNUSED(memset(view, 0, sizeof(tx_view_t)));
+
+  if ((subs == NULL) || (index >= (uint64_t)cardano_sub_transaction_set_get_length(subs)))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_sub_transaction_set_get(subs, (size_t)index, &sub);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_sub_transaction_body_t* sub_body    = cardano_sub_transaction_get_body(sub);
+    cardano_witness_set_t*          witness_set = cardano_sub_transaction_get_witness_set(sub);
+    const uint64_t*                 donation    = cardano_sub_transaction_body_get_donation(sub_body);
+
+    view->id                = cardano_sub_transaction_get_id(sub);
+    view->is_sub_tx         = true;
+    view->sub_tx_index      = index;
+    view->inputs            = cardano_sub_transaction_body_get_inputs(sub_body);
+    view->reference_inputs  = cardano_sub_transaction_body_get_reference_inputs(sub_body);
+    view->outputs           = cardano_sub_transaction_body_get_outputs(sub_body);
+    view->mint              = cardano_sub_transaction_body_get_mint(sub_body);
+    view->certificates      = cardano_sub_transaction_body_get_certificates(sub_body);
+    view->withdrawals       = cardano_sub_transaction_body_get_withdrawals(sub_body);
+    view->direct_deposits   = cardano_sub_transaction_body_get_direct_deposits(sub_body);
+    view->balance_intervals = cardano_sub_transaction_body_get_account_balance_intervals(sub_body);
+    view->guards            = cardano_sub_transaction_body_get_guards(sub_body);
+    view->required_guards   = cardano_sub_transaction_body_get_required_top_level_guards(sub_body);
+    view->votes             = cardano_sub_transaction_body_get_voting_procedures(sub_body);
+    view->proposals         = cardano_sub_transaction_body_get_proposal_procedures(sub_body);
+    view->redeemers         = cardano_witness_set_get_redeemers(witness_set);
+    view->datums            = cardano_witness_set_get_plutus_data(witness_set);
+    view->donation          = (donation != NULL) ? *donation : 0U;
+
+    tx_view_set_optional(cardano_sub_transaction_body_get_invalid_before(sub_body), &view->has_invalid_before, &view->invalid_before);
+    tx_view_set_optional(cardano_sub_transaction_body_get_invalid_after(sub_body), &view->has_invalid_after, &view->invalid_after);
+    tx_view_set_optional(cardano_sub_transaction_body_get_treasury_value(sub_body), &view->has_treasury, &view->treasury);
+
+    cardano_sub_transaction_body_unref(&sub_body);
+    cardano_witness_set_unref(&witness_set);
+
+    result = (view->id != NULL) ? CARDANO_SUCCESS : CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_sub_transaction_unref(&sub);
+  cardano_sub_transaction_set_unref(&subs);
+  cardano_transaction_body_unref(&body);
+
+  return result;
+}
+
+/**
+ * \brief Reads the view of the transaction level a script runs at.
+ *
+ * \param[in] tx The top-level transaction.
+ * \param[in] sub_tx_index The position of the sub-transaction, or NULL for the top level.
+ * \param[out] view The view to fill.
+ */
+static cardano_error_t
+tx_view_read(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_view_t* view)
+{
+  if (sub_tx_index == NULL)
+  {
+    return tx_view_from_transaction(tx, view);
+  }
+
+  return tx_view_from_sub_transaction(tx, *sub_tx_index, view);
+}
+
+/**
+ * \brief Takes the entry at a position of a sorted map, or fails when the position is out of range.
+ */
+static cardano_error_t
+sorted_map_key_at(const sorted_map_t* map, const uint64_t index, cardano_plutus_data_t** key_data)
+{
+  if (index >= (uint64_t)map->count)
+  {
+    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  cardano_plutus_data_ref(map->items[index].key_data);
+  *key_data = map->items[index].key_data;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Finds the minting policy that a mint redeemer points to, in ledger policy order.
+ */
+static cardano_error_t
+indexed_policy(cardano_multi_asset_t* mint, const uint64_t index, cardano_plutus_data_t** policy)
+{
+  sorted_map_t           map    = { NULL, 0U, 0U };
+  cardano_plutus_data_t* found  = NULL;
+  uint64_t               seen   = 0U;
+  cardano_error_t        result = put_assets(&map, mint, ASSETS_ALL);
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < map.count); ++i)
+  {
+    const bool is_new_policy = (i == 0U) || !cardano_plutus_data_equals(map.items[i].key_data, map.items[i - 1U].key_data);
+
+    if (is_new_policy && (seen == index))
+    {
+      found = map.items[i].key_data;
+    }
+
+    seen += is_new_policy ? 1U : 0U;
+  }
+
+  if ((result == CARDANO_SUCCESS) && (found == NULL))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_plutus_data_ref(found);
+    *policy = found;
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Finds the voter that a voting redeemer points to, in ledger voter order.
+ */
+static cardano_error_t
+indexed_voter(cardano_voting_procedures_t* procedures, const uint64_t index, cardano_plutus_data_t** voter_data)
+{
+  sorted_map_t          map    = { NULL, 0U, 0U };
+  cardano_voter_list_t* voters = NULL;
+  cardano_error_t       result = (procedures != NULL) ? cardano_voting_procedures_get_voters(procedures, &voters) : CARDANO_SUCCESS;
+  const size_t          count  = (voters != NULL) ? cardano_voter_list_get_length(voters) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_voter_t*       voter    = NULL;
+    cardano_plutus_data_t* voter_pd = NULL;
+    sort_key_t             key;
+
+    key.size = 0U;
+    result   = cardano_voter_list_get(voters, i, &voter);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = voter_entry(voter, &key, &voter_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = sorted_map_put(&map, &key, voter_pd, NULL, NULL, NULL, MERGE_KEEP_FIRST);
+    }
+
+    cardano_voter_unref(&voter);
+    cardano_plutus_data_unref(&voter_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_key_at(&map, index, voter_data);
+  }
+
+  cardano_voter_list_unref(&voters);
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Finds the credential that a withdrawal redeemer points to, in ledger account order.
+ */
+static cardano_error_t
+indexed_withdrawal(cardano_withdrawal_map_t* withdrawals, const uint64_t index, cardano_plutus_data_t** credential)
+{
+  sorted_map_t    map    = { NULL, 0U, 0U };
+  cardano_error_t result = put_withdrawals(&map, withdrawals);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_key_at(&map, index, credential);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Extracts the script hash that witnesses an encoded V4 TxCert.
+ *
+ * Every certificate but the stake pool ones carries its witness credential as
+ * its first field.
+ */
+static cardano_error_t
+certificate_script_hash(cardano_plutus_data_t* certificate, cardano_plutus_data_t** script_hash)
+{
+  uint64_t               alternative = CONSTR_0;
+  cardano_plutus_data_t* credential  = NULL;
+  cardano_error_t        result      = constr_field_at(certificate, 0U, &alternative, &credential);
+
+  if ((result == CARDANO_SUCCESS) && ((alternative == TX_CERT_V4_POOL_REGISTER) || (alternative == TX_CERT_V4_POOL_RETIRE)))
+  {
+    result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = credential_script_hash(credential, script_hash);
+  }
+
+  cardano_plutus_data_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Extracts the script hash of an encoded voter: committee members and DReps may be scripts, stake pools never are.
+ */
+static cardano_error_t
+voter_script_hash(cardano_plutus_data_t* voter, cardano_plutus_data_t** script_hash)
+{
+  uint64_t               alternative = CONSTR_0;
+  cardano_plutus_data_t* credential  = NULL;
+  cardano_error_t        result      = constr_field_at(voter, 0U, &alternative, &credential);
+
+  if ((result == CARDANO_SUCCESS) && (alternative == CONSTR_2))
+  {
+    result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = credential_script_hash(credential, script_hash);
+  }
+
+  cardano_plutus_data_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Extracts the guardrail script hash of a proposal procedure.
+ *
+ * Only parameter changes and treasury withdrawals can carry a guardrail script.
+ */
+static cardano_error_t
+proposal_script_hash(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** script_hash)
+{
+  cardano_governance_action_type_t type   = CARDANO_GOVERNANCE_ACTION_TYPE_INFO;
+  cardano_blake2b_hash_t*          hash   = NULL;
+  cardano_error_t                  result = cardano_proposal_procedure_get_action_type(proposal, &type);
+
+  if ((result == CARDANO_SUCCESS) && (type == CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE))
+  {
+    cardano_parameter_change_action_t* action = NULL;
+
+    result = cardano_proposal_procedure_to_parameter_change_action(proposal, &action);
+    hash   = (result == CARDANO_SUCCESS) ? cardano_parameter_change_action_get_policy_hash(action) : NULL;
+
+    cardano_parameter_change_action_unref(&action);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (type == CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS))
+  {
+    cardano_treasury_withdrawals_action_t* action = NULL;
+
+    result = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal, &action);
+    hash   = (result == CARDANO_SUCCESS) ? cardano_treasury_withdrawals_action_get_policy_hash(action) : NULL;
+
+    cardano_treasury_withdrawals_action_unref(&action);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (hash == NULL))
+  {
+    result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = hash_bytes(hash, script_hash);
+  }
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+/**
+ * \brief Releases the values held by resolved purpose parts.
+ */
+static void
+purpose_parts_release(purpose_parts_t* parts)
+{
+  unref_all(parts->items, PURPOSE_MAX_ITEMS);
+  cardano_plutus_data_unref(&parts->script_hash);
+  cardano_plutus_data_unref(&parts->guard);
+}
+
+/**
+ * \brief Resolves the spending purpose: the spent output reference and the script locking it.
+ */
+static cardano_error_t
+spend_parts(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, const uint64_t index, purpose_parts_t* parts)
+{
+  cardano_transaction_input_t*  input      = NULL;
+  cardano_transaction_output_t* output     = NULL;
+  cardano_address_t*            address    = NULL;
+  cardano_credential_t*         payment    = NULL;
+  cardano_plutus_data_t*        credential = NULL;
+  cardano_error_t               result     = CARDANO_SUCCESS;
+
+  if ((view->inputs == NULL) || (index >= (uint64_t)cardano_transaction_input_set_get_length(view->inputs)))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_transaction_input_set_get(view->inputs, (size_t)index, &input);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    output = resolve_output(resolved_inputs, input);
+    result = (output != NULL) ? out_ref_v4(input, &parts->items[0]) : CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    address = cardano_transaction_output_get_address(output);
+    payment = payment_credential(address);
+    result  = (payment != NULL) ? encode_credential(payment, &credential) : CARDANO_ERROR_INVALID_ADDRESS_TYPE;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = credential_script_hash(credential, &parts->script_hash);
+  }
+
+  parts->alternative = CONSTR_1;
+  parts->item_count  = 1U;
+
+  cardano_transaction_input_unref(&input);
+  cardano_transaction_output_unref(&output);
+  cardano_address_unref(&address);
+  cardano_credential_unref(&payment);
+  cardano_plutus_data_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Resolves the certifying purpose: the certificate index, the certificate and its witness script.
+ */
+static cardano_error_t
+cert_parts(const tx_view_t* view, const uint64_t index, purpose_parts_t* parts)
+{
+  cardano_certificate_t* certificate = NULL;
+  cardano_error_t        result      = CARDANO_SUCCESS;
+
+  if ((view->certificates == NULL) || (index >= (uint64_t)cardano_certificate_set_get_length(view->certificates)))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_certificate_set_get(view->certificates, (size_t)index, &certificate);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(index, &parts->items[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = certificate_v4(certificate, &parts->items[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = certificate_script_hash(parts->items[1], &parts->script_hash);
+  }
+
+  parts->alternative = CONSTR_3;
+  parts->item_count  = 2U;
+
+  cardano_certificate_unref(&certificate);
+
+  return result;
+}
+
+/**
+ * \brief Resolves the proposing purpose: the proposal index, the proposal and its guardrail script.
+ */
+static cardano_error_t
+propose_parts(const tx_view_t* view, const uint64_t index, purpose_parts_t* parts)
+{
+  cardano_proposal_procedure_t* proposal = NULL;
+  cardano_error_t               result   = CARDANO_SUCCESS;
+
+  if ((view->proposals == NULL) || (index >= (uint64_t)cardano_proposal_procedure_set_get_length(view->proposals)))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_proposal_procedure_set_get(view->proposals, (size_t)index, &proposal);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(index, &parts->items[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = proposal_procedure_v4(proposal, &parts->items[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = proposal_script_hash(proposal, &parts->script_hash);
+  }
+
+  parts->alternative = CONSTR_5;
+  parts->item_count  = 2U;
+
+  cardano_proposal_procedure_unref(&proposal);
+
+  return result;
+}
+
+/**
+ * \brief Resolves the guarding purpose: the guard index and the guard script.
+ *
+ * The index points into the guards of the transaction, which may also hold key
+ * credentials; a guarding redeemer can only point to a script credential.
+ */
+static cardano_error_t
+guard_parts(const tx_view_t* view, const uint64_t index, purpose_parts_t* parts)
+{
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = CARDANO_SUCCESS;
+
+  if ((view->guards == NULL) || (index >= (uint64_t)cardano_guard_set_get_length(view->guards)))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_guard_set_get(view->guards, (size_t)index, &credential);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(index, &parts->items[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_credential(credential, &parts->guard);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = credential_script_hash(parts->guard, &parts->script_hash);
+  }
+
+  parts->alternative = CONSTR_6;
+  parts->item_count  = 1U;
+
+  cardano_credential_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Resolves what a redeemer points to at a transaction level.
+ *
+ * Fills the ScriptPurpose / ScriptInfo constructor alternative, the items both
+ * share, and the hash of the script that runs. Redeemer indices follow the
+ * ledger order of each collection: sorted inputs, policies, accounts and
+ * voters, and the transaction order of certificates, proposals and guards.
+ */
+static cardano_error_t
+resolve_purpose(
+  const tx_view_t*             view,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_redeemer_tag_t tag,
+  const uint64_t               index,
+  purpose_parts_t*             parts)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  CARDANO_UNUSED(memset(parts, 0, sizeof(purpose_parts_t)));
+
+  switch (tag)
+  {
+    case CARDANO_REDEEMER_TAG_SPEND:
+    {
+      result = spend_parts(view, resolved_inputs, index, parts);
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_MINT:
+    {
+      parts->alternative = CONSTR_0;
+      parts->item_count  = 1U;
+      result             = indexed_policy(view->mint, index, &parts->items[0]);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        cardano_plutus_data_ref(parts->items[0]);
+        parts->script_hash = parts->items[0];
+      }
+
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_REWARD:
+    {
+      parts->alternative = CONSTR_2;
+      parts->item_count  = 1U;
+      result             = indexed_withdrawal(view->withdrawals, index, &parts->items[0]);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = credential_script_hash(parts->items[0], &parts->script_hash);
+      }
+
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_CERTIFYING:
+    {
+      result = cert_parts(view, index, parts);
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_VOTING:
+    {
+      parts->alternative = CONSTR_4;
+      parts->item_count  = 1U;
+      result             = indexed_voter(view->votes, index, &parts->items[0]);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = voter_script_hash(parts->items[0], &parts->script_hash);
+      }
+
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_PROPOSING:
+    {
+      result = propose_parts(view, index, parts);
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_GUARDING:
+    {
+      result = guard_parts(view, index, parts);
+      break;
+    }
+    default:
+    {
+      result = CARDANO_ERROR_INVALID_ARGUMENT;
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes the ScriptPurpose of resolved purpose parts: Constr alternative [script hash, items...].
+ */
+static cardano_error_t
+script_purpose_v4(const purpose_parts_t* parts, cardano_plutus_data_t** out)
+{
+  cardano_plutus_data_t* fields[PURPOSE_MAX_ITEMS + 1U] = { NULL };
+
+  fields[0] = parts->script_hash;
+
+  for (size_t i = 0U; i < parts->item_count; ++i)
+  {
+    fields[i + 1U] = parts->items[i];
+  }
+
+  return encode_variant(parts->alternative, fields, parts->item_count + 1U, out);
+}
+
+/**
+ * \brief Encodes the redeemers of a transaction level as the V4 map of ScriptPurpose to redeemer, in ledger purpose order.
+ *
+ * When \p script_hashes is not NULL it also receives the hash of every script
+ * the redeemers run.
+ */
+static cardano_error_t
+redeemers_v4(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted_map_t* script_hashes, cardano_plutus_data_t** out)
+{
+  sorted_map_t    map    = { NULL, 0U, 0U };
+  const size_t    count  = (view->redeemers != NULL) ? cardano_redeemer_list_get_length(view->redeemers) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_redeemer_t*    redeemer   = NULL;
+    cardano_plutus_data_t* data       = NULL;
+    cardano_plutus_data_t* purpose_pd = NULL;
+    purpose_parts_t        parts;
+    sort_key_t             key;
+
+    key.size = 0U;
+
+    CARDANO_UNUSED(memset(&parts, 0, sizeof(purpose_parts_t)));
+
+    result = cardano_redeemer_list_get(view->redeemers, i, &redeemer);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      const cardano_redeemer_tag_t tag   = cardano_redeemer_get_tag(redeemer);
+      const uint64_t               index = cardano_redeemer_get_index(redeemer);
+
+      sort_key_append_byte(&key, (byte_t)tag);
+      sort_key_append_index(&key, index);
+
+      result = resolve_purpose(view, resolved_inputs, tag, index, &parts);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = script_purpose_v4(&parts, &purpose_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      data   = cardano_redeemer_get_data(redeemer);
+      result = sorted_map_put(&map, &key, purpose_pd, NULL, data, NULL, MERGE_KEEP_FIRST);
+    }
+
+    if ((result == CARDANO_SUCCESS) && (script_hashes != NULL))
+    {
+      sort_key_t hash_key;
+
+      hash_key.size = 0U;
+
+      cardano_buffer_t* bytes = NULL;
+
+      result = cardano_plutus_data_to_bounded_bytes(parts.script_hash, &bytes);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        sort_key_append(&hash_key, cardano_buffer_get_data(bytes), cardano_buffer_get_size(bytes));
+        result = sorted_map_put(script_hashes, &hash_key, parts.script_hash, NULL, NULL, NULL, MERGE_KEEP_FIRST);
+      }
+
+      cardano_buffer_unref(&bytes);
+    }
+
+    purpose_parts_release(&parts);
+    cardano_redeemer_unref(&redeemer);
+    cardano_plutus_data_unref(&data);
+    cardano_plutus_data_unref(&purpose_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&map, out);
+  }
+
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the sub-transaction index of a TxInfo: Nothing at the top level, Just the index in a sub-transaction.
+ */
+static cardano_error_t
+sub_tx_index_v4(const tx_view_t* view, cardano_plutus_data_t** out)
+{
+  if (!view->is_sub_tx)
+  {
+    return encode_maybe(NULL, out);
+  }
+
+  cardano_plutus_data_t* index  = NULL;
+  cardano_error_t        result = cardano_plutus_data_new_integer_from_uint(view->sub_tx_index, &index);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_maybe(index, out);
+  }
+
+  cardano_plutus_data_unref(&index);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the 19 fields of a V4 TxInfo for a transaction level.
+ *
+ * The fields are, in order: id, sub-transaction index, inputs, reference inputs,
+ * outputs, mint, certificates, withdrawals, direct deposits, account balance
+ * intervals, validity range, guards, required top-level guards, redeemers,
+ * datums, votes, proposals, current treasury amount and treasury donation.
+ *
+ * \param[in] view The transaction level.
+ * \param[in] resolved_inputs The outputs spent or referenced by the level.
+ * \param[in] slot_config The slot configuration of the network.
+ * \param[in] script_hashes Receives the hashes of the scripts the redeemers run, or NULL.
+ * \param[out] fields The encoded fields; the caller releases them.
+ */
+static cardano_error_t
+tx_info_fields_v4(
+  const tx_view_t*             view,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  sorted_map_t*                script_hashes,
+  cardano_plutus_data_t**      fields)
+{
+  cardano_error_t result = check_reference_inputs_disjoint(view->inputs, view->reference_inputs);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = hash_bytes(view->id, &fields[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sub_tx_index_v4(view, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = inputs_v4(view->inputs, resolved_inputs, &fields[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = inputs_v4(view->reference_inputs, resolved_inputs, &fields[3]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = outputs_v4(view->outputs, &fields[4]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = mint_v4(view->mint, ASSETS_ALL, &fields[5]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = certificates_v4(view->certificates, &fields[6]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = withdrawals_v4(view->withdrawals, &fields[7]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = direct_deposits_v4(view->direct_deposits, &fields[8]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = balance_intervals_v4(view->balance_intervals, &fields[9]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = time_range_v4(
+      view->has_invalid_before ? &view->invalid_before : NULL,
+      view->has_invalid_after ? &view->invalid_after : NULL,
+      slot_config,
+      &fields[10]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = guards_v4(view->guards, &fields[11]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = required_guards_v4(view->required_guards, &fields[12]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = redeemers_v4(view, resolved_inputs, script_hashes, &fields[13]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = datums_v4(view->datums, &fields[14]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = votes_v4(view->votes, &fields[15]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = proposal_procedures_v4(view->proposals, &fields[16]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = maybe_coin(view->has_treasury ? &view->treasury : NULL, &fields[17]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer_from_uint(view->donation, &fields[18]);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Appends the items of an encoded list to a plutus-data list.
+ */
+static cardano_error_t
+append_list_items(cardano_plutus_list_t* target, cardano_plutus_data_t* source)
+{
+  cardano_plutus_list_t* items  = NULL;
+  cardano_error_t        result = cardano_plutus_data_to_list(source, &items);
+  const size_t           count  = (result == CARDANO_SUCCESS) ? cardano_plutus_list_get_length(items) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_data_t* item = NULL;
+
+    result = cardano_plutus_list_get(items, i, &item);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(target, item);
+    }
+
+    cardano_plutus_data_unref(&item);
+  }
+
+  cardano_plutus_list_unref(&items);
+
+  return result;
+}
+
+/**
+ * \brief Releases the aggregates of a whole transaction.
+ */
+static void
+batch_free(batch_t* batch)
+{
+  cardano_plutus_list_unref(&batch->sub_tx_infos);
+  cardano_plutus_list_unref(&batch->ids);
+  cardano_plutus_list_unref(&batch->inputs);
+  cardano_plutus_list_unref(&batch->reference_inputs);
+  cardano_plutus_list_unref(&batch->outputs);
+  cardano_plutus_list_unref(&batch->certificates);
+  cardano_plutus_list_unref(&batch->guards);
+  cardano_plutus_list_unref(&batch->proposals);
+  sorted_map_free(&batch->guard_datums);
+  sorted_map_free(&batch->mints);
+  sorted_map_free(&batch->burns);
+  sorted_map_free(&batch->withdrawals);
+  sorted_map_free(&batch->direct_deposits);
+  sorted_map_free(&batch->required_guards);
+  sorted_map_free(&batch->redeemer_hashes);
+  sorted_map_free(&batch->datums);
+  sorted_map_free(&batch->votes);
+  cardano_bigint_unref(&batch->donations);
+}
+
+/**
+ * \brief Prepares empty aggregates for a whole transaction.
+ */
+static cardano_error_t
+batch_init(batch_t* batch)
+{
+  CARDANO_UNUSED(memset(batch, 0, sizeof(batch_t)));
+
+  cardano_plutus_list_t** lists[] = {
+    &batch->sub_tx_infos,
+    &batch->ids,
+    &batch->inputs,
+    &batch->reference_inputs,
+    &batch->outputs,
+    &batch->certificates,
+    &batch->guards,
+    &batch->proposals
+  };
+
+  cardano_error_t result = cardano_bigint_from_unsigned_int(0U, &batch->donations);
+
+  for (size_t i = 0U; (i < (sizeof(lists) / sizeof(lists[0]))) && (result == CARDANO_SUCCESS); ++i)
+  {
+    result = cardano_plutus_list_new(lists[i]);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Records the datum a transaction level supplies to the running guard, keyed by the level's id.
+ *
+ * A level supplies a datum when its required top-level guards hold the guard
+ * credential with a datum.
+ */
+static cardano_error_t
+batch_add_guard_datum(batch_t* batch, const tx_view_t* view, cardano_plutus_data_t* id, cardano_plutus_data_t* guard)
+{
+  const size_t    count  = (view->required_guards != NULL) ? cardano_required_guards_map_get_length(view->required_guards) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t*  credential    = NULL;
+    cardano_plutus_data_t* datum         = NULL;
+    cardano_plutus_data_t* credential_pd = NULL;
+
+    result = cardano_required_guards_map_get_key_value_at(view->required_guards, i, &credential, &datum);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_credential(credential, &credential_pd);
+    }
+
+    if ((result == CARDANO_SUCCESS) && (datum != NULL) && cardano_plutus_data_equals(credential_pd, guard))
+    {
+      sort_key_t key;
+
+      key.size = 0U;
+
+      sort_key_append_hash(&key, view->id);
+
+      result = sorted_map_put(&batch->guard_datums, &key, id, NULL, datum, NULL, MERGE_KEEP_FIRST);
+    }
+
+    cardano_credential_unref(&credential);
+    cardano_plutus_data_unref(&datum);
+    cardano_plutus_data_unref(&credential_pd);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Narrows the batch validity interval to its intersection with a transaction level's interval.
+ */
+static void
+batch_add_validity(batch_t* batch, const tx_view_t* view)
+{
+  if (view->has_invalid_before)
+  {
+    batch->lower     = (batch->has_lower && (batch->lower > view->invalid_before)) ? batch->lower : view->invalid_before;
+    batch->has_lower = true;
+  }
+
+  if (view->has_invalid_after)
+  {
+    batch->upper     = (batch->has_upper && (batch->upper < view->invalid_after)) ? batch->upper : view->invalid_after;
+    batch->has_upper = true;
+  }
+}
+
+/**
+ * \brief Keeps the first current treasury amount any transaction level of the batch states.
+ */
+static void
+batch_add_treasury(batch_t* batch, const tx_view_t* view)
+{
+  if (view->has_treasury && !batch->has_treasury)
+  {
+    batch->treasury     = view->treasury;
+    batch->has_treasury = true;
+  }
+}
+
+/**
+ * \brief Adds a transaction level to the aggregates of the whole transaction.
+ *
+ * \param[in] batch The aggregates.
+ * \param[in] view The transaction level, added after the levels before it.
+ * \param[in] fields The encoded TxInfo fields of the level.
+ * \param[in] guard The encoded credential of the running guard.
+ */
+static cardano_error_t
+batch_add(batch_t* batch, const tx_view_t* view, cardano_plutus_data_t** fields, cardano_plutus_data_t* guard)
+{
+  cardano_bigint_t* donation = NULL;
+  cardano_error_t   result   = cardano_plutus_list_add(batch->ids, fields[TX_INFO_V4_ID_FIELD]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->inputs, fields[TX_INFO_V4_INPUTS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->reference_inputs, fields[TX_INFO_V4_REF_INPUTS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->outputs, fields[TX_INFO_V4_OUTPUTS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->certificates, fields[TX_INFO_V4_CERTS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->guards, fields[TX_INFO_V4_GUARDS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = append_list_items(batch->proposals, fields[TX_INFO_V4_PROPOSALS_FIELD]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_assets(&batch->mints, view->mint, ASSETS_POSITIVE);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_assets(&batch->burns, view->mint, ASSETS_NEGATIVE);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_withdrawals(&batch->withdrawals, view->withdrawals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_direct_deposits(&batch->direct_deposits, view->direct_deposits);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_required_guards(&batch->required_guards, view->required_guards);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_datums(&batch->datums, view->datums);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = put_votes(&batch->votes, view->votes);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = batch_add_guard_datum(batch, view, fields[TX_INFO_V4_ID_FIELD], guard);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_unsigned_int(view->donation, &donation);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_bigint_add(batch->donations, donation, batch->donations);
+    batch_add_validity(batch, view);
+    batch_add_treasury(batch, view);
+  }
+
+  cardano_bigint_unref(&donation);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the TopTxInfoSimplified of the whole transaction from its aggregates.
+ */
+static cardano_error_t
+top_tx_info_simplified_v4(const batch_t* batch, const cardano_slot_config_t* slot_config, cardano_plutus_data_t** out)
+{
+  cardano_plutus_data_t* fields[TOP_TX_INFO_SIMPLIFIED_FIELD_COUNT] = { NULL };
+  cardano_error_t        result                                     = cardano_plutus_data_new_list(batch->ids, &fields[0]);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->inputs, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->reference_inputs, &fields[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->outputs, &fields[3]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_nested(&batch->mints, &fields[4]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_nested(&batch->burns, &fields[5]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->certificates, &fields[6]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&batch->withdrawals, &fields[7]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&batch->direct_deposits, &fields[8]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = time_range_v4(batch->has_lower ? &batch->lower : NULL, batch->has_upper ? &batch->upper : NULL, slot_config, &fields[9]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->guards, &fields[10]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_keys(&batch->required_guards, &fields[11]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_keys(&batch->redeemer_hashes, &fields[12]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&batch->datums, &fields[13]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_nested(&batch->votes, &fields[14]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->proposals, &fields[15]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = maybe_coin(batch->has_treasury ? &batch->treasury : NULL, &fields[16]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_integer(batch->donations, &fields[17]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, TOP_TX_INFO_SIMPLIFIED_FIELD_COUNT, out);
+  }
+
+  unref_all(fields, TOP_TX_INFO_SIMPLIFIED_FIELD_COUNT);
+
+  return result;
+}
+
+/**
+ * \brief Adds every sub-transaction of a transaction to the aggregates, in body order.
+ *
+ * Each sub-transaction contributes its own TxInfo, whose sub-transaction index
+ * is its position in the body.
+ */
+static cardano_error_t
+batch_add_sub_transactions(
+  batch_t*                     batch,
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_plutus_data_t*       guard)
+{
+  cardano_transaction_body_t*    body   = cardano_transaction_get_body(tx);
+  cardano_sub_transaction_set_t* subs   = cardano_transaction_body_get_sub_transactions(body);
+  const size_t                   count  = (subs != NULL) ? cardano_sub_transaction_set_get_length(subs) : 0U;
+  cardano_error_t                result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    tx_view_t              view;
+    cardano_plutus_data_t* fields[TX_INFO_V4_FIELD_COUNT] = { NULL };
+    cardano_plutus_data_t* info                           = NULL;
+
+    result = tx_view_from_sub_transaction(tx, (uint64_t)i, &view);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = tx_info_fields_v4(&view, resolved_inputs, slot_config, &batch->redeemer_hashes, fields);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_list(fields, TX_INFO_V4_FIELD_COUNT, &info);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(batch->sub_tx_infos, info);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = batch_add(batch, &view, fields, guard);
+    }
+
+    tx_view_release(&view);
+    unref_all(fields, TX_INFO_V4_FIELD_COUNT);
+    cardano_plutus_data_unref(&info);
+  }
+
+  cardano_sub_transaction_set_unref(&subs);
+  cardano_transaction_body_unref(&body);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the TopTxInfo a guard running at the top level receives.
+ *
+ * The record is the list [sub-transaction TxInfos, guard datums by transaction
+ * id, starting account balance intervals, TopTxInfoSimplified]. The aggregates
+ * take the sub-transactions in body order followed by the top-level
+ * transaction.
+ *
+ * \param[in] batch The aggregates, already holding the redeemer script hashes of the top level.
+ * \param[in] tx The top-level transaction.
+ * \param[in] top The view of the top-level transaction.
+ * \param[in] top_fields The encoded TxInfo fields of the top-level transaction.
+ * \param[in] resolved_inputs The outputs spent or referenced by the whole transaction.
+ * \param[in] slot_config The slot configuration of the network.
+ * \param[in] guard The encoded credential of the running guard.
+ * \param[out] out The encoded TopTxInfo.
+ */
+static cardano_error_t
+top_tx_info_v4(
+  batch_t*                     batch,
+  cardano_transaction_t*       tx,
+  const tx_view_t*             top,
+  cardano_plutus_data_t**      top_fields,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_plutus_data_t*       guard,
+  cardano_plutus_data_t**      out)
+{
+  cardano_transaction_body_t*              body                            = cardano_transaction_get_body(tx);
+  cardano_account_balance_intervals_map_t* starting                        = cardano_transaction_body_get_starting_account_balance_intervals(body);
+  cardano_plutus_data_t*                   fields[TOP_TX_INFO_FIELD_COUNT] = { NULL };
+  cardano_error_t                          result                          = batch_add_sub_transactions(batch, tx, resolved_inputs, slot_config, guard);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = batch_add(batch, top, top_fields, guard);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(batch->sub_tx_infos, &fields[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&batch->guard_datums, &fields[1]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = balance_intervals_v4(starting, &fields[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = top_tx_info_simplified_v4(batch, slot_config, &fields[3]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, TOP_TX_INFO_FIELD_COUNT, out);
+  }
+
+  unref_all(fields, TOP_TX_INFO_FIELD_COUNT);
+  cardano_account_balance_intervals_map_unref(&starting);
+  cardano_transaction_body_unref(&body);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the V4 ScriptInfo of resolved purpose parts.
+ *
+ * Spending scripts also receive their optional datum and guards their optional
+ * TopTxInfo; every other script receives the purpose items as they are.
+ */
+static cardano_error_t
+script_info_v4(const purpose_parts_t* parts, cardano_plutus_data_t* extra, cardano_plutus_data_t** out)
+{
+  cardano_plutus_data_t* fields[PURPOSE_MAX_ITEMS + 1U] = { NULL };
+  size_t                 count                          = parts->item_count;
+
+  for (size_t i = 0U; i < parts->item_count; ++i)
+  {
+    fields[i] = parts->items[i];
+  }
+
+  if (extra != NULL)
+  {
+    fields[count] = extra;
+    ++count;
+  }
+
+  return encode_variant(parts->alternative, fields, count, out);
+}
+
+/**
+ * \brief Builds the V4 ScriptContext list [TxInfo, redeemer, ScriptInfo, script hash] of a transaction level.
+ */
+static cardano_error_t
+script_context_v4(
+  cardano_transaction_t*       tx,
+  const tx_view_t*             view,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_redeemer_t*          redeemer,
+  cardano_plutus_data_t*       datum,
+  cardano_plutus_data_t**      script_context)
+{
+  const cardano_redeemer_tag_t tag                                    = cardano_redeemer_get_tag(redeemer);
+  const bool                   with_top                               = (tag == CARDANO_REDEEMER_TAG_GUARDING) && !view->is_sub_tx;
+  cardano_plutus_data_t*       tx_fields[TX_INFO_V4_FIELD_COUNT]      = { NULL };
+  cardano_plutus_data_t*       context[SCRIPT_CONTEXT_V4_FIELD_COUNT] = { NULL };
+  cardano_plutus_data_t*       top                                    = NULL;
+  cardano_plutus_data_t*       extra                                  = NULL;
+  purpose_parts_t              parts;
+  batch_t                      batch;
+
+  CARDANO_UNUSED(memset(&parts, 0, sizeof(purpose_parts_t)));
+
+  cardano_error_t result = batch_init(&batch);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = resolve_purpose(view, resolved_inputs, tag, cardano_redeemer_get_index(redeemer), &parts);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = tx_info_fields_v4(view, resolved_inputs, slot_config, with_top ? &batch.redeemer_hashes : NULL, tx_fields);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(tx_fields, TX_INFO_V4_FIELD_COUNT, &context[0]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    context[1] = cardano_redeemer_get_data(redeemer);
+    result     = (context[1] != NULL) ? CARDANO_SUCCESS : CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((result == CARDANO_SUCCESS) && with_top)
+  {
+    result = top_tx_info_v4(&batch, tx, view, tx_fields, resolved_inputs, slot_config, parts.guard, &top);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (tag == CARDANO_REDEEMER_TAG_SPEND))
+  {
+    result = encode_maybe(datum, &extra);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (tag == CARDANO_REDEEMER_TAG_GUARDING))
+  {
+    result = encode_maybe(top, &extra);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = script_info_v4(&parts, extra, &context[2]);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_plutus_data_ref(parts.script_hash);
+    context[3] = parts.script_hash;
+
+    result = encode_list(context, SCRIPT_CONTEXT_V4_FIELD_COUNT, script_context);
+  }
+
+  batch_free(&batch);
+  purpose_parts_release(&parts);
+  unref_all(tx_fields, TX_INFO_V4_FIELD_COUNT);
+  unref_all(context, SCRIPT_CONTEXT_V4_FIELD_COUNT);
+  cardano_plutus_data_unref(&top);
+  cardano_plutus_data_unref(&extra);
+
+  return result;
+}
+
 /* PUBLIC FUNCTIONS **********************************************************/
 
 cardano_error_t
@@ -5511,6 +9621,67 @@ cardano_uplc_int_build_script_context_v3(
   cardano_plutus_data_unref(&redeemer_pd);
   cardano_plutus_data_unref(&info);
   cardano_plutus_list_unref(&fields);
+
+  return result;
+}
+
+cardano_error_t
+cardano_uplc_int_build_tx_info_v4(
+  cardano_transaction_t*       tx,
+  const uint64_t*              sub_tx_index,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_plutus_data_t**      tx_info)
+{
+  if ((tx == NULL) || (resolved_inputs == NULL) || (slot_config == NULL) || (tx_info == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  tx_view_t              view;
+  cardano_plutus_data_t* fields[TX_INFO_V4_FIELD_COUNT] = { NULL };
+  cardano_error_t        result                         = tx_view_read(tx, sub_tx_index, &view);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = tx_info_fields_v4(&view, resolved_inputs, slot_config, NULL, fields);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_list(fields, TX_INFO_V4_FIELD_COUNT, tx_info);
+  }
+
+  tx_view_release(&view);
+  unref_all(fields, TX_INFO_V4_FIELD_COUNT);
+
+  return result;
+}
+
+cardano_error_t
+cardano_uplc_int_build_script_context_v4(
+  cardano_transaction_t*       tx,
+  const uint64_t*              sub_tx_index,
+  cardano_utxo_list_t*         resolved_inputs,
+  const cardano_slot_config_t* slot_config,
+  cardano_redeemer_t*          redeemer,
+  cardano_plutus_data_t*       datum,
+  cardano_plutus_data_t**      script_context)
+{
+  if ((tx == NULL) || (resolved_inputs == NULL) || (slot_config == NULL) || (redeemer == NULL) || (script_context == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  tx_view_t       view;
+  cardano_error_t result = tx_view_read(tx, sub_tx_index, &view);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = script_context_v4(tx, &view, resolved_inputs, slot_config, redeemer, datum, script_context);
+  }
+
+  tx_view_release(&view);
 
   return result;
 }
