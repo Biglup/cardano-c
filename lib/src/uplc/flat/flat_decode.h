@@ -42,10 +42,13 @@ extern "C" {
  * \brief Decodes a single flat-encoded constant into an arena-allocated value.
  *
  * Reads the const-type list (a run of 4-bit type tags, each preceded by a one
- * continuation bit, with the application tag building \c list<T> and
+ * continuation bit, with the application tag building \c list<T>, \c array<T> and
  * \c pair<a,b>) and then the value for that type. The \c data constant is read as
  * a flat bytestring whose contents are decoded as CBOR through
- * \ref cardano_plutus_data_from_cbor.
+ * \ref cardano_plutus_data_from_cbor. An array is read like a list. A value is
+ * read as a list of (currency symbol, list of (token name, quantity)) entries and
+ * must be canonical: strictly ascending keys of at most 32 bytes, no empty token
+ * list and non-zero quantities in the signed 128-bit range.
  *
  * Every node the decoder produces is allocated from \p arena, and every interior
  * refcounted object (bigint, buffer, plutus data) is registered with \p arena
@@ -53,10 +56,9 @@ extern "C" {
  * releases everything regardless of the exit path. On failure no constant is
  * handed back and nothing the call created outlives \p arena.
  *
- * A BLS12-381 G1 or G2 constant value is read as a compressed point (48 bytes for
- * G1, 96 for G2), uncompressed and checked to lie in the prime-order subgroup; a
- * malformed or off-subgroup point is rejected with \ref CARDANO_ERROR_DECODING.
- * The Miller-loop-result type has no flat value form and is likewise rejected.
+ * The BLS12-381 G1, G2 and Miller-loop-result types have no flat value form, as in
+ * the reference decoder, so a value of any of them is rejected with
+ * \ref CARDANO_ERROR_DECODING.
  *
  * \param[in] arena The arena every node and interior object is allocated from.
  * \param[in,out] reader The flat reader, advanced past the encoded constant.
@@ -65,9 +67,8 @@ extern "C" {
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any argument is NULL, \ref CARDANO_ERROR_DECODING for a malformed
  *         type list, an unknown tag, a truncated value, invalid UTF-8 in a string,
- *         malformed CBOR for a \c data value, a malformed or off-subgroup BLS
- *         point, a Miller-loop-result value, or type/value nesting past the depth
- *         bound, \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an
+ *         malformed CBOR for a \c data value, a non-canonical value constant, a
+ *         BLS12-381 value, or type/value nesting past the depth bound, \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an
  *         interior object cannot be allocated, or \ref CARDANO_ERROR_ILLEGAL_STATE
  *         if the arena is past its byte ceiling.
  */
@@ -88,6 +89,9 @@ cardano_uplc_flat_decode_constant(
  * then a cons-bit list of field terms) and 9 a \c Case (a scrutinee term then a
  * cons-bit list of branch terms). A field or branch list, like the constant list
  * encoding, places a one bit before each element and a zero bit to stop.
+ *
+ * No program version is known at this level, so \c Constr and \c Case are always
+ * accepted; \ref cardano_uplc_flat_decode_program applies the version gate.
  *
  * Recursion through \c Delay, \c Lambda, \c Apply, \c Force, \c Constr and \c Case
  * is bounded by an internal depth ceiling, so a deeply nested adversarial input
@@ -120,7 +124,9 @@ cardano_uplc_flat_decode_term(
  * \ref cardano_uplc_flat_decode_term, then a final filler run: a sequence of zero
  * bits up to and including a terminating one bit that byte-aligns the stream. A
  * truncated stream, a missing terminating filler bit or a version word that does
- * not fit in 32 bits is rejected with \ref CARDANO_ERROR_DECODING.
+ * not fit in 32 bits is rejected with \ref CARDANO_ERROR_DECODING. A \c Constr or
+ * \c Case term in a program whose version is below 1.1.0 is rejected the same way,
+ * matching the reference decoder.
  *
  * The returned program and its whole term tree are owned by \p arena; a single
  * \ref cardano_uplc_arena_free releases everything regardless of the exit path.
@@ -131,8 +137,8 @@ cardano_uplc_flat_decode_term(
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any argument is NULL, \ref CARDANO_ERROR_DECODING for a malformed or
- *         truncated stream, a version word too large for 32 bits or a missing
- *         terminating filler bit, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if
+ *         truncated stream, a version word too large for 32 bits, a \c Constr or
+ *         \c Case term before version 1.1.0 or a missing terminating filler bit, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if
  *         the arena cannot serve a node.
  */
 cardano_error_t

@@ -35,10 +35,12 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <gmock/gmock.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 /* STATIC HELPERS ************************************************************/
@@ -158,6 +160,43 @@ class BitWriter
       }
     }
 
+    // Encodes an unsigned magnitude given as big-endian bytes as a flat word.
+    void
+    big_word(const std::vector<uint8_t>& magnitude)
+    {
+      std::vector<uint8_t> bits_le;
+
+      for (auto it = magnitude.rbegin(); it != magnitude.rend(); ++it)
+      {
+        for (uint8_t i = 0U; i < 8U; ++i)
+        {
+          bits_le.push_back(static_cast<uint8_t>((*it >> i) & 1U));
+        }
+      }
+
+      while ((bits_le.size() > 1U) && (bits_le.back() == 0U))
+      {
+        bits_le.pop_back();
+      }
+
+      for (size_t start = 0U; start < bits_le.size(); start += 7U)
+      {
+        uint8_t group = 0U;
+
+        for (size_t i = 0U; (i < 7U) && ((start + i) < bits_le.size()); ++i)
+        {
+          group = static_cast<uint8_t>(group | (bits_le[start + i] << i));
+        }
+
+        if ((start + 7U) < bits_le.size())
+        {
+          group |= 0x80U;
+        }
+
+        bits(group, 8U);
+      }
+    }
+
     // Encodes a signed integer constant value: zigzag then word.
     void
     integer(int64_t value)
@@ -222,6 +261,85 @@ int_const_i64(const cardano_uplc_constant_t* constant)
   }
 
   return cardano_bigint_to_int(constant->as.integer.big);
+}
+
+// A value quantity as its flat zigzag word, given as big-endian magnitude bytes.
+using FlatAmount = std::vector<uint8_t>;
+
+// One token of a value: the token name and its quantity.
+using FlatToken = std::pair<std::vector<uint8_t>, FlatAmount>;
+
+// One policy entry of a value: the currency symbol and its tokens.
+using FlatPolicy = std::pair<std::vector<uint8_t>, std::vector<FlatToken>>;
+
+// Returns the zigzag word of a small quantity.
+FlatAmount
+small_amount(int64_t value)
+{
+  const uint64_t zigzag = (value >= 0) ? (static_cast<uint64_t>(value) << 1U) : (((~static_cast<uint64_t>(value)) << 1U) | 1U);
+  FlatAmount     out;
+
+  for (int shift = 56; shift >= 0; shift -= 8)
+  {
+    out.push_back(static_cast<uint8_t>(zigzag >> static_cast<uint64_t>(shift)));
+  }
+
+  return out;
+}
+
+// Returns the zigzag word of a quantity at the signed 128-bit boundary: 2^127 - 1
+// or -(2^127) when inside the range, 2^127 or -(2^127) - 1 when just outside.
+FlatAmount
+big_amount(bool positive, bool outside)
+{
+  FlatAmount out(17U, 0U);
+  out[0] = 0x01U;
+
+  if (positive && !outside)
+  {
+    out[0] = 0x00U;
+    std::fill(out.begin() + 1, out.end(), 0xFFU);
+    out[16] = 0xFEU;
+  }
+  else if (!positive && !outside)
+  {
+    out[0] = 0x00U;
+    std::fill(out.begin() + 1, out.end(), 0xFFU);
+  }
+  else if (!positive)
+  {
+    out[16] = 0x01U;
+  }
+
+  return out;
+}
+
+// Encodes a value constant (type tag 13) with the given entries, in order.
+std::vector<uint8_t>
+value_bytes(const std::vector<FlatPolicy>& policies)
+{
+  BitWriter w;
+  w.type_tag(13U);
+  w.end_type_list();
+
+  for (const FlatPolicy& policy: policies)
+  {
+    w.bit(1U);
+    w.byte_string(policy.first);
+
+    for (const FlatToken& token: policy.second)
+    {
+      w.bit(1U);
+      w.byte_string(token.first);
+      w.big_word(token.second);
+    }
+
+    w.bit(0U);
+  }
+
+  w.bit(0U);
+
+  return w.bytes();
 }
 
 // Wraps a byte payload in a single definite-length CBOR bytestring (major type 2).
@@ -1223,10 +1341,9 @@ TEST(cardano_uplc_flat_decode_constant, rejectsTypeNestingPastDepthBound)
 
 /* BLS TESTS ****************************************************************/
 
-TEST(cardano_uplc_flat_decode_constant, decodesBlsG1CompressedPoint)
+TEST(cardano_uplc_flat_decode_constant, rejectsBlsG1Value)
 {
-  // Arrange: a BLS G1 type tag (9) followed by the compressed G1 generator (48
-  // bytes) decodes to a G1 constant.
+  // Arrange
   const std::vector<uint8_t> g1_generator = {
     0x97, 0xf1, 0xd3, 0xa7, 0x31, 0x97, 0xd7, 0x94, 0x26, 0x95, 0x63, 0x8c, 0x4f, 0xa9, 0xac, 0x0f, 0xc3, 0x68, 0x8c, 0x4f, 0x97, 0x74, 0xb9, 0x05, 0xa1, 0x4e, 0x3a, 0x3f, 0x17, 0x1b, 0xac, 0x58, 0x6c, 0x55, 0xe8, 0x3f, 0xf9, 0x7a, 0x1a, 0xef, 0xfb, 0x3a, 0xf0, 0x0a, 0xdb, 0x22, 0xc6, 0xbb
   };
@@ -1243,41 +1360,15 @@ TEST(cardano_uplc_flat_decode_constant, decodesBlsG1CompressedPoint)
   cardano_error_t result = decode(w.bytes(), arena, &constant);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_SUCCESS);
-  ASSERT_NE(constant, nullptr);
-  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_BLS_G1);
-
-  cardano_uplc_arena_free(&arena);
-}
-
-TEST(cardano_uplc_flat_decode_constant, rejectsBlsG1PointOutsideSubgroup)
-{
-  // Arrange: 48 bytes that do not uncompress to a valid subgroup point are a
-  // decode error.
-  const std::vector<uint8_t> bad(48U, 0xFFU);
-
-  BitWriter w;
-  w.type_tag(9U);
-  w.end_type_list();
-  w.byte_string(bad);
-
-  cardano_uplc_arena_t*    arena    = make_arena();
-  cardano_uplc_constant_t* constant = nullptr;
-
-  // Act
-  cardano_error_t result = decode(w.bytes(), arena, &constant);
-
-  // Assert
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
   EXPECT_EQ(constant, nullptr);
 
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_flat_decode_constant, decodesBlsG2CompressedPoint)
+TEST(cardano_uplc_flat_decode_constant, rejectsBlsG2Value)
 {
-  // Arrange: a BLS G2 type tag (10) followed by the compressed G2 generator (96
-  // bytes) decodes to a G2 constant.
+  // Arrange
   const std::vector<uint8_t> g2_generator = {
     0x93, 0xe0, 0x2b, 0x60, 0x52, 0x71, 0x9f, 0x60, 0x7d, 0xac, 0xd3, 0xa0, 0x88, 0x27, 0x4f, 0x65, 0x59, 0x6b, 0xd0, 0xd0, 0x99, 0x20, 0xb6, 0x1a, 0xb5, 0xda, 0x61, 0xbb, 0xdc, 0x7f, 0x50, 0x49, 0x33, 0x4c, 0xf1, 0x12, 0x13, 0x94, 0x5d, 0x57, 0xe5, 0xac, 0x7d, 0x05, 0x5d, 0x04, 0x2b, 0x7e, 0x02, 0x4a, 0xa2, 0xb2, 0xf0, 0x8f, 0x0a, 0x91, 0x26, 0x08, 0x05, 0x27, 0x2d, 0xc5, 0x10, 0x51, 0xc6, 0xe4, 0x7a, 0xd4, 0xfa, 0x40, 0x3b, 0x02, 0xb4, 0x51, 0x0b, 0x64, 0x7a, 0xe3, 0xd1, 0x77, 0x0b, 0xac, 0x03, 0x26, 0xa8, 0x05, 0xbb, 0xef, 0xd4, 0x80, 0x56, 0xc8, 0xc1, 0x21, 0xbd, 0xb8
   };
@@ -1294,17 +1385,15 @@ TEST(cardano_uplc_flat_decode_constant, decodesBlsG2CompressedPoint)
   cardano_error_t result = decode(w.bytes(), arena, &constant);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_SUCCESS);
-  ASSERT_NE(constant, nullptr);
-  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_BLS_G2);
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(constant, nullptr);
 
   cardano_uplc_arena_free(&arena);
 }
 
 TEST(cardano_uplc_flat_decode_constant, rejectsBlsMlResultValue)
 {
-  // Arrange: an ML-result has no flat serialization, so its value tag is a decode
-  // error.
+  // Arrange
   BitWriter w;
   w.type_tag(11U);
   w.end_type_list();
@@ -1320,6 +1409,402 @@ TEST(cardano_uplc_flat_decode_constant, rejectsBlsMlResultValue)
   EXPECT_EQ(constant, nullptr);
 
   cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, decodesEmptyListsOfBlsElements)
+{
+  for (uint8_t tag: { 9U, 10U, 11U })
+  {
+    // Arrange
+    BitWriter w;
+    w.type_tag(7U);
+    w.type_tag(5U);
+    w.type_tag(tag);
+    w.end_type_list();
+    w.bit(0U);
+
+    cardano_uplc_arena_t*    arena    = make_arena();
+    cardano_uplc_constant_t* constant = nullptr;
+
+    // Act
+    cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    ASSERT_NE(constant, nullptr);
+    EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_LIST);
+    EXPECT_EQ(constant->as.list.count, 0U);
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsNonEmptyListOfBlsElements)
+{
+  // Arrange
+  BitWriter w;
+  w.type_tag(7U);
+  w.type_tag(5U);
+  w.type_tag(9U);
+  w.end_type_list();
+  w.bit(1U);
+  w.byte_string(std::vector<uint8_t>(48U, 0U));
+  w.bit(0U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(constant, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+/* ARRAY TESTS **************************************************************/
+
+TEST(cardano_uplc_flat_decode_constant, decodesArrayOfInteger)
+{
+  // Arrange
+  BitWriter w;
+  w.type_tag(7U);
+  w.type_tag(12U);
+  w.type_tag(0U);
+  w.end_type_list();
+
+  for (int64_t value: { 1, -2, 300 })
+  {
+    w.bit(1U);
+    w.integer(value);
+  }
+
+  w.bit(0U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(constant, nullptr);
+  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_ARRAY);
+  EXPECT_EQ(constant->as.list.element_type->kind, CARDANO_UPLC_TYPE_INTEGER);
+  ASSERT_EQ(constant->as.list.count, 3U);
+  EXPECT_EQ(int_const_i64(constant->as.list.items[0]), 1);
+  EXPECT_EQ(int_const_i64(constant->as.list.items[1]), -2);
+  EXPECT_EQ(int_const_i64(constant->as.list.items[2]), 300);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, decodesArrayOfListsOfArrays)
+{
+  // Arrange
+  BitWriter w;
+  w.type_tag(7U);
+  w.type_tag(12U);
+  w.type_tag(7U);
+  w.type_tag(5U);
+  w.type_tag(7U);
+  w.type_tag(12U);
+  w.type_tag(4U);
+  w.end_type_list();
+  w.bit(1U);
+  w.bit(1U);
+  w.bit(1U);
+  w.bit(1U);
+  w.bit(0U);
+  w.bit(0U);
+  w.bit(0U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(constant, nullptr);
+  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_ARRAY);
+  ASSERT_EQ(constant->as.list.count, 1U);
+
+  const cardano_uplc_constant_t* list = constant->as.list.items[0];
+  EXPECT_EQ(list->kind, CARDANO_UPLC_TYPE_LIST);
+  ASSERT_EQ(list->as.list.count, 1U);
+
+  const cardano_uplc_constant_t* inner = list->as.list.items[0];
+  EXPECT_EQ(inner->kind, CARDANO_UPLC_TYPE_ARRAY);
+  EXPECT_EQ(inner->as.list.element_type->kind, CARDANO_UPLC_TYPE_BOOL);
+  ASSERT_EQ(inner->as.list.count, 1U);
+  EXPECT_TRUE(inner->as.list.items[0]->as.boolean);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsUnappliedArrayTag)
+{
+  // Arrange
+  BitWriter w;
+  w.type_tag(12U);
+  w.end_type_list();
+  w.bit(0U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(constant, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsArrayNestingPastDepthBound)
+{
+  // Arrange
+  BitWriter w;
+
+  for (int i = 0; i < 64; ++i)
+  {
+    w.type_tag(7U);
+    w.type_tag(12U);
+  }
+
+  w.type_tag(0U);
+  w.end_type_list();
+  w.bit(0U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(constant, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsTruncatedArray)
+{
+  for (int elements = 0; elements <= 4; elements += 4)
+  {
+    // Arrange
+    BitWriter w;
+    w.type_tag(7U);
+    w.type_tag(12U);
+    w.type_tag(4U);
+    w.end_type_list();
+
+    for (int i = 0; i < elements; ++i)
+    {
+      w.bit(1U);
+      w.bit(1U);
+    }
+
+    cardano_uplc_arena_t*    arena    = make_arena();
+    cardano_uplc_constant_t* constant = nullptr;
+
+    // Act
+    cardano_error_t result = decode(w.bytes(), arena, &constant);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+    EXPECT_EQ(constant, nullptr);
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+/* VALUE TESTS **************************************************************/
+
+TEST(cardano_uplc_flat_decode_constant, decodesEmptyValue)
+{
+  // Arrange
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(value_bytes({}), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(constant, nullptr);
+  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_VALUE);
+  EXPECT_EQ(constant->as.list.count, 0U);
+  ASSERT_NE(constant->as.list.element_type, nullptr);
+  EXPECT_EQ(constant->as.list.element_type->kind, CARDANO_UPLC_TYPE_PAIR);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, decodesCanonicalValue)
+{
+  // Arrange
+  const std::vector<FlatPolicy> policies = {
+    { {}, { { {}, small_amount(1) } } },
+    { { 0x01U }, { { { 0x41U }, small_amount(-7) }, { { 0x41U, 0x00U }, small_amount(9) } } },
+    { std::vector<uint8_t>(32U, 0xFFU), { { std::vector<uint8_t>(32U, 0xEEU), big_amount(true, false) } } }
+  };
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(value_bytes(policies), arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(constant, nullptr);
+  EXPECT_EQ(constant->kind, CARDANO_UPLC_TYPE_VALUE);
+  ASSERT_EQ(constant->as.list.count, 3U);
+
+  const cardano_uplc_constant_t* second = constant->as.list.items[1];
+  EXPECT_EQ(second->as.pair.fst->as.bytes.size, 1U);
+  ASSERT_EQ(second->as.pair.snd->as.list.count, 2U);
+  EXPECT_EQ(int_const_i64(second->as.pair.snd->as.list.items[0]->as.pair.snd), -7);
+  EXPECT_EQ(int_const_i64(second->as.pair.snd->as.list.items[1]->as.pair.snd), 9);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, acceptsQuantityBounds)
+{
+  for (const FlatAmount& amount: { big_amount(true, false), big_amount(false, false) })
+  {
+    // Arrange
+    cardano_uplc_arena_t*    arena    = make_arena();
+    cardano_uplc_constant_t* constant = nullptr;
+
+    // Act
+    cardano_error_t result = decode(value_bytes({ { { 0x01U }, { { { 0x02U }, amount } } } }), arena, &constant);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_NE(constant, nullptr);
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsNonCanonicalValues)
+{
+  const std::vector<uint8_t> a         = { 0x0AU };
+  const std::vector<uint8_t> b         = { 0x0BU };
+  const std::vector<uint8_t> too_long  = std::vector<uint8_t>(33U, 0x01U);
+  const FlatAmount           one       = small_amount(1);
+  const FlatAmount           zero      = small_amount(0);
+  const FlatAmount           too_big   = big_amount(true, true);
+  const FlatAmount           too_small = big_amount(false, true);
+
+  const std::vector<std::vector<FlatPolicy>> cases = {
+    { { b, { { a, one } } }, { a, { { a, one } } } },
+    { { a, { { a, one } } }, { a, { { b, one } } } },
+    { { a, { { b, one }, { a, one } } } },
+    { { a, { { a, one }, { a, one } } } },
+    { { a, {} } },
+    { { a, { { a, zero } } } },
+    { { too_long, { { a, one } } } },
+    { { a, { { too_long, one } } } },
+    { { a, { { a, too_big } } } },
+    { { a, { { a, too_small } } } }
+  };
+
+  for (const std::vector<FlatPolicy>& policies: cases)
+  {
+    // Arrange
+    cardano_uplc_arena_t*    arena    = make_arena();
+    cardano_uplc_constant_t* constant = nullptr;
+
+    // Act
+    cardano_error_t result = decode(value_bytes(policies), arena, &constant);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+    EXPECT_EQ(constant, nullptr);
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_flat_decode_constant, rejectsTruncatedValue)
+{
+  // Arrange
+  std::vector<uint8_t> bytes = value_bytes({ { { 0x01U }, { { { 0x02U }, small_amount(3) } } } });
+  bytes.resize(bytes.size() - 2U);
+
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_constant_t* constant = nullptr;
+
+  // Act
+  cardano_error_t result = decode(bytes, arena, &constant);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(constant, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_constant, arrayAndValueFailCleanlyAtEveryArenaCeiling)
+{
+  BitWriter array;
+  array.type_tag(7U);
+  array.type_tag(12U);
+  array.type_tag(0U);
+  array.end_type_list();
+
+  for (int64_t i = 0; i < 9; ++i)
+  {
+    array.bit(1U);
+    array.integer(i);
+  }
+
+  array.bit(0U);
+
+  const std::vector<std::vector<uint8_t>> inputs = {
+    array.bytes(),
+    value_bytes({ { { 0x01U }, { { { 0x02U }, small_amount(3) }, { { 0x03U }, big_amount(true, false) } } } })
+  };
+
+  for (const std::vector<uint8_t>& input: inputs)
+  {
+    bool decoded = false;
+
+    for (size_t ceiling = 0U; (ceiling < 65536U) && !decoded; ceiling += 8U)
+    {
+      // Arrange
+      cardano_uplc_arena_t*    arena    = nullptr;
+      cardano_uplc_constant_t* constant = nullptr;
+      ASSERT_EQ(cardano_uplc_int_arena_new_with_ceiling(0U, ceiling, &arena), CARDANO_SUCCESS);
+
+      // Act
+      cardano_error_t result = decode(input, arena, &constant);
+
+      // Assert
+      decoded = (result == CARDANO_SUCCESS);
+
+      if (!decoded)
+      {
+        EXPECT_EQ(constant, nullptr);
+      }
+
+      cardano_uplc_arena_free(&arena);
+    }
+
+    EXPECT_TRUE(decoded);
+  }
 }
 
 /* ALLOCATION FAILURE TESTS *************************************************/
@@ -1905,6 +2390,92 @@ TEST(cardano_uplc_flat_decode_program, decodesConstrProgramV11)
   EXPECT_EQ(program->term->as.constr.field_count, 0U);
 
   cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_program, rejectsConstrAndCaseBefore110)
+{
+  const std::vector<std::vector<uint64_t>> versions = { { 1U, 0U, 0U }, { 1U, 0U, 9U }, { 0U, 9U, 0U } };
+
+  for (const std::vector<uint64_t>& version: versions)
+  {
+    for (uint8_t form = 0U; form < 3U; ++form)
+    {
+      // Arrange
+      BitWriter w;
+      w.word(version[0]);
+      w.word(version[1]);
+      w.word(version[2]);
+
+      if (form == 2U)
+      {
+        w.bits(2U, 4U);
+      }
+
+      if (form == 1U)
+      {
+        w.bits(9U, 4U);
+        w.bits(6U, 4U);
+        w.bit(0U);
+      }
+      else
+      {
+        w.bits(8U, 4U);
+        w.word(0U);
+        w.bit(0U);
+      }
+
+      w.filler();
+
+      cardano_uplc_arena_t*         arena   = make_arena();
+      const cardano_uplc_program_t* program = nullptr;
+
+      // Act
+      cardano_error_t result = decode_program(w.bytes(), arena, &program);
+
+      // Assert
+      EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+      EXPECT_EQ(program, nullptr);
+
+      cardano_uplc_arena_free(&arena);
+    }
+  }
+}
+
+TEST(cardano_uplc_flat_decode_program, acceptsConstrAndCaseFrom110)
+{
+  const std::vector<std::vector<uint64_t>> versions = { { 1U, 1U, 0U }, { 1U, 2U, 0U }, { 2U, 0U, 0U } };
+
+  for (const std::vector<uint64_t>& version: versions)
+  {
+    // Arrange
+    BitWriter w;
+    w.word(version[0]);
+    w.word(version[1]);
+    w.word(version[2]);
+    w.bits(9U, 4U);
+    w.bits(8U, 4U);
+    w.word(0U);
+    w.bit(0U);
+    w.bit(1U);
+    w.bits(6U, 4U);
+    w.bit(0U);
+    w.filler();
+
+    cardano_uplc_arena_t*         arena   = make_arena();
+    const cardano_uplc_program_t* program = nullptr;
+
+    // Act
+    cardano_error_t result = decode_program(w.bytes(), arena, &program);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    ASSERT_NE(program, nullptr);
+    EXPECT_EQ(program->term->kind, CARDANO_UPLC_TERM_CASE);
+    EXPECT_EQ(program->term->as.cases.scrutinee->kind, CARDANO_UPLC_TERM_CONSTR);
+    EXPECT_EQ(program->term->as.cases.branch_count, 1U);
+
+    cardano_uplc_arena_free(&arena);
+  }
 }
 
 TEST(cardano_uplc_flat_decode_program, acceptsTrailingZeroByteAfterFiller)

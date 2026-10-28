@@ -1,6 +1,7 @@
 # Corpus cases the evaluator is known not to match yet.
 #
-# Each line is "<case path relative to vectors> <gap category> [reason]". The
+# Each line is "<case path relative to vectors> <gap category> [reason]", where
+# the path names the .uplc or the .flat input of a case. The
 # conformance test fails when a listed case passes (remove the stale entry) and
 # when an unlisted case fails. Categories: semantics-variant, builtin-bounds,
 # division-costing, cost-model, flat-decoding, version-gating, batch7-builtins,
@@ -12,126 +13,248 @@ builtin/parser/value/empty-tokens/empty-tokens.uplc text-parser value constant p
 builtin/parser/value/tokenIDs-unordered/tokenIDs-unordered.uplc text-parser value constant parsing is not strict
 builtin/parser/value/zero-asset/zero-asset.uplc text-parser value constant parsing is not strict
 builtin/semantics/blake2b_224/blake2b_224-empty/blake2b_224-empty.uplc cost-model
+builtin/semantics/blake2b_224/blake2b_224-empty/blake2b_224-empty.flat cost-model
 builtin/semantics/blake2b_224/blake2b_224-length-200/blake2b_224-length-200.uplc cost-model
+builtin/semantics/blake2b_224/blake2b_224-length-200/blake2b_224-length-200.flat cost-model
 builtin/semantics/blake2b_256/blake2b_256-empty/blake2b_256-empty.uplc cost-model
+builtin/semantics/blake2b_256/blake2b_256-empty/blake2b_256-empty.flat cost-model
 builtin/semantics/blake2b_256/blake2b_256-length-200/blake2b_256-length-200.uplc cost-model
+builtin/semantics/blake2b_256/blake2b_256-length-200/blake2b_256-length-200.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/add/add.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/add/add.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/neg/neg.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/neg/neg.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/scalarMul/scalarMul.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/scalarMul/scalarMul.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/add/add.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/add/add.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/neg/neg.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/neg/neg.flat cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/scalarMul/scalarMul.uplc cost-model
+builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/scalarMul/scalarMul.flat cost-model
 builtin/semantics/bls12_381_G1_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
+builtin/semantics/bls12_381_G1_scalarMul/mulperiodic-01/mulperiodic-01.flat cost-model
 builtin/semantics/bls12_381_G2_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
+builtin/semantics/bls12_381_G2_scalarMul/mulperiodic-01/mulperiodic-01.flat cost-model
 builtin/semantics/complementByteString/case-05/case-05.uplc cost-model
+builtin/semantics/complementByteString/case-05/case-05.flat cost-model
 builtin/semantics/divideInteger/divideInteger-01/divideInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-01/divideInteger-01.flat cost-model division default parameters predate cost model e
 builtin/semantics/divideInteger/divideInteger-neg-neg/divideInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-neg-neg/divideInteger-neg-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/divideInteger/divideInteger-neg-pos/divideInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-neg-pos/divideInteger-neg-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/divideInteger/divideInteger-pos-neg/divideInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-pos-neg/divideInteger-pos-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/divideInteger/divideInteger-pos-pos/divideInteger-pos-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/divideInteger/divideInteger-pos-pos/divideInteger-pos-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/equalsByteString/equalsByteString-02/equalsByteString-02.uplc cost-model
+builtin/semantics/equalsByteString/equalsByteString-02/equalsByteString-02.flat cost-model
 builtin/semantics/equalsByteString/equalsByteString/equalsByteString.uplc cost-model
+builtin/semantics/equalsByteString/equalsByteString/equalsByteString.flat cost-model
 builtin/semantics/expModInteger/extra/expModInteger-19/expModInteger-19.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-19/expModInteger-19.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-20/expModInteger-20.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-20/expModInteger-20.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-21/expModInteger-21.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-21/expModInteger-21.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-22/expModInteger-22.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-22/expModInteger-22.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-23/expModInteger-23.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-23/expModInteger-23.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-24/expModInteger-24.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-24/expModInteger-24.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-25/expModInteger-25.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-25/expModInteger-25.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-46/expModInteger-46.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-46/expModInteger-46.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-47/expModInteger-47.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-47/expModInteger-47.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-48/expModInteger-48.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-48/expModInteger-48.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-49/expModInteger-49.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-49/expModInteger-49.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-50/expModInteger-50.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-50/expModInteger-50.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-51/expModInteger-51.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-51/expModInteger-51.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-52/expModInteger-52.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-52/expModInteger-52.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-53/expModInteger-53.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-53/expModInteger-53.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-54/expModInteger-54.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-54/expModInteger-54.flat cost-model division default parameters predate cost model e
 builtin/semantics/expModInteger/extra/expModInteger-55/expModInteger-55.uplc cost-model division default parameters predate cost model e
+builtin/semantics/expModInteger/extra/expModInteger-55/expModInteger-55.flat cost-model division default parameters predate cost model e
 builtin/semantics/insertCoin/long-key-zero-1/long-key-zero-1.uplc cost-model
+builtin/semantics/insertCoin/long-key-zero-1/long-key-zero-1.flat cost-model
 builtin/semantics/insertCoin/long-key-zero-2/long-key-zero-2.uplc cost-model
+builtin/semantics/insertCoin/long-key-zero-2/long-key-zero-2.flat cost-model
 builtin/semantics/insertCoin/multi-ccy-empty/multi-ccy-empty.uplc cost-model
+builtin/semantics/insertCoin/multi-ccy-empty/multi-ccy-empty.flat cost-model
 builtin/semantics/insertCoin/multi-ccy-nonempty/multi-ccy-nonempty.uplc cost-model
+builtin/semantics/insertCoin/multi-ccy-nonempty/multi-ccy-nonempty.flat cost-model
 builtin/semantics/insertCoin/multi-token/multi-token.uplc cost-model
+builtin/semantics/insertCoin/multi-token/multi-token.flat cost-model
 builtin/semantics/insertCoin/negative-empty/negative-empty.uplc cost-model
+builtin/semantics/insertCoin/negative-empty/negative-empty.flat cost-model
 builtin/semantics/insertCoin/no-overflow/no-overflow.uplc cost-model
+builtin/semantics/insertCoin/no-overflow/no-overflow.flat cost-model
 builtin/semantics/insertCoin/no-underflow/no-underflow.uplc cost-model
+builtin/semantics/insertCoin/no-underflow/no-underflow.flat cost-model
 builtin/semantics/insertCoin/positive-empty/positive-empty.uplc cost-model
+builtin/semantics/insertCoin/positive-empty/positive-empty.flat cost-model
 builtin/semantics/insertCoin/positive-nonempty/positive-nonempty.uplc cost-model
+builtin/semantics/insertCoin/positive-nonempty/positive-nonempty.flat cost-model
 builtin/semantics/insertCoin/zero-positive/zero-positive.uplc cost-model
+builtin/semantics/insertCoin/zero-positive/zero-positive.flat cost-model
 builtin/semantics/keccak_256/keccak_256-empty/keccak_256-empty.uplc cost-model
+builtin/semantics/keccak_256/keccak_256-empty/keccak_256-empty.flat cost-model
 builtin/semantics/keccak_256/keccak_256-length-200/keccak_256-length-200.uplc cost-model
+builtin/semantics/keccak_256/keccak_256-length-200/keccak_256-length-200.flat cost-model
 builtin/semantics/lessThanByteString/lessThanByteString-01/lessThanByteString-01.uplc cost-model
+builtin/semantics/lessThanByteString/lessThanByteString-01/lessThanByteString-01.flat cost-model
 builtin/semantics/modInteger/modInteger-01/modInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-01/modInteger-01.flat cost-model division default parameters predate cost model e
 builtin/semantics/modInteger/modInteger-neg-neg/modInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-neg-neg/modInteger-neg-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/modInteger/modInteger-neg-pos/modInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-neg-pos/modInteger-neg-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/modInteger/modInteger-pos-neg/modInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-pos-neg/modInteger-pos-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/modInteger/modInteger-pos-pos/modInteger-pos-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/modInteger/modInteger-pos-pos/modInteger-pos-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/multiIndexArray/multiIndexArray-01/multiIndexArray-01.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-01/multiIndexArray-01.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-02/multiIndexArray-02.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-02/multiIndexArray-02.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-03/multiIndexArray-03.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-03/multiIndexArray-03.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-04/multiIndexArray-04.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-04/multiIndexArray-04.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-05/multiIndexArray-05.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-05/multiIndexArray-05.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-06/multiIndexArray-06.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-06/multiIndexArray-06.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-07/multiIndexArray-07.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-07/multiIndexArray-07.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-08/multiIndexArray-08.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-08/multiIndexArray-08.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-09/multiIndexArray-09.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-09/multiIndexArray-09.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-10/multiIndexArray-10.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-10/multiIndexArray-10.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-11/multiIndexArray-11.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-11/multiIndexArray-11.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-12/multiIndexArray-12.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-12/multiIndexArray-12.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-13/multiIndexArray-13.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-13/multiIndexArray-13.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-14/multiIndexArray-14.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-14/multiIndexArray-14.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-15/multiIndexArray-15.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-15/multiIndexArray-15.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-16/multiIndexArray-16.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-16/multiIndexArray-16.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-17/multiIndexArray-17.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-17/multiIndexArray-17.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-18/multiIndexArray-18.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-18/multiIndexArray-18.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-19/multiIndexArray-19.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-19/multiIndexArray-19.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-20/multiIndexArray-20.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-20/multiIndexArray-20.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-21/multiIndexArray-21.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-21/multiIndexArray-21.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-22/multiIndexArray-22.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-22/multiIndexArray-22.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-23/multiIndexArray-23.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-23/multiIndexArray-23.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-24/multiIndexArray-24.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-24/multiIndexArray-24.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-25/multiIndexArray-25.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-25/multiIndexArray-25.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/multiIndexArray/multiIndexArray-26/multiIndexArray-26.uplc batch7-builtins
+builtin/semantics/multiIndexArray/multiIndexArray-26/multiIndexArray-26.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 builtin/semantics/quotientInteger/quotientInteger-01/quotientInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-01/quotientInteger-01.flat cost-model division default parameters predate cost model e
 builtin/semantics/quotientInteger/quotientInteger-neg-neg/quotientInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-neg-neg/quotientInteger-neg-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/quotientInteger/quotientInteger-neg-pos/quotientInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-neg-pos/quotientInteger-neg-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/quotientInteger/quotientInteger-pos-neg/quotientInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-pos-neg/quotientInteger-pos-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/quotientInteger/quotientInteger-pos-pos/quotientInteger-pos-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/quotientInteger/quotientInteger-pos-pos/quotientInteger-pos-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/remainderInteger/remainderInteger-01/remainderInteger-01.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-01/remainderInteger-01.flat cost-model division default parameters predate cost model e
 builtin/semantics/remainderInteger/remainderInteger-neg-neg/remainderInteger-neg-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-neg-neg/remainderInteger-neg-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/remainderInteger/remainderInteger-neg-pos/remainderInteger-neg-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-neg-pos/remainderInteger-neg-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/remainderInteger/remainderInteger-pos-neg/remainderInteger-pos-neg.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-pos-neg/remainderInteger-pos-neg.flat cost-model division default parameters predate cost model e
 builtin/semantics/remainderInteger/remainderInteger-pos-pos/remainderInteger-pos-pos.uplc cost-model division default parameters predate cost model e
+builtin/semantics/remainderInteger/remainderInteger-pos-pos/remainderInteger-pos-pos.flat cost-model division default parameters predate cost model e
 builtin/semantics/ripemd_160/ripemd_160-empty/ripemd_160-empty.uplc cost-model
+builtin/semantics/ripemd_160/ripemd_160-empty/ripemd_160-empty.flat cost-model
 builtin/semantics/ripemd_160/ripemd_160-length-200/ripemd_160-length-200.uplc cost-model
+builtin/semantics/ripemd_160/ripemd_160-length-200/ripemd_160-length-200.flat cost-model
 builtin/semantics/scaleValue/by-neg/by-neg.uplc cost-model
+builtin/semantics/scaleValue/by-neg/by-neg.flat cost-model
 builtin/semantics/scaleValue/by-pos/by-pos.uplc cost-model
+builtin/semantics/scaleValue/by-pos/by-pos.flat cost-model
 builtin/semantics/scaleValue/by-zero/by-zero.uplc cost-model
+builtin/semantics/scaleValue/by-zero/by-zero.flat cost-model
 builtin/semantics/scaleValue/no-overflow/no-overflow.uplc cost-model
+builtin/semantics/scaleValue/no-overflow/no-overflow.flat cost-model
 builtin/semantics/scaleValue/no-underflow/no-underflow.uplc cost-model
+builtin/semantics/scaleValue/no-underflow/no-underflow.flat cost-model
 builtin/semantics/sha2_256/sha2_256-empty/sha2_256-empty.uplc cost-model
+builtin/semantics/sha2_256/sha2_256-empty/sha2_256-empty.flat cost-model
 builtin/semantics/sha2_256/sha2_256-length-200/sha2_256-length-200.uplc cost-model
+builtin/semantics/sha2_256/sha2_256-length-200/sha2_256-length-200.flat cost-model
 builtin/semantics/sha3_256/sha3_256-empty/sha3_256-empty.uplc cost-model
+builtin/semantics/sha3_256/sha3_256-empty/sha3_256-empty.flat cost-model
 builtin/semantics/sha3_256/sha3_256-length-200/sha3_256-length-200.uplc cost-model
+builtin/semantics/sha3_256/sha3_256-length-200/sha3_256-length-200.flat cost-model
 builtin/semantics/unValueData/empty/empty.uplc cost-model
+builtin/semantics/unValueData/empty/empty.flat cost-model
 builtin/semantics/unValueData/max-key-len/max-key-len.uplc cost-model
+builtin/semantics/unValueData/max-key-len/max-key-len.flat cost-model
 builtin/semantics/unValueData/multi-currency/multi-currency.uplc cost-model
+builtin/semantics/unValueData/multi-currency/multi-currency.flat cost-model
 builtin/semantics/unValueData/multi-token/multi-token.uplc cost-model
+builtin/semantics/unValueData/multi-token/multi-token.flat cost-model
 builtin/semantics/unValueData/negative-quantity/negative-quantity.uplc cost-model
+builtin/semantics/unValueData/negative-quantity/negative-quantity.flat cost-model
+builtin/semantics/unValueData/quantity-underflow/quantity-underflow.flat other CBOR negative bignums (tag 3) decode to -n instead of -1 - n
 builtin/semantics/unValueData/roundtrip-from-data/roundtrip-from-data.uplc cost-model
+builtin/semantics/unValueData/roundtrip-from-data/roundtrip-from-data.flat cost-model
 builtin/semantics/unValueData/single-entry/single-entry.uplc cost-model
+builtin/semantics/unValueData/single-entry/single-entry.flat cost-model
 builtin/semantics/unionValue/cancel-01/cancel-01.uplc cost-model
+builtin/semantics/unionValue/cancel-01/cancel-01.flat cost-model
 builtin/semantics/unionValue/cancel-02/cancel-02.uplc cost-model
+builtin/semantics/unionValue/cancel-02/cancel-02.flat cost-model
 builtin/semantics/unionValue/combine/combine.uplc cost-model
+builtin/semantics/unionValue/combine/combine.flat cost-model
 builtin/semantics/unionValue/no-overflow/no-overflow.uplc cost-model
+builtin/semantics/unionValue/no-overflow/no-overflow.flat cost-model
 builtin/semantics/unionValue/no-underflow/no-underflow.uplc cost-model
+builtin/semantics/unionValue/no-underflow/no-underflow.flat cost-model
 builtin/semantics/unionValue/unitl/unitl.uplc cost-model
+builtin/semantics/unionValue/unitl/unitl.flat cost-model
 builtin/semantics/unionValue/unitr/unitr.uplc cost-model
+builtin/semantics/unionValue/unitr/unitr.flat cost-model
 builtin/semantics/valueData/roundtrip-from-value/roundtrip-from-value.uplc cost-model
+builtin/semantics/valueData/roundtrip-from-value/roundtrip-from-value.flat cost-model
 example/IfIntegers/IfIntegers.uplc cost-model
+example/IfIntegers/IfIntegers.flat cost-model
 term/constant-case/data/data-01/data-01.uplc case-on-data
+term/constant-case/data/data-01/data-01.flat case-on-data
 term/constant-case/data/data-02/data-02.uplc case-on-data
+term/constant-case/data/data-02/data-02.flat case-on-data
 term/free-vars/constr-free-var/constr-free-var.uplc text-parser free variables are accepted
 term/free-vars/unused-free-var/unused-free-var.uplc text-parser free variables are accepted
 term/free-vars/var/var.uplc text-parser free variables are accepted

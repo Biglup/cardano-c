@@ -29,6 +29,7 @@
 #include <cardano/error.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/ast/uplc_int.h"
 #include "../../src/uplc/builtins/builtins.h"
 #include "../../src/uplc/cost/uplc_builtin_costs.h"
 #include "../../src/uplc/cost/uplc_cost_model.h"
@@ -1769,4 +1770,47 @@ TEST(cardano_uplc_builtin_bounds, expModIntegerBoundsItsOperandsInEveryVariant)
   EXPECT_EQ(status_under(program_of("expModInteger", three, below, seven), CARDANO_UPLC_SEMANTICS_C), CARDANO_UPLC_EVAL_ERROR_TERM);
 
   EXPECT_EQ(eval_ok(program_of("expModInteger", above, below, one).c_str()), "(con integer 0)");
+}
+
+/* VALUE CANONICAL FORM ******************************************************/
+
+TEST(cardano_uplc_int_value_entries_are_canonical, rejectsInvalidArguments)
+{
+  // Arrange
+  cardano_uplc_arena_t* arena = new_arena();
+
+  // Act / Assert
+  EXPECT_FALSE(cardano_uplc_int_value_entries_are_canonical(nullptr, nullptr, 0U));
+  EXPECT_FALSE(cardano_uplc_int_value_entries_are_canonical(arena, nullptr, 1U));
+  EXPECT_TRUE(cardano_uplc_int_value_entries_are_canonical(arena, nullptr, 0U));
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_int_value_entries_are_canonical, rejectsMalformedEntries)
+{
+  // Arrange
+  cardano_uplc_arena_t*    arena   = new_arena();
+  cardano_uplc_type_t*     int_ty  = nullptr;
+  cardano_uplc_constant_t* integer = nullptr;
+  cardano_uplc_constant_t* key     = nullptr;
+  cardano_uplc_constant_t* tokens  = nullptr;
+  cardano_uplc_constant_t* entry   = nullptr;
+
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_ty), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_integer_small(arena, 1, &integer), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_int_constant_new_byte_string_copy(arena, nullptr, 0U, &key), CARDANO_SUCCESS);
+
+  const cardano_uplc_constant_t* token_items[1] = { integer };
+  ASSERT_EQ(cardano_uplc_constant_new_list(arena, int_ty, token_items, 1U, &tokens), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_pair(arena, key, tokens, &entry), CARDANO_SUCCESS);
+
+  const cardano_uplc_constant_t* not_a_pair[1] = { integer };
+  const cardano_uplc_constant_t* bad_token[1]  = { entry };
+
+  // Act / Assert
+  EXPECT_FALSE(cardano_uplc_int_value_entries_are_canonical(arena, not_a_pair, 1U));
+  EXPECT_FALSE(cardano_uplc_int_value_entries_are_canonical(arena, bad_token, 1U));
+
+  cardano_uplc_arena_free(&arena);
 }

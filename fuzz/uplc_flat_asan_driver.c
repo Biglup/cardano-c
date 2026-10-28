@@ -30,11 +30,11 @@
 
 #include <cardano/cardano.h>
 
-#include "uplc/arena.h"
-#include "uplc/flat_decode.h"
-#include "uplc/flat_reader.h"
+#include "uplc/arena/uplc_arena.h"
+#include "uplc/flat/flat_decode.h"
+#include "uplc/flat/flat_reader.h"
 
-#include <cardano/uplc/uplc_machine.h>
+#include "uplc/machine/uplc_machine.h"
 
 #include <dirent.h>
 #include <stdint.h>

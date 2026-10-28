@@ -41,8 +41,9 @@ extern "C" {
  * Internal flat encoder behind \ref cardano_uplc_flat_encode_program. Writes the
  * three version words, then the term, then a byte-aligning filler, producing the
  * canonical flat byte stream and the exact inverse of
- * \ref cardano_uplc_flat_decode_program. The \c array, \c value and
- * \c bls12_381_mlresult constant kinds have no flat serialization and are rejected.
+ * \ref cardano_uplc_flat_decode_program. The BLS12-381 G1, G2 and Miller-loop-result
+ * values have no flat serialization and are rejected, as the reference encoder
+ * refuses them; a list or array of such elements still encodes when it is empty.
  * The caller is expected to have validated its arguments; the \c cardano_uplc_int_
  * prefix marks this entry module-internal.
  *
