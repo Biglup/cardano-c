@@ -289,7 +289,8 @@ cardano_bigint_to_string(
  *
  * \param[in] bigint A constant pointer to the \ref cardano_bigint_t object.
  *
- * \return The integer value of the bigint. If the bigint is too large to fit in an int64_t, the behavior is undefined.
+ * \return The integer value of the bigint. If the bigint is too large to fit in an int64_t, the value is
+ *         undefined; only the low 64 bits of the magnitude are read.
  *
  * Usage Example:
  * \code{.c}
@@ -313,7 +314,8 @@ cardano_bigint_to_int(const cardano_bigint_t* bigint);
  *
  * \param[in] bigint A constant pointer to the \ref cardano_bigint_t object.
  *
- * \return The unsigned integer representation of the \ref cardano_bigint_t object.
+ * \return The unsigned integer representation of the \ref cardano_bigint_t object. Only the
+ *         low 64 bits of the magnitude are kept when the value does not fit in an uint64_t.
  *
  * Usage Example:
  * \code{.c}
