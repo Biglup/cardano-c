@@ -273,7 +273,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_invalid_before_ex(cardano_sub_tx_
  *
  * This function appends a specified UTXO as an input to the sub transaction being built. The builder never selects
  * inputs by itself, so the sub transaction spends exactly the UTXOs added through this function. Only inputs locked
- * by a key or by a native script can be spent, since this builder only supports native scripts and key witnesses.
+ * by a key or by a native script can be spent, since the input functions of this builder take no redeemer.
  * An input set cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already added
  * as an input is rejected.
  *
@@ -1485,7 +1485,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep_ex(
  * \brief Registers a vote for a specified governance action within the sub transaction.
  *
  * This function allows a voter to submit their vote for a given governance action. The voter must be identified by
- * a key or by a native script, since this builder only supports native scripts and key witnesses.
+ * a key or by a native script, since the vote functions of this builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] voter A pointer to a \ref cardano_voter_t structure representing the voter participating in the governance action.
@@ -1515,8 +1515,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_vote(
  *
  * This function adds a specified certificate to the sub transaction being constructed. Certificates are used to perform
  * various actions on the blockchain, such as staking, delegating, or registering/deregistering entities. The
- * credential the certificate acts on must be a key or a native script, since this builder only supports native
- * scripts and key witnesses.
+ * credential the certificate acts on must be a key or a native script, since the certificate functions of this
+ * builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] certificate A pointer to a \ref cardano_certificate_t structure representing the certificate to add.
@@ -1976,6 +1976,15 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * the outputs that were added, and the difference is the intent a batcher matches against the rest of the batch.
  * If any of the previous operations failed, this function reports the first error that was recorded.
  *
+ * When the sub transaction carries guarding redeemers, this function evaluates them natively against the UTXOs
+ * added as inputs and reference inputs, writes the computed execution units into the redeemers and sets the script
+ * data hash of the sub transaction. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script
+ * with the hash of a guard is added with `cardano_sub_tx_builder_add_script` or carried as a reference script by
+ * one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1, PlutusV2 or
+ * PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
+ * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE when a script fails phase-2 validation. The message of the failure is
+ * available through \ref cardano_sub_tx_builder_get_last_error.
+
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance that manages the sub transaction details.
  * \param[out] sub_transaction A pointer to a \ref cardano_sub_transaction_t pointer where the created sub transaction
  *                             will be stored upon success.

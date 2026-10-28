@@ -127,11 +127,10 @@ cardano_uplc_evaluate(
  * \param[in] semantics The builtin semantics variant driving the version-dependent
  *            builtin behaviours.
  * \param[in] protocol_major The major protocol version the program is evaluated
- *            under; below 11 a \c case on a constant fails the script, and below
- *            12, or for a program version below 1.2.0, a \c case on a Data constant
- *            fails the script. Builtin
- *            availability is not checked here: the ledger rejects an unavailable
- *            builtin when it deserialises the script.
+ *            under; below 11 a \c case on a constant fails the script, and below 12,
+ *            or for a program version below 1.2.0, a \c case on a Data constant
+ *            fails the script. Builtin availability is not checked here: the
+ *            ledger rejects an unavailable builtin when it deserialises the script.
  * \param[in] initial_budget The CPU and memory ceiling for the evaluation.
  * \param[out] out On a \ref CARDANO_SUCCESS return, the script outcome, spent
  *             budget and result term.

@@ -68,9 +68,8 @@ extern "C" {
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         \p out_script is NULL or \p script_bytes is NULL while \p script_size is
  *         non-zero, \ref CARDANO_ERROR_DECODING if the script bytes are not a
- *         valid CBOR-wrapped flat program, \ref CARDANO_ERROR_NOT_IMPLEMENTED if
- *         the decoded program carries a constant form with no flat serialization,
- *         or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an output
+ *         valid CBOR-wrapped flat program, or
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an output
  *         buffer cannot be allocated.
  */
 CARDANO_NODISCARD
