@@ -1142,14 +1142,18 @@ TEST(cardano_uplc_string_ex_mem, utf8_byte_semantics)
   cardano_uplc_arena_t* arena = nullptr;
   ASSERT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
 
-  // "abcd": 4 bytes -> (4-1)/4+1 = 1.
+  // "abcd": 4 bytes -> 4/4 = 1.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "abcd"), true), 1);
-  // 2 bytes -> (2-1)/4+1 = 1.
-  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "\xC3\xA9"), true), 1);
+  // 2 bytes -> 2/4 = 0.
+  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "\xC3\xA9"), true), 0);
+  // 3 bytes -> 3/4 = 0.
+  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "abc"), true), 0);
   // empty -> 0.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, ""), true), 0);
-  // 9 bytes -> (9-1)/4+1 = 3.
-  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "123456789"), true), 3);
+  // 7 bytes -> 7/4 = 1.
+  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "1234567"), true), 1);
+  // 9 bytes -> 9/4 = 2.
+  EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "123456789"), true), 2);
 
   cardano_uplc_arena_free(&arena);
 }
@@ -1181,7 +1185,7 @@ TEST(cardano_uplc_constant_ex_mem, null_is_zero)
   EXPECT_EQ(cardano_uplc_constant_ex_mem(nullptr, false), 0);
 }
 
-TEST(cardano_uplc_constant_ex_mem, nested_pair_and_list_matches_aiken)
+TEST(cardano_uplc_constant_ex_mem, nested_pair_and_list_per_semantics)
 {
   cardano_uplc_arena_t* arena = nullptr;
   ASSERT_EQ(cardano_uplc_arena_new(8192U, &arena), CARDANO_SUCCESS);
@@ -1208,8 +1212,8 @@ TEST(cardano_uplc_constant_ex_mem, nested_pair_and_list_matches_aiken)
 
   // C semantics (char count): 2 + (4 + 1 + 2) = 9.
   EXPECT_EQ(const_ex_mem(arena, pair, false), 9);
-  // D semantics (utf-8 bytes): 2 + (1 + 1 + 2) = 6.
-  EXPECT_EQ(const_ex_mem(arena, pair, true), 6);
+  // D semantics (utf-8 bytes, rounded down): 2 + (1 + 0 + 2) = 5.
+  EXPECT_EQ(const_ex_mem(arena, pair, true), 5);
 
   cardano_uplc_arena_free(&arena);
 }
@@ -2961,35 +2965,58 @@ TEST(cardano_uplc_builtin_cost, integer_to_byte_string_literal_width)
 
 TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, v1_boundaries)
 {
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 0U), CARDANO_UPLC_SEMANTICS_A);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 8U), CARDANO_UPLC_SEMANTICS_A);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 9U), CARDANO_UPLC_SEMANTICS_B);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 10U), CARDANO_UPLC_SEMANTICS_B);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 11U), CARDANO_UPLC_SEMANTICS_D);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 12U), CARDANO_UPLC_SEMANTICS_D);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 12U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 13U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, 100U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V1, UINT64_MAX), CARDANO_UPLC_SEMANTICS_F);
 }
 
 TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, v2_boundaries)
 {
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 0U), CARDANO_UPLC_SEMANTICS_A);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 8U), CARDANO_UPLC_SEMANTICS_A);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 9U), CARDANO_UPLC_SEMANTICS_B);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 10U), CARDANO_UPLC_SEMANTICS_B);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 11U), CARDANO_UPLC_SEMANTICS_D);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 12U), CARDANO_UPLC_SEMANTICS_D);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 12U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 13U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, 100U), CARDANO_UPLC_SEMANTICS_F);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V2, UINT64_MAX), CARDANO_UPLC_SEMANTICS_F);
 }
 
 TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, v3_boundaries)
 {
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 0U), CARDANO_UPLC_SEMANTICS_C);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 8U), CARDANO_UPLC_SEMANTICS_C);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 9U), CARDANO_UPLC_SEMANTICS_C);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 10U), CARDANO_UPLC_SEMANTICS_C);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 11U), CARDANO_UPLC_SEMANTICS_E);
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 12U), CARDANO_UPLC_SEMANTICS_E);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 12U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 13U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, 100U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V3, UINT64_MAX), CARDANO_UPLC_SEMANTICS_G);
 }
 
-TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, v4_follows_v3)
+TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, v4_boundaries)
 {
-  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 10U), CARDANO_UPLC_SEMANTICS_C);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 0U), CARDANO_UPLC_SEMANTICS_E);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 10U), CARDANO_UPLC_SEMANTICS_E);
   EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 11U), CARDANO_UPLC_SEMANTICS_E);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 12U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 13U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, 100U), CARDANO_UPLC_SEMANTICS_G);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(CARDANO_UPLC_LANG_VERSION_V4, UINT64_MAX), CARDANO_UPLC_SEMANTICS_G);
+}
+
+TEST(cardano_uplc_builtin_semantics_for_language_and_protocol, unknown_language_selects_c)
+{
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(static_cast<cardano_uplc_lang_version_t>(99), 8U), CARDANO_UPLC_SEMANTICS_C);
+  EXPECT_EQ(cardano_uplc_builtin_semantics_for_language_and_protocol(static_cast<cardano_uplc_lang_version_t>(99), 12U), CARDANO_UPLC_SEMANTICS_C);
 }
 
 TEST(cardano_uplc_builtin_semantics_for_language, no_protocol)
@@ -3007,6 +3034,8 @@ TEST(cardano_uplc_semantics_costs_strings_by_utf8_bytes, per_variant)
   EXPECT_FALSE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_C));
   EXPECT_TRUE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_D));
   EXPECT_TRUE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_E));
+  EXPECT_TRUE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_F));
+  EXPECT_TRUE(cardano_uplc_semantics_costs_strings_by_utf8_bytes(CARDANO_UPLC_SEMANTICS_G));
 }
 
 TEST(cardano_uplc_semantics_cons_byte_string_range_checks, per_variant)
@@ -3016,4 +3045,6 @@ TEST(cardano_uplc_semantics_cons_byte_string_range_checks, per_variant)
   EXPECT_TRUE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_C));
   EXPECT_FALSE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_D));
   EXPECT_TRUE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_E));
+  EXPECT_FALSE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_F));
+  EXPECT_TRUE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_G));
 }

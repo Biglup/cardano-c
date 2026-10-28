@@ -69,14 +69,14 @@ struct Configuration
 };
 
 // The reference runs the corpus at the newest protocol version (12) with builtin
-// semantics variant G and the newest cost model. Neither variant G nor the V4
-// cost model exist yet, so the closest available values are used: the newest
-// language, the newest implemented semantics variant (E) and the V3 cost model.
-// Cases that depend on the missing behaviour are listed as expected failures.
+// semantics variant G and the newest cost model. The V4 cost model does not exist
+// yet, so the V3 cost model stands in for it alongside the newest language and
+// semantics variant G. Cases that depend on the missing behaviour are listed as
+// expected failures.
 const Configuration CONFIGURATION = {
   CARDANO_UPLC_LANG_VERSION_V4,
   12U,
-  CARDANO_UPLC_SEMANTICS_E,
+  CARDANO_UPLC_SEMANTICS_G,
   CARDANO_UPLC_COST_MODEL_VERSION_V3
 };
 

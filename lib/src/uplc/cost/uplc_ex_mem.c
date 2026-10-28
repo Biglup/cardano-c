@@ -47,7 +47,7 @@ static const int64_t CARDANO_UPLC_INTEGER_WORD_BITS = 64;
 static const int64_t CARDANO_UPLC_BYTE_STRING_CHUNK = 8;
 
 /**
- * \brief The utf-8 string chunk size: one memory unit per this many bytes.
+ * \brief The utf-8 string chunk size: one memory unit per this many whole bytes.
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STRING_UTF8_CHUNK = 4;
@@ -182,12 +182,7 @@ cardano_uplc_string_ex_mem(const byte_t* bytes, size_t size, bool costs_by_utf8_
 {
   if (costs_by_utf8_bytes)
   {
-    if (size == 0U)
-    {
-      return 0;
-    }
-
-    return (((int64_t)size - 1) / CARDANO_UPLC_STRING_UTF8_CHUNK) + 1;
+    return (int64_t)size / CARDANO_UPLC_STRING_UTF8_CHUNK;
   }
 
   return utf8_code_point_count(bytes, size);

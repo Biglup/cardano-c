@@ -30,6 +30,9 @@
 
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/builtins/builtins.h"
+#include "../../src/uplc/cost/uplc_builtin_costs.h"
+#include "../../src/uplc/cost/uplc_cost_model.h"
+#include "../../src/uplc/cost/uplc_machine_costs.h"
 #include "../../src/uplc/machine/uplc_value.h"
 #include "../../src/uplc/syntax/pretty.h"
 #include "../../src/uplc/syntax/text_parser.h"
@@ -842,6 +845,114 @@ TEST(cardano_uplc_builtin_body, encodeAndDecodeUtf8RoundTrip)
   EXPECT_EQ(
     eval_ok("(program 1.0.0 [ (builtin decodeUtf8) (con bytestring #4f6c61) ])"),
     "(con string \"Ola\")");
+}
+
+static cardano_uplc_budget_t
+spent_by_evaluate(const char* source, cardano_uplc_machine_version_t version)
+{
+  cardano_uplc_arena_t*         arena   = new_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
+
+  EXPECT_EQ(cardano_uplc_parse_program(arena, source, std::strlen(source), &program, &offset), CARDANO_SUCCESS);
+
+  const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
+  cardano_uplc_eval_result_t  result  = {};
+  EXPECT_EQ(cardano_uplc_evaluate(arena, program, version, initial, &result), CARDANO_SUCCESS);
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+
+  return result.spent;
+}
+
+static cardano_uplc_budget_t
+spent_under_semantics(
+  const char*                       source,
+  cardano_uplc_cost_model_version_t cost_version,
+  cardano_uplc_lang_version_t       language,
+  cardano_uplc_builtin_semantics_t  semantics)
+{
+  cardano_uplc_arena_t*         arena   = new_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
+
+  EXPECT_EQ(cardano_uplc_parse_program(arena, source, std::strlen(source), &program, &offset), CARDANO_SUCCESS);
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(cost_version);
+  model.builtins = (cost_version == CARDANO_UPLC_COST_MODEL_VERSION_V1) ? cardano_uplc_builtin_costs_v1() : cardano_uplc_builtin_costs_v3();
+
+  const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
+  cardano_uplc_eval_result_t  result  = {};
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, language, 11U, initial, &result),
+    CARDANO_SUCCESS);
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+
+  return result.spent;
+}
+
+TEST(cardano_uplc_evaluate, v3CostsStringsUnderTheVanRossemVariant)
+{
+  const char* source = "(program 1.0.0 [ (builtin encodeUtf8) (con string \"abcdefgh\") ])";
+
+  const cardano_uplc_budget_t spent = spent_by_evaluate(source, CARDANO_UPLC_MACHINE_VERSION_V3);
+  const cardano_uplc_budget_t e     = spent_under_semantics(
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_LANG_VERSION_V3, CARDANO_UPLC_SEMANTICS_E);
+  const cardano_uplc_budget_t c = spent_under_semantics(
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_LANG_VERSION_V3, CARDANO_UPLC_SEMANTICS_C);
+
+  EXPECT_EQ(spent.cpu, e.cpu);
+  EXPECT_EQ(spent.mem, e.mem);
+  EXPECT_NE(spent.cpu, c.cpu);
+}
+
+TEST(cardano_uplc_evaluate, v1CostsStringsUnderTheVanRossemVariant)
+{
+  const char* source = "(program 1.0.0 [ (builtin encodeUtf8) (con string \"abcdefgh\") ])";
+
+  const cardano_uplc_budget_t spent = spent_by_evaluate(source, CARDANO_UPLC_MACHINE_VERSION_V1);
+  const cardano_uplc_budget_t d     = spent_under_semantics(
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_LANG_VERSION_V1, CARDANO_UPLC_SEMANTICS_D);
+  const cardano_uplc_budget_t b = spent_under_semantics(
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_LANG_VERSION_V1, CARDANO_UPLC_SEMANTICS_B);
+
+  EXPECT_EQ(spent.cpu, d.cpu);
+  EXPECT_EQ(spent.mem, d.mem);
+  EXPECT_NE(spent.cpu, b.cpu);
+}
+
+TEST(cardano_uplc_builtin_body, consByteStringRangeCheckFollowsTheDijkstraVariants)
+{
+  const char* source = "(program 1.0.0 [ [ (builtin consByteString) (con integer 256) ] (con bytestring #01) ])";
+
+  cardano_uplc_arena_t*         arena   = new_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
+
+  ASSERT_EQ(cardano_uplc_parse_program(arena, source, std::strlen(source), &program, &offset), CARDANO_SUCCESS);
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  model.builtins = cardano_uplc_builtin_costs_v3();
+
+  const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
+  cardano_uplc_eval_result_t  result  = {};
+
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_F, CARDANO_UPLC_LANG_VERSION_V2, 12U, initial, &result),
+    CARDANO_SUCCESS);
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
+
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_G, CARDANO_UPLC_LANG_VERSION_V4, 12U, initial, &result),
+    CARDANO_SUCCESS);
+  EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_ERROR_TERM);
+
+  cardano_uplc_arena_free(&arena);
 }
 
 TEST(cardano_uplc_builtin_body, decodeUtf8OnInvalidBytesIsAScriptError)

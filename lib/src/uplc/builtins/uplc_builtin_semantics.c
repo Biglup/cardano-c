@@ -44,6 +44,14 @@ static const uint64_t CARDANO_UPLC_CHANG_PROTOCOL_VERSION = 9U;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION = 11U;
 
+/**
+ * \brief The protocol major version at which the Dijkstra upgrade activates.
+ *
+ * At and above this version V1/V2 select semantics F and V3/V4 select G.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint64_t CARDANO_UPLC_DIJKSTRA_PROTOCOL_VERSION = 12U;
+
 /* DEFINITIONS ***************************************************************/
 
 cardano_uplc_builtin_semantics_t
@@ -86,7 +94,11 @@ cardano_uplc_builtin_semantics_for_language_and_protocol(
     case CARDANO_UPLC_LANG_VERSION_V1:
     case CARDANO_UPLC_LANG_VERSION_V2:
     {
-      if (protocol_major >= CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION)
+      if (protocol_major >= CARDANO_UPLC_DIJKSTRA_PROTOCOL_VERSION)
+      {
+        result = CARDANO_UPLC_SEMANTICS_F;
+      }
+      else if (protocol_major >= CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION)
       {
         result = CARDANO_UPLC_SEMANTICS_D;
       }
@@ -101,10 +113,25 @@ cardano_uplc_builtin_semantics_for_language_and_protocol(
       break;
     }
     case CARDANO_UPLC_LANG_VERSION_V3:
+    {
+      if (protocol_major >= CARDANO_UPLC_DIJKSTRA_PROTOCOL_VERSION)
+      {
+        result = CARDANO_UPLC_SEMANTICS_G;
+      }
+      else if (protocol_major >= CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION)
+      {
+        result = CARDANO_UPLC_SEMANTICS_E;
+      }
+      else
+      {
+        result = CARDANO_UPLC_SEMANTICS_C;
+      }
+      break;
+    }
     case CARDANO_UPLC_LANG_VERSION_V4:
     {
-      result = (protocol_major >= CARDANO_UPLC_VAN_ROSSEM_PROTOCOL_VERSION) ? CARDANO_UPLC_SEMANTICS_E
-                                                                            : CARDANO_UPLC_SEMANTICS_C;
+      result = (protocol_major >= CARDANO_UPLC_DIJKSTRA_PROTOCOL_VERSION) ? CARDANO_UPLC_SEMANTICS_G
+                                                                          : CARDANO_UPLC_SEMANTICS_E;
       break;
     }
     default:
@@ -125,6 +152,8 @@ cardano_uplc_semantics_costs_strings_by_utf8_bytes(cardano_uplc_builtin_semantic
   {
     case CARDANO_UPLC_SEMANTICS_D:
     case CARDANO_UPLC_SEMANTICS_E:
+    case CARDANO_UPLC_SEMANTICS_F:
+    case CARDANO_UPLC_SEMANTICS_G:
     {
       result = true;
       break;
@@ -154,6 +183,7 @@ cardano_uplc_semantics_cons_byte_string_range_checks(cardano_uplc_builtin_semant
   {
     case CARDANO_UPLC_SEMANTICS_C:
     case CARDANO_UPLC_SEMANTICS_E:
+    case CARDANO_UPLC_SEMANTICS_G:
     {
       result = true;
       break;
@@ -161,6 +191,7 @@ cardano_uplc_semantics_cons_byte_string_range_checks(cardano_uplc_builtin_semant
     case CARDANO_UPLC_SEMANTICS_A:
     case CARDANO_UPLC_SEMANTICS_B:
     case CARDANO_UPLC_SEMANTICS_D:
+    case CARDANO_UPLC_SEMANTICS_F:
     {
       result = false;
       break;

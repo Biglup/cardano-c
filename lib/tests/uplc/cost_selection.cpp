@@ -941,6 +941,54 @@ TEST(cardano_uplc_select_cost_model, v3_van_rossem_selects_e)
   EXPECT_EQ(selected.semantics, CARDANO_UPLC_SEMANTICS_E);
 }
 
+TEST(cardano_uplc_select_cost_model, v1_dijkstra_selects_f)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  cardano_error_t result = cardano_uplc_select_cost_model(
+    CARDANO_UPLC_LANG_VERSION_V1,
+    12U,
+    V1_DEFAULT_PARAMS,
+    CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1,
+    &selected);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(selected.semantics, CARDANO_UPLC_SEMANTICS_F);
+}
+
+TEST(cardano_uplc_select_cost_model, v3_dijkstra_selects_g)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  cardano_error_t result = cardano_uplc_select_cost_model(
+    CARDANO_UPLC_LANG_VERSION_V3,
+    12U,
+    V3_DEFAULT_PARAMS,
+    CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3,
+    &selected);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(selected.semantics, CARDANO_UPLC_SEMANTICS_G);
+}
+
+TEST(cardano_uplc_select_cost_model, v4_dijkstra_selects_g)
+{
+  cardano_uplc_selected_cost_model_t selected;
+  std::memset(&selected, 0, sizeof(selected));
+
+  cardano_error_t result = cardano_uplc_select_cost_model(
+    CARDANO_UPLC_LANG_VERSION_V4,
+    12U,
+    V3_DEFAULT_PARAMS,
+    CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3,
+    &selected);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(selected.semantics, CARDANO_UPLC_SEMANTICS_G);
+}
+
 TEST(cardano_uplc_select_cost_model, extra_trailing_params_are_ignored)
 {
   int64_t longer[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 + 2U];
