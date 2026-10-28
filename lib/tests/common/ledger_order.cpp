@@ -29,8 +29,11 @@
 #include <cardano/common/withdrawal_map.h>
 #include <cardano/voting_procedures/voter.h>
 #include <cardano/voting_procedures/voter_list.h>
+#include <cardano/voting_procedures/voting_procedures.h>
 
-#include "../../src/common/ledger_order.h"
+#include "../allocators_helpers.h"
+#include "../src/allocators.h"
+#include "../src/common/ledger_order.h"
 
 #include <cstring>
 #include <gmock/gmock.h>
@@ -110,6 +113,28 @@ new_withdrawals(const std::vector<cardano_reward_address_t*>& accounts)
   }
 
   return withdrawals;
+}
+
+/**
+ * Creates voting procedures from the hex of the DRep script voter 66*28 and the DRep key voter 55*28.
+ * \return A new voting procedures instance.
+ */
+static cardano_voting_procedures_t*
+new_voting_procedures()
+{
+  const char* cbor =
+    "a282"
+    "02581c55555555555555555555555555555555555555555555555555555555a1825820cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc008201f6"
+    "8203581c66666666666666666666666666666666666666666666666666666666a1825820cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc008200f6";
+
+  cardano_voting_procedures_t* procedures = NULL;
+  cardano_cbor_reader_t*       reader     = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  EXPECT_EQ(cardano_voting_procedures_from_cbor(reader, &procedures), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return procedures;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -393,4 +418,85 @@ TEST(_cardano_ledger_order_withdrawal_index, returnsErrorIfGivenNull)
   // Cleanup
   cardano_withdrawal_map_unref(&withdrawals);
   cardano_reward_address_unref(&address);
+}
+
+TEST(_cardano_ledger_order_withdrawal_at_index, putsScriptAccountsFirst)
+{
+  // Arrange
+  cardano_reward_address_t* key_account    = new_reward_address(0xe1U, 0x01U);
+  cardano_reward_address_t* script_account = new_reward_address(0xf1U, 0x02U);
+  cardano_withdrawal_map_t* withdrawals    = new_withdrawals({ key_account, script_account });
+  cardano_reward_address_t* first          = NULL;
+  cardano_reward_address_t* second         = NULL;
+  cardano_reward_address_t* missing        = NULL;
+
+  // Act
+  ASSERT_EQ(_cardano_ledger_order_withdrawal_at_index(withdrawals, 0U, &first), CARDANO_SUCCESS);
+  ASSERT_EQ(_cardano_ledger_order_withdrawal_at_index(withdrawals, 1U, &second), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_reward_address_get_bytes(first)[0], 0xf1U);
+  EXPECT_EQ(cardano_reward_address_get_bytes(second)[0], 0xe1U);
+  EXPECT_EQ(_cardano_ledger_order_withdrawal_at_index(withdrawals, 2U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(_cardano_ledger_order_withdrawal_at_index(NULL, 0U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(_cardano_ledger_order_withdrawal_at_index(withdrawals, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(missing, nullptr);
+
+  // Cleanup
+  cardano_reward_address_unref(&first);
+  cardano_reward_address_unref(&second);
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_reward_address_unref(&key_account);
+  cardano_reward_address_unref(&script_account);
+}
+
+TEST(_cardano_ledger_order_voter_at_index, putsScriptVotersFirst)
+{
+  // Arrange
+  cardano_voting_procedures_t* procedures = new_voting_procedures();
+  cardano_voter_t*             first      = NULL;
+  cardano_voter_t*             second     = NULL;
+  cardano_voter_t*             missing    = NULL;
+  cardano_voter_type_t         type       = CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH;
+
+  // Act
+  ASSERT_EQ(_cardano_ledger_order_voter_at_index(procedures, 0U, &first), CARDANO_SUCCESS);
+  ASSERT_EQ(_cardano_ledger_order_voter_at_index(procedures, 1U, &second), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_voter_get_type(first, &type), CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH);
+  EXPECT_EQ(cardano_voter_get_type(second, &type), CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_VOTER_TYPE_DREP_KEY_HASH);
+  EXPECT_EQ(_cardano_ledger_order_voter_at_index(procedures, 2U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(_cardano_ledger_order_voter_at_index(NULL, 0U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(_cardano_ledger_order_voter_at_index(procedures, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(missing, nullptr);
+
+  // Cleanup
+  cardano_voter_unref(&second);
+  cardano_voter_unref(&first);
+  cardano_voting_procedures_unref(&procedures);
+}
+
+TEST(_cardano_ledger_order_voter_at_index, returnsErrorIfListingVotersFails)
+{
+  // Arrange
+  cardano_voting_procedures_t* procedures = new_voting_procedures();
+  cardano_voter_t*             voter      = NULL;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t result = _cardano_ledger_order_voter_at_index(procedures, 0U, &voter);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(voter, nullptr);
+
+  // Cleanup
+  cardano_voting_procedures_unref(&procedures);
 }

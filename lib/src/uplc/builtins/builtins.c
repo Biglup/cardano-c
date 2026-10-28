@@ -4332,50 +4332,6 @@ body_b_data(
   return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
 }
 
-cardano_error_t
-cardano_uplc_int_data_list_from_nodes(
-  struct cardano_uplc_arena_t*      arena,
-  const cardano_uplc_data_t* const* nodes,
-  const size_t                      count,
-  cardano_uplc_constant_t**         out)
-{
-  cardano_uplc_type_t*            data_type = NULL;
-  const cardano_uplc_constant_t** items     = NULL;
-  size_t                          i         = 0U;
-  cardano_error_t                 error     = type_data(arena, &data_type);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    return error;
-  }
-
-  if (count > 0U)
-  {
-    items = (const cardano_uplc_constant_t**)cardano_uplc_arena_alloc(arena, sizeof(*items) * count, 0U);
-
-    if (items == NULL)
-    {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-  }
-
-  for (i = 0U; i < count; ++i)
-  {
-    cardano_uplc_constant_t* constant = NULL;
-
-    error = cardano_uplc_int_constant_new_data_node(arena, nodes[i], &constant);
-
-    if (error != CARDANO_SUCCESS)
-    {
-      return error;
-    }
-
-    items[i] = constant;
-  }
-
-  return cardano_uplc_constant_new_list(arena, data_type, items, count, out);
-}
-
 /**
  * \brief Runs \c unConstrData: a Data Constr into a (pair integer (list data)).
  *
@@ -6261,56 +6217,6 @@ static const size_t PRV_VALUE_KEY_MAX = 32U;
 static const size_t PRV_VALUE_AMOUNT_BITS = 128U;
 
 /**
- * \brief Builds the canonical value element type from the arena.
- *
- * The element type is \c (pair bytestring (list (pair bytestring integer))).
- *
- * \param[in] arena The arena to allocate from.
- * \param[out] out On success, the element type descriptor.
- *
- * \return \ref CARDANO_SUCCESS or a propagated allocation error.
- */
-static cardano_error_t
-value_elem_type(struct cardano_uplc_arena_t* arena, const cardano_uplc_type_t** out)
-{
-  cardano_uplc_type_t* bytestring = NULL;
-  cardano_uplc_type_t* integer    = NULL;
-  cardano_uplc_type_t* token_pair = NULL;
-  cardano_uplc_type_t* token_list = NULL;
-  cardano_uplc_type_t* policy     = NULL;
-  cardano_error_t      error      = CARDANO_SUCCESS;
-
-  error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token_pair);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, &token_list);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, token_list, &policy);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    *out = policy;
-  }
-
-  return error;
-}
-
-/**
  * \brief Reads the value constant a value argument holds.
  *
  * \param[in] value The argument value.
@@ -6639,7 +6545,7 @@ value_result(
   cardano_uplc_constant_t*   constant  = NULL;
   cardano_uplc_value_t*      result    = NULL;
 
-  *host_error = value_elem_type(arena, &elem_type);
+  *host_error = cardano_uplc_int_value_element_type(arena, &elem_type);
 
   if (*host_error == CARDANO_SUCCESS)
   {
@@ -9806,6 +9712,50 @@ cardano_uplc_int_builtin_run(
   }
 }
 
+cardano_error_t
+cardano_uplc_int_data_list_from_nodes(
+  struct cardano_uplc_arena_t*      arena,
+  const cardano_uplc_data_t* const* nodes,
+  const size_t                      count,
+  cardano_uplc_constant_t**         out)
+{
+  cardano_uplc_type_t*            data_type = NULL;
+  const cardano_uplc_constant_t** items     = NULL;
+  size_t                          i         = 0U;
+  cardano_error_t                 error     = type_data(arena, &data_type);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (count > 0U)
+  {
+    items = (const cardano_uplc_constant_t**)cardano_uplc_arena_alloc(arena, sizeof(*items) * count, 0U);
+
+    if (items == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+  }
+
+  for (i = 0U; i < count; ++i)
+  {
+    cardano_uplc_constant_t* constant = NULL;
+
+    error = cardano_uplc_int_constant_new_data_node(arena, nodes[i], &constant);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+
+    items[i] = constant;
+  }
+
+  return cardano_uplc_constant_new_list(arena, data_type, items, count, out);
+}
+
 bool
 cardano_uplc_int_value_entries_are_canonical(
   struct cardano_uplc_arena_t*          arena,
@@ -9863,4 +9813,42 @@ cardano_uplc_int_value_entries_are_canonical(
   }
 
   return true;
+}
+
+cardano_error_t
+cardano_uplc_int_value_element_type(struct cardano_uplc_arena_t* arena, const cardano_uplc_type_t** type)
+{
+  cardano_uplc_type_t* bytestring = NULL;
+  cardano_uplc_type_t* integer    = NULL;
+  cardano_uplc_type_t* token      = NULL;
+  cardano_uplc_type_t* tokens     = NULL;
+  cardano_uplc_type_t* policy     = NULL;
+  cardano_error_t      result     = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token, NULL, &tokens);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, tokens, &policy);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *type = policy;
+  }
+
+  return result;
 }
