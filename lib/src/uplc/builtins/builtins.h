@@ -283,6 +283,17 @@ cardano_uplc_int_value_entries_are_canonical(
   const cardano_uplc_constant_t* const* entries,
   size_t                                count);
 
+/**
+ * \brief Builds the value element type <tt>pair(bytestring, list(pair(bytestring, integer)))</tt>.
+ *
+ * \param[in] arena The arena every descriptor node is allocated from.
+ * \param[out] type On success, the element type descriptor.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or a propagated allocation error.
+ */
+cardano_error_t
+cardano_uplc_int_value_element_type(struct cardano_uplc_arena_t* arena, const cardano_uplc_type_t** type);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

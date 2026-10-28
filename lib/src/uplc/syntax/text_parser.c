@@ -1832,68 +1832,6 @@ parse_type(parser_t* parser, const uint32_t depth, const cardano_uplc_type_t** o
 }
 
 /**
- * \brief Builds the canonical value element type from the arena.
- *
- * The value constant is stored as a list of pairs whose element type is
- * \c (pair bytestring (list (pair bytestring integer))): a policy paired with a
- * list of (token, amount) pairs.
- *
- * \param[in] arena The arena to allocate the descriptor from.
- * \param[out] out On success, the element type descriptor.
- *
- * \return \ref CARDANO_SUCCESS on success or a propagated allocation error.
- */
-static cardano_error_t
-value_element_type(cardano_uplc_arena_t* arena, const cardano_uplc_type_t** out)
-{
-  cardano_uplc_type_t* bytestring  = NULL;
-  cardano_uplc_type_t* integer     = NULL;
-  cardano_uplc_type_t* token_pair  = NULL;
-  cardano_uplc_type_t* token_list  = NULL;
-  cardano_uplc_type_t* policy_pair = NULL;
-  cardano_error_t      result      = CARDANO_SUCCESS;
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token_pair);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token_pair, NULL, &token_list);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, token_list, &policy_pair);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  *out = policy_pair;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
  * \brief Builds a value constant from a parsed list of policy entries.
  *
  * The entries must already be in canonical form, as the reference parser
@@ -2198,7 +2136,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
       cardano_uplc_type_t*           list_type    = NULL;
       const cardano_uplc_constant_t* list_const   = NULL;
 
-      result = value_element_type(parser->arena, &element_type);
+      result = cardano_uplc_int_value_element_type(parser->arena, &element_type);
 
       if (result != CARDANO_SUCCESS)
       {

@@ -96,6 +96,7 @@
 #include <cardano/witness_set/witness_set.h>
 
 #include "../../allocators.h"
+#include "../../common/ledger_order.h"
 #include "../../string_safe.h"
 #include "../../uplc/arena/uplc_arena.h"
 #include "../../uplc/tx/script_context.h"
@@ -1271,7 +1272,7 @@ resolve_script_hash(
     {
       cardano_reward_address_t* address = NULL;
 
-      result = cardano_uplc_int_withdrawal_at_ledger_index(level->withdrawals, index, &address);
+      result = _cardano_ledger_order_withdrawal_at_index(level->withdrawals, index, &address);
 
       if (result == CARDANO_SUCCESS)
       {
@@ -1322,7 +1323,7 @@ resolve_script_hash(
     {
       cardano_voter_t* voter = NULL;
 
-      result = cardano_uplc_int_voter_at_ledger_index(level->votes, index, &voter);
+      result = _cardano_ledger_order_voter_at_index(level->votes, index, &voter);
 
       if (result == CARDANO_SUCCESS)
       {

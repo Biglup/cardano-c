@@ -25,13 +25,10 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/common/utxo_list.h>
-#include <cardano/common/withdrawal_map.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/slot_config.h>
 #include <cardano/transaction/transaction.h>
-#include <cardano/voting_procedures/voter.h>
-#include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/redeemer.h>
 
 /* DECLARATIONS **************************************************************/
@@ -368,54 +365,6 @@ cardano_uplc_int_build_script_context_v4(
   cardano_redeemer_t*          redeemer,
   cardano_plutus_data_t*       datum,
   cardano_plutus_data_t**      script_context);
-
-/**
- * \brief Finds the reward account a reward redeemer points to.
- *
- * The ledger resolves a reward redeemer index against its map of withdrawals,
- * which orders accounts by network, test networks first, then script
- * credentials before key credentials, then by hash. The withdrawal map of the
- * library is ordered by address bytes, which puts key credentials first, so the
- * position in the library map is not the redeemer index.
- *
- * \param[in] withdrawals The withdrawals of the transaction level. May be NULL.
- * \param[in] index The redeemer index.
- * \param[out] address On success, the reward account at \p index in ledger order,
- *             owned by the caller.
- *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
- *         \p address is NULL, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS if \p index
- *         is past the withdrawals, or another error code otherwise.
- */
-cardano_error_t
-cardano_uplc_int_withdrawal_at_ledger_index(
-  cardano_withdrawal_map_t*  withdrawals,
-  uint64_t                   index,
-  cardano_reward_address_t** address);
-
-/**
- * \brief Finds the voter a voting redeemer points to.
- *
- * The ledger resolves a voting redeemer index against its map of voting
- * procedures, which orders committee voters first, then DReps, then stake
- * pools, each with script credentials before key credentials. The library
- * orders key credentials first within a role, so the position in the library
- * map is not the redeemer index.
- *
- * \param[in] procedures The voting procedures of the transaction level. May be NULL.
- * \param[in] index The redeemer index.
- * \param[out] voter On success, the voter at \p index in ledger order, owned by
- *             the caller.
- *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
- *         \p voter is NULL, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS if \p index is
- *         past the voters, or another error code otherwise.
- */
-cardano_error_t
-cardano_uplc_int_voter_at_ledger_index(
-  cardano_voting_procedures_t* procedures,
-  uint64_t                     index,
-  cardano_voter_t**            voter);
 
 #ifdef __cplusplus
 }

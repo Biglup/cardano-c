@@ -7193,7 +7193,7 @@ static cardano_error_t
 indexed_voter(cardano_voting_procedures_t* procedures, const uint64_t index, cardano_plutus_data_t** voter_data)
 {
   cardano_voter_t* voter  = NULL;
-  cardano_error_t  result = cardano_uplc_int_voter_at_ledger_index(procedures, index, &voter);
+  cardano_error_t  result = _cardano_ledger_order_voter_at_index(procedures, index, &voter);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -7213,7 +7213,7 @@ indexed_withdrawal(cardano_withdrawal_map_t* withdrawals, const uint64_t index, 
 {
   cardano_reward_address_t* address = NULL;
   cardano_credential_t*     cred    = NULL;
-  cardano_error_t           result  = cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, index, &address);
+  cardano_error_t           result  = _cardano_ledger_order_withdrawal_at_index(withdrawals, index, &address);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -9378,107 +9378,6 @@ cardano_uplc_int_build_script_context_v4(
   }
 
   tx_view_release(&view);
-
-  return result;
-}
-
-cardano_error_t
-cardano_uplc_int_withdrawal_at_ledger_index(
-  cardano_withdrawal_map_t*  withdrawals,
-  const uint64_t             index,
-  cardano_reward_address_t** address)
-{
-  if (address == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  const size_t              count  = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
-  cardano_reward_address_t* found  = NULL;
-  cardano_error_t           result = CARDANO_SUCCESS;
-
-  for (size_t i = 0U; (i < count) && (found == NULL) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_reward_address_t* candidate = NULL;
-    uint64_t                  rank      = 0U;
-
-    result = cardano_withdrawal_map_get_key_at(withdrawals, i, &candidate);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = _cardano_ledger_order_withdrawal_index(withdrawals, candidate, &rank);
-    }
-
-    if ((result == CARDANO_SUCCESS) && (rank == index))
-    {
-      cardano_reward_address_ref(candidate);
-      found = candidate;
-    }
-
-    cardano_reward_address_unref(&candidate);
-  }
-
-  if ((result == CARDANO_SUCCESS) && (found == NULL))
-  {
-    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    *address = found;
-  }
-
-  return result;
-}
-
-cardano_error_t
-cardano_uplc_int_voter_at_ledger_index(
-  cardano_voting_procedures_t* procedures,
-  const uint64_t               index,
-  cardano_voter_t**            voter)
-{
-  if (voter == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  cardano_voter_list_t* voters = NULL;
-  cardano_voter_t*      found  = NULL;
-  cardano_error_t       result = (procedures != NULL) ? cardano_voting_procedures_get_voters(procedures, &voters) : CARDANO_SUCCESS;
-  const size_t          count  = (voters != NULL) ? cardano_voter_list_get_length(voters) : 0U;
-
-  for (size_t i = 0U; (i < count) && (found == NULL) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_voter_t* candidate = NULL;
-    uint64_t         rank      = 0U;
-
-    result = cardano_voter_list_get(voters, i, &candidate);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = _cardano_ledger_order_voter_index(voters, candidate, &rank);
-    }
-
-    if ((result == CARDANO_SUCCESS) && (rank == index))
-    {
-      cardano_voter_ref(candidate);
-      found = candidate;
-    }
-
-    cardano_voter_unref(&candidate);
-  }
-
-  if ((result == CARDANO_SUCCESS) && (found == NULL))
-  {
-    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    *voter = found;
-  }
-
-  cardano_voter_list_unref(&voters);
 
   return result;
 }

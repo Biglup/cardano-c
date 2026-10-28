@@ -1776,6 +1776,77 @@ TEST(cardano_uplc_builtin_bounds, expModIntegerBoundsItsOperandsInEveryVariant)
 
 /* VALUE CANONICAL FORM ******************************************************/
 
+TEST(cardano_uplc_int_value_element_type, buildsThePolicyTokenPairType)
+{
+  // Arrange
+  cardano_uplc_arena_t*      arena = new_arena();
+  const cardano_uplc_type_t* type  = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_uplc_int_value_element_type(arena, &type);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(type, nullptr);
+  EXPECT_EQ(type->kind, CARDANO_UPLC_TYPE_PAIR);
+  ASSERT_NE(type->fst, nullptr);
+  EXPECT_EQ(type->fst->kind, CARDANO_UPLC_TYPE_BYTE_STRING);
+  ASSERT_NE(type->snd, nullptr);
+  EXPECT_EQ(type->snd->kind, CARDANO_UPLC_TYPE_LIST);
+  EXPECT_EQ(type->snd->snd, nullptr);
+  ASSERT_NE(type->snd->fst, nullptr);
+  EXPECT_EQ(type->snd->fst->kind, CARDANO_UPLC_TYPE_PAIR);
+  ASSERT_NE(type->snd->fst->fst, nullptr);
+  EXPECT_EQ(type->snd->fst->fst->kind, CARDANO_UPLC_TYPE_BYTE_STRING);
+  ASSERT_NE(type->snd->fst->snd, nullptr);
+  EXPECT_EQ(type->snd->fst->snd->kind, CARDANO_UPLC_TYPE_INTEGER);
+
+  // Cleanup
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_int_value_element_type, propagatesEveryAllocationFailure)
+{
+  // Arrange
+  bool succeeded = false;
+  int  failures  = 0;
+
+  // Act / Assert
+  for (int nth = 0; (nth < 16) && !succeeded; ++nth)
+  {
+    cardano_uplc_arena_t* arena = nullptr;
+    ASSERT_EQ(cardano_uplc_arena_new(8U, &arena), CARDANO_SUCCESS);
+
+    const cardano_uplc_type_t* type = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(nth);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t result = cardano_uplc_int_value_element_type(arena, &type);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    if (result == CARDANO_SUCCESS)
+    {
+      EXPECT_NE(type, nullptr);
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << "allocation " << nth;
+      EXPECT_EQ(type, nullptr);
+      ++failures;
+    }
+
+    cardano_uplc_arena_free(&arena);
+  }
+
+  EXPECT_TRUE(succeeded);
+  EXPECT_EQ(failures, 5);
+}
+
 TEST(cardano_uplc_int_value_entries_are_canonical, rejectsInvalidArguments)
 {
   // Arrange

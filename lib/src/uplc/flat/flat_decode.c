@@ -934,52 +934,6 @@ read_sequence(
 }
 
 /**
- * \brief Builds the value element type <tt>pair(bytestring, list(pair(bytestring, integer)))</tt>.
- *
- * \param[in] arena The arena every descriptor node is allocated from.
- * \param[out] type On success, the element type descriptor.
- *
- * \return \ref CARDANO_SUCCESS on success, or a propagated allocation error.
- */
-static cardano_error_t
-value_element_type(cardano_uplc_arena_t* arena, const cardano_uplc_type_t** type)
-{
-  cardano_uplc_type_t* bytestring = NULL;
-  cardano_uplc_type_t* integer    = NULL;
-  cardano_uplc_type_t* token      = NULL;
-  cardano_uplc_type_t* tokens     = NULL;
-  cardano_uplc_type_t* policy     = NULL;
-  cardano_error_t      result     = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token, NULL, &tokens);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, tokens, &policy);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    *type = policy;
-  }
-
-  return result;
-}
-
-/**
  * \brief Reads a multi-asset value constant.
  *
  * The flat form is the reference's encoding of the nested map: a cons-bit list of
@@ -1008,7 +962,7 @@ read_asset_value(
   const cardano_uplc_type_t*      element = NULL;
   const cardano_uplc_constant_t** items   = NULL;
   size_t                          count   = 0U;
-  cardano_error_t                 result  = value_element_type(arena, &element);
+  cardano_error_t                 result  = cardano_uplc_int_value_element_type(arena, &element);
 
   if (result != CARDANO_SUCCESS)
   {
