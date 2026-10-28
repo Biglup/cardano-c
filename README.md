@@ -63,7 +63,7 @@ Use `cardano_tx_builder_set_coin_selector` to switch selectors, or implement you
 
 ## Plutus CEK Machine
 
-cardano-c ships a native implementation of the Plutus virtual machine (an untyped Plutus Core CEK evaluator, supporting Plutus V1/V2/V3), so transactions with scripts can be evaluated and their execution units computed locally, without an external node or evaluation service. The evaluator is conformance-tested against the official Plutus test vectors.
+cardano-c ships a native implementation of the Plutus virtual machine (an untyped Plutus Core CEK evaluator, supporting Plutus V1/V2/V3/V4, the latter from protocol version 12), so transactions with scripts can be evaluated and their execution units computed locally, without an external node or evaluation service. The evaluator is conformance-tested against the official Plutus test vectors.
 
 ## Deferred Redeemers
 
