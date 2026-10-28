@@ -165,6 +165,10 @@ Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_tx_builder_add_guard_with_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_tx_builder_add_datum
 
 ------------

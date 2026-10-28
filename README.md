@@ -97,7 +97,7 @@ The callback runs on every balancing iteration (it must be a pure function of it
 
 ## Nested Transactions
 
-cardano-c can build the nested transactions of [CIP-118](https://cips.cardano.org/cip/CIP-0118) (Dijkstra era, native scripts and key witnesses for now). Independent parties each build and sign a sub transaction with `cardano_sub_tx_builder_t`. A sub transaction is an intent: it is deliberately unbalanced, pays no fee and posts no collateral. A batcher then adds the finished sub transactions to a regular transaction, which pays the fee for the whole batch, and `cardano_tx_builder_build` balances the batch as a whole, the way the ledger checks it:
+cardano-c can build the nested transactions of [CIP-118](https://cips.cardano.org/cip/CIP-0118) (Dijkstra era). Independent parties each build and sign a sub transaction with `cardano_sub_tx_builder_t`. A sub transaction is an intent: it is deliberately unbalanced, pays no fee and posts no collateral. A batcher then adds the finished sub transactions to a regular transaction, which pays the fee for the whole batch, and `cardano_tx_builder_build` balances the batch as a whole, the way the ledger checks it:
 
 ```c
 // Each party spends its own UTXO and pays itself what it wants to end up with. The imbalance is its offer.
@@ -125,6 +125,8 @@ cardano_tx_builder_build(tx_builder, &transaction);
 ```
 
 The sub transactions are carried untouched, so their ids and the signatures of the parties are preserved. A net deficit of the sub transactions is funded by the inputs of the batcher and a net surplus ends up in its change. A party whose keys live in a secure key handler signs with `cardano_secure_key_handler_bip32_sign_sub_transaction` or `cardano_secure_key_handler_ed25519_sign_sub_transaction`, the counterparts of the functions that sign a transaction. See the [sub transaction batch](examples/src/sub_transaction_batch_example.c) example for a complete trade between two parties that runs offline.
+
+A sub transaction can run native scripts and Plutus V4 scripts. `cardano_sub_tx_builder_add_guard_with_redeemer` (and `cardano_tx_builder_add_guard_with_redeemer` for the top level transaction) adds a script hash guard together with the redeemer that satisfies it, and the builders evaluate the Plutus V4 validators, guards and sub transaction scripts natively, all levels of the batch together as the ledger does. See the [Plutus V4 guarded sub transaction](examples/src/plutus_v4_guarded_sub_transaction_example.c) example, which spends from a V4 validator in a transaction that carries a sub transaction guarded by a V4 script. It builds the transactions offline from a private key and the Plutus V4 cost model of the network, given in the `PAYMENT_PRIVATE_KEY` and `PLUTUS_V4_COST_MODEL` environment variables, and prints them for submission to a Dijkstra network such as Musashi.
 
 ## Basic Example
 

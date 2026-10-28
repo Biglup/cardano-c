@@ -1777,6 +1777,7 @@ cardano_transaction_body_new(
   if ((*transaction_body)->fee == NULL)
   {
     cardano_transaction_body_deallocate(*transaction_body);
+    *transaction_body = NULL;
 
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
@@ -1795,6 +1796,7 @@ cardano_transaction_body_new(
     if ((*transaction_body)->invalid_after == NULL)
     {
       cardano_transaction_body_deallocate(*transaction_body);
+      *transaction_body = NULL;
 
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }

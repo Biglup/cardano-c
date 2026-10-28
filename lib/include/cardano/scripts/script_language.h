@@ -56,7 +56,7 @@ typedef enum
    * The main changes in V2 of Plutus were to the interface to scripts. The ScriptContext was extended
    * to include the following information:
    *
-   *  - The full “redeemers” structure, which contains all the redeemers used in the transaction
+   *  - The full "redeemers" structure, which contains all the redeemers used in the transaction
    *  - Reference inputs in the transaction (proposed in CIP-31)
    *  - Inline datums in the transaction (proposed in CIP-32)
    *  - Reference scripts in the transaction (proposed in CIP-33)
@@ -79,9 +79,9 @@ typedef enum
   /**
    * \brief V4 was introduced in the Dijkstra hard fork.
    *
-   * The Dijkstra era defines the wire format for V4 scripts, however, V4 is not yet
-   * an executable language. V4 scripts can travel in transactions as witness set scripts,
-   * reference scripts or auxiliary data scripts.
+   * V4 scripts run from protocol version 12. They can travel in transactions as witness
+   * set scripts, reference scripts or auxiliary data scripts, and they are the only Plutus
+   * scripts that run inside a sub transaction.
    */
   CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4,
 

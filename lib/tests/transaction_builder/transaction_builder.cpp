@@ -44,6 +44,7 @@
 #include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
+#include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/transaction_builder/evaluation/provider_tx_evaluator.h>
 #include <cardano/transaction_builder/fee.h>
 #include <gmock/gmock.h>
@@ -13449,4 +13450,346 @@ TEST(cardano_tx_builder_vote_with_deferred_redeemer, returnsErrorIfMemoryAllocat
   cardano_governance_action_id_unref(&action_id);
   cardano_cbor_reader_unref(&gov_action_reader);
   cardano_set_allocators(malloc, realloc, free);
+}
+
+/* GUARDING REDEEMERS ********************************************************/
+
+static const char* ALWAYS_SUCCEEDS_V4_CBOR = "82044645010000249901";
+
+/**
+ * Creates protocol parameters for the Dijkstra era, with a Plutus V4 cost model.
+ * \return A new instance of the protocol parameters.
+ */
+static cardano_protocol_parameters_t*
+init_dijkstra_protocol_parameters()
+{
+  cardano_protocol_parameters_t* params   = init_protocol_parameters_with_version(12U);
+  cardano_costmdls_t*            costmdls = cardano_protocol_parameters_get_cost_models(params);
+  cardano_cost_model_t*          v3_model = NULL;
+  cardano_cost_model_t*          v4_model = NULL;
+
+  EXPECT_EQ(cardano_costmdls_get(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3, &v3_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V4, cardano_cost_model_get_costs(v3_model), cardano_cost_model_get_costs_size(v3_model), &v4_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_insert(costmdls, v4_model), CARDANO_SUCCESS);
+
+  cardano_cost_model_unref(&v4_model);
+  cardano_cost_model_unref(&v3_model);
+  cardano_costmdls_unref(&costmdls);
+
+  return params;
+}
+
+/**
+ * Creates a script hash credential for a script.
+ * \param script The script.
+ * \return A new instance of the credential.
+ */
+static cardano_credential_t*
+create_script_credential(cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* hash       = cardano_script_get_hash(script);
+  cardano_credential_t*   credential = NULL;
+
+  EXPECT_EQ(cardano_credential_new(hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &credential), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return credential;
+}
+
+/**
+ * Gets the redeemer at a position of the witness set of a transaction.
+ * \param tx The transaction.
+ * \param index The position of the redeemer.
+ * \return A new reference to the redeemer.
+ */
+static cardano_redeemer_t*
+get_tx_redeemer(cardano_transaction_t* tx, size_t index)
+{
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  cardano_redeemer_t* redeemer = NULL;
+
+  EXPECT_EQ(cardano_redeemer_list_get(redeemers, index, &redeemer), CARDANO_SUCCESS);
+
+  return redeemer;
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, doesntCrashIfGivenNull)
+{
+  cardano_tx_builder_add_guard_with_redeemer(nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, returnsErrorIfGuardIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_tx_builder_add_guard_with_redeemer(tx_builder, nullptr, redeemer);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Guard is NULL.");
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, rejectsAKeyHashGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_credential_t*          guard      = create_credential(HASH_HEX, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_tx_builder_add_guard_with_redeemer(tx_builder, guard, redeemer);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Only a script hash guard is satisfied by a redeemer.");
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_credential_unref(&guard);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, addsTheRedeemerAtThePositionOfTheGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder   = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_credential_t*          key_guard    = create_credential(HASH_HEX, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_credential_t*          script_guard = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_plutus_data_t*         redeemer     = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_tx_builder_add_guard(tx_builder, key_guard);
+  cardano_tx_builder_add_guard_with_redeemer(tx_builder, script_guard, redeemer);
+
+  cardano_redeemer_t*         added = get_tx_redeemer(tx_builder->state.transaction, 0U);
+  cardano_transaction_body_t* body  = cardano_transaction_get_body(tx_builder->state.transaction);
+  cardano_guard_set_t*        set   = cardano_transaction_body_get_guards(body);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_guard_set_get_length(set), 2U);
+  EXPECT_EQ(cardano_redeemer_get_tag(added), CARDANO_REDEEMER_TAG_GUARDING);
+  EXPECT_EQ(cardano_redeemer_get_index(added), 1U);
+
+  // Cleanup
+  cardano_guard_set_unref(&set);
+  cardano_transaction_body_unref(&body);
+  cardano_redeemer_unref(&added);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_credential_unref(&script_guard);
+  cardano_credential_unref(&key_guard);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_protocol_parameters();
+  cardano_credential_t*          guard    = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_plutus_data_t*         redeemer = create_plutus_data(PLUTUS_DATA_CBOR);
+  bool                           added    = false;
+
+  for (int i = 0; (i < 100) && !added; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_tx_builder_add_guard_with_redeemer(tx_builder, guard, redeemer);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    added = (tx_builder->last_error == CARDANO_SUCCESS);
+
+    if (!added)
+    {
+      EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(added);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_plutus_data_unref(&redeemer);
+  cardano_credential_unref(&guard);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, returnsErrorIfTheRedeemerListCannotGrow)
+{
+  // Arrange
+  static const size_t FULL_REDEEMER_LIST = 127U;
+
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder  = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_credential_t*          guard       = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_plutus_data_t*         redeemer    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_witness_set_t*         witness_set = cardano_transaction_get_witness_set(tx_builder->state.transaction);
+  cardano_redeemer_list_t*       redeemers   = nullptr;
+  cardano_ex_units_t*            ex_units    = nullptr;
+
+  ASSERT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_ex_units_new(0U, 0U, &ex_units), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < FULL_REDEEMER_LIST; ++i)
+  {
+    cardano_redeemer_t* spend = nullptr;
+
+    ASSERT_EQ(cardano_redeemer_new(CARDANO_REDEEMER_TAG_SPEND, i, redeemer, ex_units, &spend), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_redeemer_list_add(redeemers, spend), CARDANO_SUCCESS);
+
+    cardano_redeemer_unref(&spend);
+  }
+
+  ASSERT_EQ(cardano_witness_set_set_redeemers(witness_set, redeemers), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_tx_builder_add_guard_with_redeemer(tx_builder, guard, redeemer);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "Failed to add redeemer.");
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemers), FULL_REDEEMER_LIST);
+
+  // Cleanup
+  reset_allocators_run_count();
+  cardano_ex_units_unref(&ex_units);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witness_set);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_credential_unref(&guard);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_guard_with_redeemer, evaluatesTheGuardsOfEveryLevelWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_sub_tx_builder_t*      sub_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          guard       = create_script_credential(script);
+  cardano_plutus_data_t*         redeemer    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_costmdls_t*            costmdls    = cardano_protocol_parameters_get_cost_models(params);
+  cardano_tx_evaluator_t*        evaluator   = nullptr;
+  cardano_sub_transaction_t*     sub_tx      = nullptr;
+  cardano_transaction_t*         tx          = nullptr;
+  cardano_utxo_list_t*           sub_utxos   = nullptr;
+
+  EXPECT_EQ(cardano_utxo_list_new(&sub_utxos), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&CARDANO_MAINNET_SLOT_CONFIG, costmdls, 12U, &evaluator), CARDANO_SUCCESS);
+
+  cardano_sub_tx_builder_add_script(sub_builder, script);
+  cardano_sub_tx_builder_add_guard_with_redeemer(sub_builder, guard, redeemer);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(sub_builder, &sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(sub_builder);
+
+  // Act
+  cardano_tx_builder_set_tx_evaluator(tx_builder, evaluator);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_guard_with_redeemer(tx_builder, guard, redeemer);
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_redeemer_t*         evaluated = get_tx_redeemer(tx, 0U);
+  cardano_ex_units_t*         units     = cardano_redeemer_get_ex_units(evaluated);
+  cardano_transaction_body_t* body      = cardano_transaction_get_body(tx);
+  cardano_blake2b_hash_t*     hash      = cardano_transaction_body_get_script_data_hash(body);
+
+  EXPECT_TRUE(tx_builder->state.has_plutus_v4);
+  EXPECT_EQ(cardano_redeemer_get_tag(evaluated), CARDANO_REDEEMER_TAG_GUARDING);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(units), 92100U);
+  EXPECT_EQ(cardano_ex_units_get_memory(units), 500U);
+  EXPECT_NE(hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_body_unref(&body);
+  cardano_ex_units_unref(&units);
+  cardano_redeemer_unref(&evaluated);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_costmdls_unref(&costmdls);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_credential_unref(&guard);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&sub_builder);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_reference_input, flagsAPlutusV4ReferenceScript)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_tx_builder_t*          tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                funding    = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_transaction_input_t*   input      = cardano_utxo_get_input(funding);
+  cardano_transaction_output_t*  output     = cardano_utxo_get_output(funding);
+  cardano_utxo_t*                reference  = nullptr;
+
+  EXPECT_EQ(cardano_transaction_output_set_script_ref(output, script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_new(input, output, &reference), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_TRUE(tx_builder->state.has_plutus_v4);
+
+  // Cleanup
+  cardano_utxo_unref(&reference);
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_input_unref(&input);
+  cardano_utxo_unref(&funding);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
 }

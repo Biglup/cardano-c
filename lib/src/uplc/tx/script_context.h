@@ -81,7 +81,11 @@ cardano_uplc_int_slot_to_posix_time(
  * \param[out] tx_info On success, the newly created TxInfo data. The caller owns
  *             it and must release it with \ref cardano_plutus_data_unref.
  *
- * \return \ref CARDANO_SUCCESS on success, or an error code otherwise.
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         when \p tx carries a field the V1 and V2 contexts cannot represent
+ *         (votes, proposals, a current treasury value, a treasury donation,
+ *         direct deposits, account balance intervals, required top-level guards
+ *         or a script-hash guard), or an error code otherwise.
  */
 cardano_error_t
 cardano_uplc_int_build_tx_info_v1(
@@ -208,7 +212,10 @@ cardano_uplc_int_build_script_context_v2(
  * \param[out] tx_info On success, the newly created TxInfo data, owned by the
  *             caller.
  *
- * \return \ref CARDANO_SUCCESS on success, or an error code otherwise.
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INVALID_ARGUMENT
+ *         when \p tx carries a Dijkstra field the V3 context cannot represent
+ *         (direct deposits, account balance intervals, required top-level guards
+ *         or a script-hash guard), or an error code otherwise.
  */
 cardano_error_t
 cardano_uplc_int_build_tx_info_v3(

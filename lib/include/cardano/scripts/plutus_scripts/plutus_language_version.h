@@ -36,7 +36,7 @@ extern "C" {
  * \brief The Cardano ledger tags scripts with a language that determines what the ledger will do with the script.
  *
  * In most cases this language will be very similar to the ones that came before, we refer to these as
- * 'Plutus language versions'. However, from the ledger’s perspective they are entirely unrelated and there
+ * 'Plutus language versions'. However, from the ledger's perspective they are entirely unrelated and there
  * is generally no requirement that they be similar or compatible in any way.
  */
 typedef enum
@@ -52,7 +52,7 @@ typedef enum
    * The main changes in V2 of Plutus were to the interface to scripts. The ScriptContext was extended
    * to include the following information:
    *
-   *  - The full “redeemers” structure, which contains all the redeemers used in the transaction
+   *  - The full "redeemers" structure, which contains all the redeemers used in the transaction
    *  - Reference inputs in the transaction (proposed in CIP-31)
    *  - Inline datums in the transaction (proposed in CIP-32)
    *  - Reference scripts in the transaction (proposed in CIP-33)
@@ -75,9 +75,10 @@ typedef enum
   /**
    * \brief V4 was introduced in the Dijkstra hard fork.
    *
-   * The Dijkstra era defines the wire format for V4 scripts and their cost models,
-   * however, V4 is not yet an executable language. V4 scripts can be serialized in
-   * transactions and protocol parameters, but they cannot be used to witness anything.
+   * V4 scripts run from protocol version 12, priced by the V4 cost model of the
+   * protocol parameters. They witness the purposes of the top level transaction,
+   * including guards, and they are the only Plutus scripts that run inside a sub
+   * transaction.
    */
   CARDANO_PLUTUS_LANGUAGE_VERSION_V4 = 3,
 

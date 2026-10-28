@@ -48,6 +48,18 @@ extern "C" {
  * through a \ref cardano_tx_evaluator_impl_t, so callers use it exactly as they
  * would the provider-backed evaluator.
  *
+ * A Dijkstra transaction runs scripts at two levels: the top-level transaction
+ * and each of its sub-transactions, every level with its own redeemers. Like the
+ * ledger, the evaluator runs the redeemers of every level together: a script
+ * that fails at any level fails the evaluation. The redeemers this evaluator
+ * returns are those of the top-level transaction; use
+ * \ref cardano_tx_evaluator_new_native_sub_transaction for the redeemers of a
+ * sub-transaction. Plutus V4 scripts are evaluated with the V4 \c ScriptContext
+ * of the level they run at, guarding redeemers resolve to the guard at their
+ * index in the guard set of their level (key-hash guards count towards the
+ * index), and a script needed by any level can be provided by the witness set of
+ * any level or by a reference script.
+ *
  * The \ref cardano_tx_evaluator_evaluate signature carries no slot config, cost
  * models or protocol version, so this constructor binds them once: the slot
  * config converts validity slots to POSIX time for the \c ScriptContext, the cost
@@ -66,14 +78,32 @@ extern "C" {
  *
  * \remark Each script is deserialised the way the ledger does at the protocol
  *         version: its language and every builtin it names must be available
- *         there. A script that cannot be deserialised makes
- *         \ref cardano_tx_evaluator_evaluate return \ref CARDANO_ERROR_DECODING.
- *         A script whose Plutus Core version is not available at the protocol
- *         version, a script with a free variable, or a script that runs and
- *         fails, returns \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE. Below
+ *         there. Every script of every level is deserialised before any of them
+ *         runs, so a script that cannot be deserialised makes
+ *         \ref cardano_tx_evaluator_evaluate return \ref CARDANO_ERROR_DECODING
+ *         even when another script would fail phase-2 validation. A script whose
+ *         Plutus Core version is not available at the protocol version, a script
+ *         with a free variable, a script that runs and fails, or a Plutus V3 or
+ *         V4 script that does not return unit, returns
+ *         \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE. A sub-transaction
+ *         redeemer that runs a Plutus V1, V2 or V3 script returns
+ *         \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE, since those languages only
+ *         run at the top level. Below
  *         protocol version 12 the free variable check, like the ledger's, does
  *         not look inside \c constr and \c case terms; from 12 on it covers the
  *         whole script.
+ *
+ * \remark A redeemer whose index points past the items of its purpose in its
+ *         transaction level (for example past the end of the guard set) returns
+ *         \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS, and a redeemer whose item is not
+ *         authorised by a script (for example a key-hash guard) returns
+ *         \ref CARDANO_ERROR_INVALID_ARGUMENT. Like the ledger, a Plutus V1, V2 or
+ *         V3 script cannot run in a transaction that carries direct deposits,
+ *         account balance intervals, required top-level guards or a script-hash
+ *         guard, since its \c ScriptContext cannot represent them; such a
+ *         transaction returns \ref CARDANO_ERROR_INVALID_ARGUMENT, as does a
+ *         Plutus V1 or V2 script in a transaction with votes, proposals, a
+ *         current treasury value or a treasury donation.
  *
  * \param[in] slot_config The slot/time parameters used to convert the transaction
  *            validity interval to POSIX time. Must not be NULL.
@@ -114,6 +144,70 @@ cardano_tx_evaluator_new_native(
   const cardano_slot_config_t* slot_config,
   cardano_costmdls_t*          cost_models,
   uint64_t                     protocol_major,
+  cardano_tx_evaluator_t**     tx_evaluator);
+
+/**
+ * \brief Creates a native phase-2 evaluator that returns the redeemers of a sub-transaction.
+ *
+ * Behaves like \ref cardano_tx_evaluator_new_native and evaluates the whole
+ * transaction the same way, the top level and every sub-transaction together,
+ * but the redeemer list \ref cardano_tx_evaluator_evaluate returns holds the
+ * redeemers of the sub-transaction at position \p sub_tx_index of the top-level
+ * transaction body, in the order of that sub-transaction's witness set, each
+ * carrying its computed execution units. Together with the evaluator returned by
+ * \ref cardano_tx_evaluator_new_native, this maps the execution units back to
+ * every redeemer at every level.
+ *
+ * Evaluating a transaction that has no sub-transaction at \p sub_tx_index
+ * returns \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS.
+ *
+ * \param[in] slot_config The slot/time parameters used to convert the validity
+ *            intervals to POSIX time. Must not be NULL.
+ * \param[in] cost_models The ledger cost models keyed by Plutus language version.
+ *            May be NULL, in which case the evaluator uses the per-version default
+ *            semantics for the protocol version.
+ * \param[in] protocol_major The protocol major version selecting the builtin
+ *            semantics variant and the language, builtin and Plutus Core
+ *            versions each script may use.
+ * \param[in] sub_tx_index The position of the sub-transaction in the body of the
+ *            evaluated transaction.
+ * \param[out] tx_evaluator On success, set to the newly created evaluator. The
+ *             caller owns it and releases it with \ref cardano_tx_evaluator_unref.
+ *             Left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         \p slot_config or \p tx_evaluator is NULL, or
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the evaluator context
+ *         cannot be allocated.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_evaluator_t* evaluator = NULL;
+ * cardano_error_t         result    = cardano_tx_evaluator_new_native_sub_transaction(
+ *   &slot_config, cost_models, 12U, 0U, &evaluator);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   cardano_redeemer_list_t* redeemers = NULL;
+ *   result = cardano_tx_evaluator_evaluate(evaluator, tx, resolved_utxos, &redeemers);
+ *
+ *   if (result == CARDANO_SUCCESS)
+ *   {
+ *     printf("The first sub transaction has %zu redeemers.\n", cardano_redeemer_list_get_length(redeemers));
+ *   }
+ *
+ *   cardano_redeemer_list_unref(&redeemers);
+ *   cardano_tx_evaluator_unref(&evaluator);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t
+cardano_tx_evaluator_new_native_sub_transaction(
+  const cardano_slot_config_t* slot_config,
+  cardano_costmdls_t*          cost_models,
+  uint64_t                     protocol_major,
+  uint64_t                     sub_tx_index,
   cardano_tx_evaluator_t**     tx_evaluator);
 
 #ifdef __cplusplus

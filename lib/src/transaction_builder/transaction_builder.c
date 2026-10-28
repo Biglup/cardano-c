@@ -821,6 +821,24 @@ cardano_tx_builder_add_guard_ex(
 }
 
 void
+cardano_tx_builder_add_guard_with_redeemer(
+  cardano_tx_builder_t*  builder,
+  cardano_credential_t*  guard,
+  cardano_plutus_data_t* redeemer)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_guard_with_redeemer(&builder->state, guard, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_tx_builder_add_datum(
   cardano_tx_builder_t*  builder,
   cardano_plutus_data_t* datum)

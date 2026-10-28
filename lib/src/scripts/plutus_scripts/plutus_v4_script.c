@@ -35,8 +35,8 @@
 /* STRUCTURES ****************************************************************/
 
 /**
- * \brief Plutus v4 scripts were introduced in the Dijkstra hard fork. The era defines their
- * wire format, however, V4 is not yet an executable language.
+ * \brief Plutus v4 scripts were introduced in the Dijkstra hard fork. They run from protocol
+ * version 12.
  */
 typedef struct cardano_plutus_v4_script_t
 {

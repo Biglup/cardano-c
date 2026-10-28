@@ -388,6 +388,11 @@ cardano_builder_add_reference_input(
         state->has_plutus_v3 = true;
         break;
       }
+      case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
+      {
+        state->has_plutus_v4 = true;
+        break;
+      }
       default:
       {
         break;

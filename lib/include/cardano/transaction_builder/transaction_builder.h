@@ -67,7 +67,7 @@ typedef struct cardano_tx_builder_t cardano_tx_builder_t;
  * This function initializes a new transaction builder (`cardano_tx_builder_t`)
  * using the supplied protocol parameters and slot configuration. The builder
  * enables incremental, rule-safe construction of a transaction, including input
- * selection, output balancing, fee calculation, and script evaluation—based on
+ * selection, output balancing, fee calculation, and script evaluation - based on
  * the specified protocol settings.
  *
  * The protocol parameters determine limits and constants such as:
@@ -1117,8 +1117,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_signer_ex(
  * present leaves the transaction unchanged.
  *
  * The builder does not resolve or attach the script behind a script hash guard. Provide the script with
- * `cardano_tx_builder_add_script` or through a reference input, and attach its guarding redeemer through the
- * redeemer functions of the builder.
+ * `cardano_tx_builder_add_script` or through a reference input. A script hash guard added with this function has
+ * no redeemer; use `cardano_tx_builder_add_guard_with_redeemer` to add it together with the guarding redeemer
+ * that satisfies it.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
  * \param[in] guard A pointer to the \ref cardano_credential_t structure representing the guard to be added.
@@ -1171,6 +1172,45 @@ CARDANO_EXPORT void cardano_tx_builder_add_guard_ex(
   const char*               hash_hex,
   size_t                    hash_hex_size,
   cardano_credential_type_t type);
+
+/**
+ * \brief Adds a script hash guard to the transaction together with the guarding redeemer that satisfies it.
+ *
+ * This function registers \p guard like `cardano_tx_builder_add_guard` and attaches a redeemer with the guarding
+ * purpose whose payload is \p redeemer. The ledger runs the guard script with that redeemer as a validity condition
+ * of the transaction, and the execution units of the redeemer are computed when the transaction is built. The
+ * redeemer points to the position of the guard in the guards of the transaction, which keep the order in which they
+ * were added, counting key hash guards and the signers added with `cardano_tx_builder_add_signer`. A guard that is
+ * already present keeps its position.
+ *
+ * The builder does not resolve or attach the guard script. Provide it with `cardano_tx_builder_add_script` or
+ * through a reference input. A guard script running in a top level transaction is a PlutusV4 script, which sees the
+ * whole batch, the transaction and all its sub transactions.
+ *
+ * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
+ * \param[in] guard A pointer to the script hash \ref cardano_credential_t to add as a guard.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t handed to the guard script as its redeemer.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_tx_builder_t*  tx_builder = ...;
+ * cardano_credential_t*  guard      = ...;
+ * cardano_script_t*      script     = ...;
+ * cardano_plutus_data_t* redeemer   = ...;
+ *
+ * cardano_tx_builder_add_script(tx_builder, script);
+ * cardano_tx_builder_add_guard_with_redeemer(tx_builder, guard, redeemer);
+ * \endcode
+ *
+ * \note Errors are deferred and will only be reported when `cardano_tx_builder_build` is called. A key hash guard
+ *       makes `cardano_tx_builder_build` return \ref CARDANO_ERROR_INVALID_ARGUMENT, since only a script is
+ *       satisfied by a redeemer, and a guard that already has a redeemer makes it return
+ *       \ref CARDANO_ERROR_DUPLICATED_KEY.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_guard_with_redeemer(
+  cardano_tx_builder_t*  builder,
+  cardano_credential_t*  guard,
+  cardano_plutus_data_t* redeemer);
 
 /**
  * \brief Adds a datum to the transaction builder for use in script-locked UTXOs.
@@ -1524,8 +1564,10 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * collateral UTXOs are empty. The UTXOs that the sub transactions spend or reference are never used
  * as collateral, even when they are also among the UTXOs set with `cardano_tx_builder_set_collateral_utxos`, and
  * building fails with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT when every collateral UTXO is used by a sub transaction.
- * The scripts of the sub transactions are not evaluated, the execution units their redeemers declare are taken as
- * final.
+ * The execution units the redeemers of a sub transaction declare are taken as final, since they are signed by the
+ * party that built it. When the transaction itself carries redeemers, the transaction evaluator runs the scripts of
+ * the sub transactions together with the ones of the transaction, as the ledger does, so a sub transaction script
+ * that fails makes building fail with \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE.
  *
  * A sub transaction can require guards from the transaction that carries it, and the batch is only valid when every
  * one of those credentials is among the guards of the transaction. The batcher must add each of them with

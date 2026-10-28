@@ -48,50 +48,6 @@
 /* STATIC DECLARATIONS *******************************************************/
 
 /**
- * \brief Sets a dummy script data hash in the transaction.
- *
- * This function assigns a placeholder script data hash to the specified transaction for fee calculation
- * purposes when the transaction includes script data.
- *
- * \param[in,out] tx A pointer to a \ref cardano_transaction_t object representing the transaction to which
- *                   the dummy script data hash will be set. This parameter must not be NULL.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the dummy
- *         script data hash was successfully set, or an appropriate error code indicating the failure reason.
- */
-static cardano_error_t
-set_dummy_script_data_hash(cardano_transaction_t* tx)
-{
-  if (!cardano_transaction_has_script_data(tx))
-  {
-    return CARDANO_SUCCESS;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
-  static byte_t           dummy_hash[32] = { 0 };
-  cardano_blake2b_hash_t* hash           = NULL;
-
-  cardano_error_t new_hash_result = cardano_blake2b_hash_from_bytes(dummy_hash, sizeof(dummy_hash), &hash);
-
-  if (new_hash_result != CARDANO_SUCCESS)
-  {
-    return new_hash_result;
-  }
-
-  new_hash_result = cardano_transaction_body_set_script_data_hash(body, hash);
-  cardano_blake2b_hash_unref(&hash);
-
-  if (new_hash_result != CARDANO_SUCCESS)
-  {
-    return new_hash_result;
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
  * \brief Retrieves the cost model for a specified Plutus language version.
  *
  * This function searches for the cost model matching the specified Plutus language version within a
@@ -182,76 +138,15 @@ get_cost_models(cardano_builder_state_t* state, cardano_costmdls_t* costmdls)
     }
   }
 
-  return result;
-}
-
-/**
- * \brief Computes and updates the script data hash in a transaction.
- *
- * This function calculates the script data hash based on the redeemers, datums, and cost models
- * associated with the transaction in the \ref cardano_builder_state_t instance, then updates this
- * hash in the provided \ref cardano_transaction_t.
- *
- * \param[in] state A pointer to the \ref cardano_builder_state_t instance containing the necessary
- *                  transaction data, including redeemers, datums, and cost models.
- * \param[in,out] tx A pointer to an initialized \ref cardano_transaction_t object. This transaction
- *                   will be updated with the computed script data hash.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS
- *         if the script data hash was successfully computed and updated in the transaction, or an
- *         appropriate error code if the computation or update fails.
- */
-static cardano_error_t
-update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* tx)
-{
-  if (!cardano_transaction_has_script_data(tx))
+  if (state->has_plutus_v4)
   {
-    return CARDANO_SUCCESS;
+    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
-
-  cardano_costmdls_t* costmdls = NULL;
-
-  cardano_error_t result = cardano_costmdls_new(&costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = get_cost_models(state, costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_costmdls_unref(&costmdls);
-    return result;
-  }
-
-  cardano_blake2b_hash_t* hash = NULL;
-
-  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
-  cardano_witness_set_unref(&witness_set);
-
-  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
-  cardano_redeemer_list_unref(&redeemers);
-
-  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
-  cardano_plutus_data_set_unref(&datums);
-
-  result = cardano_compute_script_data_hash(costmdls, redeemers, datums, &hash);
-  cardano_costmdls_unref(&costmdls);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    cardano_blake2b_hash_unref(&hash);
-
-    return result;
-  }
-
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
-  result = cardano_transaction_body_set_script_data_hash(body, hash);
-  cardano_blake2b_hash_unref(&hash);
 
   return result;
 }
@@ -691,6 +586,93 @@ get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
+cardano_builder_set_dummy_script_data_hash(cardano_transaction_t* tx)
+{
+  if (!cardano_transaction_has_script_data(tx))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  static byte_t           dummy_hash[32] = { 0 };
+  cardano_blake2b_hash_t* hash           = NULL;
+
+  cardano_error_t new_hash_result = cardano_blake2b_hash_from_bytes(dummy_hash, sizeof(dummy_hash), &hash);
+
+  if (new_hash_result != CARDANO_SUCCESS)
+  {
+    return new_hash_result;
+  }
+
+  new_hash_result = cardano_transaction_body_set_script_data_hash(body, hash);
+  cardano_blake2b_hash_unref(&hash);
+
+  if (new_hash_result != CARDANO_SUCCESS)
+  {
+    return new_hash_result;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* tx)
+{
+  if (!cardano_transaction_has_script_data(tx))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_costmdls_t* costmdls = NULL;
+
+  cardano_error_t result = cardano_costmdls_new(&costmdls);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = get_cost_models(state, costmdls);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_costmdls_unref(&costmdls);
+    return result;
+  }
+
+  cardano_blake2b_hash_t* hash = NULL;
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+  cardano_redeemer_list_unref(&redeemers);
+
+  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_plutus_data_set_unref(&datums);
+
+  result = cardano_compute_script_data_hash(costmdls, redeemers, datums, &hash);
+  cardano_costmdls_unref(&costmdls);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&hash);
+
+    return result;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  result = cardano_transaction_body_set_script_data_hash(body, hash);
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+cardano_error_t
 cardano_builder_build(
   cardano_builder_state_t* state,
   cardano_transaction_t**  transaction,
@@ -759,7 +741,7 @@ cardano_builder_build(
 
   cardano_transaction_t* tx = state->transaction;
 
-  result = set_dummy_script_data_hash(tx);
+  result = cardano_builder_set_dummy_script_data_hash(tx);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -801,7 +783,7 @@ cardano_builder_build(
     return result;
   }
 
-  result = update_script_data_hash(state, tx);
+  result = cardano_builder_update_script_data_hash(state, tx);
 
   if (result != CARDANO_SUCCESS)
   {

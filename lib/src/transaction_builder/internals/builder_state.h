@@ -107,6 +107,9 @@ typedef struct cardano_builder_state_t
     /** \brief Whether the transaction uses at least one Plutus V3 script. */
     bool has_plutus_v3;
 
+    /** \brief Whether the transaction uses at least one Plutus V4 script. */
+    bool has_plutus_v4;
+
     /** \brief The number of additional signatures accounted for when computing fees. */
     size_t additional_signature_count;
 

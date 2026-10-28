@@ -1874,7 +1874,7 @@ TEST(cardano_witness_set_to_cip116_json, includesOnlyPlutusV4Scripts)
   free(json_str);
 }
 
-TEST(cardano_witness_set_add_script, rejectsPlutusV4Scripts)
+TEST(cardano_witness_set_add_script, canAddPlutusV4Script)
 {
   // Arrange
   cardano_witness_set_t* witness_set = nullptr;
@@ -1889,10 +1889,88 @@ TEST(cardano_witness_set_add_script, rejectsPlutusV4Scripts)
   // Assert
   cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
 
-  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
-  EXPECT_EQ(plutus_v4_scripts, nullptr);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(plutus_v4_scripts), 1U);
 
   // Cleanup
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
   cardano_witness_set_unref(&witness_set);
+  cardano_script_unref(&script);
+}
+
+TEST(cardano_witness_set_add_script, returnsErrorIfThePlutusV4ScriptSetCannotGrow)
+{
+  // Arrange
+  static const size_t FULL_SCRIPT_SET = 127U;
+
+  cardano_witness_set_t* witness_set = nullptr;
+  cardano_script_t*      script      = create_script(PLUTUS_V4_CBOR);
+
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+  for (size_t i = 0U; i < FULL_SCRIPT_SET; ++i)
+  {
+    EXPECT_EQ(cardano_witness_set_add_script(witness_set, script), CARDANO_SUCCESS);
+  }
+
+  reset_allocators_run_count();
+  cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_witness_set_add_script(witness_set, script);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  cardano_plutus_v4_script_set_t* plutus_v4_scripts = cardano_witness_set_get_plutus_v4_scripts(witness_set);
+
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(cardano_plutus_v4_script_set_get_length(plutus_v4_scripts), FULL_SCRIPT_SET);
+
+  // Cleanup
+  reset_allocators_run_count();
+  cardano_plutus_v4_script_set_unref(&plutus_v4_scripts);
+  cardano_witness_set_unref(&witness_set);
+  cardano_script_unref(&script);
+}
+
+TEST(cardano_witness_set_add_script, returnsErrorOnMemoryAllocationFailureForPlutusV4Script)
+{
+  // Arrange
+  cardano_script_t* script = create_script(PLUTUS_V4_CBOR);
+  bool              added  = false;
+
+  for (int fail_at = 0; (fail_at < 100) && !added; ++fail_at)
+  {
+    cardano_witness_set_t* witness_set = nullptr;
+
+    EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(fail_at);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_witness_set_add_script(witness_set, script);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    added = (result == CARDANO_SUCCESS);
+
+    if (!added)
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    // Cleanup
+    cardano_witness_set_unref(&witness_set);
+  }
+
+  EXPECT_TRUE(added);
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
   cardano_script_unref(&script);
 }

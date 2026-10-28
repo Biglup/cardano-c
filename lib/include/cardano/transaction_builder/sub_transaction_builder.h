@@ -81,11 +81,12 @@ extern "C" {
  *   the batch.
  * - **Sub Transaction Fields Only**: Fees, collateral and starting account balance intervals only exist on a
  *   top level transaction, so this builder has no functions for them.
- * - **Native Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub
- *   transaction and PlutusV4 scripts are not supported by this builder yet, so no function of this builder
- *   takes a redeemer and Plutus scripts are rejected. For the same reason the governance proposals that are
- *   validated by the guardrails script, which is a Plutus script, have no functions on this builder: parameter
- *   change and treasury withdrawals proposals belong in a top level transaction.
+ * - **Native Scripts, PlutusV4 Guards and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
+ *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted, and a script hash guard can be
+ *   satisfied by a guarding redeemer, whose execution units the builder computes with the native evaluator when
+ *   the sub transaction is built, before the parties sign it. The other functions of this builder take no
+ *   redeemer, so the governance proposals that are validated by the guardrails script have no functions on this
+ *   builder: parameter change and treasury withdrawals proposals belong in a top level transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -506,7 +507,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_metadata_ex(
  *
  * This function allows the user to specify a token minting operation within a sub transaction, including
  * the policy ID, asset name and amount. This enables minting (positive amount) or burning (negative amount) of
- * tokens. The minting policy must be a native script, since this builder does not support Plutus scripts.
+ * tokens. The minting policy must be a native script, since the minting functions of this builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance for building the sub transaction.
  * \param[in] policy_id A pointer to a \ref cardano_blake2b_hash_t representing the unique minting policy ID.
@@ -535,7 +536,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
  * \brief Adds a token minting operation to the sub transaction builder using policy ID and asset name in hexadecimal format.
  *
  * This function allows the sub transaction builder to mint or burn tokens associated with a specific policy ID and asset name.
- * The minting policy must be a native script, since this builder does not support Plutus scripts.
+ * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] policy_id_hex A string in hexadecimal format representing the policy ID of the token to mint or burn.
@@ -570,7 +571,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_ex(
  * \brief Adds a token minting operation to the sub transaction builder using a predefined asset ID.
  *
  * This function allows minting or burning of tokens within a sub transaction by specifying an asset ID along with the amount.
- * The minting policy must be a native script, since this builder does not support Plutus scripts.
+ * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
  * \param[in] asset_id A pointer to a \ref cardano_asset_id_t structure representing the asset to mint or burn.
@@ -596,7 +597,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id(
  * \brief Adds a token minting operation to the sub transaction builder using an asset ID in hexadecimal format.
  *
  * This function enables minting or burning tokens for a specific asset identified by its unique `asset_id` in hexadecimal format.
- * The minting policy must be a native script, since this builder does not support Plutus scripts.
+ * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] asset_id_hex A string in hexadecimal format representing the unique asset ID.
@@ -624,16 +625,18 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id_ex(
 /**
  * \brief Adds a script to the sub transaction builder.
  *
- * This function allows the addition of a native script (`cardano_script_t`) to the witness set of the sub transaction.
- * Native scripts define the conditions under which outputs can be unlocked and tokens can be minted. PlutusV1,
- * PlutusV2 and PlutusV3 scripts can not run inside a sub transaction and PlutusV4 scripts are not supported by this
- * builder yet, so adding a Plutus script of any language version is reported as an error.
+ * This function allows the addition of a native or PlutusV4 script (`cardano_script_t`) to the witness set of the sub
+ * transaction. Native scripts define the conditions under which outputs can be unlocked and tokens can be minted,
+ * and a PlutusV4 script can satisfy a script hash guard added with `cardano_sub_tx_builder_add_guard_with_redeemer`.
+ * PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, so adding one of them is reported as
+ * an error.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction details.
- * \param[in] script A pointer to the \ref cardano_script_t structure representing the native script to be added.
+ * \param[in] script A pointer to the \ref cardano_script_t structure representing the native or PlutusV4 script to
+ *                   be added.
  *
  * \note Errors related to adding an invalid or incompatible script will be deferred and reported only when `cardano_sub_tx_builder_build` is called.
- *       A Plutus script is reported as \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE.
+ *       A PlutusV1, PlutusV2 or PlutusV3 script is reported as \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE.
  *
  * Usage Example:
  * \code{.c}
@@ -719,7 +722,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_signer_ex(
  * the sub transaction unchanged.
  *
  * The builder does not resolve or attach the script behind a script hash guard. Provide the script with
- * `cardano_sub_tx_builder_add_script` or through a reference input.
+ * `cardano_sub_tx_builder_add_script` or through a reference input. A script hash guard added with this function
+ * has no redeemer; use `cardano_sub_tx_builder_add_guard_with_redeemer` to add it together with the guarding
+ * redeemer that satisfies it.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] guard A pointer to the \ref cardano_credential_t structure representing the guard to be added.
@@ -769,6 +774,49 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_guard_ex(
   const char*               hash_hex,
   size_t                    hash_hex_size,
   cardano_credential_type_t type);
+
+/**
+ * \brief Adds a script hash guard to the sub transaction together with the guarding redeemer that satisfies it.
+ *
+ * This function registers \p guard like `cardano_sub_tx_builder_add_guard` and attaches a redeemer with the guarding
+ * purpose whose payload is \p redeemer. The ledger runs the guard script with that redeemer as a validity condition
+ * of the sub transaction. The redeemer points to the position of the guard in the guards of the sub transaction,
+ * which keep the order in which they were added, counting key hash guards and the signers added with
+ * `cardano_sub_tx_builder_add_signer`. A guard that is already present keeps its position.
+ *
+ * The guard script must be a PlutusV4 script, the only Plutus language that runs inside a sub transaction. Provide
+ * it with `cardano_sub_tx_builder_add_script` or through a reference input. When the sub transaction is built, the
+ * builder evaluates its redeemers with the native evaluator, using the cost models and the protocol version of the
+ * protocol parameters and resolving the inputs with the UTXOs added to the builder, writes the execution units into
+ * the redeemers and sets the script data hash, so the parties sign the final sub transaction. The sub transaction is
+ * evaluated at position 0 of a batch that holds nothing else. Its script context carries its position in the batch,
+ * so a script whose path or cost depends on that position may need different execution units in the final batch.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
+ * \param[in] guard A pointer to the script hash \ref cardano_credential_t to add as a guard.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t handed to the guard script as its redeemer.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;
+ * cardano_credential_t*     guard          = ...;
+ * cardano_script_t*         script         = ...;
+ * cardano_plutus_data_t*    redeemer       = ...;
+ *
+ * cardano_sub_tx_builder_add_script(sub_tx_builder, script);
+ * cardano_sub_tx_builder_add_guard_with_redeemer(sub_tx_builder, guard, redeemer);
+ * \endcode
+ *
+ * \note Errors are deferred and will only be reported when `cardano_sub_tx_builder_build` is called. A key hash
+ *       guard makes `cardano_sub_tx_builder_build` return \ref CARDANO_ERROR_INVALID_ARGUMENT, since only a script
+ *       is satisfied by a redeemer, and a guard that already has a redeemer makes it return
+ *       \ref CARDANO_ERROR_DUPLICATED_KEY. A guard script that fails makes it return
+ *       \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_guard_with_redeemer(
+  cardano_sub_tx_builder_t* builder,
+  cardano_credential_t*     guard,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Requires a guard from the top level transaction that carries the sub transaction.

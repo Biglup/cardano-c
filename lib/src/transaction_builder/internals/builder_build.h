@@ -68,6 +68,39 @@ cardano_builder_build(
   cardano_transaction_t**  transaction,
   const char**             error_message);
 
+/**
+ * \brief Sets a placeholder script data hash in a transaction that carries script data.
+ *
+ * The placeholder has the size of the real hash, so the transaction can be sized and evaluated
+ * before its redeemers carry their final execution units. A transaction without script data is
+ * left unchanged.
+ *
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t that receives the placeholder. This
+ *                   parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the placeholder was set or the transaction carries no script data,
+ *         or an appropriate error code indicating the failure reason.
+ */
+cardano_error_t
+cardano_builder_set_dummy_script_data_hash(cardano_transaction_t* tx);
+
+/**
+ * \brief Computes and sets the script data hash of a transaction that carries script data.
+ *
+ * The hash covers the redeemers and datums of the transaction witness set and the cost models of
+ * the Plutus languages flagged in \p state. A transaction without script data is left unchanged.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t holding the protocol parameters and
+ *                  the Plutus language flags. This parameter must not be NULL.
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t whose script data hash is set. This
+ *                   parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the hash was set or the transaction carries no script data, or an
+ *         appropriate error code indicating the failure reason.
+ */
+cardano_error_t
+cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* tx);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

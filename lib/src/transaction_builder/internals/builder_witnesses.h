@@ -152,6 +152,36 @@ cardano_builder_add_guard_ex(
   const char**              error_message);
 
 /**
+ * \brief Adds a script hash guard credential together with the redeemer that satisfies it.
+ *
+ * This function adds \p guard to the guard set of the transaction body like
+ * \ref cardano_builder_add_guard, and appends a guarding redeemer with \p redeemer as payload and
+ * zero execution units to the witness set. The redeemer index is the position of the guard in the
+ * guard set, which keeps the order in which guards were added and counts key hash guards too.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] guard A pointer to the script hash \ref cardano_credential_t to add. This parameter must
+ *                  not be NULL.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t handed to the guard script. This
+ *                     parameter must not be NULL.
+ * \param[out] error_message A pointer that receives a static string describing the failure when the
+ *                           function does not return \ref CARDANO_SUCCESS. It is left untouched on
+ *                           success. This parameter must not be NULL.
+ *
+ * \return \ref CARDANO_SUCCESS if the guard and its redeemer were added,
+ *         \ref CARDANO_ERROR_INVALID_ARGUMENT if \p guard is a key hash credential,
+ *         \ref CARDANO_ERROR_DUPLICATED_KEY if the guard already has a redeemer, or an appropriate
+ *         error code indicating the failure reason.
+ */
+cardano_error_t
+cardano_builder_add_guard_with_redeemer(
+  cardano_builder_state_t* state,
+  cardano_credential_t*    guard,
+  cardano_plutus_data_t*   redeemer,
+  const char**             error_message);
+
+/**
  * \brief Requires a guard from the top level transaction of the batch.
  *
  * This function sets the entry of \p credential in the required top level guards map of the
@@ -257,9 +287,9 @@ cardano_builder_add_script(
 /**
  * \brief Adds a script to the witness set of a sub transaction.
  *
- * The sub transaction builder does not support Plutus scripts, so this function only accepts native scripts.
- * A native script is added through \ref cardano_builder_add_script, and a Plutus script of any
- * language version is rejected leaving the witness set unchanged.
+ * PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, so this function only
+ * accepts native and PlutusV4 scripts. They are added through \ref cardano_builder_add_script, and a
+ * script of an earlier Plutus language version is rejected leaving the witness set unchanged.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the sub transaction
  *                      under construction. This parameter must not be NULL.
@@ -269,7 +299,8 @@ cardano_builder_add_script(
  *                           success. This parameter must not be NULL.
  *
  * \return \ref CARDANO_SUCCESS if the script was added, \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE if
- *         the script is a Plutus script, or an appropriate error code indicating the failure reason.
+ *         the script is a PlutusV1, PlutusV2 or PlutusV3 script, or an appropriate error code indicating
+ *         the failure reason.
  */
 cardano_error_t
 cardano_builder_add_sub_transaction_script(
