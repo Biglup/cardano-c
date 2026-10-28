@@ -178,7 +178,12 @@ static const char* const BUILTIN_NAME[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_VALUE_CONTAINS]                     = "valueContains",
   [CARDANO_UPLC_BUILTIN_VALUE_DATA]                         = "valueData",
   [CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]                      = "unValueData",
-  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = "scaleValue"
+  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = "scaleValue",
+  [CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY]                  = "multiIndexArray",
+  [CARDANO_UPLC_BUILTIN_POLICIES]                           = "policies",
+  [CARDANO_UPLC_BUILTIN_ASSET_COUNT]                        = "assetCount",
+  [CARDANO_UPLC_BUILTIN_KEEP_POLICIES]                      = "keepPolicies",
+  [CARDANO_UPLC_BUILTIN_DROP_POLICIES]                      = "dropPolicies"
 };
 
 /* STRUCTURES ****************************************************************/

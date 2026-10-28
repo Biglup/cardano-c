@@ -26,6 +26,7 @@
 #include "../../allocators.h"
 #include "../arena/uplc_arena.h"
 #include "../ast/uplc_int.h"
+#include "../cost/uplc_ex_mem.h"
 #include "bls.h"
 
 #include <blst.h>
@@ -8370,6 +8371,351 @@ body_bls_multi_scalar_mul(
   return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
 }
 
+/* BATCH 7 BODIES ***********************************************************/
+
+/**
+ * \brief The most indices \c multiIndexArray accepts in its index list.
+ *
+ * Walking a long list makes the execution time unpredictable from the index
+ * count alone, so the count is limited and the cost model is fitted over exactly
+ * that range.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t PRV_MULTI_INDEX_ARRAY_MAX_INDICES = 1024U;
+
+/**
+ * \brief The most policy ids \c keepPolicies and \c dropPolicies accept in their list.
+ *
+ * Every element counts, repeated ids and ids longer than a policy key included.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t PRV_POLICY_FILTER_MAX_IDS = 256U;
+
+/**
+ * \brief The largest bit length of an index that can address an array element.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t PRV_ARRAY_INDEX_MAX_BITS = 63U;
+
+/**
+ * \brief Resolves an integer index constant to a position in an array.
+ *
+ * \param[in] index The integer index constant.
+ * \param[in] count The number of array elements.
+ * \param[out] position On success, the element position.
+ *
+ * \return \c true when \p index is in 0 .. count - 1, \c false otherwise.
+ */
+static bool
+array_position(const cardano_uplc_constant_t* index, size_t count, size_t* position)
+{
+  uint64_t value = 0U;
+
+  if (cardano_uplc_constant_int_is_small(index))
+  {
+    const int64_t small = cardano_uplc_constant_int_small(index);
+
+    if (small < 0)
+    {
+      return false;
+    }
+
+    value = (uint64_t)small;
+  }
+  else
+  {
+    const cardano_bigint_t* big = index->as.integer.big;
+
+    if ((cardano_bigint_signum(big) < 0) || (cardano_bigint_bit_length(big) > PRV_ARRAY_INDEX_MAX_BITS))
+    {
+      return false;
+    }
+
+    value = cardano_bigint_to_unsigned_int(big);
+  }
+
+  if (value >= (uint64_t)count)
+  {
+    return false;
+  }
+
+  *position = (size_t)value;
+
+  return true;
+}
+
+/**
+ * \brief Runs \c multiIndexArray: the array elements at a list of indices.
+ *
+ * The first argument must be an array and the second a list of integer indices.
+ * The result is a list of the array element type holding the element at each
+ * index, in index-list order and keeping repeats. Any index out of bounds, or
+ * more than \ref PRV_MULTI_INDEX_ARRAY_MAX_INDICES indices, is a script error.
+ *
+ * \param[in] arena The arena the result is allocated from.
+ * \param[in] args The array and the index list.
+ * \param[out] out_result On success, the list result value.
+ * \param[out] host_error Set to a host error on allocation failure.
+ *
+ * \return The script-visible outcome.
+ */
+static cardano_uplc_int_builtin_outcome_t
+body_multi_index_array(
+  struct cardano_uplc_arena_t*       arena,
+  const cardano_uplc_value_t* const* args,
+  const cardano_uplc_value_t**       out_result,
+  cardano_error_t*                   host_error)
+{
+  const cardano_uplc_type_t*            element_type = NULL;
+  const cardano_uplc_constant_t* const* items        = NULL;
+  size_t                                count        = 0U;
+  const cardano_uplc_type_t*            index_type   = NULL;
+  const cardano_uplc_constant_t* const* indices      = NULL;
+  size_t                                index_count  = 0U;
+  const cardano_uplc_constant_t**       selected     = NULL;
+  cardano_uplc_constant_t*              constant     = NULL;
+  cardano_uplc_value_t*                 result       = NULL;
+  size_t                                i            = 0U;
+
+  if (!as_array(args[0], &element_type, &items, &count) || !cardano_uplc_builtin_as_list(args[1], &index_type, &indices, &index_count))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if ((index_type->kind != CARDANO_UPLC_TYPE_INTEGER) || (index_count > PRV_MULTI_INDEX_ARRAY_MAX_INDICES))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  selected = alloc_const_array(arena, index_count);
+
+  if ((index_count > 0U) && (selected == NULL))
+  {
+    *host_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  for (i = 0U; i < index_count; ++i)
+  {
+    size_t position = 0U;
+
+    if (!array_position(indices[i], count, &position))
+    {
+      return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+    }
+
+    selected[i] = items[position];
+  }
+
+  *host_error = cardano_uplc_constant_new_list(arena, element_type, selected, index_count, &constant);
+
+  if (*host_error == CARDANO_SUCCESS)
+  {
+    *host_error = cardano_uplc_value_new_constant(arena, constant, &result);
+  }
+
+  if (*host_error != CARDANO_SUCCESS)
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  *out_result = result;
+
+  return CARDANO_UPLC_BUILTIN_OUTCOME_OK;
+}
+
+/**
+ * \brief Runs \c policies: the policy ids of a value.
+ *
+ * The result is a list of byte strings holding every policy id of the value in
+ * ascending order.
+ *
+ * \param[in] arena The arena the result is allocated from.
+ * \param[in] args The single value argument.
+ * \param[out] out_result On success, the list result value.
+ * \param[out] host_error Set to a host error on allocation failure.
+ *
+ * \return The script-visible outcome.
+ */
+static cardano_uplc_int_builtin_outcome_t
+body_policies(
+  struct cardano_uplc_arena_t*       arena,
+  const cardano_uplc_value_t* const* args,
+  const cardano_uplc_value_t**       out_result,
+  cardano_error_t*                   host_error)
+{
+  const cardano_uplc_constant_t*  value      = NULL;
+  const cardano_uplc_constant_t** ids        = NULL;
+  cardano_uplc_type_t*            bytestring = NULL;
+  cardano_uplc_constant_t*        constant   = NULL;
+  cardano_uplc_value_t*           result     = NULL;
+  size_t                          i          = 0U;
+
+  if (!as_value_constant(args[0], &value))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  ids = alloc_const_array(arena, value->as.list.count);
+
+  if ((value->as.list.count > 0U) && (ids == NULL))
+  {
+    *host_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  for (i = 0U; i < value->as.list.count; ++i)
+  {
+    ids[i] = value->as.list.items[i]->as.pair.fst;
+  }
+
+  *host_error = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
+
+  if (*host_error == CARDANO_SUCCESS)
+  {
+    *host_error = cardano_uplc_constant_new_list(arena, bytestring, ids, value->as.list.count, &constant);
+  }
+
+  if (*host_error == CARDANO_SUCCESS)
+  {
+    *host_error = cardano_uplc_value_new_constant(arena, constant, &result);
+  }
+
+  if (*host_error != CARDANO_SUCCESS)
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  *out_result = result;
+
+  return CARDANO_UPLC_BUILTIN_OUTCOME_OK;
+}
+
+/**
+ * \brief Runs \c assetCount: the number of (policy, token) entries of a value.
+ *
+ * \param[in] arena The arena the result is allocated from.
+ * \param[in] args The single value argument.
+ * \param[out] out_result On success, the integer result value.
+ * \param[out] host_error Set to a host error on allocation failure.
+ *
+ * \return The script-visible outcome.
+ */
+static cardano_uplc_int_builtin_outcome_t
+body_asset_count(
+  struct cardano_uplc_arena_t*       arena,
+  const cardano_uplc_value_t* const* args,
+  const cardano_uplc_value_t**       out_result,
+  cardano_error_t*                   host_error)
+{
+  const cardano_uplc_constant_t* value = NULL;
+
+  if (!as_value_constant(args[0], &value))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  *host_error = result_integer_from_int(arena, cardano_uplc_value_token_count(value), out_result);
+
+  return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+}
+
+/**
+ * \brief Tests whether a policy id appears in a list of byte-string constants.
+ *
+ * \param[in] ids The byte-string item array.
+ * \param[in] count The number of ids.
+ * \param[in] policy The policy id to look for.
+ *
+ * \return \c true when some id equals \p policy, \c false otherwise.
+ */
+static bool
+policy_listed(const cardano_uplc_constant_t* const* ids, size_t count, cardano_uplc_byte_view_t policy)
+{
+  size_t i = 0U;
+
+  for (i = 0U; i < count; ++i)
+  {
+    const cardano_uplc_byte_view_t id = { ids[i]->as.bytes.data, ids[i]->as.bytes.size };
+
+    if (compare_buffers(id, policy) == 0)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * \brief Runs \c keepPolicies or \c dropPolicies: filters a value by policy id.
+ *
+ * The first argument must be a list of byte strings and the second a value. With
+ * \p keep set the result holds only the policies the list names, otherwise only
+ * the policies it does not name; every kept policy keeps all its tokens. Ids the
+ * value does not have, and repeated ids, are ignored. A list with more than
+ * \ref PRV_POLICY_FILTER_MAX_IDS ids is a script error.
+ *
+ * \param[in] arena The arena the result is allocated from.
+ * \param[in] keep \c true for \c keepPolicies, \c false for \c dropPolicies.
+ * \param[in] args The policy id list and the value.
+ * \param[out] out_result On success, the value result.
+ * \param[out] host_error Set to a host error on allocation failure.
+ *
+ * \return The script-visible outcome.
+ */
+static cardano_uplc_int_builtin_outcome_t
+body_filter_policies(
+  struct cardano_uplc_arena_t*       arena,
+  bool                               keep,
+  const cardano_uplc_value_t* const* args,
+  const cardano_uplc_value_t**       out_result,
+  cardano_error_t*                   host_error)
+{
+  const cardano_uplc_type_t*            id_type   = NULL;
+  const cardano_uplc_constant_t* const* ids       = NULL;
+  size_t                                id_count  = 0U;
+  const cardano_uplc_constant_t*        value     = NULL;
+  const cardano_uplc_constant_t**       entries   = NULL;
+  size_t                                out_count = 0U;
+  size_t                                i         = 0U;
+
+  if (!cardano_uplc_builtin_as_list(args[0], &id_type, &ids, &id_count) || !as_value_constant(args[1], &value))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if ((id_type->kind != CARDANO_UPLC_TYPE_BYTE_STRING) || (id_count > PRV_POLICY_FILTER_MAX_IDS))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  entries = alloc_const_array(arena, value->as.list.count);
+
+  if ((value->as.list.count > 0U) && (entries == NULL))
+  {
+    *host_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  for (i = 0U; i < value->as.list.count; ++i)
+  {
+    const cardano_uplc_constant_t* policy = value->as.list.items[i]->as.pair.fst;
+    const cardano_uplc_byte_view_t view   = { policy->as.bytes.data, policy->as.bytes.size };
+
+    if (policy_listed(ids, id_count, view) == keep)
+    {
+      entries[out_count]  = value->as.list.items[i];
+      out_count          += 1U;
+    }
+  }
+
+  return value_result(arena, entries, out_count, out_result, host_error);
+}
+
 /* DISPATCH *****************************************************************/
 
 cardano_uplc_int_builtin_outcome_t
@@ -9411,6 +9757,61 @@ cardano_uplc_int_builtin_run(
       }
 
       return body_scale_value(arena, args, out_result, host_error);
+    }
+    case CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY:
+    {
+      *host_error = spend_builtin_cost(acc, costs, semantics, func, args, arg_count);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+      }
+
+      return body_multi_index_array(arena, args, out_result, host_error);
+    }
+    case CARDANO_UPLC_BUILTIN_POLICIES:
+    {
+      *host_error = spend_builtin_cost(acc, costs, semantics, func, args, arg_count);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+      }
+
+      return body_policies(arena, args, out_result, host_error);
+    }
+    case CARDANO_UPLC_BUILTIN_ASSET_COUNT:
+    {
+      *host_error = spend_builtin_cost(acc, costs, semantics, func, args, arg_count);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+      }
+
+      return body_asset_count(arena, args, out_result, host_error);
+    }
+    case CARDANO_UPLC_BUILTIN_KEEP_POLICIES:
+    {
+      *host_error = spend_builtin_cost(acc, costs, semantics, func, args, arg_count);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+      }
+
+      return body_filter_policies(arena, true, args, out_result, host_error);
+    }
+    case CARDANO_UPLC_BUILTIN_DROP_POLICIES:
+    {
+      *host_error = spend_builtin_cost(acc, costs, semantics, func, args, arg_count);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+      }
+
+      return body_filter_policies(arena, false, args, out_result, host_error);
     }
     default:
     {

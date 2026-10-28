@@ -402,14 +402,39 @@ fill_batch6(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
 }
 
 /**
+ * \brief Fills the batch-7 builtins from a contiguous run of 19 params.
+ *
+ * The run is ordered multi_index_array, asset_count, policies, keep_policies and
+ * drop_policies; the order is identical in every version's list.
+ *
+ * \param[in,out] b The builtin costs to fill.
+ * \param[in] p The parameter array.
+ * \param[in] base The index of the first parameter of the run.
+ */
+static void
+fill_batch7(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
+{
+  b->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_0 = p[base + 0U];
+  b->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_1 = p[base + 1U];
+  b->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_2 = p[base + 2U];
+  b->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].mem.two.params.linear.intercept       = p[base + 3U];
+  b->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].mem.two.params.linear.slope           = p[base + 4U];
+
+  set_one_const(&b->entries[CARDANO_UPLC_BUILTIN_ASSET_COUNT], p, base + 5U, base + 6U);
+  set_one_lin(&b->entries[CARDANO_UPLC_BUILTIN_POLICIES], p, base + 7U, base + 8U, base + 9U, base + 10U);
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_KEEP_POLICIES], p, base + 11U, base + 12U, base + 13U, base + 14U);
+  set_two_lin(&b->entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES], p, base + 15U, base + 16U, base + 17U, base + 18U);
+}
+
+/**
  * \brief Maps the V1 flat parameter list onto a default V1 cost model.
  *
  * The default shapes come from \ref cardano_uplc_builtin_costs_v1; this
  * overwrites their coefficients. Protocol version 11 (van Rossem) unified the
  * builtin set across the three languages, so the V1 list appends the previously
  * V2/V3-only builtins, the constr and case machine steps and the batch-6
- * builtins after the original 166 parameters. The trailing batch-7
- * coefficients are not read.
+ * builtins after the original 166 parameters, followed by the batch-7
+ * builtins of protocol version 12.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V1 parameter array.
@@ -534,6 +559,7 @@ from_params_v1(cardano_uplc_cost_model_t* out, const int64_t* p)
   fill_bitwise(b, p, 233U);
   fill_exp_mod(b, p, 279U);
   fill_batch6(b, p, 284U);
+  fill_batch7(b, p, 332U);
 }
 
 /**
@@ -544,7 +570,8 @@ from_params_v1(cardano_uplc_cost_model_t* out, const int64_t* p)
  * appended to the V2 list at protocol version 10 (Plomin); protocol version 11
  * (van Rossem) then unified the builtin set across the three languages,
  * appending the previously V3-only builtins, the constr and case machine steps
- * and the batch-6 builtins. The trailing batch-7 coefficients are not read.
+ * and the batch-6 builtins, followed by the batch-7 builtins of protocol
+ * version 12.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V2 parameter array.
@@ -669,6 +696,7 @@ from_params_v2(cardano_uplc_cost_model_t* out, const int64_t* p)
   fill_bitwise(b, p, 233U);
   fill_exp_mod(b, p, 279U);
   fill_batch6(b, p, 284U);
+  fill_batch7(b, p, 332U);
 }
 
 /**
@@ -700,8 +728,8 @@ set_v3_div_cpu(cardano_uplc_builtin_cost_t* e, const int64_t* p, size_t base)
  * \brief Maps the V3 flat parameter list onto a default V3 cost model.
  *
  * Reads every builtin through the exp_mod_integer coefficients plus the array
- * and value families appended at protocol version 11 (van Rossem). The V4 list
- * shares this ordering. The trailing batch-7 coefficients are not read.
+ * and value families appended at protocol version 11 (van Rossem) and the
+ * batch-7 builtins of protocol version 12. The V4 list shares this ordering.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V3 parameter array.
@@ -840,6 +868,7 @@ from_params_v3(cardano_uplc_cost_model_t* out, const int64_t* p)
   fill_bitwise(b, p, 251U);
   fill_exp_mod(b, p, 297U);
   fill_batch6(b, p, 302U);
+  fill_batch7(b, p, 350U);
 }
 
 /* DEFINITIONS ***************************************************************/

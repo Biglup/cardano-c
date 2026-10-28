@@ -6,58 +6,6 @@
 # when an unlisted case fails. Categories: semantics-variant, builtin-bounds,
 # division-costing, cost-model, flat-decoding, version-gating, batch7-builtins,
 # case-on-data, text-parser, other.
-builtin/semantics/multiIndexArray/multiIndexArray-01/multiIndexArray-01.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-01/multiIndexArray-01.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-02/multiIndexArray-02.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-02/multiIndexArray-02.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-03/multiIndexArray-03.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-03/multiIndexArray-03.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-04/multiIndexArray-04.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-04/multiIndexArray-04.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-05/multiIndexArray-05.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-05/multiIndexArray-05.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-06/multiIndexArray-06.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-06/multiIndexArray-06.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-07/multiIndexArray-07.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-07/multiIndexArray-07.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-08/multiIndexArray-08.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-08/multiIndexArray-08.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-09/multiIndexArray-09.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-09/multiIndexArray-09.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-10/multiIndexArray-10.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-10/multiIndexArray-10.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-11/multiIndexArray-11.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-11/multiIndexArray-11.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-12/multiIndexArray-12.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-12/multiIndexArray-12.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-13/multiIndexArray-13.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-13/multiIndexArray-13.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-14/multiIndexArray-14.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-14/multiIndexArray-14.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-15/multiIndexArray-15.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-15/multiIndexArray-15.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-16/multiIndexArray-16.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-16/multiIndexArray-16.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-17/multiIndexArray-17.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-17/multiIndexArray-17.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-18/multiIndexArray-18.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-18/multiIndexArray-18.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-19/multiIndexArray-19.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-19/multiIndexArray-19.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-20/multiIndexArray-20.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-20/multiIndexArray-20.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-21/multiIndexArray-21.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-21/multiIndexArray-21.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-22/multiIndexArray-22.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-22/multiIndexArray-22.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-23/multiIndexArray-23.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-23/multiIndexArray-23.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-24/multiIndexArray-24.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-24/multiIndexArray-24.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-25/multiIndexArray-25.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-25/multiIndexArray-25.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
-builtin/semantics/multiIndexArray/multiIndexArray-26/multiIndexArray-26.uplc batch7-builtins
-builtin/semantics/multiIndexArray/multiIndexArray-26/multiIndexArray-26.flat batch7-builtins the flat decoder rejects the builtin tag until the builtin is implemented
 term/constant-case/data/data-01/data-01.uplc case-on-data
 term/constant-case/data/data-01/data-01.flat case-on-data
 term/constant-case/data/data-02/data-02.uplc case-on-data

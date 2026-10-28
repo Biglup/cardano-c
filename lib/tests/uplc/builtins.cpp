@@ -38,6 +38,9 @@
 #include "../../src/uplc/syntax/pretty.h"
 #include "../../src/uplc/syntax/text_parser.h"
 
+#include "../allocators_helpers.h"
+#include "../src/allocators.h"
+
 #include <cstdio>
 #include <cstring>
 #include <gmock/gmock.h>
@@ -1812,4 +1815,302 @@ TEST(cardano_uplc_int_value_entries_are_canonical, rejectsMalformedEntries)
   EXPECT_FALSE(cardano_uplc_int_value_entries_are_canonical(arena, bad_token, 1U));
 
   cardano_uplc_arena_free(&arena);
+}
+
+/* BATCH 7 BUILTINS *********************************************************/
+
+static const size_t MULTI_INDEX_ARRAY_MAX_INDICES = 1024U;
+static const size_t POLICY_FILTER_MAX_IDS         = 256U;
+
+static const char* const THREE_POLICY_VALUE =
+  "(con value [(#01, [(#aa, 1), (#bb, 2)]), (#02, [(#aa, -3)]), (#03, [(#cc, 4)])])";
+
+// Builds a list constant of the given element type holding the same item
+// count times.
+static std::string
+repeated_list(const char* element_type, const char* item, size_t count)
+{
+  std::string items;
+
+  for (size_t i = 0U; i < count; ++i)
+  {
+    items += (i > 0U) ? ", " : "";
+    items += item;
+  }
+
+  return "(con (list " + std::string(element_type) + ") [" + items + "])";
+}
+
+static std::string
+multi_index_program(const std::string& array, const std::string& indices)
+{
+  return "(program 1.0.0 [ [ (force (builtin multiIndexArray)) " + array + " ] " + indices + " ])";
+}
+
+static cardano_uplc_eval_status_t
+status_of(const std::string& source)
+{
+  cardano_uplc_eval_status_t status = CARDANO_UPLC_EVAL_SUCCESS;
+  (void)evaluate_to_render(source.c_str(), &status);
+  return status;
+}
+
+// Parses a constant into a value living in the given arena.
+static const cardano_uplc_value_t*
+parsed_constant_value(cardano_uplc_arena_t* arena, const std::string& constant)
+{
+  const std::string             source  = "(program 1.0.0 " + constant + ")";
+  const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
+  cardano_uplc_value_t*         value   = nullptr;
+
+  EXPECT_EQ(cardano_uplc_parse_program(arena, source.c_str(), source.size(), &program, &offset), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_value_new_constant(arena, program->term->as.constant, &value), CARDANO_SUCCESS);
+
+  return value;
+}
+
+// Runs a builtin with every allocation from the nth onwards failing, for every n
+// until the run succeeds, and checks each failure surfaces as a host error.
+static void
+expect_allocation_failures_are_host_errors(cardano_uplc_builtin_t func, const std::string& first, const std::string& second, size_t arg_count)
+{
+  bool succeeded = false;
+
+  for (int nth = 0; (nth < 64) && !succeeded; ++nth)
+  {
+    cardano_uplc_arena_t* arena = nullptr;
+    ASSERT_EQ(cardano_uplc_arena_new(8U, &arena), CARDANO_SUCCESS);
+
+    cardano_uplc_machine_costs_t    machine = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+    cardano_uplc_builtin_costs_t    costs   = cardano_uplc_builtin_costs_v3();
+    cardano_uplc_step_accumulator_t acc;
+    const cardano_uplc_value_t*     out     = nullptr;
+    cardano_error_t                 host    = CARDANO_SUCCESS;
+    const cardano_uplc_value_t*     args[2] = { parsed_constant_value(arena, first), (arg_count > 1U) ? parsed_constant_value(arena, second) : nullptr };
+
+    ASSERT_EQ(cardano_uplc_step_accumulator_init(&acc, &machine), CARDANO_SUCCESS);
+
+    reset_allocators_run_count();
+    set_malloc_limit(nth);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_uplc_int_builtin_outcome_t outcome =
+      cardano_uplc_int_builtin_run(arena, &acc, &costs, CARDANO_UPLC_SEMANTICS_G, func, args, arg_count, &out, &host);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    if (outcome == CARDANO_UPLC_BUILTIN_OUTCOME_OK)
+    {
+      EXPECT_EQ(host, CARDANO_SUCCESS);
+      EXPECT_NE(out, nullptr);
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(outcome, CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR) << "allocation " << nth;
+      EXPECT_EQ(host, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << "allocation " << nth;
+    }
+
+    cardano_uplc_arena_free(&arena);
+  }
+
+  EXPECT_TRUE(succeeded);
+}
+
+TEST(cardano_uplc_builtin_body, multiIndexArrayReturnsTheElementsInIndexOrder)
+{
+  EXPECT_EQ(
+    eval_ok(multi_index_program("(con (array integer) [10, 20, 30])", "(con (list integer) [2, 0, 2])").c_str()),
+    "(con (list integer) [30, 10, 30])");
+  EXPECT_EQ(
+    eval_ok(multi_index_program("(con (array bytestring) [#00, #ff01])", "(con (list integer) [1])").c_str()),
+    "(con (list bytestring) [#ff01])");
+  EXPECT_EQ(
+    eval_ok(multi_index_program("(con (array integer) [10])", "(con (list integer) [])").c_str()),
+    "(con (list integer) [])");
+  EXPECT_EQ(
+    eval_ok(multi_index_program("(con (array bool) [])", "(con (list integer) [])").c_str()),
+    "(con (list bool) [])");
+}
+
+TEST(cardano_uplc_builtin_body, multiIndexArrayOutOfBoundsIsAScriptError)
+{
+  const std::string array = "(con (array integer) [10, 20, 30])";
+
+  EXPECT_EQ(status_of(multi_index_program(array, "(con (list integer) [0, -1])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program(array, "(con (list integer) [3])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program(array, "(con (list integer) [18446744073709551616])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program(array, "(con (list integer) [-18446744073709551616])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program("(con (array integer) [])", "(con (list integer) [0])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_body, multiIndexArrayAcceptsAtMostTheIndexLimit)
+{
+  const std::string array = "(con (array integer) [7])";
+
+  EXPECT_EQ(status_of(multi_index_program(array, repeated_list("integer", "0", MULTI_INDEX_ARRAY_MAX_INDICES))), CARDANO_UPLC_EVAL_SUCCESS);
+  EXPECT_EQ(status_of(multi_index_program(array, repeated_list("integer", "0", MULTI_INDEX_ARRAY_MAX_INDICES + 1U))), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_body, multiIndexArrayRejectsMistypedArguments)
+{
+  EXPECT_EQ(status_of(multi_index_program("(con (list integer) [1, 2])", "(con (list integer) [0])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program("(con (array integer) [1, 2])", "(con (array integer) [0])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program("(con (array integer) [1, 2])", "(con (list bool) [])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+  EXPECT_EQ(status_of(multi_index_program("(con (array integer) [1, 2])", "(con integer 0)")), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_body, policiesListsThePolicyIdsInOrder)
+{
+  EXPECT_EQ(eval_ok(program_of("policies", THREE_POLICY_VALUE).c_str()), "(con (list bytestring) [#01, #02, #03])");
+  EXPECT_EQ(eval_ok(program_of("policies", "(con value [])").c_str()), "(con (list bytestring) [])");
+  EXPECT_EQ(status_of(program_of("policies", "(con (list bytestring) [#01])")), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_body, assetCountCountsEveryToken)
+{
+  EXPECT_EQ(eval_ok(program_of("assetCount", THREE_POLICY_VALUE).c_str()), "(con integer 4)");
+  EXPECT_EQ(eval_ok(program_of("assetCount", "(con value [])").c_str()), "(con integer 0)");
+  EXPECT_EQ(status_of(program_of("assetCount", "(con integer 4)")), CARDANO_UPLC_EVAL_ERROR_TERM);
+}
+
+TEST(cardano_uplc_builtin_body, keepPoliciesKeepsOnlyTheListedPolicies)
+{
+  EXPECT_EQ(
+    eval_ok(program_of("keepPolicies", "(con (list bytestring) [#03, #01, #03, #ff])", THREE_POLICY_VALUE).c_str()),
+    "(con value [(#01, [(#aa, 1), (#bb, 2)]), (#03, [(#cc, 4)])])");
+  EXPECT_EQ(eval_ok(program_of("keepPolicies", "(con (list bytestring) [])", THREE_POLICY_VALUE).c_str()), "(con value [])");
+  EXPECT_EQ(eval_ok(program_of("keepPolicies", "(con (list bytestring) [#01])", "(con value [])").c_str()), "(con value [])");
+  EXPECT_EQ(
+    eval_ok(program_of("keepPolicies", "(con (list bytestring) [#" + std::string(66U, '0') + "])", THREE_POLICY_VALUE).c_str()),
+    "(con value [])");
+}
+
+TEST(cardano_uplc_builtin_body, dropPoliciesRemovesTheListedPolicies)
+{
+  EXPECT_EQ(
+    eval_ok(program_of("dropPolicies", "(con (list bytestring) [#02, #02, #ff])", THREE_POLICY_VALUE).c_str()),
+    "(con value [(#01, [(#aa, 1), (#bb, 2)]), (#03, [(#cc, 4)])])");
+  EXPECT_EQ(
+    eval_ok(program_of("dropPolicies", "(con (list bytestring) [])", THREE_POLICY_VALUE).c_str()),
+    "(con value [(#01, [(#aa, 1), (#bb, 2)]), (#02, [(#aa, -3)]), (#03, [(#cc, 4)])])");
+  EXPECT_EQ(eval_ok(program_of("dropPolicies", "(con (list bytestring) [#01, #02, #03])", THREE_POLICY_VALUE).c_str()), "(con value [])");
+}
+
+TEST(cardano_uplc_builtin_body, policyFiltersAcceptAtMostThePolicyIdLimit)
+{
+  const char* const names[2] = { "keepPolicies", "dropPolicies" };
+
+  for (const char* name: names)
+  {
+    EXPECT_EQ(status_of(program_of(name, repeated_list("bytestring", "#01", POLICY_FILTER_MAX_IDS), THREE_POLICY_VALUE)), CARDANO_UPLC_EVAL_SUCCESS) << name;
+    EXPECT_EQ(status_of(program_of(name, repeated_list("bytestring", "#01", POLICY_FILTER_MAX_IDS + 1U), THREE_POLICY_VALUE)), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+    EXPECT_EQ(status_of(program_of(name, repeated_list("bytestring", "#ff", POLICY_FILTER_MAX_IDS + 1U), "(con value [])")), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+  }
+}
+
+TEST(cardano_uplc_builtin_body, policyFiltersRejectMistypedArguments)
+{
+  const char* const names[2] = { "keepPolicies", "dropPolicies" };
+
+  for (const char* name: names)
+  {
+    EXPECT_EQ(status_of(program_of(name, "(con (list integer) [])", THREE_POLICY_VALUE)), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+    EXPECT_EQ(status_of(program_of(name, "(con (array bytestring) [#01])", THREE_POLICY_VALUE)), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+    EXPECT_EQ(status_of(program_of(name, "(con (list bytestring) [#01])", "(con integer 1)")), CARDANO_UPLC_EVAL_ERROR_TERM) << name;
+  }
+}
+
+// Prices a builtin with the default V3 costs over arguments parsed from text.
+static cardano_uplc_budget_t
+batch7_cost(cardano_uplc_builtin_t func, const std::string& first, const std::string& second)
+{
+  cardano_uplc_arena_t*              arena   = new_arena();
+  const cardano_uplc_builtin_costs_t costs   = cardano_uplc_builtin_costs_v3();
+  const cardano_uplc_value_t*        args[2] = { parsed_constant_value(arena, first), second.empty() ? nullptr : parsed_constant_value(arena, second) };
+  const cardano_uplc_budget_t        budget  = cardano_uplc_builtin_cost(&costs, func, args, second.empty() ? 1U : 2U, false);
+
+  cardano_uplc_arena_free(&arena);
+
+  return budget;
+}
+
+TEST(cardano_uplc_builtin_cost, multiIndexArrayIsQuadraticInTheIndexCount)
+{
+  const cardano_uplc_budget_t budget = batch7_cost(
+    CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY,
+    "(con (array bytestring) [#0001020304050607, #08])",
+    "(con (list integer) [1, 18446744073709551616])");
+
+  EXPECT_EQ(budget.cpu, 326163 + (12304 * 2) + (2 * 2 * 2));
+  EXPECT_EQ(budget.mem, 4 + (3 * 2));
+}
+
+TEST(cardano_uplc_builtin_cost, policiesIsLinearInThePolicyCount)
+{
+  const cardano_uplc_budget_t budget = batch7_cost(CARDANO_UPLC_BUILTIN_POLICIES, THREE_POLICY_VALUE, "");
+
+  EXPECT_EQ(budget.cpu, 930912 + (13220 * 3));
+  EXPECT_EQ(budget.mem, 4 + (3 * 3));
+}
+
+TEST(cardano_uplc_builtin_cost, assetCountIsConstant)
+{
+  const cardano_uplc_budget_t budget = batch7_cost(CARDANO_UPLC_BUILTIN_ASSET_COUNT, THREE_POLICY_VALUE, "");
+
+  EXPECT_EQ(budget.cpu, 129043);
+  EXPECT_EQ(budget.mem, 10);
+}
+
+TEST(cardano_uplc_builtin_cost, policyFiltersMultiplyTheIdCountByTheOuterDepth)
+{
+  const std::string two_long_ids = "(con (list bytestring) [#" + std::string(64U, 'a') + ", #" + std::string(64U, 'b') + "])";
+  const std::string five_policies =
+    "(con value [(#01, [(#aa, 1)]), (#02, [(#aa, 1)]), (#03, [(#aa, 1)]), (#04, [(#aa, 1)]), (#05, [(#aa, 1)])])";
+
+  const cardano_uplc_budget_t keep = batch7_cost(CARDANO_UPLC_BUILTIN_KEEP_POLICIES, two_long_ids, THREE_POLICY_VALUE);
+  EXPECT_EQ(keep.cpu, 335279 + (57077 * 2 * 2));
+  EXPECT_EQ(keep.mem, 32 + (32 * 2 * 2));
+
+  const cardano_uplc_budget_t keep_five = batch7_cost(CARDANO_UPLC_BUILTIN_KEEP_POLICIES, "(con (list bytestring) [#01])", five_policies);
+  EXPECT_EQ(keep_five.cpu, 335279 + (57077 * 3));
+  EXPECT_EQ(keep_five.mem, 32 + (32 * 3));
+
+  const cardano_uplc_budget_t drop_empty = batch7_cost(CARDANO_UPLC_BUILTIN_DROP_POLICIES, two_long_ids, "(con value [])");
+  EXPECT_EQ(drop_empty.cpu, 345402 + (57932 * 2));
+  EXPECT_EQ(drop_empty.mem, 32 + (36 * 2));
+
+  const cardano_uplc_budget_t drop_mistyped = batch7_cost(CARDANO_UPLC_BUILTIN_DROP_POLICIES, "(con (list bytestring) [#01])", "(con integer 1)");
+  EXPECT_EQ(drop_mistyped.cpu, 345402 + 57932);
+  EXPECT_EQ(drop_mistyped.mem, 32 + 36);
+}
+
+TEST(cardano_uplc_builtin_cost, batch7BuiltinsPriceMissingArgumentsAsEmpty)
+{
+  cardano_uplc_arena_t*              arena    = new_arena();
+  const cardano_uplc_builtin_costs_t costs    = cardano_uplc_builtin_costs_v3();
+  const cardano_uplc_value_t*        args[2]  = { delay_value(arena), int_value(arena, 1) };
+  const size_t                       counts[] = { 0U, 1U, 2U };
+
+  for (const size_t count: counts)
+  {
+    EXPECT_EQ(cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY, nullptr, count, false).cpu, 326163) << count;
+    EXPECT_EQ(cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_POLICIES, nullptr, count, false).cpu, 930912) << count;
+    EXPECT_EQ(cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_KEEP_POLICIES, nullptr, count, false).cpu, 335279) << count;
+    EXPECT_EQ(cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_POLICIES, args, count, false).cpu, 930912) << count;
+    EXPECT_EQ(cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_DROP_POLICIES, args, count, false).cpu, 345402) << count;
+  }
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_builtin_body, batch7AllocationFailuresAreHostErrors)
+{
+  expect_allocation_failures_are_host_errors(CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY, "(con (array integer) [10, 20])", "(con (list integer) [1, 0])", 2U);
+  expect_allocation_failures_are_host_errors(CARDANO_UPLC_BUILTIN_POLICIES, THREE_POLICY_VALUE, "", 1U);
+  expect_allocation_failures_are_host_errors(CARDANO_UPLC_BUILTIN_ASSET_COUNT, THREE_POLICY_VALUE, "", 1U);
+  expect_allocation_failures_are_host_errors(CARDANO_UPLC_BUILTIN_KEEP_POLICIES, "(con (list bytestring) [#02])", THREE_POLICY_VALUE, 2U);
+  expect_allocation_failures_are_host_errors(CARDANO_UPLC_BUILTIN_DROP_POLICIES, "(con (list bytestring) [#02])", THREE_POLICY_VALUE, 2U);
 }

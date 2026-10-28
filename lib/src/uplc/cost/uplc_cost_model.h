@@ -105,8 +105,9 @@ typedef struct cardano_uplc_cost_model_t
  * trailing coefficients, and a shorter list is read as a positional prefix of
  * the full list, with every missing parameter set to \c INT64_MAX. A builtin
  * whose coefficients are missing therefore costs a saturated budget and cannot
- * run within any transaction limit. The batch-7 coefficients are accepted and
- * skipped, since those builtins are not implemented.
+ * run within any transaction limit; a list that predates batch 7 therefore
+ * prices multiIndexArray, assetCount, policies, keepPolicies and dropPolicies
+ * out of reach.
  *
  * \param[in] version The cost-model version selecting the parameter ordering and
  *            the per-builtin shapes.

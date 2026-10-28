@@ -2056,10 +2056,10 @@ TEST(cardano_uplc_flat_decode_term, decodesBuiltin)
 
 TEST(cardano_uplc_flat_decode_term, rejectsUnknownBuiltinTag)
 {
-  // Arrange: term tag 7, builtin tag 101 which names no builtin.
+  // Arrange: term tag 7, builtin tag 106 which names no builtin.
   BitWriter w;
   w.bits(7U, 4U);
-  w.bits(101U, 7U);
+  w.bits(106U, 7U);
 
   cardano_uplc_arena_t*      arena = make_arena();
   const cardano_uplc_term_t* term  = nullptr;
@@ -3104,7 +3104,11 @@ TEST(cardano_uplc_flat_decode_script_program, rejectsABuiltinUnavailableAtThePro
     { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 10U, CARDANO_ERROR_DECODING },
     { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 11U, CARDANO_SUCCESS },
     { CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V4, 11U, CARDANO_ERROR_DECODING },
-    { CARDANO_UPLC_BUILTIN_SCALE_VALUE, CARDANO_UPLC_LANG_VERSION_V4, 12U, CARDANO_SUCCESS }
+    { CARDANO_UPLC_BUILTIN_SCALE_VALUE, CARDANO_UPLC_LANG_VERSION_V4, 12U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY, CARDANO_UPLC_LANG_VERSION_V1, 11U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY, CARDANO_UPLC_LANG_VERSION_V1, 12U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_DROP_POLICIES, CARDANO_UPLC_LANG_VERSION_V3, 11U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_DROP_POLICIES, CARDANO_UPLC_LANG_VERSION_V4, 12U, CARDANO_SUCCESS }
   };
 
   for (const Row& row: rows)
