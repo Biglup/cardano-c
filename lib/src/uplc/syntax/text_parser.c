@@ -26,6 +26,7 @@
 #include "../../allocators.h"
 #include "../ast/uplc_int.h"
 #include "../builtins/bls.h"
+#include "../builtins/builtins.h"
 
 #include <cardano/buffer.h>
 #include <cardano/common/bigint.h>
@@ -1154,19 +1155,18 @@ scope_pop(parser_t* parser)
  * latest binding of a shadowed name wins, matching the lexical scope of the flat
  * encoding.
  *
- * A free (unbound) name is not a parse error: an open term is accepted and the
- * machine fails on it. An unbound name is assigned the index \c scope_count + 1,
- * which is one past the outermost binder in scope and therefore always out of
- * range for the environment built at evaluation. The CEK env lookup for that
- * index fails, so an open term yields a script error rather than a parse error.
+ * A free (unbound) name is a parse error, as in the reference, whose conversion
+ * of the parsed names to de Bruijn indices fails on a free variable. This holds
+ * wherever the variable occurs, including in an unused lambda body or in the
+ * fields of a \c constr.
  *
  * \param[in] parser The parser whose scope to search.
  * \param[in] text The variable name slice start.
  * \param[in] length The variable name length.
- * \param[out] index On success, the 1-based de Bruijn index, or
- *             \c scope_count + 1 for a free variable.
+ * \param[out] index On success, the 1-based de Bruijn index.
  *
- * \return \ref CARDANO_SUCCESS always.
+ * \return \ref CARDANO_SUCCESS when the name is bound, or
+ *         \ref CARDANO_ERROR_DECODING for a free variable.
  */
 static cardano_error_t
 resolve_name_index(const parser_t* parser, const char* text, const size_t length, uint64_t* index)
@@ -1187,9 +1187,7 @@ resolve_name_index(const parser_t* parser, const char* text, const size_t length
     i -= 1U;
   }
 
-  *index = (uint64_t)parser->scope_count + 1U;
-
-  return CARDANO_SUCCESS;
+  return CARDANO_ERROR_DECODING;
 }
 
 /**
@@ -1891,476 +1889,35 @@ value_element_type(cardano_uplc_arena_t* arena, const cardano_uplc_type_t** out)
 }
 
 /**
- * \brief The maximum byte length of a value policy or token key.
- */
-#define PRV_VALUE_KEY_MAX_LEN ((size_t)32U)
-
-/**
- * \brief Tests whether a quantity fits the signed 128-bit range.
+ * \brief Builds a value constant from a parsed list of policy entries.
  *
- * The valid range is \c -(2^127) .. \c (2^127 - 1).
- *
- * \param[in] amount The quantity to check.
- *
- * \return \c true when in range, \c false otherwise.
- */
-static bool
-value_amount_in_range(const cardano_bigint_t* amount)
-{
-  cardano_bigint_t* one   = NULL;
-  cardano_bigint_t* limit = NULL;
-  bool              ok    = false;
-
-  if (cardano_bigint_bit_length(amount) < 128U)
-  {
-    return true;
-  }
-
-  if (cardano_bigint_from_int(1, &one) != CARDANO_SUCCESS)
-  {
-    return false;
-  }
-
-  if (cardano_bigint_from_int(0, &limit) != CARDANO_SUCCESS)
-  {
-    cardano_bigint_unref(&one);
-
-    return false;
-  }
-
-  cardano_bigint_shift_left(one, 127U, limit);
-
-  if (cardano_bigint_signum(amount) >= 0)
-  {
-    ok = (cardano_bigint_compare(amount, limit) < 0);
-  }
-  else
-  {
-    cardano_bigint_t* neg = NULL;
-
-    if (cardano_bigint_from_int(0, &neg) == CARDANO_SUCCESS)
-    {
-      cardano_bigint_negate(limit, neg);
-      ok = (cardano_bigint_compare(amount, neg) >= 0);
-      cardano_bigint_unref(&neg);
-    }
-  }
-
-  cardano_bigint_unref(&one);
-  cardano_bigint_unref(&limit);
-
-  return ok;
-}
-
-/**
- * \brief A borrowed view of arena bytes used as a value-map key during parsing.
- */
-typedef struct bytes_view_t
-{
-    const byte_t* data;
-    size_t        size;
-} bytes_view_t;
-
-/**
- * \brief Compares two byte views lexicographically.
- *
- * \param[in] a The first view.
- * \param[in] b The second view.
- *
- * \return A negative, zero, or positive value as \p a orders before, equal to, or
- *         after \p b.
- */
-static int
-value_compare_buffers(bytes_view_t a, bytes_view_t b)
-{
-  size_t n = (a.size < b.size) ? a.size : b.size;
-  size_t i = 0U;
-
-  for (i = 0U; i < n; ++i)
-  {
-    if (a.data[i] != b.data[i])
-    {
-      return (a.data[i] < b.data[i]) ? -1 : 1;
-    }
-  }
-
-  if (a.size == b.size)
-  {
-    return 0;
-  }
-
-  return (a.size < b.size) ? -1 : 1;
-}
-
-/**
- * \brief A single accumulated token amount keyed by token bytes.
- */
-typedef struct token_acc_t
-{
-    bytes_view_t      name;
-    cardano_bigint_t* amount;
-} token_acc_t;
-
-/**
- * \brief A single accumulated policy entry keyed by policy bytes.
- */
-typedef struct policy_acc_t
-{
-    bytes_view_t policy;
-    token_acc_t* tokens;
-    size_t       token_count;
-    size_t       token_capacity;
-} policy_acc_t;
-
-/**
- * \brief Releases the working accumulator and all owned bigints.
- *
- * \param[in,out] policies The policy accumulator array.
- * \param[in] count The number of policy entries.
- */
-static void
-value_acc_free(policy_acc_t* policies, size_t count)
-{
-  size_t i = 0U;
-
-  if (policies == NULL)
-  {
-    return;
-  }
-
-  for (i = 0U; i < count; ++i)
-  {
-    size_t j = 0U;
-
-    for (j = 0U; j < policies[i].token_count; ++j)
-    {
-      cardano_bigint_unref(&policies[i].tokens[j].amount);
-    }
-
-    _cardano_free(policies[i].tokens);
-  }
-
-  _cardano_free(policies);
-}
-
-/**
- * \brief Inserts or sums a (policy, token, amount) triple into the accumulator.
- *
- * Keeps policies and tokens in ascending order; a repeated key sums the amount.
- *
- * \param[in,out] policies The policy accumulator array (grown as needed).
- * \param[in,out] count The number of policy entries.
- * \param[in,out] capacity The policy array capacity.
- * \param[in] policy The policy byte view.
- * \param[in] name The token byte view.
- * \param[in] amount The amount to add.
- *
- * \return \ref CARDANO_SUCCESS or an allocation error.
- */
-static cardano_error_t
-value_acc_insert(
-  policy_acc_t**          policies,
-  size_t*                 count,
-  size_t*                 capacity,
-  bytes_view_t            policy,
-  bytes_view_t            name,
-  const cardano_bigint_t* amount)
-{
-  size_t pi = 0U;
-
-  while ((pi < *count) && (value_compare_buffers((*policies)[pi].policy, policy) < 0))
-  {
-    pi += 1U;
-  }
-
-  if ((pi >= *count) || (value_compare_buffers((*policies)[pi].policy, policy) != 0))
-  {
-    if (*count == *capacity)
-    {
-      size_t        next  = (*capacity == 0U) ? 4U : (*capacity * 2U);
-      policy_acc_t* grown = (policy_acc_t*)_cardano_realloc(*policies, next * sizeof(policy_acc_t));
-
-      if (grown == NULL)
-      {
-        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      }
-
-      *policies = grown;
-      *capacity = next;
-    }
-
-    {
-      size_t k = *count;
-
-      while (k > pi)
-      {
-        (*policies)[k] = (*policies)[k - 1U];
-        k              -= 1U;
-      }
-    }
-
-    (*policies)[pi].policy         = policy;
-    (*policies)[pi].tokens         = NULL;
-    (*policies)[pi].token_count    = 0U;
-    (*policies)[pi].token_capacity = 0U;
-    *count                         += 1U;
-  }
-
-  {
-    policy_acc_t* entry = &(*policies)[pi];
-    size_t        ti    = 0U;
-
-    while ((ti < entry->token_count) && (value_compare_buffers(entry->tokens[ti].name, name) < 0))
-    {
-      ti += 1U;
-    }
-
-    if ((ti < entry->token_count) && (value_compare_buffers(entry->tokens[ti].name, name) == 0))
-    {
-      cardano_bigint_t* sum = NULL;
-
-      if (cardano_bigint_from_int(0, &sum) != CARDANO_SUCCESS)
-      {
-        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      }
-
-      cardano_bigint_add(entry->tokens[ti].amount, amount, sum);
-      cardano_bigint_unref(&entry->tokens[ti].amount);
-      entry->tokens[ti].amount = sum;
-
-      return CARDANO_SUCCESS;
-    }
-
-    if (entry->token_count == entry->token_capacity)
-    {
-      size_t       next  = (entry->token_capacity == 0U) ? 4U : (entry->token_capacity * 2U);
-      token_acc_t* grown = (token_acc_t*)_cardano_realloc(entry->tokens, next * sizeof(token_acc_t));
-
-      if (grown == NULL)
-      {
-        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      }
-
-      entry->tokens         = grown;
-      entry->token_capacity = next;
-    }
-
-    {
-      size_t k = entry->token_count;
-
-      while (k > ti)
-      {
-        entry->tokens[k] = entry->tokens[k - 1U];
-        k                -= 1U;
-      }
-    }
-
-    {
-      cardano_bigint_t* clone = NULL;
-
-      if (cardano_bigint_clone(amount, &clone) != CARDANO_SUCCESS)
-      {
-        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      }
-
-      entry->tokens[ti].name   = name;
-      entry->tokens[ti].amount = clone;
-      entry->token_count       += 1U;
-    }
-  }
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Builds a token-pair constant from a token buffer and an amount.
- *
- * \param[in] arena The arena the constant is allocated from.
- * \param[in] name The token byte view; copied into the arena.
- * \param[in] amount The amount; the constructor clones it.
- * \param[out] out On success, the token-pair constant.
- *
- * \return \ref CARDANO_SUCCESS or an allocation error.
- */
-static cardano_error_t
-value_make_token(
-  cardano_uplc_arena_t*           arena,
-  bytes_view_t                    name,
-  const cardano_bigint_t*         amount,
-  const cardano_uplc_constant_t** out)
-{
-  cardano_bigint_t*        amt_copy   = NULL;
-  cardano_uplc_constant_t* name_const = NULL;
-  cardano_uplc_constant_t* amt_const  = NULL;
-  cardano_uplc_constant_t* pair_const = NULL;
-  cardano_error_t          error      = cardano_uplc_int_constant_new_byte_string_copy(arena, name.data, name.size, &name_const);
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_bigint_clone(amount, &amt_copy);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_constant_new_integer(arena, amt_copy, &amt_const);
-    cardano_bigint_unref(&amt_copy);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    error = cardano_uplc_constant_new_pair(arena, name_const, amt_const, &pair_const);
-  }
-
-  if (error == CARDANO_SUCCESS)
-  {
-    *out = pair_const;
-  }
-
-  return error;
-}
-
-/**
- * \brief Normalizes a raw parsed value list into a canonical value constant.
- *
- * Validates key lengths (at most 32 bytes) and amounts (signed 128-bit range),
- * sums repeated keys, drops zero amounts and empty token maps, and sorts policies
- * and tokens ascending. A bound or key-length violation yields
- * \ref CARDANO_ERROR_DECODING (a parse error).
+ * The entries must already be in canonical form, as the reference parser
+ * requires: currency ids strictly ascending, token ids strictly ascending within
+ * each currency, ids of at most 32 bytes, no empty token list and non-zero
+ * quantities in the signed 128-bit range. Repeated or unordered keys are not
+ * merged or sorted.
  *
  * \param[in] arena The arena the result is allocated from.
  * \param[in] element_type The canonical value element type.
- * \param[in] raw The raw parsed list of policy entries.
- * \param[out] out On success, the normalized value constant.
+ * \param[in] raw The parsed list of policy entries.
+ * \param[out] out On success, the value constant.
  *
- * \return \ref CARDANO_SUCCESS, \ref CARDANO_ERROR_DECODING on a validation
- *         failure, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED.
+ * \return \ref CARDANO_SUCCESS, \ref CARDANO_ERROR_DECODING when the entries are
+ *         not canonical, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED.
  */
 static cardano_error_t
-normalize_value(
+canonical_value(
   cardano_uplc_arena_t*          arena,
   const cardano_uplc_type_t*     element_type,
   const cardano_uplc_constant_t* raw,
   cardano_uplc_constant_t**      out)
 {
-  policy_acc_t*                   policies   = NULL;
-  size_t                          count      = 0U;
-  size_t                          capacity   = 0U;
-  const cardano_uplc_constant_t** entries    = NULL;
-  size_t                          out_count  = 0U;
-  size_t                          i          = 0U;
-  cardano_error_t                 error      = CARDANO_SUCCESS;
-  const cardano_uplc_type_t*      token_pair = element_type->snd->fst;
-
-  for (i = 0U; (i < raw->as.list.count) && (error == CARDANO_SUCCESS); ++i)
+  if (!cardano_uplc_int_value_entries_are_canonical(arena, raw->as.list.items, raw->as.list.count))
   {
-    const cardano_uplc_constant_t* entry  = raw->as.list.items[i];
-    bytes_view_t                   policy = { entry->as.pair.fst->as.bytes.data, entry->as.pair.fst->as.bytes.size };
-    const cardano_uplc_constant_t* tlist  = entry->as.pair.snd;
-    size_t                         j      = 0U;
-
-    if (policy.size > PRV_VALUE_KEY_MAX_LEN)
-    {
-      error = CARDANO_ERROR_DECODING;
-      break;
-    }
-
-    for (j = 0U; (j < tlist->as.list.count) && (error == CARDANO_SUCCESS); ++j)
-    // cppcheck-suppress misra-c2012-15.4; Reason: multiple loop exits keep the control flow flat
-    {
-      const cardano_uplc_constant_t* tok    = tlist->as.list.items[j];
-      bytes_view_t                   name   = { tok->as.pair.fst->as.bytes.data, tok->as.pair.fst->as.bytes.size };
-      const cardano_bigint_t*        amount = NULL;
-
-      if (cardano_uplc_constant_int_materialize(arena, tok->as.pair.snd, &amount) != CARDANO_SUCCESS)
-      {
-        error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-        break;
-      }
-
-      if ((name.size > PRV_VALUE_KEY_MAX_LEN) || !value_amount_in_range(amount))
-      {
-        error = CARDANO_ERROR_DECODING;
-        break;
-      }
-
-      error = value_acc_insert(&policies, &count, &capacity, policy, name, amount);
-    }
+    return CARDANO_ERROR_DECODING;
   }
 
-  if (error == CARDANO_SUCCESS)
-  {
-    entries = (const cardano_uplc_constant_t**)cardano_uplc_arena_alloc(arena, (count == 0U) ? 1U : (count * sizeof(const cardano_uplc_constant_t*)), 0U);
-
-    if (entries == NULL)
-    {
-      error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-  }
-
-  for (i = 0U; (i < count) && (error == CARDANO_SUCCESS); ++i)
-  {
-    const cardano_uplc_constant_t** tokens       = NULL;
-    size_t                          tout         = 0U;
-    size_t                          j            = 0U;
-    cardano_uplc_constant_t*        policy_const = NULL;
-    cardano_uplc_constant_t*        token_list   = NULL;
-    cardano_uplc_constant_t*        pair_const   = NULL;
-
-    tokens = (const cardano_uplc_constant_t**)cardano_uplc_arena_alloc(arena, (policies[i].token_count == 0U) ? 1U : (policies[i].token_count * sizeof(const cardano_uplc_constant_t*)), 0U);
-
-    if (tokens == NULL)
-    {
-      error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      break;
-    }
-
-    for (j = 0U; (j < policies[i].token_count) && (error == CARDANO_SUCCESS); ++j)
-    {
-      if (cardano_bigint_is_zero(policies[i].tokens[j].amount))
-      {
-        continue;
-      }
-
-      error = value_make_token(arena, policies[i].tokens[j].name, policies[i].tokens[j].amount, &tokens[tout]);
-
-      if (error == CARDANO_SUCCESS)
-      {
-        tout += 1U;
-      }
-    }
-
-    if ((error != CARDANO_SUCCESS) || (tout == 0U))
-    {
-      continue;
-    }
-
-    error = cardano_uplc_int_constant_new_byte_string_copy(arena, policies[i].policy.data, policies[i].policy.size, &policy_const);
-
-    if (error == CARDANO_SUCCESS)
-    {
-      error = cardano_uplc_constant_new_list(arena, token_pair, tokens, tout, &token_list);
-    }
-
-    if (error == CARDANO_SUCCESS)
-    {
-      error = cardano_uplc_constant_new_pair(arena, policy_const, token_list, &pair_const);
-    }
-
-    if (error == CARDANO_SUCCESS)
-    {
-      entries[out_count] = pair_const;
-      out_count          += 1U;
-    }
-  }
-
-  value_acc_free(policies, count);
-
-  if (error != CARDANO_SUCCESS)
-  {
-    return error;
-  }
-
-  return cardano_uplc_constant_new_value(arena, element_type, entries, out_count, out);
+  return cardano_uplc_constant_new_value(arena, element_type, raw->as.list.items, raw->as.list.count, out);
 }
 
 /**
@@ -2658,7 +2215,7 @@ parse_value(parser_t* parser, const cardano_uplc_type_t* type, const uint32_t de
         return result;
       }
 
-      result = normalize_value(parser->arena, element_type, list_const, &built);
+      result = canonical_value(parser->arena, element_type, list_const, &built);
       break;
     }
     default:

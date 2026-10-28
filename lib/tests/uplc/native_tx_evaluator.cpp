@@ -332,6 +332,91 @@ build_divide_below_diagonal_v3_script()
 }
 
 /**
+ * \brief Where the free variable of a scope check test script sits.
+ */
+enum class FreeVariableSite
+{
+  DELAYED_ARGUMENT,
+  CONSTR_FIELD,
+  CASE_BRANCH
+};
+
+/**
+ * \brief Builds a PlutusV3 1.1.0 script that succeeds when run but holds a free
+ *        variable the machine never reaches.
+ *
+ * For \c DELAYED_ARGUMENT and \c CONSTR_FIELD the body applies a lambda that
+ * ignores its argument to a delayed term holding the free variable, directly or as
+ * the field of a \c constr. For \c CASE_BRANCH the body is a \c case on
+ * \c (constr 0) whose taken branch is unit and whose other branch is the free
+ * variable.
+ */
+static cardano_plutus_v3_script_t*
+build_free_variable_v3_script(FreeVariableSite site)
+{
+  cardano_uplc_arena_t* arena = nullptr;
+  EXPECT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
+
+  cardano_uplc_constant_t* unit      = nullptr;
+  cardano_uplc_term_t*     unit_term = nullptr;
+  cardano_uplc_term_t*     free_var  = nullptr;
+  EXPECT_EQ(cardano_uplc_constant_new_unit(arena, &unit), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_constant(arena, unit, &unit_term), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 5U, &free_var), CARDANO_SUCCESS);
+
+  const cardano_uplc_term_t** slots =
+    static_cast<const cardano_uplc_term_t**>(cardano_uplc_arena_alloc(arena, sizeof(cardano_uplc_term_t*) * 2U, 0U));
+
+  cardano_uplc_term_t* body = nullptr;
+
+  if (site == FreeVariableSite::CASE_BRANCH)
+  {
+    cardano_uplc_term_t* scrutinee = nullptr;
+    EXPECT_EQ(cardano_uplc_term_new_constr(arena, 0U, nullptr, 0U, &scrutinee), CARDANO_SUCCESS);
+
+    slots[0] = unit_term;
+    slots[1] = free_var;
+    EXPECT_EQ(cardano_uplc_term_new_case(arena, scrutinee, slots, 2U, &body), CARDANO_SUCCESS);
+  }
+  else
+  {
+    cardano_uplc_term_t* payload = free_var;
+
+    if (site == FreeVariableSite::CONSTR_FIELD)
+    {
+      slots[0] = free_var;
+      EXPECT_EQ(cardano_uplc_term_new_constr(arena, 0U, slots, 1U, &payload), CARDANO_SUCCESS);
+    }
+
+    cardano_uplc_term_t* delayed = nullptr;
+    cardano_uplc_term_t* ignore  = nullptr;
+    EXPECT_EQ(cardano_uplc_term_new_delay(arena, payload, &delayed), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_uplc_term_new_lambda(arena, unit_term, &ignore), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_uplc_term_new_apply(arena, ignore, delayed, &body), CARDANO_SUCCESS);
+  }
+
+  cardano_uplc_term_t* lambda = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, body, &lambda), CARDANO_SUCCESS);
+
+  cardano_uplc_program_t program;
+  program.version_major = 1U;
+  program.version_minor = 1U;
+  program.version_patch = 0U;
+  program.term          = lambda;
+
+  cardano_buffer_t* cbor = nullptr;
+  EXPECT_EQ(cardano_uplc_program_to_cbor(&program, &cbor), CARDANO_SUCCESS);
+
+  cardano_plutus_v3_script_t* script = nullptr;
+  EXPECT_EQ(cardano_plutus_v3_script_new_bytes(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), &script), CARDANO_SUCCESS);
+
+  cardano_buffer_unref(&cbor);
+  cardano_uplc_arena_free(&arena);
+
+  return script;
+}
+
+/**
  * \brief Builds a script enterprise address from a script hash.
  */
 static cardano_address_t*
@@ -1333,6 +1418,50 @@ TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion
   const uint64_t cpu_e = single_redeemer_cpu(tx, utxos, 11U);
 
   EXPECT_EQ(cpu_e - cpu_c, 134366U - 85848U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, rejectsAFreeVariableAtEveryProtocolVersion)
+{
+  // The free variable is never evaluated, but the ledger's scope check sees it at
+  // every protocol version since it is not under a constr or case.
+  cardano_plutus_v3_script_t* script = build_free_variable_v3_script(FreeVariableSite::DELAYED_ARGUMENT);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_script_failure(tx, utxos, 11U);
+  expect_script_failure(tx, utxos, 12U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, checksTheScopeOfConstrFieldsFromDijkstra)
+{
+  cardano_plutus_v3_script_t* script = build_free_variable_v3_script(FreeVariableSite::CONSTR_FIELD);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_single_redeemer_ok(tx, utxos, 11U);
+  expect_script_failure(tx, utxos, 12U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, checksTheScopeOfCaseBranchesFromDijkstra)
+{
+  cardano_plutus_v3_script_t* script = build_free_variable_v3_script(FreeVariableSite::CASE_BRANCH);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_single_redeemer_ok(tx, utxos, 11U);
+  expect_script_failure(tx, utxos, 12U);
 
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);

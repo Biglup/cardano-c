@@ -45,6 +45,84 @@ alloc_term(cardano_uplc_arena_t* arena)
   return term;
 }
 
+/**
+ * \brief Checks that a term is closed under a number of enclosing lambdas.
+ *
+ * \param[in] term The term to check.
+ * \param[in] level The number of lambdas that enclose \p term.
+ * \param[in] mode Which subterms to visit.
+ *
+ * \return \c true when no visited variable is free, \c false otherwise.
+ */
+static bool
+is_closed_at(const cardano_uplc_term_t* term, const uint64_t level, const cardano_uplc_scope_check_mode_t mode)
+{
+  bool closed = true;
+
+  switch (term->kind)
+  {
+    case CARDANO_UPLC_TERM_VAR:
+    {
+      closed = (term->as.var_index >= 1U) && (term->as.var_index <= level);
+      break;
+    }
+    case CARDANO_UPLC_TERM_LAMBDA:
+    {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+      closed = is_closed_at(term->as.unary, level + 1U, mode);
+      break;
+    }
+    case CARDANO_UPLC_TERM_DELAY:
+    case CARDANO_UPLC_TERM_FORCE:
+    {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+      closed = is_closed_at(term->as.unary, level, mode);
+      break;
+    }
+    case CARDANO_UPLC_TERM_APPLY:
+    {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+      closed = is_closed_at(term->as.apply.function, level, mode) && is_closed_at(term->as.apply.argument, level, mode);
+      break;
+    }
+    case CARDANO_UPLC_TERM_CONSTR:
+    {
+      for (size_t i = 0U; (mode == CARDANO_UPLC_SCOPE_CHECK_FULL) && closed && (i < term->as.constr.field_count); ++i)
+      {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+        closed = is_closed_at(term->as.constr.fields[i], level, mode);
+      }
+
+      break;
+    }
+    case CARDANO_UPLC_TERM_CASE:
+    {
+      if (mode == CARDANO_UPLC_SCOPE_CHECK_FULL)
+      {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+        closed = is_closed_at(term->as.cases.scrutinee, level, mode);
+      }
+
+      for (size_t i = 0U; (mode == CARDANO_UPLC_SCOPE_CHECK_FULL) && closed && (i < term->as.cases.branch_count); ++i)
+      {
+        // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+        closed = is_closed_at(term->as.cases.branches[i], level, mode);
+      }
+
+      break;
+    }
+    case CARDANO_UPLC_TERM_CONSTANT:
+    case CARDANO_UPLC_TERM_ERROR:
+    case CARDANO_UPLC_TERM_BUILTIN:
+    default:
+    {
+      break;
+    }
+  }
+
+  return closed;
+}
+
 /* DEFINITIONS ***************************************************************/
 
 cardano_error_t
@@ -343,4 +421,10 @@ cardano_uplc_term_new_case(
   *term = result;
 
   return CARDANO_SUCCESS;
+}
+
+bool
+cardano_uplc_term_is_closed(const cardano_uplc_term_t* term, const cardano_uplc_scope_check_mode_t mode)
+{
+  return is_closed_at(term, 0U, mode);
 }

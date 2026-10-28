@@ -656,6 +656,133 @@ TEST(cardano_uplc_term_new_case, failsOnArenaAllocationFailure)
   cardano_uplc_arena_free(&prereq);
 }
 
+TEST(cardano_uplc_term_is_closed, acceptsBoundVariablesAndLeaves)
+{
+  cardano_uplc_arena_t*    arena    = new_arena();
+  cardano_uplc_constant_t* unit     = nullptr;
+  cardano_uplc_term_t*     constant = nullptr;
+  cardano_uplc_term_t*     error    = nullptr;
+  cardano_uplc_term_t*     builtin  = nullptr;
+  cardano_uplc_term_t*     outer    = nullptr;
+  cardano_uplc_term_t*     inner    = nullptr;
+  cardano_uplc_term_t*     apply    = nullptr;
+  cardano_uplc_term_t*     forced   = nullptr;
+  cardano_uplc_term_t*     delayed  = nullptr;
+  cardano_uplc_term_t*     lam_y    = nullptr;
+  cardano_uplc_term_t*     lam_x    = nullptr;
+
+  EXPECT_EQ(cardano_uplc_constant_new_unit(arena, &unit), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_constant(arena, unit, &constant), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_error(arena, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_builtin(arena, CARDANO_UPLC_BUILTIN_ADD_INTEGER, &builtin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 2U, &outer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 1U, &inner), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_apply(arena, outer, inner, &apply), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_force(arena, apply, &forced), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_delay(arena, forced, &delayed), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, delayed, &lam_y), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, lam_y, &lam_x), CARDANO_SUCCESS);
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lam_x, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_TRUE(cardano_uplc_term_is_closed(constant, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_TRUE(cardano_uplc_term_is_closed(error, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_TRUE(cardano_uplc_term_is_closed(builtin, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lam_y, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lam_y, CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR));
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_term_is_closed, rejectsIndexZeroAndIndicesPastTheBinders)
+{
+  cardano_uplc_arena_t* arena  = new_arena();
+  cardano_uplc_term_t*  zero   = nullptr;
+  cardano_uplc_term_t*  two    = nullptr;
+  cardano_uplc_term_t*  lam_0  = nullptr;
+  cardano_uplc_term_t*  lam_2  = nullptr;
+  cardano_uplc_term_t*  bound  = nullptr;
+  cardano_uplc_term_t*  lam_ok = nullptr;
+  cardano_uplc_term_t*  apply  = nullptr;
+
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 0U, &zero), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 2U, &two), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 1U, &bound), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, zero, &lam_0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, two, &lam_2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, bound, &lam_ok), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_apply(arena, lam_ok, lam_2, &apply), CARDANO_SUCCESS);
+
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lam_0, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lam_2, CARDANO_UPLC_SCOPE_CHECK_FULL));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(apply, CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR));
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_term_is_closed, visitsConstrFieldsOnlyInFullMode)
+{
+  cardano_uplc_arena_t* arena   = new_arena();
+  cardano_uplc_term_t*  bound   = nullptr;
+  cardano_uplc_term_t*  unbound = nullptr;
+  cardano_uplc_term_t*  constr  = nullptr;
+  cardano_uplc_term_t*  lambda  = nullptr;
+
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 1U, &bound), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 2U, &unbound), CARDANO_SUCCESS);
+
+  const cardano_uplc_term_t** fields = reinterpret_cast<const cardano_uplc_term_t**>(
+    cardano_uplc_arena_alloc(arena, sizeof(cardano_uplc_term_t*) * 2U, 0U));
+  fields[0] = bound;
+  fields[1] = unbound;
+
+  EXPECT_EQ(cardano_uplc_term_new_constr(arena, 0U, fields, 2U, &constr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, constr, &lambda), CARDANO_SUCCESS);
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_FULL));
+
+  fields[1] = bound;
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_FULL));
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_term_is_closed, visitsCaseScrutineeAndBranchesOnlyInFullMode)
+{
+  cardano_uplc_arena_t* arena   = new_arena();
+  cardano_uplc_term_t*  bound   = nullptr;
+  cardano_uplc_term_t*  unbound = nullptr;
+  cardano_uplc_term_t*  cases   = nullptr;
+  cardano_uplc_term_t*  lambda  = nullptr;
+
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 1U, &bound), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_var(arena, 2U, &unbound), CARDANO_SUCCESS);
+
+  const cardano_uplc_term_t** branches = reinterpret_cast<const cardano_uplc_term_t**>(
+    cardano_uplc_arena_alloc(arena, sizeof(cardano_uplc_term_t*) * 2U, 0U));
+  branches[0] = bound;
+  branches[1] = unbound;
+
+  EXPECT_EQ(cardano_uplc_term_new_case(arena, bound, branches, 2U, &cases), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, cases, &lambda), CARDANO_SUCCESS);
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_FULL));
+
+  branches[1] = bound;
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_FULL));
+
+  EXPECT_EQ(cardano_uplc_term_new_case(arena, unbound, branches, 2U, &cases), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_term_new_lambda(arena, cases, &lambda), CARDANO_SUCCESS);
+
+  EXPECT_TRUE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR));
+  EXPECT_FALSE(cardano_uplc_term_is_closed(lambda, CARDANO_UPLC_SCOPE_CHECK_FULL));
+
+  cardano_uplc_arena_free(&arena);
+}
+
 TEST(cardano_uplc_term_new_constant, wrapsConstant)
 {
   cardano_uplc_arena_t*    arena    = new_arena();

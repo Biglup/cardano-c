@@ -127,6 +127,13 @@ static const int64_t PRV_MAX_CPU = (int64_t)100000000000;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t PRV_MAX_MEM = (int64_t)100000000;
 
+/**
+ * \brief The Dijkstra protocol major version, from which the ledger's scope check
+ * of a script also visits the subterms of \c constr and \c case.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint64_t PRV_DIJKSTRA_PROTOCOL_MAJOR = 12U;
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -1416,13 +1423,35 @@ deserialise_script(
 }
 
 /**
+ * \brief Returns whether a script is closed, as the ledger checks before evaluating it.
+ *
+ * Below the Dijkstra protocol version the ledger's scope check does not visit the
+ * subterms of \c constr and \c case; from Dijkstra on it visits every subterm. A
+ * script that is not closed fails phase-2 validation without being evaluated.
+ *
+ * \param[in] program The deserialised script.
+ * \param[in] protocol_major The protocol major version.
+ *
+ * \return \c true when the script passes the scope check, \c false otherwise.
+ */
+static bool
+script_is_closed(const cardano_uplc_program_t* program, const uint64_t protocol_major)
+{
+  const cardano_uplc_scope_check_mode_t mode = (protocol_major < PRV_DIJKSTRA_PROTOCOL_MAJOR)
+    ? CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR
+    : CARDANO_UPLC_SCOPE_CHECK_FULL;
+
+  return cardano_uplc_term_is_closed(program->term, mode);
+}
+
+/**
  * \brief Evaluates one redeemer and writes its consumed ex-units into a new redeemer.
  *
  * The whole evaluation runs inside a per-redeemer arena that is freed on every
  * path. A script that cannot be deserialised for its language at the protocol
  * version, or that fails (Plutus Core version not available at the protocol
- * version, error term, out of budget, unsupported builtin), is reported through
- * \p out_outcome, not as a host error.
+ * version, a free variable, error term, out of budget, unsupported builtin), is
+ * reported through \p out_outcome, not as a host error.
  *
  * The CEK machine is bounded by \p remaining, the budget left for the whole
  * transaction; on a successful evaluation the script's spent units are deducted
@@ -1496,6 +1525,14 @@ eval_redeemer(
   if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
     if (!cardano_uplc_plc_version_available(uplc_lang_version(version), ctx->protocol_major, program->version_major, program->version_minor, program->version_patch))
+    {
+      *out_outcome = PRV_REDEEMER_SCRIPT_FAILED;
+    }
+  }
+
+  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
+  {
+    if (!script_is_closed(program, ctx->protocol_major))
     {
       *out_outcome = PRV_REDEEMER_SCRIPT_FAILED;
     }
@@ -1581,7 +1618,8 @@ set_error_message(cardano_tx_evaluator_impl_t* impl, const char* message)
  * that cannot be deserialised for its language at the protocol version (an
  * unavailable language or builtin, or a malformed script) is reported as
  * \ref CARDANO_ERROR_DECODING, and a script that fails phase-2 validation
- * (including a Plutus Core version not available at the protocol version) as
+ * (including a Plutus Core version not available at the protocol version and a
+ * script with a free variable) as
  * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE, each with an error message
  * naming the failure.
  */

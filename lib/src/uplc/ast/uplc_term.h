@@ -27,6 +27,7 @@
 #include "../arena/uplc_arena.h"
 #include "../builtins/uplc_builtin.h"
 #include "uplc_constant.h"
+#include "uplc_scope_check_mode.h"
 #include "uplc_term_kind.h"
 #include <cardano/error.h>
 #include <cardano/export.h>
@@ -275,6 +276,24 @@ cardano_uplc_term_new_case(
   const cardano_uplc_term_t* const* branches,
   size_t                            branch_count,
   cardano_uplc_term_t**             term);
+
+/**
+ * \brief Returns whether a term is closed, the scope check the ledger runs on a
+ * script before evaluating it.
+ *
+ * A term is closed when every variable is bound by an enclosing lambda, that is
+ * when each de Bruijn index is at least 1 and at most the number of lambdas
+ * around it. With \ref CARDANO_UPLC_SCOPE_CHECK_NO_CASE_CONSTR the fields of
+ * \c constr terms and the scrutinee and branches of \c case terms are not
+ * visited. Recursion follows the term nesting, which the decoders bound.
+ *
+ * \param[in] term The term to check. Must not be NULL.
+ * \param[in] mode Which subterms to visit.
+ *
+ * \return \c true when no visited variable is free, \c false otherwise.
+ */
+bool
+cardano_uplc_term_is_closed(const cardano_uplc_term_t* term, cardano_uplc_scope_check_mode_t mode);
 
 #ifdef __cplusplus
 }

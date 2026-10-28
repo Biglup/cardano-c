@@ -6,12 +6,6 @@
 # when an unlisted case fails. Categories: semantics-variant, builtin-bounds,
 # division-costing, cost-model, flat-decoding, version-gating, batch7-builtins,
 # case-on-data, text-parser, other.
-builtin/parser/value/currencyIDs-unordered/currencyIDs-unordered.uplc text-parser value constant parsing is not strict
-builtin/parser/value/duplicate-currencyIDs/duplicate-currencyIDs.uplc text-parser value constant parsing is not strict
-builtin/parser/value/duplicate-tokenIDs/duplicate-tokenIDs.uplc text-parser value constant parsing is not strict
-builtin/parser/value/empty-tokens/empty-tokens.uplc text-parser value constant parsing is not strict
-builtin/parser/value/tokenIDs-unordered/tokenIDs-unordered.uplc text-parser value constant parsing is not strict
-builtin/parser/value/zero-asset/zero-asset.uplc text-parser value constant parsing is not strict
 builtin/semantics/blake2b_224/blake2b_224-empty/blake2b_224-empty.uplc cost-model
 builtin/semantics/blake2b_224/blake2b_224-empty/blake2b_224-empty.flat cost-model
 builtin/semantics/blake2b_224/blake2b_224-length-200/blake2b_224-length-200.uplc cost-model
@@ -254,6 +248,3 @@ term/constant-case/data/data-01/data-01.uplc case-on-data
 term/constant-case/data/data-01/data-01.flat case-on-data
 term/constant-case/data/data-02/data-02.uplc case-on-data
 term/constant-case/data/data-02/data-02.flat case-on-data
-term/free-vars/constr-free-var/constr-free-var.uplc text-parser free variables are accepted
-term/free-vars/unused-free-var/unused-free-var.uplc text-parser free variables are accepted
-term/free-vars/var/var.uplc text-parser free variables are accepted
