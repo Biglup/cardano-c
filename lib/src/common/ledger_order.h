@@ -43,11 +43,8 @@
  * and a reward account key put a rank byte (the voter role or the network) in
  * front of the credential key.
  */
-enum
-{
-  CARDANO_LEDGER_ORDER_CREDENTIAL_KEY_SIZE = 1 + CARDANO_BLAKE2B_HASH_SIZE_224,
-  CARDANO_LEDGER_ORDER_KEY_SIZE            = 1 + CARDANO_LEDGER_ORDER_CREDENTIAL_KEY_SIZE
-};
+#define CARDANO_LEDGER_ORDER_CREDENTIAL_KEY_SIZE ((size_t)CARDANO_BLAKE2B_HASH_SIZE_224 + 1U)
+#define CARDANO_LEDGER_ORDER_KEY_SIZE            (CARDANO_LEDGER_ORDER_CREDENTIAL_KEY_SIZE + 1U)
 
 /* DECLARATIONS **************************************************************/
 
