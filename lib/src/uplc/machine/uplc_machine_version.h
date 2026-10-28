@@ -33,19 +33,18 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief The Plutus language version selecting the default machine-step costs.
+ * \brief The Plutus language version selecting the default builtin costs.
  *
- * V1 and V2 share a table in which the constr and case steps carry a prohibitive
- * sentinel cost (those step kinds are unavailable); V3 enables them at the normal
- * cost. An unrecognized value is treated as V3.
+ * The versions differ in their default builtin costs; every version charges the
+ * same machine-step costs. An unrecognized value is treated as V3.
  */
 typedef enum
 {
-  /** \brief Plutus V1 machine-step costs. */
+  /** \brief Plutus V1 default builtin costs. */
   CARDANO_UPLC_MACHINE_VERSION_V1 = 0,
-  /** \brief Plutus V2 machine-step costs. */
+  /** \brief Plutus V2 default builtin costs. */
   CARDANO_UPLC_MACHINE_VERSION_V2 = 1,
-  /** \brief Plutus V3 machine-step costs (the default). */
+  /** \brief Plutus V3 default builtin costs (the default). */
   CARDANO_UPLC_MACHINE_VERSION_V3 = 2
 } cardano_uplc_machine_version_t;
 

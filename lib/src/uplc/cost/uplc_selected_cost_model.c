@@ -49,9 +49,13 @@ cardano_uplc_cost_model_version_for_language(cardano_uplc_lang_version_t lang_ve
       break;
     }
     case CARDANO_UPLC_LANG_VERSION_V3:
-    case CARDANO_UPLC_LANG_VERSION_V4:
     {
       result = CARDANO_UPLC_COST_MODEL_VERSION_V3;
+      break;
+    }
+    case CARDANO_UPLC_LANG_VERSION_V4:
+    {
+      result = CARDANO_UPLC_COST_MODEL_VERSION_V4;
       break;
     }
     default:

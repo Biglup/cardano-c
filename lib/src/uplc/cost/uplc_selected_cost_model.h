@@ -60,9 +60,9 @@ typedef struct cardano_uplc_selected_cost_model_t
 /**
  * \brief Maps a Plutus language version to its cost-model parameter ordering.
  *
- * V1 and V2 map to their own orderings; V3 and V4 share the V3 ordering, as
- * there is no separate V4 parameter list yet. This is the version that selects
- * the parameter count and per-builtin shapes consumed by
+ * Each language maps to its own cost-model version; the V4 parameter list has
+ * the same names and order as the V3 list. This is the version that selects the
+ * parameter count and per-builtin shapes consumed by
  * \ref cardano_uplc_cost_model_from_params.
  *
  * \param[in] lang_version The language version to map.

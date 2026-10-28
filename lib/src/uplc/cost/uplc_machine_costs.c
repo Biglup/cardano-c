@@ -23,6 +23,8 @@
 
 #include "uplc_machine_costs.h"
 
+#include <cardano/export.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -52,15 +54,6 @@ static const int64_t CARDANO_UPLC_STEP_MEM = 100;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const int64_t CARDANO_UPLC_STEP_CPU = 16000;
 
-/**
- * \brief Sentinel cost for a step kind unavailable in a language version.
- *
- * Applied to constr and case under V1/V2 so any program reaching them is driven
- * out of budget.
- */
-// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
-static const int64_t CARDANO_UPLC_UNAVAILABLE_STEP_COST = 30000000000;
-
 /* DEFINITIONS ***************************************************************/
 
 cardano_uplc_machine_costs_t
@@ -70,7 +63,8 @@ cardano_uplc_machine_costs_default(cardano_uplc_cost_model_version_t version)
 
   const cardano_uplc_budget_t startup = { CARDANO_UPLC_STARTUP_CPU, CARDANO_UPLC_STARTUP_MEM };
   const cardano_uplc_budget_t step    = { CARDANO_UPLC_STEP_CPU, CARDANO_UPLC_STEP_MEM };
-  const cardano_uplc_budget_t unavail = { CARDANO_UPLC_UNAVAILABLE_STEP_COST, CARDANO_UPLC_UNAVAILABLE_STEP_COST };
+
+  CARDANO_UNUSED(version);
 
   costs.startup   = startup;
   costs.constant  = step;
@@ -82,22 +76,6 @@ cardano_uplc_machine_costs_default(cardano_uplc_cost_model_version_t version)
   costs.builtin   = step;
   costs.constr    = step;
   costs.case_step = step;
-
-  switch (version)
-  {
-    case CARDANO_UPLC_COST_MODEL_VERSION_V1:
-    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
-    {
-      costs.constr    = unavail;
-      costs.case_step = unavail;
-      break;
-    }
-    case CARDANO_UPLC_COST_MODEL_VERSION_V3:
-    default:
-    {
-      break;
-    }
-  }
 
   return costs;
 }

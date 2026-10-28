@@ -60,7 +60,11 @@ typedef struct cardano_uplc_builtin_costs_t
 /**
  * \brief Returns the default Plutus V1 per-builtin costing functions.
  *
- * Builtins introduced after V1 carry the prohibitive sentinel cost.
+ * The coefficients are those of the reference builtin cost model D, which the
+ * V1 and V2 languages read from protocol version 11 (van Rossem). The integer
+ * division shapes are those of cost model B until
+ * \ref cardano_uplc_builtin_costs_select_division_shapes reshapes them. Builtins
+ * without a costing function carry the prohibitive sentinel cost.
  *
  * \return The V1 builtin costs by value.
  */
@@ -70,13 +74,21 @@ cardano_uplc_builtin_costs_v1(void);
 /**
  * \brief Returns the default Plutus V2 per-builtin costing functions.
  *
+ * Identical to \ref cardano_uplc_builtin_costs_v1: both read builtin cost
+ * model D.
+ *
  * \return The V2 builtin costs by value.
  */
 cardano_uplc_builtin_costs_t
 cardano_uplc_builtin_costs_v2(void);
 
 /**
- * \brief Returns the default Plutus V3 per-builtin costing functions.
+ * \brief Returns the default Plutus V3 and V4 per-builtin costing functions.
+ *
+ * The coefficients are those of the reference builtin cost model E, which V3
+ * reads from protocol version 11 (van Rossem) and V4 always reads. The integer
+ * division shapes are those of cost model C until
+ * \ref cardano_uplc_builtin_costs_select_division_shapes reshapes them.
  *
  * \return The V3 builtin costs by value.
  */

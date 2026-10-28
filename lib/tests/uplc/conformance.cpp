@@ -70,16 +70,14 @@ struct Configuration
     cardano_uplc_cost_model_version_t cost_model_version;
 };
 
-// The reference runs the corpus at the newest protocol version (12) with builtin
-// semantics variant G and the newest cost model. The V4 cost model does not exist
-// yet, so the V3 cost model stands in for it alongside the newest language and
-// semantics variant G. Cases that depend on the missing behaviour are listed as
-// expected failures.
+// The reference runs the corpus at the newest protocol version (12) with the
+// newest language, builtin semantics variant G and the V4 default cost model.
+// Cases that depend on missing behaviour are listed as expected failures.
 const Configuration CONFIGURATION = {
   CARDANO_UPLC_LANG_VERSION_V4,
   12U,
   CARDANO_UPLC_SEMANTICS_G,
-  CARDANO_UPLC_COST_MODEL_VERSION_V3
+  CARDANO_UPLC_COST_MODEL_VERSION_V4
 };
 
 // The conformance corpus carries the exact budget every supported case must
@@ -252,6 +250,7 @@ make_cost_model(const Configuration& config)
     }
 
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
+    case CARDANO_UPLC_COST_MODEL_VERSION_V4:
     default:
     {
       model.builtins = cardano_uplc_builtin_costs_v3();

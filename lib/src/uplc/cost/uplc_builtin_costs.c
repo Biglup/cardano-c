@@ -626,7 +626,7 @@ fill_v1_v2_core(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING]            = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 20467, 1), three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 4, 0));
   c->entries[CARDANO_UPLC_BUILTIN_LENGTH_OF_BYTE_STRING]        = entry_one(one_const(22100), one_const(10));
   c->entries[CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING]            = entry_two(two_const(13169), two_const(4));
-  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING]           = entry_two(two_on_diagonal(24548, 29498, 38), two_const(1));
+  c->entries[CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING]           = entry_two(two_on_diagonal(30623, 28755, 75), two_const(1));
   c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING]        = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 28999, 74), two_const(1));
   c->entries[CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_BYTE_STRING] = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MIN_SIZE, 28999, 74), two_const(1));
 
@@ -724,7 +724,7 @@ fill_all_unavail(cardano_uplc_builtin_costs_t* c)
 
 /**
  * \brief Fills the builtins shared by every version's list from protocol
- *        version 11 (van Rossem) onwards, with the enacted default coefficients.
+ *        version 11 (van Rossem) onwards, with the reference default coefficients.
  *
  * Covers serialise_data, the secp256k1 verifiers, the additional hashes, the
  * BLS12-381 family, the integer/byte-string conversions, the bitwise family,
@@ -788,13 +788,13 @@ fill_shared_extension(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL] = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_X, 321837444, 25087669), two_const(18));
   c->entries[CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL] = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_X, 617887431, 67302824), two_const(36));
 
-  c->entries[CARDANO_UPLC_BUILTIN_INSERT_COIN]    = entry_one(one_linear(356924, 18413), one_linear(45, 21));
+  c->entries[CARDANO_UPLC_BUILTIN_INSERT_COIN]    = entry_one(one_linear(390841, 30257), one_linear(47, 27));
   c->entries[CARDANO_UPLC_BUILTIN_LOOKUP_COIN]    = entry_three(three_linear(CARDANO_UPLC_THREE_ARG_LINEAR_IN_Z, 219951, 9444), three_const(1));
-  c->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE]    = entry_two(two_with_interaction(1000, 172116, 183150, 6), two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 24, 21));
+  c->entries[CARDANO_UPLC_BUILTIN_UNION_VALUE]    = entry_two(two_with_interaction(1000, 284948, 143815, 4), two_linear(CARDANO_UPLC_TWO_ARG_ADDED_SIZES, 26, 29));
   c->entries[CARDANO_UPLC_BUILTIN_VALUE_CONTAINS] = entry_two(two_const_above_linear(213283, 618401, 1998, 28258), two_const(1));
   c->entries[CARDANO_UPLC_BUILTIN_VALUE_DATA]     = entry_one(one_linear(1000, 38159), one_linear(2, 22));
-  c->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]  = entry_one(one_quadratic(1000, 95933, 1), one_linear(1, 11));
-  c->entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE]    = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 1000, 277577), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 12, 21));
+  c->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]  = entry_one(one_quadratic(1000, 128595, 1), one_linear(14, 18));
+  c->entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE]    = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 1000, 383231), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 14, 29));
 }
 
 /**
@@ -879,10 +879,10 @@ cardano_uplc_builtin_costs_v3(void)
   fill_v1_v2_core(&c);
   fill_shared_extension(&c);
 
-  c.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER]    = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_subtracted(0, 1, 1));
-  c.entries[CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER]  = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_subtracted(0, 1, 1));
-  c.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER] = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
-  c.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER]       = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 549, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
+  c.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER]    = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 960, -900), two_subtracted(0, 1, 1));
+  c.entries[CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER]  = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 960, -900), two_subtracted(0, 1, 1));
+  c.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER] = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 960, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
+  c.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER]       = entry_two(two_const_above_quad(85848, 85848, 123203, 1716, 7305, 57, 960, -900), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 0, 1));
 
   return c;
 }

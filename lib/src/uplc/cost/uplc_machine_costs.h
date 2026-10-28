@@ -59,21 +59,22 @@ typedef struct cardano_uplc_machine_costs_t
     cardano_uplc_budget_t force;
     /** \brief Cost of one builtin step. */
     cardano_uplc_budget_t builtin;
-    /** \brief Cost of one constr step (sentinel under V1/V2). */
+    /** \brief Cost of one constr step. */
     cardano_uplc_budget_t constr;
-    /** \brief Cost of one case step (sentinel under V1/V2). */
+    /** \brief Cost of one case step. */
     cardano_uplc_budget_t case_step;
 } cardano_uplc_machine_costs_t;
 
 /**
  * \brief Returns the default machine-cost table for a language version.
  *
- * For V1 and V2 the constr and case costs are a prohibitive sentinel (those step
- * kinds are unavailable); for V3 they are the normal 100/16000. All other steps
- * are 100/16000 and startup is 100/100 in every version. An unrecognized version
- * is treated as V3.
+ * Every language version uses the same table: each step, including constr and
+ * case, costs 16000 CPU and 100 memory, and startup costs 100 CPU and 100 memory.
+ * V1 and V2 can reach constr and case through Plutus Core 1.1.0 from protocol
+ * version 11, so they price those steps like V3 and V4.
  *
- * \param[in] version The language version selecting the table.
+ * \param[in] version The language version. Every version, including an
+ *            unrecognized one, yields the same table.
  *
  * \return The machine-cost table by value.
  */

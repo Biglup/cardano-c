@@ -39,6 +39,8 @@
 #include "../../src/uplc/data/uplc_data.h"
 #include "../../src/uplc/machine/uplc_value.h"
 
+#include "cost_model_params_vectors.h"
+
 #include <cardano/common/bigint.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
@@ -63,6 +65,8 @@ static const cardano_uplc_step_kind_t ALL_KINDS[CARDANO_UPLC_STEP_KIND_COUNT] = 
   CARDANO_UPLC_STEP_KIND_CONSTR,
   CARDANO_UPLC_STEP_KIND_CASE
 };
+
+static const int64_t MARKER = 987654321;
 
 /* STATIC HELPERS ************************************************************/
 
@@ -164,36 +168,41 @@ TEST(cardano_uplc_cost_model, get_handles_null_and_invalid_kind)
   EXPECT_EQ(invalid_cost.mem, 0);
 }
 
-TEST(cardano_uplc_cost_model, v1_v2_constr_case_are_prohibitive)
+TEST(cardano_uplc_cost_model, v1_v2_constr_case_cost_a_normal_step)
 {
   // Arrange
   cardano_uplc_machine_costs_t v1 = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V1);
   cardano_uplc_machine_costs_t v2 = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V2);
 
   // Assert
-  EXPECT_EQ(v1.constr.cpu, 30000000000);
-  EXPECT_EQ(v1.constr.mem, 30000000000);
-  EXPECT_EQ(v1.case_step.cpu, 30000000000);
-  EXPECT_EQ(v1.case_step.mem, 30000000000);
+  EXPECT_EQ(v1.constr.cpu, 16000);
+  EXPECT_EQ(v1.constr.mem, 100);
+  EXPECT_EQ(v1.case_step.cpu, 16000);
+  EXPECT_EQ(v1.case_step.mem, 100);
 
-  EXPECT_EQ(v2.constr.cpu, 30000000000);
-  EXPECT_EQ(v2.constr.mem, 30000000000);
-  EXPECT_EQ(v2.case_step.cpu, 30000000000);
-  EXPECT_EQ(v2.case_step.mem, 30000000000);
-
-  // V1/V2 still charge the normal cost for the other steps.
-  EXPECT_EQ(v1.apply.cpu, 16000);
-  EXPECT_EQ(v1.apply.mem, 100);
+  EXPECT_EQ(v2.constr.cpu, 16000);
+  EXPECT_EQ(v2.constr.mem, 100);
+  EXPECT_EQ(v2.case_step.cpu, 16000);
+  EXPECT_EQ(v2.case_step.mem, 100);
 }
 
-TEST(cardano_uplc_cost_model, unknown_version_defaults_to_v3)
+TEST(cardano_uplc_cost_model, every_version_shares_the_same_step_costs)
 {
   // Arrange
-  cardano_uplc_machine_costs_t costs = cardano_uplc_machine_costs_default(static_cast<cardano_uplc_cost_model_version_t>(99));
+  const cardano_uplc_cost_model_version_t versions[] = {
+    CARDANO_UPLC_COST_MODEL_VERSION_V1,
+    CARDANO_UPLC_COST_MODEL_VERSION_V2,
+    CARDANO_UPLC_COST_MODEL_VERSION_V4,
+    static_cast<cardano_uplc_cost_model_version_t>(99)
+  };
+  const cardano_uplc_machine_costs_t expected = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
 
-  // Assert
-  EXPECT_EQ(costs.constr.cpu, 16000);
-  EXPECT_EQ(costs.case_step.cpu, 16000);
+  // Act / Assert
+  for (const cardano_uplc_cost_model_version_t version: versions)
+  {
+    const cardano_uplc_machine_costs_t costs = cardano_uplc_machine_costs_default(version);
+    EXPECT_EQ(std::memcmp(&costs, &expected, sizeof(expected)), 0) << "version " << version;
+  }
 }
 
 TEST(cardano_uplc_cost_model, init_zeroes_spent_and_sets_slippage)
@@ -428,20 +437,22 @@ TEST(cardano_uplc_cost_model, overflow_saturates_rather_than_wraps)
   EXPECT_TRUE(cardano_uplc_step_accumulator_is_exhausted(&acc, initial));
 }
 
-TEST(cardano_uplc_cost_model, sentinel_step_flush_saturates)
+TEST(cardano_uplc_cost_model, v1_constr_and_case_steps_flush_at_the_step_cost)
 {
-  // V1 constr cost is the 30000000000 sentinel; a single constr step under V1,
-  // multiplied through the flush, stays exact at that value.
+  // Arrange
   cardano_uplc_machine_costs_t    costs = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V1);
   cardano_uplc_step_accumulator_t acc;
   ASSERT_EQ(cardano_uplc_step_accumulator_init(&acc, &costs), CARDANO_SUCCESS);
 
+  // Act
   ASSERT_EQ(cardano_uplc_step_accumulator_step(&acc, CARDANO_UPLC_STEP_KIND_CONSTR), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_step_accumulator_step(&acc, CARDANO_UPLC_STEP_KIND_CASE), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_uplc_step_accumulator_flush(&acc), CARDANO_SUCCESS);
 
+  // Assert
   cardano_uplc_budget_t spent = cardano_uplc_step_accumulator_spent(&acc);
-  EXPECT_EQ(spent.cpu, 30000000000);
-  EXPECT_EQ(spent.mem, 30000000000);
+  EXPECT_EQ(spent.cpu, 2 * 16000);
+  EXPECT_EQ(spent.mem, 2 * 100);
 }
 
 TEST(cardano_uplc_cost_model, null_pointer_paths)
@@ -1468,1035 +1479,6 @@ TEST(cardano_uplc_value_ex_mem, null_is_zero)
 
 /* BUILTIN COSTS ************************************************************/
 
-// The mainnet 2024-09-29 V1 flat parameter vector that must reproduce
-// cardano_uplc_builtin_costs_v1, transcribed from aiken cost_model.rs.
-static const int64_t V1_DEFAULT_PARAMS[] = {
-  100788,
-  420,
-  1,
-  1,
-  1000,
-  173,
-  0,
-  1,
-  1000,
-  59957,
-  4,
-  1,
-  11183,
-  32,
-  201305,
-  8356,
-  4,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  100,
-  100,
-  16000,
-  100,
-  94375,
-  32,
-  132994,
-  32,
-  61462,
-  4,
-  72010,
-  178,
-  0,
-  1,
-  22151,
-  32,
-  91189,
-  769,
-  4,
-  2,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  1000,
-  42921,
-  4,
-  2,
-  24548,
-  29498,
-  38,
-  1,
-  898148,
-  27279,
-  1,
-  51775,
-  558,
-  1,
-  39184,
-  1000,
-  60594,
-  1,
-  141895,
-  32,
-  83150,
-  32,
-  15299,
-  32,
-  76049,
-  1,
-  13169,
-  4,
-  22100,
-  10,
-  28999,
-  74,
-  1,
-  28999,
-  74,
-  1,
-  43285,
-  552,
-  1,
-  44749,
-  541,
-  1,
-  33852,
-  32,
-  68246,
-  32,
-  72362,
-  32,
-  7243,
-  32,
-  7391,
-  32,
-  11546,
-  32,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  90434,
-  519,
-  0,
-  1,
-  74433,
-  32,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  270652,
-  22588,
-  4,
-  1457325,
-  64566,
-  4,
-  20467,
-  1,
-  4,
-  0,
-  141992,
-  32,
-  100788,
-  420,
-  1,
-  1,
-  81663,
-  32,
-  59498,
-  32,
-  20142,
-  32,
-  24588,
-  32,
-  20744,
-  32,
-  25933,
-  32,
-  24623,
-  32,
-  53384111,
-  14333,
-  10,
-  955506,
-  213312,
-  0,
-  2,
-  43053543,
-  10,
-  43574283,
-  26308,
-  10,
-  16000,
-  100,
-  16000,
-  100,
-  962335,
-  18,
-  2780678,
-  6,
-  442008,
-  1,
-  52538055,
-  3756,
-  18,
-  267929,
-  18,
-  76433006,
-  8868,
-  18,
-  52948122,
-  18,
-  1995836,
-  36,
-  3227919,
-  12,
-  901022,
-  1,
-  166917843,
-  4307,
-  36,
-  284546,
-  36,
-  158221314,
-  26549,
-  36,
-  74698472,
-  36,
-  333849714,
-  1,
-  254006273,
-  72,
-  2174038,
-  72,
-  2261318,
-  64571,
-  4,
-  207616,
-  8310,
-  4,
-  1293828,
-  28716,
-  63,
-  0,
-  1,
-  1006041,
-  43623,
-  251,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  107878,
-  680,
-  0,
-  1,
-  95336,
-  1,
-  281145,
-  18848,
-  0,
-  1,
-  180194,
-  159,
-  1,
-  1,
-  158519,
-  8942,
-  0,
-  1,
-  159378,
-  8813,
-  0,
-  1,
-  107490,
-  3298,
-  1,
-  106057,
-  655,
-  1,
-  1964219,
-  24520,
-  3,
-  607153,
-  231697,
-  53144,
-  0,
-  1,
-  116711,
-  1957,
-  4,
-  231883,
-  10,
-  1000,
-  24838,
-  7,
-  1,
-  232010,
-  32,
-  321837444,
-  25087669,
-  18,
-  617887431,
-  67302824,
-  36,
-  356924,
-  18413,
-  45,
-  21,
-  219951,
-  9444,
-  1,
-  1000,
-  172116,
-  183150,
-  6,
-  24,
-  21,
-  213283,
-  618401,
-  1998,
-  28258,
-  1,
-  1000,
-  38159,
-  2,
-  22,
-  1000,
-  95933,
-  1,
-  1,
-  11,
-  1000,
-  277577,
-  12,
-  21
-};
-
-// The mainnet 2024-09-29 V2 flat parameter vector that must reproduce
-// cardano_uplc_builtin_costs_v2.
-static const int64_t V2_DEFAULT_PARAMS[] = {
-  100788,
-  420,
-  1,
-  1,
-  1000,
-  173,
-  0,
-  1,
-  1000,
-  59957,
-  4,
-  1,
-  11183,
-  32,
-  201305,
-  8356,
-  4,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  100,
-  100,
-  16000,
-  100,
-  94375,
-  32,
-  132994,
-  32,
-  61462,
-  4,
-  72010,
-  178,
-  0,
-  1,
-  22151,
-  32,
-  91189,
-  769,
-  4,
-  2,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  1000,
-  42921,
-  4,
-  2,
-  24548,
-  29498,
-  38,
-  1,
-  898148,
-  27279,
-  1,
-  51775,
-  558,
-  1,
-  39184,
-  1000,
-  60594,
-  1,
-  141895,
-  32,
-  83150,
-  32,
-  15299,
-  32,
-  76049,
-  1,
-  13169,
-  4,
-  22100,
-  10,
-  28999,
-  74,
-  1,
-  28999,
-  74,
-  1,
-  43285,
-  552,
-  1,
-  44749,
-  541,
-  1,
-  33852,
-  32,
-  68246,
-  32,
-  72362,
-  32,
-  7243,
-  32,
-  7391,
-  32,
-  11546,
-  32,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  90434,
-  519,
-  0,
-  1,
-  74433,
-  32,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  85848,
-  228465,
-  122,
-  0,
-  1,
-  1,
-  955506,
-  213312,
-  0,
-  2,
-  270652,
-  22588,
-  4,
-  1457325,
-  64566,
-  4,
-  20467,
-  1,
-  4,
-  0,
-  141992,
-  32,
-  100788,
-  420,
-  1,
-  1,
-  81663,
-  32,
-  59498,
-  32,
-  20142,
-  32,
-  24588,
-  32,
-  20744,
-  32,
-  25933,
-  32,
-  24623,
-  32,
-  43053543,
-  10,
-  53384111,
-  14333,
-  10,
-  43574283,
-  26308,
-  10,
-  1293828,
-  28716,
-  63,
-  0,
-  1,
-  1006041,
-  43623,
-  251,
-  0,
-  1,
-  16000,
-  100,
-  16000,
-  100,
-  962335,
-  18,
-  2780678,
-  6,
-  442008,
-  1,
-  52538055,
-  3756,
-  18,
-  267929,
-  18,
-  76433006,
-  8868,
-  18,
-  52948122,
-  18,
-  1995836,
-  36,
-  3227919,
-  12,
-  901022,
-  1,
-  166917843,
-  4307,
-  36,
-  284546,
-  36,
-  158221314,
-  26549,
-  36,
-  74698472,
-  36,
-  333849714,
-  1,
-  254006273,
-  72,
-  2174038,
-  72,
-  2261318,
-  64571,
-  4,
-  207616,
-  8310,
-  4,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  107878,
-  680,
-  0,
-  1,
-  95336,
-  1,
-  281145,
-  18848,
-  0,
-  1,
-  180194,
-  159,
-  1,
-  1,
-  158519,
-  8942,
-  0,
-  1,
-  159378,
-  8813,
-  0,
-  1,
-  107490,
-  3298,
-  1,
-  106057,
-  655,
-  1,
-  1964219,
-  24520,
-  3,
-  607153,
-  231697,
-  53144,
-  0,
-  1,
-  116711,
-  1957,
-  4,
-  231883,
-  10,
-  1000,
-  24838,
-  7,
-  1,
-  232010,
-  32,
-  321837444,
-  25087669,
-  18,
-  617887431,
-  67302824,
-  36,
-  356924,
-  18413,
-  45,
-  21,
-  219951,
-  9444,
-  1,
-  1000,
-  172116,
-  183150,
-  6,
-  24,
-  21,
-  213283,
-  618401,
-  1998,
-  28258,
-  1,
-  1000,
-  38159,
-  2,
-  22,
-  1000,
-  95933,
-  1,
-  1,
-  11,
-  1000,
-  277577,
-  12,
-  21
-};
-
-// The preprod 2024-11-22 V3 flat parameter vector that must reproduce
-// cardano_uplc_builtin_costs_v3.
-static const int64_t V3_DEFAULT_PARAMS[] = {
-  100788,
-  420,
-  1,
-  1,
-  1000,
-  173,
-  0,
-  1,
-  1000,
-  59957,
-  4,
-  1,
-  11183,
-  32,
-  201305,
-  8356,
-  4,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  16000,
-  100,
-  100,
-  100,
-  16000,
-  100,
-  94375,
-  32,
-  132994,
-  32,
-  61462,
-  4,
-  72010,
-  178,
-  0,
-  1,
-  22151,
-  32,
-  91189,
-  769,
-  4,
-  2,
-  85848,
-  123203,
-  7305,
-  -900,
-  1716,
-  549,
-  57,
-  85848,
-  0,
-  1,
-  1,
-  1000,
-  42921,
-  4,
-  2,
-  24548,
-  29498,
-  38,
-  1,
-  898148,
-  27279,
-  1,
-  51775,
-  558,
-  1,
-  39184,
-  1000,
-  60594,
-  1,
-  141895,
-  32,
-  83150,
-  32,
-  15299,
-  32,
-  76049,
-  1,
-  13169,
-  4,
-  22100,
-  10,
-  28999,
-  74,
-  1,
-  28999,
-  74,
-  1,
-  43285,
-  552,
-  1,
-  44749,
-  541,
-  1,
-  33852,
-  32,
-  68246,
-  32,
-  72362,
-  32,
-  7243,
-  32,
-  7391,
-  32,
-  11546,
-  32,
-  85848,
-  123203,
-  7305,
-  -900,
-  1716,
-  549,
-  57,
-  85848,
-  0,
-  1,
-  90434,
-  519,
-  0,
-  1,
-  74433,
-  32,
-  85848,
-  123203,
-  7305,
-  -900,
-  1716,
-  549,
-  57,
-  85848,
-  0,
-  1,
-  1,
-  85848,
-  123203,
-  7305,
-  -900,
-  1716,
-  549,
-  57,
-  85848,
-  0,
-  1,
-  955506,
-  213312,
-  0,
-  2,
-  270652,
-  22588,
-  4,
-  1457325,
-  64566,
-  4,
-  20467,
-  1,
-  4,
-  0,
-  141992,
-  32,
-  100788,
-  420,
-  1,
-  1,
-  81663,
-  32,
-  59498,
-  32,
-  20142,
-  32,
-  24588,
-  32,
-  20744,
-  32,
-  25933,
-  32,
-  24623,
-  32,
-  43053543,
-  10,
-  53384111,
-  14333,
-  10,
-  43574283,
-  26308,
-  10,
-  16000,
-  100,
-  16000,
-  100,
-  962335,
-  18,
-  2780678,
-  6,
-  442008,
-  1,
-  52538055,
-  3756,
-  18,
-  267929,
-  18,
-  76433006,
-  8868,
-  18,
-  52948122,
-  18,
-  1995836,
-  36,
-  3227919,
-  12,
-  901022,
-  1,
-  166917843,
-  4307,
-  36,
-  284546,
-  36,
-  158221314,
-  26549,
-  36,
-  74698472,
-  36,
-  333849714,
-  1,
-  254006273,
-  72,
-  2174038,
-  72,
-  2261318,
-  64571,
-  4,
-  207616,
-  8310,
-  4,
-  1293828,
-  28716,
-  63,
-  0,
-  1,
-  1006041,
-  43623,
-  251,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  100181,
-  726,
-  719,
-  0,
-  1,
-  107878,
-  680,
-  0,
-  1,
-  95336,
-  1,
-  281145,
-  18848,
-  0,
-  1,
-  180194,
-  159,
-  1,
-  1,
-  158519,
-  8942,
-  0,
-  1,
-  159378,
-  8813,
-  0,
-  1,
-  107490,
-  3298,
-  1,
-  106057,
-  655,
-  1,
-  1964219,
-  24520,
-  3,
-  607153,
-  231697,
-  53144,
-  0,
-  1,
-  116711,
-  1957,
-  4,
-  231883,
-  10,
-  1000,
-  24838,
-  7,
-  1,
-  232010,
-  32,
-  321837444,
-  25087669,
-  18,
-  617887431,
-  67302824,
-  36,
-  356924,
-  18413,
-  45,
-  21,
-  219951,
-  9444,
-  1,
-  1000,
-  172116,
-  183150,
-  6,
-  24,
-  21,
-  213283,
-  618401,
-  1998,
-  28258,
-  1,
-  1000,
-  38159,
-  2,
-  22,
-  1000,
-  95933,
-  1,
-  1,
-  11,
-  1000,
-  277577,
-  12,
-  21
-};
-
 // Builds a constant integer value in an arena, for builtin-cost dispatch tests.
 static cardano_uplc_value_t*
 make_int_value(cardano_uplc_arena_t* arena, int64_t n)
@@ -2642,6 +1624,54 @@ TEST(cardano_uplc_cost_model_from_params, v3_extra_params_are_ignored)
   EXPECT_EQ(std::memcmp(&with_extra, &exact, sizeof(exact)), 0);
 }
 
+TEST(cardano_uplc_cost_model_from_params, defaults_equal_the_reference_cost_models_d_and_e)
+{
+  const struct
+  {
+      cardano_uplc_cost_model_version_t version;
+      const int64_t*                    params;
+      size_t                            count;
+      cardano_uplc_builtin_semantics_t  semantics;
+      cardano_uplc_builtin_costs_t      defaults;
+  } cases[] = {
+    { CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_D, cardano_uplc_builtin_costs_v1() },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_F, cardano_uplc_builtin_costs_v1() },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2, CARDANO_UPLC_SEMANTICS_F, cardano_uplc_builtin_costs_v2() },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_E, cardano_uplc_builtin_costs_v3() },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_G, cardano_uplc_builtin_costs_v3() },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4, CARDANO_UPLC_SEMANTICS_G, cardano_uplc_builtin_costs_v3() }
+  };
+
+  for (const auto& c: cases)
+  {
+    cardano_uplc_cost_model_t    model;
+    cardano_uplc_builtin_costs_t expected = c.defaults;
+
+    cardano_uplc_builtin_costs_select_division_shapes(&expected, c.semantics);
+
+    ASSERT_EQ(cardano_uplc_cost_model_from_params(c.version, c.params, c.count, c.semantics, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(std::memcmp(&model.builtins, &expected, sizeof(expected)), 0) << "version " << c.version << " semantics " << c.semantics;
+  }
+}
+
+TEST(cardano_uplc_cost_model_from_params, v4_reads_the_v3_parameter_order)
+{
+  std::vector<int64_t> params(V3_DEFAULT_PARAMS, V3_DEFAULT_PARAMS + CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3);
+
+  for (size_t i = 0U; i < params.size(); ++i)
+  {
+    params[i] = (int64_t)(1000U + i);
+  }
+
+  cardano_uplc_cost_model_t v3;
+  cardano_uplc_cost_model_t v4;
+
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params.data(), params.size(), CARDANO_UPLC_SEMANTICS_G, &v3), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V4, params.data(), params.size(), CARDANO_UPLC_SEMANTICS_G, &v4), CARDANO_SUCCESS);
+
+  EXPECT_EQ(std::memcmp(&v3, &v4, sizeof(v3)), 0);
+}
+
 TEST(cardano_uplc_cost_model_from_params, v3_prices_exp_mod_integer_from_params)
 {
   int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
@@ -2745,11 +1775,11 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_c_charges_the
 {
   cardano_uplc_builtin_costs_t c = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_C);
 
-  // above: constant 85848; below: 123203 + 1716*5 + 7305*3 + 57*25 + 549*15 - 900*9 = 155258
+  // above: constant 85848; below: 123203 + 1716*5 + 7305*3 + 57*25 + 960*15 - 900*9 = 161423
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 85848);
-  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 85848);
-  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
 }
@@ -2791,17 +1821,17 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_reads_divid
 {
   cardano_uplc_builtin_costs_t e = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_E);
 
-  // quadratic at (max, min) = (5, 3): 155258 on both sides
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 155258);
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 155258);
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 155258);
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 155258);
+  // quadratic at (max, min) = (5, 3): 161423 on both sides
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 161423);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 161423);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 161423);
 
   // quotient and remainder keep the constant above the diagonal
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
-  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 155258);
+  EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 161423);
 }
 
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_keeps_the_quadratic_coefficients)
@@ -3208,7 +2238,7 @@ TEST(cardano_uplc_builtin_cost, v3_insert_coin_arity_four_linear_in_value_depth)
 
   // insertCoin costs cpu/mem linearly in the value-max-depth of the value arg
   // (args[3]). With non-value placeholder args the depth is 0, so cpu and mem
-  // collapse to their intercepts: cpu 356924, mem 45.
+  // collapse to their intercepts: cpu 390841, mem 47.
   const cardano_uplc_value_t* args[4];
   for (size_t i = 0U; i < 4U; ++i)
   {
@@ -3217,8 +2247,8 @@ TEST(cardano_uplc_builtin_cost, v3_insert_coin_arity_four_linear_in_value_depth)
 
   cardano_uplc_budget_t budget = cardano_uplc_builtin_cost(&costs, CARDANO_UPLC_BUILTIN_INSERT_COIN, args, 4U, false);
 
-  EXPECT_EQ(budget.cpu, 356924);
-  EXPECT_EQ(budget.mem, 45);
+  EXPECT_EQ(budget.cpu, 390841);
+  EXPECT_EQ(budget.mem, 47);
 
   cardano_uplc_arena_free(&arena);
 }
@@ -3357,4 +2387,250 @@ TEST(cardano_uplc_semantics_bounds_byte_string_arguments, per_variant)
   EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_F));
   EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_G));
   EXPECT_FALSE(cardano_uplc_semantics_bounds_byte_string_arguments(static_cast<cardano_uplc_builtin_semantics_t>(99)));
+}
+
+/* PARAMETER LAYOUT **********************************************************/
+
+// Builds the cost model from a default vector with one parameter replaced.
+static cardano_error_t
+model_with_param(
+  cardano_uplc_cost_model_version_t version,
+  const int64_t*                    defaults,
+  size_t                            count,
+  size_t                            index,
+  int64_t                           value,
+  cardano_uplc_cost_model_t*        model)
+{
+  std::vector<int64_t> params(defaults, defaults + count);
+  params[index] = value;
+
+  return cardano_uplc_cost_model_from_params(version, params.data(), params.size(), CARDANO_UPLC_SEMANTICS_C, model);
+}
+
+// Builds the cost model of an unmodified default vector.
+static cardano_error_t
+default_model(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t count, cardano_uplc_cost_model_t* model)
+{
+  return cardano_uplc_cost_model_from_params(version, defaults, count, CARDANO_UPLC_SEMANTICS_C, model);
+}
+
+// Each language's list is ordered as the upstream ParamName enumeration and grows
+// by appending batches; the first and last parameter of every batch must land in
+// the field the parameter name designates, and batch 7 is not read.
+TEST(cardano_uplc_cost_model_from_params, v1_batch_boundaries)
+{
+  const cardano_uplc_cost_model_version_t v = CARDANO_UPLC_COST_MODEL_VERSION_V1;
+  const size_t                            n = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
+  cardano_uplc_cost_model_t               model;
+  cardano_uplc_cost_model_t               base;
+
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 165U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE].mem.three.params.constant, MARKER);
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 166U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SERIALISE_DATA].cpu.one.params.linear.intercept, MARKER);
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 331U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
+
+  ASSERT_EQ(default_model(v, V1_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, PARAM_COUNT_V1_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+}
+
+TEST(cardano_uplc_cost_model_from_params, v2_batch_boundaries)
+{
+  const cardano_uplc_cost_model_version_t v = CARDANO_UPLC_COST_MODEL_VERSION_V2;
+  const size_t                            n = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
+  cardano_uplc_cost_model_t               model;
+  cardano_uplc_cost_model_t               base;
+
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 174U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE].mem.three.params.constant, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 175U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING].cpu.three.params.quadratic_in_z.coeff_0, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 184U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.slope, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 185U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.machine.constr.cpu, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 278U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_RIPEMD_160].mem.one.params.constant, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 279U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00, MARKER);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 331U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
+
+  ASSERT_EQ(default_model(v, V2_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, PARAM_COUNT_V2_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
+  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+}
+
+TEST(cardano_uplc_cost_model_from_params, v3_and_v4_batch_boundaries)
+{
+  const cardano_uplc_cost_model_version_t versions[2] = { CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_COST_MODEL_VERSION_V4 };
+  const size_t                            n           = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3;
+
+  for (const cardano_uplc_cost_model_version_t v: versions)
+  {
+    cardano_uplc_cost_model_t model;
+    cardano_uplc_cost_model_t base;
+
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 250U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER].mem.two.params.linear.slope, MARKER);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 251U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept, MARKER);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 296U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_RIPEMD_160].mem.one.params.constant, MARKER);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 297U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00, MARKER);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 349U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
+
+    ASSERT_EQ(default_model(v, V3_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, PARAM_COUNT_V3_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+    ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  }
+}
+
+// Asserts that each parameter before the batch-7 run is read into a field of its
+// own: replacing it changes the model, and no two parameters change the same byte.
+static void
+expect_each_parameter_sets_its_own_field(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t read_count, size_t count)
+{
+  cardano_uplc_cost_model_t base;
+  ASSERT_EQ(default_model(version, defaults, count, &base), CARDANO_SUCCESS);
+
+  std::vector<bool> claimed(sizeof(base), false);
+
+  for (size_t i = 0U; i < read_count; ++i)
+  {
+    cardano_uplc_cost_model_t model;
+    ASSERT_EQ(model_with_param(version, defaults, count, i, MARKER, &model), CARDANO_SUCCESS);
+
+    const unsigned char* a    = reinterpret_cast<const unsigned char*>(&model);
+    const unsigned char* b    = reinterpret_cast<const unsigned char*>(&base);
+    bool                 read = false;
+
+    for (size_t j = 0U; j < sizeof(base); ++j)
+    {
+      if (a[j] != b[j])
+      {
+        EXPECT_FALSE(claimed[j]) << "parameter " << i << " overlaps an earlier parameter";
+        claimed[j] = true;
+        read       = true;
+      }
+    }
+
+    EXPECT_TRUE(read) << "parameter " << i << " is not read";
+  }
+}
+
+TEST(cardano_uplc_cost_model_from_params, every_parameter_sets_its_own_field)
+{
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, PARAM_COUNT_V1_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, PARAM_COUNT_V2_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4);
+}
+
+TEST(cardano_uplc_cost_model_from_params, default_params_yield_the_default_machine_costs)
+{
+  const struct
+  {
+      cardano_uplc_cost_model_version_t version;
+      const int64_t*                    params;
+      size_t                            count;
+  } cases[] = {
+    { CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4 }
+  };
+
+  for (const auto& c: cases)
+  {
+    cardano_uplc_cost_model_t          model;
+    const cardano_uplc_machine_costs_t expected = cardano_uplc_machine_costs_default(c.version);
+
+    ASSERT_EQ(default_model(c.version, c.params, c.count, &model), CARDANO_SUCCESS);
+    EXPECT_EQ(std::memcmp(&model.machine, &expected, sizeof(expected)), 0) << "version " << c.version;
+  }
+}
+
+/* LEDGER LIST LENGTHS *******************************************************/
+
+// A node that predates batch 7 publishes 332 parameters for V1 and V2 and 350 for
+// V3; the Dijkstra genesis V4 list stops after the 251 parameters of the original
+// V3 list.
+TEST(cardano_uplc_cost_model_from_params, lists_without_batch_7_match_the_full_lists)
+{
+  const struct
+  {
+      cardano_uplc_cost_model_version_t version;
+      const int64_t*                    params;
+      size_t                            short_count;
+      size_t                            count;
+  } cases[] = {
+    { CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, PARAM_COUNT_V1_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, PARAM_COUNT_V2_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 },
+    { CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4 }
+  };
+
+  for (const auto& c: cases)
+  {
+    cardano_uplc_cost_model_t shorter;
+    cardano_uplc_cost_model_t full;
+
+    ASSERT_EQ(cardano_uplc_cost_model_from_params(c.version, c.params, c.short_count, CARDANO_UPLC_SEMANTICS_G, &shorter), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_uplc_cost_model_from_params(c.version, c.params, c.count, CARDANO_UPLC_SEMANTICS_G, &full), CARDANO_SUCCESS);
+
+    EXPECT_EQ(std::memcmp(&shorter, &full, sizeof(full)), 0) << "version " << c.version;
+  }
+}
+
+TEST(cardano_uplc_cost_model_from_params, v4_list_of_251_saturates_the_missing_parameters)
+{
+  cardano_uplc_cost_model_t shorter;
+  cardano_uplc_cost_model_t full;
+
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, PARAM_COUNT_V4_DIJKSTRA_GENESIS, CARDANO_UPLC_SEMANTICS_G, &shorter), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4, CARDANO_UPLC_SEMANTICS_G, &full), CARDANO_SUCCESS);
+
+  const cardano_uplc_builtin_cost_t* entries = shorter.builtins.entries;
+
+  EXPECT_EQ(std::memcmp(&shorter.machine, &full.machine, sizeof(full.machine)), 0);
+  EXPECT_EQ(std::memcmp(&entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER], &full.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER], sizeof(entries[0])), 0);
+  EXPECT_EQ(std::memcmp(&entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER], &full.builtins.entries[CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER], sizeof(entries[0])), 0);
+
+  EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_AND_BYTE_STRING].cpu.three.params.linear_in_y_and_z.intercept, INT64_MAX);
+  EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_RIPEMD_160].mem.one.params.constant, INT64_MAX);
+  EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER].cpu.three.params.exp_mod.coeff_00, INT64_MAX);
+  EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, INT64_MAX);
+  EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&entries[CARDANO_UPLC_BUILTIN_INDEX_ARRAY].cpu.two, 1, 1), INT64_MAX);
+}
+
+TEST(cardano_uplc_cost_model_from_params, v4_extra_params_are_ignored)
+{
+  std::vector<int64_t> longer(V3_DEFAULT_PARAMS, V3_DEFAULT_PARAMS + CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4);
+  longer.push_back(111);
+  longer.push_back(222);
+
+  cardano_uplc_cost_model_t with_extra;
+  cardano_uplc_cost_model_t exact;
+
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V4, longer.data(), longer.size(), CARDANO_UPLC_SEMANTICS_G, &with_extra), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4, CARDANO_UPLC_SEMANTICS_G, &exact), CARDANO_SUCCESS);
+
+  EXPECT_EQ(std::memcmp(&with_extra, &exact, sizeof(exact)), 0);
 }
