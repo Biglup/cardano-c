@@ -52,6 +52,29 @@
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint64_t CASE_ON_BUILTINS_PROTOCOL_VERSION = 11U;
 
+/**
+ * \brief The protocol major version (Dijkstra) from which \c case may scrutinise
+ *        a Data constant
+ *        (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs,
+ *        \c defaultCaserBuiltinFor).
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint64_t CASE_ON_DATA_PROTOCOL_VERSION = 12U;
+
+/**
+ * \brief The major component of the Plutus Core program version (1.2.0) from which
+ *        \c case may scrutinise a Data constant.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint32_t CASE_ON_DATA_PLC_VERSION_MAJOR = 1U;
+
+/**
+ * \brief The minor component of the Plutus Core program version (1.2.0) from which
+ *        \c case may scrutinise a Data constant.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint32_t CASE_ON_DATA_PLC_VERSION_MINOR = 2U;
+
 /* MACHINE LOOP **************************************************************/
 
 /**
@@ -105,7 +128,8 @@ typedef struct
  * and the builtin semantics variant; the step loop reads its machine-step costs
  * through the accumulator, and the saturated-builtin path reads \c cost_model.builtins
  * and \c semantics to charge builtin costs. \c protocol_major decides whether
- * \c case may scrutinise a constant.
+ * \c case may scrutinise a constant, and \c case_on_data whether that constant may
+ * be a Data value.
  */
 typedef struct
 {
@@ -115,6 +139,7 @@ typedef struct
     cardano_uplc_cost_model_t        cost_model;
     cardano_uplc_builtin_semantics_t semantics;
     uint64_t                         protocol_major;
+    bool                             case_on_data;
 } machine_t;
 
 /**
@@ -885,10 +910,14 @@ constant_value(
  * branch 0 of a single branch; an integer selects the branch at its non-negative
  * in-range index; a non-empty list selects branch 0 and pushes its head then
  * tail; an empty list selects branch 1; a pair selects branch 0 and pushes its
- * first then second component. Any other constant kind, or an out-of-range or
- * missing branch, is a script error. Before protocol version 11 casing on any
- * constant is a script error, as the ledger's unavailable caser makes it
- * (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs, \c defaultCaserBuiltinFor).
+ * first then second component; a Data Constr selects the branch at its tag and
+ * pushes its fields as one list of data, while any other Data value is a script
+ * error. Any other constant kind, or an out-of-range or missing branch, is a
+ * script error. Before protocol version 11 casing on any constant is a script
+ * error, as the ledger's unavailable caser makes it, and casing on Data is a
+ * script error unless \c machine->case_on_data is set
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs, \c defaultCaserBuiltinFor;
+ * plutus-core/plutus-core/src/PlutusCore/Default/Universe.hs, \c caseBuiltinData).
  *
  * \param[in,out] machine The machine context.
  * \param[in] frame The cases frame holding the branches and environment.
@@ -1069,9 +1098,54 @@ case_on_constant(
       break;
     }
 
+    case CARDANO_UPLC_TYPE_DATA:
+    {
+      const cardano_uplc_data_t*  data = constant->as.data;
+      const cardano_uplc_value_t* fields[1];
+      cardano_uplc_constant_t*    fields_constant = NULL;
+
+      if (!machine->case_on_data || (data->kind != CARDANO_UPLC_DATA_KIND_CONSTR))
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
+      if (data->as.constr.tag >= (uint64_t)frame->as.cases.branch_count)
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
+      *host_error = cardano_uplc_int_data_list_from_nodes(
+        machine->arena,
+        data->as.constr.fields,
+        data->as.constr.count,
+        &fields_constant);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
+      *host_error = constant_value(machine, fields_constant, &fields[0]);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
+      *host_error = transfer_arg_stack(machine, fields, (size_t)1, frame->as.cases.ctx, &branch_ctx);
+
+      if (*host_error != CARDANO_SUCCESS)
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
+      tag = (size_t)data->as.constr.tag;
+
+      break;
+    }
+
     case CARDANO_UPLC_TYPE_BYTE_STRING:
     case CARDANO_UPLC_TYPE_STRING:
-    case CARDANO_UPLC_TYPE_DATA:
     case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
     case CARDANO_UPLC_TYPE_BLS_G1:
@@ -1779,6 +1853,35 @@ discharge_value(
 /* EVALUATE *****************************************************************/
 
 /**
+ * \brief Reports whether \c case may scrutinise a Data constant.
+ *
+ * Mirrors the ledger's caser choice: casing on Data needs protocol version 12 or
+ * later and a program version of 1.2.0 or later; below either bound the caser
+ * without Data applies
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs, \c defaultCaserBuiltinFor).
+ *
+ * \param[in] protocol_major The major protocol version the program is evaluated under.
+ * \param[in] program The program being evaluated.
+ *
+ * \return \c true when casing on Data is available, \c false otherwise.
+ */
+static bool
+case_on_data_available(uint64_t protocol_major, const cardano_uplc_program_t* program)
+{
+  if (protocol_major < CASE_ON_DATA_PROTOCOL_VERSION)
+  {
+    return false;
+  }
+
+  if (program->version_major != CASE_ON_DATA_PLC_VERSION_MAJOR)
+  {
+    return program->version_major > CASE_ON_DATA_PLC_VERSION_MAJOR;
+  }
+
+  return program->version_minor >= CASE_ON_DATA_PLC_VERSION_MINOR;
+}
+
+/**
  * \brief Maps a machine version to the matching cost-model version.
  *
  * \param[in] version The machine version to map.
@@ -1913,6 +2016,7 @@ cardano_uplc_int_evaluate_with_costs(
   machine.cost_model     = *cost_model;
   machine.semantics      = semantics;
   machine.protocol_major = protocol_major;
+  machine.case_on_data   = case_on_data_available(protocol_major, program);
 
   error = cardano_uplc_step_accumulator_init(&machine.acc, &machine.cost_model.machine);
 

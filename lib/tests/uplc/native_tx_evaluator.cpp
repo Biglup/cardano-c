@@ -73,6 +73,7 @@
 #include <cardano/witness_set/witness_set.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/syntax/text_parser.h"
 
 #include <gmock/gmock.h>
 
@@ -318,6 +319,39 @@ build_divide_below_diagonal_v3_script()
   program.version_minor = 1U;
   program.version_patch = 0U;
   program.term          = lambda;
+
+  cardano_buffer_t* cbor = nullptr;
+  EXPECT_EQ(cardano_uplc_program_to_cbor(&program, &cbor), CARDANO_SUCCESS);
+
+  cardano_plutus_v3_script_t* script = nullptr;
+  EXPECT_EQ(cardano_plutus_v3_script_new_bytes(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), &script), CARDANO_SUCCESS);
+
+  cardano_buffer_unref(&cbor);
+  cardano_uplc_arena_free(&arena);
+
+  return script;
+}
+
+/**
+ * \brief Builds a V3 script of program version 1.\p version_minor.0 whose body
+ *        cases on the Data constant (Constr 0 []) and returns unit from its only
+ *        branch, so it succeeds only where casing on Data is available.
+ */
+static cardano_plutus_v3_script_t*
+build_case_on_data_v3_script(uint32_t version_minor)
+{
+  static const char SOURCE[] =
+    "(program 1.1.0 (lam ctx (case (con data (Constr 0 [])) (lam fields (con unit ())))))";
+
+  cardano_uplc_arena_t* arena = nullptr;
+  EXPECT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
+
+  const cardano_uplc_program_t* parsed = nullptr;
+  size_t                        offset = 0U;
+  EXPECT_EQ(cardano_uplc_parse_program(arena, SOURCE, sizeof(SOURCE) - 1U, &parsed, &offset), CARDANO_SUCCESS);
+
+  cardano_uplc_program_t program = *parsed;
+  program.version_minor          = version_minor;
 
   cardano_buffer_t* cbor = nullptr;
   EXPECT_EQ(cardano_uplc_program_to_cbor(&program, &cbor), CARDANO_SUCCESS);
@@ -1371,6 +1405,34 @@ TEST(cardano_tx_evaluator_native, gatesPlutusCoreOneTwoZeroForV3ByProtocolVersio
 
   expect_script_failure(tx, utxos, 11U);
   expect_single_redeemer_ok(tx, utxos, 12U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, casesOnDataFromPlutusCoreOneTwoZeroAtDijkstra)
+{
+  cardano_plutus_v3_script_t* script = build_case_on_data_v3_script(2U);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_script_failure(tx, utxos, 11U);
+  expect_single_redeemer_ok(tx, utxos, 12U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, rejectsCaseOnDataBelowPlutusCoreOneTwoZero)
+{
+  cardano_plutus_v3_script_t* script = build_case_on_data_v3_script(1U);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_script_failure(tx, utxos, 11U);
+  expect_script_failure(tx, utxos, 12U);
 
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);

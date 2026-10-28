@@ -4332,25 +4332,11 @@ body_b_data(
   return (*host_error == CARDANO_SUCCESS) ? CARDANO_UPLC_BUILTIN_OUTCOME_OK : CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
 }
 
-/**
- * \brief Builds a proto-list of data constants from an arena data node array.
- *
- * Each data node is wrapped in a fresh data constant; the result is a list constant
- * carrying element type \c data. Used by the deconstructors that surface a Data List
- * or the fields of a Data Constr.
- *
- * \param[in] arena The arena the result is allocated from.
- * \param[in] nodes The data nodes to expose, or NULL when \p count is 0.
- * \param[in] count The number of nodes.
- * \param[out] out On success, the list constant; left untouched on failure.
- *
- * \return \ref CARDANO_SUCCESS on success or a propagated allocation error.
- */
-static cardano_error_t
-proto_list_from_data_nodes(
+cardano_error_t
+cardano_uplc_int_data_list_from_nodes(
   struct cardano_uplc_arena_t*      arena,
   const cardano_uplc_data_t* const* nodes,
-  size_t                            count,
+  const size_t                      count,
   cardano_uplc_constant_t**         out)
 {
   cardano_uplc_type_t*            data_type = NULL;
@@ -4443,7 +4429,7 @@ body_un_constr_data(
 
   if (*host_error == CARDANO_SUCCESS)
   {
-    *host_error = proto_list_from_data_nodes(arena, data->as.constr.fields, data->as.constr.count, &list_const);
+    *host_error = cardano_uplc_int_data_list_from_nodes(arena, data->as.constr.fields, data->as.constr.count, &list_const);
   }
 
   if (*host_error == CARDANO_SUCCESS)
@@ -4601,7 +4587,7 @@ body_un_list_data(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  *host_error = proto_list_from_data_nodes(arena, data->as.list.items, data->as.list.count, &list_const);
+  *host_error = cardano_uplc_int_data_list_from_nodes(arena, data->as.list.items, data->as.list.count, &list_const);
 
   if (*host_error == CARDANO_SUCCESS)
   {

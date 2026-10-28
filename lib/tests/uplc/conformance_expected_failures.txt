@@ -6,7 +6,3 @@
 # when an unlisted case fails. Categories: semantics-variant, builtin-bounds,
 # division-costing, cost-model, flat-decoding, version-gating, batch7-builtins,
 # case-on-data, text-parser, other.
-term/constant-case/data/data-01/data-01.uplc case-on-data
-term/constant-case/data/data-01/data-01.flat case-on-data
-term/constant-case/data/data-02/data-02.uplc case-on-data
-term/constant-case/data/data-02/data-02.flat case-on-data
