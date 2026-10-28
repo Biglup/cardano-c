@@ -961,6 +961,34 @@ expect_single_redeemer_ok(cardano_transaction_t* tx, cardano_utxo_list_t* utxos,
   cardano_tx_evaluator_unref(&evaluator);
 }
 
+/**
+ * \brief Asserts that \p list holds one redeemer of \p tag at \p index that
+ *        consumed exactly \p cpu steps and \p mem memory units.
+ */
+static void
+expect_single_evaluated(
+  cardano_redeemer_list_t* list,
+  cardano_redeemer_tag_t   tag,
+  uint64_t                 index,
+  uint64_t                 cpu,
+  uint64_t                 mem)
+{
+  ASSERT_NE(list, nullptr);
+  ASSERT_EQ(cardano_redeemer_list_get_length(list), 1U);
+
+  cardano_redeemer_t* redeemer = nullptr;
+  EXPECT_EQ(cardano_redeemer_list_get(list, 0U, &redeemer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), tag);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), index);
+
+  cardano_ex_units_t* units = cardano_redeemer_get_ex_units(redeemer);
+  EXPECT_EQ(cardano_ex_units_get_cpu_steps(units), cpu);
+  EXPECT_EQ(cardano_ex_units_get_memory(units), mem);
+
+  cardano_ex_units_unref(&units);
+  cardano_redeemer_unref(&redeemer);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_tx_evaluator_new_native, rejectsNullArguments)
@@ -2082,6 +2110,11 @@ v4_credential(cardano_plutus_v4_script_t* script)
 
 /**
  * \brief Builds a key-hash credential from a seed byte.
+ *
+ * The library withdrawal and voter maps list key credentials before script
+ * credentials of the same role, while the ledger lists script credentials
+ * first, so pairing this credential with a script credential tells the two
+ * orders apart.
  */
 static cardano_credential_t*
 key_credential(uint8_t seed)
@@ -2098,6 +2131,106 @@ key_credential(uint8_t seed)
   cardano_blake2b_hash_unref(&hash);
 
   return credential;
+}
+
+TEST(cardano_tx_evaluator_native, resolvesARewardRedeemerInLedgerAccountOrder)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_gov_tx(script, CARDANO_REDEEMER_TAG_REWARD, &utxos);
+
+  cardano_credential_t*     script_cred = script_credential(script);
+  cardano_credential_t*     key_cred    = key_credential(0x01U);
+  cardano_reward_address_t* script_acct = nullptr;
+  cardano_reward_address_t* key_acct    = nullptr;
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, script_cred, &script_acct), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, key_cred, &key_acct), CARDANO_SUCCESS);
+
+  cardano_withdrawal_map_t* withdrawals = nullptr;
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, script_acct, 0U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, key_acct, 0U), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  EXPECT_EQ(cardano_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+  cardano_transaction_body_unref(&body);
+
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_SUCCESS);
+
+  expect_single_evaluated(result, CARDANO_REDEEMER_TAG_REWARD, 0U, 64100U, 500U);
+
+  cardano_redeemer_list_unref(&result);
+  cardano_tx_evaluator_unref(&evaluator);
+
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_reward_address_unref(&key_acct);
+  cardano_reward_address_unref(&script_acct);
+  cardano_credential_unref(&key_cred);
+  cardano_credential_unref(&script_cred);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, resolvesAVotingRedeemerInLedgerVoterOrder)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_gov_tx(script, CARDANO_REDEEMER_TAG_VOTING, &utxos);
+
+  cardano_credential_t* script_cred = script_credential(script);
+  cardano_credential_t* key_cred    = key_credential(0x01U);
+  cardano_voter_t*      script_drep = nullptr;
+  cardano_voter_t*      key_drep    = nullptr;
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, script_cred, &script_drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_KEY_HASH, key_cred, &key_drep), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* action_tx = nullptr;
+  byte_t                  id_bytes[32];
+  memset(id_bytes, 0x09U, sizeof(id_bytes));
+  EXPECT_EQ(cardano_blake2b_hash_from_bytes(id_bytes, sizeof(id_bytes), &action_tx), CARDANO_SUCCESS);
+
+  cardano_governance_action_id_t* action_id = nullptr;
+  EXPECT_EQ(cardano_governance_action_id_new(action_tx, 0U, &action_id), CARDANO_SUCCESS);
+
+  cardano_voting_procedure_t* procedure = nullptr;
+  EXPECT_EQ(cardano_voting_procedure_new(CARDANO_VOTE_YES, nullptr, &procedure), CARDANO_SUCCESS);
+
+  cardano_voting_procedures_t* procedures = nullptr;
+  EXPECT_EQ(cardano_voting_procedures_new(&procedures), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedures_insert(procedures, script_drep, action_id, procedure), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedures_insert(procedures, key_drep, action_id, procedure), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  EXPECT_EQ(cardano_transaction_body_set_voting_procedures(body, procedures), CARDANO_SUCCESS);
+  cardano_transaction_body_unref(&body);
+
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_SUCCESS);
+
+  expect_single_evaluated(result, CARDANO_REDEEMER_TAG_VOTING, 0U, 64100U, 500U);
+
+  cardano_redeemer_list_unref(&result);
+  cardano_tx_evaluator_unref(&evaluator);
+
+  cardano_voting_procedures_unref(&procedures);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_blake2b_hash_unref(&action_tx);
+  cardano_voter_unref(&key_drep);
+  cardano_voter_unref(&script_drep);
+  cardano_credential_unref(&key_cred);
+  cardano_credential_unref(&script_cred);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
 }
 
 /**
@@ -2356,34 +2489,6 @@ static const uint64_t kV4ReturnsUnitCpu = 64100U;
  * \brief Memory units the always-succeeding V4 script consumes under the default cost model.
  */
 static const uint64_t kV4ReturnsUnitMem = 500U;
-
-/**
- * \brief Asserts that \p list holds one redeemer of \p tag at \p index that
- *        consumed exactly \p cpu steps and \p mem memory units.
- */
-static void
-expect_single_evaluated(
-  cardano_redeemer_list_t* list,
-  cardano_redeemer_tag_t   tag,
-  uint64_t                 index,
-  uint64_t                 cpu,
-  uint64_t                 mem)
-{
-  ASSERT_NE(list, nullptr);
-  ASSERT_EQ(cardano_redeemer_list_get_length(list), 1U);
-
-  cardano_redeemer_t* redeemer = nullptr;
-  EXPECT_EQ(cardano_redeemer_list_get(list, 0U, &redeemer), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), tag);
-  EXPECT_EQ(cardano_redeemer_get_index(redeemer), index);
-
-  cardano_ex_units_t* units = cardano_redeemer_get_ex_units(redeemer);
-  EXPECT_EQ(cardano_ex_units_get_cpu_steps(units), cpu);
-  EXPECT_EQ(cardano_ex_units_get_memory(units), mem);
-
-  cardano_ex_units_unref(&units);
-  cardano_redeemer_unref(&redeemer);
-}
 
 /**
  * \brief Builds a transaction spending one input held at the address of \p script,

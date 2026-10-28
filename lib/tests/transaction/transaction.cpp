@@ -31,6 +31,7 @@
 #include <cardano/common/credential.h>
 #include <cardano/common/governance_action_id.h>
 #include <cardano/common/guard_set.h>
+#include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/scripts/native_scripts/native_script.h>
@@ -2190,6 +2191,153 @@ TEST(cardano_transaction_find_vote_index, returnsErrorIfGivenNull)
   cardano_voter_unref(&voter);
 }
 
+TEST(cardano_transaction_find_vote_index, putsScriptDRepsBeforeKeyDReps)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR2);
+
+  cardano_voter_t* key_drep    = new_voter_from_cbor("8202581c01010101010101010101010101010101010101010101010101010101");
+  cardano_voter_t* script_drep = new_voter_from_cbor("8203581c02020202020202020202020202020202020202020202020202020202");
+
+  add_votes(transaction, key_drep, script_drep);
+
+  // Act
+  uint64_t key_index    = 99U;
+  uint64_t script_index = 99U;
+
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, key_drep, &key_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, script_drep, &script_index), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(script_index, 0U);
+  EXPECT_EQ(key_index, 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_voter_unref(&key_drep);
+  cardano_voter_unref(&script_drep);
+}
+
+TEST(cardano_transaction_find_vote_index, putsScriptCommitteeMembersBeforeKeyCommitteeMembers)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR2);
+
+  cardano_voter_t* key_member    = new_voter_from_cbor("8200581c01010101010101010101010101010101010101010101010101010101");
+  cardano_voter_t* script_member = new_voter_from_cbor("8201581c02020202020202020202020202020202020202020202020202020202");
+
+  add_votes(transaction, key_member, script_member);
+
+  // Act
+  uint64_t key_index    = 99U;
+  uint64_t script_index = 99U;
+
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, key_member, &key_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_vote_index(transaction, script_member, &script_index), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(script_index, 0U);
+  EXPECT_EQ(key_index, 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_voter_unref(&key_member);
+  cardano_voter_unref(&script_member);
+}
+
+TEST(cardano_transaction_find_vote_index, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(CBOR2);
+  cardano_voter_t*       voter       = new_voter_from_cbor("8200581c00000000000000000000000000000000000000000000000000000000");
+  cardano_voter_t*       other_voter = new_voter_from_cbor("8202581c01000000000000000000000000000000000000000000000000000000");
+
+  add_votes(transaction, voter, other_voter);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  uint64_t              index  = 99U;
+  const cardano_error_t result = cardano_transaction_find_vote_index(transaction, voter, &index);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(index, 99U);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_voter_unref(&voter);
+  cardano_voter_unref(&other_voter);
+}
+
+/**
+ * Creates a reward address from its header byte followed by a hash made of a repeated byte.
+ * \return A new reward address instance.
+ */
+static cardano_reward_address_t*
+new_reward_address(const byte_t header, const byte_t fill)
+{
+  byte_t bytes[29] = { 0 };
+
+  bytes[0] = header;
+  memset(&bytes[1], fill, sizeof(bytes) - 1U);
+
+  cardano_reward_address_t* address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_bytes(bytes, sizeof(bytes), &address), CARDANO_SUCCESS);
+
+  return address;
+}
+
+TEST(cardano_transaction_find_withdrawal_index, putsScriptAccountsBeforeKeyAccountsWithinANetwork)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(CBOR2);
+  cardano_reward_address_t* key_testnet    = new_reward_address(0xe0U, 0x01U);
+  cardano_reward_address_t* script_testnet = new_reward_address(0xf0U, 0x02U);
+  cardano_reward_address_t* key_mainnet    = new_reward_address(0xe1U, 0x03U);
+  cardano_reward_address_t* script_mainnet = new_reward_address(0xf1U, 0x04U);
+  cardano_withdrawal_map_t* withdrawals    = NULL;
+
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, key_testnet, 1U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, script_testnet, 2U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, key_mainnet, 3U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, script_mainnet, 4U), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  EXPECT_EQ(cardano_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+  cardano_transaction_body_unref(&body);
+
+  // Act
+  uint64_t key_testnet_index    = 99U;
+  uint64_t script_testnet_index = 99U;
+  uint64_t key_mainnet_index    = 99U;
+  uint64_t script_mainnet_index = 99U;
+
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, key_testnet, &key_testnet_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, script_testnet, &script_testnet_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, key_mainnet, &key_mainnet_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(transaction, script_mainnet, &script_mainnet_index), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(script_testnet_index, 0U);
+  EXPECT_EQ(key_testnet_index, 1U);
+  EXPECT_EQ(script_mainnet_index, 2U);
+  EXPECT_EQ(key_mainnet_index, 3U);
+
+  // Cleanup
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_reward_address_unref(&key_testnet);
+  cardano_reward_address_unref(&script_testnet);
+  cardano_reward_address_unref(&key_mainnet);
+  cardano_reward_address_unref(&script_mainnet);
+  cardano_transaction_unref(&transaction);
+}
+
 TEST(cardano_transaction_find_mint_policy_index, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange
@@ -2229,7 +2377,7 @@ TEST(cardano_transaction_find_mint_policy_index, returnsErrorIfMemoryAllocationF
   cardano_set_allocators(malloc, realloc, free);
 }
 
-TEST(cardano_transaction_find_withdrawal_index, returnsErrorIfMemoryAllocationFails)
+TEST(cardano_transaction_find_withdrawal_index, doesNotAllocate)
 {
   // Arrange
   cardano_transaction_t*    transaction    = new_default_transaction(CBOR);
@@ -2237,47 +2385,20 @@ TEST(cardano_transaction_find_withdrawal_index, returnsErrorIfMemoryAllocationFa
 
   EXPECT_EQ(cardano_reward_address_from_bech32(WITHDRAWAL_ADDRESS, strlen(WITHDRAWAL_ADDRESS), &reward_address), CARDANO_SUCCESS);
 
-  // Sweep the allocation failure point across the whole call until it succeeds, so that both the
-  // target and the per-entry reward address conversions fail at least once. Some failure points
-  // degrade an internal comparison into a non-match, so the sweep only demands a non-success
-  // result while requiring the allocation failure itself to surface at least once.
-  bool saw_memory_failure = false;
-
-  for (int i = 0; i < 512; ++i)
-  {
-    reset_allocators_run_count();
-    set_malloc_limit(i);
-    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
-
-    // Act
-    uint64_t              index  = 0U;
-    const cardano_error_t result = cardano_transaction_find_withdrawal_index(transaction, reward_address, &index);
-
-    reset_allocators_run_count();
-    reset_limited_malloc();
-    cardano_set_allocators(malloc, realloc, free);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      break;
-    }
-
-    // Assert
-    EXPECT_NE(result, CARDANO_SUCCESS);
-
-    if (result == CARDANO_ERROR_MEMORY_ALLOCATION_FAILED)
-    {
-      saw_memory_failure = true;
-    }
-  }
-
-  EXPECT_TRUE(saw_memory_failure);
-
   reset_allocators_run_count();
-  reset_limited_malloc();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  uint64_t              index  = 99U;
+  const cardano_error_t result = cardano_transaction_find_withdrawal_index(transaction, reward_address, &index);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(index, 0U);
 
   // Cleanup
   cardano_transaction_unref(&transaction);
   cardano_reward_address_unref(&reward_address);
-  cardano_set_allocators(malloc, realloc, free);
 }

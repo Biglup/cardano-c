@@ -30,6 +30,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "../common/ledger_order.h"
 #include "../transaction_builder/balancing/internals/unique_signers.h"
 
 #include <assert.h>
@@ -922,52 +923,7 @@ cardano_transaction_find_withdrawal_index(
     return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
-  cardano_address_t* target = cardano_reward_address_to_address(reward_address);
-
-  if (target == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  cardano_error_t result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
-
-  const size_t length = cardano_withdrawal_map_get_length(withdrawals);
-
-  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
-  {
-    cardano_reward_address_t* key = NULL;
-
-    const cardano_error_t get_result = cardano_withdrawal_map_get_key_at(withdrawals, i, &key);
-
-    if (get_result != CARDANO_SUCCESS)
-    {
-      result = get_result;
-      break;
-    }
-
-    cardano_address_t* key_address = cardano_reward_address_to_address(key);
-
-    if (key_address == NULL)
-    {
-      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-    else if (cardano_address_equals(key_address, target))
-    {
-      *index = i;
-      result = CARDANO_SUCCESS;
-    }
-    else
-    {
-      /* Keep searching. */
-    }
-
-    cardano_address_unref(&key_address);
-    cardano_reward_address_unref(&key);
-  }
-
-  cardano_address_unref(&target);
-
-  return result;
+  return _cardano_ledger_order_withdrawal_index(withdrawals, reward_address, index);
 }
 
 /**
@@ -1106,30 +1062,7 @@ cardano_transaction_find_vote_index(
     return result;
   }
 
-  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
-
-  const size_t length = cardano_voter_list_get_length(voters);
-
-  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
-  {
-    cardano_voter_t* entry = NULL;
-
-    const cardano_error_t get_result = cardano_voter_list_get(voters, i, &entry);
-
-    if (get_result != CARDANO_SUCCESS)
-    {
-      result = get_result;
-      break;
-    }
-
-    if (cardano_voter_equals(entry, voter))
-    {
-      *index = i;
-      result = CARDANO_SUCCESS;
-    }
-
-    cardano_voter_unref(&entry);
-  }
+  result = _cardano_ledger_order_voter_index(voters, voter, index);
 
   cardano_voter_list_unref(&voters);
 

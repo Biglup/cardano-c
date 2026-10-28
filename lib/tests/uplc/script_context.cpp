@@ -28,6 +28,7 @@
 #include <cardano/common/guard_set.h>
 #include <cardano/common/utxo.h>
 #include <cardano/common/utxo_list.h>
+#include <cardano/common/withdrawal_map.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_data.h>
@@ -40,11 +41,15 @@
 #include <cardano/transaction_body/direct_deposit_map.h>
 #include <cardano/transaction_body/required_guards_map.h>
 #include <cardano/transaction_body/transaction_body.h>
+#include <cardano/voting_procedures/voter.h>
+#include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
 
 #include "../../src/uplc/tx/script_context.h"
+#include "../allocators_helpers.h"
+#include "../src/allocators.h"
 
 #include <cstring>
 #include <gmock/gmock.h>
@@ -403,7 +408,7 @@ TEST(uplc_script_context, tx_info_v1_byte_exact)
     "1111111111111111111111111111111111111111ffd87a80ffa140a1401a000f4240d87a80ffffa140a140"
     "1a00030d40a140a140008080d8799fd8799fd87a9f1b000001739cf6dd38ffd87a80ffd8799fd87a9f1b00"
     "000173a2ecbe38ffd87980ffff9f581c020202020202020202020202020202020202020202020202020202"
-    "02ffa0d8799f582087aef86f0290a6cbcc910e3eccb2536e3b9d999b21b54b08e54d4fb49eefdbd0ffff";
+    "02ff80d8799f582087aef86f0290a6cbcc910e3eccb2536e3b9d999b21b54b08e54d4fb49eefdbd0ffff";
 
   cardano_transaction_t* tx    = decode_tx(kTxWithIntervalCbor);
   cardano_utxo_list_t*   utxos = decode_utxos(kUtxoCbor);
@@ -1314,4 +1319,479 @@ TEST(uplc_script_context, v3_null_arguments_are_rejected)
   cardano_redeemer_unref(&rdmr);
   cardano_utxo_list_unref(&utxos);
   cardano_transaction_unref(&tx);
+}
+
+/**
+ * \brief A transaction whose collections are ordered differently by the library
+ *        and by the ledger.
+ *
+ * body = { 0: inputs[ (id=00*32, ix=0) ],
+ *          1: outputs[ (enterprise-key 11*28, [1000000, { 50*28: { 02: 2, 0101: 1 } }]),
+ *                      (enterprise-key 11*28, 0) ],
+ *          2: fee 200000,
+ *          5: withdrawals{ e1 ++ 33*28: 1000000, f1 ++ 44*28: 2000000 },
+ *          9: mint{ 50*28: { 02: -1, 0101: 1 } } }
+ * witness set = { 4: datums[ 1, 3 ] (descending hash order),
+ *                 5: redeemers[ (Spend, 0), (Mint, 0), (Reward, 0) ] }
+ *
+ * The ledger orders V3 withdrawals as its Map AccountAddress: by network, then
+ * script credentials before key credentials. V1 and V2 keep the Plutus
+ * StakingCredential order, key credentials first. Asset name 0101 sorts before
+ * 02 byte by byte, and the zero-coin output keeps its ada entry. The V1
+ * txInfoData is a list [(DatumHash, Datum)]; V2 and V3 use Map DatumHash Datum.
+ */
+static const char* kTxLedgerOrderCbor =
+  "84a5008182582000000000000000000000000000000000000000000000000000000000000000000001828258"
+  "1d6111111111111111111111111111111111111111111111111111111111821a000f4240a1581c5050505050"
+  "5050505050505050505050505050505050505050505050a24102024201010182581d61111111111111111111"
+  "1111111111111111111111111111111111111100021a00030d4005a2581de133333333333333333333333333"
+  "3333333333333333333333333333331a000f4240581df1444444444444444444444444444444444444444444"
+  "444444444444441a001e848009a1581c50505050505050505050505050505050505050505050505050505050"
+  "a241022042010101a2048201030583840000d87980821a000f42401a05f5e100840100d87980821a000f4240"
+  "1a05f5e100840300d87980821a000f42401a05f5e100f5f6";
+
+/**
+ * \brief A transaction with a DRep key voter and a DRep script voter, and an
+ *        UpdateCommittee proposal with key and script members and a 2/4 quorum.
+ *
+ * body = { 19: votes{ DRep key 55*28: { (cc*32, 0): Yes },
+ *                     DRep script 66*28: { (cc*32, 0): No } },
+ *          20: proposals[ (1000000, e1 ++ 77*28,
+ *                          UpdateCommittee(None, { key 88*28, script 99*28 },
+ *                                          { key aa*28: 10, script bb*28: 20 }, 2/4),
+ *                          anchor) ] }
+ * witness set = { 5: redeemers[ (Spend, 0), (Voting, 0) ] }
+ */
+static const char* kTxGovernanceOrderCbor =
+  "84a5008182582000000000000000000000000000000000000000000000000000000000000000000001818258"
+  "1d61111111111111111111111111111111111111111111111111111111111a000f4240021a00030d4013a282"
+  "02581c55555555555555555555555555555555555555555555555555555555a1825820cccccccccccccccccc"
+  "cccccccccccccccccccccccccccccccccccccccccccccc008201f68203581c66666666666666666666666666"
+  "666666666666666666666666666666a1825820cccccccccccccccccccccccccccccccccccccccccccccccccc"
+  "cccccccccccccc008200f61481841a000f4240581de177777777777777777777777777777777777777777777"
+  "7777777777778504f6d90102828200581c888888888888888888888888888888888888888888888888888888"
+  "888201581c99999999999999999999999999999999999999999999999999999999a28200581caaaaaaaaaaaa"
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0a8201581cbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  "bbbbbbbbbbbbbbbbbbbbbb14d81e820204827368747470733a2f2f6578616d706c652e636f6d582000000000"
+  "00000000000000000000000000000000000000000000000000000000a10582840000d87980821a000f42401a"
+  "05f5e100840400d87980821a000f42401a05f5e100f5f6";
+
+/**
+ * \brief A transaction with a TreasuryWithdrawals proposal paying a key account
+ *        (e1 ++ 33*28: 1) and a script account (f1 ++ 44*28: 2).
+ */
+static const char* kTxTreasuryOrderCbor =
+  "84a4008182582000000000000000000000000000000000000000000000000000000000000000000001818258"
+  "1d61111111111111111111111111111111111111111111111111111111111a000f4240021a00030d40148184"
+  "1a000f4240581de1777777777777777777777777777777777777777777777777777777778302a2581de13333"
+  "333333333333333333333333333333333333333333333333333301581df14444444444444444444444444444"
+  "444444444444444444444444444402f6827368747470733a2f2f6578616d706c652e636f6d58200000000000"
+  "000000000000000000000000000000000000000000000000000000a10581840000d87980821a000f42401a05"
+  "f5e100f5f6";
+
+/**
+ * \brief A transaction whose witness set carries the same datum twice.
+ *
+ * body = { 0: inputs[ (id=00*32, ix=0) ],
+ *          1: outputs[ (enterprise-key 11*28, 1000000) ],
+ *          2: fee 200000 }
+ * witness set = { 4: datums[ 1, 3, 1 ], 5: redeemers[ (Spend, 0) ] }
+ *
+ * The ledger keeps the witness datums in a map keyed by hash, so the repeated
+ * datum appears once in txInfoData.
+ */
+static const char* kTxRepeatedDatumCbor =
+  "84a3008182582000000000000000000000000000000000000000000000000000000000000000000001818258"
+  "1d61111111111111111111111111111111111111111111111111111111111a000f4240021a00030d40a20483"
+  "0103010581840000d87980821a000f42401a05f5e100f5f6";
+
+/**
+ * \brief Returns the redeemer at a position of the witness set of a transaction.
+ */
+static cardano_redeemer_t*
+redeemer_at(cardano_transaction_t* tx, const size_t position)
+{
+  cardano_witness_set_t*   witness   = cardano_transaction_get_witness_set(tx);
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness);
+  cardano_redeemer_t*      redeemer  = NULL;
+
+  EXPECT_EQ(cardano_redeemer_list_get(redeemers, position, &redeemer), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witness);
+
+  return redeemer;
+}
+
+/**
+ * \brief Serializes a field of a constructor plutus-data value to hex CBOR.
+ */
+static std::string
+field_hex(cardano_plutus_data_t* data, const size_t index)
+{
+  cardano_plutus_data_t* field = constr_field(data, index);
+  std::string            hex   = to_hex(field);
+
+  cardano_plutus_data_unref(&field);
+
+  return hex;
+}
+
+/**
+ * \brief Builds the TxInfo of a transaction for a Plutus version (1, 2 or 3).
+ */
+static cardano_plutus_data_t*
+build_tx_info(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, const int version)
+{
+  cardano_plutus_data_t* tx_info = NULL;
+  cardano_error_t        result  = CARDANO_ERROR_GENERIC;
+
+  if (version == 1)
+  {
+    result = cardano_uplc_int_build_tx_info_v1(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info);
+  }
+  else if (version == 2)
+  {
+    result = cardano_uplc_int_build_tx_info_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info);
+  }
+  else
+  {
+    result = cardano_uplc_int_build_tx_info_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, &tx_info);
+  }
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  return tx_info;
+}
+
+/**
+ * \brief Serializes one field of the TxInfo of a transaction for a Plutus version.
+ */
+static std::string
+tx_info_field_hex(const char* tx_hex, const int version, const size_t index)
+{
+  cardano_transaction_t* tx      = decode_tx(tx_hex);
+  cardano_utxo_list_t*   utxos   = decode_utxos(kUtxoCbor);
+  cardano_plutus_data_t* tx_info = build_tx_info(tx, utxos, version);
+  std::string            hex     = (tx_info != NULL) ? field_hex(tx_info, index) : std::string();
+
+  cardano_plutus_data_unref(&tx_info);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+
+  return hex;
+}
+
+/**
+ * \brief Builds a V1, V2 or V3 script context with every allocation failing in turn until it succeeds.
+ *
+ * \return The number of failed attempts.
+ */
+static int
+sweep_context_allocations(const char* tx_hex, const size_t position, const int version)
+{
+  cardano_transaction_t* tx       = decode_tx(tx_hex);
+  cardano_utxo_list_t*   utxos    = decode_utxos(kUtxoCbor);
+  cardano_redeemer_t*    redeemer = redeemer_at(tx, position);
+  cardano_error_t        result   = CARDANO_ERROR_GENERIC;
+  int                    limit    = 0;
+
+  for (; result != CARDANO_SUCCESS; ++limit)
+  {
+    cardano_plutus_data_t* context = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    if (version == 1)
+    {
+      result = cardano_uplc_int_build_script_context_v1(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, redeemer, &context);
+    }
+    else if (version == 2)
+    {
+      result = cardano_uplc_int_build_script_context_v2(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, redeemer, &context);
+    }
+    else
+    {
+      result = cardano_uplc_int_build_script_context_v3(tx, utxos, &CARDANO_MAINNET_SLOT_CONFIG, redeemer, NULL, &context);
+    }
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    EXPECT_EQ(context == nullptr, result != CARDANO_SUCCESS);
+
+    cardano_plutus_data_unref(&context);
+  }
+
+  cardano_redeemer_unref(&redeemer);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+
+  return limit - 1;
+}
+
+TEST(uplc_script_context, v3_withdrawals_put_script_accounts_before_key_accounts)
+{
+  static const char* kExpected =
+    "a2d87a9f581c44444444444444444444444444444444444444444444444444444444ff1a001e8480d8799f58"
+    "1c33333333333333333333333333333333333333333333333333333333ff1a000f4240";
+
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 3, 6), kExpected);
+}
+
+TEST(uplc_script_context, v1_v2_withdrawals_keep_key_credentials_first)
+{
+  static const char* kExpectedV1 =
+    "9fd8799fd8799fd8799f581c33333333333333333333333333333333333333333333333333333333ffff1a00"
+    "0f4240ffd8799fd8799fd87a9f581c44444444444444444444444444444444444444444444444444444444ff"
+    "ff1a001e8480ffff";
+  static const char* kExpectedV2 =
+    "a2d8799fd8799f581c33333333333333333333333333333333333333333333333333333333ffff1a000f4240"
+    "d8799fd87a9f581c44444444444444444444444444444444444444444444444444444444ffff1a001e8480";
+
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 1, 5), kExpectedV1);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 2, 6), kExpectedV2);
+}
+
+TEST(uplc_script_context, v3_treasury_withdrawals_put_script_accounts_first)
+{
+  static const char* kExpected =
+    "9fd8799f1a000f4240d8799f581c77777777777777777777777777777777777777777777777777777777ffd8"
+    "7b9fa2d87a9f581c44444444444444444444444444444444444444444444444444444444ff02d8799f581c33"
+    "333333333333333333333333333333333333333333333333333333ff01d87a80ffffff";
+
+  EXPECT_EQ(tx_info_field_hex(kTxTreasuryOrderCbor, 3, 13), kExpected);
+}
+
+TEST(uplc_script_context, output_asset_names_follow_byte_order)
+{
+  static const char* kExpectedV1 =
+    "9fd8799fd8799fd8799f581c11111111111111111111111111111111111111111111111111111111ffd87a80"
+    "ffa240a1401a000f4240581c50505050505050505050505050505050505050505050505050505050a2420101"
+    "01410202d87a80ffd8799fd8799fd8799f581c11111111111111111111111111111111111111111111111111"
+    "111111ffd87a80ffa140a14000d87a80ffff";
+  static const char* kExpectedV2V3 =
+    "9fd8799fd8799fd8799f581c11111111111111111111111111111111111111111111111111111111ffd87a80"
+    "ffa240a1401a000f4240581c50505050505050505050505050505050505050505050505050505050a2420101"
+    "01410202d87980d87a80ffd8799fd8799fd8799f581c11111111111111111111111111111111111111111111"
+    "111111111111ffd87a80ffa140a14000d87980d87a80ffff";
+
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 1, 1), kExpectedV1);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 2, 2), kExpectedV2V3);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 3, 2), kExpectedV2V3);
+}
+
+TEST(uplc_script_context, mint_asset_names_follow_byte_order)
+{
+  static const char* kExpectedV1V2 =
+    "a240a14000581c50505050505050505050505050505050505050505050505050505050a242010101410220";
+  static const char* kExpectedV3 =
+    "a1581c50505050505050505050505050505050505050505050505050505050a242010101410220";
+
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 1, 3), kExpectedV1V2);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 2, 4), kExpectedV1V2);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 3, 4), kExpectedV3);
+}
+
+TEST(uplc_script_context, datums_follow_hash_order)
+{
+  static const char* kExpectedV1 =
+    "9fd8799f5820e88bd757ad5b9bedf372d8d3f0cf6c962a469db61a265f6418e1ffed86da29ec03ffd8799f58"
+    "20ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e2501ffff";
+  static const char* kExpectedV2V3 =
+    "a25820e88bd757ad5b9bedf372d8d3f0cf6c962a469db61a265f6418e1ffed86da29ec035820ee155ace9c40"
+    "292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e2501";
+
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 1, 8), kExpectedV1);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 2, 10), kExpectedV2V3);
+  EXPECT_EQ(tx_info_field_hex(kTxLedgerOrderCbor, 3, 10), kExpectedV2V3);
+}
+
+TEST(uplc_script_context, repeated_datums_appear_once)
+{
+  static const char* kExpectedV1 =
+    "9fd8799f5820e88bd757ad5b9bedf372d8d3f0cf6c962a469db61a265f6418e1ffed86da29ec03ffd8799f58"
+    "20ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e2501ffff";
+  static const char* kExpectedV2V3 =
+    "a25820e88bd757ad5b9bedf372d8d3f0cf6c962a469db61a265f6418e1ffed86da29ec035820ee155ace9c40"
+    "292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e2501";
+
+  EXPECT_EQ(tx_info_field_hex(kTxRepeatedDatumCbor, 1, 8), kExpectedV1);
+  EXPECT_EQ(tx_info_field_hex(kTxRepeatedDatumCbor, 2, 10), kExpectedV2V3);
+  EXPECT_EQ(tx_info_field_hex(kTxRepeatedDatumCbor, 3, 10), kExpectedV2V3);
+}
+
+TEST(uplc_script_context, v3_votes_put_script_voters_before_key_voters)
+{
+  static const char* kExpected =
+    "a2d87a9fd87a9f581c66666666666666666666666666666666666666666666666666666666ffffa1d8799f58"
+    "20cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc00ffd87980d87a9fd8799f"
+    "581c55555555555555555555555555555555555555555555555555555555ffffa1d8799f5820cccccccccccc"
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccc00ffd87a80";
+
+  EXPECT_EQ(tx_info_field_hex(kTxGovernanceOrderCbor, 3, 12), kExpected);
+}
+
+TEST(uplc_script_context, v3_update_committee_orders_members_and_reduces_quorum)
+{
+  static const char* kExpected =
+    "9fd8799f1a000f4240d8799f581c77777777777777777777777777777777777777777777777777777777ffd8"
+    "7d9fd87a809fd87a9f581c99999999999999999999999999999999999999999999999999999999ffd8799f58"
+    "1c88888888888888888888888888888888888888888888888888888888ffffa2d87a9f581cbbbbbbbbbbbbbb"
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbff14d8799f581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    "aaaaaaaaaaaaaaaaaaaaaaaaff0ad8799f0102ffffffff";
+
+  EXPECT_EQ(tx_info_field_hex(kTxGovernanceOrderCbor, 3, 13), kExpected);
+}
+
+TEST(uplc_script_context, reward_redeemer_resolves_in_ledger_account_order)
+{
+  static const char* kExpectedV1V2 =
+    "d87b9fd8799fd87a9f581c44444444444444444444444444444444444444444444444444444444ffffff";
+  static const char* kExpectedV3 =
+    "d87b9fd87a9f581c44444444444444444444444444444444444444444444444444444444ffff";
+
+  cardano_transaction_t* tx       = decode_tx(kTxLedgerOrderCbor);
+  cardano_utxo_list_t*   utxos    = decode_utxos(kUtxoCbor);
+  cardano_redeemer_t*    redeemer = redeemer_at(tx, 2U);
+  cardano_plutus_data_t* purpose  = NULL;
+  cardano_plutus_data_t* info     = NULL;
+
+  ASSERT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_REWARD);
+  ASSERT_EQ(cardano_uplc_int_build_script_purpose_v1v2(tx, utxos, redeemer, &purpose), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_int_build_script_info_v3(tx, utxos, redeemer, NULL, &info), CARDANO_SUCCESS);
+
+  EXPECT_EQ(to_hex(purpose), kExpectedV1V2);
+  EXPECT_EQ(to_hex(info), kExpectedV3);
+
+  cardano_plutus_data_unref(&info);
+  cardano_plutus_data_unref(&purpose);
+  cardano_redeemer_unref(&redeemer);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, voting_redeemer_resolves_in_ledger_voter_order)
+{
+  static const char* kExpected =
+    "d87d9fd87a9fd87a9f581c66666666666666666666666666666666666666666666666666666666ffffff";
+
+  cardano_transaction_t* tx       = decode_tx(kTxGovernanceOrderCbor);
+  cardano_utxo_list_t*   utxos    = decode_utxos(kUtxoCbor);
+  cardano_redeemer_t*    redeemer = redeemer_at(tx, 1U);
+  cardano_plutus_data_t* info     = NULL;
+
+  ASSERT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_VOTING);
+  ASSERT_EQ(cardano_uplc_int_build_script_info_v3(tx, utxos, redeemer, NULL, &info), CARDANO_SUCCESS);
+
+  EXPECT_EQ(to_hex(info), kExpected);
+
+  cardano_plutus_data_unref(&info);
+  cardano_redeemer_unref(&redeemer);
+  cardano_utxo_list_unref(&utxos);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, withdrawal_at_ledger_index_puts_script_accounts_first)
+{
+  // Arrange
+  cardano_transaction_t*      tx          = decode_tx(kTxLedgerOrderCbor);
+  cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
+  cardano_withdrawal_map_t*   withdrawals = cardano_transaction_body_get_withdrawals(body);
+  cardano_reward_address_t*   first       = NULL;
+  cardano_reward_address_t*   second      = NULL;
+  cardano_reward_address_t*   missing     = NULL;
+
+  // Act
+  ASSERT_EQ(cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, 0U, &first), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, 1U, &second), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_reward_address_get_bytes(first)[0], 0xf1U);
+  EXPECT_EQ(cardano_reward_address_get_bytes(second)[0], 0xe1U);
+  EXPECT_EQ(cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, 2U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(cardano_uplc_int_withdrawal_at_ledger_index(NULL, 0U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(missing, nullptr);
+
+  // Cleanup
+  cardano_reward_address_unref(&second);
+  cardano_reward_address_unref(&first);
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, voter_at_ledger_index_puts_script_voters_first)
+{
+  // Arrange
+  cardano_transaction_t*       tx         = decode_tx(kTxGovernanceOrderCbor);
+  cardano_transaction_body_t*  body       = cardano_transaction_get_body(tx);
+  cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
+  cardano_voter_t*             first      = NULL;
+  cardano_voter_t*             second     = NULL;
+  cardano_voter_t*             missing    = NULL;
+  cardano_voter_type_t         type       = CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH;
+
+  // Act
+  ASSERT_EQ(cardano_uplc_int_voter_at_ledger_index(procedures, 0U, &first), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_int_voter_at_ledger_index(procedures, 1U, &second), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_voter_get_type(first, &type), CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH);
+  EXPECT_EQ(cardano_voter_get_type(second, &type), CARDANO_SUCCESS);
+  EXPECT_EQ(type, CARDANO_VOTER_TYPE_DREP_KEY_HASH);
+  EXPECT_EQ(cardano_uplc_int_voter_at_ledger_index(procedures, 2U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(cardano_uplc_int_voter_at_ledger_index(NULL, 0U, &missing), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
+  EXPECT_EQ(cardano_uplc_int_voter_at_ledger_index(procedures, 0U, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(missing, nullptr);
+
+  // Cleanup
+  cardano_voter_unref(&second);
+  cardano_voter_unref(&first);
+  cardano_voting_procedures_unref(&procedures);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, voter_at_ledger_index_fails_when_listing_voters_fails)
+{
+  // Arrange
+  cardano_transaction_t*       tx         = decode_tx(kTxGovernanceOrderCbor);
+  cardano_transaction_body_t*  body       = cardano_transaction_get_body(tx);
+  cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
+  cardano_voter_t*             voter      = NULL;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_uplc_int_voter_at_ledger_index(procedures, 0U, &voter);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(voter, nullptr);
+
+  // Cleanup
+  cardano_voting_procedures_unref(&procedures);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(uplc_script_context, ledger_order_contexts_free_everything_on_allocation_failure)
+{
+  for (size_t position = 0U; position < 3U; ++position)
+  {
+    EXPECT_GT(sweep_context_allocations(kTxLedgerOrderCbor, position, 1), 0);
+    EXPECT_GT(sweep_context_allocations(kTxLedgerOrderCbor, position, 2), 0);
+    EXPECT_GT(sweep_context_allocations(kTxLedgerOrderCbor, position, 3), 0);
+  }
+
+  EXPECT_GT(sweep_context_allocations(kTxGovernanceOrderCbor, 1U, 3), 0);
+  EXPECT_GT(sweep_context_allocations(kTxTreasuryOrderCbor, 0U, 3), 0);
 }

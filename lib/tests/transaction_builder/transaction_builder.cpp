@@ -9999,6 +9999,88 @@ TEST(cardano_tx_builder_vote, keyHashVotersOccupyARedeemerIndexSlot)
   cardano_voter_unref(&drep_script_voter);
 }
 
+TEST(cardano_tx_builder_vote, assignsRedeemerIndicesInLedgerVoterOrder)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_protocol_parameters();
+  cardano_plutus_data_t*          redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_governance_action_id_t* action_id = nullptr;
+  cardano_voting_procedure_t*     procedure = nullptr;
+
+  cardano_cbor_reader_t* gov_action_reader       = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+  cardano_cbor_reader_t* voting_procedure_reader = cardano_cbor_reader_from_hex(CBOR_YES_WITH_ANCHOR, strlen(CBOR_YES_WITH_ANCHOR));
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voting_procedure_from_cbor(voting_procedure_reader, &procedure), CARDANO_SUCCESS);
+
+  static const char* VOTERS[] = {
+    "8200581c11111111111111111111111111111111111111111111111111111111",
+    "8201581c22222222222222222222222222222222222222222222222222222222",
+    "8202581c33333333333333333333333333333333333333333333333333333333",
+    "8203581c44444444444444444444444444444444444444444444444444444444",
+    "8204581c55555555555555555555555555555555555555555555555555555555",
+  };
+  static const bool     HAS_REDEEMER[]   = { false, true, false, true, false };
+  static const uint64_t LEDGER_INDICES[] = { 1U, 0U, 3U, 2U, 4U };
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_voter_t* voters[5] = { nullptr };
+
+  for (size_t i = 0U; i < 5U; ++i)
+  {
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(VOTERS[i], strlen(VOTERS[i]));
+    EXPECT_EQ(cardano_voter_from_cbor(reader, &voters[i]), CARDANO_SUCCESS);
+    cardano_cbor_reader_unref(&reader);
+  }
+
+  // Act
+  for (size_t i = 0U; i < 5U; ++i)
+  {
+    cardano_tx_builder_vote(tx_builder, voters[i], action_id, procedure, HAS_REDEEMER[i] ? redeemer : nullptr);
+  }
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.votes_to_redeemer_map), 5U);
+
+  for (size_t i = 0U; i < 5U; ++i)
+  {
+    cardano_redeemer_t* value      = nullptr;
+    uint64_t            find_index = 99U;
+
+    EXPECT_EQ(cardano_transaction_find_vote_index(tx_builder->state.transaction, voters[i], &find_index), CARDANO_SUCCESS);
+    EXPECT_EQ(find_index, LEDGER_INDICES[i]);
+
+    EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.votes_to_redeemer_map, (size_t)LEDGER_INDICES[i], &value), CARDANO_SUCCESS);
+
+    if (HAS_REDEEMER[i])
+    {
+      ASSERT_NE(value, nullptr);
+      EXPECT_EQ(cardano_redeemer_get_index(value), LEDGER_INDICES[i]);
+    }
+    else
+    {
+      EXPECT_EQ(value, nullptr);
+    }
+
+    cardano_redeemer_unref(&value);
+  }
+
+  // Cleanup
+  for (size_t i = 0U; i < 5U; ++i)
+  {
+    cardano_voter_unref(&voters[i]);
+  }
+
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_cbor_reader_unref(&gov_action_reader);
+  cardano_cbor_reader_unref(&voting_procedure_reader);
+}
+
 TEST(cardano_tx_builder_vote, oneVoterVotingOnSeveralActionsUsesASingleRedeemerSlot)
 {
   // Arrange
@@ -10071,7 +10153,7 @@ TEST(cardano_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_voting_procedure_from_cbor(voting_procedure_reader, &procedure), CARDANO_SUCCESS);
 
-  for (int i = 0; i < 52; ++i)
+  for (int i = 0; i < 36; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
