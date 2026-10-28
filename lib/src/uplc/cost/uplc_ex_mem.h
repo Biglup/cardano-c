@@ -74,13 +74,13 @@ cardano_uplc_byte_string_ex_mem(size_t length);
  * \brief The ex-mem size of a UTF-8 text string.
  *
  * Under the character-count semantics (variants A, B, C) the cost is the number
- * of Unicode code points; under the utf-8-byte semantics (variants D, E) it is
- * 0 for the empty string and (bytes - 1) / 4 + 1 otherwise. The single boolean
- * selects between the two.
+ * of Unicode code points; under the utf-8-byte semantics (variants D, E, F, G)
+ * it is the byte length divided by 4, rounded down, so strings shorter than 4
+ * bytes cost 0. The single boolean selects between the two.
  *
  * \param[in] bytes The UTF-8 encoded bytes, or NULL when \p size is 0.
  * \param[in] size The number of encoded bytes.
- * \param[in] costs_by_utf8_bytes \c true to cost by utf-8 byte length (D/E),
+ * \param[in] costs_by_utf8_bytes \c true to cost by utf-8 byte length (D/E/F/G),
  *            \c false to cost by code-point count (A/B/C).
  *
  * \return The string's ex-mem size.

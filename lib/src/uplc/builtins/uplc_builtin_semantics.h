@@ -39,9 +39,9 @@ extern "C" {
  * Some builtins behave or cost differently across protocol upgrades; the variant
  * captures that selection so the cost model and the builtin runtime read one
  * value rather than re-deriving the protocol rules. The observable differences
- * are that variants D and E cost text strings by their utf-8 byte length rather
- * than code-point count (see \ref cardano_uplc_semantics_costs_strings_by_utf8_bytes)
- * and that variants C and E apply a range check to \c consByteString (see
+ * are that variants D, E, F and G cost text strings by their utf-8 byte length
+ * rather than code-point count (see \ref cardano_uplc_semantics_costs_strings_by_utf8_bytes)
+ * and that variants C, E and G apply a range check to \c consByteString (see
  * \ref cardano_uplc_semantics_cons_byte_string_range_checks).
  */
 typedef enum
@@ -54,8 +54,12 @@ typedef enum
   CARDANO_UPLC_SEMANTICS_C = 2,
   /** \brief Van-Rossem-era V1/V2 semantics (utf-8-byte string costing). */
   CARDANO_UPLC_SEMANTICS_D = 3,
-  /** \brief Van-Rossem-era V3 semantics (utf-8 costing and range checks). */
-  CARDANO_UPLC_SEMANTICS_E = 4
+  /** \brief V3 from Van-Rossem and V4 before Dijkstra (utf-8 costing, range checks). */
+  CARDANO_UPLC_SEMANTICS_E = 4,
+  /** \brief Dijkstra-era V1/V2 semantics (utf-8-byte string costing). */
+  CARDANO_UPLC_SEMANTICS_F = 5,
+  /** \brief Dijkstra-era V3/V4 semantics (utf-8 costing and range checks). */
+  CARDANO_UPLC_SEMANTICS_G = 6
 } cardano_uplc_builtin_semantics_t;
 
 /**
@@ -63,7 +67,8 @@ typedef enum
  *
  * The protocol-unaware selection maps V1 and V2 to B and V3 to C. Protocol-aware
  * callers should use \ref cardano_uplc_builtin_semantics_for_language_and_protocol
- * instead, which can also select the pre-Chang A and the Van-Rossem D/E variants.
+ * instead, which can also select the pre-Chang A, the Van-Rossem D/E and the
+ * Dijkstra F/G variants.
  * An unrecognized version is treated as V3 (variant C).
  *
  * \param[in] lang_version The language version selecting the variant.
@@ -76,11 +81,12 @@ cardano_uplc_builtin_semantics_for_language(cardano_uplc_lang_version_t lang_ver
 /**
  * \brief Selects the builtin semantics variant from language and protocol.
  *
- * For V1 and V2 a protocol major version at or above the Van-Rossem version
- * selects D, at or above the Chang version selects B, and anything earlier
- * selects A. For V3 a protocol at or above Van-Rossem selects E, otherwise C.
- * V4 follows the V3 rule (Van-Rossem and later select E, earlier select C). An
- * unrecognized version is treated as V3.
+ * For V1 and V2 a protocol major version at or above the Dijkstra version
+ * selects F, at or above the Van-Rossem version selects D, at or above the Chang
+ * version selects B, and anything earlier selects A. For V3 a protocol at or
+ * above Dijkstra selects G, at or above Van-Rossem selects E, otherwise C. For V4
+ * a protocol at or above Dijkstra selects G and anything earlier selects E. An
+ * unrecognized version selects C.
  *
  * \param[in] lang_version The language version selecting the rule.
  * \param[in] protocol_major The protocol major version.
@@ -95,12 +101,12 @@ cardano_uplc_builtin_semantics_for_language_and_protocol(
 /**
  * \brief Whether a semantics variant costs text strings by their utf-8 byte length.
  *
- * True for D and E, false for A, B and C. This is the boolean the ex-mem string
- * measure consumes (\ref cardano_uplc_string_ex_mem).
+ * True for D, E, F and G, false for A, B and C. This is the boolean the ex-mem
+ * string measure consumes (\ref cardano_uplc_string_ex_mem).
  *
  * \param[in] semantics The semantics variant to query.
  *
- * \return \c true for D and E, \c false otherwise (including an unknown variant).
+ * \return \c true for D, E, F and G, \c false otherwise (including an unknown variant).
  */
 bool
 cardano_uplc_semantics_costs_strings_by_utf8_bytes(cardano_uplc_builtin_semantics_t semantics);
@@ -108,12 +114,12 @@ cardano_uplc_semantics_costs_strings_by_utf8_bytes(cardano_uplc_builtin_semantic
 /**
  * \brief Whether a semantics variant range-checks the consByteString builtin.
  *
- * True for C and E, false for A, B and D. The \c consByteString builtin consults
- * this to decide whether to reject a byte argument outside 0..255.
+ * True for C, E and G, false for A, B, D and F. The \c consByteString builtin
+ * consults this to decide whether to reject a byte argument outside 0..255.
  *
  * \param[in] semantics The semantics variant to query.
  *
- * \return \c true for C and E, \c false otherwise (including an unknown variant).
+ * \return \c true for C, E and G, \c false otherwise (including an unknown variant).
  */
 bool
 cardano_uplc_semantics_cons_byte_string_range_checks(cardano_uplc_builtin_semantics_t semantics);

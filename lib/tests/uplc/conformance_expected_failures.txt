@@ -11,7 +11,6 @@ builtin/parser/value/duplicate-tokenIDs/duplicate-tokenIDs.uplc text-parser valu
 builtin/parser/value/empty-tokens/empty-tokens.uplc text-parser value constant parsing is not strict
 builtin/parser/value/tokenIDs-unordered/tokenIDs-unordered.uplc text-parser value constant parsing is not strict
 builtin/parser/value/zero-asset/zero-asset.uplc text-parser value constant parsing is not strict
-builtin/semantics/appendString/appendString.uplc semantics-variant utf-8 text size rounds up instead of down
 builtin/semantics/blake2b_224/blake2b_224-empty/blake2b_224-empty.uplc cost-model
 builtin/semantics/blake2b_224/blake2b_224-length-200/blake2b_224-length-200.uplc cost-model
 builtin/semantics/blake2b_256/blake2b_256-empty/blake2b_256-empty.uplc cost-model
@@ -34,10 +33,8 @@ builtin/semantics/divideInteger/divideInteger-neg-neg/divideInteger-neg-neg.uplc
 builtin/semantics/divideInteger/divideInteger-neg-pos/divideInteger-neg-pos.uplc division-costing
 builtin/semantics/divideInteger/divideInteger-pos-neg/divideInteger-pos-neg.uplc division-costing
 builtin/semantics/divideInteger/divideInteger-pos-pos/divideInteger-pos-pos.uplc division-costing
-builtin/semantics/encodeUtf8/encodeUtf8.uplc semantics-variant utf-8 text size rounds up instead of down
 builtin/semantics/equalsByteString/equalsByteString-02/equalsByteString-02.uplc cost-model
 builtin/semantics/equalsByteString/equalsByteString/equalsByteString.uplc cost-model
-builtin/semantics/equalsString/equalsString-02/equalsString-02.uplc semantics-variant utf-8 text size rounds up instead of down
 builtin/semantics/expModInteger/extra/expModInteger-19/expModInteger-19.uplc division-costing
 builtin/semantics/expModInteger/extra/expModInteger-20/expModInteger-20.uplc division-costing
 builtin/semantics/expModInteger/extra/expModInteger-21/expModInteger-21.uplc division-costing

@@ -2063,11 +2063,14 @@ cardano_uplc_evaluate(
   cardano_uplc_budget_t          initial_budget,
   cardano_uplc_eval_result_t*    out)
 {
-  cardano_uplc_cost_model_t        cost_model = cost_model_for_version(version);
-  cardano_uplc_builtin_semantics_t semantics  = cardano_uplc_builtin_semantics_for_language(lang_version(version));
+  const uint64_t                   VAN_ROSSEM_PROTOCOL_VERSION = 11U;
+  cardano_uplc_cost_model_t        cost_model                  = cost_model_for_version(version);
+  cardano_uplc_builtin_semantics_t semantics                   = cardano_uplc_builtin_semantics_for_language_and_protocol(
+    lang_version(version),
+    VAN_ROSSEM_PROTOCOL_VERSION);
 
   // This generic entry point does not carry a protocol version; gate by language
   // only by assuming the newest protocol, where every builtin of the language is
   // available. The transaction evaluator threads the real protocol version below.
-  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, lang_version(version), 11U, initial_budget, out);
+  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, lang_version(version), VAN_ROSSEM_PROTOCOL_VERSION, initial_budget, out);
 }

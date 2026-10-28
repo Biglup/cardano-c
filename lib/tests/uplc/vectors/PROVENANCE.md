@@ -63,7 +63,7 @@ run yet.
 The reference evaluates every case at the newest protocol version (12) with builtin
 semantics variant G and the newest cost model. The runner uses the closest
 configuration the evaluator offers (language V4, protocol version 12, semantics
-variant E, V3 cost model). Cases that depend on the missing behaviour are listed
+variant G, V3 cost model). Cases that depend on the missing behaviour are listed
 in ../conformance_expected_failures.txt, each tagged with a gap category. The
 runner fails when a listed case passes or an unlisted case fails.
 
