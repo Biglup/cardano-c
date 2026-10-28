@@ -8600,7 +8600,7 @@ body_filter_policies(
 
     if (policy_listed(ids, id_count, view) == keep)
     {
-      entries[out_count]  = value->as.list.items[i];
+      entries[out_count] = value->as.list.items[i];
       out_count          += 1U;
     }
   }

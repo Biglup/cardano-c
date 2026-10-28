@@ -1453,7 +1453,7 @@ cardano_uplc_builtin_cost(
       s[0] = value_list_len((args != NULL) ? args[0] : NULL);
     }
   }
-  else if ((func == CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL) || (func == CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL))
+  else if ((func == CARDANO_UPLC_BUILTIN_BLS12_381_G1_MULTI_SCALAR_MUL) || (func == CARDANO_UPLC_BUILTIN_BLS12_381_G2_MULTI_SCALAR_MUL) || (func == CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY))
   {
     if (arg_count > 0U)
     {
@@ -1510,18 +1510,6 @@ cardano_uplc_builtin_cost(
     if (arg_count > 1U)
     {
       s[1] = value_arg_token_count((args != NULL) ? args[1] : NULL);
-    }
-  }
-  else if (func == CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY)
-  {
-    if (arg_count > 0U)
-    {
-      s[0] = value_list_len((args != NULL) ? args[0] : NULL);
-    }
-
-    if (arg_count > 1U)
-    {
-      s[1] = value_list_len((args != NULL) ? args[1] : NULL);
     }
   }
   else if (func == CARDANO_UPLC_BUILTIN_POLICIES)

@@ -432,9 +432,14 @@ static cardano_error_t
 reference_script_bytes(cardano_script_t* script_ref, cardano_buffer_t** out_bytes, script_version_t* out_version)
 {
   cardano_script_language_t lang   = CARDANO_SCRIPT_LANGUAGE_NATIVE;
-  cardano_error_t           result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  cardano_error_t           result = cardano_script_get_language(script_ref, &lang);
 
-  CARDANO_UNUSED(cardano_script_get_language(script_ref, &lang));
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
 
   switch (lang)
   {

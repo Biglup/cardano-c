@@ -48,6 +48,7 @@
 
 #include <gmock/gmock.h>
 #include <string>
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -708,19 +709,14 @@ to_hex(cardano_plutus_data_t* data)
 
   EXPECT_EQ(cardano_plutus_data_to_cbor(data, writer), CARDANO_SUCCESS);
 
-  const size_t size = cardano_cbor_writer_get_hex_size(writer);
-  std::string  hex(size, '\0');
+  const size_t      size = cardano_cbor_writer_get_hex_size(writer);
+  std::vector<char> hex(size + 1U, '\0');
 
-  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, &hex[0], size), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex.data(), size), CARDANO_SUCCESS);
 
   cardano_cbor_writer_unref(&writer);
 
-  if (!hex.empty() && (hex.back() == '\0'))
-  {
-    hex.pop_back();
-  }
-
-  return hex;
+  return std::string(hex.data());
 }
 
 /**

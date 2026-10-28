@@ -892,23 +892,15 @@ cardano_uplc_cost_model_from_params(
   switch (version)
   {
     case CARDANO_UPLC_COST_MODEL_VERSION_V1:
+    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
     {
       expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
       break;
     }
-    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
-    {
-      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
-      break;
-    }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
-    {
-      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3;
-      break;
-    }
     case CARDANO_UPLC_COST_MODEL_VERSION_V4:
     {
-      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4;
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3;
       break;
     }
     default:
