@@ -66,6 +66,7 @@ Next (V1.2.3)
 - Fixed CBOR major type 1 integers in the range [-2^64, -2^63 - 1] wrapping when decoded into Plutus data, metadatum and UPLC data (for example `3bffffffffffffffff` decoded to 0). These values now decode correctly and are encoded with major type 1, as plutus-core does: an unsigned integer for [0, 2^64 - 1], a negative integer for [-2^64, -1] and a bignum outside that range.
 - Added `cardano_cbor_reader_read_negative_int` and `cardano_cbor_writer_write_negative_int`, which read and write the raw argument `n` of a CBOR major type 1 integer (the value `-1 - n`), covering the whole range down to -2^64.
 - `cardano_cbor_writer_write_bigint` now writes 0 as `c240` (an unsigned bignum with an empty byte string) instead of failing.
+- Fixed the native transaction evaluator (`cardano_tx_evaluator_new_native`) accepting scripts that contain a free variable the machine never reaches, for example in a branch that is not taken. Like the ledger, it now checks that every script is closed before evaluating it and reports a script with a free variable as `CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE`. Below protocol version 12 the check does not look inside `constr` and `case` terms, as the ledger's does not; from protocol version 12 it covers the whole script.
 
 V1.2.2
 ---------------------

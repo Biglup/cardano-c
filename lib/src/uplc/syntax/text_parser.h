@@ -55,9 +55,13 @@ extern "C" {
  * \c case forms are parsed only when the program version is 1.1.0 or later; under
  * an earlier version they are a parse error.
  *
- * A free (unbound) variable is not a parse error: it is given a de Bruijn index
- * that is out of range for the evaluation environment, so the parser yields an
- * open term that the machine fails on, matching the reference.
+ * A free (unbound) variable is a parse error wherever it occurs, matching the
+ * reference, whose conversion of the parsed names to de Bruijn indices rejects
+ * open terms. A \c value constant must be written in canonical form: currency
+ * ids strictly ascending, token ids strictly ascending within each currency (both
+ * in bytewise lexicographic order), ids of at most 32 bytes, no empty token list
+ * and non-zero quantities in the signed 128-bit range. Anything else is a parse
+ * error.
  *
  * BLS constant value literals are not parsed: a \c (con bls12_381_G1_element ...)
  * or G2 constant is rejected with \ref CARDANO_ERROR_NOT_IMPLEMENTED rather than
@@ -83,8 +87,9 @@ extern "C" {
  *         \p arena or \p program is NULL, or if \p text is NULL while \p len is
  *         non-zero, \ref CARDANO_ERROR_DECODING for any malformed input (bad token,
  *         unbalanced parens or brackets, unknown builtin name, a \c constr or
- *         \c case form under a version below 1.1.0, bad constant, bad hex, or
- *         nesting past the bound),
+ *         \c case form under a version below 1.1.0, bad constant, bad hex, a
+ *         free variable, a non-canonical value constant, or nesting past the
+ *         bound),
  *         \ref CARDANO_ERROR_NOT_IMPLEMENTED for a BLS constant value literal, or
  *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an interior
  *         object cannot be allocated.

@@ -69,8 +69,11 @@ extern "C" {
  *         there. A script that cannot be deserialised makes
  *         \ref cardano_tx_evaluator_evaluate return \ref CARDANO_ERROR_DECODING.
  *         A script whose Plutus Core version is not available at the protocol
- *         version, or that runs and fails, returns
- *         \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE.
+ *         version, a script with a free variable, or a script that runs and
+ *         fails, returns \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE. Below
+ *         protocol version 12 the free variable check, like the ledger's, does
+ *         not look inside \c constr and \c case terms; from 12 on it covers the
+ *         whole script.
  *
  * \param[in] slot_config The slot/time parameters used to convert the transaction
  *            validity interval to POSIX time. Must not be NULL.

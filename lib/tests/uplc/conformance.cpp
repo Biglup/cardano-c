@@ -291,64 +291,6 @@ has_suffix(const std::string& name, const std::string& suffix)
   return (name.size() >= suffix.size()) && (name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0);
 }
 
-// Returns whether every variable of a de Bruijn term is bound by an enclosing
-// lambda. Indices start at 1 for the innermost binder.
-bool
-is_closed(const cardano_uplc_term_t* term, uint64_t binders)
-{
-  switch (term->kind)
-  {
-    case CARDANO_UPLC_TERM_VAR:
-    {
-      return (term->as.var_index >= 1U) && (term->as.var_index <= binders);
-    }
-    case CARDANO_UPLC_TERM_LAMBDA:
-    {
-      return is_closed(term->as.unary, binders + 1U);
-    }
-    case CARDANO_UPLC_TERM_DELAY:
-    case CARDANO_UPLC_TERM_FORCE:
-    {
-      return is_closed(term->as.unary, binders);
-    }
-    case CARDANO_UPLC_TERM_APPLY:
-    {
-      return is_closed(term->as.apply.function, binders) && is_closed(term->as.apply.argument, binders);
-    }
-    case CARDANO_UPLC_TERM_CONSTR:
-    {
-      for (size_t i = 0U; i < term->as.constr.field_count; ++i)
-      {
-        if (!is_closed(term->as.constr.fields[i], binders))
-        {
-          return false;
-        }
-      }
-
-      return true;
-    }
-    case CARDANO_UPLC_TERM_CASE:
-    {
-      for (size_t i = 0U; i < term->as.cases.branch_count; ++i)
-      {
-        if (!is_closed(term->as.cases.branches[i], binders))
-        {
-          return false;
-        }
-      }
-
-      return is_closed(term->as.cases.scrutinee, binders);
-    }
-    case CARDANO_UPLC_TERM_CONSTANT:
-    case CARDANO_UPLC_TERM_ERROR:
-    case CARDANO_UPLC_TERM_BUILTIN:
-    default:
-    {
-      return true;
-    }
-  }
-}
-
 // Decodes a flat program the way the reference harness does (decodeFlatProg in
 // plutus-conformance/src/PlutusConformance/Common.hs): an empty input is a parse
 // error without decoding, and a program with a free variable fails the
@@ -372,7 +314,7 @@ decode_flat_program(cardano_uplc_arena_t* arena, const std::string& bytes, const
     result = cardano_uplc_flat_decode_program(arena, &reader, program);
   }
 
-  if ((result == CARDANO_SUCCESS) && !is_closed((*program)->term, 0U))
+  if ((result == CARDANO_SUCCESS) && !cardano_uplc_term_is_closed((*program)->term, CARDANO_UPLC_SCOPE_CHECK_FULL))
   {
     result = CARDANO_ERROR_DECODING;
   }

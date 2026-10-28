@@ -827,6 +827,130 @@ TEST(cardano_uplc_parse_program, parsesPair)
   cardano_uplc_arena_free(&arena);
 }
 
+TEST(cardano_uplc_parse_program, parsesCanonicalValue)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act: #123456 precedes #88 bytewise, and the empty id precedes every other id.
+  cardano_error_t result = parse(
+    "(program 1.0.0 (con value [(#, [(#, 1)]), (#123456, [(#, -5), (#aa, 2)]), (#88, [(#bb, 3)])]))",
+    arena,
+    &program);
+
+  // Assert: the entries are kept as written.
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  const cardano_uplc_constant_t* c = program->term->as.constant;
+  ASSERT_EQ(c->kind, CARDANO_UPLC_TYPE_VALUE);
+  ASSERT_EQ(c->as.list.count, 3U);
+  EXPECT_EQ(c->as.list.items[0]->as.pair.fst->as.bytes.size, 0U);
+  EXPECT_EQ(c->as.list.items[1]->as.pair.fst->as.bytes.size, 3U);
+  ASSERT_EQ(c->as.list.items[1]->as.pair.snd->as.list.count, 2U);
+  EXPECT_EQ(int_const_i64(c->as.list.items[1]->as.pair.snd->as.list.items[0]->as.pair.snd), -5);
+  EXPECT_EQ(c->as.list.items[2]->as.pair.fst->as.bytes.data[0], 0x88U);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, parsesEmptyValue)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act
+  cardano_error_t result = parse("(program 1.0.0 (con value []))", arena, &program);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_EQ(program->term->as.constant->kind, CARDANO_UPLC_TYPE_VALUE);
+  EXPECT_EQ(program->term->as.constant->as.list.count, 0U);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, parsesValueAtTheBounds)
+{
+  // Arrange: 32 byte ids and the extreme signed 128-bit quantities.
+  const std::string id(64U, 'f');
+  const std::string min_quantity = "-170141183460469231731687303715884105728";
+  const std::string max_quantity = "170141183460469231731687303715884105727";
+  const std::string text =
+    "(program 1.0.0 (con value [(#" + id + ", [(#00, " + min_quantity + "), (#" + id + ", " + max_quantity + ")])]))";
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act
+  cardano_error_t result = parse(text, arena, &program);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, rejectsUnorderedOrDuplicateCurrencyIds)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act / Assert
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#88, [(#aa, 1)]), (#123456, [(#bb, 2)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#aa, [(#aa, 1)]), (#, [(#bb, 2)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#1234, [(#00, 1)]), (#1234, [(#01, 2)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, rejectsUnorderedOrDuplicateTokenIds)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act / Assert
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#88, 2), (#123456, 1)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#aa00, 2), (#aa, 1)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#, 123), (#, 456)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, rejectsEmptyTokenListAndZeroQuantity)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act / Assert
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#, 0), (#aa, 1)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, rejectsOverLongIdsAndOutOfRangeQuantities)
+{
+  // Arrange
+  const std::string             id(66U, 'f');
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act / Assert
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#" + id + ", [(#, 1)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#" + id + ", 1)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#, 170141183460469231731687303715884105728)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (con value [(#, [(#, -170141183460469231731687303715884105729)])]))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
+
+  cardano_uplc_arena_free(&arena);
+}
+
 TEST(cardano_uplc_parse_program, parsesDataShapes)
 {
   // Arrange
@@ -1008,45 +1132,63 @@ TEST(cardano_uplc_parse_program, rejectsNullArguments)
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_parse_program, parsesFreeVariable)
+TEST(cardano_uplc_parse_program, rejectsFreeVariable)
 {
-  // A free (unbound) variable is accepted at parse time and given an out-of-range
-  // de Bruijn index, matching the reference, which parses the open term.
+  // Arrange
   cardano_uplc_arena_t*         arena   = make_arena();
   const cardano_uplc_program_t* program = nullptr;
+  size_t                        offset  = 0U;
 
   // Act
-  cardano_error_t result = parse("(program 1.0.0 x)", arena, &program);
+  cardano_error_t result = parse("(program 1.0.0 x)", arena, &program, &offset);
 
-  // Assert: it parses, and the free variable resolves to index 1 with an empty
-  // top-level scope, which is out of range for the evaluation environment.
-  EXPECT_EQ(result, CARDANO_SUCCESS);
-  ASSERT_NE(program, nullptr);
-  ASSERT_EQ(program->term->kind, CARDANO_UPLC_TERM_VAR);
-  EXPECT_EQ(program->term->as.var_index, 1U);
+  // Assert: an open term is a parse error, as the reference's name resolution fails.
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
+  EXPECT_GT(offset, 0U);
 
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_parse_program, freeVariableEvaluatesToScriptFailure)
+TEST(cardano_uplc_parse_program, rejectsFreeVariableInUnusedBody)
 {
-  // An open term parses, then the machine fails the env lookup for the free
-  // variable, ending the evaluation with a script error rather than a parse error.
+  // Arrange
   cardano_uplc_arena_t*         arena   = make_arena();
   const cardano_uplc_program_t* program = nullptr;
 
-  // Act
-  cardano_error_t result = parse("(program 1.0.0 x)", arena, &program);
-  ASSERT_EQ(result, CARDANO_SUCCESS);
+  // Act / Assert: the variable is never reached at evaluation, but it is still free.
+  EXPECT_EQ(parse("(program 1.0.0 (lam x y))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 [ (lam x (con integer 1)) (delay y) ])", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.0.0 (lam x (lam y z)))", arena, &program), CARDANO_ERROR_DECODING);
 
-  const cardano_uplc_budget_t initial = { 100000000, 100000000 };
-  cardano_uplc_eval_result_t  eval    = {};
-  cardano_error_t             host =
-    cardano_uplc_evaluate(arena, program, CARDANO_UPLC_MACHINE_VERSION_V3, initial, &eval);
+  cardano_uplc_arena_free(&arena);
+}
 
-  // Assert: the host ran the script and the script outcome is an error term.
-  EXPECT_EQ(host, CARDANO_SUCCESS);
-  EXPECT_EQ(eval.status, CARDANO_UPLC_EVAL_ERROR_TERM);
+TEST(cardano_uplc_parse_program, rejectsFreeVariableInConstrAndCase)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act / Assert
+  EXPECT_EQ(parse("(program 1.1.0 (constr 0 x))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.1.0 (case (constr 0) x))", arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(parse("(program 1.1.0 (case x (con integer 1)))", arena, &program), CARDANO_ERROR_DECODING);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_parse_program, rejectsVariableAfterItsBinderCloses)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  // Act: x is bound inside the first argument only.
+  cardano_error_t result = parse("(program 1.0.0 [ (lam x x) x ])", arena, &program);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   cardano_uplc_arena_free(&arena);
 }
