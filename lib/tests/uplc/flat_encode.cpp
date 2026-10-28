@@ -28,6 +28,7 @@
 #include <cardano/plutus_data/plutus_data.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/ast/uplc_int.h"
 #include "../../src/uplc/builtins/bls.h"
 #include "../../src/uplc/flat/flat_decode.h"
 #include "../../src/uplc/flat/flat_reader.h"
@@ -45,6 +46,7 @@
 #include <gmock/gmock.h>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 /* STATIC HELPERS ************************************************************/
@@ -185,6 +187,83 @@ round_trip_constant(cardano_uplc_constant_t* constant)
   cardano_buffer_unref(&flat);
   cardano_uplc_arena_free(&decode_arena);
   cardano_uplc_arena_free(&arena);
+}
+
+// Encodes a single-constant program and discards the bytes, returning the status.
+cardano_error_t
+encode_constant(cardano_uplc_arena_t* arena, const cardano_uplc_constant_t* constant)
+{
+  const cardano_uplc_program_t* program = nullptr;
+  cardano_buffer_t*             flat    = nullptr;
+
+  EXPECT_EQ(wrap_program(arena, make_constant_term(arena, constant), &program), CARDANO_SUCCESS);
+
+  const cardano_error_t result = cardano_uplc_flat_encode_program(program, &flat);
+  cardano_buffer_unref(&flat);
+
+  return result;
+}
+
+// One token of a value: the token name and its amount.
+using Token = std::pair<std::vector<uint8_t>, int64_t>;
+
+// One policy entry of a value: the currency symbol and its tokens.
+using Policy = std::pair<std::vector<uint8_t>, std::vector<Token>>;
+
+// Builds a byte-string constant over the arena.
+cardano_uplc_constant_t*
+make_bytes(cardano_uplc_arena_t* arena, const std::vector<uint8_t>& bytes)
+{
+  cardano_uplc_constant_t* constant = nullptr;
+  EXPECT_EQ(cardano_uplc_int_constant_new_byte_string_copy(arena, bytes.data(), bytes.size(), &constant), CARDANO_SUCCESS);
+  return constant;
+}
+
+// Builds a value constant with the canonical element type from policy entries.
+cardano_uplc_constant_t*
+make_value(cardano_uplc_arena_t* arena, const std::vector<Policy>& policies)
+{
+  cardano_uplc_type_t* bytestring = nullptr;
+  cardano_uplc_type_t* integer    = nullptr;
+  cardano_uplc_type_t* token      = nullptr;
+  cardano_uplc_type_t* tokens     = nullptr;
+  cardano_uplc_type_t* element    = nullptr;
+
+  EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, nullptr, nullptr, &bytestring), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &integer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token, nullptr, &tokens), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, tokens, &element), CARDANO_SUCCESS);
+
+  const cardano_uplc_constant_t** entries = static_cast<const cardano_uplc_constant_t**>(
+    cardano_uplc_arena_alloc(arena, sizeof(const cardano_uplc_constant_t*) * (policies.size() + 1U), 0U));
+
+  for (size_t i = 0U; i < policies.size(); ++i)
+  {
+    const std::vector<Token>&       names = policies[i].second;
+    const cardano_uplc_constant_t** pairs = static_cast<const cardano_uplc_constant_t**>(
+      cardano_uplc_arena_alloc(arena, sizeof(const cardano_uplc_constant_t*) * (names.size() + 1U), 0U));
+
+    for (size_t j = 0U; j < names.size(); ++j)
+    {
+      cardano_uplc_constant_t* amount = nullptr;
+      cardano_uplc_constant_t* pair   = nullptr;
+      EXPECT_EQ(cardano_uplc_constant_new_integer_small(arena, names[j].second, &amount), CARDANO_SUCCESS);
+      EXPECT_EQ(cardano_uplc_constant_new_pair(arena, make_bytes(arena, names[j].first), amount, &pair), CARDANO_SUCCESS);
+      pairs[j] = pair;
+    }
+
+    cardano_uplc_constant_t* list  = nullptr;
+    cardano_uplc_constant_t* entry = nullptr;
+    EXPECT_EQ(cardano_uplc_constant_new_list(arena, token, pairs, names.size(), &list), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_uplc_constant_new_pair(arena, make_bytes(arena, policies[i].first), list, &entry), CARDANO_SUCCESS);
+    entries[i] = entry;
+  }
+
+  cardano_uplc_constant_t* value = nullptr;
+  EXPECT_EQ(cardano_uplc_constant_new_value(arena, element, policies.empty() ? nullptr : entries, policies.size(), &value), CARDANO_SUCCESS);
+
+  return value;
 }
 
 std::string
@@ -414,7 +493,7 @@ TEST(cardano_uplc_flat_encode_constant, nestedListAndPair)
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_flat_encode_constant, blsG1AndG2)
+TEST(cardano_uplc_flat_encode_constant, blsValuesAreRejected)
 {
   const std::array<uint8_t, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE> g1 = {
     0x97, 0xf1, 0xd3, 0xa7, 0x31, 0x97, 0xd7, 0x94, 0x26, 0x95, 0x63, 0x8c, 0x4f, 0xa9, 0xac, 0x0f, 0xc3, 0x68, 0x8c, 0x4f, 0x97, 0x74, 0xb9, 0x05, 0xa1, 0x4e, 0x3a, 0x3f, 0x17, 0x1b, 0xac, 0x58, 0x6c, 0x55, 0xe8, 0x3f, 0xf9, 0x7a, 0x1a, 0xef, 0xfb, 0x3a, 0xf0, 0x0a, 0xdb, 0x22, 0xc6, 0xbb
@@ -424,44 +503,158 @@ TEST(cardano_uplc_flat_encode_constant, blsG1AndG2)
     0x93, 0xe0, 0x2b, 0x60, 0x52, 0x71, 0x9f, 0x60, 0x7d, 0xac, 0xd3, 0xa0, 0x88, 0x27, 0x4f, 0x65, 0x59, 0x6b, 0xd0, 0xd0, 0x99, 0x20, 0xb6, 0x1a, 0xb5, 0xda, 0x61, 0xbb, 0xdc, 0x7f, 0x50, 0x49, 0x33, 0x4c, 0xf1, 0x12, 0x13, 0x94, 0x5d, 0x57, 0xe5, 0xac, 0x7d, 0x05, 0x5d, 0x04, 0x2b, 0x7e, 0x02, 0x4a, 0xa2, 0xb2, 0xf0, 0x8f, 0x0a, 0x91, 0x26, 0x08, 0x05, 0x27, 0x2d, 0xc5, 0x10, 0x51, 0xc6, 0xe4, 0x7a, 0xd4, 0xfa, 0x40, 0x3b, 0x02, 0xb4, 0x51, 0x0b, 0x64, 0x7a, 0xe3, 0xd1, 0x77, 0x0b, 0xac, 0x03, 0x26, 0xa8, 0x05, 0xbb, 0xef, 0xd4, 0x80, 0x56, 0xc8, 0xc1, 0x21, 0xbd, 0xb8
   };
 
-  cardano_uplc_arena_t* arena = make_arena();
+  const std::array<uint8_t, 16U> ml_blob = {};
 
+  // Arrange
+  cardano_uplc_arena_t*    arena  = make_arena();
   cardano_uplc_constant_t* g1_con = nullptr;
-  ASSERT_EQ(cardano_uplc_int_bls_g1_from_compressed(arena, g1.data(), g1.size(), &g1_con), CARDANO_SUCCESS);
-  round_trip_constant(g1_con);
-
   cardano_uplc_constant_t* g2_con = nullptr;
+  cardano_uplc_constant_t* ml_con = nullptr;
+
+  ASSERT_EQ(cardano_uplc_int_bls_g1_from_compressed(arena, g1.data(), g1.size(), &g1_con), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_uplc_int_bls_g2_from_compressed(arena, g2.data(), g2.size(), &g2_con), CARDANO_SUCCESS);
-  round_trip_constant(g2_con);
+  ASSERT_EQ(cardano_uplc_constant_new_bls(arena, CARDANO_UPLC_TYPE_BLS_ML_RESULT, ml_blob.data(), ml_blob.size(), &ml_con), CARDANO_SUCCESS);
+
+  // Act / Assert
+  EXPECT_EQ(encode_constant(arena, g1_con), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(encode_constant(arena, g2_con), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(encode_constant(arena, ml_con), CARDANO_ERROR_INVALID_ARGUMENT);
 
   cardano_uplc_arena_free(&arena);
 }
 
-/* UNSUPPORTED CONSTANT KINDS ************************************************/
-
-TEST(cardano_uplc_flat_encode_constant, arrayValueAndMlResultAreRejected)
+TEST(cardano_uplc_flat_encode_constant, emptyBlsListsRoundTrip)
 {
+  // Arrange
   cardano_uplc_arena_t* arena = make_arena();
 
-  cardano_uplc_type_t* int_type = nullptr;
+  for (cardano_uplc_type_kind_t kind: { CARDANO_UPLC_TYPE_BLS_G1, CARDANO_UPLC_TYPE_BLS_G2, CARDANO_UPLC_TYPE_BLS_ML_RESULT })
+  {
+    cardano_uplc_type_t*     element = nullptr;
+    cardano_uplc_constant_t* list    = nullptr;
+
+    ASSERT_EQ(cardano_uplc_type_new(arena, kind, nullptr, nullptr, &element), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_uplc_constant_new_list(arena, element, nullptr, 0U, &list), CARDANO_SUCCESS);
+
+    // Act / Assert
+    round_trip_constant(list);
+  }
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_encode_constant, arraysRoundTrip)
+{
+  // Arrange
+  cardano_uplc_arena_t* arena    = make_arena();
+  cardano_uplc_type_t*  int_type = nullptr;
   ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_type), CARDANO_SUCCESS);
 
-  cardano_uplc_constant_t* array = nullptr;
+  const cardano_uplc_constant_t* items[3] = {};
+
+  for (int64_t i = 0; i < 3; ++i)
+  {
+    cardano_uplc_constant_t* item = nullptr;
+    ASSERT_EQ(cardano_uplc_constant_new_integer_small(arena, i - 1, &item), CARDANO_SUCCESS);
+    items[i] = item;
+  }
+
+  cardano_uplc_constant_t* empty  = nullptr;
+  cardano_uplc_constant_t* filled = nullptr;
+  ASSERT_EQ(cardano_uplc_constant_new_array(arena, int_type, nullptr, 0U, &empty), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_array(arena, int_type, items, 3U, &filled), CARDANO_SUCCESS);
+
+  cardano_uplc_type_t* array_type = nullptr;
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_ARRAY, int_type, nullptr, &array_type), CARDANO_SUCCESS);
+
+  const cardano_uplc_constant_t* nested_items[2] = { empty, filled };
+  cardano_uplc_constant_t*       nested          = nullptr;
+  ASSERT_EQ(cardano_uplc_constant_new_array(arena, array_type, nested_items, 2U, &nested), CARDANO_SUCCESS);
+
+  // Act / Assert
+  round_trip_constant(empty);
+  round_trip_constant(filled);
+  round_trip_constant(nested);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_encode_constant, arrayEncodesWithTheArrayTypeTag)
+{
+  // Arrange
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_type_t*     int_type = nullptr;
+  cardano_uplc_constant_t* array    = nullptr;
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &int_type), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_uplc_constant_new_array(arena, int_type, nullptr, 0U, &array), CARDANO_SUCCESS);
 
-  const cardano_uplc_term_t*    term    = make_constant_term(arena, array);
   const cardano_uplc_program_t* program = nullptr;
   cardano_buffer_t*             flat    = nullptr;
-  ASSERT_EQ(wrap_program(arena, term, &program), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_uplc_flat_encode_program(program, &flat), CARDANO_ERROR_INVALID_ARGUMENT);
-  EXPECT_EQ(flat, nullptr);
+  ASSERT_EQ(wrap_program(arena, make_constant_term(arena, array), &program), CARDANO_SUCCESS);
 
-  cardano_uplc_constant_t* value = nullptr;
-  ASSERT_EQ(cardano_uplc_constant_new_value(arena, int_type, nullptr, 0U, &value), CARDANO_SUCCESS);
-  const cardano_uplc_term_t*    vterm = make_constant_term(arena, value);
-  const cardano_uplc_program_t* vprog = nullptr;
-  ASSERT_EQ(wrap_program(arena, vterm, &vprog), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_uplc_flat_encode_program(vprog, &flat), CARDANO_ERROR_INVALID_ARGUMENT);
+  // Act
+  ASSERT_EQ(cardano_uplc_flat_encode_program(program, &flat), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(to_hex(to_vector(flat)), "0100004bf201");
+
+  cardano_buffer_unref(&flat);
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_encode_constant, valuesRoundTrip)
+{
+  // Arrange
+  cardano_uplc_arena_t*    arena = make_arena();
+  cardano_uplc_constant_t* empty = make_value(arena, {});
+  cardano_uplc_constant_t* value = make_value(
+    arena,
+    { { {}, { { {}, 1 } } },
+      { { 0x01U, 0x02U }, { { { 0x41U }, -5 }, { { 0x42U }, INT64_MAX } } } });
+
+  // Act / Assert
+  round_trip_constant(empty);
+  round_trip_constant(value);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_encode_constant, valueEncodesWithTheValueTypeTag)
+{
+  // Arrange
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  cardano_buffer_t*             flat    = nullptr;
+  ASSERT_EQ(wrap_program(arena, make_constant_term(arena, make_value(arena, {})), &program), CARDANO_SUCCESS);
+
+  // Act
+  ASSERT_EQ(cardano_uplc_flat_encode_program(program, &flat), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(to_hex(to_vector(flat)), "0100004e81");
+
+  cardano_buffer_unref(&flat);
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_encode_constant, unknownKindsAreRejected)
+{
+  // Arrange
+  cardano_uplc_arena_t*    arena    = make_arena();
+  cardano_uplc_type_t*     bogus    = nullptr;
+  cardano_uplc_constant_t* constant = nullptr;
+  cardano_uplc_constant_t* list     = nullptr;
+
+  ASSERT_EQ(cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, nullptr, nullptr, &bogus), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_integer_small(arena, 1, &constant), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_uplc_constant_new_list(arena, bogus, nullptr, 0U, &list), CARDANO_SUCCESS);
+
+  bogus->kind    = static_cast<cardano_uplc_type_kind_t>(99);
+  constant->kind = static_cast<cardano_uplc_type_kind_t>(99);
+
+  // Act / Assert
+  EXPECT_EQ(encode_constant(arena, constant), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(encode_constant(arena, list), CARDANO_ERROR_INVALID_ARGUMENT);
 
   cardano_uplc_arena_free(&arena);
 }
@@ -561,4 +754,42 @@ TEST(cardano_uplc_flat_encode_program, roundTripsCorpusPrograms)
   }
 
   EXPECT_GT(round_tripped, 100U);
+}
+
+TEST(cardano_uplc_flat_encode_program, reencodesCorpusFlatInputsByteForByte)
+{
+  size_t round_tripped = 0U;
+
+  for (const auto& entry: fs::recursive_directory_iterator(corpus_root()))
+  {
+    const std::string name = entry.path().filename().string();
+
+    if (!entry.is_regular_file() || (name.size() < 5U) || (name.compare(name.size() - 5U, 5U, ".flat") != 0))
+    {
+      continue;
+    }
+
+    const std::string    text = read_file(entry.path().string());
+    std::vector<uint8_t> bytes(text.begin(), text.end());
+
+    cardano_uplc_arena_t*         arena   = make_arena();
+    const cardano_uplc_program_t* program = nullptr;
+
+    if (bytes.empty() || (decode_program(bytes, arena, &program) != CARDANO_SUCCESS))
+    {
+      cardano_uplc_arena_free(&arena);
+      continue;
+    }
+
+    cardano_buffer_t* flat = nullptr;
+    ASSERT_EQ(cardano_uplc_flat_encode_program(program, &flat), CARDANO_SUCCESS) << entry.path().string();
+    EXPECT_EQ(to_hex(to_vector(flat)), to_hex(bytes)) << entry.path().string();
+
+    round_tripped += 1U;
+
+    cardano_buffer_unref(&flat);
+    cardano_uplc_arena_free(&arena);
+  }
+
+  EXPECT_GT(round_tripped, 800U);
 }

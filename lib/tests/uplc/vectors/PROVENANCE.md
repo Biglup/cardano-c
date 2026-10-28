@@ -53,10 +53,17 @@ Each case lives in its own directory named after the case. Inside:
                              "parse/decode error" this file holds that text instead
                              of a budget.
   <case>.flat                The flat encoding of the program, for most cases.
-  <case>.flat.expected       The expected outcome of evaluating the flat input.
+  <case>.flat.expected       The expected outcome of evaluating the flat input:
+                             the flat-encoded result program, or the text
+                             "evaluation failure" or "parse/decode error".
 
-The conformance runner evaluates the .uplc inputs only. The .flat inputs are not
-run yet.
+The conformance runner evaluates both the .uplc and the .flat inputs. A .flat case
+is decoded as the upstream harness does (plutus-conformance/src/PlutusConformance/
+Common.hs): an empty input or a decode failure is a parse/decode error, and so is a
+program with a free variable, which the harness rejects when it converts de Bruijn
+indices back to names. Its result is compared against the program decoded from
+<case>.flat.expected (or the failure text that file holds), and its budget against
+the same <case>.budget.expected as the .uplc case.
 
 ## Evaluation configuration
 
@@ -64,8 +71,9 @@ The reference evaluates every case at the newest protocol version (12) with buil
 semantics variant G and the newest cost model. The runner uses the closest
 configuration the evaluator offers (language V4, protocol version 12, semantics
 variant G, V3 cost model). Cases that depend on the missing behaviour are listed
-in ../conformance_expected_failures.txt, each tagged with a gap category. The
-runner fails when a listed case passes or an unlisted case fails.
+in ../conformance_expected_failures.txt, each tagged with a gap category; a .flat
+case is listed under its own .flat path. The runner fails when a listed case passes
+or an unlisted case fails.
 
 ## Build exclusion (verified)
 

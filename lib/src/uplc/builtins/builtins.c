@@ -9418,3 +9418,62 @@ cardano_uplc_int_builtin_run(
     }
   }
 }
+
+bool
+cardano_uplc_int_value_entries_are_canonical(
+  struct cardano_uplc_arena_t*          arena,
+  const cardano_uplc_constant_t* const* entries,
+  const size_t                          count)
+{
+  cardano_uplc_byte_view_t prev_policy = { NULL, 0U };
+
+  if ((arena == NULL) || ((entries == NULL) && (count > 0U)))
+  {
+    return false;
+  }
+
+  for (size_t i = 0U; i < count; ++i)
+  {
+    cardano_uplc_byte_view_t              policy     = { NULL, 0U };
+    cardano_uplc_byte_view_t              prev_token = { NULL, 0U };
+    const cardano_uplc_constant_t* const* tokens     = NULL;
+    size_t                                tcount     = 0U;
+
+    if (!value_entry(entries[i], &policy, &tokens, &tcount) || (policy.size > PRV_VALUE_KEY_MAX) || (tcount == 0U))
+    {
+      return false;
+    }
+
+    if ((i > 0U) && (compare_buffers(prev_policy, policy) >= 0))
+    {
+      return false;
+    }
+
+    for (size_t j = 0U; j < tcount; ++j)
+    {
+      cardano_uplc_byte_view_t name   = { NULL, 0U };
+      const cardano_bigint_t*  amount = NULL;
+
+      if (!value_token(arena, tokens[j], &name, &amount) || (name.size > PRV_VALUE_KEY_MAX))
+      {
+        return false;
+      }
+
+      if (cardano_bigint_is_zero(amount) || !amount_in_range(amount))
+      {
+        return false;
+      }
+
+      if ((j > 0U) && (compare_buffers(prev_token, name) >= 0))
+      {
+        return false;
+      }
+
+      prev_token = name;
+    }
+
+    prev_policy = policy;
+  }
+
+  return true;
+}

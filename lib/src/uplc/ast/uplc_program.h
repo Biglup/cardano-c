@@ -99,10 +99,10 @@ cardano_uplc_program_from_script_bytes(
  * back to those same bytes, and the result is a fixed point under a second
  * decode-encode pass.
  *
- * The \c array, \c value and \c bls12_381_mlresult constant kinds have no flat
- * serialization (the decoder rejects them), so a program carrying one is rejected
- * here with \ref CARDANO_ERROR_INVALID_ARGUMENT rather than producing bytes that
- * could not be decoded back.
+ * BLS12-381 G1, G2 and Miller-loop-result values have no flat serialization (the
+ * reference encoder and decoder both refuse them), so a program carrying one is
+ * rejected here with \ref CARDANO_ERROR_INVALID_ARGUMENT rather than producing
+ * bytes that could not be decoded back.
  *
  * \param[in] program The program to encode. Must not be NULL and must carry a
  *            non-NULL term.

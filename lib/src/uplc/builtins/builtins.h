@@ -234,6 +234,32 @@ cardano_uplc_builtin_as_pair(
   const cardano_uplc_constant_t** fst,
   const cardano_uplc_constant_t** snd);
 
+/* VALUE HELPERS ************************************************************/
+
+/**
+ * \brief Tests whether a policy-entry list is in the canonical form of a value.
+ *
+ * Each entry must be a pair of a byte-string policy and a list of (byte-string
+ * token, integer amount) pairs. The list is canonical when policies are strictly
+ * ascending, every token list is non-empty and strictly ascending, every key is at
+ * most 32 bytes, and every amount is non-zero and within -(2^127) .. 2^127 - 1.
+ * These are the invariants the value builtins maintain and the ones the reference
+ * enforces when it deserializes a value.
+ *
+ * \param[in] arena The arena an inline amount is materialized through. Must not
+ *            be NULL.
+ * \param[in] entries The policy entries, or NULL when \p count is 0.
+ * \param[in] count The number of policy entries.
+ *
+ * \return \c true when the entries are canonical, \c false when they are not, when
+ *         an argument is invalid or when an amount cannot be materialized.
+ */
+bool
+cardano_uplc_int_value_entries_are_canonical(
+  struct cardano_uplc_arena_t*          arena,
+  const cardano_uplc_constant_t* const* entries,
+  size_t                                count);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

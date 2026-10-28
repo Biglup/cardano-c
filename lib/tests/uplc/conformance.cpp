@@ -27,6 +27,8 @@
 #include <cardano/error.h>
 
 #include "../../src/uplc/arena/uplc_arena.h"
+#include "../../src/uplc/flat/flat_decode.h"
+#include "../../src/uplc/flat/flat_reader.h"
 #include "../../src/uplc/syntax/pretty.h"
 #include "../../src/uplc/syntax/text_parser.h"
 
@@ -276,15 +278,139 @@ evaluate(
     arena, program, &model, CONFIGURATION.semantics, CONFIGURATION.language, CONFIGURATION.protocol_major, initial, result);
 }
 
+// The input format of a corpus case, named by its file extension.
+enum class Format
+{
+  TEXTUAL, // a .uplc program in the surface syntax
+  FLAT     // a .flat flat-encoded program
+};
+
+bool
+has_suffix(const std::string& name, const std::string& suffix)
+{
+  return (name.size() >= suffix.size()) && (name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0);
+}
+
+// Returns whether every variable of a de Bruijn term is bound by an enclosing
+// lambda. Indices start at 1 for the innermost binder.
+bool
+is_closed(const cardano_uplc_term_t* term, uint64_t binders)
+{
+  switch (term->kind)
+  {
+    case CARDANO_UPLC_TERM_VAR:
+    {
+      return (term->as.var_index >= 1U) && (term->as.var_index <= binders);
+    }
+    case CARDANO_UPLC_TERM_LAMBDA:
+    {
+      return is_closed(term->as.unary, binders + 1U);
+    }
+    case CARDANO_UPLC_TERM_DELAY:
+    case CARDANO_UPLC_TERM_FORCE:
+    {
+      return is_closed(term->as.unary, binders);
+    }
+    case CARDANO_UPLC_TERM_APPLY:
+    {
+      return is_closed(term->as.apply.function, binders) && is_closed(term->as.apply.argument, binders);
+    }
+    case CARDANO_UPLC_TERM_CONSTR:
+    {
+      for (size_t i = 0U; i < term->as.constr.field_count; ++i)
+      {
+        if (!is_closed(term->as.constr.fields[i], binders))
+        {
+          return false;
+        }
+      }
+
+      return true;
+    }
+    case CARDANO_UPLC_TERM_CASE:
+    {
+      for (size_t i = 0U; i < term->as.cases.branch_count; ++i)
+      {
+        if (!is_closed(term->as.cases.branches[i], binders))
+        {
+          return false;
+        }
+      }
+
+      return is_closed(term->as.cases.scrutinee, binders);
+    }
+    case CARDANO_UPLC_TERM_CONSTANT:
+    case CARDANO_UPLC_TERM_ERROR:
+    case CARDANO_UPLC_TERM_BUILTIN:
+    default:
+    {
+      return true;
+    }
+  }
+}
+
+// Decodes a flat program the way the reference harness does (decodeFlatProg in
+// plutus-conformance/src/PlutusConformance/Common.hs): an empty input is a parse
+// error without decoding, and a program with a free variable fails the
+// de Bruijn-to-names conversion that follows the decode, so it is a parse error
+// too.
+cardano_error_t
+decode_flat_program(cardano_uplc_arena_t* arena, const std::string& bytes, const cardano_uplc_program_t** program)
+{
+  cardano_uplc_flat_reader_t reader = { nullptr, 0U, 0U, 0U };
+
+  if (bytes.empty())
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  cardano_error_t result =
+    cardano_uplc_flat_reader_init(&reader, reinterpret_cast<const byte_t*>(bytes.data()), bytes.size());
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_flat_decode_program(arena, &reader, program);
+  }
+
+  if ((result == CARDANO_SUCCESS) && !is_closed((*program)->term, 0U))
+  {
+    result = CARDANO_ERROR_DECODING;
+  }
+
+  return result;
+}
+
+// Reads a program in the given format. On a textual parse failure the offset of
+// the failure is stored in \p offset.
+cardano_error_t
+read_program(
+  cardano_uplc_arena_t*          arena,
+  Format                         format,
+  const std::string&             input,
+  const cardano_uplc_program_t** program,
+  size_t*                        offset)
+{
+  if (format == Format::FLAT)
+  {
+    return decode_flat_program(arena, input, program);
+  }
+
+  return cardano_uplc_parse_program(arena, input.c_str(), input.size(), program, offset);
+}
+
 // Runs one case and returns the empty string when it passes, or a description of
-// why it failed.
+// why it failed. A .flat case is compared against its .flat.expected golden, which
+// holds either the flat-encoded result program or the failure text, and against
+// the same .budget.expected as the .uplc case of the same directory.
 std::string
 check_case(const fs::path& input_path)
 {
   const std::string input_str  = input_path.string();
-  const std::string base       = input_str.substr(0U, input_str.size() - 5U); // strip ".uplc"
+  const Format      format     = has_suffix(input_str, ".flat") ? Format::FLAT : Format::TEXTUAL;
+  const std::string extension  = (format == Format::FLAT) ? ".flat" : ".uplc";
+  const std::string base       = input_str.substr(0U, input_str.size() - extension.size());
   const std::string input_text = read_file(input_str);
-  const std::string expected   = read_file(base + ".uplc.expected");
+  const std::string expected   = read_file(base + extension + ".expected");
   const std::string budget     = read_file(base + ".budget.expected");
 
   const Outcome outcome = classify(expected, budget);
@@ -292,8 +418,7 @@ check_case(const fs::path& input_path)
   cardano_uplc_arena_t*         arena        = make_arena();
   const cardano_uplc_program_t* program      = nullptr;
   size_t                        parse_offset = 0U;
-  const cardano_error_t         parse_error =
-    cardano_uplc_parse_program(arena, input_text.c_str(), input_text.size(), &program, &parse_offset);
+  const cardano_error_t         parse_error  = read_program(arena, format, input_text, &program, &parse_offset);
 
   std::ostringstream failure;
 
@@ -337,7 +462,7 @@ check_case(const fs::path& input_path)
       const cardano_uplc_program_t* expected_program = nullptr;
       size_t                        expected_offset  = 0U;
       const cardano_error_t         expected_parse =
-        cardano_uplc_parse_program(arena, expected.c_str(), expected.size(), &expected_program, &expected_offset);
+        read_program(arena, format, expected, &expected_program, &expected_offset);
 
       if (expected_parse != CARDANO_SUCCESS)
       {
@@ -417,8 +542,8 @@ load_expected_failures(std::vector<std::string>& problems)
 
 TEST(cardano_uplc_conformance, fullCorpusMatchesTheExpectedFailureList)
 {
-  // Arrange: collect every *.uplc input under the corpus, sorted so reports are
-  // stable. The *.uplc.expected sidecars do not end in ".uplc".
+  // Arrange: collect every *.uplc and *.flat input under the corpus, sorted so
+  // reports are stable. The *.expected sidecars end in neither extension.
   const std::string root = corpus_root();
   ASSERT_TRUE(fs::exists(root)) << "corpus directory not found: " << root;
 
@@ -431,7 +556,7 @@ TEST(cardano_uplc_conformance, fullCorpusMatchesTheExpectedFailureList)
     }
 
     const std::string name = entry.path().filename().string();
-    if ((name.size() >= 5U) && (name.compare(name.size() - 5U, 5U, ".uplc") == 0))
+    if (has_suffix(name, ".uplc") || has_suffix(name, ".flat"))
     {
       inputs.push_back(entry.path());
     }

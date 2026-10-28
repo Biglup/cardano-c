@@ -24,7 +24,7 @@
 #include "flat_decode.h"
 
 #include "../ast/uplc_int.h"
-#include "../builtins/bls.h"
+#include "../builtins/builtins.h"
 #include "../data/uplc_data.h"
 
 #include <cardano/cbor/cbor_reader.h>
@@ -37,10 +37,12 @@
 /**
  * \brief Flat const-type list tags.
  *
- * These are the 4-bit tags read from the const-type list, fixed by the protocol.
- * They are distinct from \ref cardano_uplc_type_kind_t enumerator values: the descriptor
- * enum places \c data at 7 and the BLS kinds at 8..10, while the flat tags place
- * \c apply at 7, \c data at 8 and the BLS tags at 9..11.
+ * These are the 4-bit tags read from the const-type list, fixed by the protocol
+ * (\c encodeUni in plutus-core/src/PlutusCore/Default/Universe.hs). They are
+ * distinct from \ref cardano_uplc_type_kind_t enumerator values: the descriptor
+ * enum places \c data at 7, the BLS kinds at 8..10, \c array at 11 and \c value
+ * at 12, while the flat tags place \c apply at 7, \c data at 8, the BLS tags at
+ * 9..11, \c array at 12 and \c value at 13.
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_INTEGER = 0U;
@@ -66,6 +68,10 @@ static const uint8_t FLAT_TYPE_TAG_BLS_G1 = 9U;
 static const uint8_t FLAT_TYPE_TAG_BLS_G2 = 10U;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_BLS_ML_RESULT = 11U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_ARRAY = 12U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_VALUE = 13U;
 
 /**
  * \brief Number of bits in a single const-type tag.
@@ -111,6 +117,14 @@ static const uint8_t FLAT_TERM_TAG_BITS = 4U;
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_BUILTIN_TAG_BITS = 7U;
+
+/**
+ * \brief The first program version, 1.1.0, whose terms may use \c constr and \c case.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t FLAT_CONSTR_CASE_MIN_MAJOR = 1U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t FLAT_CONSTR_CASE_MIN_MINOR = 1U;
 
 /**
  * \brief Upper bound on the term nesting depth the decoder will follow.
@@ -272,9 +286,9 @@ is_valid_utf8(const byte_t* data, const size_t size)
 /**
  * \brief Maps a leaf flat type tag to its \ref cardano_uplc_type_kind_t.
  *
- * Handles only the tags that name a non-application type. The list and pair
- * applications are handled by the recursive type parser, and the apply tag never
- * reaches this function.
+ * Handles only the tags that name a non-application type. The list, array and
+ * pair applications are handled by the recursive type parser, and the apply tag
+ * never reaches this function.
  *
  * \param[in] tag The flat type tag.
  * \param[out] kind On success, the corresponding descriptor kind.
@@ -323,6 +337,10 @@ leaf_kind(const uint8_t tag, cardano_uplc_type_kind_t* kind)
   {
     *kind = CARDANO_UPLC_TYPE_BLS_ML_RESULT;
   }
+  else if (tag == FLAT_TYPE_TAG_VALUE)
+  {
+    *kind = CARDANO_UPLC_TYPE_VALUE;
+  }
   else
   {
     result = CARDANO_ERROR_DECODING;
@@ -335,10 +353,10 @@ leaf_kind(const uint8_t tag, cardano_uplc_type_kind_t* kind)
  * \brief Builds a type descriptor from the collected const-type tag list.
  *
  * Consumes tags starting at \p index. A leaf tag yields a leaf type. The apply
- * tag drives the two application shapes used by flat: <tt>[7, 5, T]</tt> builds
- * <tt>list(T)</tt> and <tt>[7, 7, 6, A, B]</tt> builds <tt>pair(A, B)</tt>, exactly
- * as \c decode_type does in the references. Recursion is bounded by
- * \ref FLAT_TYPE_MAX_DEPTH.
+ * tag drives the three application shapes used by flat: <tt>[7, 5, T]</tt> builds
+ * <tt>list(T)</tt>, <tt>[7, 12, T]</tt> builds <tt>array(T)</tt> and
+ * <tt>[7, 7, 6, A, B]</tt> builds <tt>pair(A, B)</tt>, exactly as \c decode_type
+ * does in the references. Recursion is bounded by \ref FLAT_TYPE_MAX_DEPTH.
  *
  * \param[in] arena The arena every descriptor node is allocated from.
  * \param[in] tags The collected 4-bit type tags.
@@ -388,10 +406,11 @@ parse_type(
       const uint8_t applied = tags[*index];
       *index                += 1U;
 
-      if (applied == FLAT_TYPE_TAG_LIST)
+      if ((applied == FLAT_TYPE_TAG_LIST) || (applied == FLAT_TYPE_TAG_ARRAY))
       {
-        const cardano_uplc_type_t* element = NULL;
-        cardano_uplc_type_t*       built   = NULL;
+        const cardano_uplc_type_t*     element   = NULL;
+        cardano_uplc_type_t*           built     = NULL;
+        const cardano_uplc_type_kind_t container = (applied == FLAT_TYPE_TAG_LIST) ? CARDANO_UPLC_TYPE_LIST : CARDANO_UPLC_TYPE_ARRAY;
 
         // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
         result = parse_type(arena, tags, tag_count, index, depth + 1U, &element);
@@ -401,7 +420,7 @@ parse_type(
           return result;
         }
 
-        result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, element, NULL, &built);
+        result = cardano_uplc_type_new(arena, container, element, NULL, &built);
 
         if (result != CARDANO_SUCCESS)
         {
@@ -649,74 +668,6 @@ read_byte_string(
 }
 
 /**
- * \brief Reads a BLS12-381 G1 constant value.
- *
- * The flat form is a byte string carrying the compressed point; the bytes are
- * uncompressed and subgroup-checked. An invalid point is a decode error.
- *
- * \param[in] arena The arena the constant is allocated from.
- * \param[in,out] reader The flat reader, advanced past the value.
- * \param[out] constant On success, the G1 constant.
- *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for an
- *         invalid point, or a propagated decode or allocation error.
- */
-static cardano_error_t
-read_bls_g1(
-  cardano_uplc_arena_t*       arena,
-  cardano_uplc_flat_reader_t* reader,
-  cardano_uplc_constant_t**   constant)
-{
-  cardano_buffer_t* bytes  = NULL;
-  cardano_error_t   result = cardano_uplc_flat_reader_bytes(reader, &bytes);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_int_bls_g1_from_compressed(arena, cardano_buffer_get_data(bytes), cardano_buffer_get_size(bytes), constant);
-
-  cardano_buffer_unref(&bytes);
-
-  return result;
-}
-
-/**
- * \brief Reads a BLS12-381 G2 constant value.
- *
- * The flat form is a byte string carrying the compressed point; the bytes are
- * uncompressed and subgroup-checked. An invalid point is a decode error.
- *
- * \param[in] arena The arena the constant is allocated from.
- * \param[in,out] reader The flat reader, advanced past the value.
- * \param[out] constant On success, the G2 constant.
- *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for an
- *         invalid point, or a propagated decode or allocation error.
- */
-static cardano_error_t
-read_bls_g2(
-  cardano_uplc_arena_t*       arena,
-  cardano_uplc_flat_reader_t* reader,
-  cardano_uplc_constant_t**   constant)
-{
-  cardano_buffer_t* bytes  = NULL;
-  cardano_error_t   result = cardano_uplc_flat_reader_bytes(reader, &bytes);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  result = cardano_uplc_int_bls_g2_from_compressed(arena, cardano_buffer_get_data(bytes), cardano_buffer_get_size(bytes), constant);
-
-  cardano_buffer_unref(&bytes);
-
-  return result;
-}
-
-/**
  * \brief Reads a UTF-8 string constant value.
  *
  * The bytes are read as a flat bytestring and then validated as UTF-8; invalid
@@ -799,33 +750,36 @@ read_data(
 }
 
 /**
- * \brief Reads a typed list constant value.
+ * \brief Reads a cons-bit sequence of constant values of one element type.
  *
- * A list value is a cons-bit sequence: a one bit precedes each element and a zero
- * bit ends the sequence. Each element is read at the list's element type. The
- * element pointers are gathered into an arena array handed to the list
- * constructor.
+ * A one bit precedes each element and a zero bit ends the sequence. Each element
+ * is read at \p element_type and the element pointers are gathered into an arena
+ * array. This is the flat form of a list, of an array (the reference encodes a
+ * vector as a list) and of each level of a value.
  *
- * \param[in] arena The arena the constant and its element array are allocated from.
- * \param[in,out] reader The flat reader, advanced past the value.
+ * \param[in] arena The arena the elements and the element array are allocated from.
+ * \param[in,out] reader The flat reader, advanced past the sequence.
  * \param[in] element_type The element type descriptor.
  * \param[in] depth The current value nesting depth.
- * \param[out] constant On success, the list constant.
+ * \param[out] items On success, the element array, or NULL when \p count is 0.
+ * \param[out] count On success, the number of elements.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
  *         truncated stream or nesting past the depth bound, or a propagated
  *         allocation error.
  */
 static cardano_error_t
-read_list(
+read_items(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
   const cardano_uplc_type_t*  element_type,
   const size_t                depth,
-  cardano_uplc_constant_t**   constant)
+  // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
+  const cardano_uplc_constant_t*** items,
+  size_t*                          count)
 {
-  const cardano_uplc_constant_t** items    = NULL;
-  size_t                          count    = 0U;
+  const cardano_uplc_constant_t** list     = NULL;
+  size_t                          length   = 0U;
   size_t                          capacity = 0U;
   cardano_error_t                 result   = CARDANO_SUCCESS;
   uint8_t                         more     = 0U;
@@ -849,7 +803,7 @@ read_list(
       return result;
     }
 
-    if (count == capacity)
+    if (length == capacity)
     {
       const size_t                    next_capacity = (capacity == 0U) ? 4U : (capacity * 2U);
       const cardano_uplc_constant_t** grown         = (const cardano_uplc_constant_t**)cardano_uplc_arena_alloc(
@@ -862,17 +816,17 @@ read_list(
         return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       }
 
-      for (size_t i = 0U; i < count; ++i)
+      for (size_t i = 0U; i < length; ++i)
       {
-        grown[i] = items[i];
+        grown[i] = list[i];
       }
 
-      items    = grown;
+      list     = grown;
       capacity = next_capacity;
     }
 
-    items[count] = element;
-    count        += 1U;
+    list[length] = element;
+    length       += 1U;
 
     result = cardano_uplc_flat_reader_bit(reader, &more);
 
@@ -882,7 +836,151 @@ read_list(
     }
   }
 
-  return cardano_uplc_constant_new_list(arena, element_type, items, count, constant);
+  *items = list;
+  *count = length;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Reads a typed list or array constant value.
+ *
+ * Both forms are a cons-bit sequence of elements read at the element type; the
+ * array form is the reference's flat instance for a strict vector, which encodes
+ * the vector as a list (plutus-core/src/Data/Vector/Orphans.hs).
+ *
+ * \param[in] arena The arena the constant and its element array are allocated from.
+ * \param[in,out] reader The flat reader, advanced past the value.
+ * \param[in] type The list or array type descriptor.
+ * \param[in] depth The current value nesting depth.
+ * \param[out] constant On success, the list or array constant.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
+ *         truncated stream or nesting past the depth bound, or a propagated
+ *         allocation error.
+ */
+static cardano_error_t
+read_sequence(
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  const cardano_uplc_type_t*  type,
+  const size_t                depth,
+  cardano_uplc_constant_t**   constant)
+{
+  const cardano_uplc_constant_t** items = NULL;
+  size_t                          count = 0U;
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+  cardano_error_t result = read_items(arena, reader, type->fst, depth, &items, &count);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (type->kind == CARDANO_UPLC_TYPE_ARRAY)
+  {
+    return cardano_uplc_constant_new_array(arena, type->fst, items, count, constant);
+  }
+
+  return cardano_uplc_constant_new_list(arena, type->fst, items, count, constant);
+}
+
+/**
+ * \brief Builds the value element type <tt>pair(bytestring, list(pair(bytestring, integer)))</tt>.
+ *
+ * \param[in] arena The arena every descriptor node is allocated from.
+ * \param[out] type On success, the element type descriptor.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or a propagated allocation error.
+ */
+static cardano_error_t
+value_element_type(cardano_uplc_arena_t* arena, const cardano_uplc_type_t** type)
+{
+  cardano_uplc_type_t* bytestring = NULL;
+  cardano_uplc_type_t* integer    = NULL;
+  cardano_uplc_type_t* token      = NULL;
+  cardano_uplc_type_t* tokens     = NULL;
+  cardano_uplc_type_t* policy     = NULL;
+  cardano_error_t      result     = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_BYTE_STRING, NULL, NULL, &bytestring);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_INTEGER, NULL, NULL, &integer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, integer, &token);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, token, NULL, &tokens);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_PAIR, bytestring, tokens, &policy);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *type = policy;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Reads a multi-asset value constant.
+ *
+ * The flat form is the reference's encoding of the nested map: a cons-bit list of
+ * (currency symbol, cons-bit list of (token name, quantity)) entries, keys as flat
+ * byte strings and quantities as flat integers (plutus-core/src/PlutusCore/Value.hs,
+ * \c Flat instance of \c Value). The entries must already be canonical, as the
+ * reference's \c buildValueWith requires: strictly ascending keys of at most 32
+ * bytes, no empty token map and non-zero quantities in the signed 128-bit range.
+ *
+ * \param[in] arena The arena the constant is allocated from.
+ * \param[in,out] reader The flat reader, advanced past the value.
+ * \param[in] depth The current value nesting depth.
+ * \param[out] constant On success, the value constant.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
+ *         truncated stream or a non-canonical value, or a propagated allocation
+ *         error.
+ */
+static cardano_error_t
+read_asset_value(
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  const size_t                depth,
+  cardano_uplc_constant_t**   constant)
+{
+  const cardano_uplc_type_t*      element = NULL;
+  const cardano_uplc_constant_t** items   = NULL;
+  size_t                          count   = 0U;
+  cardano_error_t                 result  = value_element_type(arena, &element);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+  result = read_items(arena, reader, element, depth, &items, &count);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (!cardano_uplc_int_value_entries_are_canonical(arena, items, count))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  return cardano_uplc_constant_new_value(arena, element, items, count, constant);
 }
 
 /**
@@ -932,10 +1030,13 @@ read_pair(
 /**
  * \brief Reads a constant value for a parsed type descriptor.
  *
- * Dispatches on \p type->kind to the per-type readers. Recursion through list and
- * pair values is bounded by \ref FLAT_TYPE_MAX_DEPTH. A G1 or G2 value is the
- * compressed point uncompressed and subgroup-checked; an ML-result value has no
- * flat serialization and is a decode error.
+ * Dispatches on \p type->kind to the per-type readers. Recursion through list,
+ * array, pair and value constants is bounded by \ref FLAT_TYPE_MAX_DEPTH. The
+ * BLS12-381 G1, G2 and Miller-loop-result types have no flat value form: the
+ * reference's \c Flat instances fail to decode them (\c G1.hs, \c G2.hs and
+ * \c Pairing.hs under plutus-core/src/PlutusCore/Crypto/BLS12_381), so a value of
+ * any of them is a decode error. The type alone is accepted, so an empty list of
+ * such elements decodes as it does in the reference.
  *
  * \param[in] arena The arena the constant is allocated from.
  * \param[in,out] reader The flat reader, advanced past the value.
@@ -944,8 +1045,9 @@ read_pair(
  * \param[out] constant On success, the decoded constant.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
- *         truncated or invalid value, an out-of-subgroup BLS point, an ML-result
- *         value, or nesting past the depth bound, or a propagated allocation error.
+ *         truncated or invalid value, a BLS12-381 value, a non-canonical value
+ *         constant, or nesting past the depth bound, or a propagated allocation
+ *         error.
  */
 static cardano_error_t
 read_value(
@@ -998,9 +1100,10 @@ read_value(
       break;
     }
     case CARDANO_UPLC_TYPE_LIST:
+    case CARDANO_UPLC_TYPE_ARRAY:
     {
       // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-      result = read_list(arena, reader, type->fst, depth, constant);
+      result = read_sequence(arena, reader, type, depth, constant);
       break;
     }
     case CARDANO_UPLC_TYPE_PAIR:
@@ -1014,18 +1117,14 @@ read_value(
       result = read_data(arena, reader, constant);
       break;
     }
-    case CARDANO_UPLC_TYPE_BLS_G1:
-    {
-      result = read_bls_g1(arena, reader, constant);
-      break;
-    }
-    case CARDANO_UPLC_TYPE_BLS_G2:
-    {
-      result = read_bls_g2(arena, reader, constant);
-      break;
-    }
-    case CARDANO_UPLC_TYPE_ARRAY:
     case CARDANO_UPLC_TYPE_VALUE:
+    {
+      // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
+      result = read_asset_value(arena, reader, depth, constant);
+      break;
+    }
+    case CARDANO_UPLC_TYPE_BLS_G1:
+    case CARDANO_UPLC_TYPE_BLS_G2:
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
     default:
     {
@@ -1042,6 +1141,7 @@ static cardano_error_t
 read_term(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  bool                        allow_constr_case,
   size_t                      depth,
   const cardano_uplc_term_t** term);
 
@@ -1056,6 +1156,7 @@ read_term(
  *
  * \param[in] arena The arena the element array and every element are allocated from.
  * \param[in,out] reader The flat reader, advanced past the list.
+ * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
  * \param[in] depth The current term nesting depth.
  * \param[out] items On success, the element array, or NULL when \p count is 0.
  * \param[out] count On success, the number of elements.
@@ -1068,6 +1169,7 @@ static cardano_error_t
 read_term_list(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  const bool                  allow_constr_case,
   const size_t                depth,
   // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_term_t*** items,
@@ -1091,7 +1193,7 @@ read_term_list(
     const cardano_uplc_term_t* element = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, depth + 1U, &element);
+    result = read_term(arena, reader, allow_constr_case, depth + 1U, &element);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1183,19 +1285,26 @@ read_builtin(
 /**
  * \brief Reads a constructor term: a tag word then a cons-bit field list.
  *
+ * A constructor in a program older than 1.1.0 is rejected before its payload is
+ * read, as the reference decoder does
+ * (plutus-core/untyped-plutus-core/src/UntypedPlutusCore/Core/Instance/Flat.hs,
+ * \c handleTerm 8).
+ *
  * \param[in] arena The arena the term and its field array are allocated from.
  * \param[in,out] reader The flat reader, advanced past the constructor.
+ * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the constructor term.
  *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
- *         truncated stream or nesting past the depth bound, or a propagated
- *         allocation error.
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when
+ *         constructors are not allowed, for a truncated stream or nesting past the
+ *         depth bound, or a propagated allocation error.
  */
 static cardano_error_t
 read_constr(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  const bool                  allow_constr_case,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1203,7 +1312,14 @@ read_constr(
   const cardano_uplc_term_t** fields      = NULL;
   size_t                      field_count = 0U;
   cardano_uplc_term_t*        built       = NULL;
-  cardano_error_t             result      = cardano_uplc_flat_reader_word(reader, &tag);
+  cardano_error_t             result      = CARDANO_SUCCESS;
+
+  if (!allow_constr_case)
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  result = cardano_uplc_flat_reader_word(reader, &tag);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1211,7 +1327,7 @@ read_constr(
   }
 
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  result = read_term_list(arena, reader, depth, &fields, &field_count);
+  result = read_term_list(arena, reader, allow_constr_case, depth, &fields, &field_count);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1233,19 +1349,26 @@ read_constr(
 /**
  * \brief Reads a case term: a scrutinee term then a cons-bit branch list.
  *
+ * A case in a program older than 1.1.0 is rejected before its payload is read,
+ * as the reference decoder does
+ * (plutus-core/untyped-plutus-core/src/UntypedPlutusCore/Core/Instance/Flat.hs,
+ * \c handleTerm 9).
+ *
  * \param[in] arena The arena the term and its branch array are allocated from.
  * \param[in,out] reader The flat reader, advanced past the case.
+ * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the case term.
  *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
- *         truncated stream or nesting past the depth bound, or a propagated
- *         allocation error.
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when
+ *         case terms are not allowed, for a truncated stream or nesting past the
+ *         depth bound, or a propagated allocation error.
  */
 static cardano_error_t
 read_case(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  const bool                  allow_constr_case,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1253,8 +1376,15 @@ read_case(
   const cardano_uplc_term_t** branches     = NULL;
   size_t                      branch_count = 0U;
   cardano_uplc_term_t*        built        = NULL;
+  cardano_error_t             result       = CARDANO_SUCCESS;
+
+  if (!allow_constr_case)
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  cardano_error_t result = read_term(arena, reader, depth + 1U, &scrutinee);
+  result = read_term(arena, reader, allow_constr_case, depth + 1U, &scrutinee);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1262,7 +1392,7 @@ read_case(
   }
 
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  result = read_term_list(arena, reader, depth, &branches, &branch_count);
+  result = read_term_list(arena, reader, allow_constr_case, depth, &branches, &branch_count);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1290,6 +1420,7 @@ read_case(
  *
  * \param[in] arena The arena every node is allocated from.
  * \param[in,out] reader The flat reader, advanced past the term.
+ * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the decoded term.
  *
@@ -1301,6 +1432,7 @@ static cardano_error_t
 read_term(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  const bool                  allow_constr_case,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1344,7 +1476,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, depth + 1U, &body);
+    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1362,7 +1494,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, depth + 1U, &body);
+    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1381,12 +1513,12 @@ read_term(
     cardano_uplc_term_t*       built    = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, depth + 1U, &function);
+    result = read_term(arena, reader, allow_constr_case, depth + 1U, &function);
 
     if (result == CARDANO_SUCCESS)
     {
       // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-      result = read_term(arena, reader, depth + 1U, &argument);
+      result = read_term(arena, reader, allow_constr_case, depth + 1U, &argument);
     }
 
     if (result == CARDANO_SUCCESS)
@@ -1422,7 +1554,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, depth + 1U, &body);
+    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1452,12 +1584,12 @@ read_term(
   else if (tag == FLAT_TERM_TAG_CONSTR)
   {
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_constr(arena, reader, depth, term);
+    result = read_constr(arena, reader, allow_constr_case, depth, term);
   }
   else if (tag == FLAT_TERM_TAG_CASE)
   {
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_case(arena, reader, depth, term);
+    result = read_case(arena, reader, allow_constr_case, depth, term);
   }
   else
   {
@@ -1504,7 +1636,7 @@ cardano_uplc_flat_decode_term(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  return read_term(arena, reader, 0U, term);
+  return read_term(arena, reader, true, 0U, term);
 }
 
 cardano_error_t
@@ -1513,12 +1645,13 @@ cardano_uplc_flat_decode_program(
   cardano_uplc_flat_reader_t*    reader,
   const cardano_uplc_program_t** program)
 {
-  size_t                     major  = 0U;
-  size_t                     minor  = 0U;
-  size_t                     patch  = 0U;
-  const cardano_uplc_term_t* term   = NULL;
-  cardano_uplc_program_t*    result = NULL;
-  cardano_error_t            status = CARDANO_SUCCESS;
+  size_t                     major             = 0U;
+  size_t                     minor             = 0U;
+  size_t                     patch             = 0U;
+  const cardano_uplc_term_t* term              = NULL;
+  cardano_uplc_program_t*    result            = NULL;
+  cardano_error_t            status            = CARDANO_SUCCESS;
+  bool                       allow_constr_case = false;
 
   if ((arena == NULL) || (reader == NULL) || (program == NULL))
   {
@@ -1551,7 +1684,9 @@ cardano_uplc_flat_decode_program(
     return CARDANO_ERROR_DECODING;
   }
 
-  status = read_term(arena, reader, 0U, &term);
+  allow_constr_case = (major > FLAT_CONSTR_CASE_MIN_MAJOR) || ((major == FLAT_CONSTR_CASE_MIN_MAJOR) && (minor >= FLAT_CONSTR_CASE_MIN_MINOR));
+
+  status = read_term(arena, reader, allow_constr_case, 0U, &term);
 
   if (status != CARDANO_SUCCESS)
   {

@@ -27,7 +27,6 @@
 #include <cardano/cbor/cbor_writer.h>
 
 #include "../ast/uplc_int.h"
-#include "../builtins/bls.h"
 #include "../data/uplc_data.h"
 #include "flat_writer.h"
 
@@ -39,8 +38,9 @@
 /**
  * \brief Flat const-type list tags, the inverse of the tags in flat_decode.c.
  *
- * The application tag drives the two nested shapes: <tt>[7, 5, T]</tt> for
- * <tt>list(T)</tt> and <tt>[7, 7, 6, A, B]</tt> for <tt>pair(A, B)</tt>.
+ * The application tag drives the three nested shapes: <tt>[7, 5, T]</tt> for
+ * <tt>list(T)</tt>, <tt>[7, 12, T]</tt> for <tt>array(T)</tt> and
+ * <tt>[7, 7, 6, A, B]</tt> for <tt>pair(A, B)</tt>.
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_INTEGER = 0U;
@@ -64,6 +64,12 @@ static const uint8_t FLAT_TYPE_TAG_DATA = 8U;
 static const uint8_t FLAT_TYPE_TAG_BLS_G1 = 9U;
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t FLAT_TYPE_TAG_BLS_G2 = 10U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_BLS_ML_RESULT = 11U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_ARRAY = 12U;
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t FLAT_TYPE_TAG_VALUE = 13U;
 
 /**
  * \brief Number of bits in a single const-type tag.
@@ -117,17 +123,16 @@ write_type_tag(cardano_uplc_flat_writer_t* writer, const uint8_t tag)
 /**
  * \brief Emits the const-type tag run for a type descriptor (no terminator).
  *
- * Leaf types emit a single tag; a list emits <tt>[apply, list, ...element]</tt>
- * and a pair emits <tt>[apply, apply, pair, ...fst, ...snd]</tt>, matching
- * \c parse_type in flat_decode.c. The terminating zero bit is written by the
- * caller. The \c array, \c value and \c bls12_381_mlresult kinds have no flat type
- * tag and are rejected.
+ * Leaf types emit a single tag; a list emits <tt>[apply, list, ...element]</tt>,
+ * an array <tt>[apply, array, ...element]</tt> and a pair
+ * <tt>[apply, apply, pair, ...fst, ...snd]</tt>, matching \c parse_type in
+ * flat_decode.c. The terminating zero bit is written by the caller.
  *
  * \param[in,out] writer The writer to append to.
  * \param[in] type The type descriptor to emit.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INVALID_ARGUMENT for
- *         a kind with no flat serialization, or a propagated write error.
+ *         an unknown kind, or a propagated write error.
  */
 static cardano_error_t
 write_type_tags(cardano_uplc_flat_writer_t* writer, const cardano_uplc_type_t* type)
@@ -176,13 +181,24 @@ write_type_tags(cardano_uplc_flat_writer_t* writer, const cardano_uplc_type_t* t
       result = write_type_tag(writer, FLAT_TYPE_TAG_BLS_G2);
       break;
     }
+    case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
+    {
+      result = write_type_tag(writer, FLAT_TYPE_TAG_BLS_ML_RESULT);
+      break;
+    }
+    case CARDANO_UPLC_TYPE_VALUE:
+    {
+      result = write_type_tag(writer, FLAT_TYPE_TAG_VALUE);
+      break;
+    }
     case CARDANO_UPLC_TYPE_LIST:
+    case CARDANO_UPLC_TYPE_ARRAY:
     {
       result = write_type_tag(writer, FLAT_TYPE_TAG_APPLY);
 
       if (result == CARDANO_SUCCESS)
       {
-        result = write_type_tag(writer, FLAT_TYPE_TAG_LIST);
+        result = write_type_tag(writer, (type->kind == CARDANO_UPLC_TYPE_LIST) ? FLAT_TYPE_TAG_LIST : FLAT_TYPE_TAG_ARRAY);
       }
 
       if (result == CARDANO_SUCCESS)
@@ -221,9 +237,6 @@ write_type_tags(cardano_uplc_flat_writer_t* writer, const cardano_uplc_type_t* t
 
       break;
     }
-    case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
-    case CARDANO_UPLC_TYPE_ARRAY:
-    case CARDANO_UPLC_TYPE_VALUE:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
@@ -238,10 +251,11 @@ write_type_tags(cardano_uplc_flat_writer_t* writer, const cardano_uplc_type_t* t
  * \brief Writes the data carried by a value at a given type descriptor.
  *
  * Dispatches on \p type->kind: an integer is zig-zagged, byte-string/string/data
- * become flat bytestrings, a bool is one bit, a unit writes nothing, a list is a
- * cons-bit run of element values and a pair is its two component values. A G1 or
- * G2 value is compressed to its serialized form and written as a flat bytestring.
- * The \c array, \c value and \c bls12_381_mlresult kinds are rejected.
+ * become flat bytestrings, a bool is one bit, a unit writes nothing, a list or an
+ * array is a cons-bit run of element values and a pair is its two component values.
+ * A value is the cons-bit run of its (currency symbol, token list) entries, the
+ * reference's encoding of the nested map. The BLS12-381 kinds have no flat value
+ * form in the reference and are rejected.
  *
  * \param[in,out] writer The writer to append to.
  * \param[in] type The type descriptor whose value is written.
@@ -335,7 +349,11 @@ write_value(
       break;
     }
     case CARDANO_UPLC_TYPE_LIST:
+    case CARDANO_UPLC_TYPE_ARRAY:
+    case CARDANO_UPLC_TYPE_VALUE:
     {
+      const cardano_uplc_type_t* element = (type->kind == CARDANO_UPLC_TYPE_VALUE) ? constant->as.list.element_type : type->fst;
+
       for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < constant->as.list.count); ++i)
       {
         result = cardano_uplc_flat_writer_bit(writer, 1U);
@@ -343,7 +361,7 @@ write_value(
         if (result == CARDANO_SUCCESS)
         {
           // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-          result = write_value(writer, type->fst, constant->as.list.items[i]);
+          result = write_value(writer, element, constant->as.list.items[i]);
         }
       }
 
@@ -368,34 +386,8 @@ write_value(
       break;
     }
     case CARDANO_UPLC_TYPE_BLS_G1:
-    {
-      byte_t compressed[CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE];
-
-      result = cardano_uplc_int_bls_g1_compress(constant, compressed);
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_uplc_flat_writer_bytes(writer, compressed, CARDANO_UPLC_BLS_G1_COMPRESSED_SIZE);
-      }
-
-      break;
-    }
     case CARDANO_UPLC_TYPE_BLS_G2:
-    {
-      byte_t compressed[CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE];
-
-      result = cardano_uplc_int_bls_g2_compress(constant, compressed);
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_uplc_flat_writer_bytes(writer, compressed, CARDANO_UPLC_BLS_G2_COMPRESSED_SIZE);
-      }
-
-      break;
-    }
     case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
-    case CARDANO_UPLC_TYPE_ARRAY:
-    case CARDANO_UPLC_TYPE_VALUE:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
@@ -409,9 +401,10 @@ write_value(
 /**
  * \brief Recovers the type descriptor a constant carries.
  *
- * Leaf constants map their kind directly. A list builds <tt>list(element_type)</tt>
- * and a pair builds <tt>pair(fst-type, snd-type)</tt> from the recovered component
- * types. The descriptor and any nested nodes are allocated from \p arena.
+ * Leaf constants, including a value, map their kind directly. A list or an array
+ * builds <tt>list(element_type)</tt> or <tt>array(element_type)</tt> and a pair
+ * builds <tt>pair(fst-type, snd-type)</tt> from the recovered component types. The
+ * descriptor and any nested nodes are allocated from \p arena.
  *
  * \param[in] arena The arena every descriptor node is allocated from.
  * \param[in] constant The constant whose type is recovered.
@@ -419,7 +412,7 @@ write_value(
  *             failure.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INVALID_ARGUMENT for
- *         a kind with no flat serialization, or a propagated allocation error.
+ *         an unknown kind, or a propagated allocation error.
  */
 static cardano_error_t
 constant_type(
@@ -440,6 +433,8 @@ constant_type(
     case CARDANO_UPLC_TYPE_DATA:
     case CARDANO_UPLC_TYPE_BLS_G1:
     case CARDANO_UPLC_TYPE_BLS_G2:
+    case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
+    case CARDANO_UPLC_TYPE_VALUE:
     {
       result = cardano_uplc_type_new(arena, constant->kind, NULL, NULL, &built);
 
@@ -451,8 +446,9 @@ constant_type(
       break;
     }
     case CARDANO_UPLC_TYPE_LIST:
+    case CARDANO_UPLC_TYPE_ARRAY:
     {
-      result = cardano_uplc_type_new(arena, CARDANO_UPLC_TYPE_LIST, constant->as.list.element_type, NULL, &built);
+      result = cardano_uplc_type_new(arena, constant->kind, constant->as.list.element_type, NULL, &built);
 
       if (result == CARDANO_SUCCESS)
       {
@@ -487,9 +483,6 @@ constant_type(
 
       break;
     }
-    case CARDANO_UPLC_TYPE_BLS_ML_RESULT:
-    case CARDANO_UPLC_TYPE_ARRAY:
-    case CARDANO_UPLC_TYPE_VALUE:
     default:
     {
       result = CARDANO_ERROR_INVALID_ARGUMENT;
