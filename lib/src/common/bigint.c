@@ -98,6 +98,28 @@ cardano_bigint_new(void)
   return data;
 }
 
+/**
+ * \brief Exports the low 64 bits of the magnitude of a GMP integer.
+ *
+ * \param[in] value The GMP integer to export.
+ *
+ * \return The magnitude of \p value reduced modulo 2^64.
+ */
+static uint64_t
+export_low_magnitude(const mpz_t value)
+{
+  const int order  = cardano_is_little_endian() ? -1 : 1;
+  uint64_t  result = 0;
+  mpz_t     low;
+
+  mpz_init(low);
+  mpz_tdiv_r_2exp(low, value, 64U);
+  mpz_export(&result, NULL, order, sizeof(result), 0, 0, low);
+  mpz_clear(low);
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -309,10 +331,7 @@ cardano_bigint_to_int(const cardano_bigint_t* bigint)
     return 0;
   }
 
-  const int order      = cardano_is_little_endian() ? -1 : 1;
-  uint64_t  abs_result = 0;
-
-  mpz_export(&abs_result, NULL, order, sizeof(abs_result), 0, 0, bigint->mpz);
+  const uint64_t abs_result = export_low_magnitude(bigint->mpz);
 
   return (mpz_sgn(bigint->mpz) < 0) ? -(int64_t)abs_result : (int64_t)abs_result;
 }
@@ -325,12 +344,7 @@ cardano_bigint_to_unsigned_int(const cardano_bigint_t* bigint)
     return 0;
   }
 
-  const int order  = cardano_is_little_endian() ? -1 : 1;
-  uint64_t  result = 0;
-
-  mpz_export(&result, NULL, order, sizeof(result), 0, 0, bigint->mpz);
-
-  return result;
+  return export_low_magnitude(bigint->mpz);
 }
 
 size_t

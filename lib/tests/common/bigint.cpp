@@ -469,6 +469,32 @@ TEST(cardano_bigint_to_unsigned_int, canConvertToAnUnsignedInt)
   cardano_bigint_unref(&bigint);
 }
 
+TEST(cardano_bigint_to_unsigned_int, keepsTheLow64BitsOfAValueThatDoesNotFit)
+{
+  cardano_bigint_t* bigint = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_string("36893488147419103237", strlen("36893488147419103237"), 10, &bigint), CARDANO_SUCCESS);
+
+  uint64_t value = cardano_bigint_to_unsigned_int(bigint);
+
+  ASSERT_EQ(value, 5U);
+
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_to_int, keepsTheLow64BitsOfANegativeValueThatDoesNotFit)
+{
+  cardano_bigint_t* bigint = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_string("-18446744073709551623", strlen("-18446744073709551623"), 10, &bigint), CARDANO_SUCCESS);
+
+  int64_t value = cardano_bigint_to_int(bigint);
+
+  ASSERT_EQ(value, -7);
+
+  cardano_bigint_unref(&bigint);
+}
+
 TEST(cardano_bigint_to_unsigned_int, returnZeroIfPointerIsNull)
 {
   uint64_t value = cardano_bigint_to_unsigned_int(NULL);
