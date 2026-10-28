@@ -54,56 +54,66 @@ typedef struct cardano_uplc_cost_model_t
 /**
  * \brief The number of flat protocol parameters in the Plutus V1 cost model.
  *
- * The V1 parameter list as ordered by the ledger has this many entries as of
- * protocol version 11 (van Rossem), which unified the builtin set across the
- * three languages and appended the batch-6 coefficients.
+ * The V1 parameter list as ordered by the ledger has this many entries: the
+ * original 166, the builtins appended when protocol version 11 (van Rossem)
+ * unified the builtin set across the languages, the batch-6 coefficients and the
+ * batch-7 coefficients of multiIndexArray, assetCount, policies, keepPolicies and
+ * dropPolicies.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 ((size_t)332)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1 ((size_t)351)
 
 /**
  * \brief The number of flat protocol parameters in the Plutus V2 cost model.
  *
- * The V2 parameter list as ordered by the ledger has this many entries as of
- * protocol version 11 (van Rossem), which unified the builtin set across the
- * three languages and appended the batch-6 coefficients.
+ * The V2 parameter list as ordered by the ledger has this many entries, ending
+ * with the same batch-6 and batch-7 coefficients as the V1 list.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 ((size_t)332)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2 ((size_t)351)
 
 /**
- * \brief The number of flat protocol parameters the Plutus V3 reader consumes.
+ * \brief The number of flat protocol parameters in the Plutus V3 cost model.
  *
- * Covers the V3 list through the exp_mod_integer coefficients and the array and
- * value families appended at protocol version 11 (van Rossem), ending at
- * scale_value.
+ * Covers the V3 list through the exp_mod_integer coefficients, the array and
+ * value families appended at protocol version 11 (van Rossem) and the batch-7
+ * coefficients, ending at dropPolicies.
  */
-#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 ((size_t)350)
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 ((size_t)369)
+
+/**
+ * \brief The number of flat protocol parameters in the Plutus V4 cost model.
+ *
+ * The V4 parameter list has the same names in the same order as the V3 list.
+ */
+#define CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4 ((size_t)369)
 
 /**
  * \brief Builds a full cost model from a flat ordered protocol parameter list.
  *
  * Maps the flat int64 list positionally into the machine-step costs and the
  * per-builtin costing functions, using the per-version ledger parameter
- * ordering. The shapes are fixed per version and then adjusted for the
- * semantics variant (\ref cardano_uplc_builtin_costs_select_division_shapes);
- * only the coefficients come from \p params.
- * Parameters absent from a version's list keep the prohibitive sentinel cost.
- * When given the version's default parameter vector under semantics A, B or C
- * this reproduces \ref cardano_uplc_builtin_costs_v1, \c _v2 or \c _v3 exactly.
+ * ordering; V4 uses the V3 ordering. The shapes are fixed per version and then
+ * adjusted for the semantics variant
+ * (\ref cardano_uplc_builtin_costs_select_division_shapes); only the
+ * coefficients come from \p params. When given the version's default parameter
+ * vector this reproduces the version's default builtin costs with the division
+ * shapes of \p semantics selected, and the default machine-step costs.
  *
  * The ledger's flat list grows append-only across protocol versions, so its
  * length need not equal the count this build knows about. Following the Haskell
  * reference (\c PlutusLedgerApi.Common.ParamName.tagWithParamNames), the count is
  * not enforced: a longer list keeps its known prefix and ignores the extra
- * trailing coefficients, and a shorter list pads the missing parameters with a
- * prohibitive sentinel. Builtins whose coefficients are absent or ignored keep
- * the version defaults set by \ref cardano_uplc_builtin_costs_v1, \c _v2 or
- * \c _v3.
+ * trailing coefficients, and a shorter list is read as a positional prefix of
+ * the full list, with every missing parameter set to \c INT64_MAX. A builtin
+ * whose coefficients are missing therefore costs a saturated budget and cannot
+ * run within any transaction limit. The batch-7 coefficients are accepted and
+ * skipped, since those builtins are not implemented.
  *
  * \param[in] version The cost-model version selecting the parameter ordering and
  *            the per-builtin shapes.
  * \param[in] params The flat ordered parameter list. Must not be NULL.
  * \param[in] count The number of parameters in \p params. Any count is accepted;
- *            extra trailing parameters are ignored and missing ones are padded.
+ *            extra trailing parameters are ignored and missing ones are set to
+ *            \c INT64_MAX.
  * \param[in] semantics The builtin semantics variant, selecting the cost model
  *            generation whose shapes interpret the integer-division parameters.
  * \param[out] out On success, set to the built cost model; left untouched on

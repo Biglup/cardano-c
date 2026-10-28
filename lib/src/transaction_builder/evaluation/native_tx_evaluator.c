@@ -1278,6 +1278,7 @@ select_cost_model(
         break;
       }
       case CARDANO_UPLC_COST_MODEL_VERSION_V3:
+      case CARDANO_UPLC_COST_MODEL_VERSION_V4:
       default:
       {
         out->model.builtins = cardano_uplc_builtin_costs_v3();

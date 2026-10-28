@@ -408,7 +408,8 @@ fill_batch6(cardano_uplc_builtin_costs_t* b, const int64_t* p, size_t base)
  * overwrites their coefficients. Protocol version 11 (van Rossem) unified the
  * builtin set across the three languages, so the V1 list appends the previously
  * V2/V3-only builtins, the constr and case machine steps and the batch-6
- * builtins after the original 166 parameters.
+ * builtins after the original 166 parameters. The trailing batch-7
+ * coefficients are not read.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V1 parameter array.
@@ -543,7 +544,7 @@ from_params_v1(cardano_uplc_cost_model_t* out, const int64_t* p)
  * appended to the V2 list at protocol version 10 (Plomin); protocol version 11
  * (van Rossem) then unified the builtin set across the three languages,
  * appending the previously V3-only builtins, the constr and case machine steps
- * and the batch-6 builtins.
+ * and the batch-6 builtins. The trailing batch-7 coefficients are not read.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V2 parameter array.
@@ -698,9 +699,9 @@ set_v3_div_cpu(cardano_uplc_builtin_cost_t* e, const int64_t* p, size_t base)
 /**
  * \brief Maps the V3 flat parameter list onto a default V3 cost model.
  *
- * Reads the first \ref CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3 parameters, which
- * cover every builtin through the exp_mod_integer coefficients plus the array
- * and value families appended at protocol version 11 (van Rossem).
+ * Reads every builtin through the exp_mod_integer coefficients plus the array
+ * and value families appended at protocol version 11 (van Rossem). The V4 list
+ * shares this ordering. The trailing batch-7 coefficients are not read.
  *
  * \param[out] out The cost model to populate.
  * \param[in] p The V3 parameter array.
@@ -852,7 +853,7 @@ cardano_uplc_cost_model_from_params(
   cardano_uplc_cost_model_t*        out)
 {
   size_t  expected = 0U;
-  int64_t padded[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
+  int64_t padded[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4];
 
   if ((params == NULL) || (out == NULL))
   {
@@ -861,16 +862,24 @@ cardano_uplc_cost_model_from_params(
 
   switch (version)
   {
-    /* V1 and V2 both span 332 parameters since the van Rossem unification. */
     case CARDANO_UPLC_COST_MODEL_VERSION_V1:
-    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
     {
       expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
+      break;
+    }
+    case CARDANO_UPLC_COST_MODEL_VERSION_V2:
+    {
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
     {
       expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3;
+      break;
+    }
+    case CARDANO_UPLC_COST_MODEL_VERSION_V4:
+    {
+      expected = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4;
       break;
     }
     default:
@@ -911,6 +920,7 @@ cardano_uplc_cost_model_from_params(
       break;
     }
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
+    case CARDANO_UPLC_COST_MODEL_VERSION_V4:
     default:
     {
       from_params_v3(out, effective);

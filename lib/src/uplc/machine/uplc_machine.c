@@ -1874,6 +1874,7 @@ cost_model_for_version(cardano_uplc_machine_version_t version)
     }
 
     case CARDANO_UPLC_COST_MODEL_VERSION_V3:
+    case CARDANO_UPLC_COST_MODEL_VERSION_V4:
     default:
     {
       model.builtins = cardano_uplc_builtin_costs_v3();

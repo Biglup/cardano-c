@@ -1409,7 +1409,7 @@ TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion
 {
   // Below the diagonal cost model C charges the constant 85848, while cost model E
   // (V3 from protocol 11) evaluates the quadratic at (2, 1):
-  // 123203 + 1716*2 + 7305*1 + 57*4 + 549*2 - 900*1 = 134366.
+  // 123203 + 1716*2 + 7305*1 + 57*4 + 960*2 - 900*1 = 135188.
   cardano_plutus_v3_script_t* script = build_divide_below_diagonal_v3_script();
   cardano_utxo_list_t*        utxos  = nullptr;
   cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
@@ -1417,7 +1417,7 @@ TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion
   const uint64_t cpu_c = single_redeemer_cpu(tx, utxos, 10U);
   const uint64_t cpu_e = single_redeemer_cpu(tx, utxos, 11U);
 
-  EXPECT_EQ(cpu_e - cpu_c, 134366U - 85848U);
+  EXPECT_EQ(cpu_e - cpu_c, 135188U - 85848U);
 
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);
