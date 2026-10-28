@@ -3048,3 +3048,27 @@ TEST(cardano_uplc_semantics_cons_byte_string_range_checks, per_variant)
   EXPECT_FALSE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_F));
   EXPECT_TRUE(cardano_uplc_semantics_cons_byte_string_range_checks(CARDANO_UPLC_SEMANTICS_G));
 }
+
+TEST(cardano_uplc_semantics_bounds_integer_arguments, per_variant)
+{
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_A));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_B));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_C));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_D));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_E));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_F));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(CARDANO_UPLC_SEMANTICS_G));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_integer_arguments(static_cast<cardano_uplc_builtin_semantics_t>(99)));
+}
+
+TEST(cardano_uplc_semantics_bounds_byte_string_arguments, per_variant)
+{
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_A));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_B));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_C));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_D));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_E));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_F));
+  EXPECT_TRUE(cardano_uplc_semantics_bounds_byte_string_arguments(CARDANO_UPLC_SEMANTICS_G));
+  EXPECT_FALSE(cardano_uplc_semantics_bounds_byte_string_arguments(static_cast<cardano_uplc_builtin_semantics_t>(99)));
+}

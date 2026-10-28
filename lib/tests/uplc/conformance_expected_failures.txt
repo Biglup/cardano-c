@@ -21,11 +21,7 @@ builtin/semantics/bls12_381-cardano-crypto-tests/G1/arith/scalarMul/scalarMul.up
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/add/add.uplc cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/neg/neg.uplc cost-model
 builtin/semantics/bls12_381-cardano-crypto-tests/G2/arith/scalarMul/scalarMul.uplc cost-model
-builtin/semantics/bls12_381_G1_multiScalarMul/multiScalarMul-13b/multiScalarMul-13b.uplc builtin-bounds
-builtin/semantics/bls12_381_G1_multiScalarMul/multiScalarMul-13d/multiScalarMul-13d.uplc builtin-bounds
 builtin/semantics/bls12_381_G1_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
-builtin/semantics/bls12_381_G2_multiScalarMul/multiScalarMul-13b/multiScalarMul-13b.uplc builtin-bounds
-builtin/semantics/bls12_381_G2_multiScalarMul/multiScalarMul-13d/multiScalarMul-13d.uplc builtin-bounds
 builtin/semantics/bls12_381_G2_scalarMul/mulperiodic-01/mulperiodic-01.uplc cost-model
 builtin/semantics/complementByteString/case-05/case-05.uplc cost-model
 builtin/semantics/divideInteger/divideInteger-01/divideInteger-01.uplc division-costing
@@ -109,8 +105,6 @@ builtin/semantics/remainderInteger/remainderInteger-pos-neg/remainderInteger-pos
 builtin/semantics/remainderInteger/remainderInteger-pos-pos/remainderInteger-pos-pos.uplc division-costing
 builtin/semantics/ripemd_160/ripemd_160-empty/ripemd_160-empty.uplc cost-model
 builtin/semantics/ripemd_160/ripemd_160-length-200/ripemd_160-length-200.uplc cost-model
-builtin/semantics/rotateByteString/case-16/case-16.uplc builtin-bounds
-builtin/semantics/rotateByteString/case-18/case-18.uplc builtin-bounds
 builtin/semantics/scaleValue/by-neg/by-neg.uplc cost-model
 builtin/semantics/scaleValue/by-pos/by-pos.uplc cost-model
 builtin/semantics/scaleValue/by-zero/by-zero.uplc cost-model
@@ -120,8 +114,6 @@ builtin/semantics/sha2_256/sha2_256-empty/sha2_256-empty.uplc cost-model
 builtin/semantics/sha2_256/sha2_256-length-200/sha2_256-length-200.uplc cost-model
 builtin/semantics/sha3_256/sha3_256-empty/sha3_256-empty.uplc cost-model
 builtin/semantics/sha3_256/sha3_256-length-200/sha3_256-length-200.uplc cost-model
-builtin/semantics/shiftByteString/case-13/case-13.uplc builtin-bounds
-builtin/semantics/shiftByteString/case-15/case-15.uplc builtin-bounds
 builtin/semantics/unValueData/empty/empty.uplc cost-model
 builtin/semantics/unValueData/max-key-len/max-key-len.uplc cost-model
 builtin/semantics/unValueData/multi-currency/multi-currency.uplc cost-model

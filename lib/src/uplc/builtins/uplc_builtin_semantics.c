@@ -204,3 +204,65 @@ cardano_uplc_semantics_cons_byte_string_range_checks(cardano_uplc_builtin_semant
 
   return result;
 }
+
+bool
+cardano_uplc_semantics_bounds_integer_arguments(cardano_uplc_builtin_semantics_t semantics)
+{
+  bool result = false;
+
+  switch (semantics)
+  {
+    case CARDANO_UPLC_SEMANTICS_D:
+    case CARDANO_UPLC_SEMANTICS_E:
+    {
+      result = true;
+      break;
+    }
+    case CARDANO_UPLC_SEMANTICS_A:
+    case CARDANO_UPLC_SEMANTICS_B:
+    case CARDANO_UPLC_SEMANTICS_C:
+    case CARDANO_UPLC_SEMANTICS_F:
+    case CARDANO_UPLC_SEMANTICS_G:
+    {
+      result = false;
+      break;
+    }
+    default:
+    {
+      break;
+    }
+  }
+
+  return result;
+}
+
+bool
+cardano_uplc_semantics_bounds_byte_string_arguments(cardano_uplc_builtin_semantics_t semantics)
+{
+  bool result = false;
+
+  switch (semantics)
+  {
+    case CARDANO_UPLC_SEMANTICS_D:
+    case CARDANO_UPLC_SEMANTICS_E:
+    case CARDANO_UPLC_SEMANTICS_F:
+    case CARDANO_UPLC_SEMANTICS_G:
+    {
+      result = true;
+      break;
+    }
+    case CARDANO_UPLC_SEMANTICS_A:
+    case CARDANO_UPLC_SEMANTICS_B:
+    case CARDANO_UPLC_SEMANTICS_C:
+    {
+      result = false;
+      break;
+    }
+    default:
+    {
+      break;
+    }
+  }
+
+  return result;
+}

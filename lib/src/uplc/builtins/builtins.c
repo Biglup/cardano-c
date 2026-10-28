@@ -83,6 +83,118 @@ static const int64_t CARDANO_UPLC_BUILTIN_BYTE_MAX = 255;
 static const int64_t CARDANO_UPLC_BUILTIN_INT_TO_BS_MAX = 8192;
 
 /**
+ * \brief Bit width of the signed range a bounded integer argument must lie in.
+ *
+ * Under the variants that bound integer arguments, an argument outside
+ * -(2^262143) .. 2^262143 - 1 is a script error.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t CARDANO_UPLC_BUILTIN_INTEGER_ARG_BITS = 262143U;
+
+/**
+ * \brief Maximum length, in bytes, of a bounded byte-string argument.
+ *
+ * Under the variants that bound byte-string arguments, a longer argument is a
+ * script error.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t CARDANO_UPLC_BUILTIN_BYTE_STRING_ARG_MAX = 65536U;
+
+/**
+ * \brief Maximum input length, in bytes, of the bounded \c writeBits.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t CARDANO_UPLC_BUILTIN_WRITE_BITS_INPUT_MAX = 4096U;
+
+/**
+ * \brief Maximum bit length of the bounded \c constrData tag, an unsigned 64-bit integer.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t CARDANO_UPLC_BUILTIN_CONSTR_TAG_BITS = 64U;
+
+/**
+ * \brief Bit width of the signed range \c expModInteger accepts.
+ *
+ * The base and exponent must lie in -(2^8191) .. 2^8191 - 1 and the modulus in
+ * 1 .. 2^8191 - 1; anything else is a script error.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t CARDANO_UPLC_BUILTIN_EXP_MOD_BOUND_BITS = 8191U;
+
+/**
+ * \brief Flag naming the first argument in the bounded-argument tables.
+ */
+#define CARDANO_UPLC_BUILTIN_ARG_0 ((uint8_t)0x01U)
+
+/**
+ * \brief Flag naming the second argument in the bounded-argument tables.
+ */
+#define CARDANO_UPLC_BUILTIN_ARG_1 ((uint8_t)0x02U)
+
+/**
+ * \brief Flag naming the third argument in the bounded-argument tables.
+ */
+#define CARDANO_UPLC_BUILTIN_ARG_2 ((uint8_t)0x04U)
+
+/**
+ * \brief The integer arguments each builtin bounds under variants D and E.
+ *
+ * Each entry is a set of \c CARDANO_UPLC_BUILTIN_ARG_* flags naming the argument
+ * positions checked against \ref CARDANO_UPLC_BUILTIN_INTEGER_ARG_BITS; a builtin
+ * not listed bounds none.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t BUILTIN_BOUNDED_INTEGER_ARGS[CARDANO_UPLC_BUILTIN_COUNT] = {
+  [CARDANO_UPLC_BUILTIN_ADD_INTEGER]              = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER]         = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_MULTIPLY_INTEGER]         = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER]           = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER]         = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER]        = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_MOD_INTEGER]              = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_LESS_THAN_INTEGER]        = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_INTEGER] = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING]         = CARDANO_UPLC_BUILTIN_ARG_0
+};
+
+/**
+ * \brief The byte-string arguments each builtin bounds under variants D, E, F and G.
+ *
+ * Each entry is a set of \c CARDANO_UPLC_BUILTIN_ARG_* flags naming the argument
+ * positions checked against \ref CARDANO_UPLC_BUILTIN_BYTE_STRING_ARG_MAX; a
+ * builtin not listed bounds none.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint8_t BUILTIN_BOUNDED_BYTE_STRING_ARGS[CARDANO_UPLC_BUILTIN_COUNT] = {
+  [CARDANO_UPLC_BUILTIN_APPEND_BYTE_STRING]                 = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_CONS_BYTE_STRING]                   = CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_SLICE_BYTE_STRING]                  = CARDANO_UPLC_BUILTIN_ARG_2,
+  [CARDANO_UPLC_BUILTIN_INDEX_BYTE_STRING]                  = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_EQUALS_BYTE_STRING]                 = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_LESS_THAN_BYTE_STRING]              = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_LESS_THAN_EQUALS_BYTE_STRING]       = CARDANO_UPLC_BUILTIN_ARG_0 | CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_SHA2_256]                           = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_SHA3_256]                           = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_BLAKE2B_256]                        = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE]           = CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE] = CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_DECODE_UTF8]                        = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_BLS12_381_G1_HASH_TO_GROUP]         = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_BLS12_381_G2_HASH_TO_GROUP]         = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_KECCAK_256]                         = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_BLAKE2B_224]                        = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER]             = CARDANO_UPLC_BUILTIN_ARG_1,
+  [CARDANO_UPLC_BUILTIN_AND_BYTE_STRING]                    = CARDANO_UPLC_BUILTIN_ARG_1 | CARDANO_UPLC_BUILTIN_ARG_2,
+  [CARDANO_UPLC_BUILTIN_OR_BYTE_STRING]                     = CARDANO_UPLC_BUILTIN_ARG_1 | CARDANO_UPLC_BUILTIN_ARG_2,
+  [CARDANO_UPLC_BUILTIN_XOR_BYTE_STRING]                    = CARDANO_UPLC_BUILTIN_ARG_1 | CARDANO_UPLC_BUILTIN_ARG_2,
+  [CARDANO_UPLC_BUILTIN_COMPLEMENT_BYTE_STRING]             = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_READ_BIT]                           = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_COUNT_SET_BITS]                     = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_FIND_FIRST_SET_BIT]                 = CARDANO_UPLC_BUILTIN_ARG_0,
+  [CARDANO_UPLC_BUILTIN_RIPEMD_160]                         = CARDANO_UPLC_BUILTIN_ARG_0
+};
+
+/**
  * \brief Output length, in bytes, of a Blake2b-224 digest.
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
@@ -177,6 +289,14 @@ static const size_t CARDANO_UPLC_BLS_SCALAR_BITS = 256U;
  * hash-to-group builtins as a script error.
  */
 static const size_t CARDANO_UPLC_BLS_DST_MAX = 255U;
+
+/**
+ * \brief Bit width of the signed range a bounded BLS12-381 scalar must lie in.
+ *
+ * The multi-scalar-multiplication builtins, and \c scalarMul under the variants
+ * that bound it, reject a scalar outside -(2^4095) .. 2^4095 - 1.
+ */
+static const size_t CARDANO_UPLC_BLS_SCALAR_BOUND_BITS = 4095U;
 
 /**
  * \brief The BLS12-381 scalar field order \c r in big-endian bytes.
@@ -481,6 +601,127 @@ constant_integer_big(
   }
 
   return cardano_uplc_constant_int_materialize(arena, constant, out) == CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Tests whether an integer lies in the signed range -(2^bits) .. 2^bits - 1.
+ *
+ * Decided from the magnitude's bit length without building the bound. The only
+ * in-range value whose magnitude needs \p bits + 1 bits is -(2^bits); for a
+ * negative value \ref cardano_bigint_test_bit reads the two's-complement form, in
+ * which bit \p bits is set for -(2^bits) and clear for every larger magnitude of
+ * the same bit length.
+ *
+ * \param[in] value The integer to test.
+ * \param[in] bits The bit width of the range.
+ *
+ * \return \c true when \p value is in range, \c false otherwise.
+ */
+static bool
+bigint_within_signed_bits(const cardano_bigint_t* value, size_t bits)
+{
+  const size_t length = cardano_bigint_bit_length(value);
+
+  if (length <= bits)
+  {
+    return true;
+  }
+
+  if ((length > (bits + 1U)) || (cardano_bigint_signum(value) >= 0))
+  {
+    return false;
+  }
+
+  return cardano_bigint_test_bit(value, (uint32_t)bits);
+}
+
+/**
+ * \brief Tests whether an integer constant lies in the signed range -(2^bits) .. 2^bits - 1.
+ *
+ * Reads the constant without materializing a bigint: an inline value always fits,
+ * so \p bits must be at least 63.
+ *
+ * \param[in] constant An integer constant. Must not be NULL.
+ * \param[in] bits The bit width of the range, at least 63.
+ *
+ * \return \c true when the constant is in range, \c false otherwise.
+ */
+static bool
+constant_integer_within_signed_bits(const cardano_uplc_constant_t* constant, size_t bits)
+{
+  if (cardano_uplc_constant_int_is_small(constant))
+  {
+    return true;
+  }
+
+  return bigint_within_signed_bits(constant->as.integer.big, bits);
+}
+
+/**
+ * \brief Checks a builtin's arguments against the bounds its semantics variant applies.
+ *
+ * Under variants D and E the integer arguments named by
+ * \ref BUILTIN_BOUNDED_INTEGER_ARGS must lie in -(2^262143) .. 2^262143 - 1, and
+ * under variants D, E, F and G the byte-string arguments named by
+ * \ref BUILTIN_BOUNDED_BYTE_STRING_ARGS must be at most 65536 bytes long. An
+ * argument of another type is left for the body to reject.
+ *
+ * \param[in] semantics The semantics variant selecting which bounds apply.
+ * \param[in] func The builtin being run.
+ * \param[in] args The saturated argument values.
+ * \param[in] arg_count The number of arguments.
+ *
+ * \return \c true when every bounded argument is within its bound, \c false otherwise.
+ */
+static bool
+arguments_within_bounds(
+  cardano_uplc_builtin_semantics_t   semantics,
+  cardano_uplc_builtin_t             func,
+  const cardano_uplc_value_t* const* args,
+  size_t                             arg_count)
+{
+  uint8_t integer_args     = 0U;
+  uint8_t byte_string_args = 0U;
+  size_t  i                = 0U;
+
+  if ((size_t)func >= (size_t)CARDANO_UPLC_BUILTIN_COUNT)
+  {
+    return true;
+  }
+
+  if (cardano_uplc_semantics_bounds_integer_arguments(semantics))
+  {
+    integer_args = BUILTIN_BOUNDED_INTEGER_ARGS[func];
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics))
+  {
+    byte_string_args = BUILTIN_BOUNDED_BYTE_STRING_ARGS[func];
+  }
+
+  if ((integer_args | byte_string_args) == 0U)
+  {
+    return true;
+  }
+
+  for (i = 0U; i < arg_count; ++i)
+  {
+    const uint8_t            flag  = (uint8_t)(1U << i);
+    int_view_t               view  = { false, 0, NULL };
+    cardano_uplc_byte_view_t bytes = { NULL, 0U };
+
+    if (((integer_args & flag) != 0U) && as_int_view(args[i], &view) && !constant_integer_within_signed_bits(view.constant, CARDANO_UPLC_BUILTIN_INTEGER_ARG_BITS))
+    {
+      return false;
+    }
+
+    if (((byte_string_args & flag) != 0U) && cardano_uplc_builtin_as_byte_string(args[i], &bytes) && (bytes.size > CARDANO_UPLC_BUILTIN_BYTE_STRING_ARG_MAX))
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -1451,8 +1692,9 @@ body_int_compare(
 /**
  * \brief Runs \c expModInteger: base raised to an exponent modulo a modulus.
  *
- * A modulus of zero or less is a script error. A modulus of one yields zero. A
- * zero exponent yields one. A positive exponent uses modular exponentiation. A
+ * A modulus outside 1 .. 2^8191 - 1 is a script error. A modulus of one yields
+ * zero whatever the base and exponent; otherwise a base or exponent outside
+ * -(2^8191) .. 2^8191 - 1 is a script error. A zero exponent yields one. A positive exponent uses modular exponentiation. A
  * negative exponent inverts the base modulo the modulus (a script error when the
  * base is not invertible, or when the base is zero) then exponentiates by the
  * magnitude.
@@ -1481,7 +1723,12 @@ body_exp_mod_integer(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  if (cardano_bigint_signum(modulus) <= 0)
+  if ((cardano_bigint_signum(modulus) <= 0) || (cardano_bigint_bit_length(modulus) > CARDANO_UPLC_BUILTIN_EXP_MOD_BOUND_BITS))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if ((cardano_bigint_bit_length(modulus) > 1U) && (!bigint_within_signed_bits(base, CARDANO_UPLC_BUILTIN_EXP_MOD_BOUND_BITS) || !bigint_within_signed_bits(exponent, CARDANO_UPLC_BUILTIN_EXP_MOD_BOUND_BITS)))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -1791,46 +2038,38 @@ body_cons_byte_string(
 }
 
 /**
- * \brief Converts a non-negative bigint to a clamped \c size_t skip/take count.
+ * \brief Converts a signed count to a clamped \c size_t skip/take count.
  *
  * A negative value clamps to zero (so a negative skip or take selects nothing); a
  * value above the byte-string length clamps to the length.
  *
- * \param[in] value The bigint to clamp.
+ * \param[in] value The count to clamp.
  * \param[in] limit The upper bound (the byte-string length).
  *
  * \return The clamped count in 0..limit.
  */
 static size_t
-clamp_index(const cardano_bigint_t* value, size_t limit)
+clamp_index(int64_t value, size_t limit)
 {
-  uint64_t raw = 0U;
-
-  if (cardano_bigint_signum(value) < 0)
+  if (value < 0)
   {
     return 0U;
   }
 
-  if (cardano_bigint_bit_length(value) > 63U)
+  if ((uint64_t)value > (uint64_t)limit)
   {
     return limit;
   }
 
-  raw = cardano_bigint_to_unsigned_int(value);
-
-  if (raw > (uint64_t)limit)
-  {
-    return limit;
-  }
-
-  return (size_t)raw;
+  return (size_t)value;
 }
 
 /**
  * \brief Runs \c sliceByteString: a clamped sub-string by start and length.
  *
- * The start and length are clamped to the byte-string bounds, so an out-of-range
- * request yields a shorter or empty result rather than an error.
+ * The start and length must fit a signed 64-bit integer, otherwise the call is a
+ * script error. Within that range they are clamped to the byte-string bounds, so
+ * an out-of-range request yields a shorter or empty result rather than an error.
  *
  * \param[in] arena The arena the result is allocated from.
  * \param[in] args The three saturated argument values (start, length, byte string).
@@ -1849,6 +2088,8 @@ body_slice_byte_string(
   const cardano_bigint_t*  start_arg = NULL;
   const cardano_bigint_t*  len_arg   = NULL;
   cardano_uplc_byte_view_t bytes     = { NULL, 0U };
+  int64_t                  start     = 0;
+  int64_t                  length    = 0;
   size_t                   skip      = 0U;
   size_t                   take      = 0U;
   size_t                   available = 0U;
@@ -1858,8 +2099,13 @@ body_slice_byte_string(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
-  skip = clamp_index(start_arg, bytes.size);
-  take = clamp_index(len_arg, bytes.size);
+  if (!cardano_uplc_int_bigint_fits_int64(start_arg, &start) || !cardano_uplc_int_bigint_fits_int64(len_arg, &length))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  skip = clamp_index(start, bytes.size);
+  take = clamp_index(length, bytes.size);
 
   available = bytes.size - skip;
 
@@ -2231,9 +2477,11 @@ body_read_bit(
  *
  * The first argument is the byte string, the second a list of integer bit
  * indices, the third the boolean value to write. Any index outside 0..len*8 is a
- * script error and no result is produced.
+ * script error and no result is produced. Under the variants that bound
+ * byte-string arguments an input longer than 4096 bytes is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the input-length bound.
  * \param[in] args The three saturated argument values (byte string, index list, bit).
  * \param[out] out_result On success, the byte-string result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -2243,6 +2491,7 @@ body_read_bit(
 static cardano_uplc_int_builtin_outcome_t
 body_write_bits(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -2256,6 +2505,11 @@ body_write_bits(
   size_t                                i       = 0U;
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) || !cardano_uplc_builtin_as_list(args[1], &element, &items, &count) || !cardano_uplc_builtin_as_bool(args[2], &set_bit))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && (bytes.size > CARDANO_UPLC_BUILTIN_WRITE_BITS_INPUT_MAX))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -2432,9 +2686,12 @@ body_replicate_byte(
  * The shift count is signed: a positive count shifts left (toward the most
  * significant bit), a negative count shifts right; the result keeps the input
  * length and vacated bits are zero. A magnitude at or beyond the bit length
- * yields an all-zero string. Bits are addressed most-significant-first.
+ * yields an all-zero string. Bits are addressed most-significant-first. Under the
+ * variants that bound byte-string arguments a shift that does not fit a signed
+ * 64-bit integer is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the shift bound.
  * \param[in] args The two saturated argument values (byte string, shift).
  * \param[out] out_result On success, the byte-string result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -2444,6 +2701,7 @@ body_replicate_byte(
 static cardano_uplc_int_builtin_outcome_t
 body_shift_byte_string(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -2457,8 +2715,14 @@ body_shift_byte_string(
   bool                     is_left   = false;
   byte_t*                  scratch   = NULL;
   uint64_t                 dst_bit   = 0U;
+  int64_t                  bounded   = 0;
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) || !as_integer_big(arena, args[1], &shift))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && !cardano_uplc_int_bigint_fits_int64(shift, &bounded))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -2550,9 +2814,12 @@ body_shift_byte_string(
  *
  * The bit rotation count is reduced modulo the bit length (floor modulo, so a
  * negative count rotates right). Bits shifted off one end re-enter at the other;
- * the result keeps the input length. An empty input is returned unchanged.
+ * the result keeps the input length. An empty input is returned unchanged. Under
+ * the variants that bound byte-string arguments a rotation that does not fit a
+ * signed 64-bit integer is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the rotation bound.
  * \param[in] args The two saturated argument values (byte string, rotation).
  * \param[out] out_result On success, the byte-string result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -2562,6 +2829,7 @@ body_shift_byte_string(
 static cardano_uplc_int_builtin_outcome_t
 body_rotate_byte_string(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -2574,8 +2842,14 @@ body_rotate_byte_string(
   uint64_t                 rot     = 0U;
   byte_t*                  scratch = NULL;
   uint64_t                 dst_bit = 0U;
+  int64_t                  bounded = 0;
 
   if (!cardano_uplc_builtin_as_byte_string(args[0], &bytes) || !as_integer_big(arena, args[1], &shift))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && !cardano_uplc_int_bigint_fits_int64(shift, &bounded))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -3800,9 +4074,11 @@ collect_data_nodes(
  *
  * The first argument is the constructor alternative (an integer), the second a
  * proto-list of data. The raw alternative is stored; the compact CBOR tag is
- * derived by the serializer.
+ * derived by the serializer. Under the variants that bound byte-string arguments
+ * an alternative that does not fit an unsigned 64-bit integer is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the alternative bound.
  * \param[in] args The two saturated argument values (index, data list).
  * \param[out] out_result On success, the data result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -3812,6 +4088,7 @@ collect_data_nodes(
 static cardano_uplc_int_builtin_outcome_t
 body_constr_data(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -3825,6 +4102,11 @@ body_constr_data(
   uint64_t                              alternative  = 0U;
 
   if (!as_integer_big(arena, args[0], &index))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && ((cardano_bigint_signum(index) < 0) || (cardano_bigint_bit_length(index) > CARDANO_UPLC_BUILTIN_CONSTR_TAG_BITS)))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -5320,8 +5602,11 @@ body_bls_g1_neg(
  * \brief Runs \c bls12_381_G1_scalarMul: scalar multiplication of a G1 point.
  *
  * The integer scalar is reduced modulo the group order before multiplication.
+ * Under the variants that bound byte-string arguments a scalar outside
+ * -(2^4095) .. 2^4095 - 1 is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the scalar bound.
  * \param[in] args The scalar integer and the G1 point.
  * \param[out] out_result On success, the G1 result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -5331,6 +5616,7 @@ body_bls_g1_neg(
 static cardano_uplc_int_builtin_outcome_t
 body_bls_g1_scalar_mul(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -5342,6 +5628,11 @@ body_bls_g1_scalar_mul(
   blst_p1                 out;
 
   if (!as_integer_big(arena, args[0], &scalar) || !as_bls(args[1], CARDANO_UPLC_TYPE_BLS_G1, &point))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && !bigint_within_signed_bits(scalar, CARDANO_UPLC_BLS_SCALAR_BOUND_BITS))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -5597,8 +5888,11 @@ body_bls_g2_neg(
  * \brief Runs \c bls12_381_G2_scalarMul: scalar multiplication of a G2 point.
  *
  * The integer scalar is reduced modulo the group order before multiplication.
+ * Under the variants that bound byte-string arguments a scalar outside
+ * -(2^4095) .. 2^4095 - 1 is a script error.
  *
  * \param[in] arena The arena the result is allocated from.
+ * \param[in] semantics The semantics variant selecting the scalar bound.
  * \param[in] args The scalar integer and the G2 point.
  * \param[out] out_result On success, the G2 result value.
  * \param[out] host_error Set to a host error on allocation failure.
@@ -5608,6 +5902,7 @@ body_bls_g2_neg(
 static cardano_uplc_int_builtin_outcome_t
 body_bls_g2_scalar_mul(
   struct cardano_uplc_arena_t*       arena,
+  cardano_uplc_builtin_semantics_t   semantics,
   const cardano_uplc_value_t* const* args,
   const cardano_uplc_value_t**       out_result,
   cardano_error_t*                   host_error)
@@ -5619,6 +5914,11 @@ body_bls_g2_scalar_mul(
   blst_p2                 out;
 
   if (!as_integer_big(arena, args[0], &scalar) || !as_bls(args[1], CARDANO_UPLC_TYPE_BLS_G2, &point))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
+
+  if (cardano_uplc_semantics_bounds_byte_string_arguments(semantics) && !bigint_within_signed_bits(scalar, CARDANO_UPLC_BLS_SCALAR_BOUND_BITS))
   {
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
@@ -7959,9 +8259,11 @@ body_index_array(
  * The first argument is a list of integer scalars and the second a list of group
  * points of \p kind (\ref CARDANO_UPLC_TYPE_BLS_G1 or
  * \ref CARDANO_UPLC_TYPE_BLS_G2). The result is the sum of scalar_i * point_i
- * over the shorter of the two lists; empty lists give the group identity. Each
- * scalar is reduced modulo the scalar period before multiplication, as ordinary
- * scalar multiplication does.
+ * over the shorter of the two lists; empty lists give the group identity. Every
+ * scalar in the list, including any beyond the length of the point list, must lie
+ * in -(2^4095) .. 2^4095 - 1, otherwise the call is a script error. Each scalar is
+ * reduced modulo the scalar period before multiplication, as ordinary scalar
+ * multiplication does.
  *
  * \param[in] arena The arena the result is allocated from.
  * \param[in] kind The group kind, G1 or G2.
@@ -7995,6 +8297,21 @@ body_bls_multi_scalar_mul(
     return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
   }
 
+  for (i = 0U; i < scalar_count; ++i)
+  {
+    const cardano_uplc_constant_t* scalar_const = scalars[i];
+
+    if ((scalar_const == NULL) || (scalar_const->kind != CARDANO_UPLC_TYPE_INTEGER))
+    {
+      return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+    }
+
+    if (!constant_integer_within_signed_bits(scalar_const, CARDANO_UPLC_BLS_SCALAR_BOUND_BITS))
+    {
+      return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+    }
+  }
+
   n = (scalar_count < point_count) ? scalar_count : point_count;
 
   (void)memset(&acc1, 0, sizeof(acc1));
@@ -8005,11 +8322,6 @@ body_bls_multi_scalar_mul(
     const cardano_uplc_constant_t* scalar_const = scalars[i];
     const cardano_uplc_constant_t* point_const  = points[i];
     const cardano_bigint_t*        scalar_big   = NULL;
-
-    if ((scalar_const == NULL) || (scalar_const->kind != CARDANO_UPLC_TYPE_INTEGER))
-    {
-      return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
-    }
 
     if ((point_const == NULL) || (point_const->kind != kind))
     {
@@ -8083,6 +8395,11 @@ cardano_uplc_int_builtin_run(
   }
 
   *host_error = CARDANO_SUCCESS;
+
+  if (!arguments_within_bounds(semantics, func, args, arg_count))
+  {
+    return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
+  }
 
   /*
    * Each arm spends its cost before its body runs (cost-before-execute). Budget
@@ -8257,7 +8574,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_write_bits(arena, args, out_result, host_error);
+      return body_write_bits(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_REPLICATE_BYTE:
     {
@@ -8279,7 +8596,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_shift_byte_string(arena, args, out_result, host_error);
+      return body_shift_byte_string(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_ROTATE_BYTE_STRING:
     {
@@ -8290,7 +8607,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_rotate_byte_string(arena, args, out_result, host_error);
+      return body_rotate_byte_string(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_COUNT_SET_BITS:
     {
@@ -8510,7 +8827,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_constr_data(arena, args, out_result, host_error);
+      return body_constr_data(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_MAP_DATA:
     {
@@ -8796,7 +9113,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_bls_g1_scalar_mul(arena, args, out_result, host_error);
+      return body_bls_g1_scalar_mul(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_BLS12_381_G1_EQUAL:
     {
@@ -8873,7 +9190,7 @@ cardano_uplc_int_builtin_run(
         return CARDANO_UPLC_BUILTIN_OUTCOME_SCRIPT_ERROR;
       }
 
-      return body_bls_g2_scalar_mul(arena, args, out_result, host_error);
+      return body_bls_g2_scalar_mul(arena, semantics, args, out_result, host_error);
     }
     case CARDANO_UPLC_BUILTIN_BLS12_381_G2_EQUAL:
     {
