@@ -1200,7 +1200,7 @@ TEST(uplc_script_context_v4, buildTxInfoReturnsErrorIfGivenANullPointer)
   cardano_utxo_list_t*   utxos   = decode_utxos(kUtxosCbor);
   cardano_plutus_data_t* tx_info = NULL;
 
-  // Act and assert
+  // Act & Assert
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(NULL, NULL, utxos, &kSlotConfig, &tx_info), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(tx, NULL, NULL, &kSlotConfig, &tx_info), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(tx, NULL, utxos, NULL, &tx_info), CARDANO_ERROR_POINTER_IS_NULL);
@@ -1219,7 +1219,7 @@ TEST(uplc_script_context_v4, buildScriptContextReturnsErrorIfGivenANullPointer)
   cardano_redeemer_t*    redeemer = new_redeemer(CARDANO_REDEEMER_TAG_SPEND, 0U);
   cardano_plutus_data_t* context  = NULL;
 
-  // Act and assert
+  // Act & Assert
   EXPECT_EQ(cardano_uplc_int_build_script_context_v4(NULL, NULL, utxos, &kSlotConfig, redeemer, NULL, &context), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_uplc_int_build_script_context_v4(tx, NULL, NULL, &kSlotConfig, redeemer, NULL, &context), CARDANO_ERROR_POINTER_IS_NULL);
   EXPECT_EQ(cardano_uplc_int_build_script_context_v4(tx, NULL, utxos, NULL, redeemer, NULL, &context), CARDANO_ERROR_POINTER_IS_NULL);
@@ -1242,7 +1242,7 @@ TEST(uplc_script_context_v4, returnsErrorIfTheSubTransactionIndexIsOutOfRange)
   const uint64_t         past    = 2U;
   const uint64_t         first   = 0U;
 
-  // Act and assert
+  // Act & Assert
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(tx, &past, utxos, &kSlotConfig, &tx_info), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(plain, &first, utxos, &kSlotConfig, &tx_info), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
   EXPECT_EQ(context_error(tx, utxos, &past, CARDANO_REDEEMER_TAG_GUARDING, 0U), CARDANO_ERROR_INDEX_OUT_OF_BOUNDS);
@@ -1302,7 +1302,7 @@ TEST(uplc_script_context_v4, returnsErrorIfAnInputIsNotResolved)
 
   ASSERT_EQ(cardano_utxo_list_new(&empty), CARDANO_SUCCESS);
 
-  // Act and assert
+  // Act & Assert
   EXPECT_EQ(cardano_uplc_int_build_tx_info_v4(tx, NULL, empty, &kSlotConfig, &tx_info), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(context_error(tx, empty, NULL, CARDANO_REDEEMER_TAG_SPEND, 0U), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   EXPECT_EQ(tx_info, nullptr);
@@ -1318,7 +1318,7 @@ TEST(uplc_script_context_v4, returnsErrorIfTheSpentOutputHasNoPaymentCredential)
   cardano_transaction_t* tx    = decode_tx(kTxCbor);
   cardano_utxo_list_t*   utxos = decode_utxos(kByronSpendUtxoCbor);
 
-  // Act and assert
+  // Act & Assert
   EXPECT_EQ(context_error(tx, utxos, NULL, CARDANO_REDEEMER_TAG_SPEND, 0U), CARDANO_ERROR_INVALID_ADDRESS_TYPE);
 
   // Cleanup

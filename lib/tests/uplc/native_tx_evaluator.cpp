@@ -318,7 +318,7 @@ build_expmod_v3_script()
  *        returns unit.
  */
 static cardano_plutus_v3_script_t*
-build_divide_below_diagonal_v3_script()
+build_divide_above_diagonal_v3_script()
 {
   static const char TWO_TO_THE_64[] = "18446744073709551616";
 
@@ -1531,12 +1531,14 @@ single_redeemer_cpu(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, uint6
   return cpu;
 }
 
+/**
+ * \brief Cost model C charges the constant 85848 above the diagonal, while cost
+ *        model E (V3 from protocol 11) evaluates the quadratic at (2, 1):
+ *        123203 + 1716*2 + 7305*1 + 57*4 + 960*2 - 900*1 = 135188.
+ */
 TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion)
 {
-  // Below the diagonal cost model C charges the constant 85848, while cost model E
-  // (V3 from protocol 11) evaluates the quadratic at (2, 1):
-  // 123203 + 1716*2 + 7305*1 + 57*4 + 960*2 - 900*1 = 135188.
-  cardano_plutus_v3_script_t* script = build_divide_below_diagonal_v3_script();
+  cardano_plutus_v3_script_t* script = build_divide_above_diagonal_v3_script();
   cardano_utxo_list_t*        utxos  = nullptr;
   cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
 
@@ -1550,10 +1552,12 @@ TEST(cardano_tx_evaluator_native, costsDivisionWithTheShapesOfTheProtocolVersion
   cardano_plutus_v3_script_unref(&script);
 }
 
+/**
+ * \brief The free variable is never evaluated, but the ledger's scope check sees it
+ *        at every protocol version since it is not under a constr or case.
+ */
 TEST(cardano_tx_evaluator_native, rejectsAFreeVariableAtEveryProtocolVersion)
 {
-  // The free variable is never evaluated, but the ledger's scope check sees it at
-  // every protocol version since it is not under a constr or case.
   cardano_plutus_v3_script_t* script = build_free_variable_v3_script(FreeVariableSite::DELAYED_ARGUMENT);
   cardano_utxo_list_t*        utxos  = nullptr;
   cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
@@ -2973,11 +2977,13 @@ build_v4_script_from_source(const char* source, size_t size)
   return script;
 }
 
+/**
+ * \brief The script succeeds only when the datum of its spending ScriptInfo (the
+ *        third item of the context) is Just (I 42), which only the witness set of
+ *        the sub-transaction provides.
+ */
 TEST(cardano_tx_evaluator_native_v4, evaluatesAV4SpendInsideASubTransaction)
 {
-  // The script succeeds only when the datum of its spending ScriptInfo (the third
-  // item of the context) is Just (I 42), which only the witness set of the
-  // sub-transaction provides.
   static const char SOURCE[] =
     "(program 1.1.0 (lam ctx (force [ (force (builtin ifThenElse)) "
     "[ (builtin equalsData) "
@@ -3040,10 +3046,12 @@ TEST(cardano_tx_evaluator_native_v4, evaluatesAV4SpendInsideASubTransaction)
   cardano_plutus_v4_script_unref(&script);
 }
 
+/**
+ * \brief The script succeeds only when the sub-transaction index of its TxInfo
+ *        (the second field of the TxInfo, the first item of the context) is Just 1.
+ */
 TEST(cardano_tx_evaluator_native_v4, givesASubTransactionScriptItsPositionInTheBatch)
 {
-  // The script succeeds only when the sub-transaction index of its TxInfo (the
-  // second field of the TxInfo, the first item of the context) is Just 1.
   static const char SOURCE[] =
     "(program 1.1.0 (lam ctx (force [ (force (builtin ifThenElse)) "
     "[ (builtin equalsData) "
@@ -3252,12 +3260,14 @@ uniform_cost_model(cardano_plutus_language_version_t language, size_t count, int
   return model;
 }
 
+/**
+ * \brief '[(lam ctx (con unit ())) ctx]' takes four machine steps (apply, lambda
+ *        and two constants) plus the startup charge, each priced 200 cpu and 200
+ *        memory by the uniform model. The default model prices them 16000 cpu and
+ *        100 memory, startup 100 and 100, so it gives 64100 cpu and 500 memory.
+ */
 TEST(cardano_tx_evaluator_native_v4, usesThePlutusV4CostModelOfTheLedger)
 {
-  // '[(lam ctx (con unit ())) ctx]' takes four machine steps (apply, lambda and two
-  // constants) plus the startup charge, each priced 200 cpu and 200 memory by the
-  // uniform model. The default model prices them 16000 cpu and 100 memory, startup
-  // 100 and 100, so it gives 64100 cpu and 500 memory.
   cardano_costmdls_t*   cost_models = nullptr;
   cardano_cost_model_t* model       = uniform_cost_model(CARDANO_PLUTUS_LANGUAGE_VERSION_V4, 251U, 200);
   uint64_t              cpu         = 0U;

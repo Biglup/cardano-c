@@ -57,9 +57,13 @@ static const size_t PARAM_COUNT_V3_WITHOUT_BATCH_7 = 350U;
  */
 static const size_t PARAM_COUNT_V4_DIJKSTRA_GENESIS = 251U;
 
-// The default V1 flat parameter vector, in the order of the upstream plutus
-// PlutusLedgerApi.V1.ParamName list, with the values of builtinCostModelD.json and
-// cekMachineCostsD.json at plutus commit 08c571515.
+/**
+ * \brief The default V1 flat parameter vector.
+ *
+ * The parameters are in the order of the upstream plutus PlutusLedgerApi.V1.ParamName
+ * list, with the values of builtinCostModelD.json and cekMachineCostsD.json at plutus
+ * commit 08c571515.
+ */
 static const int64_t V1_DEFAULT_PARAMS[] = {
   100788,
   420,
@@ -414,9 +418,13 @@ static const int64_t V1_DEFAULT_PARAMS[] = {
   36
 };
 
-// The default V2 flat parameter vector, in the order of the upstream plutus
-// PlutusLedgerApi.V2.ParamName list, with the values of builtinCostModelD.json and
-// cekMachineCostsD.json at plutus commit 08c571515.
+/**
+ * \brief The default V2 flat parameter vector.
+ *
+ * The parameters are in the order of the upstream plutus PlutusLedgerApi.V2.ParamName
+ * list, with the values of builtinCostModelD.json and cekMachineCostsD.json at plutus
+ * commit 08c571515.
+ */
 static const int64_t V2_DEFAULT_PARAMS[] = {
   100788,
   420,
@@ -771,10 +779,13 @@ static const int64_t V2_DEFAULT_PARAMS[] = {
   36
 };
 
-// The default V3 and V4 flat parameter vector, in the order of the upstream
-// plutus PlutusLedgerApi.V3.ParamName list (V4.ParamName is identical), with the
-// values of builtinCostModelE.json and cekMachineCostsE.json at plutus commit
-// 08c571515.
+/**
+ * \brief The default V3 and V4 flat parameter vector.
+ *
+ * The parameters are in the order of the upstream plutus PlutusLedgerApi.V3.ParamName
+ * list (V4.ParamName is identical), with the values of builtinCostModelE.json and
+ * cekMachineCostsE.json at plutus commit 08c571515.
+ */
 static const int64_t V3_DEFAULT_PARAMS[] = {
   100788,
   420,

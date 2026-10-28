@@ -8484,7 +8484,7 @@ TEST(cardano_sub_tx_builder_build, returnsErrorIfMemoryAllocationFails)
 
 /* GUARDING REDEEMERS ********************************************************/
 
-static const char* ALWAYS_SUCCEEDS_V4_CBOR = "82044645010000249901";
+static const char* ALWAYS_SUCCEEDS_V4_CBOR = "820446450100002499";
 static const char* ALWAYS_FAILS_V4_CBOR    = "820446450100002601";
 static const char* GUARD_ERROR_KEY_HASH    = "Only a script hash guard is satisfied by a redeemer.";
 static const char* GUARD_ERROR_DUPLICATED  = "The guard already has a redeemer.";

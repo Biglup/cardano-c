@@ -160,7 +160,9 @@ class BitWriter
       }
     }
 
-    // Encodes an unsigned magnitude given as big-endian bytes as a flat word.
+    /**
+     * \brief Encodes an unsigned magnitude given as big-endian bytes as a flat word.
+     */
     void
     big_word(const std::vector<uint8_t>& magnitude)
     {
@@ -263,16 +265,24 @@ int_const_i64(const cardano_uplc_constant_t* constant)
   return cardano_bigint_to_int(constant->as.integer.big);
 }
 
-// A value quantity as its flat zigzag word, given as big-endian magnitude bytes.
+/**
+ * \brief A value quantity as its flat zigzag word, given as big-endian magnitude bytes.
+ */
 using FlatAmount = std::vector<uint8_t>;
 
-// One token of a value: the token name and its quantity.
+/**
+ * \brief One token of a value: the token name and its quantity.
+ */
 using FlatToken = std::pair<std::vector<uint8_t>, FlatAmount>;
 
-// One policy entry of a value: the currency symbol and its tokens.
+/**
+ * \brief One policy entry of a value: the currency symbol and its tokens.
+ */
 using FlatPolicy = std::pair<std::vector<uint8_t>, std::vector<FlatToken>>;
 
-// Returns the zigzag word of a small quantity.
+/**
+ * \brief Returns the zigzag word of a small quantity.
+ */
 FlatAmount
 small_amount(int64_t value)
 {
@@ -287,8 +297,11 @@ small_amount(int64_t value)
   return out;
 }
 
-// Returns the zigzag word of a quantity at the signed 128-bit boundary: 2^127 - 1
-// or -(2^127) when inside the range, 2^127 or -(2^127) - 1 when just outside.
+/**
+ * \brief Returns the zigzag word of a quantity at the signed 128-bit boundary:
+ *        2^127 - 1 or -(2^127) when inside the range, 2^127 or -(2^127) - 1 when
+ *        just outside.
+ */
 FlatAmount
 big_amount(bool positive, bool outside)
 {
@@ -314,7 +327,9 @@ big_amount(bool positive, bool outside)
   return out;
 }
 
-// Encodes a value constant (type tag 13) with the given entries, in order.
+/**
+ * \brief Encodes a value constant (type tag 13) with the given entries, in order.
+ */
 std::vector<uint8_t>
 value_bytes(const std::vector<FlatPolicy>& policies)
 {
@@ -2054,9 +2069,12 @@ TEST(cardano_uplc_flat_decode_term, decodesBuiltin)
   cardano_uplc_arena_free(&arena);
 }
 
+/**
+ * \brief Term tag 7 followed by builtin tag 106, which names no builtin.
+ */
 TEST(cardano_uplc_flat_decode_term, rejectsUnknownBuiltinTag)
 {
-  // Arrange: term tag 7, builtin tag 106 which names no builtin.
+  // Arrange
   BitWriter w;
   w.bits(7U, 4U);
   w.bits(106U, 7U);

@@ -823,6 +823,9 @@ TEST(cardano_uplc_two_arg_cost, drop_list)
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 4, 9), 116711);
 }
 
+/**
+ * \brief The cost is 7 + 3*5 = 22, whatever x and the minimum are.
+ */
 TEST(cardano_uplc_two_arg_cost, linear_in_y2_ignores_x_and_minimum)
 {
   cardano_uplc_two_arg_cost_t fn       = make_two(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y2);
@@ -830,7 +833,6 @@ TEST(cardano_uplc_two_arg_cost, linear_in_y2_ignores_x_and_minimum)
   fn.params.subtracted_sizes.slope     = 3;
   fn.params.subtracted_sizes.minimum   = 1000;
 
-  // 7 + 3*5 = 22, whatever x and the minimum are
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 9, 5), 22);
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, 5), 22);
 }
@@ -845,6 +847,10 @@ TEST(cardano_uplc_two_arg_cost, linear_in_y2_saturates)
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, I64_MAX), I64_MAX);
 }
 
+/**
+ * \brief The constant is never charged: 228465 + 122*(3*5) = 230295 on both sides
+ *        of the diagonal.
+ */
 TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_multiplied_model)
 {
   cardano_uplc_two_arg_cost_t fn                            = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
@@ -853,11 +859,14 @@ TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_multiplied_model)
   fn.params.const_diagonal.model.multiplied_sizes.intercept = 228465;
   fn.params.const_diagonal.model.multiplied_sizes.slope     = 122;
 
-  // the constant is never charged: 228465 + 122*(3*5) = 230295 on both sides
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 3, 5), 230295);
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 5, 3), 230295);
 }
 
+/**
+ * \brief At (I64_MAX, 1) the x terms saturate at I64_MAX, then the c02*y*y term
+ *        subtracts 900, as with the reference SatInt arithmetic, on both sides.
+ */
 TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_quadratic_saturates)
 {
   cardano_uplc_two_arg_cost_t fn                    = make_two(CARDANO_UPLC_TWO_ARG_ABOVE_AND_BELOW_DIAGONAL);
@@ -871,8 +880,6 @@ TEST(cardano_uplc_two_arg_cost, above_and_below_diagonal_quadratic_saturates)
   fn.params.const_diagonal.model.quadratic.coeff_11 = 960;
   fn.params.const_diagonal.model.quadratic.coeff_02 = -900;
 
-  // at (I64_MAX, 1) the x terms saturate at I64_MAX, then the c02*y*y term
-  // subtracts 900, as with the reference SatInt arithmetic, on both sides
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, 1, I64_MAX), I64_MAX - 900);
   EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&fn, I64_MAX, 1), I64_MAX - 900);
 }
@@ -1754,28 +1761,33 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, semantics_a_b_and_c_chan
   EXPECT_EQ(std::memcmp(&c, &v3, sizeof(v3)), 0);
 }
 
+/**
+ * \brief Above the diagonal the constant 85848 is charged; below it 228465 + 122*15
+ *        = 230295. Memory uses subtracted sizes: max(1, 3-5) = 1 and max(1, 5-3) = 2.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_b_charges_the_constant_above_the_diagonal)
 {
   cardano_uplc_builtin_costs_t b = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_B);
 
-  // above: constant 85848; below: 228465 + 122*15 = 230295
   EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 230295);
   EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 230295);
 
-  // subtracted sizes: max(1, 3-5) = 1 and max(1, 5-3) = 2
   EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 1);
   EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 2);
   EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 1);
   EXPECT_EQ(division_mem(b, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 2);
 }
 
+/**
+ * \brief Above the diagonal the constant 85848 is charged; below it 123203 + 1716*5
+ *        + 7305*3 + 57*25 + 960*15 - 900*9 = 161423.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_c_charges_the_constant_above_the_diagonal)
 {
   cardano_uplc_builtin_costs_t c = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_C);
 
-  // above: constant 85848; below: 123203 + 1716*5 + 7305*3 + 57*25 + 960*15 - 900*9 = 161423
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 85848);
@@ -1784,23 +1796,29 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_c_charges_the
   EXPECT_EQ(division_cpu(c, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
 }
 
+/**
+ * \brief Divide and mod use multiplied sizes at (max, min), 228465 + 122*15 = 230295
+ *        on both sides. Quotient and remainder keep the constant above the diagonal.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_d_reads_divide_and_mod_on_both_sides)
 {
   cardano_uplc_builtin_costs_t d = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
 
-  // multiplied sizes at (max, min): 228465 + 122*15 = 230295 on both sides
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 230295);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 230295);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 230295);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 230295);
 
-  // quotient and remainder keep the constant above the diagonal
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 230295);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 230295);
 }
 
+/**
+ * \brief Mod and remainder memory is linear in y; divide and quotient keep
+ *        subtracted sizes.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_d_costs_mod_and_remainder_memory_by_y)
 {
   cardano_uplc_builtin_costs_t d = division_shaped(cardano_uplc_builtin_costs_v1(), CARDANO_UPLC_SEMANTICS_D);
@@ -1812,28 +1830,33 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_d_costs_mod_a
   EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 5);
   EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 3);
 
-  // divide and quotient keep subtracted sizes
   EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 1);
   EXPECT_EQ(division_mem(d, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 2);
 }
 
+/**
+ * \brief Divide and mod evaluate the quadratic at (max, min) = (5, 3), 161423 on
+ *        both sides. Quotient and remainder keep the constant above the diagonal.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_reads_divide_and_mod_on_both_sides)
 {
   cardano_uplc_builtin_costs_t e = division_shaped(cardano_uplc_builtin_costs_v3(), CARDANO_UPLC_SEMANTICS_E);
 
-  // quadratic at (max, min) = (5, 3): 161423 on both sides
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 161423);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 3, 5), 161423);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 161423);
 
-  // quotient and remainder keep the constant above the diagonal
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_QUOTIENT_INTEGER, 5, 3), 161423);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 3, 5), 85848);
   EXPECT_EQ(division_cpu(e, CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER, 5, 3), 161423);
 }
 
+/**
+ * \brief Cost model E keeps the V3 divide quadratic below the diagonal and the
+ *        constant 85848 above it, and leaves the mod and remainder memory unchanged.
+ */
 TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_keeps_the_quadratic_coefficients)
 {
   cardano_uplc_builtin_costs_t      v3  = cardano_uplc_builtin_costs_v3();
@@ -1850,7 +1873,6 @@ TEST(cardano_uplc_builtin_costs_select_division_shapes, cost_model_e_keeps_the_q
       sizeof(cardano_uplc_two_var_quadratic_cost_t)),
     0);
 
-  // memory shapes are unchanged under cost model E
   EXPECT_EQ(std::memcmp(&e.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem, &v3.entries[CARDANO_UPLC_BUILTIN_MOD_INTEGER].mem, sizeof(cardano_uplc_builtin_cost_t::mem)), 0);
   EXPECT_EQ(std::memcmp(&e.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem, &v3.entries[CARDANO_UPLC_BUILTIN_REMAINDER_INTEGER].mem, sizeof(cardano_uplc_builtin_cost_t::mem)), 0);
 }
@@ -1907,6 +1929,9 @@ TEST(cardano_uplc_cost_model_from_params, cost_model_d_shapes_the_v1_division_pa
   EXPECT_EQ(std::memcmp(&model.builtins, &expected, sizeof(expected)), 0);
 }
 
+/**
+ * \brief Cost model B floors x - y at the minimum, while D charges 0 + 1*y.
+ */
 TEST(cardano_uplc_cost_model_from_params, cost_model_d_leaves_the_mod_memory_minimum_unread)
 {
   int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1];
@@ -1923,11 +1948,14 @@ TEST(cardano_uplc_cost_model_from_params, cost_model_d_leaves_the_mod_memory_min
     cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V1, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1, CARDANO_UPLC_SEMANTICS_D, &d),
     CARDANO_SUCCESS);
 
-  // B floors x - y at the minimum; D charges 0 + 1*y
   EXPECT_EQ(division_mem(b.builtins, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 1000);
   EXPECT_EQ(division_mem(d.builtins, CARDANO_UPLC_BUILTIN_MOD_INTEGER, 5, 3), 3);
 }
 
+/**
+ * \brief The point (3, 5) evaluates at (5, 3): 123203 + 1716*5 + 7305*3 + 57*25
+ *        + 960*15 - 900*9 = 161423.
+ */
 TEST(cardano_uplc_cost_model_from_params, cost_model_e_reads_the_v3_division_coefficients)
 {
   int64_t params[CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3];
@@ -1940,7 +1968,6 @@ TEST(cardano_uplc_cost_model_from_params, cost_model_e_reads_the_v3_division_coe
     cardano_uplc_cost_model_from_params(CARDANO_UPLC_COST_MODEL_VERSION_V3, params, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3, CARDANO_UPLC_SEMANTICS_E, &model),
     CARDANO_SUCCESS);
 
-  // (3, 5) evaluates at (5, 3): 123203 + 1716*5 + 7305*3 + 57*25 + 960*15 - 900*9 = 161423
   EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER].cpu.two.params.const_diagonal.model.quadratic.coeff_11, 960);
   EXPECT_EQ(division_cpu(model.builtins, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 3, 5), 161423);
   EXPECT_EQ(division_cpu(model.builtins, CARDANO_UPLC_BUILTIN_DIVIDE_INTEGER, 5, 3), 161423);
@@ -2383,7 +2410,9 @@ TEST(cardano_uplc_semantics_bounds_byte_string_arguments, per_variant)
 
 /* PARAMETER LAYOUT **********************************************************/
 
-// Builds the cost model from a default vector with one parameter replaced.
+/**
+ * \brief Builds the cost model from a default vector with one parameter replaced.
+ */
 static cardano_error_t
 model_with_param(
   cardano_uplc_cost_model_version_t version,
@@ -2399,16 +2428,20 @@ model_with_param(
   return cardano_uplc_cost_model_from_params(version, params.data(), params.size(), CARDANO_UPLC_SEMANTICS_C, model);
 }
 
-// Builds the cost model of an unmodified default vector.
+/**
+ * \brief Builds the cost model of an unmodified default vector.
+ */
 static cardano_error_t
 default_model(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t count, cardano_uplc_cost_model_t* model)
 {
   return cardano_uplc_cost_model_from_params(version, defaults, count, CARDANO_UPLC_SEMANTICS_C, model);
 }
 
-// Each language's list is ordered as the upstream ParamName enumeration and grows
-// by appending batches; the first and last parameter of every batch must land in
-// the field the parameter name designates.
+/**
+ * \brief Each language's list is ordered as the upstream ParamName enumeration and
+ *        grows by appending batches; the first and last parameter of every batch
+ *        must land in the field the parameter name designates.
+ */
 TEST(cardano_uplc_cost_model_from_params, v1_batch_boundaries)
 {
   const cardano_uplc_cost_model_version_t v = CARDANO_UPLC_COST_MODEL_VERSION_V1;
@@ -2488,8 +2521,10 @@ TEST(cardano_uplc_cost_model_from_params, v3_and_v4_batch_boundaries)
   }
 }
 
-// Asserts that each parameter is read into a field of its own: replacing it
-// changes the model, and no two parameters change the same byte.
+/**
+ * \brief Asserts that each parameter is read into a field of its own: replacing it
+ *        changes the model, and no two parameters change the same byte.
+ */
 static void
 expect_each_parameter_sets_its_own_field(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t count)
 {
@@ -2555,10 +2590,12 @@ TEST(cardano_uplc_cost_model_from_params, default_params_yield_the_default_machi
 
 /* LEDGER LIST LENGTHS *******************************************************/
 
-// A node that predates batch 7 publishes 332 parameters for V1 and V2 and 350 for
-// V3; the Dijkstra genesis V4 list stops after the 251 parameters of the original
-// V3 list. Such a list matches the full list everywhere but the batch-7 builtins,
-// whose missing coefficients saturate.
+/**
+ * \brief A node that predates batch 7 publishes 332 parameters for V1 and V2 and 350
+ *        for V3; the Dijkstra genesis V4 list stops after the 251 parameters of the
+ *        original V3 list. Such a list matches the full list everywhere but the
+ *        batch-7 builtins, whose missing coefficients saturate.
+ */
 TEST(cardano_uplc_cost_model_from_params, lists_without_batch_7_saturate_the_batch_7_builtins)
 {
   const struct
