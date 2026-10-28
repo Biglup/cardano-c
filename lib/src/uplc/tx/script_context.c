@@ -181,22 +181,6 @@ enum
   PURPOSE_MAX_ITEMS = 2
 };
 
-/**
- * \brief Positions of the V4 TxInfo fields that the TopTxInfo aggregates as they are.
- */
-static const size_t   TX_INFO_V4_ID_FIELD         = 0U;
-static const size_t   TX_INFO_V4_INPUTS_FIELD     = 2U;
-static const size_t   TX_INFO_V4_REF_INPUTS_FIELD = 3U;
-static const size_t   TX_INFO_V4_OUTPUTS_FIELD    = 4U;
-static const size_t   TX_INFO_V4_CERTS_FIELD      = 6U;
-static const size_t   TX_INFO_V4_GUARDS_FIELD     = 11U;
-static const size_t   TX_INFO_V4_PROPOSALS_FIELD  = 16U;
-static const size_t   SORTED_MAP_INITIAL_CAPACITY = 4U;
-static const size_t   SORT_KEY_INDEX_SIZE         = 8U;
-static const size_t   SORT_KEY_BITS_PER_BYTE      = 8U;
-static const uint64_t TX_CERT_V4_POOL_REGISTER    = 7U;
-static const uint64_t TX_CERT_V4_POOL_RETIRE      = 8U;
-
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -756,6 +740,9 @@ sort_key_append_byte(sort_key_t* key, const byte_t value)
 static void
 sort_key_append_index(sort_key_t* key, const uint64_t index)
 {
+  static const size_t SORT_KEY_INDEX_SIZE    = 8U;
+  static const size_t SORT_KEY_BITS_PER_BYTE = 8U;
+
   byte_t bytes[8] = { 0 };
 
   for (size_t i = 0U; i < SORT_KEY_INDEX_SIZE; ++i)
@@ -861,6 +848,8 @@ sorted_map_free(sorted_map_t* map)
 static cardano_error_t
 sorted_map_reserve(sorted_map_t* map)
 {
+  static const size_t SORTED_MAP_INITIAL_CAPACITY = 4U;
+
   if (map->count < map->capacity)
   {
     return CARDANO_SUCCESS;
@@ -983,7 +972,7 @@ sorted_map_put(
  * \brief Encodes the value of a sorted-map entry: its amount when summed, its value otherwise.
  */
 static cardano_error_t
-sorted_entry_value(const sorted_entry_t* entry, cardano_plutus_data_t** out)
+sorted_entry_value(sorted_entry_t* entry, cardano_plutus_data_t** out)
 {
   if (entry->amount != NULL)
   {
@@ -1000,7 +989,7 @@ sorted_entry_value(const sorted_entry_t* entry, cardano_plutus_data_t** out)
  * \brief Encodes a sorted map as a plutus-data map, in key order.
  */
 static cardano_error_t
-sorted_map_encode(const sorted_map_t* map, cardano_plutus_data_t** out)
+sorted_map_encode(sorted_map_t* map, cardano_plutus_data_t** out)
 {
   cardano_plutus_map_t* encoded = NULL;
   cardano_error_t       result  = cardano_plutus_map_new(&encoded);
@@ -1033,7 +1022,7 @@ sorted_map_encode(const sorted_map_t* map, cardano_plutus_data_t** out)
  * \brief Encodes the keys of a sorted map as a plutus-data list, in key order.
  */
 static cardano_error_t
-sorted_map_encode_keys(const sorted_map_t* map, cardano_plutus_data_t** out)
+sorted_map_encode_keys(sorted_map_t* map, cardano_plutus_data_t** out)
 {
   cardano_plutus_list_t* list   = NULL;
   cardano_error_t        result = cardano_plutus_list_new(&list);
@@ -1060,7 +1049,7 @@ sorted_map_encode_keys(const sorted_map_t* map, cardano_plutus_data_t** out)
  * their inner keys.
  */
 static cardano_error_t
-sorted_map_append_nested(const sorted_map_t* map, cardano_plutus_map_t* target)
+sorted_map_append_nested(sorted_map_t* map, cardano_plutus_map_t* target)
 {
   cardano_error_t result = CARDANO_SUCCESS;
   size_t          start  = 0U;
@@ -1112,7 +1101,7 @@ sorted_map_append_nested(const sorted_map_t* map, cardano_plutus_map_t* target)
  * \brief Encodes a sorted map of nested entries as a plutus-data map of maps.
  */
 static cardano_error_t
-sorted_map_encode_nested(const sorted_map_t* map, cardano_plutus_data_t** out)
+sorted_map_encode_nested(sorted_map_t* map, cardano_plutus_data_t** out)
 {
   cardano_plutus_map_t* encoded = NULL;
   cardano_error_t       result  = cardano_plutus_map_new(&encoded);
@@ -1317,17 +1306,20 @@ put_assets(sorted_map_t* map, cardano_multi_asset_t* multi_asset, const asset_fi
  * \brief Computes the greatest common divisor of two unsigned integers.
  */
 static uint64_t
-gcd_u64(uint64_t lhs, uint64_t rhs)
+gcd_u64(const uint64_t lhs, const uint64_t rhs)
 {
-  while (rhs != 0U)
-  {
-    const uint64_t remainder = lhs % rhs;
+  uint64_t a = lhs;
+  uint64_t b = rhs;
 
-    lhs = rhs;
-    rhs = remainder;
+  while (b != 0U)
+  {
+    const uint64_t remainder = a % b;
+
+    a = b;
+    b = remainder;
   }
 
-  return lhs;
+  return a;
 }
 
 /**
@@ -7236,6 +7228,9 @@ indexed_withdrawal(cardano_withdrawal_map_t* withdrawals, const uint64_t index, 
 static cardano_error_t
 certificate_script_hash(cardano_plutus_data_t* certificate, cardano_plutus_data_t** script_hash)
 {
+  static const uint64_t TX_CERT_V4_POOL_REGISTER = 7U;
+  static const uint64_t TX_CERT_V4_POOL_RETIRE   = 8U;
+
   uint64_t               alternative = CONSTR_0;
   cardano_plutus_data_t* credential  = NULL;
   cardano_error_t        result      = constr_field_at(certificate, 0U, &alternative, &credential);
@@ -7530,7 +7525,7 @@ guard_parts(const tx_view_t* view, const uint64_t index, purpose_parts_t* parts)
  */
 static cardano_error_t
 resolve_purpose(
-  const tx_view_t*             view,
+  tx_view_t*                   view,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_redeemer_tag_t tag,
   const uint64_t               index,
@@ -7637,7 +7632,7 @@ script_purpose_v4(const purpose_parts_t* parts, cardano_plutus_data_t** out)
  * the redeemers run.
  */
 static cardano_error_t
-redeemers_v4(const tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted_map_t* script_hashes, cardano_plutus_data_t** out)
+redeemers_v4(tx_view_t* view, cardano_utxo_list_t* resolved_inputs, sorted_map_t* script_hashes, cardano_plutus_data_t** out)
 {
   sorted_map_t    map    = { NULL, 0U, 0U };
   const size_t    count  = (view->redeemers != NULL) ? cardano_redeemer_list_get_length(view->redeemers) : 0U;
@@ -7754,7 +7749,7 @@ sub_tx_index_v4(const tx_view_t* view, cardano_plutus_data_t** out)
  */
 static cardano_error_t
 tx_info_fields_v4(
-  const tx_view_t*             view,
+  tx_view_t*                   view,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_slot_config_t* slot_config,
   sorted_map_t*                script_hashes,
@@ -8027,14 +8022,25 @@ batch_add_treasury(batch_t* batch, const tx_view_t* view)
 /**
  * \brief Adds a transaction level to the aggregates of the whole transaction.
  *
+ * The id, inputs, reference inputs, outputs, certificates, guards and proposals
+ * fields of the level are aggregated as they are.
+ *
  * \param[in] batch The aggregates.
  * \param[in] view The transaction level, added after the levels before it.
  * \param[in] fields The encoded TxInfo fields of the level.
  * \param[in] guard The encoded credential of the running guard.
  */
 static cardano_error_t
-batch_add(batch_t* batch, const tx_view_t* view, cardano_plutus_data_t** fields, cardano_plutus_data_t* guard)
+batch_add(batch_t* batch, tx_view_t* view, cardano_plutus_data_t** fields, cardano_plutus_data_t* guard)
 {
+  static const size_t TX_INFO_V4_ID_FIELD         = 0U;
+  static const size_t TX_INFO_V4_INPUTS_FIELD     = 2U;
+  static const size_t TX_INFO_V4_REF_INPUTS_FIELD = 3U;
+  static const size_t TX_INFO_V4_OUTPUTS_FIELD    = 4U;
+  static const size_t TX_INFO_V4_CERTS_FIELD      = 6U;
+  static const size_t TX_INFO_V4_GUARDS_FIELD     = 11U;
+  static const size_t TX_INFO_V4_PROPOSALS_FIELD  = 16U;
+
   cardano_bigint_t* donation = NULL;
   cardano_error_t   result   = cardano_plutus_list_add(batch->ids, fields[TX_INFO_V4_ID_FIELD]);
 
@@ -8129,7 +8135,7 @@ batch_add(batch_t* batch, const tx_view_t* view, cardano_plutus_data_t** fields,
  * \brief Encodes the TopTxInfoSimplified of the whole transaction from its aggregates.
  */
 static cardano_error_t
-top_tx_info_simplified_v4(const batch_t* batch, const cardano_slot_config_t* slot_config, cardano_plutus_data_t** out)
+top_tx_info_simplified_v4(batch_t* batch, const cardano_slot_config_t* slot_config, cardano_plutus_data_t** out)
 {
   cardano_plutus_data_t* fields[TOP_TX_INFO_SIMPLIFIED_FIELD_COUNT] = { NULL };
   cardano_error_t        result                                     = cardano_plutus_data_new_list(batch->ids, &fields[0]);
@@ -8308,7 +8314,7 @@ static cardano_error_t
 top_tx_info_v4(
   batch_t*                     batch,
   cardano_transaction_t*       tx,
-  const tx_view_t*             top,
+  tx_view_t*                   top,
   cardano_plutus_data_t**      top_fields,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_slot_config_t* slot_config,
@@ -8389,7 +8395,7 @@ script_info_v4(const purpose_parts_t* parts, cardano_plutus_data_t* extra, carda
 static cardano_error_t
 script_context_v4(
   cardano_transaction_t*       tx,
-  const tx_view_t*             view,
+  tx_view_t*                   view,
   cardano_utxo_list_t*         resolved_inputs,
   const cardano_slot_config_t* slot_config,
   cardano_redeemer_t*          redeemer,

@@ -31,27 +31,13 @@
 #include <stdbool.h>
 #include <string.h>
 
-/* CONSTANTS *****************************************************************/
-
-/**
- * \brief Ranks of the constructors the ledger orders by, in declaration order.
- *
- * \c Credential declares \c ScriptHashObj before \c KeyHashObj, \c Network
- * declares \c Testnet before \c Mainnet, and \c Voter declares
- * \c CommitteeVoter, \c DRepVoter and \c StakePoolVoter in that order.
- */
-static const byte_t LEDGER_SCRIPT_CREDENTIAL = 0U;
-static const byte_t LEDGER_KEY_CREDENTIAL    = 1U;
-static const byte_t LEDGER_TESTNET           = 0U;
-static const byte_t LEDGER_MAINNET           = 1U;
-static const byte_t LEDGER_COMMITTEE_VOTER   = 0U;
-static const byte_t LEDGER_DREP_VOTER        = 1U;
-static const byte_t LEDGER_STAKE_POOL_VOTER  = 2U;
-
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
  * \brief Returns the rank of the role of a voter kind in the ledger voter order.
+ *
+ * The ledger \c Voter type declares \c CommitteeVoter, \c DRepVoter and
+ * \c StakePoolVoter in that order, so the ranks follow that declaration order.
  *
  * \param[in] type The voter kind.
  *
@@ -60,6 +46,10 @@ static const byte_t LEDGER_STAKE_POOL_VOTER  = 2U;
 static byte_t
 voter_role_rank(const cardano_voter_type_t type)
 {
+  static const byte_t LEDGER_COMMITTEE_VOTER  = 0U;
+  static const byte_t LEDGER_DREP_VOTER       = 1U;
+  static const byte_t LEDGER_STAKE_POOL_VOTER = 2U;
+
   byte_t rank = LEDGER_STAKE_POOL_VOTER;
 
   switch (type)
@@ -110,6 +100,9 @@ ranked_credential_key(const byte_t rank, const cardano_credential_t* credential,
 cardano_error_t
 _cardano_ledger_order_credential_key(const cardano_credential_t* credential, byte_t* key)
 {
+  static const byte_t LEDGER_SCRIPT_CREDENTIAL = 0U;
+  static const byte_t LEDGER_KEY_CREDENTIAL    = 1U;
+
   if (key == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
@@ -158,6 +151,9 @@ _cardano_ledger_order_voter_key(cardano_voter_t* voter, byte_t* key)
 cardano_error_t
 _cardano_ledger_order_reward_address_key(cardano_reward_address_t* address, byte_t* key)
 {
+  static const byte_t LEDGER_TESTNET = 0U;
+  static const byte_t LEDGER_MAINNET = 1U;
+
   if (key == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
