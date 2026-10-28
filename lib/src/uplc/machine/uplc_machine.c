@@ -906,10 +906,12 @@ constant_value(
 /**
  * \brief Selects and enters a case branch when the scrutinee is a constant.
  *
- * A bool selects branch 1 when true and branch 0 when false; a unit selects
- * branch 0 of a single branch; an integer selects the branch at its non-negative
- * in-range index; a non-empty list selects branch 0 and pushes its head then
- * tail; an empty list selects branch 1; a pair selects branch 0 and pushes its
+ * A bool takes one or two branches and selects branch 1 when true and branch 0
+ * when false, so true with a single branch fails; a unit takes exactly one
+ * branch; an integer selects the branch at its non-negative in-range index; a
+ * list takes one or two branches, a non-empty list selects branch 0 and pushes
+ * its head then tail, and an empty list selects branch 1, so it fails with a
+ * single branch; a pair takes exactly one branch, selects it and pushes its
  * first then second component; a Data Constr selects the branch at its tag and
  * pushes its fields as one list of data, while any other Data value is a script
  * error. Any other constant kind, or an out-of-range or missing branch, is a
@@ -917,7 +919,8 @@ constant_value(
  * error, as the ledger's unavailable caser makes it, and casing on Data is a
  * script error unless \c machine->case_on_data is set
  * (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs, \c defaultCaserBuiltinFor;
- * plutus-core/plutus-core/src/PlutusCore/Default/Universe.hs, \c caseBuiltinData).
+ * plutus-core/plutus-core/src/PlutusCore/Default/Universe.hs, \c caseBuiltinDefault
+ * and \c caseBuiltinData).
  *
  * \param[in,out] machine The machine context.
  * \param[in] frame The cases frame holding the branches and environment.
@@ -1005,15 +1008,15 @@ case_on_constant(
 
     case CARDANO_UPLC_TYPE_LIST:
     {
+      if ((frame->as.cases.branch_count < (size_t)1) || (frame->as.cases.branch_count > (size_t)2))
+      {
+        return PRV_STEP_SCRIPT_ERROR;
+      }
+
       if (constant->as.list.count > (size_t)0)
       {
         const cardano_uplc_value_t* fields[2];
         cardano_uplc_constant_t*    tail_constant = NULL;
-
-        if (frame->as.cases.branch_count < (size_t)1)
-        {
-          return PRV_STEP_SCRIPT_ERROR;
-        }
 
         *host_error = constant_value(machine, constant->as.list.items[0], &fields[0]);
 
@@ -1052,7 +1055,7 @@ case_on_constant(
       }
       else
       {
-        if (frame->as.cases.branch_count < (size_t)2)
+        if (frame->as.cases.branch_count != (size_t)2)
         {
           return PRV_STEP_SCRIPT_ERROR;
         }

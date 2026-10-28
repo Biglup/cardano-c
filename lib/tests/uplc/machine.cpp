@@ -2128,6 +2128,87 @@ TEST(cardano_uplc_int_evaluate_with_costs, caseOnDataFailsUnlessAConstrTagSelect
   }
 }
 
+TEST(cardano_uplc_int_evaluate_with_costs, casesOnConstantsAcceptOnlyTheBranchCountsOfTheirType)
+{
+  struct Row
+  {
+      const char* source;
+      bool        is_data;
+      bool        succeeds;
+      int64_t     selected;
+  };
+
+  const Row rows[] = {
+    { "(program 1.2.0 (case (con bool False)))", false, false, 0 },
+    { "(program 1.2.0 (case (con bool False) (con integer 0)))", false, true, 0 },
+    { "(program 1.2.0 (case (con bool False) (con integer 0) (con integer 1)))", false, true, 0 },
+    { "(program 1.2.0 (case (con bool False) (con integer 0) (con integer 1) (con integer 2)))", false, false, 0 },
+    { "(program 1.2.0 (case (con bool True)))", false, false, 0 },
+    { "(program 1.2.0 (case (con bool True) (con integer 0)))", false, false, 0 },
+    { "(program 1.2.0 (case (con bool True) (con integer 0) (con integer 1)))", false, true, 1 },
+    { "(program 1.2.0 (case (con bool True) (con integer 0) (con integer 1) (con integer 2)))", false, false, 0 },
+    { "(program 1.2.0 (case (con unit ())))", false, false, 0 },
+    { "(program 1.2.0 (case (con unit ()) (con integer 0)))", false, true, 0 },
+    { "(program 1.2.0 (case (con unit ()) (con integer 0) (con integer 1)))", false, false, 0 },
+    { "(program 1.2.0 (case (con integer 0)))", false, false, 0 },
+    { "(program 1.2.0 (case (con integer 0) (con integer 0)))", false, true, 0 },
+    { "(program 1.2.0 (case (con integer 2) (con integer 0) (con integer 1)))", false, false, 0 },
+    { "(program 1.2.0 (case (con integer 2) (con integer 0) (con integer 1) (con integer 2)))", false, true, 2 },
+    { "(program 1.2.0 (case (con integer -1) (con integer 0) (con integer 1)))", false, false, 0 },
+    { "(program 1.2.0 (case (con (list integer) [7])))", false, false, 0 },
+    { "(program 1.2.0 (case (con (list integer) [7]) (lam h (lam t (con integer 0)))))", false, true, 0 },
+    { "(program 1.2.0 (case (con (list integer) [7]) (lam h (lam t (con integer 0))) (con integer 1)))", false, true, 0 },
+    { "(program 1.2.0 (case (con (list integer) [7]) (lam h (lam t (con integer 0))) (con integer 1) (con integer 2)))", false, false, 0 },
+    { "(program 1.2.0 (case (con (list integer) [])))", false, false, 0 },
+    { "(program 1.2.0 (case (con (list integer) []) (lam h (lam t (con integer 0)))))", false, false, 0 },
+    { "(program 1.2.0 (case (con (list integer) []) (lam h (lam t (con integer 0))) (con integer 1)))", false, true, 1 },
+    { "(program 1.2.0 (case (con (list integer) []) (lam h (lam t (con integer 0))) (con integer 1) (con integer 2)))", false, false, 0 },
+    { "(program 1.2.0 (case (con (pair integer bool) (7, True))))", false, false, 0 },
+    { "(program 1.2.0 (case (con (pair integer bool) (7, True)) (lam a (lam b (con integer 0)))))", false, true, 0 },
+    { "(program 1.2.0 (case (con (pair integer bool) (7, True)) (lam a (lam b (con integer 0))) (con integer 1)))", false, false, 0 },
+    { "(program 1.2.0 (case (con data (Constr 0 []))))", true, false, 0 },
+    { "(program 1.2.0 (case (con data (Constr 0 [])) (lam f (con integer 0))))", true, true, 0 },
+    { "(program 1.2.0 (case (con data (Constr 1 [])) (lam f (con integer 0))))", true, false, 0 },
+    { "(program 1.2.0 (case (con data (Constr 1 [])) (lam f (con integer 0)) (lam f (con integer 1))))", true, true, 1 },
+    { "(program 1.2.0 (case (con data (Constr 1 [])) (lam f (con integer 0)) (lam f (con integer 1)) (lam f (con integer 2))))", true, true, 1 },
+    { "(program 1.2.0 (case (con data (I 0)) (lam f (con integer 0))))", true, false, 0 },
+    { "(program 1.2.0 (case (con bytestring #00) (con integer 0)))", false, false, 0 },
+    { "(program 1.2.0 (case (con string \"a\") (con integer 0)))", false, false, 0 }
+  };
+
+  const uint64_t protocols[] = { 11U, 12U };
+
+  for (const uint64_t protocol_major: protocols)
+  {
+    for (const Row& row: rows)
+    {
+      cardano_uplc_arena_t*      arena    = new_arena();
+      cardano_uplc_eval_result_t result   = evaluate_text_at(arena, row.source, protocol_major, 1U, 2U);
+      const bool                 succeeds = row.succeeds && (!row.is_data || (protocol_major >= 12U));
+
+      if (succeeds)
+      {
+        EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS) << row.source << " protocol " << protocol_major;
+
+        if ((result.result != nullptr) && (result.result->kind == CARDANO_UPLC_TERM_CONSTANT))
+        {
+          EXPECT_EQ(int_const_i64(result.result->as.constant), row.selected) << row.source << " protocol " << protocol_major;
+        }
+        else
+        {
+          ADD_FAILURE() << row.source << " protocol " << protocol_major;
+        }
+      }
+      else
+      {
+        EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_ERROR_TERM) << row.source << " protocol " << protocol_major;
+      }
+
+      cardano_uplc_arena_free(&arena);
+    }
+  }
+}
+
 TEST(cardano_uplc_int_evaluate_with_costs, casesOnDataOnlyFromProtocolTwelveAndPlutusCoreOneTwoZero)
 {
   struct Row
