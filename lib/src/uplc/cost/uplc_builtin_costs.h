@@ -74,8 +74,8 @@ cardano_uplc_builtin_costs_v1(void);
 /**
  * \brief Returns the default Plutus V2 per-builtin costing functions.
  *
- * Identical to \ref cardano_uplc_builtin_costs_v1: both read builtin cost
- * model D.
+ * Identical to \ref cardano_uplc_builtin_costs_v1, since both read builtin
+ * cost model D.
  *
  * \return The V2 builtin costs by value.
  */

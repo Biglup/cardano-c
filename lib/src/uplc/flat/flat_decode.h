@@ -164,8 +164,8 @@ cardano_uplc_flat_decode_program(
  * header must be at most 32 flat type tags, and every \c Constr term must have at
  * most 1024 fields. A script that fails any of them cannot be deserialised.
  *
- * Ownership matches \ref cardano_uplc_flat_decode_program: the program and its
- * term tree are owned by \p arena.
+ * Ownership matches \ref cardano_uplc_flat_decode_program, so the program and
+ * its term tree are owned by \p arena.
  *
  * \param[in] arena The arena every node and interior object is allocated from.
  * \param[in,out] reader The flat reader, advanced past the encoded program.
