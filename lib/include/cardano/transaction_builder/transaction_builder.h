@@ -2114,7 +2114,7 @@ CARDANO_EXPORT void cardano_tx_builder_vote(
  * Behaves like \ref cardano_tx_builder_vote, but the redeemer payload is built by the given
  * callback from the balanced draft transaction. See \ref cardano_tx_builder_add_input_with_deferred_redeemer.
  * The \ref cardano_transaction_find_vote_index function can be used to look up the voter's
- * canonical position from inside the callback.
+ * position in ledger voter order, which is the voting redeemer index, from inside the callback.
  *
  * \param[in] builder      The transaction builder.
  * \param[in] voter        The voter casting the vote.

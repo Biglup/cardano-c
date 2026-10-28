@@ -26,6 +26,7 @@
 #include <cardano/uplc/uplc_apply_params.h>
 
 #include "../../allocators.h"
+#include "../../common/ledger_order.h"
 
 #include <cardano/address/address.h>
 #include <cardano/address/address_type.h>
@@ -132,7 +133,7 @@ static const uint64_t CONSTR_6 = 6U;
 /**
  * \brief Capacity of a ledger sort key, in bytes.
  *
- * Wide enough for the longest key the V4 encoder builds: a voter followed by a
+ * Wide enough for the longest key the encoders build: a voter followed by a
  * governance action id, or a policy id followed by an asset name.
  */
 enum
@@ -193,13 +194,6 @@ static const size_t   TX_INFO_V4_PROPOSALS_FIELD  = 16U;
 static const size_t   SORTED_MAP_INITIAL_CAPACITY = 4U;
 static const size_t   SORT_KEY_INDEX_SIZE         = 8U;
 static const size_t   SORT_KEY_BITS_PER_BYTE      = 8U;
-static const byte_t   LEDGER_SCRIPT_CREDENTIAL    = 0U;
-static const byte_t   LEDGER_KEY_CREDENTIAL       = 1U;
-static const byte_t   LEDGER_TESTNET              = 0U;
-static const byte_t   LEDGER_MAINNET              = 1U;
-static const byte_t   LEDGER_COMMITTEE_VOTER      = 0U;
-static const byte_t   LEDGER_DREP_VOTER           = 1U;
-static const byte_t   LEDGER_STAKE_POOL_VOTER     = 2U;
 static const uint64_t TX_CERT_V4_POOL_REGISTER    = 7U;
 static const uint64_t TX_CERT_V4_POOL_RETIRE      = 8U;
 
@@ -734,20 +728,644 @@ encode_address(const cardano_address_t* address, cardano_plutus_data_t** out)
 }
 
 /**
- * \brief Inserts the ada entry (empty policy id -> {empty asset name -> coin}) into a value map.
- *
- * When \p force_zero is true the entry is always inserted (used by the
- * zero-ada-asset shape of inputs/outputs/fee/mint); otherwise it is only
- * inserted when the coin is positive (the plain Value shape).
+ * \brief Appends bytes to a sort key, truncating at its capacity.
+ */
+static void
+sort_key_append(sort_key_t* key, const byte_t* data, const size_t size)
+{
+  const size_t room = (size_t)SORT_KEY_SIZE - key->size;
+  const size_t copy = (size < room) ? size : room;
+
+  cardano_safe_memcpy(&key->bytes[key->size], room, data, copy);
+
+  key->size += copy;
+}
+
+/**
+ * \brief Appends a single rank byte to a sort key.
+ */
+static void
+sort_key_append_byte(sort_key_t* key, const byte_t value)
+{
+  sort_key_append(key, &value, 1U);
+}
+
+/**
+ * \brief Appends an unsigned integer to a sort key as 8 big-endian bytes.
+ */
+static void
+sort_key_append_index(sort_key_t* key, const uint64_t index)
+{
+  byte_t bytes[8] = { 0 };
+
+  for (size_t i = 0U; i < SORT_KEY_INDEX_SIZE; ++i)
+  {
+    bytes[i] = (byte_t)(index >> (SORT_KEY_BITS_PER_BYTE * (SORT_KEY_INDEX_SIZE - 1U - i)));
+  }
+
+  sort_key_append(key, bytes, SORT_KEY_INDEX_SIZE);
+}
+
+/**
+ * \brief Appends the bytes of a hash to a sort key.
+ */
+static void
+sort_key_append_hash(sort_key_t* key, const cardano_blake2b_hash_t* hash)
+{
+  sort_key_append(key, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash));
+}
+
+/**
+ * \brief Appends a credential to a sort key in the ledger order: script credentials sort before key credentials.
  */
 static cardano_error_t
-value_add_coin(cardano_plutus_map_t* value_map, const int64_t coin, const bool force_zero)
+sort_key_append_credential(sort_key_t* key, const cardano_credential_t* credential)
 {
-  if (!force_zero && (coin <= 0))
+  byte_t          bytes[CARDANO_LEDGER_ORDER_CREDENTIAL_KEY_SIZE] = { 0 };
+  cardano_error_t result                                          = _cardano_ledger_order_credential_key(credential, bytes);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append(key, bytes, sizeof(bytes));
+  }
+
+  return result;
+}
+
+/**
+ * \brief Appends a voter to a sort key in the ledger order.
+ *
+ * The ledger orders committee voters first, then DReps, then stake pools, each
+ * by credential.
+ */
+static cardano_error_t
+sort_key_append_voter(sort_key_t* key, cardano_voter_t* voter)
+{
+  byte_t          bytes[CARDANO_LEDGER_ORDER_KEY_SIZE] = { 0 };
+  cardano_error_t result                               = _cardano_ledger_order_voter_key(voter, bytes);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append(key, bytes, sizeof(bytes));
+  }
+
+  return result;
+}
+
+/**
+ * \brief Orders two sort keys byte by byte, a proper prefix first.
+ */
+static int32_t
+compare_sort_keys(const sort_key_t* lhs, const sort_key_t* rhs)
+{
+  const size_t  common = (lhs->size < rhs->size) ? lhs->size : rhs->size;
+  const int32_t order  = (int32_t)memcmp(lhs->bytes, rhs->bytes, common);
+
+  if (order != 0)
+  {
+    return order;
+  }
+
+  if (lhs->size == rhs->size)
+  {
+    return 0;
+  }
+
+  return (lhs->size < rhs->size) ? -1 : 1;
+}
+
+/**
+ * \brief Releases the entries of a sorted map and resets it to empty.
+ */
+static void
+sorted_map_free(sorted_map_t* map)
+{
+  for (size_t i = 0U; i < map->count; ++i)
+  {
+    cardano_plutus_data_unref(&map->items[i].key_data);
+    cardano_plutus_data_unref(&map->items[i].inner_key);
+    cardano_plutus_data_unref(&map->items[i].value);
+    cardano_bigint_unref(&map->items[i].amount);
+  }
+
+  _cardano_free(map->items);
+
+  map->items    = NULL;
+  map->count    = 0U;
+  map->capacity = 0U;
+}
+
+/**
+ * \brief Makes room for one more entry in a sorted map.
+ */
+static cardano_error_t
+sorted_map_reserve(sorted_map_t* map)
+{
+  if (map->count < map->capacity)
   {
     return CARDANO_SUCCESS;
   }
 
+  const size_t    capacity = (map->capacity == 0U) ? SORTED_MAP_INITIAL_CAPACITY : (map->capacity * 2U);
+  sorted_entry_t* items    = (sorted_entry_t*)_cardano_malloc(capacity * sizeof(sorted_entry_t));
+
+  if (items == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  if (map->items != NULL)
+  {
+    cardano_safe_memcpy(items, capacity * sizeof(sorted_entry_t), map->items, map->count * sizeof(sorted_entry_t));
+  }
+
+  _cardano_free(map->items);
+
+  map->items    = items;
+  map->capacity = capacity;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Inserts an entry into a sorted map, merging it with an entry of the same key.
+ *
+ * \param[in] map The map to insert into.
+ * \param[in] key The ledger sort key of the entry.
+ * \param[in] key_data The encoded key. A new reference is taken.
+ * \param[in] inner_key The encoded key inside a nested map, or NULL.
+ * \param[in] value The encoded value, or NULL when the entry carries an amount.
+ * \param[in] amount The amount of a summed entry, or NULL. It is copied.
+ * \param[in] mode How an entry with an existing key is merged.
+ */
+static cardano_error_t
+sorted_map_put(
+  sorted_map_t*           map,
+  const sort_key_t*       key,
+  cardano_plutus_data_t*  key_data,
+  cardano_plutus_data_t*  inner_key,
+  cardano_plutus_data_t*  value,
+  const cardano_bigint_t* amount,
+  const merge_mode_t      mode)
+{
+  size_t  position = 0U;
+  int32_t order    = -1;
+
+  while (position < map->count)
+  {
+    order = compare_sort_keys(&map->items[position].key, key);
+
+    if (order >= 0)
+    {
+      break;
+    }
+
+    ++position;
+  }
+
+  if ((position < map->count) && (order == 0))
+  {
+    sorted_entry_t* entry = &map->items[position];
+
+    if (mode == MERGE_KEEP_LAST)
+    {
+      cardano_plutus_data_ref(inner_key);
+      cardano_plutus_data_ref(value);
+      cardano_plutus_data_unref(&entry->inner_key);
+      cardano_plutus_data_unref(&entry->value);
+
+      entry->inner_key = inner_key;
+      entry->value     = value;
+    }
+
+    if (mode == MERGE_SUM)
+    {
+      cardano_bigint_add(entry->amount, amount, entry->amount);
+    }
+
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_error_t result = sorted_map_reserve(map);
+  sorted_entry_t  entry;
+
+  CARDANO_UNUSED(memset(&entry, 0, sizeof(entry)));
+
+  if ((result == CARDANO_SUCCESS) && (amount != NULL))
+  {
+    result = cardano_bigint_clone(amount, &entry.amount);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  entry.key = *key;
+
+  cardano_plutus_data_ref(key_data);
+  cardano_plutus_data_ref(inner_key);
+  cardano_plutus_data_ref(value);
+
+  entry.key_data  = key_data;
+  entry.inner_key = inner_key;
+  entry.value     = value;
+
+  CARDANO_UNUSED(memmove(&map->items[position + 1U], &map->items[position], (map->count - position) * sizeof(sorted_entry_t)));
+
+  map->items[position]  = entry;
+  map->count           += 1U;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Encodes the value of a sorted-map entry: its amount when summed, its value otherwise.
+ */
+static cardano_error_t
+sorted_entry_value(const sorted_entry_t* entry, cardano_plutus_data_t** out)
+{
+  if (entry->amount != NULL)
+  {
+    return cardano_plutus_data_new_integer(entry->amount, out);
+  }
+
+  cardano_plutus_data_ref(entry->value);
+  *out = entry->value;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Encodes a sorted map as a plutus-data map, in key order.
+ */
+static cardano_error_t
+sorted_map_encode(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_map_t* encoded = NULL;
+  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
+
+  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_data_t* value = NULL;
+
+    result = sorted_entry_value(&map->items[i], &value);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_map_insert(encoded, map->items[i].key_data, value);
+    }
+
+    cardano_plutus_data_unref(&value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(encoded, out);
+  }
+
+  cardano_plutus_map_unref(&encoded);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the keys of a sorted map as a plutus-data list, in key order.
+ */
+static cardano_error_t
+sorted_map_encode_keys(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = cardano_plutus_list_new(&list);
+
+  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    result = cardano_plutus_list_add(list, map->items[i].key_data);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+
+  return result;
+}
+
+/**
+ * \brief Appends a sorted map to a plutus-data map as a map of nested maps.
+ *
+ * Consecutive entries with the same outer key form one nested map, keyed by
+ * their inner keys.
+ */
+static cardano_error_t
+sorted_map_append_nested(const sorted_map_t* map, cardano_plutus_map_t* target)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+  size_t          start  = 0U;
+
+  while ((start < map->count) && (result == CARDANO_SUCCESS))
+  {
+    cardano_plutus_map_t*  inner    = NULL;
+    cardano_plutus_data_t* inner_pd = NULL;
+    size_t                 end      = start;
+
+    result = cardano_plutus_map_new(&inner);
+
+    while ((result == CARDANO_SUCCESS) && (end < map->count) && cardano_plutus_data_equals(map->items[end].key_data, map->items[start].key_data))
+    {
+      cardano_plutus_data_t* value = NULL;
+
+      result = sorted_entry_value(&map->items[end], &value);
+
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_plutus_map_insert(inner, map->items[end].inner_key, value);
+      }
+
+      cardano_plutus_data_unref(&value);
+
+      ++end;
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_map(inner, &inner_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_map_insert(target, map->items[start].key_data, inner_pd);
+    }
+
+    cardano_plutus_map_unref(&inner);
+    cardano_plutus_data_unref(&inner_pd);
+
+    start = end;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Encodes a sorted map of nested entries as a plutus-data map of maps.
+ */
+static cardano_error_t
+sorted_map_encode_nested(const sorted_map_t* map, cardano_plutus_data_t** out)
+{
+  cardano_plutus_map_t* encoded = NULL;
+  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_append_nested(map, encoded);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_map(encoded, out);
+  }
+
+  cardano_plutus_map_unref(&encoded);
+
+  return result;
+}
+
+/**
+ * \brief Appends a reward account to a sort key in the ledger order.
+ *
+ * The ledger orders accounts by network, test networks first, then by credential.
+ */
+static cardano_error_t
+sort_key_append_account(sort_key_t* key, cardano_reward_address_t* address)
+{
+  byte_t          bytes[CARDANO_LEDGER_ORDER_KEY_SIZE] = { 0 };
+  cardano_error_t result                               = _cardano_ledger_order_reward_address_key(address, bytes);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sort_key_append(key, bytes, sizeof(bytes));
+  }
+
+  return result;
+}
+
+/**
+ * \brief Builds the sort key and the encoded credential of a reward account.
+ */
+static cardano_error_t
+account_entry(cardano_reward_address_t* address, sort_key_t* key, cardano_plutus_data_t** credential_data)
+{
+  cardano_credential_t* credential = NULL;
+  cardano_error_t       result     = sort_key_append_account(key, address);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    credential = cardano_reward_address_get_credential(address);
+    result     = encode_credential(credential, credential_data);
+  }
+
+  cardano_credential_unref(&credential);
+
+  return result;
+}
+
+/**
+ * \brief Adds an amount keyed by a reward account to a sorted map, summing amounts of the same account.
+ */
+static cardano_error_t
+put_account_amount(sorted_map_t* map, cardano_reward_address_t* address, const uint64_t amount)
+{
+  sort_key_t             key;
+  cardano_plutus_data_t* credential = NULL;
+  cardano_bigint_t*      value      = NULL;
+
+  key.size = 0U;
+
+  cardano_error_t result = account_entry(address, &key, &credential);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_bigint_from_unsigned_int(amount, &value);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_put(map, &key, credential, NULL, NULL, value, MERGE_SUM);
+  }
+
+  cardano_plutus_data_unref(&credential);
+  cardano_bigint_unref(&value);
+
+  return result;
+}
+
+/**
+ * \brief Adds the withdrawals of a transaction to a sorted map of account amounts.
+ */
+static cardano_error_t
+put_withdrawals(sorted_map_t* map, cardano_withdrawal_map_t* withdrawals)
+{
+  const size_t    count  = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_reward_address_t* address = NULL;
+    uint64_t                  amount  = 0U;
+
+    result = cardano_withdrawal_map_get_key_value_at(withdrawals, i, &address, &amount);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_account_amount(map, address, amount);
+    }
+
+    cardano_reward_address_unref(&address);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Adds the amounts of a multi-asset to a sorted map keyed by policy id and asset name.
+ *
+ * Entries are ordered as the ledger orders them: by policy id, then by asset
+ * name compared byte by byte. The filter keeps every amount, only the positive
+ * ones or only the negative ones; amounts of the same asset are summed.
+ */
+static cardano_error_t
+put_assets(sorted_map_t* map, cardano_multi_asset_t* multi_asset, const asset_filter_t filter)
+{
+  if (multi_asset == NULL)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_policy_id_list_t* policies = NULL;
+  cardano_error_t           result   = cardano_multi_asset_get_keys(multi_asset, &policies);
+  const size_t              count    = (result == CARDANO_SUCCESS) ? cardano_policy_id_list_get_length(policies) : 0U;
+
+  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_blake2b_hash_t*   policy_id = NULL;
+    cardano_asset_name_map_t* assets    = NULL;
+    cardano_plutus_data_t*    policy_pd = NULL;
+
+    result = cardano_policy_id_list_get(policies, i, &policy_id);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = hash_bytes(policy_id, &policy_pd);
+    }
+
+    const size_t asset_count = (result == CARDANO_SUCCESS) ? cardano_asset_name_map_get_length(assets) : 0U;
+
+    for (size_t j = 0U; (j < asset_count) && (result == CARDANO_SUCCESS); ++j)
+    {
+      cardano_asset_name_t*  asset_name = NULL;
+      int64_t                quantity   = 0;
+      cardano_plutus_data_t* name_pd    = NULL;
+      cardano_bigint_t*      amount     = NULL;
+      sort_key_t             key;
+
+      key.size = 0U;
+      result   = cardano_asset_name_map_get_key_value_at(assets, j, &asset_name, &quantity);
+
+      const bool keep = (filter == ASSETS_ALL) || ((filter == ASSETS_POSITIVE) && (quantity > 0)) || ((filter == ASSETS_NEGATIVE) && (quantity < 0));
+
+      if ((result == CARDANO_SUCCESS) && keep)
+      {
+        sort_key_append_hash(&key, policy_id);
+        sort_key_append(&key, cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name));
+
+        result = encode_bytes(cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name), &name_pd);
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_bigint_from_int(quantity, &amount);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = sorted_map_put(map, &key, policy_pd, name_pd, NULL, amount, MERGE_SUM);
+        }
+      }
+
+      cardano_asset_name_unref(&asset_name);
+      cardano_plutus_data_unref(&name_pd);
+      cardano_bigint_unref(&amount);
+    }
+
+    cardano_blake2b_hash_unref(&policy_id);
+    cardano_asset_name_map_unref(&assets);
+    cardano_plutus_data_unref(&policy_pd);
+  }
+
+  cardano_policy_id_list_unref(&policies);
+
+  return result;
+}
+
+/**
+ * \brief Computes the greatest common divisor of two unsigned integers.
+ */
+static uint64_t
+gcd_u64(uint64_t lhs, uint64_t rhs)
+{
+  while (rhs != 0U)
+  {
+    const uint64_t remainder = lhs % rhs;
+
+    lhs = rhs;
+    rhs = remainder;
+  }
+
+  return lhs;
+}
+
+/**
+ * \brief Adds a credential to a sorted map keyed by credential, with an optional value.
+ */
+static cardano_error_t
+put_credential(sorted_map_t* map, cardano_credential_t* credential, cardano_plutus_data_t* value)
+{
+  sort_key_t             key;
+  cardano_plutus_data_t* key_pd = NULL;
+
+  key.size = 0U;
+
+  cardano_error_t result = sort_key_append_credential(&key, credential);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_credential(credential, &key_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_put(map, &key, key_pd, NULL, value, NULL, MERGE_KEEP_FIRST);
+  }
+
+  cardano_plutus_data_unref(&key_pd);
+
+  return result;
+}
+
+/**
+ * \brief Inserts the ada entry (empty policy id -> {empty asset name -> coin}) into a value map.
+ *
+ * The entry is inserted even for a zero coin, as the ledger's \c transValue does.
+ */
+static cardano_error_t
+value_add_coin(cardano_plutus_map_t* value_map, const int64_t coin)
+{
   cardano_plutus_map_t*  inner     = NULL;
   cardano_plutus_data_t* empty_pol = NULL;
   cardano_plutus_data_t* empty_asn = NULL;
@@ -795,100 +1413,24 @@ value_add_coin(cardano_plutus_map_t* value_map, const int64_t coin, const bool f
 }
 
 /**
- * \brief Appends the multi-asset policies and amounts of a value into a value map.
+ * \brief Appends the policies and amounts of a multi-asset to a value map, in ledger order.
+ *
+ * Policies are ordered by id and the assets of a policy by name compared byte by
+ * byte, the order the ledger folds its asset maps in.
  */
 static cardano_error_t
 value_add_multiasset(cardano_plutus_map_t* value_map, cardano_multi_asset_t* multi_asset)
 {
-  if (multi_asset == NULL)
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_assets(&map, multi_asset, ASSETS_ALL);
+
+  if (result == CARDANO_SUCCESS)
   {
-    return CARDANO_SUCCESS;
+    result = sorted_map_append_nested(&map, value_map);
   }
 
-  cardano_policy_id_list_t* policies = NULL;
-  cardano_error_t           result   = cardano_multi_asset_get_keys(multi_asset, &policies);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  const size_t policy_count = cardano_policy_id_list_get_length(policies);
-
-  for (size_t i = 0U; (i < policy_count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_blake2b_hash_t*   policy_id = NULL;
-    cardano_asset_name_map_t* assets    = NULL;
-    cardano_plutus_map_t*     inner     = NULL;
-    cardano_plutus_data_t*    policy_pd = NULL;
-    cardano_plutus_data_t*    inner_pd  = NULL;
-
-    result = cardano_policy_id_list_get(policies, i, &policy_id);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_map_new(&inner);
-    }
-
-    const size_t asset_count = (result == CARDANO_SUCCESS) ? cardano_asset_name_map_get_length(assets) : 0U;
-
-    for (size_t j = 0U; (j < asset_count) && (result == CARDANO_SUCCESS); ++j)
-    {
-      cardano_asset_name_t*  asset_name = NULL;
-      int64_t                quantity   = 0;
-      cardano_plutus_data_t* name_pd    = NULL;
-      cardano_plutus_data_t* qty_pd     = NULL;
-
-      result = cardano_asset_name_map_get_key_value_at(assets, j, &asset_name, &quantity);
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = encode_bytes(cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name), &name_pd);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_data_new_integer_from_int(quantity, &qty_pd);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_map_insert(inner, name_pd, qty_pd);
-      }
-
-      cardano_asset_name_unref(&asset_name);
-      cardano_plutus_data_unref(&name_pd);
-      cardano_plutus_data_unref(&qty_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = hash_bytes(policy_id, &policy_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_data_new_map(inner, &inner_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_map_insert(value_map, policy_pd, inner_pd);
-    }
-
-    cardano_blake2b_hash_unref(&policy_id);
-    cardano_asset_name_map_unref(&assets);
-    cardano_plutus_map_unref(&inner);
-    cardano_plutus_data_unref(&policy_pd);
-    cardano_plutus_data_unref(&inner_pd);
-  }
-
-  cardano_policy_id_list_unref(&policies);
+  sorted_map_free(&map);
 
   return result;
 }
@@ -896,8 +1438,8 @@ value_add_multiasset(cardano_plutus_map_t* value_map, cardano_multi_asset_t* mul
 /**
  * \brief Encodes a transaction-output value as the zero-ada-asset Value map.
  *
- * The ada entry is always present (coin forced even when zero), followed by the
- * sorted multi-asset entries.
+ * The ada entry is always present, even for a zero coin, followed by the
+ * policies and assets in ledger order. Every Plutus version shares this shape.
  */
 static cardano_error_t
 encode_value(cardano_value_t* value, cardano_plutus_data_t** out)
@@ -907,7 +1449,7 @@ encode_value(cardano_value_t* value, cardano_plutus_data_t** out)
 
   if (result == CARDANO_SUCCESS)
   {
-    result = value_add_coin(value_map, cardano_value_get_coin(value), true);
+    result = value_add_coin(value_map, cardano_value_get_coin(value));
   }
 
   if (result == CARDANO_SUCCESS)
@@ -940,7 +1482,7 @@ encode_fee(const uint64_t coin, cardano_plutus_data_t** out)
 
   if (result == CARDANO_SUCCESS)
   {
-    result = value_add_coin(value_map, (int64_t)coin, true);
+    result = value_add_coin(value_map, (int64_t)coin);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1829,26 +2371,23 @@ datum_hash(cardano_plutus_data_t* datum, cardano_blake2b_hash_t** out)
 }
 
 /**
- * \brief Encodes the witness datums as a map of datum hash -> datum.
- *
- * V1 keeps the same map shape (the ledger sorts the witnesses by hash, which
- * the plutus-data set preserves on decode).
+ * \brief Adds the witness datums of a transaction to a sorted map keyed by datum hash.
  */
 static cardano_error_t
-encode_data(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
+put_datums(sorted_map_t* map, cardano_plutus_data_set_t* datums)
 {
-  cardano_plutus_map_t* map    = NULL;
-  cardano_error_t       result = cardano_plutus_map_new(&map);
-
-  const size_t count = (datums != NULL) ? cardano_plutus_data_set_get_length(datums) : 0U;
+  const size_t    count  = (datums != NULL) ? cardano_plutus_data_set_get_length(datums) : 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
 
   for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
   {
     cardano_plutus_data_t*  datum   = NULL;
     cardano_blake2b_hash_t* hash    = NULL;
     cardano_plutus_data_t*  hash_pd = NULL;
+    sort_key_t              key;
 
-    result = cardano_plutus_data_set_get(datums, i, &datum);
+    key.size = 0U;
+    result   = cardano_plutus_data_set_get(datums, i, &datum);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1857,12 +2396,13 @@ encode_data(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
 
     if (result == CARDANO_SUCCESS)
     {
+      sort_key_append_hash(&key, hash);
       result = hash_bytes(hash, &hash_pd);
     }
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_plutus_map_insert(map, hash_pd, datum);
+      result = sorted_map_put(map, &key, hash_pd, NULL, datum, NULL, MERGE_KEEP_FIRST);
     }
 
     cardano_plutus_data_unref(&datum);
@@ -1870,12 +2410,88 @@ encode_data(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
     cardano_plutus_data_unref(&hash_pd);
   }
 
+  return result;
+}
+
+/**
+ * \brief Encodes the witness datums as a map of datum hash -> datum, in hash order.
+ *
+ * The ledger keeps the witness datums in a map keyed by hash, so the context
+ * lists them by hash, not in witness order, and a repeated datum appears once.
+ */
+static cardano_error_t
+encode_data(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
+{
+  sorted_map_t map = { NULL, 0U, 0U };
+
+  cardano_error_t result = put_datums(&map, datums);
+
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_map(map, out);
+    result = sorted_map_encode(&map, out);
   }
 
-  cardano_plutus_map_unref(&map);
+  sorted_map_free(&map);
+
+  return result;
+}
+
+/**
+ * \brief Encodes the witness datums as the V1 list of (datum hash, datum) pairs, in hash order.
+ *
+ * The V1 \c txInfoData field has type \c [(DatumHash, Datum)], so each entry is
+ * a tuple Constr 0 [hash, datum] rather than a map entry.
+ */
+static cardano_error_t
+encode_data_v1(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
+{
+  sorted_map_t           map    = { NULL, 0U, 0U };
+  cardano_plutus_list_t* list   = NULL;
+  cardano_error_t        result = put_datums(&map, datums);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_list_new(&list);
+  }
+
+  for (size_t i = 0U; (i < map.count) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_plutus_list_t* tuple    = NULL;
+    cardano_plutus_data_t* tuple_pd = NULL;
+
+    result = cardano_plutus_list_new(&tuple);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(tuple, map.items[i].key_data);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(tuple, map.items[i].value);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = encode_constr(CONSTR_0, tuple, &tuple_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_list_add(list, tuple_pd);
+    }
+
+    cardano_plutus_list_unref(&tuple);
+    cardano_plutus_data_unref(&tuple_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_plutus_data_new_list(list, out);
+  }
+
+  cardano_plutus_list_unref(&list);
+  sorted_map_free(&map);
 
   return result;
 }
@@ -2670,7 +3286,7 @@ build_tx_info(
   if (result == CARDANO_SUCCESS)
   {
     datums = cardano_witness_set_get_plutus_data(witness_set);
-    result = encode_data(datums, &data_pd);
+    result = is_v2 ? encode_data(datums, &data_pd) : encode_data_v1(datums, &data_pd);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -2747,39 +3363,6 @@ encode_maybe(cardano_plutus_data_t* value, cardano_plutus_data_t** out)
 }
 
 /**
- * \brief Encodes a value as the V3 plain Value map: the ada entry only when the coin is positive.
- */
-static cardano_error_t
-value_plain(cardano_value_t* value, cardano_plutus_data_t** out)
-{
-  cardano_plutus_map_t* value_map = NULL;
-  cardano_error_t       result    = cardano_plutus_map_new(&value_map);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = value_add_coin(value_map, cardano_value_get_coin(value), false);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
-
-    result = value_add_multiasset(value_map, multi_asset);
-
-    cardano_multi_asset_unref(&multi_asset);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_map(value_map, out);
-  }
-
-  cardano_plutus_map_unref(&value_map);
-
-  return result;
-}
-
-/**
  * \brief Encodes the V3 mint as the plain MintValue map: signed amounts, no synthetic ada entry.
  */
 static cardano_error_t
@@ -2831,7 +3414,7 @@ output_v3(cardano_transaction_output_t* output, cardano_plutus_data_t** out)
 
   if (result == CARDANO_SUCCESS)
   {
-    result = value_plain(value, &val_pd);
+    result = encode_value(value, &val_pd);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -3067,54 +3650,23 @@ outputs_v3(cardano_transaction_output_list_t* outputs, cardano_plutus_data_t** o
  *
  * The V3 \c txInfoWdrl field has type \c Map Credential Lovelace, so the key is
  * a bare \c Credential (Constr 0 [pubKeyHash] or Constr 1 [scriptHash]); not a
- * full Address and not the V1/V2 StakingHash wrapper.
+ * full Address and not the V1/V2 StakingHash wrapper. Entries follow the
+ * ledger's reward-account order: by network, then script credentials before key
+ * credentials.
  */
 static cardano_error_t
 withdrawals_v3(cardano_withdrawal_map_t* withdrawals, cardano_plutus_data_t** out)
 {
-  const size_t count = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
+  sorted_map_t map = { NULL, 0U, 0U };
 
-  cardano_plutus_map_t* map    = NULL;
-  cardano_error_t       result = cardano_plutus_map_new(&map);
-
-  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_reward_address_t* reward     = NULL;
-    uint64_t                  coin       = 0U;
-    cardano_credential_t*     credential = NULL;
-    cardano_plutus_data_t*    key_pd     = NULL;
-    cardano_plutus_data_t*    coin_pd    = NULL;
-
-    result = cardano_withdrawal_map_get_key_value_at(withdrawals, i, &reward, &coin);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      credential = cardano_reward_address_get_credential(reward);
-      result     = encode_credential(credential, &key_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_data_new_integer_from_uint(coin, &coin_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_map_insert(map, key_pd, coin_pd);
-    }
-
-    cardano_reward_address_unref(&reward);
-    cardano_credential_unref(&credential);
-    cardano_plutus_data_unref(&key_pd);
-    cardano_plutus_data_unref(&coin_pd);
-  }
+  cardano_error_t result = put_withdrawals(&map, withdrawals);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_map(map, out);
+    result = sorted_map_encode(&map, out);
   }
 
-  cardano_plutus_map_unref(&map);
+  sorted_map_free(&map);
 
   return result;
 }
@@ -4078,16 +4630,31 @@ encode_voter(cardano_voter_t* voter, cardano_plutus_data_t** out)
 }
 
 /**
+ * \brief Builds the sort key and the encoding of a voter.
+ */
+static cardano_error_t
+voter_entry(cardano_voter_t* voter, sort_key_t* key, cardano_plutus_data_t** voter_data)
+{
+  cardano_error_t result = sort_key_append_voter(key, voter);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = encode_voter(voter, voter_data);
+  }
+
+  return result;
+}
+
+/**
  * \brief Encodes a governance action id: Constr 0 [transaction id, action index].
  */
 static cardano_error_t
 gov_action_id(cardano_governance_action_id_t* id, cardano_plutus_data_t** out)
 {
-  cardano_blake2b_hash_t* tx_id  = cardano_governance_action_id_get_hash(id);
-  uint64_t                index  = 0U;
-  cardano_plutus_data_t*  id_pd  = NULL;
-  cardano_plutus_data_t*  idx_pd = NULL;
-  cardano_error_t         result = hash_bytes(tx_id, &id_pd);
+  uint64_t               index  = 0U;
+  cardano_plutus_data_t* id_pd  = NULL;
+  cardano_plutus_data_t* idx_pd = NULL;
+  cardano_error_t        result = encode_bytes(cardano_governance_action_id_get_hash_bytes(id), cardano_governance_action_id_get_hash_bytes_size(id), &id_pd);
 
   if (result == CARDANO_SUCCESS)
   {
@@ -4104,7 +4671,6 @@ gov_action_id(cardano_governance_action_id_t* id, cardano_plutus_data_t** out)
     result = constr_two(CONSTR_0, id_pd, idx_pd, out);
   }
 
-  cardano_blake2b_hash_unref(&tx_id);
   cardano_plutus_data_unref(&id_pd);
   cardano_plutus_data_unref(&idx_pd);
 
@@ -4164,16 +4730,18 @@ encode_vote(const cardano_vote_t vote, cardano_plutus_data_t** out)
 
 /**
  * \brief Encodes the votes as a map of Voter -> map of GovActionId -> Vote.
+ *
+ * Voters follow the ledger's voter order, committee members first, then DReps,
+ * then stake pools, each with script credentials before key credentials.
  */
 static cardano_error_t
 encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** out)
 {
-  cardano_plutus_map_t* outer  = NULL;
-  cardano_error_t       result = cardano_plutus_map_new(&outer);
-
+  sorted_map_t          outer  = { NULL, 0U, 0U };
+  cardano_error_t       result = CARDANO_SUCCESS;
   cardano_voter_list_t* voters = NULL;
 
-  if ((result == CARDANO_SUCCESS) && (procedures != NULL))
+  if (procedures != NULL)
   {
     result = cardano_voting_procedures_get_voters(procedures, &voters);
   }
@@ -4187,12 +4755,14 @@ encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** ou
     cardano_plutus_data_t*               voter_pd = NULL;
     cardano_plutus_map_t*                inner    = NULL;
     cardano_plutus_data_t*               inner_pd = NULL;
+    sort_key_t                           key;
 
-    result = cardano_voter_list_get(voters, i, &voter);
+    key.size = 0U;
+    result   = cardano_voter_list_get(voters, i, &voter);
 
     if (result == CARDANO_SUCCESS)
     {
-      result = encode_voter(voter, &voter_pd);
+      result = voter_entry(voter, &key, &voter_pd);
     }
 
     if (result == CARDANO_SUCCESS)
@@ -4245,7 +4815,7 @@ encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** ou
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_plutus_map_insert(outer, voter_pd, inner_pd);
+      result = sorted_map_put(&outer, &key, voter_pd, NULL, inner_pd, NULL, MERGE_KEEP_FIRST);
     }
 
     cardano_voter_unref(&voter);
@@ -4257,32 +4827,36 @@ encode_votes(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** ou
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_map(outer, out);
+    result = sorted_map_encode(&outer, out);
   }
 
   cardano_voter_list_unref(&voters);
-  cardano_plutus_map_unref(&outer);
+  sorted_map_free(&outer);
 
   return result;
 }
 
 /**
- * \brief Encodes a unit interval as a RationalNumber: Constr 0 [numerator, denominator].
+ * \brief Encodes a unit interval as a RationalNumber: Constr 0 [numerator, denominator] in lowest terms.
  *
- * NOTE: this does not reduce the fraction by its greatest common divisor;
- * protocol-parameter rationals are not exercised by the transactions this
- * builder currently targets.
+ * The ledger translates the interval through a Haskell \c Rational, which is
+ * always reduced.
  */
 static cardano_error_t
 encode_rational(cardano_unit_interval_t* interval, cardano_plutus_data_t** out)
 {
+  const uint64_t numerator   = cardano_unit_interval_get_numerator(interval);
+  const uint64_t denominator = cardano_unit_interval_get_denominator(interval);
+  const uint64_t divisor     = gcd_u64(numerator, denominator);
+  const uint64_t scale       = (divisor == 0U) ? 1U : divisor;
+
   cardano_plutus_data_t* num_pd = NULL;
   cardano_plutus_data_t* den_pd = NULL;
-  cardano_error_t        result = cardano_plutus_data_new_integer_from_uint(cardano_unit_interval_get_numerator(interval), &num_pd);
+  cardano_error_t        result = cardano_plutus_data_new_integer_from_uint(numerator / scale, &num_pd);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_plutus_data_new_integer_from_uint(cardano_unit_interval_get_denominator(interval), &den_pd);
+    result = cardano_plutus_data_new_integer_from_uint(denominator / scale, &den_pd);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -4303,6 +4877,77 @@ static cardano_error_t
 treasury_withdrawals(cardano_withdrawal_map_t* withdrawals, cardano_plutus_data_t** out)
 {
   return withdrawals_v3(withdrawals, out);
+}
+
+/**
+ * \brief Encodes the members an UpdateCommittee action removes and adds, in ledger credential order.
+ *
+ * The removed members are a list and the added members a map of credential to
+ * expiration epoch, both with script credentials before key credentials.
+ */
+static cardano_error_t
+committee_changes(cardano_update_committee_action_t* action, cardano_plutus_data_t** removed_out, cardano_plutus_data_t** added_out)
+{
+  cardano_credential_set_t*        removed     = cardano_update_committee_action_get_members_to_be_removed(action);
+  cardano_committee_members_map_t* added       = cardano_update_committee_action_get_members_to_be_added(action);
+  sorted_map_t                     removed_map = { NULL, 0U, 0U };
+  sorted_map_t                     added_map   = { NULL, 0U, 0U };
+  const size_t                     removed_n   = (removed != NULL) ? cardano_credential_set_get_length(removed) : 0U;
+  const size_t                     added_n     = (added != NULL) ? cardano_committee_members_map_get_length(added) : 0U;
+  cardano_error_t                  result      = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < removed_n) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t* credential = NULL;
+
+    result = cardano_credential_set_get(removed, i, &credential);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_credential(&removed_map, credential, NULL);
+    }
+
+    cardano_credential_unref(&credential);
+  }
+
+  for (size_t i = 0U; (i < added_n) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_credential_t*  credential = NULL;
+    uint64_t               epoch      = 0U;
+    cardano_plutus_data_t* epoch_pd   = NULL;
+
+    result = cardano_committee_members_map_get_key_value_at(added, i, &credential, &epoch);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_plutus_data_new_integer_from_uint(epoch, &epoch_pd);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = put_credential(&added_map, credential, epoch_pd);
+    }
+
+    cardano_credential_unref(&credential);
+    cardano_plutus_data_unref(&epoch_pd);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode_keys(&removed_map, removed_out);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = sorted_map_encode(&added_map, added_out);
+  }
+
+  sorted_map_free(&removed_map);
+  sorted_map_free(&added_map);
+  cardano_credential_set_unref(&removed);
+  cardano_committee_members_map_unref(&added);
+
+  return result;
 }
 
 /**
@@ -4505,11 +5150,7 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
     {
       cardano_update_committee_action_t* action     = NULL;
       cardano_governance_action_id_t*    prev       = NULL;
-      cardano_credential_set_t*          removed    = NULL;
-      cardano_committee_members_map_t*   added      = NULL;
       cardano_unit_interval_t*           quorum     = NULL;
-      cardano_plutus_list_t*             removed_l  = NULL;
-      cardano_plutus_map_t*              added_m    = NULL;
       cardano_plutus_data_t*             prev_pd    = NULL;
       cardano_plutus_data_t*             removed_pd = NULL;
       cardano_plutus_data_t*             added_pd   = NULL;
@@ -4525,78 +5166,7 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
 
       if (result == CARDANO_SUCCESS)
       {
-        removed = cardano_update_committee_action_get_members_to_be_removed(action);
-        result  = cardano_plutus_list_new(&removed_l);
-      }
-
-      const size_t removed_count = (removed != NULL) ? cardano_credential_set_get_length(removed) : 0U;
-
-      for (size_t i = 0U; (i < removed_count) && (result == CARDANO_SUCCESS); ++i)
-      {
-        cardano_credential_t*  cred    = NULL;
-        cardano_plutus_data_t* cred_pd = NULL;
-
-        result = cardano_credential_set_get(removed, i, &cred);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = encode_credential(cred, &cred_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = cardano_plutus_list_add(removed_l, cred_pd);
-        }
-
-        cardano_credential_unref(&cred);
-        cardano_plutus_data_unref(&cred_pd);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_data_new_list(removed_l, &removed_pd);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        added  = cardano_update_committee_action_get_members_to_be_added(action);
-        result = cardano_plutus_map_new(&added_m);
-      }
-
-      const size_t added_count = (added != NULL) ? cardano_committee_members_map_get_length(added) : 0U;
-
-      for (size_t i = 0U; (i < added_count) && (result == CARDANO_SUCCESS); ++i)
-      {
-        cardano_credential_t*  cred     = NULL;
-        uint64_t               epoch    = 0U;
-        cardano_plutus_data_t* cred_pd  = NULL;
-        cardano_plutus_data_t* epoch_pd = NULL;
-
-        result = cardano_committee_members_map_get_key_value_at(added, i, &cred, &epoch);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = encode_credential(cred, &cred_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = cardano_plutus_data_new_integer_from_uint(epoch, &epoch_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = cardano_plutus_map_insert(added_m, cred_pd, epoch_pd);
-        }
-
-        cardano_credential_unref(&cred);
-        cardano_plutus_data_unref(&cred_pd);
-        cardano_plutus_data_unref(&epoch_pd);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_data_new_map(added_m, &added_pd);
+        result = committee_changes(action, &removed_pd, &added_pd);
       }
 
       if (result == CARDANO_SUCCESS)
@@ -4641,11 +5211,7 @@ gov_action(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** out)
 
       cardano_update_committee_action_unref(&action);
       cardano_governance_action_id_unref(&prev);
-      cardano_credential_set_unref(&removed);
-      cardano_committee_members_map_unref(&added);
       cardano_unit_interval_unref(&quorum);
-      cardano_plutus_list_unref(&removed_l);
-      cardano_plutus_map_unref(&added_m);
       cardano_plutus_data_unref(&prev_pd);
       cardano_plutus_data_unref(&removed_pd);
       cardano_plutus_data_unref(&added_pd);
@@ -5023,479 +5589,6 @@ credential_script_hash(cardano_plutus_data_t* credential, cardano_plutus_data_t*
 }
 
 /**
- * \brief Appends bytes to a sort key, truncating at its capacity.
- */
-static void
-sort_key_append(sort_key_t* key, const byte_t* data, const size_t size)
-{
-  const size_t room = (size_t)SORT_KEY_SIZE - key->size;
-  const size_t copy = (size < room) ? size : room;
-
-  cardano_safe_memcpy(&key->bytes[key->size], room, data, copy);
-
-  key->size += copy;
-}
-
-/**
- * \brief Appends a single rank byte to a sort key.
- */
-static void
-sort_key_append_byte(sort_key_t* key, const byte_t value)
-{
-  sort_key_append(key, &value, 1U);
-}
-
-/**
- * \brief Appends an unsigned integer to a sort key as 8 big-endian bytes.
- */
-static void
-sort_key_append_index(sort_key_t* key, const uint64_t index)
-{
-  byte_t bytes[8] = { 0 };
-
-  for (size_t i = 0U; i < SORT_KEY_INDEX_SIZE; ++i)
-  {
-    bytes[i] = (byte_t)(index >> (SORT_KEY_BITS_PER_BYTE * (SORT_KEY_INDEX_SIZE - 1U - i)));
-  }
-
-  sort_key_append(key, bytes, SORT_KEY_INDEX_SIZE);
-}
-
-/**
- * \brief Appends the bytes of a hash to a sort key.
- */
-static void
-sort_key_append_hash(sort_key_t* key, const cardano_blake2b_hash_t* hash)
-{
-  sort_key_append(key, cardano_blake2b_hash_get_data(hash), cardano_blake2b_hash_get_bytes_size(hash));
-}
-
-/**
- * \brief Appends a credential to a sort key in the ledger order: script credentials sort before key credentials.
- */
-static cardano_error_t
-sort_key_append_credential(sort_key_t* key, const cardano_credential_t* credential)
-{
-  cardano_credential_type_t type   = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
-  cardano_error_t           result = cardano_credential_get_type(credential, &type);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    sort_key_append_byte(key, (type == CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH) ? LEDGER_SCRIPT_CREDENTIAL : LEDGER_KEY_CREDENTIAL);
-    sort_key_append(key, cardano_credential_get_hash_bytes(credential), cardano_credential_get_hash_bytes_size(credential));
-  }
-
-  return result;
-}
-
-/**
- * \brief Orders two sort keys byte by byte, a proper prefix first.
- */
-static int32_t
-compare_sort_keys(const sort_key_t* lhs, const sort_key_t* rhs)
-{
-  const size_t  common = (lhs->size < rhs->size) ? lhs->size : rhs->size;
-  const int32_t order  = (int32_t)memcmp(lhs->bytes, rhs->bytes, common);
-
-  if (order != 0)
-  {
-    return order;
-  }
-
-  if (lhs->size == rhs->size)
-  {
-    return 0;
-  }
-
-  return (lhs->size < rhs->size) ? -1 : 1;
-}
-
-/**
- * \brief Releases the entries of a sorted map and resets it to empty.
- */
-static void
-sorted_map_free(sorted_map_t* map)
-{
-  for (size_t i = 0U; i < map->count; ++i)
-  {
-    cardano_plutus_data_unref(&map->items[i].key_data);
-    cardano_plutus_data_unref(&map->items[i].inner_key);
-    cardano_plutus_data_unref(&map->items[i].value);
-    cardano_bigint_unref(&map->items[i].amount);
-  }
-
-  _cardano_free(map->items);
-
-  map->items    = NULL;
-  map->count    = 0U;
-  map->capacity = 0U;
-}
-
-/**
- * \brief Makes room for one more entry in a sorted map.
- */
-static cardano_error_t
-sorted_map_reserve(sorted_map_t* map)
-{
-  if (map->count < map->capacity)
-  {
-    return CARDANO_SUCCESS;
-  }
-
-  const size_t    capacity = (map->capacity == 0U) ? SORTED_MAP_INITIAL_CAPACITY : (map->capacity * 2U);
-  sorted_entry_t* items    = (sorted_entry_t*)_cardano_malloc(capacity * sizeof(sorted_entry_t));
-
-  if (items == NULL)
-  {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  if (map->items != NULL)
-  {
-    cardano_safe_memcpy(items, capacity * sizeof(sorted_entry_t), map->items, map->count * sizeof(sorted_entry_t));
-  }
-
-  _cardano_free(map->items);
-
-  map->items    = items;
-  map->capacity = capacity;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Inserts an entry into a sorted map, merging it with an entry of the same key.
- *
- * \param[in] map The map to insert into.
- * \param[in] key The ledger sort key of the entry.
- * \param[in] key_data The encoded key. A new reference is taken.
- * \param[in] inner_key The encoded key inside a nested map, or NULL.
- * \param[in] value The encoded value, or NULL when the entry carries an amount.
- * \param[in] amount The amount of a summed entry, or NULL. It is copied.
- * \param[in] mode How an entry with an existing key is merged.
- */
-static cardano_error_t
-sorted_map_put(
-  sorted_map_t*           map,
-  const sort_key_t*       key,
-  cardano_plutus_data_t*  key_data,
-  cardano_plutus_data_t*  inner_key,
-  cardano_plutus_data_t*  value,
-  const cardano_bigint_t* amount,
-  const merge_mode_t      mode)
-{
-  size_t  position = 0U;
-  int32_t order    = -1;
-
-  while (position < map->count)
-  {
-    order = compare_sort_keys(&map->items[position].key, key);
-
-    if (order >= 0)
-    {
-      break;
-    }
-
-    ++position;
-  }
-
-  if ((position < map->count) && (order == 0))
-  {
-    sorted_entry_t* entry = &map->items[position];
-
-    if (mode == MERGE_KEEP_LAST)
-    {
-      cardano_plutus_data_ref(inner_key);
-      cardano_plutus_data_ref(value);
-      cardano_plutus_data_unref(&entry->inner_key);
-      cardano_plutus_data_unref(&entry->value);
-
-      entry->inner_key = inner_key;
-      entry->value     = value;
-    }
-
-    if (mode == MERGE_SUM)
-    {
-      cardano_bigint_add(entry->amount, amount, entry->amount);
-    }
-
-    return CARDANO_SUCCESS;
-  }
-
-  cardano_error_t result = sorted_map_reserve(map);
-  sorted_entry_t  entry;
-
-  CARDANO_UNUSED(memset(&entry, 0, sizeof(entry)));
-
-  if ((result == CARDANO_SUCCESS) && (amount != NULL))
-  {
-    result = cardano_bigint_clone(amount, &entry.amount);
-  }
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  entry.key = *key;
-
-  cardano_plutus_data_ref(key_data);
-  cardano_plutus_data_ref(inner_key);
-  cardano_plutus_data_ref(value);
-
-  entry.key_data  = key_data;
-  entry.inner_key = inner_key;
-  entry.value     = value;
-
-  CARDANO_UNUSED(memmove(&map->items[position + 1U], &map->items[position], (map->count - position) * sizeof(sorted_entry_t)));
-
-  map->items[position]  = entry;
-  map->count           += 1U;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Encodes the value of a sorted-map entry: its amount when summed, its value otherwise.
- */
-static cardano_error_t
-sorted_entry_value(const sorted_entry_t* entry, cardano_plutus_data_t** out)
-{
-  if (entry->amount != NULL)
-  {
-    return cardano_plutus_data_new_integer(entry->amount, out);
-  }
-
-  cardano_plutus_data_ref(entry->value);
-  *out = entry->value;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Encodes a sorted map as a plutus-data map, in key order.
- */
-static cardano_error_t
-sorted_map_encode(const sorted_map_t* map, cardano_plutus_data_t** out)
-{
-  cardano_plutus_map_t* encoded = NULL;
-  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
-
-  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_plutus_data_t* value = NULL;
-
-    result = sorted_entry_value(&map->items[i], &value);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_map_insert(encoded, map->items[i].key_data, value);
-    }
-
-    cardano_plutus_data_unref(&value);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_map(encoded, out);
-  }
-
-  cardano_plutus_map_unref(&encoded);
-
-  return result;
-}
-
-/**
- * \brief Encodes the keys of a sorted map as a plutus-data list, in key order.
- */
-static cardano_error_t
-sorted_map_encode_keys(const sorted_map_t* map, cardano_plutus_data_t** out)
-{
-  cardano_plutus_list_t* list   = NULL;
-  cardano_error_t        result = cardano_plutus_list_new(&list);
-
-  for (size_t i = 0U; (i < map->count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    result = cardano_plutus_list_add(list, map->items[i].key_data);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_list(list, out);
-  }
-
-  cardano_plutus_list_unref(&list);
-
-  return result;
-}
-
-/**
- * \brief Appends a sorted map to a plutus-data map as a map of nested maps.
- *
- * Consecutive entries with the same outer key form one nested map, keyed by
- * their inner keys.
- */
-static cardano_error_t
-sorted_map_append_nested(const sorted_map_t* map, cardano_plutus_map_t* target)
-{
-  cardano_error_t result = CARDANO_SUCCESS;
-  size_t          start  = 0U;
-
-  while ((start < map->count) && (result == CARDANO_SUCCESS))
-  {
-    cardano_plutus_map_t*  inner    = NULL;
-    cardano_plutus_data_t* inner_pd = NULL;
-    size_t                 end      = start;
-
-    result = cardano_plutus_map_new(&inner);
-
-    while ((result == CARDANO_SUCCESS) && (end < map->count) && cardano_plutus_data_equals(map->items[end].key_data, map->items[start].key_data))
-    {
-      cardano_plutus_data_t* value = NULL;
-
-      result = sorted_entry_value(&map->items[end], &value);
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_plutus_map_insert(inner, map->items[end].inner_key, value);
-      }
-
-      cardano_plutus_data_unref(&value);
-
-      ++end;
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_data_new_map(inner, &inner_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_map_insert(target, map->items[start].key_data, inner_pd);
-    }
-
-    cardano_plutus_map_unref(&inner);
-    cardano_plutus_data_unref(&inner_pd);
-
-    start = end;
-  }
-
-  return result;
-}
-
-/**
- * \brief Encodes a sorted map of nested entries as a plutus-data map of maps.
- */
-static cardano_error_t
-sorted_map_encode_nested(const sorted_map_t* map, cardano_plutus_data_t** out)
-{
-  cardano_plutus_map_t* encoded = NULL;
-  cardano_error_t       result  = cardano_plutus_map_new(&encoded);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_append_nested(map, encoded);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_map(encoded, out);
-  }
-
-  cardano_plutus_map_unref(&encoded);
-
-  return result;
-}
-
-/**
- * \brief Builds the sort key and the encoded credential of a reward account.
- *
- * The ledger orders accounts by network, test networks first, then by credential.
- */
-static cardano_error_t
-account_entry(cardano_reward_address_t* address, sort_key_t* key, cardano_plutus_data_t** credential_data)
-{
-  cardano_network_id_t  network    = CARDANO_NETWORK_ID_MAIN_NET;
-  cardano_credential_t* credential = NULL;
-  cardano_error_t       result     = cardano_reward_address_get_network_id(address, &network);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    sort_key_append_byte(key, (network == CARDANO_NETWORK_ID_MAIN_NET) ? LEDGER_MAINNET : LEDGER_TESTNET);
-
-    credential = cardano_reward_address_get_credential(address);
-    result     = sort_key_append_credential(key, credential);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = encode_credential(credential, credential_data);
-  }
-
-  cardano_credential_unref(&credential);
-
-  return result;
-}
-
-/**
- * \brief Adds an amount keyed by a reward account to a sorted map, summing amounts of the same account.
- */
-static cardano_error_t
-put_account_amount(sorted_map_t* map, cardano_reward_address_t* address, const uint64_t amount)
-{
-  sort_key_t             key;
-  cardano_plutus_data_t* credential = NULL;
-  cardano_bigint_t*      value      = NULL;
-
-  key.size = 0U;
-
-  cardano_error_t result = account_entry(address, &key, &credential);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_bigint_from_unsigned_int(amount, &value);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_put(map, &key, credential, NULL, NULL, value, MERGE_SUM);
-  }
-
-  cardano_plutus_data_unref(&credential);
-  cardano_bigint_unref(&value);
-
-  return result;
-}
-
-/**
- * \brief Adds the withdrawals of a transaction to a sorted map of account amounts.
- */
-static cardano_error_t
-put_withdrawals(sorted_map_t* map, cardano_withdrawal_map_t* withdrawals)
-{
-  const size_t    count  = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
-  cardano_error_t result = CARDANO_SUCCESS;
-
-  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_reward_address_t* address = NULL;
-    uint64_t                  amount  = 0U;
-
-    result = cardano_withdrawal_map_get_key_value_at(withdrawals, i, &address, &amount);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = put_account_amount(map, address, amount);
-    }
-
-    cardano_reward_address_unref(&address);
-  }
-
-  return result;
-}
-
-/**
  * \brief Adds the direct deposits of a transaction to a sorted map of account amounts.
  */
 static cardano_error_t
@@ -5518,26 +5611,6 @@ put_direct_deposits(sorted_map_t* map, cardano_direct_deposit_map_t* deposits)
 
     cardano_reward_address_unref(&address);
   }
-
-  return result;
-}
-
-/**
- * \brief Encodes the withdrawals of a transaction as the V4 map of credential to lovelace.
- */
-static cardano_error_t
-withdrawals_v4(cardano_withdrawal_map_t* withdrawals, cardano_plutus_data_t** out)
-{
-  sorted_map_t map = { NULL, 0U, 0U };
-
-  cardano_error_t result = put_withdrawals(&map, withdrawals);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_encode(&map, out);
-  }
-
-  sorted_map_free(&map);
 
   return result;
 }
@@ -5673,91 +5746,6 @@ balance_intervals_v4(cardano_account_balance_intervals_map_t* intervals, cardano
 }
 
 /**
- * \brief Adds the amounts of a multi-asset to a sorted map keyed by policy id and asset name.
- *
- * Entries are ordered as the ledger orders them: by policy id, then by asset
- * name compared byte by byte. The filter keeps every amount, only the positive
- * ones or only the negative ones; amounts of the same asset are summed.
- */
-static cardano_error_t
-put_assets(sorted_map_t* map, cardano_multi_asset_t* multi_asset, const asset_filter_t filter)
-{
-  if (multi_asset == NULL)
-  {
-    return CARDANO_SUCCESS;
-  }
-
-  cardano_policy_id_list_t* policies = NULL;
-  cardano_error_t           result   = cardano_multi_asset_get_keys(multi_asset, &policies);
-  const size_t              count    = (result == CARDANO_SUCCESS) ? cardano_policy_id_list_get_length(policies) : 0U;
-
-  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_blake2b_hash_t*   policy_id = NULL;
-    cardano_asset_name_map_t* assets    = NULL;
-    cardano_plutus_data_t*    policy_pd = NULL;
-
-    result = cardano_policy_id_list_get(policies, i, &policy_id);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_multi_asset_get_assets(multi_asset, policy_id, &assets);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = hash_bytes(policy_id, &policy_pd);
-    }
-
-    const size_t asset_count = (result == CARDANO_SUCCESS) ? cardano_asset_name_map_get_length(assets) : 0U;
-
-    for (size_t j = 0U; (j < asset_count) && (result == CARDANO_SUCCESS); ++j)
-    {
-      cardano_asset_name_t*  asset_name = NULL;
-      int64_t                quantity   = 0;
-      cardano_plutus_data_t* name_pd    = NULL;
-      cardano_bigint_t*      amount     = NULL;
-      sort_key_t             key;
-
-      key.size = 0U;
-      result   = cardano_asset_name_map_get_key_value_at(assets, j, &asset_name, &quantity);
-
-      const bool keep = (filter == ASSETS_ALL) || ((filter == ASSETS_POSITIVE) && (quantity > 0)) || ((filter == ASSETS_NEGATIVE) && (quantity < 0));
-
-      if ((result == CARDANO_SUCCESS) && keep)
-      {
-        sort_key_append_hash(&key, policy_id);
-        sort_key_append(&key, cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name));
-
-        result = encode_bytes(cardano_asset_name_get_bytes(asset_name), cardano_asset_name_get_bytes_size(asset_name), &name_pd);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = cardano_bigint_from_int(quantity, &amount);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = sorted_map_put(map, &key, policy_pd, name_pd, NULL, amount, MERGE_SUM);
-        }
-      }
-
-      cardano_asset_name_unref(&asset_name);
-      cardano_plutus_data_unref(&name_pd);
-      cardano_bigint_unref(&amount);
-    }
-
-    cardano_blake2b_hash_unref(&policy_id);
-    cardano_asset_name_map_unref(&assets);
-    cardano_plutus_data_unref(&policy_pd);
-  }
-
-  cardano_policy_id_list_unref(&policies);
-
-  return result;
-}
-
-/**
  * \brief Encodes a multi-asset as a MintValue map: policies and assets in ledger order, without an ada entry.
  */
 static cardano_error_t
@@ -5773,47 +5761,6 @@ mint_v4(cardano_multi_asset_t* multi_asset, const asset_filter_t filter, cardano
   }
 
   sorted_map_free(&map);
-
-  return result;
-}
-
-/**
- * \brief Encodes a transaction-output value as the V4 Value map.
- *
- * The ada entry always comes first, even for a zero coin, followed by the
- * policies and assets in ledger order.
- */
-static cardano_error_t
-value_v4(cardano_value_t* value, cardano_plutus_data_t** out)
-{
-  sorted_map_t           map         = { NULL, 0U, 0U };
-  cardano_plutus_map_t*  value_map   = NULL;
-  cardano_multi_asset_t* multi_asset = cardano_value_get_multi_asset(value);
-  cardano_error_t        result      = cardano_plutus_map_new(&value_map);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = value_add_coin(value_map, cardano_value_get_coin(value), true);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = put_assets(&map, multi_asset, ASSETS_ALL);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_append_nested(&map, value_map);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = cardano_plutus_data_new_map(value_map, out);
-  }
-
-  sorted_map_free(&map);
-  cardano_multi_asset_unref(&multi_asset);
-  cardano_plutus_map_unref(&value_map);
 
   return result;
 }
@@ -5966,7 +5913,7 @@ output_v4(cardano_transaction_output_t* output, cardano_plutus_data_t** out)
 
   if (result == CARDANO_SUCCESS)
   {
-    result = value_v4(value, &fields[1]);
+    result = encode_value(value, &fields[1]);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -6473,69 +6420,6 @@ required_guards_v4(cardano_required_guards_map_t* guards, cardano_plutus_data_t*
 }
 
 /**
- * \brief Adds the witness datums of a transaction to a sorted map keyed by datum hash.
- */
-static cardano_error_t
-put_datums(sorted_map_t* map, cardano_plutus_data_set_t* datums)
-{
-  const size_t    count  = (datums != NULL) ? cardano_plutus_data_set_get_length(datums) : 0U;
-  cardano_error_t result = CARDANO_SUCCESS;
-
-  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_plutus_data_t*  datum   = NULL;
-    cardano_blake2b_hash_t* hash    = NULL;
-    cardano_plutus_data_t*  hash_pd = NULL;
-    sort_key_t              key;
-
-    key.size = 0U;
-    result   = cardano_plutus_data_set_get(datums, i, &datum);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = datum_hash(datum, &hash);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      sort_key_append_hash(&key, hash);
-      result = hash_bytes(hash, &hash_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = sorted_map_put(map, &key, hash_pd, NULL, datum, NULL, MERGE_KEEP_FIRST);
-    }
-
-    cardano_plutus_data_unref(&datum);
-    cardano_blake2b_hash_unref(&hash);
-    cardano_plutus_data_unref(&hash_pd);
-  }
-
-  return result;
-}
-
-/**
- * \brief Encodes the witness datums as the V4 map of datum hash to datum, in hash order.
- */
-static cardano_error_t
-datums_v4(cardano_plutus_data_set_t* datums, cardano_plutus_data_t** out)
-{
-  sorted_map_t map = { NULL, 0U, 0U };
-
-  cardano_error_t result = put_datums(&map, datums);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_encode(&map, out);
-  }
-
-  sorted_map_free(&map);
-
-  return result;
-}
-
-/**
  * \brief Encodes a V4 governance action id: the list [transaction id, action index].
  *
  * The sort key receives the transaction id and the index, the ledger order of
@@ -6597,57 +6481,6 @@ maybe_gov_action_id_v4(cardano_governance_action_id_t* id, cardano_plutus_data_t
   }
 
   cardano_plutus_data_unref(&id_pd);
-
-  return result;
-}
-
-/**
- * \brief Builds the sort key and the encoding of a voter.
- *
- * The ledger orders committee voters first, then DReps, then stake pools, each
- * by credential.
- */
-static cardano_error_t
-voter_entry(cardano_voter_t* voter, sort_key_t* key, cardano_plutus_data_t** voter_data)
-{
-  cardano_voter_type_t  type       = CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH;
-  cardano_credential_t* credential = NULL;
-  cardano_error_t       result     = cardano_voter_get_type(voter, &type);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    switch (type)
-    {
-      case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_KEY_HASH:
-      case CARDANO_VOTER_TYPE_CONSTITUTIONAL_COMMITTEE_SCRIPT_HASH:
-      {
-        sort_key_append_byte(key, LEDGER_COMMITTEE_VOTER);
-        break;
-      }
-      case CARDANO_VOTER_TYPE_DREP_KEY_HASH:
-      case CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH:
-      {
-        sort_key_append_byte(key, LEDGER_DREP_VOTER);
-        break;
-      }
-      case CARDANO_VOTER_TYPE_STAKE_POOL_KEY_HASH:
-      default:
-      {
-        sort_key_append_byte(key, LEDGER_STAKE_POOL_VOTER);
-        break;
-      }
-    }
-
-    credential = cardano_voter_get_credential(voter);
-    result     = sort_key_append_credential(key, credential);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = encode_voter(voter, voter_data);
-  }
-
-  cardano_credential_unref(&credential);
 
   return result;
 }
@@ -6755,23 +6588,6 @@ votes_v4(cardano_voting_procedures_t* procedures, cardano_plutus_data_t** out)
 }
 
 /**
- * \brief Computes the greatest common divisor of two unsigned integers.
- */
-static uint64_t
-gcd_u64(uint64_t lhs, uint64_t rhs)
-{
-  while (rhs != 0U)
-  {
-    const uint64_t remainder = lhs % rhs;
-
-    lhs = rhs;
-    rhs = remainder;
-  }
-
-  return lhs;
-}
-
-/**
  * \brief Encodes a unit interval as the V4 Rational: the list [numerator, denominator] in lowest terms.
  *
  * The ledger translates the interval through a Haskell \c Rational, which is
@@ -6828,34 +6644,6 @@ maybe_script_hash(cardano_blake2b_hash_t* hash, cardano_plutus_data_t** out)
 }
 
 /**
- * \brief Adds a credential to a sorted map keyed by credential, with an optional value.
- */
-static cardano_error_t
-put_credential(sorted_map_t* map, cardano_credential_t* credential, cardano_plutus_data_t* value)
-{
-  sort_key_t             key;
-  cardano_plutus_data_t* key_pd = NULL;
-
-  key.size = 0U;
-
-  cardano_error_t result = sort_key_append_credential(&key, credential);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = encode_credential(credential, &key_pd);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_put(map, &key, key_pd, NULL, value, NULL, MERGE_KEEP_FIRST);
-  }
-
-  cardano_plutus_data_unref(&key_pd);
-
-  return result;
-}
-
-/**
  * \brief Encodes the fields of an UpdateCommittee action: removed members, added members and quorum.
  *
  * The removed members are a list and the added members a map, both in ledger
@@ -6864,70 +6652,14 @@ put_credential(sorted_map_t* map, cardano_credential_t* credential, cardano_plut
 static cardano_error_t
 update_committee_v4(cardano_update_committee_action_t* action, cardano_plutus_data_t** fields)
 {
-  cardano_credential_set_t*        removed     = cardano_update_committee_action_get_members_to_be_removed(action);
-  cardano_committee_members_map_t* added       = cardano_update_committee_action_get_members_to_be_added(action);
-  cardano_unit_interval_t*         quorum      = cardano_update_committee_action_get_quorum(action);
-  sorted_map_t                     removed_map = { NULL, 0U, 0U };
-  sorted_map_t                     added_map   = { NULL, 0U, 0U };
-  const size_t                     removed_n   = (removed != NULL) ? cardano_credential_set_get_length(removed) : 0U;
-  const size_t                     added_n     = (added != NULL) ? cardano_committee_members_map_get_length(added) : 0U;
-  cardano_error_t                  result      = CARDANO_SUCCESS;
-
-  for (size_t i = 0U; (i < removed_n) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_credential_t* credential = NULL;
-
-    result = cardano_credential_set_get(removed, i, &credential);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = put_credential(&removed_map, credential, NULL);
-    }
-
-    cardano_credential_unref(&credential);
-  }
-
-  for (size_t i = 0U; (i < added_n) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_credential_t*  credential = NULL;
-    uint64_t               epoch      = 0U;
-    cardano_plutus_data_t* epoch_pd   = NULL;
-
-    result = cardano_committee_members_map_get_key_value_at(added, i, &credential, &epoch);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = cardano_plutus_data_new_integer_from_uint(epoch, &epoch_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = put_credential(&added_map, credential, epoch_pd);
-    }
-
-    cardano_credential_unref(&credential);
-    cardano_plutus_data_unref(&epoch_pd);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_encode_keys(&removed_map, &fields[0]);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = sorted_map_encode(&added_map, &fields[1]);
-  }
+  cardano_unit_interval_t* quorum = cardano_update_committee_action_get_quorum(action);
+  cardano_error_t          result = committee_changes(action, &fields[0], &fields[1]);
 
   if (result == CARDANO_SUCCESS)
   {
     result = (quorum != NULL) ? rational_v4(quorum, &fields[2]) : CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  sorted_map_free(&removed_map);
-  sorted_map_free(&added_map);
-  cardano_credential_set_unref(&removed);
-  cardano_committee_members_map_unref(&added);
   cardano_unit_interval_unref(&quorum);
 
   return result;
@@ -7048,7 +6780,7 @@ gov_action_v4(cardano_proposal_procedure_t* proposal, cardano_plutus_data_t** ou
         if (result == CARDANO_SUCCESS)
         {
           withdrawals = cardano_treasury_withdrawals_action_get_withdrawals(action);
-          result      = withdrawals_v4(withdrawals, &fields[0]);
+          result      = withdrawals_v3(withdrawals, &fields[0]);
         }
 
         if (result == CARDANO_SUCCESS)
@@ -7416,23 +7148,6 @@ tx_view_read(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_view_t*
 }
 
 /**
- * \brief Takes the entry at a position of a sorted map, or fails when the position is out of range.
- */
-static cardano_error_t
-sorted_map_key_at(const sorted_map_t* map, const uint64_t index, cardano_plutus_data_t** key_data)
-{
-  if (index >= (uint64_t)map->count)
-  {
-    return CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-  }
-
-  cardano_plutus_data_ref(map->items[index].key_data);
-  *key_data = map->items[index].key_data;
-
-  return CARDANO_SUCCESS;
-}
-
-/**
  * \brief Finds the minting policy that a mint redeemer points to, in ledger policy order.
  */
 static cardano_error_t
@@ -7472,65 +7187,42 @@ indexed_policy(cardano_multi_asset_t* mint, const uint64_t index, cardano_plutus
 }
 
 /**
- * \brief Finds the voter that a voting redeemer points to, in ledger voter order.
+ * \brief Encodes the voter that a voting redeemer points to, in ledger voter order.
  */
 static cardano_error_t
 indexed_voter(cardano_voting_procedures_t* procedures, const uint64_t index, cardano_plutus_data_t** voter_data)
 {
-  sorted_map_t          map    = { NULL, 0U, 0U };
-  cardano_voter_list_t* voters = NULL;
-  cardano_error_t       result = (procedures != NULL) ? cardano_voting_procedures_get_voters(procedures, &voters) : CARDANO_SUCCESS;
-  const size_t          count  = (voters != NULL) ? cardano_voter_list_get_length(voters) : 0U;
-
-  for (size_t i = 0U; (i < count) && (result == CARDANO_SUCCESS); ++i)
-  {
-    cardano_voter_t*       voter    = NULL;
-    cardano_plutus_data_t* voter_pd = NULL;
-    sort_key_t             key;
-
-    key.size = 0U;
-    result   = cardano_voter_list_get(voters, i, &voter);
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = voter_entry(voter, &key, &voter_pd);
-    }
-
-    if (result == CARDANO_SUCCESS)
-    {
-      result = sorted_map_put(&map, &key, voter_pd, NULL, NULL, NULL, MERGE_KEEP_FIRST);
-    }
-
-    cardano_voter_unref(&voter);
-    cardano_plutus_data_unref(&voter_pd);
-  }
+  cardano_voter_t* voter  = NULL;
+  cardano_error_t  result = cardano_uplc_int_voter_at_ledger_index(procedures, index, &voter);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = sorted_map_key_at(&map, index, voter_data);
+    result = encode_voter(voter, voter_data);
   }
 
-  cardano_voter_list_unref(&voters);
-  sorted_map_free(&map);
+  cardano_voter_unref(&voter);
 
   return result;
 }
 
 /**
- * \brief Finds the credential that a withdrawal redeemer points to, in ledger account order.
+ * \brief Encodes the credential that a withdrawal redeemer points to, in ledger account order.
  */
 static cardano_error_t
 indexed_withdrawal(cardano_withdrawal_map_t* withdrawals, const uint64_t index, cardano_plutus_data_t** credential)
 {
-  sorted_map_t    map    = { NULL, 0U, 0U };
-  cardano_error_t result = put_withdrawals(&map, withdrawals);
+  cardano_reward_address_t* address = NULL;
+  cardano_credential_t*     cred    = NULL;
+  cardano_error_t           result  = cardano_uplc_int_withdrawal_at_ledger_index(withdrawals, index, &address);
 
   if (result == CARDANO_SUCCESS)
   {
-    result = sorted_map_key_at(&map, index, credential);
+    cred   = cardano_reward_address_get_credential(address);
+    result = encode_credential(cred, credential);
   }
 
-  sorted_map_free(&map);
+  cardano_credential_unref(&cred);
+  cardano_reward_address_unref(&address);
 
   return result;
 }
@@ -8107,7 +7799,7 @@ tx_info_fields_v4(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = withdrawals_v4(view->withdrawals, &fields[7]);
+    result = withdrawals_v3(view->withdrawals, &fields[7]);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -8146,7 +7838,7 @@ tx_info_fields_v4(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = datums_v4(view->datums, &fields[14]);
+    result = encode_data(view->datums, &fields[14]);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -8892,45 +8584,24 @@ cardano_uplc_int_build_script_purpose_v1v2(
     case CARDANO_REDEEMER_TAG_REWARD:
     {
       cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+      cardano_plutus_data_t*    cred_pd     = NULL;
+      cardano_plutus_data_t*    wrapped     = NULL;
 
-      if ((withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(withdrawals)))
+      result = indexed_withdrawal(withdrawals, index, &cred_pd);
+
+      if (result == CARDANO_SUCCESS)
       {
-        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+        result = wrap_constr(CONSTR_0, cred_pd, &wrapped);
       }
 
       if (result == CARDANO_SUCCESS)
       {
-        cardano_reward_address_t* address    = NULL;
-        uint64_t                  coin       = 0U;
-        cardano_credential_t*     credential = NULL;
-        cardano_plutus_data_t*    cred_pd    = NULL;
-        cardano_plutus_data_t*    wrapped    = NULL;
-
-        result = cardano_withdrawal_map_get_key_value_at(withdrawals, (size_t)index, &address, &coin);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          credential = cardano_reward_address_get_credential(address);
-          result     = encode_credential(credential, &cred_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = wrap_constr(CONSTR_0, cred_pd, &wrapped);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = wrap_constr(CONSTR_2, wrapped, purpose);
-        }
-
-        cardano_reward_address_unref(&address);
-        cardano_credential_unref(&credential);
-        cardano_plutus_data_unref(&cred_pd);
-        cardano_plutus_data_unref(&wrapped);
+        result = wrap_constr(CONSTR_2, wrapped, purpose);
       }
 
       cardano_withdrawal_map_unref(&withdrawals);
+      cardano_plutus_data_unref(&cred_pd);
+      cardano_plutus_data_unref(&wrapped);
 
       break;
     }
@@ -9454,38 +9125,17 @@ script_info_v3(
     case CARDANO_REDEEMER_TAG_REWARD:
     {
       cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+      cardano_plutus_data_t*    cred_pd     = NULL;
 
-      if ((withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(withdrawals)))
-      {
-        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-      }
+      result = indexed_withdrawal(withdrawals, index, &cred_pd);
 
       if (result == CARDANO_SUCCESS)
       {
-        cardano_reward_address_t* address    = NULL;
-        uint64_t                  coin       = 0U;
-        cardano_credential_t*     credential = NULL;
-        cardano_plutus_data_t*    cred_pd    = NULL;
-
-        result = cardano_withdrawal_map_get_key_value_at(withdrawals, (size_t)index, &address, &coin);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          credential = cardano_reward_address_get_credential(address);
-          result     = encode_credential(credential, &cred_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = wrap_constr(CONSTR_2, cred_pd, script_info);
-        }
-
-        cardano_reward_address_unref(&address);
-        cardano_credential_unref(&credential);
-        cardano_plutus_data_unref(&cred_pd);
+        result = wrap_constr(CONSTR_2, cred_pd, script_info);
       }
 
       cardano_withdrawal_map_unref(&withdrawals);
+      cardano_plutus_data_unref(&cred_pd);
 
       break;
     }
@@ -9533,38 +9183,17 @@ script_info_v3(
     case CARDANO_REDEEMER_TAG_VOTING:
     {
       cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
-      cardano_voter_list_t*        voters     = NULL;
+      cardano_plutus_data_t*       voter_pd   = NULL;
 
-      result = (procedures != NULL) ? cardano_voting_procedures_get_voters(procedures, &voters) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-
-      if ((result == CARDANO_SUCCESS) && (index >= cardano_voter_list_get_length(voters)))
-      {
-        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-      }
+      result = indexed_voter(procedures, index, &voter_pd);
 
       if (result == CARDANO_SUCCESS)
       {
-        cardano_voter_t*       voter    = NULL;
-        cardano_plutus_data_t* voter_pd = NULL;
-
-        result = cardano_voter_list_get(voters, (size_t)index, &voter);
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = encode_voter(voter, &voter_pd);
-        }
-
-        if (result == CARDANO_SUCCESS)
-        {
-          result = wrap_constr(CONSTR_4, voter_pd, script_info);
-        }
-
-        cardano_voter_unref(&voter);
-        cardano_plutus_data_unref(&voter_pd);
+        result = wrap_constr(CONSTR_4, voter_pd, script_info);
       }
 
       cardano_voting_procedures_unref(&procedures);
-      cardano_voter_list_unref(&voters);
+      cardano_plutus_data_unref(&voter_pd);
 
       break;
     }
@@ -9749,6 +9378,107 @@ cardano_uplc_int_build_script_context_v4(
   }
 
   tx_view_release(&view);
+
+  return result;
+}
+
+cardano_error_t
+cardano_uplc_int_withdrawal_at_ledger_index(
+  cardano_withdrawal_map_t*  withdrawals,
+  const uint64_t             index,
+  cardano_reward_address_t** address)
+{
+  if (address == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  const size_t              count  = (withdrawals != NULL) ? cardano_withdrawal_map_get_length(withdrawals) : 0U;
+  cardano_reward_address_t* found  = NULL;
+  cardano_error_t           result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < count) && (found == NULL) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_reward_address_t* candidate = NULL;
+    uint64_t                  rank      = 0U;
+
+    result = cardano_withdrawal_map_get_key_at(withdrawals, i, &candidate);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = _cardano_ledger_order_withdrawal_index(withdrawals, candidate, &rank);
+    }
+
+    if ((result == CARDANO_SUCCESS) && (rank == index))
+    {
+      cardano_reward_address_ref(candidate);
+      found = candidate;
+    }
+
+    cardano_reward_address_unref(&candidate);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (found == NULL))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *address = found;
+  }
+
+  return result;
+}
+
+cardano_error_t
+cardano_uplc_int_voter_at_ledger_index(
+  cardano_voting_procedures_t* procedures,
+  const uint64_t               index,
+  cardano_voter_t**            voter)
+{
+  if (voter == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_voter_list_t* voters = NULL;
+  cardano_voter_t*      found  = NULL;
+  cardano_error_t       result = (procedures != NULL) ? cardano_voting_procedures_get_voters(procedures, &voters) : CARDANO_SUCCESS;
+  const size_t          count  = (voters != NULL) ? cardano_voter_list_get_length(voters) : 0U;
+
+  for (size_t i = 0U; (i < count) && (found == NULL) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_voter_t* candidate = NULL;
+    uint64_t         rank      = 0U;
+
+    result = cardano_voter_list_get(voters, i, &candidate);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = _cardano_ledger_order_voter_index(voters, candidate, &rank);
+    }
+
+    if ((result == CARDANO_SUCCESS) && (rank == index))
+    {
+      cardano_voter_ref(candidate);
+      found = candidate;
+    }
+
+    cardano_voter_unref(&candidate);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (found == NULL))
+  {
+    result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *voter = found;
+  }
+
+  cardano_voter_list_unref(&voters);
 
   return result;
 }

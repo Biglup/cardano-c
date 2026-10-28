@@ -27,8 +27,7 @@
 #include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/witness_set.h>
 
-#include "../../allocators.h"
-#include "../../string_safe.h"
+#include "../../common/ledger_order.h"
 #include "builder_redeemers.h"
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -36,7 +35,9 @@
 /**
  * \brief Computes a deterministic, sortable hash ID for a voter.
  *
- * This function creates an identifier by concatenating the voter's type and credential hash.
+ * The identifier is the ledger order key of the voter (its role, its credential kind and its
+ * credential hash), so the IDs sort in the order the ledger uses to resolve voting redeemer
+ * indices.
  *
  * This ID can be used to establish a canonical sorting order for a voter's redeemer.
  *
@@ -58,57 +59,15 @@ compute_voting_procedures_sortable_id(cardano_voter_t* voter, cardano_blake2b_ha
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  cardano_error_t result = CARDANO_SUCCESS;
+  byte_t          key[CARDANO_LEDGER_ORDER_KEY_SIZE] = { 0 };
+  cardano_error_t result                             = _cardano_ledger_order_voter_key(voter, key);
 
-  cardano_credential_t*   credential = cardano_voter_get_credential(voter);
-  cardano_blake2b_hash_t* hash       = cardano_credential_get_hash(credential);
-
-  const byte_t* hash_bytes = cardano_blake2b_hash_get_data(hash);
-  size_t        hash_size  = cardano_blake2b_hash_get_bytes_size(hash);
-
-  cardano_voter_type_t voter_type;
-  result = cardano_voter_get_type(voter, &voter_type);
-
-  if (result != CARDANO_SUCCESS)
+  if (result == CARDANO_SUCCESS)
   {
-    cardano_blake2b_hash_unref(&hash);
-    cardano_credential_unref(&credential);
-    return result;
+    result = cardano_blake2b_hash_from_bytes(key, sizeof(key), id);
   }
 
-  const size_t total_size = sizeof(voter_type) + hash_size;
-  byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
-
-  if (id_bytes == NULL)
-  {
-    cardano_blake2b_hash_unref(&hash);
-    cardano_credential_unref(&credential);
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  size_t cursor = 0;
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size, &voter_type, sizeof(voter_type));
-  cursor += sizeof(voter_type);
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
-
-  cardano_blake2b_hash_unref(&hash);
-  cardano_credential_unref(&credential);
-
-  cardano_blake2b_hash_t* id_hash = NULL;
-  result                          = cardano_blake2b_hash_from_bytes(id_bytes, total_size, &id_hash);
-
-  _cardano_free(id_bytes);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  *id = id_hash;
-
-  return CARDANO_SUCCESS;
+  return result;
 }
 
 /* IMPLEMENTATION ************************************************************/

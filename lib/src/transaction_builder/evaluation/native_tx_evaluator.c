@@ -86,7 +86,6 @@
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/voting_procedures/voter.h>
-#include <cardano/voting_procedures/voter_list.h>
 #include <cardano/voting_procedures/voter_type.h>
 #include <cardano/voting_procedures/voting_procedures.h>
 #include <cardano/witness_set/plutus_data_set.h>
@@ -1157,8 +1156,9 @@ read_level(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_level_t* 
  *
  * The (tag, index) pair selects the concrete item against the collections of the
  * redeemer's own transaction level: sorted inputs (spend), sorted mint policies
- * (mint), withdrawals (reward), certificates (cert), voters (vote), proposals
- * (propose) or guards (guard). The guard index is the position in the guard set
+ * (mint), withdrawals in ledger account order (reward), certificates (cert),
+ * voters in ledger voter order (vote), proposals (propose) or guards (guard).
+ * The guard index is the position in the guard set
  * in transaction order, counting key-hash guards too. The script hash is the
  * script credential the item is authorized by; the spend purpose also resolves
  * the datum from the witness datums of the level. The index ordering mirrors the
@@ -1269,29 +1269,20 @@ resolve_script_hash(
     }
     case CARDANO_REDEEMER_TAG_REWARD:
     {
-      if ((level->withdrawals == NULL) || (index >= cardano_withdrawal_map_get_length(level->withdrawals)))
-      {
-        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-      }
+      cardano_reward_address_t* address = NULL;
+
+      result = cardano_uplc_int_withdrawal_at_ledger_index(level->withdrawals, index, &address);
 
       if (result == CARDANO_SUCCESS)
       {
-        cardano_reward_address_t* address = NULL;
-        uint64_t                  coin    = 0U;
+        cardano_credential_t* credential = cardano_reward_address_get_credential(address);
 
-        result = cardano_withdrawal_map_get_key_value_at(level->withdrawals, (size_t)index, &address, &coin);
+        result = script_hash_from_credential(credential, out_hash);
 
-        if (result == CARDANO_SUCCESS)
-        {
-          cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-
-          result = script_hash_from_credential(credential, out_hash);
-
-          cardano_credential_unref(&credential);
-        }
-
-        cardano_reward_address_unref(&address);
+        cardano_credential_unref(&credential);
       }
+
+      cardano_reward_address_unref(&address);
 
       break;
     }
@@ -1329,34 +1320,21 @@ resolve_script_hash(
     }
     case CARDANO_REDEEMER_TAG_VOTING:
     {
-      cardano_voter_list_t* voters = NULL;
+      cardano_voter_t* voter = NULL;
 
-      result = (level->votes != NULL) ? cardano_voting_procedures_get_voters(level->votes, &voters) : CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-
-      if ((result == CARDANO_SUCCESS) && (index >= cardano_voter_list_get_length(voters)))
-      {
-        result = CARDANO_ERROR_INDEX_OUT_OF_BOUNDS;
-      }
+      result = cardano_uplc_int_voter_at_ledger_index(level->votes, index, &voter);
 
       if (result == CARDANO_SUCCESS)
       {
-        cardano_voter_t* voter = NULL;
+        cardano_credential_t* credential = cardano_voter_get_credential(voter);
 
-        result = cardano_voter_list_get(voters, (size_t)index, &voter);
+        result = script_hash_from_credential(credential, out_hash);
 
-        if (result == CARDANO_SUCCESS)
-        {
-          cardano_credential_t* credential = cardano_voter_get_credential(voter);
-
-          result = script_hash_from_credential(credential, out_hash);
-
-          cardano_credential_unref(&credential);
-        }
-
-        cardano_voter_unref(&voter);
+        cardano_credential_unref(&credential);
       }
 
-      cardano_voter_list_unref(&voters);
+      cardano_voter_unref(&voter);
+
       break;
     }
     case CARDANO_REDEEMER_TAG_PROPOSING:

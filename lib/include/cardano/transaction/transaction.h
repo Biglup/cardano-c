@@ -833,11 +833,16 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_find_mint_policy_index(
   uint64_t*               index);
 
 /**
- * \brief Finds the index of a withdrawal in the transaction's canonically ordered withdrawal map.
+ * \brief Finds the index of a withdrawal in the transaction's withdrawals in ledger order.
+ *
+ * The ledger orders reward accounts by network, test networks first, then script credentials
+ * before key credentials, then by credential hash. The index is the number of withdrawals that
+ * sort before the given one, which is the index reward redeemers and validators use to reference
+ * it. It can differ from the position in the withdrawal map, which puts key credentials first.
  *
  * \param[in]  transaction    The transaction to inspect.
  * \param[in]  reward_address The reward address of the withdrawal.
- * \param[out] index          The position of the withdrawal in the canonical ordering.
+ * \param[out] index          The position of the withdrawal in ledger order.
  *
  * \return \ref CARDANO_SUCCESS if the withdrawal was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if
  *         the transaction does not withdraw from the given reward address, or an appropriate error code.
@@ -869,14 +874,17 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_find_certificate_index(
   uint64_t*              index);
 
 /**
- * \brief Finds the index of a voter in the transaction's canonically ordered voting procedures.
+ * \brief Finds the index of a voter in the transaction's voting procedures in ledger order.
  *
- * Voters are ordered canonically in the voting procedures map, and each voter's position in that
- * ordering is the index voting redeemers and validators use to reference its votes.
+ * The ledger orders voters by role, constitutional committee members first, then DReps, then
+ * stake pools, then script credentials before key credentials, then by credential hash. The index
+ * is the number of voters that sort before the given one, which is the index voting redeemers and
+ * validators use to reference its votes. It can differ from the position in the voting procedures
+ * map, which puts key credentials first.
  *
  * \param[in]  transaction The transaction to inspect.
  * \param[in]  voter       The voter to look for.
- * \param[out] index       The position of the voter in the canonical voter ordering.
+ * \param[out] index       The position of the voter in ledger order.
  *
  * \return \ref CARDANO_SUCCESS if the voter was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the
  *         transaction does not carry votes from the given voter, or an appropriate error code.
